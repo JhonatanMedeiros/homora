@@ -1,8 +1,8 @@
-# Lumora
+# Homora
 
 Um espaço pessoal para visualizar e organizar serviços, infraestrutura e informações do seu ambiente, com integrações e gerenciamento assistido por agentes de IA.
 
-**Estado:** planejamento inicial; ainda não existe uma aplicação funcional. Lumora é um nome provisório, escolhido para não limitar o projeto ao Proxmox ou a homelabs.
+**Estado:** planejamento inicial; ainda não existe uma aplicação funcional. Homora é um nome provisório, escolhido para não limitar o projeto ao Proxmox ou a homelabs.
 
 ## Documentação
 

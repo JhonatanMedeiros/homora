@@ -1,6 +1,6 @@
 # Visão do produto
 
-Lumora reúne serviços e informações úteis em um painel personalizável. O usuário pode organizar seu ambiente pela interface ou solicitar mudanças a um agente conectado por MCP. Proxmox é a primeira integração de infraestrutura planejada, mas não define o alcance do produto.
+Homora reúne serviços e informações úteis em um painel personalizável. O usuário pode organizar seu ambiente pela interface ou solicitar mudanças a um agente conectado por MCP. Proxmox é a primeira integração de infraestrutura planejada, mas não define o alcance do produto.
 
 ## Público e problemas
 
