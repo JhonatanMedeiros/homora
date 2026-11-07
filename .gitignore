@@ -1,0 +1,15 @@
+node_modules/
+.idea/
+dist/
+.turbo/
+data/*.sqlite*
+coverage/
+
+.env
+.env.*
+!.env.example
+backups/
+data/*.auth
+data/*.key
+data/*.proxmox
+data/*.tmp

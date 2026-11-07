@@ -1,0 +1,13 @@
+.git
+.idea
+node_modules
+**/node_modules
+**/dist
+.turbo
+coverage
+data
+backups
+.env
+.env.*
+!.env.example
+propostas

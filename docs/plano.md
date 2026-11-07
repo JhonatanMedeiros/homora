@@ -1,5 +1,9 @@
 # Plano de entrega
 
+Este documento registra a visão geral das fases. Para a sequência priorizada, o
+estado atual e os critérios de conclusão de cada etapa, consulte o
+[plano de evolução](evolucao.md).
+
 ## Fase 0 — validação
 
 - [ ] Avaliar dashboards existentes e registrar lacunas reais.

@@ -1,0 +1,9 @@
+node_modules
+**/dist
+.turbo
+.idea
+data
+pnpm-lock.yaml
+packages/db/migrations
+propostas
+coverage
