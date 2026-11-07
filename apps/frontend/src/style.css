@@ -1338,3 +1338,10 @@ form label small {
 .integration-action {
   margin: 14px 8px 0 0;
 }
+
+.integration-catalog {
+  color: #c3d1c8;
+  font-size: 12px;
+  padding-left: 18px;
+  line-height: 1.8;
+}

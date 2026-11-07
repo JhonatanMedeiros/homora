@@ -16,25 +16,32 @@ export function Proxmox() {
     [secret, setSecret] = useState('');
   const [resources, setResources] = useState<Resource[] | null>(null),
     [message, setMessage] = useState('');
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [ca, setCa] = useState(''),
     [hasCa, setHasCa] = useState(false),
     [removeCa, setRemoveCa] = useState(false),
     [busy, setBusy] = useState(false);
-  async function refresh() {
+  async function refresh(force = false) {
     try {
-      const response = await fetch('/api/proxmox/resources');
+      const response = await fetch(`/api/proxmox/resources${force ? '?refresh=true' : ''}`);
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
         throw new Error(
           typeof body?.error === 'string' ? body.error : 'Não foi possível consultar o Proxmox.',
         );
       }
-      const body = (await response.json()) as { data: unknown };
+      const body = (await response.json()) as { data: unknown; checkedAt?: unknown };
       if (!Array.isArray(body.data)) throw Error();
       setResources(body.data as Resource[]);
+      setCheckedAt(
+        typeof body.checkedAt === 'string' && !Number.isNaN(Date.parse(body.checkedAt))
+          ? body.checkedAt
+          : null,
+      );
       setMessage('');
     } catch (error) {
       setResources(null);
+      setCheckedAt(null);
       setMessage(
         error instanceof Error && !(error instanceof TypeError)
           ? error.message
@@ -125,7 +132,12 @@ export function Proxmox() {
               onChange={(e) => setSecret(e.target.value)}
             />
           </label>
-          {configured && <p>Deixe os campos em branco para manter os dados existentes.</p>}
+          {configured && (
+            <p>
+              Deixe os campos em branco para manter os dados existentes. Ao alterar a URL ou o ID do
+              token, informe novamente o segredo.
+            </p>
+          )}
           <label>
             Certificado público da CA (opcional, PEM)
             <input
@@ -193,6 +205,12 @@ export function Proxmox() {
                 {resources.filter((r) => r.status === 'running' || r.status === 'online').length}{' '}
                 recursos ativos
               </p>
+              {checkedAt && (
+                <p>
+                  Última atualização:{' '}
+                  <time dateTime={checkedAt}>{new Date(checkedAt).toLocaleString('pt-BR')}</time>
+                </p>
+              )}
             </>
           ) : (
             <p>
@@ -205,7 +223,7 @@ export function Proxmox() {
             {configured ? 'Alterar integração' : 'Configurar Proxmox'}
           </button>
           {configured && (
-            <button className="cancel integration-action" onClick={() => void refresh()}>
+            <button className="cancel integration-action" onClick={() => void refresh(true)}>
               Atualizar
             </button>
           )}

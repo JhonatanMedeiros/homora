@@ -3,8 +3,14 @@ import { eq } from 'drizzle-orm';
 import { createDatabase, services } from '@homora/db';
 import { validateService, type ServiceInput } from '@homora/shared';
 import { createAuth } from './auth.js';
-import { createVault, validateProxmoxConfig, type ProxmoxConfig } from './vault.js';
-import { ProxmoxError, readProxmox } from './proxmox.js';
+import { createVault, type ProxmoxConfig } from './vault.js';
+import { ProxmoxError } from './proxmox.js';
+import {
+  createIntegrationRegistry,
+  createObservationCache,
+  IntegrationInvalidatedError,
+  proxmoxAdapter,
+} from './integrations.js';
 type Database = ReturnType<typeof createDatabase>['db'];
 export function createApp(
   db: Database,
@@ -13,6 +19,8 @@ export function createApp(
   vault?: ReturnType<typeof createVault>,
 ) {
   const app = Fastify({ bodyLimit: 100_000 });
+  const integrations = createIntegrationRegistry([proxmoxAdapter]);
+  const proxmoxCache = createObservationCache<unknown>(30_000);
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     if (
@@ -64,6 +72,7 @@ export function createApp(
       return reply.code(401).send({ error: 'Autenticação necessária.' });
   });
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
+  app.get('/api/integrations/catalog', async () => integrations.list());
   app.get('/api/proxmox/status', async () => {
     const config = vault?.load();
     return { configured: Boolean(config), hasCa: Boolean(config?.ca) };
@@ -78,7 +87,19 @@ export function createApp(
     if (input.removeCa !== undefined && typeof input.removeCa !== 'boolean')
       throw new Error('Dados inválidos.');
     const existing = vault?.load();
-    return validateProxmoxConfig({
+    if (existing && !input.secret) {
+      let changedUrl = false;
+      if (input.url) {
+        try {
+          changedUrl = new URL(input.url as string).origin !== existing.url;
+        } catch {
+          throw new Error('Informe uma URL HTTPS válida.');
+        }
+      }
+      if (changedUrl || (input.tokenId && input.tokenId !== existing.tokenId))
+        throw new Error('Informe novamente o segredo ao alterar a URL ou o ID do token.');
+    }
+    return proxmoxAdapter.validate({
       url: (input.url as string) || existing?.url || '',
       tokenId: (input.tokenId as string) || existing?.tokenId || '',
       secret: (input.secret as string) || existing?.secret || '',
@@ -100,6 +121,7 @@ export function createApp(
     }
     try {
       await vault.save(config);
+      proxmoxCache.invalidate();
       return { ok: true };
     } catch {
       return reply.code(500).send({ error: 'Não foi possível salvar a configuração.' });
@@ -119,7 +141,7 @@ export function createApp(
       });
     }
     try {
-      await readProxmox(config);
+      await proxmoxAdapter.collect(config);
       return { ok: true };
     } catch (error) {
       return reply.code(502).send({
@@ -127,20 +149,26 @@ export function createApp(
       });
     }
   });
-  app.get('/api/proxmox/resources', async (_request, reply) => {
-    try {
-      const config = vault?.load();
-      if (!config) return reply.code(404).send({ error: 'Proxmox não configurado.' });
-      return { data: await readProxmox(config) };
-    } catch (error) {
-      return reply.code(502).send({
-        error:
-          error instanceof ProxmoxError
-            ? error.message
-            : 'Não foi possível carregar a configuração do Proxmox. Verifique os arquivos de integração e a chave.',
-      });
-    }
-  });
+  app.get<{ Querystring: { refresh?: string } }>(
+    '/api/proxmox/resources',
+    async (request, reply) => {
+      try {
+        const config = vault?.load();
+        if (!config) return reply.code(404).send({ error: 'Proxmox não configurado.' });
+        return await proxmoxCache.collect(
+          () => proxmoxAdapter.collect(config),
+          request.query.refresh === 'true',
+        );
+      } catch (error) {
+        return reply.code(502).send({
+          error:
+            error instanceof ProxmoxError || error instanceof IntegrationInvalidatedError
+              ? error.message
+              : 'Não foi possível carregar a configuração do Proxmox. Verifique os arquivos de integração e a chave.',
+        });
+      }
+    },
+  );
   app.get('/api/services', async () =>
     db.select().from(services).orderBy(services.category, services.name),
   );

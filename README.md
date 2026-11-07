@@ -8,6 +8,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 
 - [Visão e produto](docs/produto.md)
 - [Arquitetura e segurança](docs/arquitetura.md)
+- [Referências e arquitetura de integrações](docs/integracoes.md)
 - [Plano de entrega](docs/plano.md)
 - [Plano de evolução e acompanhamento](docs/evolucao.md)
 - [Orientações para agentes de IA](AGENTS.md)

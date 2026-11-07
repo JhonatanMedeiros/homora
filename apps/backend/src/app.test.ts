@@ -24,6 +24,20 @@ afterEach(async () => {
     });
 });
 describe('API de serviços', () => {
+  it('protege o catálogo de integrações e retorna apenas metadados', async () => {
+    expect((await app.inject({ method: 'GET', url: '/api/integrations/catalog' })).statusCode).toBe(
+      401,
+    );
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/integrations/catalog',
+      headers: { cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] },
+    ]);
+  });
   it('não expõe serviços sem sessão', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
   });
@@ -155,6 +169,14 @@ it('atualiza e remove CA sem apagar as credenciais existentes', async () => {
       secret: 'segredo',
     });
     const ca = rootCertificates[0];
+    for (const payload of [{ url: 'https://outro.example:8006' }, { tokenId: 'other@pve!token' }]) {
+      for (const route of ['/api/proxmox/config', '/api/proxmox/test']) {
+        const response = await localApp.inject({ method: 'POST', url: route, headers, payload });
+        expect(response.statusCode).toBe(400);
+        expect(response.json().error).toContain('Informe novamente o segredo');
+      }
+    }
+    expect(vault.load()?.secret).toBe('segredo');
     expect(
       (
         await localApp.inject({

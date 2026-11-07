@@ -127,3 +127,18 @@ com o projeto usando a documentação disponível.
 - Arquivos de IDE foram incluídos no `.gitignore`. Dados e segredos nos caminhos
   locais padrão estão ignorados; caminhos personalizados devem ser protegidos
   separadamente. A revisão completa antes do primeiro commit permanece pendente.
+
+## Trabalho em andamento — integrações
+
+- A análise e o plano técnico estão em [integrações](integracoes.md). A primeira
+  versão do projeto foi registrada no Git e a conexão Proxmox com CA importada
+  funcionou no ambiente do usuário; os demais cenários reais ainda exigem testes.
+- O registro de adaptadores, catálogo autenticado, cache Proxmox e migração
+  aditiva de instâncias e widgets são fundações iniciais. As novas tabelas ainda
+  não possuem API ou interface completas; o cofre Proxmox antigo permanece em uso.
+- Jellyfin e Home Assistant têm protótipos isolados com testes simulados, ainda
+  indisponíveis na interface. Uptime Kuma e AdGuard Home foram pesquisados, mas
+  ainda não foram implementados. Nenhum dos quatro foi validado em ambiente real.
+- A política e o transporte de rede são experimentais e ainda não protegem os
+  adaptadores existentes. Precisam de revisão de endereços especiais, integração
+  e testes adicionais antes de expor destinos configuráveis.

@@ -2,6 +2,10 @@
 
 Decisões iniciais, sujeitas a validação durante a implementação. Um monólito modular reduz a complexidade operacional inicial.
 
+A comparação de projetos e a proposta de evolução das integrações estão em
+[integrações](integracoes.md). O diagrama abaixo descreve a arquitetura alvo;
+em particular, o MCP existente ainda acessa o banco e o cofre local diretamente.
+
 ```mermaid
 flowchart LR
   U[Usuário] --> UI[Interface web]

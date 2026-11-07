@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { Service, ServiceInput } from '@homora/shared';
 import { Proxmox } from './Proxmox';
+import { IntegrationCatalog } from './IntegrationCatalog';
 
 const empty: ServiceInput = { name: '', url: '', category: '', description: '' };
 const colors = ['orange', 'blue', 'green', 'purple', 'rose', 'cyan', 'sky', 'lime'];
@@ -263,6 +264,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </div>
           <div className="widgets">
             <Proxmox />
+            <IntegrationCatalog />
             {[
               [
                 '◉  MONITORAMENTO',

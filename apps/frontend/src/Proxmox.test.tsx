@@ -36,3 +36,20 @@ it('mostra o diagnóstico retornado pela API', async () => {
   render(<Proxmox />);
   expect(await screen.findByText('Certificado TLS não confiável.')).toBeTruthy();
 });
+
+it('exibe data da consulta e força atualização ao solicitar', async () => {
+  const fetchMock = vi.fn(async (url: string) =>
+    url.endsWith('/status')
+      ? { ok: true, json: async () => ({ configured: true }) }
+      : { ok: true, json: async () => ({ data: [], checkedAt: '2026-01-01T12:00:00.000Z' }) },
+  );
+  vi.stubGlobal('fetch', fetchMock);
+  render(<Proxmox />);
+  expect(await screen.findByText(/Última atualização:/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/proxmox/resources?refresh=true')).toBe(
+    true,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Alterar integração' }));
+  expect(screen.getByText(/Ao alterar a URL ou o ID do token/)).toBeTruthy();
+});

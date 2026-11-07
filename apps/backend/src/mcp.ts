@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { createVault } from './vault.js';
-import { readProxmox } from './proxmox.js';
+import { proxmoxAdapter } from './integrations.js';
 
 export function createMcp(database: DatabaseSync, vault: ReturnType<typeof createVault>) {
   const server = new McpServer({ name: 'homora', version: '0.1.0' });
@@ -34,7 +34,7 @@ export function createMcp(database: DatabaseSync, vault: ReturnType<typeof creat
         const config = vault.load();
         if (!config)
           return { content: [{ type: 'text', text: 'Proxmox não configurado.' }], isError: true };
-        const data = await readProxmox(config);
+        const data = await proxmoxAdapter.collect(config);
         return { content: [{ type: 'text', text: JSON.stringify(data) }] };
       } catch {
         return {
