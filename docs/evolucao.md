@@ -142,3 +142,28 @@ com o projeto usando a documentação disponível.
 - A política e o transporte de rede são experimentais e ainda não protegem os
   adaptadores existentes. Precisam de revisão de endereços especiais, integração
   e testes adicionais antes de expor destinos configuráveis.
+
+## Redesenho da interface
+
+- A interface foi refeita a partir da proposta `propostas/console-v2.html`:
+  começa pelo celular (navegação inferior, alvos de toque de 44 px), usa tema
+  claro e escuro conforme o sistema (com alternância manual), paleta grafite e
+  azul, e fontes Hanken Grotesk e Bricolage Grotesque servidas localmente
+  (SIL OFL 1.1, ver `apps/frontend/src/fonts/README.md`).
+- O cadastro e a edição de serviços passaram a usar um formulário na própria
+  página, em vez de diálogo modal. A remoção exige confirmação na própria linha.
+  Serviços são agrupados por categoria; a busca também considera o endereço, e
+  Enter abre o primeiro resultado (`Ctrl K` ou `/` focam a busca).
+- O painel de integrações mostra o Proxmox (CPU e memória dos nós, lista de VMs
+  e containers e data da última consulta) e o catálogo de integrações
+  disponíveis, com o mesmo conteúdo e comportamento que já existiam. Os cartões “Monitoramento” e “Assistente”
+  e o relógio foram removidos: eram apenas texto de recurso planejado.
+- Não implementado, apenas previsto na proposta: estado e histórico de
+  disponibilidade por serviço, sugestão de cards a partir do Proxmox e fila de
+  propostas do agente. Dependem de monitoramento e do modelo de aprovação.
+- Validação: `pnpm check` e `pnpm build` passaram. O fluxo foi exercitado em
+  navegador headless (primeiro acesso, cadastro, confirmação de remoção,
+  abas e formulário do Proxmox) com banco temporário, em 390 e 1440 px, sem
+  erros no console nem rolagem horizontal. Não foram verificados: leitor de
+  tela, navegação completa por teclado, aparelho móvel real e Proxmox real.
+  Por isso os itens de telas pequenas e teclado do P1 seguem abertos.
