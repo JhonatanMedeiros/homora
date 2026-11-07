@@ -105,6 +105,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     .filter((group) => group.items.length);
   function openForm(service?: Service) {
     setTab('services');
+    setMenu(null);
+    setConfirming(null);
     setEditing(service?.id ?? null);
     setForm(
       service
