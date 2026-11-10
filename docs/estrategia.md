@@ -29,7 +29,7 @@ entre versões; confirme antes de afirmar paridade publicamente.
 | -------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Integrações    | Homepage descreve integrações para mais de 100 serviços.                                       | Quatro adaptadores de leitura e Proxmox; nenhum validado em instância real.        |
 | Widgets        | Dados do serviço junto ao atalho, mais widgets informativos (clima, hora, busca).              | Widgets são registros nominais, ficam na aba Integrações e não aparecem na home.   |
-| Descoberta     | Homepage descobre serviços por labels Docker.                                                  | Não há descoberta.                                                                 |
+| Descoberta     | Homepage descobre serviços por labels Docker.                                                  | Sugestões por labels Docker (opcional, via proxy somente leitura), com revisão.    |
 | Configuração   | Homepage: YAML ou labels Docker. Dashy: um `conf.yml`, editável também pela interface.         | Banco SQLite e interface; sem importação nem exportação.                           |
 | Status         | Dashy: código HTTP e ping ICMP, com intervalos configuráveis. Homepage: estado de contêineres. | HTTP com estado por código e latência, ping ICMP opcional e intervalo por serviço. |
 | Acesso         | OIDC nos dois; Dashy também tem usuários, tipos e convidado somente leitura.                   | Uma conta de administrador com senha local.                                        |
@@ -73,7 +73,7 @@ Homepage e do Dashy, sem edição manual, em um ambiente de teste.
 - [x] Remover o limite silencioso de 25 serviços, ou expor cobertura e fila.
 - [ ] Widgets dentro do card, com configuração, estado vazio e de erro; chamar
       de widget só o que tem renderização própria na home.
-- [ ] Descoberta Docker por labels com sugestões revisáveis e acesso somente
+- [x] Descoberta Docker por labels com sugestões revisáveis e acesso somente
       leitura ao socket.
 - [x] Opção de ping ICMP e de intervalo por serviço, com limites.
 - [ ] Ícones de marca por nome (conjunto open source com licença compatível,

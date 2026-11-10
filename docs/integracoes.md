@@ -105,8 +105,10 @@ qualquer endereço ou modificar infraestrutura.
 - APIs mudam; validar versões, autenticação e tratamento de respostas antes de
   declarar uma integração suportada. Testes simulados não substituem validação
   com os serviços reais.
-- Docker socket concede acesso privilegiado ao daemon. Qualquer descoberta deve
-  ser opcional, documentar suas permissões e avaliar um proxy restrito.
+- Docker socket concede acesso privilegiado ao daemon. A descoberta é opcional
+  (`HOMORA_DOCKER_HOST`), só lista contêineres e é pensada para um proxy
+  restrito somente leitura (`compose.docker-discovery.yml`); o Homora não monta
+  o socket. Ver o registro em [evolucao.md](evolucao.md).
 
 ## Guia das conexões experimentais
 

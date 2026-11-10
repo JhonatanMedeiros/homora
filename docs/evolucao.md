@@ -411,9 +411,9 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
       uma integração, sem agente no host (ver registro abaixo). Só há CPU,
       memória e disco do Proxmox; sem outra fonte de recursos por enquanto.
 - [x] **Intervalo por serviço e ping ICMP,** com limites (ver registro abaixo).
-- [ ] **Descoberta Docker por labels,** com sugestões revisáveis e acesso
-      somente leitura ao socket. É o item de maior risco; avaliar depois dos
-      demais.
+- [x] **Descoberta Docker por labels,** com sugestões revisáveis e acesso
+      somente leitura ao socket (ver registro abaixo). Opcional e desligada por
+      padrão; é o item de maior risco.
 
 **Conclusão:** a home responde "o que caiu?" sem abrir outra aba, nenhum card
 parece monitorado sem ter sido verificado e a página de referência do
@@ -621,6 +621,61 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
 - Não validado: IPv6 e hostnames reais, redes com ICMP filtrado, Docker rootless
   ou Podman (o intervalo `ping_group_range` do sistema pode negar ICMP sem
   root), a imagem publicada e arm64. Latência abaixo de 1 ms aparece como 0 ms.
+
+### Registro R1 — descoberta Docker por labels (2026-11-10)
+
+- Escopo: a página Configurações lista contêineres em execução que têm os
+  labels `homora.url` (ou `homepage.href`) e sugere um card para cada um. Nada é
+  adicionado sem a pessoa marcar os contêineres e confirmar; a importação só
+  adiciona e ignora o que já existe (mesma URL no mesmo grupo).
+- Labels: `homora.url`, `homora.name`, `homora.group`, `homora.description` e
+  `homora.icon`, mais os equivalentes `homepage.href`, `homepage.name`,
+  `homepage.group`, `homepage.description` e `homepage.icon` para quem migra do
+  Homepage (`homora.*` tem precedência). Sem nome, vale o nome do contêiner; sem
+  grupo, "Docker". Ícones passam pelo mesmo mapeamento dos importadores.
+- Acesso ao Docker, desenhado para o menor privilégio:
+  - desligado por padrão; só existe se `HOMORA_DOCKER_HOST` estiver definido
+    (`unix:///caminho/docker.sock` ou `http://host:porta`, sem credenciais,
+    caminho ou HTTPS; valor inválido impede o backend de iniciar);
+  - o backend faz uma única chamada, `GET /containers/json`, com timeout de 5 s,
+    resposta limitada a 4 MB e no máximo 1000 contêineres;
+  - o `compose.docker-discovery.yml` não entrega o socket ao Homora: um proxy
+    (`tecnativa/docker-socket-proxy`, fixado por digest) segura o socket como
+    somente leitura e só responde à listagem de contêineres (`CONTAINERS=1`,
+    `POST=0`), sem porta publicada. Mesmo assim o socket dá acesso privilegiado
+    ao daemon para esse proxy, então deve ser usado só em um host confiável.
+- Segurança dos dados: labels e nomes são não confiáveis. As URLs passam pela
+  mesma validação dos importadores (só http/https, sem credenciais); a interface
+  nunca envia dados de cards, apenas IDs de contêineres, e o servidor relê o
+  Docker na hora de importar. Labels **não** concedem monitoramento em rede
+  privada: a caixa na revisão é uma escolha explícita e vale só para os cards
+  adicionados naquele momento.
+- API: `GET /api/discovery` (sugestões, plano e versão; `{ enabled: false }` se
+  desligada) e `POST /api/discovery/import` (`ids`, `keepPrivate`,
+  `expectedVersion`); erros `docker-unavailable`, `docker-invalid-response` e
+  `discovery-disabled`.
+- Também: `HOMORA_DOCKER_HOST` entrou em `globalPassThroughEnv` do Turborepo; sem
+  isso o `pnpm dev` nunca repassava a variável ao backend.
+- Validação: `pnpm check` e `pnpm build`; testes do endereço (aceitos e
+  recusados), dos labels (precedência, `homepage.*`, URL insegura, ignorados),
+  do cliente contra servidores reais por socket e por TCP (200, 403, JSON
+  inválido, objeto, conexão recusada), das rotas (desligada, listar sem gravar,
+  importar só os IDs escolhidos, duplicata, rede privada, versão antiga, erro do
+  Docker) e da interface. Docker real (29.9): o proxy respondeu 200 à listagem e
+  403 a imagens, `POST /containers/create` e exec; quatro contêineres de teste
+  (dois com labels `homora.*` e `homepage.*`, um sem labels e um com
+  `javascript:`) apareceram na interface só os dois válidos, foram adicionados
+  com a caixa de rede privada, a segunda leitura os mostrou como já presentes e
+  o monitor os verificou (200 e 302). O cliente também foi exercitado contra o
+  socket Unix real.
+- Compose completo: `docker compose -f compose.yml -f compose.docker-discovery.yml
+up` subiu backend, frontend e proxy; no backend não existe
+  `/var/run/docker.sock`, `HOMORA_DOCKER_HOST` apontava para o proxy, o proxy não
+  publica porta e `GET /api/discovery` (pelo nginx, autenticado) devolveu o
+  contêiner rotulado. Tudo foi removido depois (projeto, rede e imagens).
+- Não validado: Docker Swarm, Podman e Docker rootless, contêineres em outros
+  hosts, a versão arm64 do proxy, atualização automática de cards quando os labels mudam (a descoberta é
+  sob demanda e não remove nem edita cards) e labels do Traefik ou do Dashy.
 
 ### Registro R1 — faixa superior (2026-11-10)
 

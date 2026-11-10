@@ -15,12 +15,13 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - English and Portuguese (Brazil) interface. The language follows your browser and can be switched with the language button.
 - Export your groups and cards to YAML or JSON, and import from Homora, [Homepage](https://github.com/gethomepage/homepage) (`services.yaml`, `bookmarks.yaml`) or [Dashy](https://github.com/Lissy93/dashy) (`conf.yml`), always with a preview. See [Import and export](#import-and-export).
 - A check method per service (HTTP request or ping) and a check interval per service (30 to 3600 seconds), also kept in exports.
+- Optional Docker discovery: suggests cards from container labels (`homora.url`, or Homepage's `homepage.href`), with a review step. See [Docker discovery](#docker-discovery).
 - Local administrator account, SQLite storage with migrations, backup and restore scripts.
 - Widgets inside cards: attach a widget (Proxmox, Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home data) to a card on the Integrations page. Each widget shows its own loading or error state, and a failing connection does not affect the other cards.
 - An optional top bar (turn it on in Settings) with the date, the time and CPU, memory and disk usage from the Proxmox widget.
 - Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) and a local MCP server where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
 
-Not available yet: Docker label discovery, OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md) (in Portuguese).
+Not available yet: OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md) (in Portuguese).
 
 ## Install with Docker
 
@@ -84,6 +85,31 @@ docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11
 ```
 
 `.auth` and `.proxmox` may not exist on every installation; skip a copy if the file is missing. Keep the key as protected as the database, and do a test restore before relying on a backup.
+
+## Docker discovery
+
+Off by default. It suggests cards from labels on running containers and adds nothing until you review and confirm on the **Settings** page.
+
+```yaml
+services:
+  jellyfin:
+    labels:
+      homora.url: http://192.168.1.10:8096
+      homora.name: Jellyfin # optional, defaults to the container name
+      homora.group: Media # optional, defaults to "Docker"
+      homora.description: Movies and shows # optional
+      homora.icon: brand:jellyfin # optional
+```
+
+The Homepage labels `homepage.href`, `homepage.name`, `homepage.group`, `homepage.description` and `homepage.icon` also work, and `homora.*` wins when both are set. Labels never turn on monitoring of private addresses; you choose that for the cards you add.
+
+The Docker socket gives privileged access to the daemon, so Homora never mounts it. Enable discovery with a restricted proxy that only answers "list containers":
+
+```bash
+docker compose -f compose.yml -f compose.docker-discovery.yml up -d --build
+```
+
+This starts `tecnativa/docker-socket-proxy` (read-only socket, containers only, no published port) and sets `HOMORA_DOCKER_HOST=http://docker-proxy:2375` for the backend. Outside Compose, `HOMORA_DOCKER_HOST` also accepts `unix:///var/run/docker.sock`, which gives the backend the socket directly; prefer the proxy. Run this only on a host you trust.
 
 ## Proxmox and other integrations
 

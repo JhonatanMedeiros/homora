@@ -54,17 +54,17 @@ export function mapIcon(raw: unknown): { icon: string; unsupported: boolean } {
     : { icon: '', unsupported: true };
 }
 
-type Collector = {
+export type Collector = {
   groups: Map<string, ImportedGroup>;
   issues: ImportIssue[];
   count: number;
 };
-const newCollector = (): Collector => ({ groups: new Map(), issues: [], count: 0 });
+export const newCollector = (): Collector => ({ groups: new Map(), issues: [], count: 0 });
 const fatal = (code: IssueCode): ParsedImport => ({
   document: { groups: [] },
   issues: [{ path: '', code, severity: 'error' }],
 });
-const finish = (collector: Collector): ParsedImport => {
+export const finish = (collector: Collector): ParsedImport => {
   if (collector.count > MAX_SERVICES) return fatal('too-many-services');
   const document: ImportDocument = { groups: [...collector.groups.values()] };
   if (document.groups.length > MAX_GROUPS) return fatal('too-many-groups');
@@ -80,7 +80,11 @@ function load(content: string): unknown {
   }
 }
 
-function groupFor(collector: Collector, rawName: string, path: string): ImportedGroup | null {
+export function groupFor(
+  collector: Collector,
+  rawName: string,
+  path: string,
+): ImportedGroup | null {
   const name = rawName.trim();
   if (!name) {
     collector.issues.push({ path, code: 'invalid-group', severity: 'error' });
@@ -98,7 +102,7 @@ function groupFor(collector: Collector, rawName: string, path: string): Imported
   return group;
 }
 
-function add(
+export function add(
   collector: Collector,
   group: ImportedGroup,
   fields: { name: unknown; url: unknown; description?: unknown; icon?: unknown },

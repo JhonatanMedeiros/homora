@@ -11,6 +11,8 @@ import { createServiceConfiguration } from './service-configuration.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
 import { registerProxmoxRoutes } from './routes/proxmox.js';
+import type { DockerSource } from './docker-discovery.js';
+import { registerDiscoveryRoutes } from './routes/discovery.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
@@ -23,6 +25,7 @@ export function createApp(
   auth: ReturnType<typeof createAuth>,
   vault?: ReturnType<typeof createVault>,
   configuredOrigins: readonly string[] = [],
+  dockerSource?: DockerSource,
 ) {
   const app = Fastify({ bodyLimit: 100_000 });
   const sqlite = getSqliteHandle(db);
@@ -64,6 +67,7 @@ export function createApp(
   registerAgentProposalRoutes(app, proposals);
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
+  registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
 
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));
   return app;

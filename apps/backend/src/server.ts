@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { createDatabase } from '@homora/db';
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
+import { createDockerSource } from './docker-discovery.js';
 import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
 const config = loadConfig();
@@ -14,6 +15,7 @@ const app = createApp(
   createAuth(`${config.databasePath}.auth`),
   createVault(config.databasePath),
   config.allowedOrigins,
+  config.dockerHost ? createDockerSource(config.dockerHost) : undefined,
 );
 app.addHook('onClose', async () => database.close());
 await app.listen({ port: config.apiPort, host: config.bindHost });

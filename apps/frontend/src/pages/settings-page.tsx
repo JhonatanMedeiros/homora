@@ -2,6 +2,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { PageHeader } from '@/components/page-header';
+import { Discovery } from '@/features/discovery/discovery';
 import { ConfigTransfer } from '@/features/transfer/config-transfer';
 import { t } from '@/i18n';
 
@@ -22,6 +23,7 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
         </div>
       </Field>
       <ConfigTransfer onImported={onImported} />
+      <Discovery onImported={onImported} />
     </section>
   );
 }

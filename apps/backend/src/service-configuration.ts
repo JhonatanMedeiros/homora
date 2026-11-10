@@ -178,12 +178,12 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     /**
      * Aplica uma importação em uma única transação, recalculando o plano sobre o estado
      * atual. Só adiciona grupos e cards; a autorização de rede privada vem do arquivo apenas
-     * se `keepPrivate` for verdadeiro. `expectedVersion` recusa a aplicação se a configuração
+     * se `keepPrivate` for verdadeiro; `grantPrivate` (escolha explícita na revisão) autoriza todos os cards novos. `expectedVersion` recusa a aplicação se a configuração
      * mudou depois da prévia.
      */
     applyImport(
       parsed: ParsedImport,
-      options: { keepPrivate: boolean; expectedVersion?: number },
+      options: { keepPrivate: boolean; grantPrivate?: boolean; expectedVersion?: number },
     ): { status: 'stale' } | { status: 'applied'; plan: ImportPlan; created: number } {
       return transaction(() => {
         const current = (
@@ -213,7 +213,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           const valid = validateService({
             ...service,
             category: group,
-            allowPrivate: options.keepPrivate && service.allowPrivate,
+            allowPrivate:
+              options.grantPrivate === true || (options.keepPrivate && service.allowPrivate),
           });
           insert.run(
             valid.name,

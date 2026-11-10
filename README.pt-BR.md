@@ -30,6 +30,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 - Método de verificação por serviço (requisição HTTP ou ping) e intervalo por serviço (30 a 3600 segundos), também mantidos nas exportações.
 - Widgets dentro do card: ligue um widget (dados do Proxmox, Jellyfin, Home Assistant, Uptime Kuma ou AdGuard Home) a um card na página Integrações. Cada widget mostra o próprio estado de carregamento ou erro, e uma conexão com falha não afeta os outros cards.
 - Faixa superior opcional (ative em Configurações) com data, hora e uso de CPU, memória e disco do widget do Proxmox.
+- Descoberta Docker opcional: sugere cards a partir de labels de contêineres (`homora.url` ou o `homepage.href` do Homepage), com etapa de revisão. Veja [Descoberta Docker](#descoberta-docker).
 - Integrações experimentais de leitura (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) e agentes de IA com permissões, via MCP local.
 
 Ideias e recursos planejados estão em [estratégia](docs/estrategia.md) e no [plano de evolução](docs/evolucao.md), separados do que já existe.
@@ -101,6 +102,31 @@ use um backup isolado e confirme os dados antes de voltar a iniciar a versão
 atualizada. Não há procedimento automatizado de downgrade de migração; se uma
 migração falhar, mantenha o volume original e restaure uma cópia de segurança
 em uma cópia de trabalho antes de retomar o serviço.
+
+## Descoberta Docker
+
+Desativada por padrão. Sugere cards a partir de labels de contêineres em execução e não adiciona nada até você revisar e confirmar na página **Configurações**.
+
+```yaml
+services:
+  jellyfin:
+    labels:
+      homora.url: http://192.168.1.10:8096
+      homora.name: Jellyfin # opcional; padrão: nome do contêiner
+      homora.group: Mídia # opcional; padrão: "Docker"
+      homora.description: Filmes e séries # opcional
+      homora.icon: brand:jellyfin # opcional
+```
+
+Os labels do Homepage (`homepage.href`, `homepage.name`, `homepage.group`, `homepage.description`, `homepage.icon`) também funcionam, e `homora.*` vence quando os dois existem. Labels nunca ativam o monitoramento de endereços privados; você escolhe isso nos cards que adicionar.
+
+O socket do Docker dá acesso privilegiado ao daemon, então o Homora nunca o monta. Ative com um proxy restrito que só responde à listagem de contêineres:
+
+```bash
+docker compose -f compose.yml -f compose.docker-discovery.yml up -d --build
+```
+
+Isso sobe o `tecnativa/docker-socket-proxy` (socket somente leitura, só contêineres, sem porta publicada) e define `HOMORA_DOCKER_HOST=http://docker-proxy:2375` no backend. Fora do Compose, `HOMORA_DOCKER_HOST` também aceita `unix:///var/run/docker.sock`, que entrega o socket direto ao backend; prefira o proxy. Use apenas em um host confiável.
 
 ## Primeiro acesso e Proxmox
 
