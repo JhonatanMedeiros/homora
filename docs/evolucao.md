@@ -185,8 +185,8 @@ infraestrutura foi acessada.
 - [x] Revisar e documentar os caminhos atuais de instalação, atualização,
       backup e recuperação no README; upgrade entre versões e restauração
       completa ainda não foram validados nesta etapa.
-- [ ] Demonstrar instalação limpa e upgrade preservando dados antes de publicar
-      uma release.
+- [x] Demonstrar instalação limpa e upgrade preservando dados antes de publicar
+      uma release (ver "Validação de upgrade e instalação limpa" abaixo).
 - [ ] Validar os critérios do MVP com uso real e decidir o escopo da primeira
       versão pública. Avaliar instalador para Proxmox depois de releases confiáveis.
 
@@ -701,6 +701,27 @@ up` subiu backend, frontend e proxy; no backend não existe
 - Não validado: Proxmox real (o disco de um nó é o sistema de arquivos raiz,
   não todos os armazenamentos); faixa em pt-BR no navegador (só no teste);
   vários nós com discos de tamanhos muito diferentes.
+
+## Validação de upgrade e instalação limpa (2026-11-10)
+
+- Upgrade: a versão de `0abf05a` (migrações 0000 a 0005, seis aplicadas) foi
+  construída e iniciada com Docker Compose em um projeto isolado. Pela API
+  criaram-se a conta, 2 grupos, 4 cards (ícone, descrição e permissão de rede
+  privada), uma conexão Jellyfin com segredo e um widget. A versão atual (`main`
+  com as migrações 0006 a 0008, nove no total) foi construída e iniciada **sobre
+  o mesmo volume**. Resultado: login com a mesma senha, cards, grupos, conexão
+  (`hasSecret: true`) e widget idênticos antes e depois; os cards ganharam os
+  padrões novos (`check_type=http`, `check_interval` nulo), os grupos
+  `columns` nulo e o widget `service_id` nulo; os dois contêineres ficaram
+  `healthy` e o monitor passou a verificar os cards.
+- Instalação limpa: volume novo, `GET /api/auth/status` devolveu
+  `configured: false`, nove migrações aplicadas e nenhum card; contêineres
+  `healthy`.
+- Projetos, volumes e imagens de teste foram removidos.
+- Não validado: upgrade a partir de versões anteriores a `0abf05a`, bases
+  grandes, a imagem publicada (nenhuma release foi feita), arm64 e a leitura da
+  credencial cifrada da conexão depois do upgrade (só `hasSecret` foi conferido;
+  o serviço de destino era fictício).
 
 ## Registro inicial
 
