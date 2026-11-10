@@ -11,6 +11,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 - [Arquitetura e segurança](docs/arquitetura.md)
 - [Padrões de engenharia](docs/padroes.md)
 - [Referências e arquitetura de integrações](docs/integracoes.md)
+- [Estratégia e posicionamento frente ao Homepage e ao Dashy](docs/estrategia.md)
 - [Plano de entrega](docs/plano.md)
 - [Plano de evolução e acompanhamento](docs/evolucao.md)
 - [Orientações para agentes de IA](AGENTS.md)

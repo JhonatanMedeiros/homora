@@ -11,6 +11,11 @@ no próprio repositório. Um item só deve ser marcado como concluído depois da
 implementação e da validação indicadas; código existente não significa que o
 fluxo completo já foi validado. As etapas podem ser divididas em tarefas menores.
 
+> **Direção (2026-11-10):** o posicionamento frente ao Homepage e ao Dashy e as
+> fases R0 a R4 estão em [estrategia.md](estrategia.md). Os itens P0 a P5 abaixo
+> continuam sendo o registro de progresso; ao iniciar uma fase R, converta seus
+> itens em tarefas aqui.
+
 ## P0 — Consolidar e validar a base
 
 - [x] Revisar os arquivos modificados e não rastreados, preservando o trabalho
