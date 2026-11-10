@@ -135,23 +135,67 @@ describe('monitoramento de serviços', () => {
     expect(unavailable.snapshot()).toEqual({});
   });
 
-  it('limita cada ciclo a 25 serviços e deixa o restante desconhecido', async () => {
-    const services = Array.from({ length: 27 }, (_, index) =>
+  it('verifica todos os serviços, sem limite fixo de quantidade', async () => {
+    const services = Array.from({ length: 60 }, (_, index) =>
       service(index + 1, `https://service-${index + 1}.example`),
     );
     const check = vi.fn(async () => ok);
     const monitor = createServiceMonitor(async () => services, check);
     await monitor.run(true);
-    expect(check).toHaveBeenCalledTimes(25);
-    expect(monitor.snapshot()[25]).toMatchObject({ status: 'available' });
-    const notChecked = {
-      status: 'unknown',
-      lastAttempt: null,
-      reason: 'unchecked',
-      httpStatus: null,
-      latencyMs: null,
-    };
-    expect(monitor.snapshot()[26]).toEqual(notChecked);
-    expect(monitor.snapshot()[27]).toEqual(notChecked);
+    expect(check).toHaveBeenCalledTimes(60);
+    expect(Object.values(monitor.snapshot()).every((s) => s.reason === 'responding')).toBe(true);
+  });
+
+  it('para de iniciar verificações ao esgotar o orçamento e começa pelos mais antigos no ciclo seguinte', async () => {
+    let time = 1_800_000_000_000;
+    const services = Array.from({ length: 12 }, (_, index) =>
+      service(index + 1, `https://service-${index + 1}.example`),
+    );
+    // Cada verificação "consome" 10 s do relógio, então o orçamento do ciclo se esgota
+    // depois da primeira leva de cinco em paralelo.
+    const checked: string[] = [];
+    const check = vi.fn(async (url: string) => {
+      checked.push(url);
+      time += 10_000;
+      return ok;
+    });
+    const monitor = createServiceMonitor(
+      async () => services,
+      check,
+      () => time,
+    );
+    await monitor.run(true);
+    const first = checked.length;
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBeLessThan(12);
+    const snapshot = monitor.snapshot();
+    const unchecked = Object.entries(snapshot).filter(([, s]) => s.reason === 'unchecked');
+    expect(unchecked.length).toBe(12 - first);
+    const waiting = unchecked.map(([id]) => Number(id));
+    checked.length = 0;
+    time += 60_001;
+    await monitor.run(true);
+    // Os que ficaram sem verificar passam à frente dos já verificados.
+    expect(checked.length).toBeGreaterThan(0);
+    const waitingUrls = new Set(waiting.map((id) => `https://service-${id}.example`));
+    expect(checked.every((url) => waitingUrls.has(url))).toBe(true);
+  });
+
+  it('mantém o estado anterior de um serviço enquanto o ciclo seguinte ainda não o alcançou', async () => {
+    let time = 1_800_000_000_000;
+    let code = 200;
+    const monitor = createServiceMonitor(
+      async () => [service(1, 'https://a.example')],
+      async () => ({ httpStatus: code, latencyMs: 3 }),
+      () => time,
+    );
+    await monitor.run(true);
+    expect(monitor.snapshot()[1]).toMatchObject({ reason: 'responding' });
+    code = 500;
+    time += 60_001;
+    const run = monitor.run();
+    expect(monitor.snapshot()[1]).toMatchObject({ reason: 'responding' });
+    await run;
+    expect(monitor.snapshot()[1]).toMatchObject({ reason: 'error-status' });
   });
 });

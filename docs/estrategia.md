@@ -31,7 +31,7 @@ entre versões; confirme antes de afirmar paridade publicamente.
 | Widgets        | Dados do serviço junto ao atalho, mais widgets informativos (clima, hora, busca).              | Widgets são registros nominais, ficam na aba Integrações e não aparecem na home. |
 | Descoberta     | Homepage descobre serviços por labels Docker.                                                  | Não há descoberta.                                                               |
 | Configuração   | Homepage: YAML ou labels Docker. Dashy: um `conf.yml`, editável também pela interface.         | Banco SQLite e interface; sem importação nem exportação.                         |
-| Status         | Dashy: código HTTP e ping ICMP, com intervalos configuráveis. Homepage: estado de contêineres. | Só HTTP; apenas 2xx vira "Disponível"; 25 serviços por ciclo; sem latência.      |
+| Status         | Dashy: código HTTP e ping ICMP, com intervalos configuráveis. Homepage: estado de contêineres. | Só HTTP, com estado por código e latência; sem ICMP nem intervalo por serviço.   |
 | Acesso         | OIDC nos dois; Dashy também tem usuários, tipos e convidado somente leitura.                   | Uma conta de administrador com senha local.                                      |
 | Idiomas        | Homepage com mais de 40; Dashy com mais de 30.                                                 | Somente português do Brasil.                                                     |
 | Personalização | Temas, CSS próprio (os dois); Dashy tem configurador de cores e várias páginas.                | Tema claro e escuro; sem CSS próprio nem várias páginas.                         |
@@ -70,7 +70,7 @@ Homepage e do Dashy, sem edição manual, em um ambiente de teste.
 - [ ] Estado semântico do monitor: responde, exige login, não encontrado, sem
       resposta, não verificado; com código HTTP e latência, sem seguir
       redirecionamentos (política de destinos de P2 preservada).
-- [ ] Remover o limite silencioso de 25 serviços, ou expor cobertura e fila.
+- [x] Remover o limite silencioso de 25 serviços, ou expor cobertura e fila.
 - [ ] Widgets dentro do card, com configuração, estado vazio e de erro; chamar
       de widget só o que tem renderização própria na home.
 - [ ] Descoberta Docker por labels com sugestões revisáveis e acesso somente
