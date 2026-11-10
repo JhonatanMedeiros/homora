@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import type { AuthStatus } from '@/hooks/use-auth';
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import { BrandMark } from '@/components/brand-mark';
 import { FormError } from '@/components/form-error';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,10 @@ export function AuthPage({ status, error, onSubmit }: Props) {
   return (
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <BrandMark className="self-center text-2xl" />
+        <div className="flex items-center justify-between">
+          <BrandMark className="text-2xl" />
+          <LocaleSwitcher />
+        </div>
         <Card>
           {status ? (
             <>

@@ -13,6 +13,35 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { iconNames, iconRegistry } from '@/lib/icons';
 import { t } from '@/i18n';
 
+const portugueseKeywords: Record<string, string> = {
+  server: 'servidor',
+  database: 'banco dados',
+  cloud: 'nuvem',
+  house: 'casa',
+  film: 'filme cinema',
+  music: 'musica',
+  camera: 'câmera',
+  lock: 'cadeado senha',
+  shield: 'escudo segurança',
+  network: 'rede',
+  settings: 'configurações',
+  search: 'busca pesquisa',
+  folder: 'pasta',
+  book: 'livro',
+  image: 'imagem foto',
+  mail: 'email correio',
+  users: 'usuários pessoas',
+  calendar: 'calendário',
+  clock: 'relógio',
+  download: 'baixar',
+  upload: 'enviar',
+  printer: 'impressora',
+  wifi: 'rede sem fio',
+  monitor: 'tela',
+  globe: 'internet mundo',
+  key: 'chave',
+};
+
 export function IconPicker({
   value,
   onChange,
@@ -41,6 +70,7 @@ export function IconPicker({
                   <CommandItem
                     key={name}
                     value={name}
+                    keywords={[portugueseKeywords[name] ?? '']}
                     onSelect={() => {
                       onChange(`lucide:${name}`);
                       setOpen(false);

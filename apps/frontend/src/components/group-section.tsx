@@ -93,7 +93,7 @@ export function GroupSection({
                   aria-label={t('group.renameAria', { name: category })}
                   onClick={onRename}
                 >
-                  Renomear
+                  {t('common.rename')}
                 </Button>
                 {canRemove && (
                   <Button
@@ -104,7 +104,7 @@ export function GroupSection({
                     aria-label={t('group.removeAria', { name: category })}
                     onClick={onRemove}
                   >
-                    Remover
+                    {t('common.remove')}
                   </Button>
                 )}
               </>
