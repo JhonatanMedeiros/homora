@@ -15,6 +15,9 @@ export const services = sqliteTable('services', {
   icon: text('icon').notNull().default(''),
   position: integer('position').notNull().default(0),
   allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
+  // 'http' (GET) ou 'ping' (ICMP); o intervalo em segundos é nulo para o padrão do monitor.
+  checkType: text('check_type').notNull().default('http'),
+  checkInterval: integer('check_interval'),
 });
 
 // Configuration stored here must never contain credentials; secretRef points to a

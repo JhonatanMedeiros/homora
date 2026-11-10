@@ -1,5 +1,10 @@
 import { parse, stringify } from 'yaml';
-import { normalizeIcon, type Service } from '@homora/shared';
+import {
+  CHECK_INTERVAL_MAX,
+  CHECK_INTERVAL_MIN,
+  normalizeIcon,
+  type Service,
+} from '@homora/shared';
 
 /** Versão do formato de exportação do Homora. */
 export const TRANSFER_VERSION = 1;
@@ -14,6 +19,8 @@ export type ImportedService = {
   description: string;
   icon: string;
   allowPrivate: boolean;
+  checkType?: 'http' | 'ping';
+  checkInterval?: number;
 };
 export type ImportedGroup = { name: string; columns?: number; services: ImportedService[] };
 export type ImportDocument = { groups: ImportedGroup[] };
@@ -33,6 +40,7 @@ export type IssueCode =
   | 'duplicate-in-file'
   | 'icon-unsupported'
   | 'columns-ignored'
+  | 'check-ignored'
   | 'widget-ignored'
   | 'pages-ignored'
   | 'group-renamed';
@@ -79,6 +87,8 @@ export function serializeConfiguration(
           ...(service.description ? { description: service.description } : {}),
           ...(service.icon ? { icon: service.icon } : {}),
           ...(service.allowPrivate ? { allowPrivate: true } : {}),
+          ...(service.checkType === 'ping' ? { check: 'ping' } : {}),
+          ...(service.checkInterval ? { interval: service.checkInterval } : {}),
         })),
     })),
   };
@@ -105,12 +115,28 @@ export function parseService(
   const icon = normalizeIcon(raw.icon);
   if (typeof raw.icon === 'string' && raw.icon.trim() && !icon)
     issues.push({ path, code: 'icon-ignored', severity: 'warning' });
+  let checkType: 'http' | 'ping' | undefined;
+  if (raw.check === 'http' || raw.check === 'ping') checkType = raw.check;
+  else if (raw.check !== undefined)
+    issues.push({ path: `${path}.check`, code: 'check-ignored', severity: 'warning' });
+  let checkInterval: number | undefined;
+  if (
+    typeof raw.interval === 'number' &&
+    Number.isSafeInteger(raw.interval) &&
+    raw.interval >= CHECK_INTERVAL_MIN &&
+    raw.interval <= CHECK_INTERVAL_MAX
+  )
+    checkInterval = raw.interval;
+  else if (raw.interval !== undefined)
+    issues.push({ path: `${path}.interval`, code: 'check-ignored', severity: 'warning' });
   return {
     name,
     url: url.href,
     description: typeof raw.description === 'string' ? raw.description.trim().slice(0, 140) : '',
     icon,
     allowPrivate: raw.allowPrivate === true,
+    ...(checkType ? { checkType } : {}),
+    ...(checkInterval ? { checkInterval } : {}),
   };
 }
 

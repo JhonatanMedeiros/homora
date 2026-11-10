@@ -13,7 +13,11 @@ LABEL org.opencontainers.image.title="Homora backend" \
 WORKDIR /app
 ENV NODE_ENV=production HOMORA_BIND_HOST=0.0.0.0 HOMORA_DATABASE_PATH=/app/data/homora.sqlite
 COPY --from=build --chown=node:node /app /app
-RUN mkdir -p /app/data && chown node:node /app/data
+# `ping` backs the optional ICMP check; the monitor runs it as the unprivileged `node` user.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends iputils-ping \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /app/data && chown node:node /app/data
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

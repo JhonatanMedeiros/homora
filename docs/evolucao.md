@@ -410,7 +410,7 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
 - [x] **Faixa superior opcional:** data, hora e recursos do sistema vindos de
       uma integração, sem agente no host (ver registro abaixo). Só há CPU,
       memória e disco do Proxmox; sem outra fonte de recursos por enquanto.
-- [ ] **Intervalo por serviço e ping ICMP,** com limites.
+- [x] **Intervalo por serviço e ping ICMP,** com limites (ver registro abaixo).
 - [ ] **Descoberta Docker por labels,** com sugestões revisáveis e acesso
       somente leitura ao socket. É o item de maior risco; avaliar depois dos
       demais.
@@ -583,6 +583,44 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
   servidor falso na rede local; todos receberam estado (nenhum "Não verificado").
 - Não validado: centenas de serviços reais, impacto da carga na rede doméstica e
   o comportamento com muitos destinos lentos.
+
+### Registro R1 — intervalo por serviço e ping ICMP (2026-11-10)
+
+- Modelo: `services.check_type` (`http`, padrão, ou `ping`) e
+  `services.check_interval` (segundos; nulo = 60) na migração `0008`. Limites:
+  30 a 3600 s, validados na API (`400` fora disso) e novamente no servidor.
+  Editar um card sem enviar os campos preserva os valores; `checkInterval: null`
+  volta ao padrão. Agentes MCP podem propor os dois campos como qualquer outro,
+  e uma proposta de edição sem eles os preserva.
+- Monitor: o agendador acorda a cada 10 s e verifica só os serviços vencidos
+  (tolerância de 2 s); cada serviço segue o próprio intervalo. O orçamento de
+  45 s por ciclo e os cinco em paralelo do registro anterior continuam. Criar,
+  editar ou remover um serviço continua reiniciando todas as verificações.
+- Ping: usa o binário `ping` do sistema (um pacote `iputils-ping` agora está na
+  imagem do backend), sem shell e só contra o IP que a política de destinos já
+  autorizou e fixou (mesma regra de rede privada e de faixas especiais do HTTP).
+  Uma resposta vira "Responde ao ping" (`reachable`, disponível) com a latência
+  reportada pelo `ping`; sem resposta vira "Sem resposta". O ping só prova que o
+  host responde: não diz nada sobre o serviço, e o formulário avisa isso.
+- Sem o binário ou sem permissão (por exemplo, contêiner sem `NET_RAW`), o card
+  fica "Não verificado" em vez de "Sem resposta", porque não é uma falha do
+  serviço.
+- Exportação e importação: `check: ping` e `interval: <s>` entram no arquivo só
+  quando diferem do padrão; valores inválidos na importação são ignorados com o
+  aviso `check-ignored`.
+- Interface: o formulário do card ganhou "Método de verificação" e "Verificar a
+  cada (segundos)". O card mostra `Ping · <ms>` para o ping.
+- Validação: `pnpm check`; testes do agendamento por intervalo, do ping (IP
+  autorizado, sem shell, latência, sem resposta, binário ausente ou sem
+  permissão), da API (criar, preservar, limites, null, exportar e importar) e do
+  formulário e do card. Contêiner da imagem nova (usuário `node`): ping a um host
+  da rede local respondeu e a um endereço sem resposta falhou; com `NET_RAW`
+  removido o ping é negado (tratado como "Não verificado"). Navegador real: card
+  criado pelo formulário com ping e 30 s, outro inalcançável e um HTTP padrão;
+  o de 30 s atualizou em ~36 s e o de 60 s não.
+- Não validado: IPv6 e hostnames reais, redes com ICMP filtrado, Docker rootless
+  ou Podman (o intervalo `ping_group_range` do sistema pode negar ICMP sem
+  root), a imagem publicada e arm64. Latência abaixo de 1 ms aparece como 0 ms.
 
 ### Registro R1 — faixa superior (2026-11-10)
 

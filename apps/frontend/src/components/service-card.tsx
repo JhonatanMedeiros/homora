@@ -47,6 +47,7 @@ const REASON_LABEL = {
   'login-required': 'status.loginRequired',
   'not-found': 'status.notFound',
   'error-status': 'status.errorStatus',
+  reachable: 'status.reachable',
   'no-response': 'status.noResponse',
   unchecked: 'status.unchecked',
 } as const;
@@ -72,14 +73,16 @@ export function ServiceCard({
   const state = status?.status ?? 'unknown';
   const reason = status?.reason;
   const detail =
-    reason && reason !== 'responding' && typeof status?.httpStatus === 'number'
-      ? [
-          `HTTP ${status.httpStatus}`,
-          typeof status.latencyMs === 'number' && `${status.latencyMs} ms`,
-        ]
-          .filter(Boolean)
-          .join(' · ')
-      : null;
+    reason === 'reachable' && typeof status?.latencyMs === 'number'
+      ? `Ping · ${status.latencyMs} ms`
+      : reason && reason !== 'responding' && typeof status?.httpStatus === 'number'
+        ? [
+            `HTTP ${status.httpStatus}`,
+            typeof status.latencyMs === 'number' && `${status.latencyMs} ms`,
+          ]
+            .filter(Boolean)
+            .join(' · ')
+        : null;
   const isBlocked = blocked && state !== 'available';
   const inline = organizing || confirmingRemoval;
   return (

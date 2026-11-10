@@ -7,6 +7,8 @@ export const emptyService: ServiceInput = {
   category: '',
   description: '',
   allowPrivate: false,
+  checkType: 'http',
+  checkInterval: null,
 };
 
 export type ServiceGroup = {
@@ -24,6 +26,7 @@ export type StatusReason =
   | 'login-required'
   | 'not-found'
   | 'error-status'
+  | 'reachable'
   | 'no-response'
   | 'unchecked';
 export type ServiceStatus = {

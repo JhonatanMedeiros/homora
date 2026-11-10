@@ -1,4 +1,4 @@
-import { ICON_MAX_LENGTH } from '@homora/shared';
+import { CHECK_INTERVAL_MAX, CHECK_INTERVAL_MIN, ICON_MAX_LENGTH } from '@homora/shared';
 import { z } from 'zod';
 
 const integrationType = z.enum(['jellyfin', 'home-assistant', 'uptime-kuma', 'adguard-home']);
@@ -13,6 +13,14 @@ export const serviceInputSchema = z
     icon: z.string().trim().max(ICON_MAX_LENGTH).optional(),
     position: z.number().int().safe().min(0).optional(),
     allowPrivate: z.boolean().optional(),
+    checkType: z.enum(['http', 'ping']).optional(),
+    checkInterval: z
+      .number()
+      .int()
+      .min(CHECK_INTERVAL_MIN)
+      .max(CHECK_INTERVAL_MAX)
+      .nullable()
+      .optional(),
   })
   .strict();
 

@@ -1,5 +1,12 @@
 import { type FormEvent } from 'react';
-import { ICON_MAX_LENGTH, type ServiceInput } from '@homora/shared';
+import {
+  CHECK_INTERVAL_DEFAULT,
+  CHECK_INTERVAL_MAX,
+  CHECK_INTERVAL_MIN,
+  ICON_MAX_LENGTH,
+  type ServiceInput,
+} from '@homora/shared';
+import { NativeSelect } from '@/components/native-select';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { IconPicker } from '@/components/icon-picker';
@@ -135,6 +142,39 @@ export function ServiceForm({
               </Button>
             )}
           </div>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="service-check">{t('form.checkType')}</FieldLabel>
+          <NativeSelect
+            id="service-check"
+            value={value.checkType ?? 'http'}
+            onChange={(e) => set({ checkType: e.target.value === 'ping' ? 'ping' : 'http' })}
+          >
+            <option value="http">{t('form.checkHttp')}</option>
+            <option value="ping">{t('form.checkPing')}</option>
+          </NativeSelect>
+          <FieldDescription>
+            {value.checkType === 'ping' ? t('form.checkPingHint') : t('form.checkHttpHint')}
+          </FieldDescription>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="service-interval">{t('form.interval')}</FieldLabel>
+          <Input
+            id="service-interval"
+            type="number"
+            inputMode="numeric"
+            min={CHECK_INTERVAL_MIN}
+            max={CHECK_INTERVAL_MAX}
+            step={1}
+            value={value.checkInterval ?? ''}
+            onChange={(e) =>
+              set({ checkInterval: e.target.value === '' ? null : Number(e.target.value) })
+            }
+            placeholder={String(CHECK_INTERVAL_DEFAULT)}
+          />
+          <FieldDescription>
+            {t('form.intervalHint', { min: CHECK_INTERVAL_MIN, max: CHECK_INTERVAL_MAX })}
+          </FieldDescription>
         </Field>
         <Field orientation="horizontal" className="items-start sm:col-span-2">
           <Checkbox

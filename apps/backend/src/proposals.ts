@@ -71,6 +71,8 @@ export function createProposalService(
           d.service.allowPrivate === undefined
             ? Boolean(current.allowPrivate)
             : d.service.allowPrivate;
+        if (service.checkType === undefined) service.checkType = current.checkType;
+        if (service.checkInterval === undefined) service.checkInterval = current.checkInterval;
       }
       diff = d.op === 'create' ? { op: 'create', service } : { op: 'update', id: d.id, service };
     }

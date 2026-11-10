@@ -62,6 +62,8 @@ export const en = {
   'transfer.issue.group-renamed': 'The group name was shortened to 40 characters.',
   'transfer.issue.columns-ignored':
     'The number of columns must be between 1 and 6; it was ignored.',
+  'transfer.issue.check-ignored':
+    'The check method must be http or ping and the interval between 30 and 3600 seconds; it was ignored.',
   'transfer.source': 'File format',
   'transfer.source.homora': 'Homora (YAML or JSON)',
   'transfer.source.homepage': 'Homepage (services.yaml or bookmarks.yaml)',
@@ -134,6 +136,8 @@ export const ptBR: Record<keyof typeof en, string> = {
     'As outras páginas listadas em "pages" não foram lidas. Importe cada arquivo separadamente.',
   'transfer.issue.group-renamed': 'O nome do grupo foi encurtado para 40 caracteres.',
   'transfer.issue.columns-ignored': 'O número de colunas deve estar entre 1 e 6; foi ignorado.',
+  'transfer.issue.check-ignored':
+    'O método de verificação deve ser http ou ping e o intervalo ficar entre 30 e 3600 segundos; foi ignorado.',
   'transfer.source': 'Formato do arquivo',
   'transfer.source.homora': 'Homora (YAML ou JSON)',
   'transfer.source.homepage': 'Homepage (services.yaml ou bookmarks.yaml)',

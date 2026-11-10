@@ -1,6 +1,12 @@
 import { BRAND_ICON_NAMES } from './brand-icons.js';
 
 export { BRAND_ICON_NAMES };
+/** Como o monitor verifica o serviço: GET HTTP (padrão) ou ping ICMP. */
+export type CheckType = 'http' | 'ping';
+export const CHECK_INTERVAL_MIN = 30;
+export const CHECK_INTERVAL_MAX = 3600;
+export const CHECK_INTERVAL_DEFAULT = 60;
+
 export type ServiceInput = {
   name: string;
   url: string;
@@ -9,6 +15,10 @@ export type ServiceInput = {
   icon?: string;
   position?: number;
   allowPrivate?: boolean;
+  /** Ausente mantém o valor atual (ou `http` em um card novo). */
+  checkType?: CheckType;
+  /** Segundos entre verificações; nulo volta ao padrão e ausente mantém o valor atual. */
+  checkInterval?: number | null;
 };
 export type Service = ServiceInput & { id: number };
 
@@ -180,5 +190,15 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
         ? Number(input.position)
         : 0,
     allowPrivate: input.allowPrivate === true,
+    ...(input.checkType === 'http' || input.checkType === 'ping'
+      ? { checkType: input.checkType }
+      : {}),
+    ...(input.checkInterval === null
+      ? { checkInterval: null }
+      : Number.isSafeInteger(input.checkInterval) &&
+          Number(input.checkInterval) >= CHECK_INTERVAL_MIN &&
+          Number(input.checkInterval) <= CHECK_INTERVAL_MAX
+        ? { checkInterval: Number(input.checkInterval) }
+        : {}),
   };
 }

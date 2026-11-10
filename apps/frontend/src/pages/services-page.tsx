@@ -139,6 +139,8 @@ export function ServicesPage({
             icon: service.icon ?? '',
             position: service.position ?? 0,
             allowPrivate: service.allowPrivate === true,
+            checkType: service.checkType ?? 'http',
+            checkInterval: service.checkInterval ?? null,
           }
         : emptyService,
     );
@@ -200,6 +202,8 @@ export function ServicesPage({
             icon: service.icon ?? '',
             position: service.position ?? 0,
             allowPrivate: service.allowPrivate === true,
+            checkType: service.checkType ?? 'http',
+            checkInterval: service.checkInterval ?? null,
           }
         : emptyService,
     );
