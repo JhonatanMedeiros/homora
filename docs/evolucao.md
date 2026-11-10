@@ -1027,3 +1027,19 @@ up` subiu backend, frontend e proxy; no backend não existe
   corrigida).
 - **Não validado:** concorrência sob carga e respostas reais de ferramentas
   externas a um agente de IA (só um cliente MCP de teste foi usado).
+
+## Registro P2 — sessões, senha e segredos (2026-11-10)
+
+- Revisão de `auth.ts`, rotas de autenticação e `vault.ts`: comportamento de
+  sessão, cookie e limite de login conforme já descrito; documentados no README
+  (en e pt-BR) sessões, redefinição de senha e rotação de segredos.
+- Redefinição de senha verificada contra o `auth.js` compilado: apagar `.auth`
+  libera nova conta, a senha antiga deixa de valer, as sessões antigas não
+  valem em um processo novo e o arquivo é criado com modo 0600.
+- Achado: sem `.key` e com conexões cifradas, o cofre não cria chave nova; não
+  existe rotação de chave. Documentado como limitação, com a rotação prática de
+  tokens na origem. Enquanto não há conta, quem alcança a interface por uma
+  origem permitida pode criá-la (não imposto; apenas documentado).
+- **Não validado:** limites de autenticação sob carga e atrás de proxy HTTPS
+  real; por isso os itens de revisão de sessões e de segredos do P2 seguem
+  abertos.
