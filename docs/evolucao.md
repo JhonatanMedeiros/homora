@@ -383,6 +383,38 @@ Homepage e do Dashy, sem edição manual, em ambiente de teste.
   passaram. Não verificados: a interface em inglês em navegador real (largura,
   quebras de texto), leitor de tela e revisão do inglês por falante nativo.
 
+## R1 — Home viva e estado honesto (tarefas)
+
+Origem: [estrategia.md](estrategia.md), fase R1 e o caso de referência de
+migração de um Homepage real. Nenhum item iniciado. Marque apenas com a
+implementação e a validação indicadas. A ordem abaixo é a sugerida.
+
+- [ ] **Widgets dentro do card:** cada card pode exibir dados de uma conexão
+      existente (por exemplo Proxmox: VMs, LXC, CPU, MEM), com estado vazio e de
+      erro por widget. Hoje os widgets só aparecem na página Integrações e não
+      têm configuração própria (ver `docs/integracoes.md`). Validar com instância
+      real e com falha simulada de uma integração.
+- [ ] **Ícones de marca por nome:** conjunto open source com licença compatível,
+      registrado em `THIRD_PARTY_NOTICES.md`, mantendo `lucide:`, emoji e URL.
+      Atualizar os importadores do Homepage e do Dashy para mapear os nomes de
+      ícone que hoje ficam vazios com aviso.
+- [ ] **Estado semântico do monitor** (responde, exige login, não encontrado,
+      sem resposta, não verificado), com código HTTP e latência, sem seguir
+      redirecionamentos.
+- [ ] **Limite de 25 serviços:** removê-lo ou expor cobertura e fila.
+- [ ] **Colunas por grupo:** larguras escolhidas, além da grade fixa e do modo
+      compacto. Validar em desktop e celular.
+- [ ] **Faixa superior opcional:** data, hora e recursos do sistema vindos de
+      uma integração, sem agente no host.
+- [ ] **Intervalo por serviço e ping ICMP,** com limites.
+- [ ] **Descoberta Docker por labels,** com sugestões revisáveis e acesso
+      somente leitura ao socket. É o item de maior risco; avaliar depois dos
+      demais.
+
+**Conclusão:** a home responde "o que caiu?" sem abrir outra aba, nenhum card
+parece monitorado sem ter sido verificado e a página de referência do
+mantenedor pode ser reproduzida (ver o caso em estrategia.md).
+
 ## Registro inicial
 
 > **Histórico:** esta seção descreve a análise inicial. O estado atual está nas
