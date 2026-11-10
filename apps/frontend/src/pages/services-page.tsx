@@ -140,9 +140,32 @@ export function ServicesPage({
     setFormOpen(true);
   }
   function closeForm() {
+    try {
+      sessionStorage.setItem('homora-focus-service', editing === null ? 'new' : String(editing));
+    } catch {
+      /* armazenamento indisponível */
+    }
     setFormOpen(false);
     navigate('/manage/services', true);
   }
+  useEffect(() => {
+    if (!managing || formRoute !== null) return;
+    try {
+      const value = sessionStorage.getItem('homora-focus-service');
+      if (!value || (value !== 'new' && !data.loaded)) return;
+      const target =
+        value === 'new'
+          ? addButton.current
+          : (document.querySelector<HTMLButtonElement>(`[data-service-edit="${Number(value)}"]`) ??
+            addButton.current);
+      if (target) {
+        target.focus();
+        sessionStorage.removeItem('homora-focus-service');
+      }
+    } catch {
+      /* armazenamento indisponível */
+    }
+  }, [managing, formRoute, data.loaded, services]);
   useEffect(() => {
     if (formRoute === null) {
       initializedRoute.current = null;
