@@ -28,7 +28,14 @@ estão em [arquitetura](arquitetura.md).
   ambiente, dados do banco que tenham formato serializado e respostas externas.
 - Prefira schemas Zod em `packages/shared` quando o mesmo contrato é usado na
   interface e na API. Validação específica do backend pode ficar no backend.
-  Não use `as` como substituto de validação em fronteiras externas.
+  Use schemas estritos nos limites HTTP para rejeitar campos desconhecidos;
+  mantenha normalização e regras de domínio nas funções que já as possuem.
+  Converta falhas de validação em mensagens seguras e estáveis sem devolver o
+  conteúdo do payload ou detalhes internos do Zod. Não use `as` como substituto
+  de validação em fronteiras externas.
+- Valide também dados serializados lidos do banco ou cofre antes de tratá-los
+  como tipos confiáveis. Para payloads de credenciais, não inclua entradas nem
+  detalhes de validação em erros de rota ou logs.
 - Respostas HTTP e ferramentas MCP devem expor DTOs explícitos. Nunca retornar
   linhas do banco que possam incluir segredo, hash/token, referências internas
   ou campos não destinados ao cliente.
