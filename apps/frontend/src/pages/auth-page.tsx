@@ -1,3 +1,4 @@
+import { PasswordInput } from '@/components/password-input';
 import { useRef, useState, type FormEvent } from 'react';
 import type { AuthStatus } from '@/hooks/use-auth';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -6,7 +7,6 @@ import { FormError } from '@/components/form-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/i18n';
 
@@ -58,9 +58,8 @@ export function AuthPage({ status, error, onSubmit }: Props) {
                   <FieldGroup>
                     <Field>
                       <FieldLabel htmlFor="password">{t('auth.password')}</FieldLabel>
-                      <Input
+                      <PasswordInput
                         id="password"
-                        type="password"
                         required
                         minLength={8}
                         maxLength={1024}

@@ -1,3 +1,4 @@
+import { PasswordInput } from '@/components/password-input';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -50,9 +51,8 @@ export function ProxmoxForm(p: Props) {
         </Field>
         <Field>
           <FieldLabel htmlFor="proxmox-secret">{t('proxmox.secret')}</FieldLabel>
-          <Input
+          <PasswordInput
             id="proxmox-secret"
-            type="password"
             required={!p.configured}
             value={p.secret}
             onChange={(e) => p.onSecret(e.target.value)}
