@@ -458,7 +458,7 @@ export function ServicesPage({
         />
       )}
       {!managing && services.length > 0 && (
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           <span className="text-sm text-muted-foreground">{t('view.label')}</span>
           <ToggleGroup
             type="single"

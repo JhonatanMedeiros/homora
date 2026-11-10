@@ -44,21 +44,25 @@ export function ProxmoxResources({ resources, checkedAt, showAll, onToggleAll }:
   const shownGuests = showAll ? guests : guests.slice(0, 8);
   return (
     <div className="flex flex-col gap-4">
-      {nodes.map((node) => (
-        <div key={node.name} className="flex flex-col gap-3 rounded-md border p-3">
-          <h3 className="text-lg">{node.name}</h3>
-          {typeof node.cpu === 'number' && (
-            <Usage label="CPU" value={pct(node.cpu)} text={`${pct(node.cpu)}%`} />
-          )}
-          {typeof node.mem === 'number' && typeof node.maxmem === 'number' && node.maxmem > 0 && (
-            <Usage
-              label={t('proxmox.memory')}
-              value={pct(node.mem / node.maxmem)}
-              text={t('proxmox.memoryOf', { used: gb(node.mem), total: gb(node.maxmem) })}
-            />
-          )}
-        </div>
-      ))}
+      {nodes.map((node, index) => {
+        // A API do Proxmox identifica o nó em `node`; `name` fica como alternativa.
+        const label = node.node ?? node.name ?? t('proxmox.unnamed');
+        return (
+          <div key={`${label}:${index}`} className="flex flex-col gap-3 rounded-md border p-3">
+            <h3 className="text-lg">{label}</h3>
+            {typeof node.cpu === 'number' && (
+              <Usage label="CPU" value={pct(node.cpu)} text={`${pct(node.cpu)}%`} />
+            )}
+            {typeof node.mem === 'number' && typeof node.maxmem === 'number' && node.maxmem > 0 && (
+              <Usage
+                label={t('proxmox.memory')}
+                value={pct(node.mem / node.maxmem)}
+                text={t('proxmox.memoryOf', { used: gb(node.mem), total: gb(node.maxmem) })}
+              />
+            )}
+          </div>
+        );
+      })}
       <p className="text-sm text-muted-foreground">
         {t('proxmox.summary', {
           nodes: t('proxmox.nodes', { count: nodes.length }),
