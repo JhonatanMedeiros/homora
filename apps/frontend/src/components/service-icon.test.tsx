@@ -2,6 +2,7 @@
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { ServiceIcon } from './service-icon';
+import { ICON_NAMES } from '@homora/shared';
 import { iconKind, iconNames, iconRegistry } from '@/lib/icons';
 
 afterEach(cleanup);
@@ -41,4 +42,8 @@ it('expõe somente nomes válidos no registro', () => {
     expect(name).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     expect(iconRegistry[name]).toBeDefined();
   }
+});
+
+it('mantém o registro da interface igual à lista compartilhada com o servidor', () => {
+  expect([...iconNames].sort()).toEqual([...ICON_NAMES].sort());
 });

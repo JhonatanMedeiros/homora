@@ -9,7 +9,11 @@ export type IssueCode =
   | 'invalid-name'
   | 'invalid-url'
   | 'icon-ignored'
-  | 'duplicate-in-file';
+  | 'duplicate-in-file'
+  | 'icon-unsupported'
+  | 'widget-ignored'
+  | 'pages-ignored'
+  | 'group-renamed';
 export type Issue = { path: string; code: IssueCode; severity: 'error' | 'warning' };
 export type Plan = {
   groups: { name: string; status: 'new' | 'existing' }[];
@@ -26,3 +30,6 @@ export type Plan = {
 export type Preview = { version: number; plan: Plan };
 
 export const MAX_FILE_BYTES = 1_000_000;
+
+export type Source = 'homora' | 'homepage' | 'dashy';
+export const SOURCES: Source[] = ['homora', 'homepage', 'dashy'];

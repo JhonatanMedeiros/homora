@@ -107,6 +107,44 @@ groups:
     ).toBe(true);
   });
 
+  it('importa arquivos do Homepage e do Dashy pela mesma prévia revisável', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const post = (url: string, payload: unknown) =>
+      app.inject({ method: 'POST', url, headers, payload: payload as object });
+    const homepage =
+      '- Media:\n    - Jellyfin:\n        href: http://localhost:8096\n        icon: mdi-server\n';
+    const dashy =
+      'sections:\n  - name: Dev\n    items:\n      - { title: Gitea, url: "http://localhost:3000" }\n';
+    const wrong = await post('/api/config/import/preview', { content: homepage });
+    expect(wrong.json().plan.summary.errors).toBe(1);
+    const plan = await post('/api/config/import/preview', {
+      content: homepage,
+      source: 'homepage',
+    });
+    expect(plan.json().plan.summary).toMatchObject({ newServices: 1, errors: 0 });
+    const done = await post('/api/config/import/apply', {
+      content: homepage,
+      source: 'homepage',
+      expectedVersion: plan.json().version,
+    });
+    expect(done.json().created).toBe(1);
+    expect(
+      (await post('/api/config/import/apply', { content: dashy, source: 'dashy' })).json().created,
+    ).toBe(1);
+    const list = (
+      await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })
+    ).json() as { name: string; category: string; icon: string; allowPrivate: boolean }[];
+    expect(list.find((item) => item.name === 'Jellyfin')).toMatchObject({
+      category: 'Media',
+      icon: 'lucide:server',
+      allowPrivate: false,
+    });
+    expect(list.find((item) => item.name === 'Gitea')?.category).toBe('Dev');
+    expect(
+      (await post('/api/config/import/preview', { content: homepage, source: 'outro' })).statusCode,
+    ).toBe(400);
+  });
+
   it('recusa importação sem origem permitida e com corpo inválido', async () => {
     expect(
       (

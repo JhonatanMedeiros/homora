@@ -4,8 +4,8 @@ import { normalizeIcon, type Service } from '@homora/shared';
 /** Versão do formato de exportação do Homora. */
 export const TRANSFER_VERSION = 1;
 export const MAX_TRANSFER_CHARS = 1_000_000;
-const MAX_GROUPS = 200;
-const MAX_SERVICES = 1000;
+export const MAX_GROUPS = 200;
+export const MAX_SERVICES = 1000;
 
 export type ImportedService = {
   name: string;
@@ -29,7 +29,11 @@ export type IssueCode =
   | 'invalid-name'
   | 'invalid-url'
   | 'icon-ignored'
-  | 'duplicate-in-file';
+  | 'duplicate-in-file'
+  | 'icon-unsupported'
+  | 'widget-ignored'
+  | 'pages-ignored'
+  | 'group-renamed';
 export type ImportIssue = { path: string; code: IssueCode; severity: 'error' | 'warning' };
 export type ParsedImport = { document: ImportDocument; issues: ImportIssue[] };
 
@@ -47,7 +51,7 @@ export type ImportPlan = {
   };
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** Serializa grupos e cards na ordem atual. Nunca inclui segredos, conexões nem IDs. */
@@ -76,7 +80,11 @@ export function serializeConfiguration(
   return format === 'json' ? `${JSON.stringify(document, null, 2)}\n` : stringify(document);
 }
 
-function parseService(raw: unknown, path: string, issues: ImportIssue[]): ImportedService | null {
+export function parseService(
+  raw: unknown,
+  path: string,
+  issues: ImportIssue[],
+): ImportedService | null {
   const error = (code: IssueCode) => issues.push({ path, code, severity: 'error' });
   if (!isRecord(raw)) return (error('invalid-service'), null);
   const name = typeof raw.name === 'string' ? raw.name.trim() : '';

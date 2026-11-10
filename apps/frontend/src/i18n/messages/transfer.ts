@@ -10,7 +10,7 @@ export const en = {
   'transfer.downloadJson': 'Download JSON',
   'transfer.importTitle': 'Import',
   'transfer.importHint':
-    'Choose a Homora file (YAML or JSON). You review a preview first. Nothing is changed or removed: only new groups and cards are added.',
+    'Bring in a file from Homora, Homepage or Dashy. You review a preview first. Nothing is changed or removed: only new groups and cards are added.',
   'transfer.file': 'Configuration file',
   'transfer.previewTitle': 'Preview',
   'transfer.summary': '{groups} and {services} to add, {duplicates} already present.',
@@ -49,6 +49,20 @@ export const en = {
   'transfer.issue.invalid-url': 'Card ignored: the URL must be http or https, without credentials.',
   'transfer.issue.icon-ignored': 'The icon is not valid and was left empty.',
   'transfer.issue.duplicate-in-file': 'Repeated in the file: only the first one is added.',
+  'transfer.issue.icon-unsupported':
+    'The icon is not available in Homora and was left empty. You can set one by name or URL later.',
+  'transfer.issue.widget-ignored': 'Widgets are not imported; the card itself was.',
+  'transfer.issue.pages-ignored':
+    'Other pages listed in "pages" were not read. Import each file separately.',
+  'transfer.issue.group-renamed': 'The group name was shortened to 40 characters.',
+  'transfer.source': 'File format',
+  'transfer.source.homora': 'Homora (YAML or JSON)',
+  'transfer.source.homepage': 'Homepage (services.yaml or bookmarks.yaml)',
+  'transfer.source.dashy': 'Dashy (conf.yml)',
+  'transfer.sourceHint.homepage':
+    'Groups and cards are imported. Monitoring settings, widgets, Docker links and unmapped icons are not.',
+  'transfer.sourceHint.dashy':
+    'Sections become groups and items become cards; sub-items become cards named "Item / Sub". Widgets, other pages and unmapped icons are not imported.',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -62,7 +76,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'transfer.downloadJson': 'Baixar JSON',
   'transfer.importTitle': 'Importar',
   'transfer.importHint':
-    'Escolha um arquivo do Homora (YAML ou JSON). Você revisa uma prévia antes. Nada é alterado nem removido: só entram grupos e cards novos.',
+    'Traga um arquivo do Homora, do Homepage ou do Dashy. Você revisa uma prévia antes. Nada é alterado nem removido: só entram grupos e cards novos.',
   'transfer.file': 'Arquivo de configuração',
   'transfer.previewTitle': 'Prévia',
   'transfer.summary': '{groups} e {services} para adicionar, {duplicates} já existentes.',
@@ -101,4 +115,18 @@ export const ptBR: Record<keyof typeof en, string> = {
   'transfer.issue.invalid-url': 'Card ignorado: a URL deve ser http ou https, sem credenciais.',
   'transfer.issue.icon-ignored': 'O ícone não é válido e ficou vazio.',
   'transfer.issue.duplicate-in-file': 'Repetido no arquivo: só o primeiro é adicionado.',
+  'transfer.issue.icon-unsupported':
+    'O ícone não existe no Homora e ficou vazio. Você pode definir um por nome ou URL depois.',
+  'transfer.issue.widget-ignored': 'Widgets não são importados; o card em si foi.',
+  'transfer.issue.pages-ignored':
+    'As outras páginas listadas em "pages" não foram lidas. Importe cada arquivo separadamente.',
+  'transfer.issue.group-renamed': 'O nome do grupo foi encurtado para 40 caracteres.',
+  'transfer.source': 'Formato do arquivo',
+  'transfer.source.homora': 'Homora (YAML ou JSON)',
+  'transfer.source.homepage': 'Homepage (services.yaml ou bookmarks.yaml)',
+  'transfer.source.dashy': 'Dashy (conf.yml)',
+  'transfer.sourceHint.homepage':
+    'Grupos e cards são importados. Monitoramento, widgets, vínculos com Docker e ícones sem equivalente não são.',
+  'transfer.sourceHint.dashy':
+    'Seções viram grupos e itens viram cards; subitens viram cards chamados "Item / Sub". Widgets, outras páginas e ícones sem equivalente não são importados.',
 };

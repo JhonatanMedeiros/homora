@@ -231,7 +231,9 @@ Marque apenas com a implementação e a validação indicadas.
       exportação/importação manual no navegador.
 - [ ] **Importador do Homepage** (`services.yaml`, `bookmarks.yaml`) e do Dashy,
       com prévia revisável antes de gravar e limite às versões testadas.
-      Validar com configurações reais, sem edição manual.
+      Implementado e testado com amostras derivadas da documentação oficial
+      (ver registro abaixo); **pendente** validar com configurações reais, sem
+      edição manual, que é o critério de conclusão do R0.
 - [x] **Ícones por nome** de conjunto open source com licença compatível,
       mantendo emoji e URL própria (ver registro abaixo).
 - [ ] **Inglês e i18n:** interface em inglês por padrão, com pt-BR completo
@@ -241,6 +243,37 @@ Marque apenas com a implementação e a validação indicadas.
 
 **Conclusão:** instalação limpa e importação de uma configuração real do
 Homepage e do Dashy, sem edição manual, em ambiente de teste.
+
+### Registro R0 — importadores do Homepage e do Dashy (2026-11-10)
+
+- Formatos conferidos na documentação oficial em 2026-11-10 (Homepage:
+  `configs/services` e `configs/bookmarks`; Dashy: `docs/configuring.md`), sem
+  versão de software fixada. São a base dos testes; arquivos reais podem
+  variar.
+- `POST /api/config/import/{preview,apply}` aceitam `source`: `homora`
+  (padrão), `homepage` ou `dashy`. Todos geram o mesmo documento intermediário
+  e passam pela mesma prévia, relatório e transação do item anterior.
+- Homepage: um único leitor para `services.yaml` e `bookmarks.yaml`; a entrada
+  vira serviço ou bookmark conforme a forma. Grupos aninhados viram
+  "Pai / Filho". `href` vira a URL; `description` e `icon` são mantidos quando
+  possível. `siteMonitor`, `ping`, `widget(s)`, `server` e `container` não são
+  importados (widgets geram aviso).
+- Dashy: seções viram grupos; itens (`title`, `url`, `description`, `icon`)
+  viram cards; `subItems` viram "Item / Sub". `pages` e widgets de seção geram
+  aviso e não são lidos; `appConfig` e `pageInfo` são ignorados.
+- Ícones: só são mantidos URL, emoji e nomes que coincidem com um dos 96 ícones
+  embutidos (`mdi-server`, `fas fa-database` etc.). O restante (por exemplo
+  `sonarr.png`) fica vazio com aviso: não há ícones de marcas nem busca em CDN
+  de terceiros, para não revelar o IP de quem abre o painel nem depender de
+  licença de marca. Esta é a maior perda de fidelidade da migração.
+- Itens sem URL válida (incluindo `{{HOMEPAGE_VAR_*}}`) são relatados e
+  ignorados. Cards importados de outro painel nunca recebem permissão de rede
+  privada. Chaves e segredos de widgets não são lidos nem aparecem na prévia.
+- Interface: seletor de formato na aba Configurações; trocar o formato refaz a
+  prévia e a opção de manter a rede privada só aparece para arquivos do Homora.
+- Validação: `pnpm check` (194 testes Vitest e 4 testes Node) e `pnpm build`
+  passaram. Não verificados: configurações reais do Homepage e do Dashy,
+  versões específicas dos dois projetos e o fluxo em navegador real.
 
 ### Registro R0 — exportação e importação (2026-11-10)
 

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, t } from '@/i18n';
 import { ImportPreview } from './import-preview';
-import { MAX_FILE_BYTES, type Preview } from './transfer-model';
+import { NativeSelect } from '@/components/native-select';
+import { MAX_FILE_BYTES, SOURCES, type Preview, type Source } from './transfer-model';
 
 const json = { 'Content-Type': 'application/json' };
 
@@ -21,6 +22,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [fileKey, setFileKey] = useState(0);
+  const [source, setSource] = useState<Source>('homora');
 
   function reset() {
     setContent('');
@@ -47,20 +49,32 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
       return;
     }
     setContent(text);
+    await runPreview(text, source);
+  }
+
+  async function runPreview(text: string, from: Source) {
     setBusy(true);
+    setMessage('');
     try {
       const response = await fetch('/api/config/import/preview', {
         method: 'POST',
         headers: json,
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({ content: text, source: from }),
       });
       if (!response.ok) throw new Error();
       setPreview((await response.json()) as Preview);
     } catch {
+      setPreview(null);
       setMessage(t('transfer.previewFailed'));
     } finally {
       setBusy(false);
     }
+  }
+
+  function changeSource(next: Source) {
+    setSource(next);
+    setKeepPrivate(false);
+    if (content) void runPreview(content, next);
   }
 
   async function apply() {
@@ -71,7 +85,12 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
       const response = await fetch('/api/config/import/apply', {
         method: 'POST',
         headers: json,
-        body: JSON.stringify({ content, keepPrivate, expectedVersion: preview.version }),
+        body: JSON.stringify({
+          content,
+          source,
+          keepPrivate: source === 'homora' && keepPrivate,
+          expectedVersion: preview.version,
+        }),
       });
       const body = (await response.json().catch(() => null)) as {
         created?: number;
@@ -130,6 +149,24 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Field>
+              <FieldLabel htmlFor="import-source">{t('transfer.source')}</FieldLabel>
+              <NativeSelect
+                id="import-source"
+                value={source}
+                disabled={busy}
+                onChange={(event) => changeSource(event.target.value as Source)}
+              >
+                {SOURCES.map((item) => (
+                  <option key={item} value={item}>
+                    {t(`transfer.source.${item}` as const)}
+                  </option>
+                ))}
+              </NativeSelect>
+              {source !== 'homora' && (
+                <FieldDescription>{t(`transfer.sourceHint.${source}` as const)}</FieldDescription>
+              )}
+            </Field>
+            <Field>
               <FieldLabel htmlFor="import-file">{t('transfer.file')}</FieldLabel>
               <Input
                 key={fileKey}
@@ -141,7 +178,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
               />
             </Field>
             {preview && <ImportPreview plan={preview.plan} />}
-            {preview && (
+            {preview && source === 'homora' && (
               <Field orientation="horizontal" className="items-start">
                 <Checkbox
                   id="import-keep-private"

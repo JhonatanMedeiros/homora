@@ -55,6 +55,7 @@ it('mostra a prévia, relata itens ignorados e só grava ao confirmar', async ()
   const [, init] = fetchMock.mock.calls[1] as unknown as [string, { body: string }];
   expect(JSON.parse(init.body)).toEqual({
     content: 'version: 1',
+    source: 'homora',
     keepPrivate: false,
     expectedVersion: 7,
   });
@@ -120,4 +121,26 @@ it('não oferece importar quando não há nada novo', async () => {
   choose(screen.getByLabelText('Arquivo de configuração'), file('x'));
   const button = await screen.findByRole('button', { name: 'Nada novo para importar.' });
   expect((button as HTMLButtonElement).disabled).toBe(true);
+});
+
+it('envia a origem escolhida, refaz a prévia ao trocar de formato e oculta a opção de rede privada', async () => {
+  const fetchMock = vi.fn(async (url: string) => ({
+    ok: true,
+    status: 200,
+    json: async () => (url.endsWith('preview') ? preview : { created: 1, plan: preview.plan }),
+  }));
+  vi.stubGlobal('fetch', fetchMock);
+  render(<ConfigTransfer onImported={() => {}} />);
+  choose(screen.getByLabelText('Arquivo de configuração'), file('- Casa: []'));
+  await screen.findByRole('checkbox', { name: /Manter as permissões/ });
+  fireEvent.change(screen.getByLabelText('Formato do arquivo'), { target: { value: 'homepage' } });
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+  const [, previewInit] = fetchMock.mock.calls[1] as unknown as [string, { body: string }];
+  expect(JSON.parse(previewInit.body)).toEqual({ content: '- Casa: []', source: 'homepage' });
+  expect(screen.queryByRole('checkbox', { name: /Manter as permissões/ })).toBeNull();
+  expect(screen.getByText(/Monitoramento, widgets, vínculos com Docker/)).toBeTruthy();
+  fireEvent.click(await screen.findByRole('button', { name: 'Importar (1)' }));
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+  const [, applyInit] = fetchMock.mock.calls[2] as unknown as [string, { body: string }];
+  expect(JSON.parse(applyInit.body)).toMatchObject({ source: 'homepage', keepPrivate: false });
 });

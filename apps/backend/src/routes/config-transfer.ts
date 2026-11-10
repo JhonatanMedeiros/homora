@@ -2,12 +2,18 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
-import { MAX_TRANSFER_CHARS, parseTransfer, serializeConfiguration } from '../config-transfer.js';
+import { MAX_TRANSFER_CHARS, serializeConfiguration } from '../config-transfer.js';
+import { IMPORT_SOURCES, parseBySource } from '../importers.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
 
-const previewSchema = z.object({ content: z.string().max(MAX_TRANSFER_CHARS) }).strict();
+const previewSchema = z
+  .object({
+    content: z.string().max(MAX_TRANSFER_CHARS),
+    source: z.enum(IMPORT_SOURCES).optional(),
+  })
+  .strict();
 const applySchema = previewSchema
   .extend({
     keepPrivate: z.boolean().optional(),
@@ -36,7 +42,9 @@ export function registerConfigTransferRoutes(
     async (request, reply) => {
       const body = previewSchema.safeParse(request.body);
       if (!body.success) return reply.code(400).send({ error: 'Dados inválidos.' });
-      return configuration.previewImport(parseTransfer(body.data.content));
+      return configuration.previewImport(
+        parseBySource(body.data.source ?? 'homora', body.data.content),
+      );
     },
   );
 
@@ -46,10 +54,13 @@ export function registerConfigTransferRoutes(
     async (request, reply) => {
       const body = applySchema.safeParse(request.body);
       if (!body.success) return reply.code(400).send({ error: 'Dados inválidos.' });
-      const result = configuration.applyImport(parseTransfer(body.data.content), {
-        keepPrivate: body.data.keepPrivate === true,
-        expectedVersion: body.data.expectedVersion,
-      });
+      const result = configuration.applyImport(
+        parseBySource(body.data.source ?? 'homora', body.data.content),
+        {
+          keepPrivate: body.data.keepPrivate === true,
+          expectedVersion: body.data.expectedVersion,
+        },
+      );
       if (result.status === 'stale')
         return reply.code(409).send({ error: 'A configuração mudou. Revise a prévia novamente.' });
       void monitor.invalidate();
