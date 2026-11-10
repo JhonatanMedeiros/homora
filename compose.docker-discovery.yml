@@ -1,0 +1,22 @@
+# Optional: Docker label discovery. Use it on top of compose.yml:
+#   docker compose -f compose.yml -f compose.docker-discovery.yml up -d --build
+#
+# Homora never gets the Docker socket. A restricted proxy (tecnativa/docker-socket-proxy)
+# holds it read-only and only answers "list containers": every other API group, and every
+# write method, is denied. Even so, the socket gives that proxy privileged access to the
+# daemon, so run this only on a host you trust. The proxy has no published port; it is
+# reachable only by the backend on the internal Compose network.
+services:
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0@sha256:9e4b9e7517a6b660f2cc903a19b257b1852d5b3344794e3ea334ff00ae677ac2
+    environment:
+      CONTAINERS: '1' # GET /containers/* only
+      POST: '0' # no writes
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+  backend:
+    environment:
+      HOMORA_DOCKER_HOST: http://docker-proxy:2375
+    depends_on:
+      - docker-proxy

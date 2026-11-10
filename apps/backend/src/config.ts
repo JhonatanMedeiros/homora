@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
+import { parseDockerHost } from './docker-discovery.js';
 export const root = fileURLToPath(new URL('../../../', import.meta.url));
 export function parseAllowedOrigins(value: string | undefined): string[] {
   if (value === undefined || value.trim() === '') return [];
@@ -48,6 +49,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     apiPort,
     webPort,
     allowedOrigins,
+    dockerHost: parseDockerHost(env.HOMORA_DOCKER_HOST),
     databasePath: resolve(root, env.HOMORA_DATABASE_PATH || 'data/homora.sqlite'),
   };
 }

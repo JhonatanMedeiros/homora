@@ -10,6 +10,10 @@ export const en = {
   'apiError.invalid-card-order': 'Invalid card order.',
   'apiError.invalid-group-order': 'Invalid group order.',
   'apiError.invalid-group-name': 'Provide a group name with up to 40 characters.',
+  'apiError.discovery-disabled': 'Docker discovery is not enabled.',
+  'apiError.docker-unavailable':
+    'Could not read the Docker containers. Check HOMORA_DOCKER_HOST and the proxy.',
+  'apiError.docker-invalid-response': 'Docker returned an unexpected response.',
   'apiError.invalid-widget': 'Provide a valid integration and name.',
   'apiError.invalid-url': 'Provide a valid URL.',
   'apiError.https-url-required': 'Provide a valid HTTPS URL.',
@@ -85,6 +89,10 @@ export const ptBR = {
   'apiError.invalid-card-order': 'Ordem de cards inválida.',
   'apiError.invalid-group-order': 'Ordem de grupos inválida.',
   'apiError.invalid-group-name': 'Informe um nome de grupo com até 40 caracteres.',
+  'apiError.discovery-disabled': 'A descoberta Docker não está ativada.',
+  'apiError.docker-unavailable':
+    'Não foi possível ler os contêineres do Docker. Confira HOMORA_DOCKER_HOST e o proxy.',
+  'apiError.docker-invalid-response': 'O Docker devolveu uma resposta inesperada.',
   'apiError.invalid-widget': 'Informe integração e nome válidos.',
   'apiError.invalid-url': 'Informe uma URL válida.',
   'apiError.https-url-required': 'Informe uma URL HTTPS válida.',

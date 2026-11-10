@@ -14,6 +14,10 @@ export const ERROR_MESSAGES = {
   'invalid-group-order': 'Invalid group order.',
   'invalid-columns': 'Choose between 1 and 6 columns, or automatic.',
   'invalid-group-name': 'Provide a group name with up to 40 characters.',
+  'discovery-disabled': 'Docker discovery is not enabled.',
+  'docker-unavailable':
+    'Could not read the Docker containers. Check HOMORA_DOCKER_HOST and the proxy.',
+  'docker-invalid-response': 'Docker returned an unexpected response.',
   'invalid-widget': 'Provide a valid integration and name.',
   'invalid-url': 'Provide a valid URL.',
   'https-url-required': 'Provide a valid HTTPS URL.',

@@ -1,6 +1,23 @@
 /** Textos de configurações, exportação e importação. */
 export const en = {
   'nav.settings': 'Settings',
+  'discovery.title': 'Docker discovery',
+  'discovery.hint':
+    'Suggests cards from container labels (homora.url, homora.name, homora.group, homora.description, homora.icon, or the Homepage equivalents). Nothing is added until you pick containers and confirm.',
+  'discovery.loading': 'Reading containers...',
+  'discovery.disabled':
+    'Not enabled. Set HOMORA_DOCKER_HOST to a restricted Docker proxy (or the socket) and restart the backend. See the README for the safe setup.',
+  'discovery.failed': 'Could not read the containers.',
+  'discovery.scanned': '{count} running containers read.',
+  'discovery.none': 'No container has a homora.url or homepage.href label.',
+  'discovery.list': 'Containers with labels',
+  'discovery.container': 'Container: {name}',
+  'discovery.private': 'Allow monitoring on a private network for the selected cards',
+  'discovery.privateHint':
+    'Labels never grant this on their own. Most homelab addresses are private, so tick it for services on your network.',
+  'discovery.rescan': 'Read again',
+  'discovery.add': 'Add selected',
+  'discovery.added': '{count} cards added.',
   'settings.title': 'Settings',
   'settings.topBar': 'Show the top bar on the home page',
   'settings.topBarHint':
@@ -76,6 +93,23 @@ export const en = {
 
 export const ptBR: Record<keyof typeof en, string> = {
   'nav.settings': 'Configurações',
+  'discovery.title': 'Descoberta Docker',
+  'discovery.hint':
+    'Sugere cards a partir dos labels dos contêineres (homora.url, homora.name, homora.group, homora.description, homora.icon ou os equivalentes do Homepage). Nada é adicionado antes de você escolher os contêineres e confirmar.',
+  'discovery.loading': 'Lendo os contêineres...',
+  'discovery.disabled':
+    'Desativada. Defina HOMORA_DOCKER_HOST com um proxy restrito do Docker (ou o socket) e reinicie o backend. Veja o README para a configuração segura.',
+  'discovery.failed': 'Não foi possível ler os contêineres.',
+  'discovery.scanned': '{count} contêineres em execução lidos.',
+  'discovery.none': 'Nenhum contêiner tem o label homora.url ou homepage.href.',
+  'discovery.list': 'Contêineres com labels',
+  'discovery.container': 'Contêiner: {name}',
+  'discovery.private': 'Permitir monitoramento em rede privada nos cards selecionados',
+  'discovery.privateHint':
+    'Os labels nunca concedem isso sozinhos. A maioria dos endereços do homelab é privada, então marque para serviços da sua rede.',
+  'discovery.rescan': 'Ler novamente',
+  'discovery.add': 'Adicionar selecionados',
+  'discovery.added': '{count} cards adicionados.',
   'settings.title': 'Configurações',
   'settings.topBar': 'Mostrar a faixa superior na página inicial',
   'settings.topBarHint':
