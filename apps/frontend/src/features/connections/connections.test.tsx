@@ -180,3 +180,47 @@ it('cria, consulta e remove widgets nomeados usando a conexão vinculada', async
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção do widget Mídia sala' }));
   expect(await screen.findByText('Widget removido.')).toBeTruthy();
 });
+
+it('oferece o Proxmox como origem de widget e consulta os números agregados', async () => {
+  const widgets: unknown[] = [];
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === '/api/proxmox/status')
+      return { ok: true, json: async () => ({ configured: true, hasCa: false }) };
+    if (url === '/api/widgets' && init?.method === 'POST') {
+      const body = JSON.parse(String(init.body));
+      widgets.push({ id: 7, integrationId: 99, type: 'proxmox', name: body.name, serviceId: null });
+      return { ok: true, json: async () => widgets[0] };
+    }
+    if (url === '/api/widgets') return { ok: true, json: async () => [...widgets] };
+    if (url === '/api/connections/99/data')
+      return {
+        ok: true,
+        json: async () => ({
+          data: {
+            vms: { running: 1, total: 1 },
+            containers: { running: 16, total: 25 },
+            cpu: 6,
+            memory: null,
+          },
+        }),
+      };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<Connections />);
+  const select = await screen.findByLabelText('Conexão');
+  await waitFor(() => expect((select as HTMLSelectElement).value).toBe('proxmox'));
+  fireEvent.change(screen.getByLabelText('Nome do widget'), { target: { value: 'Cluster' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Criar widget' }));
+  await waitFor(() =>
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/widgets',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ source: 'proxmox', name: 'Cluster' }),
+      }),
+    ),
+  );
+  fireEvent.click(await screen.findByRole('button', { name: 'Consultar Cluster' }));
+  expect(await screen.findByText('VMs: 1 / 1 · LXC: 16 / 25 · CPU: 6%')).toBeTruthy();
+});

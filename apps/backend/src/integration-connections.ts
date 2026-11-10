@@ -7,6 +7,8 @@ import { getAuthorizedResponse } from './network-request.js';
 import { createObservationCache } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
 import { InputError } from './api-error.js';
+import { createHash } from 'node:crypto';
+import { summarizeProxmox } from './proxmox-summary.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
@@ -198,9 +200,44 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     if (current) cacheFor(current.id).invalidate();
     return publicRow(result);
   }
+  /**
+   * Proxmox continua no cofre legado; uma linha ponte (sem segredo) permite ligar widgets a ele.
+   * A assinatura da configuração evita servir dados em cache de um endereço ou token anterior.
+   */
+  const proxmoxSignatures = new Map<number, string>();
+  function proxmoxConfig() {
+    let config;
+    try {
+      config = vault?.load() ?? null;
+    } catch {
+      throw new InputError('proxmox-load-failed');
+    }
+    if (!config) throw new InputError('proxmox-not-configured');
+    return config;
+  }
+  async function proxmoxInstanceId() {
+    const existing = (
+      await db.select().from(integrationInstances).where(eq(integrationInstances.type, 'proxmox'))
+    )[0];
+    if (existing) return existing.id;
+    const [created] = await db
+      .insert(integrationInstances)
+      .values({ type: 'proxmox', name: 'Proxmox VE', publicConfig: '{}' })
+      .returning();
+    return created.id;
+  }
   async function collect(id: number) {
     const row = await find(id);
     if (!row) return null;
+    if (row.type === 'proxmox') {
+      const config = proxmoxConfig();
+      const raw = await integrationRegistry.prepare('proxmox', {
+        publicConfig: {},
+        credentials: {},
+        legacyConfig: config,
+      })();
+      return summarizeProxmox(raw);
+    }
     const data = parseData(row);
     const keys = credentials(row);
     return await prepareAdapter(row.type, data, keys)();
@@ -214,14 +251,23 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
 
   return {
     async listConnections() {
-      return (await db.select().from(integrationInstances)).map(publicRow);
+      return (await db.select().from(integrationInstances))
+        .filter((row) => row.type !== 'proxmox')
+        .map(publicRow);
     },
     async listWidgets() {
       const rows = await db.select().from(integrationWidgets);
       return rows.map((row) => widgetSchema.parse(row));
     },
-    async createWidget(integrationId: number, name: string, serviceId: number | null = null) {
-      const connection = await find(integrationId);
+    async createWidget(
+      target: { integrationId: number } | { source: 'proxmox' },
+      name: string,
+      serviceId: number | null = null,
+    ) {
+      if ('source' in target) proxmoxConfig();
+      const connection = await find(
+        'source' in target ? await proxmoxInstanceId() : target.integrationId,
+      );
       if (!connection) return null;
       if (serviceId !== null && !(await serviceExists(serviceId)))
         return 'service-missing' as const;
@@ -259,11 +305,11 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     },
     async updateConnection(id: number, input: ConnectionInput) {
       const current = await find(id);
-      return current ? save(input, current) : null;
+      return current && current.type !== 'proxmox' ? save(input, current) : null;
     },
     async deleteConnection(id: number) {
       const current = await find(id);
-      if (!current) return 'missing' as const;
+      if (!current || current.type === 'proxmox') return 'missing' as const;
       const widgets = await db
         .select({ id: integrationWidgets.id })
         .from(integrationWidgets)
@@ -274,7 +320,18 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       return 'deleted' as const;
     },
     async connectionData(id: number, refresh = false) {
-      if (!(await find(id))) return null;
+      const row = await find(id);
+      if (!row) return null;
+      if (row.type === 'proxmox') {
+        const config = proxmoxConfig();
+        const signature = createHash('sha256')
+          .update(JSON.stringify([config.url, config.tokenId, config.secret, config.ca ?? '']))
+          .digest('hex');
+        if (proxmoxSignatures.get(id) !== signature) {
+          proxmoxSignatures.set(id, signature);
+          cacheFor(id).invalidate();
+        }
+      }
       return cacheFor(id).collect(async () => {
         const data = await collect(id);
         if (data === null) throw new Error('Integração não encontrada.');
@@ -282,7 +339,8 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       }, refresh);
     },
     async testConnection(id: number) {
-      if (!(await find(id))) return false;
+      const row = await find(id);
+      if (!row || row.type === 'proxmox') return false;
       await collect(id);
       return true;
     },

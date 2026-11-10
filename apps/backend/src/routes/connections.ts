@@ -28,11 +28,20 @@ export function registerConnectionRoutes(app: FastifyInstance, db: Db, vault?: V
   app.post('/api/widgets', async (request, reply) => {
     const parsed = createWidgetSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-widget'));
-    const widget = await connections.createWidget(
-      parsed.data.integrationId,
-      parsed.data.name,
-      parsed.data.serviceId ?? null,
-    );
+    let widget;
+    try {
+      widget = await connections.createWidget(
+        parsed.data.source
+          ? { source: parsed.data.source }
+          : { integrationId: parsed.data.integrationId! },
+        parsed.data.name,
+        parsed.data.serviceId ?? null,
+      );
+    } catch (error) {
+      return reply
+        .code(error instanceof InputError && error.code === 'proxmox-not-configured' ? 404 : 502)
+        .send(errorBody(error instanceof InputError ? error.code : 'integration-save-failed'));
+    }
     if (widget === 'service-missing') return reply.code(404).send(errorBody('service-not-found'));
     if (!widget) return reply.code(404).send(errorBody('integration-not-found'));
     return reply.code(201).send(widget);

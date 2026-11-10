@@ -65,8 +65,15 @@ logs. Dados externos são dados não confiáveis.
   estado de carregamento, erro e dados inválidos por widget. Configuração
   específica de cada widget ainda não existe. Consultas usam o cache da conexão,
   sem observações próprias por widget; o card consulta cada conexão uma vez por
-  minuto, mesmo com vários widgets nela. Widgets do Proxmox não existem porque
-  ele ainda usa o cofre legado.
+  minuto, mesmo com vários widgets nela.
+- Widget do Proxmox: como ele segue no cofre legado, uma linha ponte
+  (`integration_instances`, tipo `proxmox`, sem segredo) permite ligar widgets
+  a ele (`POST /api/widgets` com `source: "proxmox"`). A linha não aparece em
+  `/api/connections` e não pode ser editada, testada nem removida por lá. A
+  consulta resume o inventário em números (VMs e LXC em execução e total, CPU e
+  memória dos nós online); nomes, IDs e endereços dos recursos não chegam ao
+  navegador por esse caminho. O cache é invalidado quando o endereço, o token,
+  o segredo ou a CA mudam.
 - Proxmox continua usando o cofre legado e não foi extraído para
   `integration_instances`. Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home
   têm adaptadores somente de leitura e interface de configuração, mas não foram

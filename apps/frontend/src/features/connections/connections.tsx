@@ -23,6 +23,7 @@ export function Connections() {
   const [widgetName, setWidgetName] = useState('');
   const [widgetConnection, setWidgetConnection] = useState('');
   const [widgetCard, setWidgetCard] = useState('');
+  const [proxmoxConfigured, setProxmoxConfigured] = useState(false);
   const [cards, setCards] = useState<{ id: number; name: string }[]>([]);
   const [widgetResult, setWidgetResult] = useState<{ id: number; data: unknown } | null>(null);
   const [form, setForm] = useState<ConnectionFormState | null>(null);
@@ -68,6 +69,18 @@ export function Connections() {
   }, []);
   useEffect(() => {
     const controller = new AbortController();
+    request('/api/proxmox/status', { signal: controller.signal })
+      .then((status) => {
+        if (!controller.signal.aborted)
+          setProxmoxConfigured(Boolean((status as { configured?: unknown } | null)?.configured));
+      })
+      .catch(() => {
+        // Sem o estado do Proxmox, ele só não aparece como opção de widget.
+      });
+    return () => controller.abort();
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
     request('/api/services', { signal: controller.signal })
       .then((list) => {
         if (Array.isArray(list) && !controller.signal.aborted)
@@ -92,6 +105,8 @@ export function Connections() {
     });
     setMessage('');
   }
+  const selectedConnection =
+    widgetConnection || (items?.length ? String(items[0].id) : proxmoxConfigured ? 'proxmox' : '');
   async function createWidget(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -101,7 +116,9 @@ export function Connections() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          integrationId: Number(widgetConnection),
+          ...(selectedConnection === 'proxmox'
+            ? { source: 'proxmox' }
+            : { integrationId: Number(selectedConnection) }),
           name: widgetName,
           ...(widgetCard ? { serviceId: Number(widgetCard) } : {}),
         }),
@@ -240,14 +257,15 @@ export function Connections() {
         </SectionTitle>
         <p className="text-sm text-muted-foreground">{t('connections.description')}</p>
       </div>
-      {(Boolean(items?.length) || widgets.length > 0) && (
+      {(Boolean(items?.length) || proxmoxConfigured || widgets.length > 0) && (
         <WidgetsSection
           items={items}
           widgets={widgets}
           busy={busy}
           confirming={confirming}
           widgetName={widgetName}
-          widgetConnection={widgetConnection}
+          widgetConnection={selectedConnection}
+          proxmoxConfigured={proxmoxConfigured}
           cards={cards}
           widgetCard={widgetCard}
           onCardChange={setWidgetCard}
