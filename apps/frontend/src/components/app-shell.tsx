@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { AppSidebar } from '@/components/app-sidebar';
 import { MobileTabs } from '@/components/mobile-tabs';
 import { BrandMark } from '@/components/brand-mark';
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import type { Tab } from '@/components/app-nav';
+import { t } from '@/i18n';
 
 type Props = {
   tab: Tab;
@@ -27,7 +29,14 @@ export function AppShell({ tab, onTabChange, onLogout, toolbar, children }: Prop
           <div className="min-w-0 flex-1">{toolbar}</div>
           <div className="flex items-center md:hidden">
             <ThemeToggle />
-            <Button type="button" variant="ghost" size="icon" onClick={onLogout} aria-label="Sair">
+            <LocaleSwitcher />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onLogout}
+              aria-label={t('app.logout')}
+            >
               <LogOut />
             </Button>
           </div>

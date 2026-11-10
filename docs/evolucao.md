@@ -176,7 +176,9 @@ infraestrutura foi acessada.
 
 ## P5 — Preparar publicação open source
 
-- [ ] Escolher licença e revisar licenças e atribuições das dependências e assets.
+- [x] Escolher licença e revisar licenças e atribuições das dependências e assets.
+      MIT escolhida (2026-11-10); dependências de produção e fontes revisadas em
+      `THIRD_PARTY_NOTICES.md`. Assets futuros e a imagem Docker exigem nova revisão.
 - [ ] Verificar disponibilidade do nome e possíveis conflitos de marca.
 - [x] Criar orientação inicial de contribuição e relato privado de
       vulnerabilidades, incluindo limitações e o estado de desenvolvimento.
@@ -213,7 +215,178 @@ com o projeto usando a documentação disponível.
   existente mostra que ele usa tabelas sintéticas e não inicia o backend após
   restaurar. Upgrade e restauração operacional seguem pendentes.
 
+## R0 — Adoção sem atrito (tarefas)
+
+Origem: [estrategia.md](estrategia.md), fase R0. Nenhum item iniciado.
+Marque apenas com a implementação e a validação indicadas.
+
+- [ ] **Imagem Docker reproduzível:** fixar Node e nginx por versão/digest,
+      construir amd64 e arm64 no CI e documentar o upgrade. Implementado e
+      validado localmente (ver registro abaixo); **pendente** publicar uma
+      release: o workflow nunca foi executado e `compose.release.yml` não foi
+      testado contra imagens publicadas.
+- [x] **Licença e atribuições** (também em P5): MIT, `LICENSE` e
+      `THIRD_PARTY_NOTICES.md`. A imagem Docker deve incluir esses arquivos.
+- [x] **Exportação e importação YAML/JSON** de serviços, grupos e ordem, com
+      validação e relatório de itens ignorados; segredos nunca entram no arquivo.
+      Validado por testes de ida e volta (ver registro abaixo); falta uma
+      exportação/importação manual no navegador.
+- [ ] **Importador do Homepage** (`services.yaml`, `bookmarks.yaml`) e do Dashy,
+      com prévia revisável antes de gravar e limite às versões testadas.
+      Implementado e testado com amostras derivadas da documentação oficial
+      (ver registro abaixo); **pendente** validar com configurações reais, sem
+      edição manual, que é o critério de conclusão do R0.
+- [x] **Ícones por nome** de conjunto open source com licença compatível,
+      mantendo emoji e URL própria (ver registro abaixo).
+- [x] **Inglês e i18n:** interface em inglês por padrão, com pt-BR completo
+      (feito, ver registro abaixo); README, instalação e capturas de tela em
+      inglês (feito; `README.pt-BR.md` mantém o texto em português);
+      a API devolve códigos de erro estáveis, traduzidos pela interface
+      (feito, ver registro abaixo).
+
+**Conclusão:** instalação limpa e importação de uma configuração real do
+Homepage e do Dashy, sem edição manual, em ambiente de teste.
+
+### Registro R0 — imagem Docker, README e capturas (2026-11-10)
+
+- `Dockerfile`: Node e nginx fixados por digest (`node:24-bookworm-slim` e
+  `nginx:1.27-alpine`), rótulos OCI, `HEALTHCHECK` nos dois alvos e, na imagem
+  do frontend, a licença MIT, os avisos de terceiros e as licenças OFL das
+  fontes em `/usr/share/doc/homora`. O Dependabot propõe atualizações dos
+  digests e das actions.
+- CI: novo job `docker` que constrói os dois alvos em cada PR (sem publicar).
+  `release.yml`: ao receber uma tag `v*.*.*`, roda `pnpm check` e `pnpm build`
+  e publica `homora-backend` e `homora-frontend` no GHCR para `linux/amd64` e
+  `linux/arm64`, com proveniência e SBOM; as actions estão fixadas por SHA.
+  `compose.release.yml` usa essas imagens (mesma porta em loopback).
+- Validação local: build amd64 dos dois alvos e build arm64 (emulado, sem
+  executar os contêineres) concluídos; os dois contêineres amd64 ficaram
+  `healthy`. Upgrade: banco, conta e três serviços criados pela imagem do
+  commit `cc3430b` foram lidos de forma idêntica pela imagem nova no mesmo
+  volume, e a exportação funcionou sobre eles. Esta PR não adiciona migração,
+  então o teste não exercita uma migração. Projeto, volume e rede de teste
+  foram removidos.
+- Navegador real (Chromium headless, dados fictícios, instância em contêiner):
+  primeiro acesso em inglês, importação de arquivos dos três formatos pela
+  prévia (Homora com permissão de rede privada, Homepage com avisos de ícone e
+  widget e entrada inválida, Dashy com subitem e aviso de `pages`), reimportação
+  sem duplicar, download da exportação sem IDs nem chaves, estado Disponível
+  no monitor, troca para português sem novo login e celular de 390 px sem
+  rolagem horizontal; sem erros de console. A revisão visual achou o texto do
+  campo de busca cortado no celular (efeito do botão de idioma); corrigido com
+  reticências.
+- Documentação: `README.md` em inglês (instalação, upgrade, importação,
+  backup, segurança, MCP) com capturas em `docs/screenshots`, e
+  `README.pt-BR.md`.
+- **Não atendido:** o critério de conclusão do R0 pede importar uma
+  configuração real do Homepage e do Dashy sem edição manual; os testes usaram
+  amostras derivadas da documentação. Também não foram feitos: publicar imagens
+  e testar `compose.release.yml`, executar os contêineres arm64, revisão do
+  inglês por um falante nativo e leitor de tela.
+
+### Registro R0 — importadores do Homepage e do Dashy (2026-11-10)
+
+- Formatos conferidos na documentação oficial em 2026-11-10 (Homepage:
+  `configs/services` e `configs/bookmarks`; Dashy: `docs/configuring.md`), sem
+  versão de software fixada. São a base dos testes; arquivos reais podem
+  variar.
+- `POST /api/config/import/{preview,apply}` aceitam `source`: `homora`
+  (padrão), `homepage` ou `dashy`. Todos geram o mesmo documento intermediário
+  e passam pela mesma prévia, relatório e transação do item anterior.
+- Homepage: um único leitor para `services.yaml` e `bookmarks.yaml`; a entrada
+  vira serviço ou bookmark conforme a forma. Grupos aninhados viram
+  "Pai / Filho". `href` vira a URL; `description` e `icon` são mantidos quando
+  possível. `siteMonitor`, `ping`, `widget(s)`, `server` e `container` não são
+  importados (widgets geram aviso).
+- Dashy: seções viram grupos; itens (`title`, `url`, `description`, `icon`)
+  viram cards; `subItems` viram "Item / Sub". `pages` e widgets de seção geram
+  aviso e não são lidos; `appConfig` e `pageInfo` são ignorados.
+- Ícones: só são mantidos URL, emoji e nomes que coincidem com um dos 96 ícones
+  embutidos (`mdi-server`, `fas fa-database` etc.). O restante (por exemplo
+  `sonarr.png`) fica vazio com aviso: não há ícones de marcas nem busca em CDN
+  de terceiros, para não revelar o IP de quem abre o painel nem depender de
+  licença de marca. Esta é a maior perda de fidelidade da migração.
+- Itens sem URL válida (incluindo `{{HOMEPAGE_VAR_*}}`) são relatados e
+  ignorados. Cards importados de outro painel nunca recebem permissão de rede
+  privada. Chaves e segredos de widgets não são lidos nem aparecem na prévia.
+- Interface: seletor de formato na aba Configurações; trocar o formato refaz a
+  prévia e a opção de manter a rede privada só aparece para arquivos do Homora.
+- Validação: `pnpm check` (194 testes Vitest e 4 testes Node) e `pnpm build`
+  passaram. Não verificados: configurações reais do Homepage e do Dashy,
+  versões específicas dos dois projetos e o fluxo em navegador real.
+
+### Registro R0 — exportação e importação (2026-11-10)
+
+- Formato versionado (`version: 1`): `groups[].name` e `groups[].services[]` com
+  `name`, `url` e, se houver, `description`, `icon` e `allowPrivate`. A ordem do
+  arquivo é a ordem do painel. O arquivo não tem IDs, segredos, conexões nem
+  widgets. JSON é lido pelo mesmo parser (YAML 1.2), com limite de 10 aliases,
+  1 MB, 200 grupos e 1000 cards.
+- API autenticada e protegida por origem: `GET /api/config/export?format=yaml|json`,
+  `POST /api/config/import/preview` e `POST /api/config/import/apply`. A prévia
+  não grava nada. A aplicação recalcula o plano dentro de uma transação SQLite e
+  recusa (409) se a versão da configuração mudou depois da prévia.
+- A importação só adiciona: não sobrescreve nem remove. Um card com a mesma URL
+  no mesmo grupo é tratado como duplicado e ignorado; itens inválidos são
+  ignorados e relatados por caminho (`groups[0].services[2]`) com um código
+  estável que a interface traduz. Nenhuma mensagem em idioma sai do servidor.
+- Decisão de segurança: `allowPrivate` do arquivo é ignorado, a menos que o
+  usuário marque a opção na prévia, para que um arquivo de terceiros não
+  autorize o monitor a alcançar a rede privada. A exportação inclui o valor.
+- Interface: nova aba Configurações (exportar em YAML/JSON, escolher arquivo,
+  prévia com novos/duplicados/ignorados e confirmação). O parser interno é
+  reutilizável pelos importadores do Homepage e do Dashy.
+- Nova dependência: `yaml` 2.9.1 (ISC) no backend.
+- Validação: `pnpm check` e `pnpm build` passaram. Não verificados: o fluxo no
+  navegador real e arquivos grandes ou malformados fora dos testes.
+
+### Registro R0 — ícones por nome (2026-11-10)
+
+- O campo `icon` aceita três formatos: emoji ou texto curto (até 8 caracteres,
+  como antes), `lucide:nome` (96 ícones embutidos do Lucide, ISC, curados para
+  homelab) e URL `http(s)` de imagem (até 512 caracteres, sem credenciais).
+  `normalizeIcon` em `@homora/shared` valida no servidor; valores antigos
+  continuam válidos e nenhuma migração foi necessária.
+- A interface mostra uma prévia e sugere os nomes embutidos no formulário. Se o
+  nome não existe ou a imagem não carrega, o card usa a inicial do serviço.
+  Imagens por URL são carregadas pelo navegador, sem `referrer`.
+- Limites: a lista é curada, não a biblioteca inteira; não há ícones de marcas
+  (Jellyfin, Sonarr etc.), que precisarão de outro conjunto ou de URL própria,
+  com licença revisada, quando os importadores forem feitos. Uma URL de imagem
+  revela ao host da imagem o IP de quem abre o painel; agentes podem propor
+  ícones por URL, e a proposta mostra o valor antes da aprovação.
+- Validação: `pnpm check` (143 testes Vitest e 4 testes Node) e `pnpm build`
+  passaram. Não verificado visualmente em navegador real.
+
+### Registro R0 — i18n da interface (2026-11-10)
+
+- `apps/frontend/src/i18n`: módulo próprio, sem dependência nova. Dicionários
+  por domínio em `messages/` com `en` e `pt-BR` lado a lado; o tipo exige as
+  mesmas chaves nas duas línguas. `t()` aceita `{marcadores}` e plural
+  (`chave` e `chave_one`); datas e números usam `Intl` com o idioma atual.
+- Idioma: escolha salva em `localStorage`; sem escolha, segue o navegador
+  (português vira pt-BR) e o padrão é inglês. Há um seletor na barra lateral e
+  no topo do celular. Trocar o idioma remonta a interface e preserva a sessão.
+- Todas as telas migraram (shell, serviços, agentes, integrações, Proxmox e
+  conexões). Os testes existentes fixam pt-BR em `test-setup.ts`; novos testes
+  cobrem paridade de chaves e marcadores, plural, formatação, detecção e a
+  troca de idioma na interface.
+- Erros da API: toda resposta de erro tem `{ code, error }`, com `code`
+  estável e `error` em inglês (catálogo em `apps/backend/src/api-error.ts`).
+  Adaptadores, Proxmox e validação compartilhada lançam erros com `code`;
+  falhas inesperadas viram um código genérico, sem detalhes internos. A
+  interface traduz por `code` (`apiError`, chaves `apiError.*`) e usa `error`
+  para códigos desconhecidos. Um teste garante tradução em inglês e pt-BR de
+  todos os códigos do backend. Mudança de contrato: clientes que liam o texto
+  em português de `error` passam a receber inglês; use `code`.
+- Validação: `pnpm check` (195 testes Vitest e 4 testes Node) e `pnpm build`
+  passaram. Não verificados: a interface em inglês em navegador real (largura,
+  quebras de texto), leitor de tela e revisão do inglês por falante nativo.
+
 ## Registro inicial
+
+> **Histórico:** esta seção descreve a análise inicial. O estado atual está nas
+> seções P0 a P5 e nas validações posteriores abaixo.
 
 - Análise inicial: a base inclui CRUD de serviços, autenticação local, SQLite,
   Proxmox experimental, MCP local de leitura, testes e configuração de Compose.
@@ -278,6 +451,12 @@ com o projeto usando a documentação disponível.
   permissões e certificados precisa ser confirmada em ambientes de usuário.
 
 ## Trabalho prévio de integrações
+
+> **Histórico:** o texto abaixo é anterior à "Entrega local — integrações
+> experimentais". Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home já têm
+> adaptadores e interface (validados só com mocks), e a política de rede já
+> protege os adaptadores; as lacunas descritas aqui foram em grande parte
+> resolvidas.
 
 - A análise e o plano técnico estão em [integrações](integracoes.md). A primeira
   versão do projeto foi registrada no Git e a conexão Proxmox com CA importada

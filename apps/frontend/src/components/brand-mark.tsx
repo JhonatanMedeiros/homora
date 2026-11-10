@@ -1,11 +1,12 @@
 import { House } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 export function BrandMark({ className, compact }: { className?: string; compact?: boolean }) {
   return (
     <a
       href="/"
-      aria-label="Homora, início"
+      aria-label={t('brand.home')}
       className={cn(
         'inline-flex items-center gap-2.5 rounded-md font-label text-xl font-bold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className,

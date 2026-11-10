@@ -1,12 +1,13 @@
 import { createCipheriv, createDecipheriv, randomBytes, X509Certificate } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { InputError } from './api-error.js';
 export type ProxmoxConfig = { url: string; tokenId: string; secret: string; ca?: string };
 export function validateProxmoxConfig(input: ProxmoxConfig): ProxmoxConfig {
   let url: URL;
   try {
     url = new URL(input.url);
   } catch {
-    throw new Error('Informe uma URL HTTPS válida.');
+    throw new InputError('https-url-required');
   }
   if (
     url.protocol !== 'https:' ||
@@ -16,14 +17,14 @@ export function validateProxmoxConfig(input: ProxmoxConfig): ProxmoxConfig {
     url.search ||
     url.hash
   )
-    throw new Error('Informe uma origem HTTPS sem caminho ou credenciais.');
+    throw new InputError('https-url-required');
   if (
     !/^[^\s!@]+@[^\s!@]+![^\s!@]+$/.test(input.tokenId) ||
     !input.secret ||
     input.secret.length > 512 ||
     /[\r\n]/.test(input.secret)
   )
-    throw new Error('Informe um ID e segredo de token válidos.');
+    throw new InputError('invalid-token');
   if (input.ca) {
     try {
       if (

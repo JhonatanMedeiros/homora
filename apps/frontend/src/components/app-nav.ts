@@ -1,9 +1,11 @@
-import { Bot, LayoutGrid, Server, type LucideIcon } from 'lucide-react';
+import type { MessageKey } from '@/i18n';
+import { Bot, LayoutGrid, Server, Settings, type LucideIcon } from 'lucide-react';
 
-export type Tab = 'services' | 'integrations' | 'agents';
+export type Tab = 'services' | 'integrations' | 'agents' | 'settings';
 
-export const navItems: { id: Tab; label: string; icon: LucideIcon }[] = [
-  { id: 'services', label: 'Serviços', icon: LayoutGrid },
-  { id: 'integrations', label: 'Integrações', icon: Server },
-  { id: 'agents', label: 'Agentes', icon: Bot },
+export const navItems: { id: Tab; label: MessageKey; icon: LucideIcon }[] = [
+  { id: 'services', label: 'nav.services', icon: LayoutGrid },
+  { id: 'integrations', label: 'nav.integrations', icon: Server },
+  { id: 'agents', label: 'nav.agents', icon: Bot },
+  { id: 'settings', label: 'nav.settings', icon: Settings },
 ];

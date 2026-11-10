@@ -1,11 +1,14 @@
 import { forwardRef, type FormEvent } from 'react';
-import type { ServiceInput } from '@homora/shared';
+import { ICON_MAX_LENGTH, type ServiceInput } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
+import { ServiceIcon } from '@/components/service-icon';
+import { iconNames } from '@/lib/icons';
+import { t } from '@/i18n';
 
 type Props = {
   editing: boolean;
@@ -29,13 +32,13 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
       <Card>
         <CardHeader>
           <CardTitle id="form-title" className="font-label text-xl">
-            {editing ? 'Editar serviço' : 'Novo serviço'}
+            {editing ? t('form.editTitle') : t('form.newTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <FieldGroup className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="service-name">Nome</FieldLabel>
+              <FieldLabel htmlFor="service-name">{t('form.name')}</FieldLabel>
               <Input
                 ref={nameRef}
                 id="service-name"
@@ -48,7 +51,7 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="service-url">URL</FieldLabel>
+              <FieldLabel htmlFor="service-url">{t('form.url')}</FieldLabel>
               <Input
                 id="service-url"
                 type="url"
@@ -61,7 +64,7 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="service-category">Categoria</FieldLabel>
+              <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>
               <Input
                 id="service-category"
                 required
@@ -70,7 +73,7 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
                 autoComplete="off"
                 value={value.category}
                 onChange={(e) => set({ category: e.target.value })}
-                placeholder="Mídia"
+                placeholder={t('form.categoryPlaceholder')}
               />
               <datalist id="categories">
                 {categories.map((c) => (
@@ -80,7 +83,8 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
             </Field>
             <Field>
               <FieldLabel htmlFor="service-description">
-                Descrição <small className="font-normal text-muted-foreground">opcional</small>
+                {t('form.description')}{' '}
+                <small className="font-normal text-muted-foreground">{t('common.optional')}</small>
               </FieldLabel>
               <Input
                 id="service-description"
@@ -88,20 +92,36 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
                 autoComplete="off"
                 value={value.description}
                 onChange={(e) => set({ description: e.target.value })}
-                placeholder="Filmes e séries"
+                placeholder={t('form.descriptionPlaceholder')}
               />
             </Field>
             <Field>
               <FieldLabel htmlFor="service-icon">
-                Ícone <small className="font-normal text-muted-foreground">emoji opcional</small>
+                {t('form.icon')}{' '}
+                <small className="font-normal text-muted-foreground">{t('form.iconHint')}</small>
               </FieldLabel>
-              <Input
-                id="service-icon"
-                maxLength={8}
-                value={value.icon ?? ''}
-                onChange={(e) => set({ icon: e.target.value })}
-                placeholder="🎬"
-              />
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary text-lg font-semibold"
+                >
+                  <ServiceIcon icon={value.icon} name={value.name || '?'} />
+                </span>
+                <Input
+                  id="service-icon"
+                  maxLength={ICON_MAX_LENGTH}
+                  list="icon-names"
+                  autoComplete="off"
+                  value={value.icon ?? ''}
+                  onChange={(e) => set({ icon: e.target.value })}
+                  placeholder={t('form.iconPlaceholder')}
+                />
+              </div>
+              <datalist id="icon-names">
+                {iconNames.map((name) => (
+                  <option key={name} value={`lucide:${name}`} />
+                ))}
+              </datalist>
             </Field>
             <Field orientation="horizontal" className="items-start sm:col-span-2">
               <Checkbox
@@ -110,13 +130,8 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
                 onCheckedChange={(checked) => set({ allowPrivate: checked === true })}
               />
               <div className="flex flex-col gap-1">
-                <FieldLabel htmlFor="service-private">
-                  Permitir monitoramento em rede privada
-                </FieldLabel>
-                <FieldDescription>
-                  Útil para endereços da sua rede local, como 192.168.x.x. Vale só para este
-                  serviço.
-                </FieldDescription>
+                <FieldLabel htmlFor="service-private">{t('form.allowPrivate')}</FieldLabel>
+                <FieldDescription>{t('form.allowPrivateHint')}</FieldDescription>
               </div>
             </Field>
           </FieldGroup>
@@ -124,10 +139,10 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
         </CardContent>
         <CardFooter className="justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={saving}>
-            {editing ? 'Salvar alterações' : 'Salvar serviço'}
+            {editing ? t('form.saveChanges') : t('form.saveService')}
           </Button>
         </CardFooter>
       </Card>

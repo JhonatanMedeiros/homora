@@ -1,4 +1,5 @@
 import type { IntegrationAdapter } from './integrations.js';
+import { InputError } from './api-error.js';
 
 // Credentials are supplied only by the backend and sent through the authorized
 // transport; this adapter intentionally exposes a single read-only entity state.
@@ -15,7 +16,7 @@ function validate(input: HomeAssistantConfig): HomeAssistantConfig {
   try {
     url = new URL(input.url);
   } catch {
-    throw new Error('Informe uma URL HTTPS válida.');
+    throw new InputError('https-url-required');
   }
   if (
     url.protocol !== 'https:' ||
@@ -25,20 +26,20 @@ function validate(input: HomeAssistantConfig): HomeAssistantConfig {
     url.search ||
     url.hash
   )
-    throw new Error('Informe uma origem HTTPS sem caminho ou credenciais.');
+    throw new InputError('https-url-required');
   if (
     typeof input.token !== 'string' ||
     !input.token ||
     input.token.length > 4096 ||
     !/^[\x21-\x7e]+$/.test(input.token)
   )
-    throw new Error('Informe um token válido.');
+    throw new InputError('invalid-token');
   if (
     typeof input.entityId !== 'string' ||
     !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(input.entityId) ||
     input.entityId.length > 255
   )
-    throw new Error('Informe um identificador de entidade válido.');
+    throw new InputError('invalid-entity');
   return { url: url.origin, token: input.token, entityId: input.entityId };
 }
 

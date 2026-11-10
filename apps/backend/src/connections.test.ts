@@ -80,7 +80,7 @@ it('protege credenciais de múltiplas integrações e preserva vínculos', async
       payload: { url: 'https://outro.example' },
     });
     expect(changed.statusCode).toBe(400);
-    expect(changed.body).toContain('segredo');
+    expect(changed.json().code).toBe('secret-required');
     expect(
       (
         await app.inject({

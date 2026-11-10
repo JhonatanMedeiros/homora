@@ -49,7 +49,7 @@ it('não guarda falhas nem retorna resposta antiga após invalidação concorren
   cache.invalidate();
   expect((await cache.collect(async () => 2)).data).toBe(2);
   finish(1);
-  await expect(old).rejects.toThrow('configuração mudou');
+  await expect(old).rejects.toMatchObject({ code: 'integration-changed' });
   expect((await cache.collect(async () => 3)).data).toBe(2);
 });
 

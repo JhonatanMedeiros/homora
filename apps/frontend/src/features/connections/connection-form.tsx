@@ -6,6 +6,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { emptyForm, labels, type ConnectionFormState, type Kind } from './connection-model';
 import { NativeSelect } from '@/components/native-select';
+import { t } from '@/i18n';
 
 type Props = {
   form: ConnectionFormState;
@@ -38,7 +39,7 @@ export function ConnectionForm({
         <CardContent>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="connection-type">Tipo de serviço</FieldLabel>
+              <FieldLabel htmlFor="connection-type">{t('connections.type')}</FieldLabel>
               <NativeSelect
                 id="connection-type"
                 value={form.type}
@@ -53,7 +54,7 @@ export function ConnectionForm({
               </NativeSelect>
             </Field>
             <Field>
-              <FieldLabel htmlFor="connection-name">Nome</FieldLabel>
+              <FieldLabel htmlFor="connection-name">{t('connections.name')}</FieldLabel>
               <Input
                 id="connection-name"
                 required
@@ -63,31 +64,31 @@ export function ConnectionForm({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="connection-url">URL do serviço</FieldLabel>
+              <FieldLabel htmlFor="connection-url">{t('connections.url')}</FieldLabel>
               <Input
                 id="connection-url"
                 type="url"
                 required
                 value={form.url}
-                placeholder="https://servico.exemplo:443"
+                placeholder={t('connections.urlPlaceholder')}
                 onChange={(event) => set({ url: event.target.value })}
               />
             </Field>
             {form.type === 'home-assistant' && (
               <Field>
-                <FieldLabel htmlFor="connection-entity">Entidade</FieldLabel>
+                <FieldLabel htmlFor="connection-entity">{t('connections.entity')}</FieldLabel>
                 <Input
                   id="connection-entity"
                   required
                   value={form.entityId}
-                  placeholder="sensor.temperatura"
+                  placeholder={t('connections.entityPlaceholder')}
                   onChange={(event) => set({ entityId: event.target.value })}
                 />
               </Field>
             )}
             {form.type === 'uptime-kuma' && (
               <Field>
-                <FieldLabel htmlFor="connection-slug">Identificador da página pública</FieldLabel>
+                <FieldLabel htmlFor="connection-slug">{t('connections.slug')}</FieldLabel>
                 <Input
                   id="connection-slug"
                   required
@@ -98,7 +99,7 @@ export function ConnectionForm({
             )}
             {form.type === 'adguard-home' && (
               <Field>
-                <FieldLabel htmlFor="connection-username">Usuário</FieldLabel>
+                <FieldLabel htmlFor="connection-username">{t('connections.username')}</FieldLabel>
                 <Input
                   id="connection-username"
                   required
@@ -111,7 +112,9 @@ export function ConnectionForm({
             {hasSecret && (
               <Field>
                 <FieldLabel htmlFor="connection-secret">
-                  {form.type === 'home-assistant' ? 'Token de acesso' : 'Senha'}
+                  {form.type === 'home-assistant'
+                    ? t('connections.accessToken')
+                    : t('connections.password')}
                 </FieldLabel>
                 <Input
                   id="connection-secret"
@@ -121,18 +124,11 @@ export function ConnectionForm({
                   value={form.secret}
                   onChange={(event) => set({ secret: event.target.value })}
                 />
-                {editing && (
-                  <FieldDescription>
-                    Deixe o segredo vazio para mantê-lo. Se alterar endereço ou usuário, informe-o
-                    novamente.
-                  </FieldDescription>
-                )}
+                {editing && <FieldDescription>{t('connections.keepSecret')}</FieldDescription>}
               </Field>
             )}
             <Field>
-              <FieldLabel htmlFor="connection-ca">
-                Certificado público da CA (opcional, PEM)
-              </FieldLabel>
+              <FieldLabel htmlFor="connection-ca">{t('connections.ca')}</FieldLabel>
               <Input
                 id="connection-ca"
                 type="file"
@@ -142,14 +138,14 @@ export function ConnectionForm({
                   set({ ca: '' });
                   if (!file) return;
                   if (file.size > 65536) {
-                    onCaError('O certificado deve ter no máximo 64 KB.');
+                    onCaError(t('connections.caTooLarge'));
                     event.target.value = '';
                     return;
                   }
                   void file
                     .text()
                     .then((ca) => onUpdate((current) => ({ ...current, ca, removeCa: false })))
-                    .catch(() => onCaError('Não foi possível ler o certificado.'));
+                    .catch(() => onCaError(t('connections.caReadFailed')));
                 }}
               />
             </Field>
@@ -160,7 +156,7 @@ export function ConnectionForm({
                   checked={form.removeCa}
                   onCheckedChange={(checked) => set({ removeCa: checked === true })}
                 />
-                <FieldLabel htmlFor="connection-remove-ca">Remover CA importada</FieldLabel>
+                <FieldLabel htmlFor="connection-remove-ca">{t('connections.removeCa')}</FieldLabel>
               </Field>
             )}
             <Field orientation="horizontal" className="items-start">
@@ -171,22 +167,19 @@ export function ConnectionForm({
               />
               <div className="flex flex-col gap-1">
                 <FieldLabel htmlFor="connection-private">
-                  Permitir acesso à rede privada para este serviço
+                  {t('connections.allowPrivate')}
                 </FieldLabel>
-                <FieldDescription>
-                  Autorize a rede privada somente para um endereço de sua confiança. Credenciais
-                  exigem HTTPS.
-                </FieldDescription>
+                <FieldDescription>{t('connections.allowPrivateHint')}</FieldDescription>
               </div>
             </Field>
           </FieldGroup>
         </CardContent>
         <CardFooter className="justify-end gap-2">
           <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>
-            Salvar conexão
+            {t('connections.save')}
           </Button>
         </CardFooter>
       </Card>

@@ -1,6 +1,6 @@
 # Plano de entrega
 
-Este documento registra a visão geral das fases. Para a sequência priorizada, o
+Este documento registra a visão geral das fases (checklist atualizado em 2026-11-10; a direção posterior está em [estratégia](estrategia.md)). Para a sequência priorizada, o
 estado atual e os critérios de conclusão de cada etapa, consulte o
 [plano de evolução](evolucao.md).
 
@@ -10,21 +10,26 @@ estado atual e os critérios de conclusão de cada etapa, consulte o
       [avaliação de produto e concorrência](avaliacao-produto.md); a hipótese de
       posicionamento ainda precisa ser validada com usuários.
 - [ ] Definir nome final, público e exemplos de uso; verificar disponibilidade do nome e marca.
-- [ ] Escolher stack, formato de distribuição e modelo de autenticação após protótipo técnico.
+- [x] Escolher stack (Fastify, React, SQLite), formato de distribuição (Docker
+      Compose) e modelo de autenticação (conta local) após protótipo técnico.
 
 ## Fase 1 — fundação
 
-- [ ] Criar estrutura do projeto, desenvolvimento local, formatação, análise estática e CI.
-- [ ] Implementar autenticação, persistência, migrações, backup e restauração.
-- [ ] Modelar serviços e grupos; criar interface responsiva e acessível.
-- [ ] Testar operações, persistência, acesso não autorizado e restauração.
+- [x] Criar estrutura do projeto, desenvolvimento local, formatação, análise estática e CI.
+- [x] Implementar autenticação, persistência, migrações, backup e restauração.
+- [ ] Modelar serviços e grupos (feito); interface responsiva e acessível (feita,
+      mas sem validação com leitor de tela e aparelho móvel real; ver P1).
+- [x] Testar operações, persistência, acesso não autorizado e restauração.
 
 ## Fase 2 — observabilidade e Proxmox
 
-- [ ] Implementar verificação periódica com limites, cache e indicação de atualização.
-- [ ] Criar adaptador Proxmox com token de leitura e validação TLS.
-- [ ] Exibir inventário e oferecer sugestões revisáveis, sem modificar infraestrutura.
-- [ ] Testar indisponibilidade, credenciais inválidas, permissões reduzidas e proteção de destinos.
+- [x] Implementar verificação periódica com limites, cache e indicação de atualização.
+- [ ] Criar adaptador Proxmox com token de leitura e validação TLS (implementado;
+      conexão com CA importada funcionou no ambiente do mantenedor, permissões
+      reduzidas e falhas ainda não validadas).
+- [ ] Exibir inventário (feito) e oferecer sugestões revisáveis (pendente), sem modificar infraestrutura.
+- [ ] Testar indisponibilidade, credenciais inválidas, permissões reduzidas e proteção de destinos
+      (proteção de destinos testada; o restante depende de Proxmox real).
 
 ## Fase 3 — MCP e aprovação
 

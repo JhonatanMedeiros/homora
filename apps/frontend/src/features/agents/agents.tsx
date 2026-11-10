@@ -14,6 +14,7 @@ import { parseDiff, type Agent, type Proposal } from './agent-model';
 import { NewAgentForm } from './new-agent-form';
 import { ProposalCard } from './proposal-card';
 import { TokenNotice } from './token-notice';
+import { t } from '@/i18n';
 
 export function Agents({
   services,
@@ -77,7 +78,7 @@ export function Agents({
       body: JSON.stringify({ name, scopes }),
     }).catch(() => null);
     if (!response?.ok) {
-      setMessage('Não foi possível criar a identidade. Confira o nome e tente de novo.');
+      setMessage(t('agents.createFailed'));
       return;
     }
     const result = (await response.json()) as { token: string };
@@ -89,7 +90,7 @@ export function Agents({
   async function rotate(id: string) {
     const response = await fetch(`/api/agents/${id}/rotate`, { method: 'POST' }).catch(() => null);
     if (!response?.ok) {
-      setMessage('Não foi possível gerar um novo token.');
+      setMessage(t('agents.rotateFailed'));
       return;
     }
     const result = (await response.json()) as { token: string };
@@ -104,7 +105,7 @@ export function Agents({
     }
     setRevoking(null);
     const response = await fetch(`/api/agents/${id}/revoke`, { method: 'POST' }).catch(() => null);
-    if (!response?.ok) setMessage('Não foi possível revogar a identidade.');
+    if (!response?.ok) setMessage(t('agents.revokeFailed'));
     else await load();
   }
   async function review(id: string, approve: boolean) {
@@ -114,11 +115,11 @@ export function Agents({
       body: JSON.stringify({ approve }),
     }).catch(() => null);
     if (response?.ok) {
-      setMessage(approve ? 'Proposta aprovada e aplicada.' : 'Proposta rejeitada.');
+      setMessage(approve ? t('agents.approved') : t('agents.rejected'));
       await load();
       await onApplied();
     } else {
-      setMessage('A proposta expirou ou a configuração mudou. Peça ao agente uma nova.');
+      setMessage(t('agents.reviewFailed'));
       await load();
     }
   }
@@ -127,7 +128,7 @@ export function Agents({
       await navigator.clipboard.writeText(token);
       setCopied(true);
     } catch {
-      setMessage('Não foi possível copiar. Selecione o token e copie manualmente.');
+      setMessage(t('agents.copyFailed'));
     }
   }
   function toggleScope(id: string, checked: boolean) {
@@ -138,7 +139,8 @@ export function Agents({
 
   const pending = (proposals ?? []).filter((proposal) => proposal.state === 'pending');
   const history = (proposals ?? []).filter((proposal) => proposal.state !== 'pending');
-  const agentName = (id: string) => agents?.find((agent) => agent.id === id)?.name ?? 'Agente';
+  const agentName = (id: string) =>
+    agents?.find((agent) => agent.id === id)?.name ?? t('agents.fallbackName');
 
   const renderProposal = (proposal: Proposal) => {
     const diff = parseDiff(proposal.diff);
@@ -154,13 +156,13 @@ export function Agents({
   };
 
   return (
-    <section aria-label="Agentes" className="flex flex-col gap-8">
+    <section aria-label={t('agents.title')} className="flex flex-col gap-8">
       <PageHeader
-        title="Agentes"
-        description="Um agente consulta o seu painel e sugere mudanças. Você revisa cada sugestão antes de ela valer."
+        title={t('agents.title')}
+        description={t('agents.description')}
         actions={
           <Button type="button" variant="outline" onClick={() => void load()}>
-            Atualizar
+            {t('agents.refresh')}
           </Button>
         }
       />
@@ -173,29 +175,23 @@ export function Agents({
       </div>
       {loadFailed && (
         <Alert variant="destructive">
-          <AlertDescription>
-            Não foi possível carregar os agentes. Verifique se o servidor está ativo e use
-            Atualizar.
-          </AlertDescription>
+          <AlertDescription>{t('agents.loadFailed')}</AlertDescription>
         </Alert>
       )}
 
       <section aria-labelledby="proposals-title" className="flex flex-col gap-3">
         <SectionTitle id="proposals-title" count={pending.length || undefined}>
-          Propostas
+          {t('agents.proposals')}
         </SectionTitle>
         {proposals === null ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Spinner />
-            Carregando...
+            {t('common.loading')}
           </p>
         ) : pending.length === 0 ? (
           <Empty className="border border-dashed py-8">
             <EmptyHeader>
-              <EmptyDescription>
-                Nenhuma proposta esperando por você. Quando um agente sugerir uma mudança, ela
-                aparece aqui.
-              </EmptyDescription>
+              <EmptyDescription>{t('agents.noProposals')}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -205,7 +201,7 @@ export function Agents({
           <Collapsible className="flex flex-col gap-3">
             <CollapsibleTrigger asChild>
               <Button type="button" variant="ghost" className="w-fit">
-                Histórico ({history.length})
+                {t('agents.history', { count: history.length })}
                 <ChevronDown data-icon="inline-end" />
               </Button>
             </CollapsibleTrigger>
@@ -217,10 +213,8 @@ export function Agents({
       </section>
 
       <section aria-labelledby="identities-title" className="flex flex-col gap-3">
-        <SectionTitle id="identities-title">Identidades</SectionTitle>
-        <p className="text-sm text-muted-foreground">
-          Cada agente entra com um token próprio e só enxerga o que você permitir abaixo.
-        </p>
+        <SectionTitle id="identities-title">{t('agents.identities')}</SectionTitle>
+        <p className="text-sm text-muted-foreground">{t('agents.identitiesHint')}</p>
         {token && (
           <TokenNotice
             token={token}
@@ -236,7 +230,7 @@ export function Agents({
           onRevoke={(id) => void revoke(id)}
           onRevokeBlur={(id) => setRevoking((current) => (current === id ? null : current))}
         />
-        {agents?.length === 0 && <EmptyNote>Nenhuma identidade criada ainda.</EmptyNote>}
+        {agents?.length === 0 && <EmptyNote>{t('agents.noIdentities')}</EmptyNote>}
         <NewAgentForm
           defaultOpen={agents !== null && agents.length === 0}
           name={name}

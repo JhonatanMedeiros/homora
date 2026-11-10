@@ -9,14 +9,13 @@ import {
   refreshQuerySchema,
   updateConnectionSchema,
 } from '../input-schemas.js';
+import { InputError, errorBody } from '../api-error.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
 
 function connectionInputError(error: unknown) {
-  return error instanceof Error && /^(Informe|Certificado|Dados|Tipo)/.test(error.message)
-    ? error.message
-    : 'Não foi possível salvar a integração.';
+  return errorBody(error instanceof InputError ? error.code : 'integration-save-failed');
 }
 
 export function registerConnectionRoutes(app: FastifyInstance, db: Db, vault?: Vault) {
@@ -27,53 +26,49 @@ export function registerConnectionRoutes(app: FastifyInstance, db: Db, vault?: V
 
   app.post('/api/widgets', async (request, reply) => {
     const parsed = createWidgetSchema.safeParse(request.body);
-    if (!parsed.success)
-      return reply.code(400).send({ error: 'Informe integração e nome válidos.' });
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-widget'));
     const widget = await connections.createWidget(parsed.data.integrationId, parsed.data.name);
-    if (!widget) return reply.code(404).send({ error: 'Integração não encontrada.' });
+    if (!widget) return reply.code(404).send(errorBody('integration-not-found'));
     return reply.code(201).send(widget);
   });
 
   app.delete<{ Params: { id: string } }>('/api/widgets/:id', async (request, reply) => {
     const id = parseId(request.params.id);
-    if (id === null) return reply.code(404).send({ error: 'Widget não encontrado.' });
+    if (id === null) return reply.code(404).send(errorBody('widget-not-found'));
     return (await connections.deleteWidget(id))
       ? { ok: true }
-      : reply.code(404).send({ error: 'Widget não encontrado.' });
+      : reply.code(404).send(errorBody('widget-not-found'));
   });
 
   app.post('/api/connections', async (request, reply) => {
     const parsed = createConnectionSchema.safeParse(request.body);
-    if (!parsed.success) return reply.code(400).send({ error: 'Dados inválidos.' });
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
     try {
       return reply.code(201).send(await connections.createConnection(parsed.data));
     } catch (error) {
-      return reply.code(400).send({ error: connectionInputError(error) });
+      return reply.code(400).send(connectionInputError(error));
     }
   });
 
   app.put<{ Params: { id: string } }>('/api/connections/:id', async (request, reply) => {
     const id = parseId(request.params.id);
-    if (id === null) return reply.code(404).send({ error: 'Integração não encontrada.' });
+    if (id === null) return reply.code(404).send(errorBody('integration-not-found'));
     const parsed = updateConnectionSchema.safeParse(request.body);
-    if (!parsed.success) return reply.code(400).send({ error: 'Dados inválidos.' });
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
     try {
       const updated = await connections.updateConnection(id, parsed.data);
-      return updated ?? reply.code(404).send({ error: 'Integração não encontrada.' });
+      return updated ?? reply.code(404).send(errorBody('integration-not-found'));
     } catch (error) {
-      return reply.code(400).send({ error: connectionInputError(error) });
+      return reply.code(400).send(connectionInputError(error));
     }
   });
 
   app.delete<{ Params: { id: string } }>('/api/connections/:id', async (request, reply) => {
     const id = parseId(request.params.id);
-    if (id === null) return reply.code(404).send({ error: 'Integração não encontrada.' });
+    if (id === null) return reply.code(404).send(errorBody('integration-not-found'));
     const result = await connections.deleteConnection(id);
-    if (result === 'missing') return reply.code(404).send({ error: 'Integração não encontrada.' });
-    if (result === 'has-widgets')
-      return reply
-        .code(409)
-        .send({ error: 'Remova os widgets vinculados antes de excluir a integração.' });
+    if (result === 'missing') return reply.code(404).send(errorBody('integration-not-found'));
+    if (result === 'has-widgets') return reply.code(409).send(errorBody('integration-has-widgets'));
     return { ok: true };
   });
 
@@ -81,32 +76,27 @@ export function registerConnectionRoutes(app: FastifyInstance, db: Db, vault?: V
     '/api/connections/:id/data',
     async (request, reply) => {
       const id = parseId(request.params.id);
-      if (id === null) return reply.code(404).send({ error: 'Integração não encontrada.' });
+      if (id === null) return reply.code(404).send(errorBody('integration-not-found'));
       const query = refreshQuerySchema.safeParse(request.query);
-      if (!query.success) return reply.code(400).send({ error: 'Consulta inválida.' });
+      if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
       try {
         const result = await connections.connectionData(id, query.data.refresh === 'true');
-        return result ?? reply.code(404).send({ error: 'Integração não encontrada.' });
+        return result ?? reply.code(404).send(errorBody('integration-not-found'));
       } catch {
-        return reply.code(502).send({
-          error:
-            'Não foi possível consultar a integração. Verifique conexão, permissões e certificado.',
-        });
+        return reply.code(502).send(errorBody('integration-query-failed'));
       }
     },
   );
 
   app.post<{ Params: { id: string } }>('/api/connections/:id/test', async (request, reply) => {
     const id = parseId(request.params.id);
-    if (id === null) return reply.code(404).send({ error: 'Integração não encontrada.' });
+    if (id === null) return reply.code(404).send(errorBody('integration-not-found'));
     try {
       return (await connections.testConnection(id))
         ? { ok: true }
-        : reply.code(404).send({ error: 'Integração não encontrada.' });
+        : reply.code(404).send(errorBody('integration-not-found'));
     } catch {
-      return reply.code(502).send({
-        error: 'Não foi possível testar a integração. Verifique conexão, permissões e certificado.',
-      });
+      return reply.code(502).send(errorBody('integration-test-failed'));
     }
   });
 }

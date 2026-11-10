@@ -1,4 +1,5 @@
 import type { ServiceInput } from '@homora/shared';
+import { formatDateTime } from '@/i18n';
 
 export const emptyService: ServiceInput = {
   name: '',
@@ -34,10 +35,7 @@ export function isPrivateHost(url: string) {
   return host === '::1' || /^f[cd][0-9a-f]{2}:/.test(host) || /^fe80:/.test(host);
 }
 
-export const formatAttempt = (iso: string) =>
-  new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
-    new Date(iso),
-  );
+export const formatAttempt = formatDateTime;
 
 export const byPosition = <T extends { position?: number }>(a: T, b: T) =>
   (a.position ?? 0) - (b.position ?? 0);

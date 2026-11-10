@@ -1,4 +1,5 @@
 import type { IntegrationAdapter } from './integrations.js';
+import { InputError } from './api-error.js';
 
 export type JellyfinConfig = { url: string };
 export type JellyfinSummary = { name: string; version: string };
@@ -9,12 +10,12 @@ type Transport = (request: {
 
 function validate(config: JellyfinConfig): JellyfinConfig {
   if (!config || typeof config.url !== 'string' || config.url.length > 2048)
-    throw new Error('Informe uma URL válida para o Jellyfin.');
+    throw new InputError('invalid-url');
   let url: URL;
   try {
     url = new URL(config.url);
   } catch {
-    throw new Error('Informe uma URL válida para o Jellyfin.');
+    throw new InputError('invalid-url');
   }
   if (
     !['http:', 'https:'].includes(url.protocol) ||
@@ -23,7 +24,7 @@ function validate(config: JellyfinConfig): JellyfinConfig {
     url.search ||
     url.hash
   )
-    throw new Error('Informe uma URL HTTP ou HTTPS sem credenciais, parâmetros ou fragmento.');
+    throw new InputError('invalid-url');
   return { url: url.toString().replace(/\/+$/, '') };
 }
 

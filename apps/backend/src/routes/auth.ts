@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { createAuth } from '../auth.js';
 import { loginPasswordSchema, passwordSchema } from '../input-schemas.js';
+import { errorBody } from '../api-error.js';
 
 type Auth = ReturnType<typeof createAuth>;
 
@@ -10,28 +11,21 @@ export function registerAuthRoutes(app: FastifyInstance, auth: Auth) {
     authenticated: auth.authorized(request.headers.cookie),
   }));
   app.post('/api/auth/setup', async (request, reply) => {
-    if (auth.configured()) return reply.code(403).send({ error: 'Conta já configurada.' });
+    if (auth.configured()) return reply.code(403).send(errorBody('account-exists'));
     const parsed = passwordSchema.safeParse(request.body);
-    if (!parsed.success)
-      return reply.code(400).send({
-        error: 'Não foi possível criar a conta. Use uma senha com pelo menos 8 caracteres.',
-      });
+    if (!parsed.success) return reply.code(400).send(errorBody('account-setup-failed'));
     try {
       auth.setup(parsed.data.password);
       return reply.code(201).send({ ok: true });
     } catch {
-      return reply.code(400).send({
-        error: 'Não foi possível criar a conta. Use uma senha com pelo menos 8 caracteres.',
-      });
+      return reply.code(400).send(errorBody('account-setup-failed'));
     }
   });
   app.post('/api/auth/login', async (request, reply) => {
     const parsed = loginPasswordSchema.safeParse(request.body);
-    if (!parsed.success)
-      return reply.code(401).send({ error: 'Credenciais inválidas ou tentativas excedidas.' });
+    if (!parsed.success) return reply.code(401).send(errorBody('invalid-login'));
     const token = auth.login(parsed.data.password, request.ip);
-    if (!token)
-      return reply.code(401).send({ error: 'Credenciais inválidas ou tentativas excedidas.' });
+    if (!token) return reply.code(401).send(errorBody('invalid-login'));
     return reply
       .header(
         'Set-Cookie',

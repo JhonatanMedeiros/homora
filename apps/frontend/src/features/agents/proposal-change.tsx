@@ -2,23 +2,25 @@ import { ArrowRight } from 'lucide-react';
 import type { Service } from '@homora/shared';
 import { cn } from '@/lib/utils';
 import { FIELDS, type Diff } from './agent-model';
+import { t } from '@/i18n';
 
 /** Mudança proposta em linguagem clara: título da operação e campo a campo, antes e depois. */
 export function ProposalChange({ diff, current }: { diff: Diff; current?: Service }) {
   const name = diff.service?.name ?? current?.name;
+  const fallback = t('proposal.serviceNumber', { id: diff.id ?? '' });
   const title =
     diff.op === 'create'
-      ? `Adicionar “${name ?? 'novo serviço'}”`
+      ? t('proposal.add', { name: name ?? t('proposal.newService') })
       : diff.op === 'update'
-        ? `Alterar “${current?.name ?? name ?? `serviço nº ${diff.id}`}”`
+        ? t('proposal.update', { name: current?.name ?? name ?? fallback })
         : diff.op === 'delete'
-          ? `Remover “${current?.name ?? `serviço nº ${diff.id}`}”`
-          : 'Alteração desconhecida';
+          ? t('proposal.remove', { name: current?.name ?? fallback })
+          : t('proposal.unknown');
   const after = diff.service;
   const rows = FIELDS.map(([key, label]) => {
     const before = current?.[key as keyof Service] as string | undefined;
     const next = after?.[key];
-    return { key, label, before: before || '', next: next || '' };
+    return { key, label: t(label), before: before || '', next: next || '' };
   });
   const changed = rows.filter((row) =>
     diff.op === 'update' ? row.next !== row.before : diff.op === 'create' ? row.next : row.before,
@@ -29,7 +31,7 @@ export function ProposalChange({ diff, current }: { diff: Diff; current?: Servic
     <div className="flex flex-col gap-3">
       <p className="font-label text-lg font-semibold">{title}</p>
       {diff.op === 'delete' && !current && (
-        <p className="text-sm text-muted-foreground">Este serviço não está mais no painel.</p>
+        <p className="text-sm text-muted-foreground">{t('proposal.gone')}</p>
       )}
       {changed.length > 0 && (
         <dl className="flex flex-col gap-3">
@@ -41,16 +43,16 @@ export function ProposalChange({ diff, current }: { diff: Diff; current?: Servic
               {diff.op === 'update' ? (
                 <dd className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
                   <span className="flex min-w-0 flex-col rounded-md border bg-muted px-3 py-2 break-words">
-                    <small className="text-xs text-muted-foreground">Antes</small>
-                    {row.before || '(vazio)'}
+                    <small className="text-xs text-muted-foreground">{t('proposal.before')}</small>
+                    {row.before || t('proposal.empty')}
                   </span>
                   <ArrowRight
                     aria-hidden="true"
                     className="hidden size-4 text-muted-foreground sm:block"
                   />
                   <span className="flex min-w-0 flex-col rounded-md border border-primary bg-card px-3 py-2 break-words">
-                    <small className="text-xs text-muted-foreground">Depois</small>
-                    {row.next || '(vazio)'}
+                    <small className="text-xs text-muted-foreground">{t('proposal.after')}</small>
+                    {row.next || t('proposal.empty')}
                   </span>
                 </dd>
               ) : (
@@ -69,7 +71,7 @@ export function ProposalChange({ diff, current }: { diff: Diff; current?: Servic
       )}
       {unchanged > 0 && (
         <p className="text-sm text-muted-foreground">
-          {unchanged === 1 ? '1 campo continua igual.' : `${unchanged} campos continuam iguais.`}
+          {t('proposal.unchanged', { count: unchanged })}
         </p>
       )}
     </div>

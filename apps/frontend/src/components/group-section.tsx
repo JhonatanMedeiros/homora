@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SectionTitle } from '@/components/section-title';
+import { t } from '@/i18n';
 
 type Props = {
   category: string;
@@ -45,10 +46,10 @@ export function GroupSection({
                     variant="ghost"
                     size="sm"
                     data-group-edit={groupId}
-                    aria-label={`Renomear grupo ${category}`}
+                    aria-label={t('group.renameAria', { name: category })}
                     onClick={onRename}
                   >
-                    Renomear
+                    {t('common.rename')}
                   </Button>
                   {canRemove && (
                     <Button
@@ -56,10 +57,10 @@ export function GroupSection({
                       variant="ghost"
                       size="sm"
                       className="text-destructive hover:text-destructive"
-                      aria-label={`Remover grupo ${category}`}
+                      aria-label={t('group.removeAria', { name: category })}
                       onClick={onRemove}
                     >
-                      Remover
+                      {t('common.remove')}
                     </Button>
                   )}
                 </>
@@ -68,7 +69,7 @@ export function GroupSection({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label={`Mover grupo ${category} para cima`}
+                aria-label={t('group.moveUp', { name: category })}
                 onClick={() => onMove(-1)}
               >
                 <ArrowUp />
@@ -77,7 +78,7 @@ export function GroupSection({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label={`Mover grupo ${category} para baixo`}
+                aria-label={t('group.moveDown', { name: category })}
                 onClick={() => onMove(1)}
               >
                 <ArrowDown />
@@ -88,9 +89,7 @@ export function GroupSection({
       >
         {category}
       </SectionTitle>
-      {count === 0 && (
-        <p className="text-sm text-muted-foreground">Este grupo ainda não tem cards.</p>
-      )}
+      {count === 0 && <p className="text-sm text-muted-foreground">{t('group.empty')}</p>}
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{children}</ul>
     </section>
   );

@@ -15,6 +15,7 @@ import { ConnectionMark } from './connection-mark';
 import { describeData, labels, type Connection, type IntegrationWidget } from './connection-model';
 import { EmptyNote } from '@/components/empty-note';
 import { NativeSelect } from '@/components/native-select';
+import { t } from '@/i18n';
 
 type Props = {
   items: Connection[] | null;
@@ -49,16 +50,13 @@ export function WidgetsSection({
 }: Props) {
   return (
     <section aria-labelledby="integration-widgets-title" className="flex flex-col gap-3">
-      <SectionTitle id="integration-widgets-title">Widgets</SectionTitle>
-      <p className="text-sm text-muted-foreground">
-        Atalhos para informações importantes das suas conexões. Os dados são fornecidos pelo serviço
-        conectado.
-      </p>
+      <SectionTitle id="integration-widgets-title">{t('widgets.title')}</SectionTitle>
+      <p className="text-sm text-muted-foreground">{t('widgets.description')}</p>
       {items && items.length > 0 && (
         <form onSubmit={onCreate}>
           <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <Field>
-              <FieldLabel htmlFor="widget-connection">Conexão</FieldLabel>
+              <FieldLabel htmlFor="widget-connection">{t('widgets.connection')}</FieldLabel>
               <NativeSelect
                 id="widget-connection"
                 required
@@ -73,7 +71,7 @@ export function WidgetsSection({
               </NativeSelect>
             </Field>
             <Field>
-              <FieldLabel htmlFor="widget-name">Nome do widget</FieldLabel>
+              <FieldLabel htmlFor="widget-name">{t('widgets.name')}</FieldLabel>
               <Input
                 id="widget-name"
                 required
@@ -83,13 +81,13 @@ export function WidgetsSection({
               />
             </Field>
             <Button type="submit" disabled={busy}>
-              Criar widget
+              {t('widgets.create')}
             </Button>
           </FieldGroup>
         </form>
       )}
       {widgets.length === 0 ? (
-        <EmptyNote>Nenhum widget cadastrado ainda.</EmptyNote>
+        <EmptyNote>{t('widgets.empty')}</EmptyNote>
       ) : (
         <ul className="flex flex-col gap-2">
           {widgets.map((widget) => {
@@ -115,7 +113,7 @@ export function WidgetsSection({
                       disabled={busy || !connection}
                       onClick={() => onQuery(widget)}
                     >
-                      Consultar {widget.name}
+                      {t('connections.query', { name: widget.name })}
                     </Button>
                     <Button
                       type="button"
@@ -124,19 +122,18 @@ export function WidgetsSection({
                       disabled={busy}
                       aria-label={
                         confirmingThis
-                          ? `Confirmar remoção do widget ${widget.name}`
-                          : `Remover widget ${widget.name}`
+                          ? t('widgets.confirmRemoveAria', { name: widget.name })
+                          : t('widgets.removeAria', { name: widget.name })
                       }
                       onClick={() => onRemove(widget)}
                       onBlur={() => onCancelRemoval(widget)}
                     >
-                      {confirmingThis ? 'Confirmar remoção' : 'Remover'}
+                      {confirmingThis ? t('card.confirmRemoveShort') : t('common.remove')}
                     </Button>
                   </ItemActions>
                   {widgetResult?.id === widget.id && (
                     <p className="w-full rounded-md bg-muted px-3 py-2 font-mono text-[0.8125rem]">
-                      {describeData(widget.type, widgetResult.data) ??
-                        'O serviço retornou dados inválidos.'}
+                      {describeData(widget.type, widgetResult.data) ?? t('connections.invalidData')}
                     </p>
                   )}
                 </Item>
