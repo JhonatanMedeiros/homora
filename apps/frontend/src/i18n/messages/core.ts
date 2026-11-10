@@ -63,6 +63,10 @@ export const en = {
   'group.moveUp': 'Move group {name} up',
   'group.moveDown': 'Move group {name} down',
   'group.empty': 'This group has no cards yet.',
+  'group.columnsAria': 'Columns for group {name}',
+  'group.columnsAuto': 'Auto columns',
+  'group.columnsCount': '{count} columns',
+  'group.columnsCount_one': '{count} column',
   'health.label': 'Availability summary',
   'health.down': '{count} down',
   'health.allUp': 'All up here',
@@ -148,6 +152,7 @@ export const en = {
   'error.loadServices': 'Could not load services. Check that the server is running.',
   'error.saveCardOrder': 'Could not save the card order.',
   'error.saveGroupOrder': 'Could not save the group order.',
+  'error.saveColumns': 'Could not save the number of columns.',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -213,6 +218,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'group.moveUp': 'Mover grupo {name} para cima',
   'group.moveDown': 'Mover grupo {name} para baixo',
   'group.empty': 'Este grupo ainda não tem cards.',
+  'group.columnsAria': 'Colunas do grupo {name}',
+  'group.columnsAuto': 'Colunas automáticas',
+  'group.columnsCount': '{count} colunas',
+  'group.columnsCount_one': '{count} coluna',
   'health.label': 'Resumo de disponibilidade',
   'health.down': '{count} fora do ar',
   'health.allUp': 'Tudo no ar por aqui',
@@ -298,4 +307,5 @@ export const ptBR: Record<keyof typeof en, string> = {
     'Não foi possível carregar os serviços. Verifique se o servidor está ativo.',
   'error.saveCardOrder': 'Não foi possível salvar a ordem dos cards.',
   'error.saveGroupOrder': 'Não foi possível salvar a ordem dos grupos.',
+  'error.saveColumns': 'Não foi possível salvar o número de colunas.',
 };

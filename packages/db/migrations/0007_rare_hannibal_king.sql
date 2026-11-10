@@ -1,0 +1,1 @@
+ALTER TABLE `service_groups` ADD `columns` integer;

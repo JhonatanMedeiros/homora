@@ -11,6 +11,7 @@ export type IssueCode =
   | 'icon-ignored'
   | 'duplicate-in-file'
   | 'icon-unsupported'
+  | 'columns-ignored'
   | 'widget-ignored'
   | 'pages-ignored'
   | 'group-renamed';

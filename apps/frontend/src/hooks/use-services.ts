@@ -138,11 +138,10 @@ export function useServices() {
     if (to < 0 || to >= ordered.length) return null;
     [ordered[from], ordered[to]] = [ordered[to], ordered[from]];
     setGroupRows(
-      ordered.map((name, position) => ({
-        id: groupRows.find((group) => group.name === name)?.id ?? -1,
-        name,
-        position,
-      })),
+      ordered.map((name, position) => {
+        const row = groupRows.find((group) => group.name === name);
+        return { id: row?.id ?? -1, name, position, columns: row?.columns ?? null };
+      }),
     );
     try {
       const response = await fetch('/api/groups/order', {
@@ -155,6 +154,23 @@ export function useServices() {
     } catch {
       void refresh();
       return t('error.saveGroupOrder');
+    }
+  }
+
+  async function setGroupColumns(id: number, columns: number | null): Promise<string | null> {
+    const before = groupRows;
+    setGroupRows((rows) => rows.map((row) => (row.id === id ? { ...row, columns } : row)));
+    try {
+      const response = await fetch(`/api/groups/${id}/columns`, {
+        method: 'PUT',
+        headers: json,
+        body: JSON.stringify({ columns }),
+      });
+      if (!response.ok) throw Error();
+      return null;
+    } catch {
+      setGroupRows(before);
+      return t('error.saveColumns');
     }
   }
 
@@ -171,5 +187,6 @@ export function useServices() {
     refresh,
     placeService,
     moveGroup,
+    setGroupColumns,
   };
 }

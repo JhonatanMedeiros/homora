@@ -135,19 +135,19 @@ resultado visual; **não** foi possível conhecer a configuração por trás del
 então a lista abaixo é inferida e deve ser conferida com o `services.yaml` e
 o `widgets.yaml` reais antes de virar escopo.
 
-| O que a página tem                                                     | Situação no Homora                                             | Fase |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------- | ---- |
-| Grupos de cards com descrição e busca                                  | Existe                                                         | —    |
-| Status de disponibilidade por serviço                                  | Existe; estados semânticos pendentes                           | R1   |
-| Dados do serviço dentro do card (VMs, LXC, CPU, MEM, consultas, sites) | Não: os widgets ficam numa área separada da página Integrações | R1   |
-| Logos de marca por nome (Proxmox, Portainer, Vaultwarden…)             | Não: só emoji, `lucide:` genérico e URL                        | R1   |
-| Colunas com larguras diferentes                                        | Não: grade fixa, com modo compacto                             | R1   |
-| Faixa superior com CPU, memória, disco, data e hora                    | Não                                                            | R1   |
-| Integrações Proxmox, Uptime Kuma, AdGuard, Home Assistant              | Existem (somente leitura, validadas só com mocks)              | R2   |
-| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest  | Não existem                                                    | R2   |
-| Imagem de fundo, cards translúcidos, cores                             | Não                                                            | R3   |
-| Busca que abre um buscador web (botão "G")                             | Não: a busca só filtra os cards                                | R3   |
-| Importar o `services.yaml`                                             | Existe, mas sem widgets                                        | R0   |
+| O que a página tem                                                     | Situação no Homora                                                  | Fase |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------- | ---- |
+| Grupos de cards com descrição e busca                                  | Existe                                                              | —    |
+| Status de disponibilidade por serviço                                  | Existe; estados semânticos pendentes                                | R1   |
+| Dados do serviço dentro do card (VMs, LXC, CPU, MEM, consultas, sites) | Não: os widgets ficam numa área separada da página Integrações      | R1   |
+| Logos de marca por nome (Proxmox, Portainer, Vaultwarden…)             | Não: só emoji, `lucide:` genérico e URL                             | R1   |
+| Colunas com larguras diferentes                                        | Parcial: número de colunas por grupo; cards com larguras livres não | R1   |
+| Faixa superior com CPU, memória, disco, data e hora                    | Não                                                                 | R1   |
+| Integrações Proxmox, Uptime Kuma, AdGuard, Home Assistant              | Existem (somente leitura, validadas só com mocks)                   | R2   |
+| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest  | Não existem                                                         | R2   |
+| Imagem de fundo, cards translúcidos, cores                             | Não                                                                 | R3   |
+| Busca que abre um buscador web (botão "G")                             | Não: a busca só filtra os cards                                     | R3   |
+| Importar o `services.yaml`                                             | Existe, mas sem widgets                                             | R0   |
 
 Ordem sugerida, do que mais muda a percepção ao que mais custa:
 
