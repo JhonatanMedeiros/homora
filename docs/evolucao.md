@@ -157,8 +157,10 @@ infraestrutura foi acessada.
   adaptadores. Conexões e consultas MCP resolvem os adaptadores pelo mesmo
   registro; Proxmox continua com armazenamento de credenciais legado e política
   de transporte própria.
-- `pnpm type-check` passou. Lint, formatação global e testes não foram
-  executados nesta mudança; a validação de comportamento fica pendente no CI/PR.
+- `pnpm lint`, `pnpm format:check`, `pnpm type-check` e `pnpm build` passaram
+  após excluir os arquivos de skills vendorizadas dos verificadores. A suíte de
+  testes não foi executada localmente; a validação de comportamento permanece
+  pendente no CI/PR.
 
 ## P5 — Preparar publicação open source
 
