@@ -340,7 +340,14 @@ com o projeto usando a documentação disponível.
   serviço persistido e carregou/salvou novamente configuração Proxmox cifrada
   com chave e CA sintéticas, sem realizar conexão externa. Containers e
   diretório temporário foram removidos.
+- Repetição final após P4, no commit `158a4ad`: upgrade da versão base
+  `f66c3ef` para o branch integrado preservou o serviço sintético, incluindo
+  `icon`, `position` e `allowPrivate: false`; foram confirmadas as seis
+  migrações e as quatro tabelas novas de agentes/propostas/auditoria. A
+  restauração em outro caminho autenticou, reconheceu a configuração Proxmox
+  com CA e recarregou/salvou os dados cifrados sem chamadas de rede. O teste
+  usou projeto/volume Compose, containers, imagens e portas loopback temporários;
+  todos foram removidos ao final.
 - Nenhum banco real, caminho `data/` ou serviço real foi acessado. Os relatórios
   e logs redigidos dessas execuções ficaram em `/tmp` e não foram adicionados ao
-  repositório. A validação cobre os commits até `04fb017`; repetir upgrade e
-  restauração após P4 antes da PR final.
+  repositório.
