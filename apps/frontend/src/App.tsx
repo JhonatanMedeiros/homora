@@ -50,8 +50,12 @@ function Dashboard({
   managing,
   form = null,
   valid = true,
+  token,
+  setToken,
 }: {
   onLogout: () => void;
+  token: string;
+  setToken: (token: string) => void;
   tab: Tab;
   managing: boolean;
   form?: 'new' | number | null;
@@ -146,24 +150,70 @@ function Dashboard({
       )}
       {managing && tab === 'integrations' && <IntegrationsPage />}
       {managing && tab === 'settings' && <SettingsPage onImported={data.refresh} />}
-      {managing && tab === 'agents' && <Agents services={data.services} onApplied={data.refresh} />}
+      {managing && tab === 'agents' && (
+        <Agents
+          services={data.services}
+          onApplied={data.refresh}
+          token={token}
+          setToken={setToken}
+        />
+      )}
     </AppShell>
   );
 }
 
-function EditServiceRoute({ onLogout }: { onLogout: () => void }) {
+function EditServiceRoute({
+  onLogout,
+  token,
+  setToken,
+}: {
+  onLogout: () => void;
+  token: string;
+  setToken: (token: string) => void;
+}) {
   const { id } = useParams();
   const number = Number(id);
   if (!id || !/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(number))
-    return <Dashboard onLogout={onLogout} tab="services" managing={false} valid={false} />;
-  return <Dashboard onLogout={onLogout} tab="services" managing form={number} />;
+    return (
+      <Dashboard
+        token={token}
+        setToken={setToken}
+        onLogout={onLogout}
+        tab="services"
+        managing={false}
+        valid={false}
+      />
+    );
+  return (
+    <Dashboard
+      token={token}
+      setToken={setToken}
+      onLogout={onLogout}
+      tab="services"
+      managing
+      form={number}
+    />
+  );
 }
 
 function AppRoutes() {
   const { status, error, submit, logout } = useAuth();
+  const [token, setToken] = useState('');
+  useEffect(() => {
+    if (!token) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [token]);
   const { locale } = useI18n();
   const location = useLocation();
-  const onLogout = () => void logout();
+  const onLogout = () => {
+    if (token && !window.confirm(t('token.leaveWarning'))) return;
+    setToken('');
+    void logout();
+  };
   if (!status) return <AuthPage status={status} error={error} onSubmit={submit} />;
   if (!status.authenticated) {
     if (location.pathname !== '/login')
@@ -184,36 +234,94 @@ function AppRoutes() {
       <Routes>
         <Route
           path="/"
-          element={<Dashboard onLogout={onLogout} tab="services" managing={false} />}
+          element={
+            <Dashboard
+              token={token}
+              setToken={setToken}
+              onLogout={onLogout}
+              tab="services"
+              managing={false}
+            />
+          }
         />
         <Route path="/manage" element={<Navigate replace to="/manage/services" />} />
         <Route
           path="/manage/services"
-          element={<Dashboard onLogout={onLogout} tab="services" managing />}
+          element={
+            <Dashboard
+              token={token}
+              setToken={setToken}
+              onLogout={onLogout}
+              tab="services"
+              managing
+            />
+          }
         />
         <Route
           path="/manage/services/new"
-          element={<Dashboard onLogout={onLogout} tab="services" managing form="new" />}
+          element={
+            <Dashboard
+              token={token}
+              setToken={setToken}
+              onLogout={onLogout}
+              tab="services"
+              managing
+              form="new"
+            />
+          }
         />
         <Route
           path="/manage/services/:id/edit"
-          element={<EditServiceRoute onLogout={onLogout} />}
+          element={<EditServiceRoute onLogout={onLogout} token={token} setToken={setToken} />}
         />
         <Route
           path="/manage/integrations"
-          element={<Dashboard onLogout={onLogout} tab="integrations" managing />}
+          element={
+            <Dashboard
+              token={token}
+              setToken={setToken}
+              onLogout={onLogout}
+              tab="integrations"
+              managing
+            />
+          }
         />
         <Route
           path="/manage/agents"
-          element={<Dashboard onLogout={onLogout} tab="agents" managing />}
+          element={
+            <Dashboard
+              token={token}
+              setToken={setToken}
+              onLogout={onLogout}
+              tab="agents"
+              managing
+            />
+          }
         />
         <Route
           path="/manage/settings"
-          element={<Dashboard onLogout={onLogout} tab="settings" managing />}
+          element={
+            <Dashboard
+              token={token}
+              setToken={setToken}
+              onLogout={onLogout}
+              tab="settings"
+              managing
+            />
+          }
         />
         <Route
           path="*"
-          element={<Dashboard onLogout={onLogout} tab="services" managing={false} valid={false} />}
+          element={
+            <Dashboard
+              token={token}
+              setToken={setToken}
+              onLogout={onLogout}
+              tab="services"
+              managing={false}
+              valid={false}
+            />
+          }
         />
       </Routes>
     </Fragment>

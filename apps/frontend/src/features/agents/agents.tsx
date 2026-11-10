@@ -19,15 +19,18 @@ import { t } from '@/i18n';
 export function Agents({
   services,
   onApplied,
+  token,
+  setToken,
 }: {
   services: Service[];
   onApplied: () => void | Promise<void>;
+  token: string;
+  setToken: (token: string) => void;
 }) {
   const [agents, setAgents] = useState<Agent[] | null>(null);
   const [proposals, setProposals] = useState<Proposal[] | null>(null);
   const [name, setName] = useState('');
   const [scopes, setScopes] = useState<string[]>(['services:read', 'proposals:create']);
-  const [token, setToken] = useState('');
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -71,6 +74,7 @@ export function Agents({
 
   async function create(event: FormEvent) {
     event.preventDefault();
+    if (token && !window.confirm(t('token.replaceWarning'))) return;
     setMessage('');
     const response = await fetch('/api/agents', {
       method: 'POST',
@@ -88,6 +92,7 @@ export function Agents({
     await load();
   }
   async function rotate(id: string) {
+    if (token && !window.confirm(t('token.replaceWarning'))) return;
     const response = await fetch(`/api/agents/${id}/rotate`, { method: 'POST' }).catch(() => null);
     if (!response?.ok) {
       setMessage(t('agents.rotateFailed'));
