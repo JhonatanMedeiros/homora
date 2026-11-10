@@ -1,3 +1,6 @@
+import { BRAND_ICON_NAMES } from './brand-icons.js';
+
+export { BRAND_ICON_NAMES };
 export type ServiceInput = {
   name: string;
   url: string;
@@ -127,7 +130,7 @@ const ICON_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
  * Normaliza o ícone de um serviço. Formatos aceitos: texto curto ou emoji (até 8
- * caracteres), `lucide:nome` (ícone embutido) e URL http(s) de imagem sem credenciais.
+ * caracteres), `lucide:nome` ou `brand:nome` (ícones embutidos) e URL http(s) de imagem sem credenciais.
  * Qualquer outra coisa vira texto curto, como antes.
  */
 export function normalizeIcon(value: unknown): string {
@@ -135,6 +138,10 @@ export function normalizeIcon(value: unknown): string {
   if (raw.startsWith('lucide:')) {
     const name = raw.slice('lucide:'.length);
     return name.length <= 60 && ICON_NAME.test(name) ? raw : '';
+  }
+  if (raw.startsWith('brand:')) {
+    const name = raw.slice('brand:'.length);
+    return (BRAND_ICON_NAMES as readonly string[]).includes(name) ? raw : '';
   }
   if (/^https?:\/\//i.test(raw)) {
     try {

@@ -1,5 +1,5 @@
 import { parse } from 'yaml';
-import { ICON_NAMES, normalizeIcon } from '@homora/shared';
+import { BRAND_ICON_NAMES, ICON_NAMES, normalizeIcon } from '@homora/shared';
 import {
   MAX_GROUPS,
   MAX_SERVICES,
@@ -18,28 +18,37 @@ export const IMPORT_SOURCES = ['homora', 'homepage', 'dashy'] as const;
 export type ImportSource = (typeof IMPORT_SOURCES)[number];
 
 const knownIcons = new Set<string>(ICON_NAMES);
+const knownBrands = new Set<string>(BRAND_ICON_NAMES);
 const EMOJI = /^\p{Extended_Pictographic}/u;
 
 /**
  * Converte o ícone de outro painel para um formato do Homora. Só mapeia o que existe de
- * fato: URL, emoji e nomes que coincidem com um ícone embutido. Nada é buscado em CDN.
+ * fato: URL, emoji e nomes que coincidem com um logo de marca ou ícone embutido (`proxmox.png`,
+ * `sh-plex`, `hl-jellyfin` viram `brand:`; `mdi-server` vira `lucide:`). Nada é buscado em CDN.
  * Devolve `unsupported` quando havia um ícone que não pôde ser mantido.
  */
 export function mapIcon(raw: unknown): { icon: string; unsupported: boolean } {
   if (typeof raw !== 'string' || !raw.trim()) return { icon: '', unsupported: false };
   const value = raw.trim();
   if (value === 'favicon') return { icon: '', unsupported: false };
-  if (/^https?:\/\//i.test(value) || value.startsWith('lucide:')) {
+  if (/^https?:\/\//i.test(value) || /^(?:lucide|brand):/.test(value)) {
     const icon = normalizeIcon(value);
     return { icon, unsupported: !icon };
   }
   if (EMOJI.test(value) && value.length <= 8) return { icon: value, unsupported: false };
   const fontAwesome = value.split(/\s+/).find((token) => /^fa-[a-z0-9-]+$/.test(token));
-  const candidate = (fontAwesome ?? value)
-    .toLowerCase()
+  const lowered = (fontAwesome ?? value).toLowerCase();
+  const prefix = /^(fa|mdi|si|sh|hl)-/.exec(lowered)?.[1];
+  const candidate = lowered
     .replace(/^(?:fa|mdi|si|sh|hl)-/, '')
     .replace(/\.(?:png|svg|webp|jpg|jpeg|gif)$/, '')
     .replace(/-outline$/, '');
+  const brand = [candidate, candidate.replace(/-(?:light|dark)$/, '')].find((name) =>
+    knownBrands.has(name),
+  );
+  // Fontes de ícones genéricos (fa, mdi) não são logos de marca; as demais podem ser.
+  if (brand && prefix !== 'fa' && prefix !== 'mdi')
+    return { icon: `brand:${brand}`, unsupported: false };
   return knownIcons.has(candidate)
     ? { icon: `lucide:${candidate}`, unsupported: false }
     : { icon: '', unsupported: true };

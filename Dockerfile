@@ -29,6 +29,7 @@ COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 # The MIT license, third-party notices and the SIL OFL texts for the bundled fonts.
 COPY --from=build /app/LICENSE /app/THIRD_PARTY_NOTICES.md /usr/share/doc/homora/
+COPY --from=build /app/licenses /usr/share/doc/homora/licenses
 COPY --from=build /app/apps/frontend/node_modules/@fontsource/barlow-semi-condensed/LICENSE /usr/share/doc/homora/fonts/barlow-semi-condensed-OFL.txt
 COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/figtree/LICENSE /usr/share/doc/homora/fonts/figtree-OFL.txt
 COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/jetbrains-mono/LICENSE /usr/share/doc/homora/fonts/jetbrains-mono-OFL.txt

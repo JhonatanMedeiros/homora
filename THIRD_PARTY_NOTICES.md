@@ -21,6 +21,15 @@ correspondente em `node_modules`.
 Os ícones `lucide:nome` vêm do pacote `lucide-react` (licença ISC), já listado acima.
 Ícones por URL são de responsabilidade de quem os configura.
 
+Os logos `brand:nome` (163 arquivos SVG em `apps/frontend/public/brand-icons`)
+vêm do projeto [dashboard-icons](https://github.com/homarr-labs/dashboard-icons)
+(licença Apache-2.0, texto em `licenses/dashboard-icons-Apache-2.0.txt`),
+copiados do commit `d767d73`. Foram escolhidos apenas SVG vetoriais, sem
+imagens embutidas, scripts ou referências externas (um teste verifica isso).
+Nomes de produtos, marcas e logos pertencem a seus donos e aparecem somente para
+identificar o serviço, sem sugerir apoio ou parceria; a licença Apache-2.0 do
+repositório não concede direitos sobre marcas de terceiros.
+
 ## Fontes
 
 As fontes são servidas localmente pelos pacotes Fontsource, sob a SIL Open Font
@@ -33,6 +42,7 @@ pacotes `@fontsource*`.
 
 - A imagem Docker publicada deve incluir este arquivo e as licenças das
   fontes. Isso será tratado junto da imagem reproduzível (R0).
-- A revisão cobriu dependências de produção e fontes. Ícones e outros assets
-  futuros (por exemplo, a biblioteca de ícones por nome) exigem revisão própria.
+- A revisão cobriu dependências de produção, fontes e os logos de marca do
+  dashboard-icons (apenas pela licença do repositório; não foi feita revisão de
+  cada marca). Outros assets futuros exigem revisão própria.
 - Não foi feita análise jurídica; a checagem de nome e marca segue pendente.

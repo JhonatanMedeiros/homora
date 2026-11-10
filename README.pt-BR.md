@@ -24,7 +24,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 ## Recursos disponíveis
 
 - Painel de serviços com grupos, ordem por arraste (modo Organizar), busca e estado de disponibilidade.
-- Ícones por emoji, nome (`lucide:server`) ou URL de imagem.
+- Ícones por emoji, nome (`lucide:server`), logo de marca embutido (`brand:plex`, 163 apps de homelab e self-hosting, servidos localmente, sem requisições externas) ou URL de imagem. O formulário sugere o logo que coincide com o nome do serviço.
 - Interface em inglês e português (Brasil); o idioma segue o navegador e pode ser trocado no botão de idioma.
 - Exportação e importação de serviços e grupos em YAML ou JSON, e importação de arquivos do Homepage (`services.yaml`, `bookmarks.yaml`) e do Dashy (`conf.yml`), sempre com prévia. Veja [Importar e exportar](#importar-e-exportar).
 - Widgets dentro do card: ligue um widget (dados do Proxmox, Jellyfin, Home Assistant, Uptime Kuma ou AdGuard Home) a um card na página Integrações. Cada widget mostra o próprio estado de carregamento ou erro, e uma conexão com falha não afeta os outros cards.
@@ -61,7 +61,7 @@ O acesso local usa HTTP em loopback. Para acesso remoto, ainda não há um perfi
 
 Em **Configurações** você baixa grupos, cards e a ordem deles em YAML ou JSON (`GET /api/config/export`). O arquivo não contém senhas, tokens, conexões nem IDs, e pode ser versionado. Para importar, escolha o formato (Homora, Homepage ou Dashy) e o arquivo; o Homora mostra uma prévia com o que entra, o que já existe e o que foi ignorado, e só grava ao confirmar. A importação apenas adiciona: nada é sobrescrito nem removido. Cards importados não recebem permissão de rede privada, a menos que você marque essa opção para um arquivo do Homora em que confia.
 
-Ícones de outros painéis só são mantidos quando têm equivalente (URL, emoji ou um dos ícones embutidos); os demais ficam vazios, com aviso. Widgets, monitoramento e vínculos com Docker do Homepage e do Dashy não são importados. Os formatos foram conferidos na documentação desses projetos; arquivos reais podem variar.
+Ícones de outros painéis só são mantidos quando têm equivalente (URL, emoji, logo de marca ou um dos ícones embutidos); os demais ficam vazios, com aviso. Widgets, monitoramento e vínculos com Docker do Homepage e do Dashy não são importados. Os formatos foram conferidos na documentação desses projetos; arquivos reais podem variar.
 
 ## Qualidade e commits
 

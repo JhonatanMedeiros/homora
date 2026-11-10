@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
+import { normalizeIcon } from '@homora/shared';
 import { seedDevelopmentDatabase } from './dev-seed.js';
 
 describe('dados de desenvolvimento', () => {
@@ -13,7 +14,10 @@ describe('dados de desenvolvimento', () => {
         { name: 'Entertainment' },
         { name: 'Infrastructure' },
       ]);
-      const rows = sqlite.prepare('SELECT url, allow_private FROM services').all();
+      const rows = sqlite.prepare('SELECT url, icon, allow_private FROM services').all();
+      expect(rows.every((row) => row.icon !== '' && normalizeIcon(row.icon) === row.icon)).toBe(
+        true,
+      );
       expect(rows).toHaveLength(8);
       expect(
         rows.every(

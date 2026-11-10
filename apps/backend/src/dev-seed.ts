@@ -41,7 +41,7 @@ export function seedDevelopmentDatabase(sqlite: DatabaseSync) {
           `http://127.0.0.1:${18000 + groupPosition * 100 + position}/`,
           group.name,
           description,
-          '',
+          `brand:${name.toLowerCase().replaceAll(' ', '-')}`,
           position,
         );
       });
