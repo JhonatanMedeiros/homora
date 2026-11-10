@@ -87,3 +87,28 @@ it('mostra uso de CPU e memória dos nós e a lista de máquinas', async () => {
   expect(screen.getByText('stopped')).toBeTruthy();
   expect(screen.getByText(/1 nó · 1 VMs · 1 containers/)).toBeTruthy();
 });
+
+it('identifica o nó pelo campo node, como a API do Proxmox, sem avisos de chave', async () => {
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) =>
+      url.endsWith('/status')
+        ? { ok: true, json: async () => ({ configured: true }) }
+        : {
+            ok: true,
+            json: async () => ({
+              data: [
+                { type: 'node', node: 'pve2', status: 'online', cpu: 0.1 },
+                { type: 'node', node: 'pve3', status: 'online', cpu: 0.2 },
+              ],
+            }),
+          },
+    ),
+  );
+  render(<Proxmox />);
+  expect(await screen.findByRole('heading', { name: 'pve2' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'pve3' })).toBeTruthy();
+  expect(error).not.toHaveBeenCalled();
+  error.mockRestore();
+});
