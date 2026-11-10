@@ -46,7 +46,8 @@ const unchecked = (): ServiceStatus => ({
 
 const intervalMs = 60_000;
 const cacheMs = 60_000;
-const maxServicesPerRun = 25;
+/** Tempo máximo para iniciar verificações em um ciclo; o que sobrar fica para o próximo. */
+const cycleBudgetMs = 45_000;
 const maxConcurrentChecks = 5;
 
 /** Uses the shared pinned-DNS destination policy; private ranges require the
@@ -93,12 +94,22 @@ export function createServiceMonitor(
       if (runGeneration !== generation) return;
       const currentIds = new Set(current.map(({ id }) => id));
       for (const id of states.keys()) if (!currentIds.has(id)) states.delete(id);
-      for (const service of current) states.set(service.id, unchecked());
-      const monitored = current.slice(0, maxServicesPerRun);
+      for (const service of current)
+        if (!states.has(service.id)) states.set(service.id, unchecked());
+      // Sem limite fixo de quantidade: os mais antigos (ou nunca verificados) vão primeiro e o
+      // ciclo para de iniciar verificações ao esgotar o orçamento. O restante mantém o estado
+      // anterior e passa à frente no ciclo seguinte.
+      const lastOf = (id: number) => states.get(id)?.lastAttempt ?? '';
+      const monitored = [...current].sort((a, b) => lastOf(a.id).localeCompare(lastOf(b.id)));
+      const startedAt = now();
       let nextIndex = 0;
       await Promise.all(
         Array.from({ length: Math.min(maxConcurrentChecks, monitored.length) }, async () => {
-          while (nextIndex < monitored.length && runGeneration === generation) {
+          while (
+            nextIndex < monitored.length &&
+            runGeneration === generation &&
+            now() - startedAt < cycleBudgetMs
+          ) {
             const service = monitored[nextIndex++];
             const attemptedAt = new Date(now()).toISOString();
             try {

@@ -102,7 +102,7 @@ suportados; não anunciar exposição em rede antes dessa validação.
 inventário Proxmox foi validado com permissões reduzidas.
 
 **Evidência parcial do monitoramento:** verificações de serviços são agendadas
-a cada 60 segundos, limitadas a 25 serviços por ciclo e cinco consultas
+a cada 60 segundos, limitadas (na época) a 25 serviços por ciclo e cinco consultas
 simultâneas; cada consulta tem timeout total de 8 segundos, fixa o IP DNS e
 rejeita redirecionamentos. Observações ficam em cache por 60 segundos e são
 invalidadas ao criar, editar ou remover um serviço. RFC1918 e ULA são negadas
@@ -402,7 +402,8 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
 - [x] **Estado semântico do monitor** (responde, exige login, não encontrado,
       sem resposta, não verificado), com código HTTP e latência, sem seguir
       redirecionamentos (ver registro abaixo).
-- [ ] **Limite de 25 serviços:** removê-lo ou expor cobertura e fila.
+- [x] **Limite de 25 serviços:** removido; o ciclo agora usa um orçamento de
+      tempo com rodízio (ver registro abaixo).
 - [x] **Colunas por grupo:** número de colunas (1 a 6) escolhido por grupo, além
       da grade automática e do modo compacto (ver registro abaixo). Cards com
       larguras livres dentro do grupo não foram feitos.
@@ -547,8 +548,8 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
 - A latência mede da resolução do DNS até a resposta, em um único `GET`; não é
   uma medida de desempenho do serviço.
 - Compatibilidade: a interface aceita respostas sem `reason`.
-- O limite de 25 serviços por ciclo continua: os demais aparecem como "Não
-  verificado" (antes, "Sem informação"). Remover ou expor a fila é o próximo item.
+- O limite de 25 serviços por ciclo continuava nesta etapa (ver o registro do
+  limite abaixo, que o removeu); os demais apareciam como "Não verificado".
 - Validação: `pnpm check`; testes da classificação, do monitor (código, latência,
   sem resposta, não verificado), da requisição (3xx só quando pedido) e do card
   (rótulos e detalhe). Navegador real (Chromium) com servidor falso na rede
@@ -557,6 +558,31 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
 - Não validado: serviços reais (certificados, proxies que respondem 200 para
   tudo, 405 em `GET`), pt-BR no navegador (só em teste), a leitura por leitores
   de tela dos novos rótulos.
+
+### Registro R1 — fim do limite de 25 serviços (2026-11-10)
+
+- Antes: só os 25 primeiros serviços eram verificados por ciclo; os demais
+  ficavam para sempre "sem informação", sem aviso.
+- Agora não há limite de quantidade. Cada ciclo (a cada 60 s) ordena os serviços
+  pelo horário da última tentativa (nunca verificados primeiro) e verifica cinco
+  em paralelo, como antes. Ele para de **iniciar** verificações depois de 45 s;
+  o que sobrar mantém o estado anterior e passa à frente no ciclo seguinte. Assim
+  nenhum serviço fica de fora, e uma lista grande ou lenta só atrasa a
+  atualização dos últimos, não os esconde.
+- O estado anterior permanece visível enquanto o ciclo roda (antes, todos
+  voltavam a "desconhecido" no início de cada ciclo). "Não verificado" agora só
+  aparece para um serviço novo que ainda não foi alcançado.
+- Cobertura: um serviço é atingido em um ciclo se houver orçamento; no pior caso
+  (tudo expira em 8 s) cabem cerca de 28 verificações em 45 s, então com muitos
+  serviços lentos a atualização leva mais de um ciclo. O horário da última
+  tentativa mostra a idade do dado. Não há fila exposta na interface nem
+  intervalo por serviço (próximo item).
+- Validação: `pnpm check`; testes de 60 serviços verificados, orçamento esgotado
+  com prioridade aos mais antigos no ciclo seguinte e estado anterior preservado
+  durante o ciclo. Navegador real: 60 serviços criados pela API contra um
+  servidor falso na rede local; todos receberam estado (nenhum "Não verificado").
+- Não validado: centenas de serviços reais, impacto da carga na rede doméstica e
+  o comportamento com muitos destinos lentos.
 
 ### Registro R1 — faixa superior (2026-11-10)
 
