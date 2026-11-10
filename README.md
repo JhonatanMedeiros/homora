@@ -32,6 +32,8 @@ docker compose up -d --build
 
 Open <http://localhost:8080> and create an administrator password (at least 8 characters). The port is bound to `127.0.0.1` and your data lives in the `homora-data` volume.
 
+The bind address comes from `HOMORA_BIND_IP` (default `127.0.0.1`). Override it, for example `HOMORA_BIND_IP=0.0.0.0`, only when a reverse proxy on the same private network terminates HTTPS — see the note below.
+
 Once release images are published, you can skip the build:
 
 ```bash

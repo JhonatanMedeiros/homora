@@ -1,6 +1,8 @@
 # Runs the published images instead of building from source.
 #   HOMORA_VERSION=1.0.0 docker compose -f compose.release.yml up -d
-# Same security posture as compose.yml: the port is bound to loopback only.
+# Same security posture as compose.yml: the port is bound to loopback by default.
+# Set HOMORA_BIND_IP=0.0.0.0 only behind a reverse proxy that terminates HTTPS on
+# the same private network.
 services:
   backend:
     image: ghcr.io/jhonatanmedeiros/homora-backend:${HOMORA_VERSION:-latest}
@@ -12,7 +14,7 @@ services:
   frontend:
     image: ghcr.io/jhonatanmedeiros/homora-frontend:${HOMORA_VERSION:-latest}
     ports:
-      - '127.0.0.1:8080:80'
+      - '${HOMORA_BIND_IP:-127.0.0.1}:8080:80'
     depends_on:
       - backend
     restart: unless-stopped
