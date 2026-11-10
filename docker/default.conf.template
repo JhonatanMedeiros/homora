@@ -1,3 +1,11 @@
+# Rendered by the nginx image entrypoint (envsubst), which fills in HOMORA_TRUSTED_PROXY.
+# When an HTTPS reverse proxy sits in front of this container, set HOMORA_TRUSTED_PROXY to its
+# address or network so the real client address (from its X-Forwarded-For) is used for the
+# backend's per-client login limit. The default trusts no one: the peer address is used as is.
+set_real_ip_from ${HOMORA_TRUSTED_PROXY};
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
 server {
     listen 80;
     server_name _;
@@ -14,6 +22,9 @@ server {
         proxy_pass $homora_api$request_uri;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        # Overwrites (never appends to) anything the client sent, so the backend can trust it
+        # when HOMORA_TRUST_PROXY=true. Used for the per-client login attempt limit.
+        proxy_set_header X-Forwarded-For $remote_addr;
     }
     location / { try_files $uri $uri/ /index.html; }
 }

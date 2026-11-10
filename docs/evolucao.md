@@ -48,8 +48,9 @@ com dados preservados e sem depender de integrações opcionais.
 
 ## P2 — Acesso e segurança para o homelab
 
-- [ ] Definir os cenários suportados: acesso local, rede privada e proxy reverso,
-      incluindo configuração inicial, HTTPS e origens permitidas.
+- [x] Definir os cenários suportados: acesso local, rede privada e proxy reverso,
+      incluindo configuração inicial, HTTPS e origens permitidas (ver o README,
+      "Deployment scenarios", e o registro abaixo).
 - [ ] Revisar sessões, cookies, proteção contra CSRF, limites de requisição e
       comportamento atrás de proxy para os cenários escolhidos; testar os limites.
 - [ ] Avaliar armazenamento, permissões, rotação e recuperação de segredos e
@@ -86,6 +87,41 @@ suportados; não anunciar exposição em rede antes dessa validação.
 - Não considerar acesso à rede privada ou exposição pública validada; Compose
   permanece publicado apenas em loopback e a integração precisa de validação
   adicional no ambiente do usuário.
+
+### Registro P2 — proxy reverso HTTPS e limite de login (2026-11-10)
+
+- Problema encontrado: o README exigia que o proxy encaminhasse o `X-Real-IP`,
+  mas o backend nunca o lia. O limite de tentativas de login usava o endereço do
+  par TCP, que no Compose é sempre o nginx; todos os clientes dividiam um único
+  contador (cinco senhas erradas de qualquer pessoa bloqueavam todos por 15
+  minutos). Além disso, o Compose não repassava `HOMORA_ALLOWED_ORIGINS` ao
+  backend, então não havia como usar a origem HTTPS sem editar o arquivo.
+- Correção: `HOMORA_TRUST_PROXY=true` (padrão falso) faz o Fastify ler o IP do
+  cliente de `X-Forwarded-For`; o nginx do Compose passa a **sobrescrever** esse
+  cabeçalho com o endereço do par (o cliente não consegue forjá-lo) e, com
+  `HOMORA_TRUSTED_PROXY` (endereço ou rede de um proxy externo), usa o
+  `X-Forwarded-For` desse proxy (`real_ip_recursive`). O arquivo virou o modelo
+  `docker/default.conf.template`, renderizado pelo entrypoint do nginx. Os
+  arquivos do Compose definem `HOMORA_TRUST_PROXY=true` (só o nginx alcança o
+  backend) e repassam `HOMORA_ALLOWED_ORIGINS` e `HOMORA_TRUSTED_PROXY`.
+- Cenários: o README agora tem a tabela "Deployment scenarios" (local, HTTP
+  em rede privada não suportado, proxy HTTPS, internet pública não suportada) e
+  diz com todas as letras que, até a conta existir, quem alcança a porta pode
+  criá-la; essa restrição **não é imposta pelo código**.
+- Validação: `pnpm check`; testes do limite por cliente com `X-Forwarded-For`
+  (cada cliente tem o próprio limite) e sem confiança no proxy (o cabeçalho
+  forjado não escapa do limite) e da leitura de `HOMORA_TRUST_PROXY`. Docker
+  real: Homora (Compose) com um nginx externo, HTTPS e certificado autoassinado:
+  `Set-Cookie` com `Secure`, `HttpOnly` e `SameSite=Strict`; mutação com Origin
+  de outro site recusada (403); backend inalcançável direto; com a configuração
+  padrão o cliente B era bloqueado junto com o A (o problema), e com
+  `HOMORA_TRUSTED_PROXY` na rede do proxy só o cliente A ficou bloqueado e o B
+  entrou. No Chromium: login pelo HTTPS, cookie `Secure` e criação de um card.
+- Não validado: proxies reais (Caddy, Traefik, Nginx Proxy Manager), o cabeçalho
+  `X-Forwarded-For` acumulado por vários proxies (só um salto foi testado, com o
+  valor vindo de um cabeçalho de teste), WebSocket (não usado), carga e sessões
+  sob carga, rotação da chave e recuperação de segredos (itens abertos do P2) e
+  a imposição da configuração inicial somente local.
 
 ## P3 — Disponibilidade e Proxmox
 

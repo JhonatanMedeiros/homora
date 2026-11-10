@@ -26,8 +26,14 @@ export function createApp(
   vault?: ReturnType<typeof createVault>,
   configuredOrigins: readonly string[] = [],
   dockerSource?: DockerSource,
+  /**
+   * `trustProxy` faz o IP do cliente vir de `X-Forwarded-For` (usado no limite de tentativas de
+   * login). Só ligue quando todo o tráfego passa por um proxy que SOBRESCREVE esse cabeçalho,
+   * como o nginx do Compose; caso contrário qualquer cliente poderia forjá-lo.
+   */
+  options: { trustProxy?: boolean } = {},
 ) {
-  const app = Fastify({ bodyLimit: 100_000 });
+  const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
   const proposals = createProposalService(sqlite, configuration);

@@ -45,7 +45,26 @@ HOMORA_VERSION=<version> docker compose -f compose.release.yml up -d
 
 Images are built for `linux/amd64` and `linux/arm64` from base images pinned by digest.
 
-> **Do not expose Homora to a network yet.** It is designed for local access. Compose provides no HTTPS, and the first administrator setup must be done from the machine itself. A reverse proxy with HTTPS needs `HOMORA_ALLOWED_ORIGINS` set to the public origin (comma-separated list), must forward `Host` and `X-Real-IP`, must keep the API unreachable directly, and must not disable origin validation. That mode needs its own operational validation and does not make public exposure safe by itself.
+> **Do not expose Homora to a network you do not control.** It is designed for local use. Until the first administrator account exists, anyone who can reach the port can create it, so do the first setup from the machine itself, before exposing anything. Compose provides no HTTPS by itself. See [Deployment scenarios](#deployment-scenarios) for what was tested; it does not make public exposure safe by itself.
+
+## Deployment scenarios
+
+| Scenario                                        | How                                                                                                                                    | Status                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| This machine only                               | `docker compose up -d --build`; the port stays on `127.0.0.1`.                                                                         | Default and best tested.                                               |
+| Private network, plain HTTP                     | Not supported by design: only `localhost` may use HTTP, so changes made from other machines over HTTP are refused by the origin check. | Use the HTTPS proxy below.                                             |
+| HTTPS reverse proxy on the same private network | See below.                                                                                                                             | Validated once with a local nginx proxy and a self-signed certificate. |
+| Public internet                                 | Not supported.                                                                                                                         | Do not do this.                                                        |
+
+With a reverse proxy that terminates HTTPS in front of Homora:
+
+1. Keep the Homora port on a private network and publish only the proxy. Do not publish the backend (port 3000); in Compose it is not published.
+2. Set `HOMORA_ALLOWED_ORIGINS` to the public origin, for example `https://homora.example.home` (a comma-separated list; HTTPS only, plus `localhost`).
+3. Make the proxy forward `Host` and send the real client address in `X-Forwarded-For` (for example `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` in nginx).
+4. Set `HOMORA_TRUSTED_PROXY` to the proxy's address or network, for example `172.18.0.0/16` for a proxy container on the Compose network. This lets the per-client login limit (5 wrong passwords per client in 15 minutes) tell clients apart. Without it, every client behind your proxy shares one counter, so someone else's failed attempts can lock you out.
+5. Do not disable origin validation. The session cookie is `HttpOnly`, `SameSite=Strict` and gets `Secure` when you sign in from an HTTPS origin.
+
+`HOMORA_TRUST_PROXY=true` (already set in the Compose files) makes the backend read the client address from `X-Forwarded-For`; set it only if every request reaches the backend through a proxy that overwrites that header, as the bundled nginx does.
 
 ## Upgrade
 
