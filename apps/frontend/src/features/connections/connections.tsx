@@ -205,23 +205,25 @@ export function Connections() {
         </SectionTitle>
         <p className="text-sm text-muted-foreground">{t('connections.description')}</p>
       </div>
-      <WidgetsSection
-        items={items}
-        widgets={widgets}
-        busy={busy}
-        confirming={confirming}
-        widgetName={widgetName}
-        widgetConnection={widgetConnection}
-        widgetResult={widgetResult}
-        onNameChange={setWidgetName}
-        onConnectionChange={setWidgetConnection}
-        onCreate={(event) => void createWidget(event)}
-        onQuery={(widget) => void queryWidget(widget)}
-        onRemove={(widget) => void removeWidget(widget)}
-        onCancelRemoval={(widget) =>
-          setConfirming((key) => (key === `widget:${widget.id}` ? null : key))
-        }
-      />
+      {(Boolean(items?.length) || widgets.length > 0) && (
+        <WidgetsSection
+          items={items}
+          widgets={widgets}
+          busy={busy}
+          confirming={confirming}
+          widgetName={widgetName}
+          widgetConnection={widgetConnection}
+          widgetResult={widgetResult}
+          onNameChange={setWidgetName}
+          onConnectionChange={setWidgetConnection}
+          onCreate={(event) => void createWidget(event)}
+          onQuery={(widget) => void queryWidget(widget)}
+          onRemove={(widget) => void removeWidget(widget)}
+          onCancelRemoval={(widget) =>
+            setConfirming((key) => (key === `widget:${widget.id}` ? null : key))
+          }
+        />
+      )}
       {form ? (
         <ConnectionForm
           form={form}
