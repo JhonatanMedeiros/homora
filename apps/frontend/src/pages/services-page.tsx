@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
@@ -418,7 +419,14 @@ export function ServicesPage({
       <div role="status" id="message" className="empty:hidden">
         {(message || data.loadError) && (
           <Alert variant="destructive">
-            <AlertDescription>{message || data.loadError}</AlertDescription>
+            <AlertDescription>
+              {message || data.loadError}
+              {data.loadError && (
+                <Button type="button" variant="link" onClick={() => void data.refresh()}>
+                  {t('catalog.retry')}
+                </Button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
       </div>
@@ -558,7 +566,13 @@ export function ServicesPage({
           </GroupSection>
         );
       })}
-      {!groups.length && (
+      {!data.loaded && !data.loadError && (
+        <p role="status" className="flex items-center gap-2 text-muted-foreground">
+          <Spinner />
+          {t('common.loading')}
+        </p>
+      )}
+      {data.loaded && !data.loadError && !groups.length && (
         <ServicesEmpty
           hasServices={services.length > 0}
           managing={managing}

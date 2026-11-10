@@ -19,6 +19,7 @@ export function useServices() {
       const response = await fetch('/api/services');
       if (!response.ok) throw Error();
       setServices((await response.json()) as Service[]);
+      setLoaded(true);
       const groupResponse = await fetch('/api/groups');
       if (groupResponse.ok) setGroupRows((await groupResponse.json()) as ServiceGroup[]);
       setLoadError('');
