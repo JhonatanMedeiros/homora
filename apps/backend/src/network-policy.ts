@@ -26,6 +26,7 @@ for (const [network, prefix] of [
   ['::1', 128],
   ['::', 96],
   ['100::', 64],
+  ['100:0:0:1::', 64],
   ['fe80::', 10],
   ['ff00::', 8],
   ['64:ff9b::', 96],
@@ -47,6 +48,16 @@ for (const [network, prefix] of [
 ] as const)
   privateNetworks.addSubnet(network, prefix, 'ipv4');
 privateNetworks.addSubnet('fc00::', 7, 'ipv6');
+
+function mappedIPv4Address(address: string): string | undefined {
+  // URL canonicalizes IPv4-mapped IPv6 literals to ::ffff:hhhh:hhhh.
+  const canonical = new URL(`http://[${address}]/`).hostname.slice(1, -1);
+  const mapped = /^::ffff:([\da-f]{1,4}):([\da-f]{1,4})$/i.exec(canonical);
+  if (!mapped) return undefined;
+  const high = Number.parseInt(mapped[1], 16);
+  const low = Number.parseInt(mapped[2], 16);
+  return [high >> 8, high & 0xff, low >> 8, low & 0xff].join('.');
+}
 
 function origin(value: string): URL {
   let url: URL;
@@ -88,10 +99,12 @@ export async function authorizeDestination(
     !addresses.length ||
     addresses.some(({ address, family }) => {
       if (isIP(address) !== family) return true;
-      const version = family === 4 ? 'ipv4' : 'ipv6';
+      const mapped = family === 6 ? mappedIPv4Address(address) : undefined;
+      const classifiedAddress = mapped ?? address;
+      const version = family === 4 || mapped ? 'ipv4' : 'ipv6';
       return (
-        forbidden.check(address, version) ||
-        (!policy.allowPrivate && privateNetworks.check(address, version))
+        forbidden.check(classifiedAddress, version) ||
+        (privateNetworks.check(classifiedAddress, version) && (mapped || !policy.allowPrivate))
       );
     })
   )

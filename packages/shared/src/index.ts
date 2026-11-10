@@ -1,4 +1,12 @@
-export type ServiceInput = { name: string; url: string; category: string; description: string };
+export type ServiceInput = {
+  name: string;
+  url: string;
+  category: string;
+  description: string;
+  icon?: string;
+  position?: number;
+  allowPrivate?: boolean;
+};
 export type Service = ServiceInput & { id: number };
 export function validateService(input: Partial<ServiceInput>): ServiceInput {
   const name = String(input.name ?? '').trim();
@@ -20,5 +28,13 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
     description: String(input.description ?? '')
       .trim()
       .slice(0, 140),
+    icon: String(input.icon ?? '')
+      .trim()
+      .slice(0, 8),
+    position:
+      Number.isSafeInteger(input.position) && Number(input.position) >= 0
+        ? Number(input.position)
+        : 0,
+    allowPrivate: input.allowPrivate === true,
   };
 }

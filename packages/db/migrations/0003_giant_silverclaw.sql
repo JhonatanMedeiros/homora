@@ -1,0 +1,1 @@
+ALTER TABLE `services` ADD `allow_private` integer DEFAULT false NOT NULL;

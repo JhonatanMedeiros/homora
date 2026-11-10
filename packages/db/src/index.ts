@@ -2,7 +2,22 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
-export { services, integrationInstances, integrationWidgets } from './schema.js';
+export {
+  services,
+  serviceGroups,
+  integrationInstances,
+  integrationWidgets,
+  agentIdentities,
+  serviceProposals,
+  configVersion,
+  auditEvents,
+} from './schema.js';
+const sqliteHandles = new WeakMap<object, DatabaseSync>();
+export function getSqliteHandle(db: object) {
+  const handle = sqliteHandles.get(db);
+  if (!handle) throw new Error('Database handle unavailable');
+  return handle;
+}
 
 /** Apply generated Drizzle migrations atomically, adopting only the known legacy schema. */
 function migrate(sqlite: DatabaseSync) {
@@ -90,5 +105,6 @@ export function createDatabase(path: string) {
       return { rows: (statement.get(...(params as SQLInputValue[])) ?? []) as unknown[] };
     return { rows: statement.all(...(params as SQLInputValue[])) as unknown as unknown[][] };
   });
+  sqliteHandles.set(db, sqlite);
   return { db, close: () => sqlite.close() };
 }

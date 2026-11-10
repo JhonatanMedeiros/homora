@@ -13,30 +13,30 @@ fluxo completo já foi validado. As etapas podem ser divididas em tarefas menore
 
 ## P0 — Consolidar e validar a base
 
-- [ ] Revisar os arquivos modificados e não rastreados, preservando o trabalho
+- [x] Revisar os arquivos modificados e não rastreados, preservando o trabalho
       existente e verificando se dados locais e segredos estão fora do Git.
-- [ ] Registrar uma primeira versão coerente no Git após a revisão.
-- [ ] Instalar as dependências em ambiente com acesso ao registro npm e executar
+- [x] Registrar uma primeira versão coerente no Git após a revisão.
+- [x] Instalar as dependências em ambiente com acesso ao registro npm e executar
       `pnpm check` e `pnpm build`; registrar e corrigir falhas encontradas.
-- [ ] Validar uma instalação limpa e o fluxo local: primeiro acesso, cadastro,
+- [x] Validar uma instalação limpa e o fluxo local: primeiro acesso, cadastro,
       edição, exclusão, busca e persistência após reinicialização.
-- [ ] Subir o Docker Compose e validar inicialização, persistência e atualização
+- [x] Subir o Docker Compose e validar inicialização, persistência e atualização
       preservando dados.
-- [ ] Testar backup e restauração completos, incluindo os arquivos de conta,
+- [x] Testar backup e restauração completos, incluindo os arquivos de conta,
       chave e integração quando aplicável; documentar a proteção e a recuperação.
-- [ ] Registrar problemas encontrados, sua prioridade e limitações conhecidas.
+- [x] Registrar problemas encontrados, sua prioridade e limitações conhecidas.
 
 **Conclusão:** instalação e fluxo principal reproduzíveis, verificações passando
 e restauração comprovada em ambiente de teste.
 
 ## P1 — Fechar o núcleo da homepage
 
-- [ ] Definir e implementar grupos independentes e ordenação de grupos e cards,
+- [x] Definir e implementar grupos independentes e ordenação de grupos e cards,
       com migração dos serviços existentes.
-- [ ] Permitir configurar ícones e melhorar a apresentação dos cards.
-- [ ] Revisar busca, filtros, estados vazios e mensagens de erro.
+- [x] Permitir configurar ícones e melhorar a apresentação dos cards.
+- [x] Revisar busca, filtros, estados vazios e mensagens de erro.
 - [ ] Validar uso em telas pequenas e com teclado, incluindo foco e diálogos.
-- [ ] Confirmar que o painel funciona sem Proxmox e sem MCP.
+- [x] Confirmar que o painel de serviços funciona sem Proxmox e sem MCP.
 
 **Conclusão:** é possível organizar e usar o painel diariamente pela interface,
 com dados preservados e sem depender de integrações opcionais.
@@ -55,11 +55,38 @@ com dados preservados e sem depender de integrações opcionais.
 **Conclusão:** modelo de acesso documentado e validado para os cenários
 suportados; não anunciar exposição em rede antes dessa validação.
 
+### Registro de segurança P2 (parcial)
+
+- Cenário local documentado como padrão. Origens HTTPS adicionais podem ser
+  declaradas em `HOMORA_ALLOWED_ORIGINS`; HTTP adicional é restrito a localhost.
+  O cookie recebe `Secure` para login originado em HTTPS. A validação de origem
+  segue obrigatória para métodos que alteram estado.
+- Testes automatizados cobrem parsing de origens exatas, rejeição de caminhos,
+  curingas e HTTP remoto, bloqueio de mutações sem origem permitida e cookies
+  `Secure` em login/logout HTTPS; HTTP local permanece compatível. `pnpm check`
+  passou com 104 testes Vitest e 2 testes Node; `pnpm build` e
+  `git diff --check` também passaram na branch integrada.
+- Revisão de código: sessão em memória de oito horas, cookie HttpOnly e
+  SameSite=Strict, senha scrypt com salt aleatório, limite de tentativas de
+  login por endereço visto pelo backend, corpo limitado e destinos de integração
+  com origem/porta exatas, DNS fixado, redirecionamentos recusados, TLS validado,
+  timeout e limite de resposta. Arquivos de credenciais são cifrados e criados
+  com permissões restritas. Não há rotação da chave; banco e backups precisam
+  de proteção pelo sistema operacional.
+- Pendências para concluir P2: validar proxy reverso HTTPS real e sua política
+  de cabeçalhos/rede, testar limites de autenticação e sessões sob carga,
+  revisar/completar faixas especiais de rede e demonstrar recuperação/rotação
+  de segredos. A política atual não limita uma lista independente de portas: a
+  porta autorizada é a porta exata na origem configurada por conexão.
+- Não considerar acesso à rede privada ou exposição pública validada; Compose
+  permanece publicado apenas em loopback e a integração precisa de validação
+  adicional no ambiente do usuário.
+
 ## P3 — Disponibilidade e Proxmox
 
-- [ ] Implementar verificações periódicas com limites, timeout, cache e política
+- [x] Implementar verificações periódicas com limites, timeout, cache e política
       de destinos definida em P2.
-- [ ] Mostrar estado desconhecido ou indisponível e horário da última tentativa,
+- [x] Mostrar estado desconhecido ou indisponível e horário da última tentativa,
       sem impedir o carregamento do restante do painel.
 - [ ] Validar Proxmox em ambiente real com token de leitura e TLS confiável,
       incluindo falhas de conexão, certificado e permissões.
@@ -69,34 +96,93 @@ suportados; não anunciar exposição em rede antes dessa validação.
 **Conclusão:** falhas de serviços e integrações são claras e isoladas, e o
 inventário Proxmox foi validado com permissões reduzidas.
 
+**Evidência parcial do monitoramento:** verificações de serviços são agendadas
+a cada 60 segundos, limitadas a 25 serviços por ciclo e cinco consultas
+simultâneas; cada consulta tem timeout total de 8 segundos, fixa o IP DNS e
+rejeita redirecionamentos. Observações ficam em cache por 60 segundos e são
+invalidadas ao criar, editar ou remover um serviço. RFC1918 e ULA são negadas
+por padrão e podem ser autorizadas por serviço na interface autenticada. A
+migração aditiva preserva serviços existentes e define a opção como desativada.
+Faixas especiais e respostas DNS mistas continuam bloqueadas, incluindo
+endereços IPv4 mapeados em IPv6; a origem e a porta exatas vêm da URL
+configurada. O estado fica em memória e começa como desconhecido após reiniciar
+o backend. Testes cobrem política de rede, monitoramento, API, migração e
+interface; `pnpm check`, `pnpm build` e `git diff --check` passaram nos
+worktrees das tarefas. Não houve acesso a serviços externos nem a Proxmox real;
+validação do inventário e das redes reais permanece pendente.
+
 ## P4 — MCP e alterações com aprovação
 
-- [ ] Definir identidade, escopos e revogação de agentes e alinhar o acesso MCP
+- [x] Definir identidade, escopos e revogação de agentes e alinhar o acesso MCP
       às regras da aplicação. O MCP atual é local, somente leitura e acessa arquivos
       diretamente; a sessão web não o protege.
-- [ ] Disponibilizar consultas autorizadas sem expor segredos e tratar dados
+- [x] Disponibilizar consultas autorizadas sem expor segredos e tratar dados
       externos como não confiáveis.
-- [ ] Implementar propostas de alterações de cards com revisão humana, diff,
+- [x] Implementar propostas de alterações de cards com revisão humana, diff,
       expiração e aprovação vinculada à versão exata da proposta e da configuração.
 - [ ] Aplicar alterações de forma transacional e registrar aprovação, rejeição e
       falhas; testar autorização, concorrência, repetição e injeção de instruções.
-- [ ] Manter ações de infraestrutura, como reiniciar VMs, fora desta etapa.
+- [x] Manter ações de infraestrutura, como reiniciar VMs, fora desta etapa.
 
 **Conclusão:** agentes só acessam o que foi autorizado e alterações propostas
 são revisáveis e auditáveis antes de serem aplicadas.
+
+**Registro de implementação (2026-11-10):** foram adicionadas tabelas para
+identidades, propostas, versão de configuração e auditoria, além de uma tela
+autenticada para revisar propostas de cards. A API permite emitir, rotacionar e
+revogar tokens com escopos explícitos; o MCP exige token para consultas de
+serviços/Proxmox e usa `proposals:create` para propor cards. Aprovação/rejeição
+ocorre sob transação SQLite, verifica hash e versão base, expiração e estado
+pendente, e registra resultados sem incluir payloads de credenciais. Há testes
+de escopo, rotação/revogação, stale state, repetição com duas conexões SQLite,
+expiração, auditoria e campos hostis. A revisão independente encontrou um diff
+que não refletia posição/permissão aplicada e uma gravação de proposta sem
+atomicidade com auditoria; ambos foram corrigidos para persistir os valores
+exatos aprovados e gravar proposta/auditoria juntos.
+
+Esta etapa permanece **incompleta**: o fluxo visual não foi exercitado
+manualmente; os testes cobrem replay entre conexões SQLite, não concorrência sob
+carga nem injeção de instruções em respostas de ferramentas reais. Nenhuma
+infraestrutura foi acessada.
 
 ## P5 — Preparar publicação open source
 
 - [ ] Escolher licença e revisar licenças e atribuições das dependências e assets.
 - [ ] Verificar disponibilidade do nome e possíveis conflitos de marca.
-- [ ] Documentar contribuição, relato de vulnerabilidades, suporte e limitações.
-- [ ] Preparar instalação, atualização, backup e recuperação reproduzíveis;
-      testar instalação limpa e upgrade antes de publicar uma release.
+- [x] Criar orientação inicial de contribuição e relato privado de
+      vulnerabilidades, incluindo limitações e o estado de desenvolvimento.
+- [x] Revisar e documentar os caminhos atuais de instalação, atualização,
+      backup e recuperação no README; upgrade entre versões e restauração
+      completa ainda não foram validados nesta etapa.
+- [ ] Demonstrar instalação limpa e upgrade preservando dados antes de publicar
+      uma release.
 - [ ] Validar os critérios do MVP com uso real e decidir o escopo da primeira
       versão pública. Avaliar instalador para Proxmox depois de releases confiáveis.
 
 **Conclusão:** outra pessoa consegue entender, instalar, atualizar e contribuir
 com o projeto usando a documentação disponível.
+
+## Revisão inicial de prontidão P5
+
+- Foram criados `CONTRIBUTING.md` e `SECURITY.md`. O README agora documenta
+  instalação com lockfile congelado e sequência de atualização/recuperação,
+  deixando explícito que upgrade entre versões ainda não foi comprovado.
+- A inspeção encontrou CI em `.github/workflows/ci.yml`, executada em push e
+  pull request, com instalação congelada, `pnpm check` e `pnpm build`. O
+  `packageManager` fixa pnpm 12.4.2, mas `.nvmrc` fixa apenas a linha Node 24;
+  Docker também usa tags mutáveis (`node:24` e `nginx:1.27-alpine`). Portanto,
+  há builds repetíveis por lockfile, mas não uma cadeia totalmente imutável ou
+  uma release reproduzível.
+- Não há workflow de release, licença nem metadados de publicação; o pacote
+  raiz declara `private: true`. Nada foi publicado nesta revisão. A escolha da
+  licença e a revisão de atribuições continuam pendentes; nenhuma licença foi
+  adicionada.
+- Validação documental: `git diff --check` passou nos worktrees de P5. Um
+  deles não conseguiu executar `pnpm check`/`pnpm build` porque Corepack falhou
+  ao consultar pnpm (shebang CRLF); a integração final será validada neste
+  ambiente. O CI não constrói o Compose. A inspeção do teste de restauração
+  existente mostra que ele usa tabelas sintéticas e não inicia o backend após
+  restaurar. Upgrade e restauração operacional seguem pendentes.
 
 ## Registro inicial
 
@@ -139,8 +225,9 @@ com o projeto usando a documentação disponível.
 - A API autenticada oferece catálogo para Proxmox, Jellyfin, Home Assistant,
   Uptime Kuma e AdGuard Home, rotas de conexão e rotas básicas separadas para
   vínculos de widgets. A interface permite cadastrar, editar, testar, consultar
-  e remover as quatro conexões novas; ainda não há uma tela própria para
-  organizar widgets ou criar vários widgets por conexão.
+  e remover as quatro conexões novas; também permite criar, listar, consultar e
+  remover widgets nomeados, incluindo vários widgets por conexão. Widgets ainda
+  não podem ser editados nem têm configuração ou observação independentes.
 - Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home têm adaptadores somente
   de leitura. Segredos e CAs são cifrados usando a chave local; as respostas
   públicas não incluem seus valores. O backend aplica política comum de
@@ -168,7 +255,8 @@ com o projeto usando a documentação disponível.
   funcionou no ambiente do usuário; os demais cenários reais ainda exigem testes.
 - O registro de adaptadores, catálogo autenticado, cache Proxmox e migração
   aditiva de instâncias e widgets são fundações iniciais. As novas tabelas ainda
-  não possuem API ou interface completas; o cofre Proxmox antigo permanece em uso.
+  possuem API e interface de gerenciamento básicas; edição e configuração
+  própria de widgets continuam pendentes. O cofre Proxmox antigo permanece em uso.
 - Jellyfin e Home Assistant têm protótipos isolados com testes simulados, ainda
   indisponíveis na interface. Uptime Kuma e AdGuard Home foram pesquisados, mas
   ainda não foram implementados. Nenhum dos quatro foi validado em ambiente real.
@@ -200,3 +288,66 @@ com o projeto usando a documentação disponível.
   erros no console nem rolagem horizontal. Não foram verificados: leitor de
   tela, navegação completa por teclado, aparelho móvel real e Proxmox real.
   Por isso os itens de telas pequenas e teclado do P1 seguem abertos.
+
+## Núcleo da homepage — fluxos implementados
+
+- Migração aditiva cria grupos persistentes a partir das categorias existentes e
+  inicializa a ordem dos cards por nome; os dados e IDs dos serviços são mantidos.
+- A API e a interface permitem criar, renomear, excluir grupos vazios e ordenar
+  grupos. Excluir grupos com cards é bloqueado; renomear preserva os cards.
+- A ordenação individual dos cards é persistida dentro do grupo e a API rejeita
+  listas incompletas, duplicadas ou com IDs fora do grupo. A criação de card
+  adiciona-o ao fim e a edição mantém a posição existente.
+- O formulário de serviço aceita emoji como ícone. Busca cobre nome, categoria,
+  descrição e endereço; filtros e estados vazios permanecem visíveis. A tela de
+  serviços foi testada com falhas nas integrações opcionais.
+- O formulário é inline, não modal. Abrir formulário e renomear grupo move o
+  foco ao campo; Escape fecha/cancela e devolve o foco ao controle de origem.
+  Botões nomeados suportam ordenação de grupos e cards por teclado.
+- Revisão independente apontou colisão de posição após exclusão e submissão
+  ambígua durante renomeação; a criação de grupo fica oculta durante a edição e
+  cards novos ou movidos recebem posição após o maior valor existente.
+- `pnpm check` (95 testes Vitest e 4 testes de backup), `pnpm build` e
+  `git diff --check` passaram.
+- Permanece pendente validação manual com leitor de tela e aparelho móvel real.
+  A conclusão completa do P1 depende dessa revisão de acessibilidade e uso real.
+
+## Validação P0 — backup, restauração e migrações locais
+
+- Em Node.js `v24.16.0` e pnpm `12.4.2`, a instalação congelada usou 417
+  pacotes do cache local. Passaram os 4 testes de scripts de backup, os 4 testes
+  de migração, `pnpm build` e `pnpm test` (20 arquivos, 88 testes Vitest mais 4
+  testes Node). A execução inicial de `pnpm test` antes do build falhou porque
+  `@homora/db` ainda não tinha os artefatos `dist`; build seguido de testes
+  passou.
+- A restauração de integração usa diretório temporário e dados fictícios; copia
+  `.auth`, `.key` e `.proxmox` com o banco, restaura em outro caminho e confere
+  login, configuração Proxmox e credenciais cifradas. Também cobre WAL,
+  integridade, modo `0600`, recusa de sobrescrita e falha sem backup parcial.
+  Os testes de migração usam bancos SQLite temporários e verificam adoção de
+  esquema legado, migração aditiva, preservação de serviços e referências,
+  reinicialização e esquemas incompatíveis.
+- Validação Compose isolada: Docker Server 29.9.2 e Compose v5.6.1. A versão
+  base `f66c3ef` e o Homora integrado em `04fb017` foram construídos e iniciados
+  no projeto `homora-p0upg-4ab7d329`, volume descartável
+  `homora-p0upg-4ab7d329_homora-data` e porta loopback 49381. Um serviço
+  sintético criado pela API preservou ID 1, nome, URL e categoria após a
+  atualização; posição 0, ícone vazio e `allowPrivate: false` também foram
+  confirmados. Projeto e volume foram removidos ao final.
+- Restauração operacional completa validada com backend real em containers
+  temporários: o banco e os sidecars `.auth`, `.key` e `.proxmox` foram copiados
+  para outro caminho. O backend restaurado autenticou a conta sintética, leu o
+  serviço persistido e carregou/salvou novamente configuração Proxmox cifrada
+  com chave e CA sintéticas, sem realizar conexão externa. Containers e
+  diretório temporário foram removidos.
+- Repetição final após P4, no commit `158a4ad`: upgrade da versão base
+  `f66c3ef` para o branch integrado preservou o serviço sintético, incluindo
+  `icon`, `position` e `allowPrivate: false`; foram confirmadas as seis
+  migrações e as quatro tabelas novas de agentes/propostas/auditoria. A
+  restauração em outro caminho autenticou, reconheceu a configuração Proxmox
+  com CA e recarregou/salvou os dados cifrados sem chamadas de rede. O teste
+  usou projeto/volume Compose, containers, imagens e portas loopback temporários;
+  todos foram removidos ao final.
+- Nenhum banco real, caminho `data/` ou serviço real foi acessado. Os relatórios
+  e logs redigidos dessas execuções ficaram em `/tmp` e não foram adicionados ao
+  repositório.

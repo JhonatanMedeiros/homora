@@ -6,7 +6,9 @@ estado atual e os critérios de conclusão de cada etapa, consulte o
 
 ## Fase 0 — validação
 
-- [ ] Avaliar dashboards existentes e registrar lacunas reais.
+- [x] Avaliar dashboards existentes e registrar lacunas reais em
+      [avaliação de produto e concorrência](avaliacao-produto.md); a hipótese de
+      posicionamento ainda precisa ser validada com usuários.
 - [ ] Definir nome final, público e exemplos de uso; verificar disponibilidade do nome e marca.
 - [ ] Escolher stack, formato de distribuição e modelo de autenticação após protótipo técnico.
 

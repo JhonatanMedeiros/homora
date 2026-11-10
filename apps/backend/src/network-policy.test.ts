@@ -25,8 +25,11 @@ it.each([
   'fe80::1',
   '::ffff:127.0.0.1',
   '::ffff:169.254.169.254',
+  '::ffff:192.168.1.1',
+  '::ffff:c0a8:101',
   '::a9fe:a9fe',
   '100::1',
+  '100:0:0:1::1',
   '3fff::1',
   '5f00::1',
   '64:ff9b::a9fe:a9fe',
@@ -54,6 +57,23 @@ it('requer permissão específica para destinos privados e rejeita DNS misto', a
       { address: '169.254.169.254', family: 4 },
     ]),
   ).rejects.toThrow();
+});
+
+it('rejeita resposta DNS que mistura endereço público e privado mesmo com opt-in', async () => {
+  await expect(
+    authorizeDestination('https://service.example', policy, async () => [
+      { address: '203.0.113.10', family: 4 },
+      { address: '192.168.0.5', family: 4 },
+    ]),
+  ).rejects.toThrow();
+});
+
+it('permite endereço IPv4-mapped público após classificação como IPv4', async () => {
+  await expect(
+    authorizeDestination('https://service.example', policy, async () => [
+      { address: '::ffff:8.8.8.8', family: 6 },
+    ]),
+  ).resolves.toMatchObject({ address: { address: '::ffff:8.8.8.8', family: 6 } });
 });
 
 it('retorna IP já autorizado para conexão sem segunda resolução DNS', async () => {

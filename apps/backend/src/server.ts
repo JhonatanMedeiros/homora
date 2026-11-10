@@ -13,6 +13,7 @@ const app = createApp(
   config.webPort,
   createAuth(`${config.databasePath}.auth`),
   createVault(config.databasePath),
+  config.allowedOrigins,
 );
 app.addHook('onClose', async () => database.close());
 await app.listen({ port: config.apiPort, host: config.bindHost });
