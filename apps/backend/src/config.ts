@@ -44,11 +44,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   const bindHost = env.HOMORA_BIND_HOST ?? '127.0.0.1';
   if (!['127.0.0.1', '0.0.0.0'].includes(bindHost)) throw new Error('Endereço de escuta inválido.');
   const allowedOrigins = parseAllowedOrigins(env.HOMORA_ALLOWED_ORIGINS);
+  if (!['true', 'false', undefined, ''].includes(env.HOMORA_TRUST_PROXY))
+    throw new Error('HOMORA_TRUST_PROXY deve ser true ou false.');
   return {
     bindHost,
     apiPort,
     webPort,
     allowedOrigins,
+    trustProxy: env.HOMORA_TRUST_PROXY === 'true',
     dockerHost: parseDockerHost(env.HOMORA_DOCKER_HOST),
     databasePath: resolve(root, env.HOMORA_DATABASE_PATH || 'data/homora.sqlite'),
   };

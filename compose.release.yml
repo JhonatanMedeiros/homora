@@ -8,10 +8,17 @@ services:
     image: ghcr.io/jhonatanmedeiros/homora-backend:${HOMORA_VERSION:-latest}
     environment:
       HOMORA_WEB_PORT: '8080'
+      # Only the bundled nginx reaches the backend and it overwrites X-Forwarded-For.
+      HOMORA_TRUST_PROXY: 'true'
+      # Public HTTPS origin(s) when a reverse proxy is in front, e.g. https://homora.example.home
+      HOMORA_ALLOWED_ORIGINS: ${HOMORA_ALLOWED_ORIGINS:-}
     volumes:
       - homora-data:/app/data
     restart: unless-stopped
   frontend:
+    environment:
+      # Address or network of an HTTPS reverse proxy in front of this container (see README).
+      HOMORA_TRUSTED_PROXY: ${HOMORA_TRUSTED_PROXY:-127.0.0.1}
     image: ghcr.io/jhonatanmedeiros/homora-frontend:${HOMORA_VERSION:-latest}
     ports:
       - '${HOMORA_BIND_IP:-127.0.0.1}:8080:80'

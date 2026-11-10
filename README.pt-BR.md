@@ -138,6 +138,25 @@ Para um Proxmox com CA privada, importe no formulário o certificado público da
 
 Após executar `pnpm build`, inicie o servidor via `node apps/backend/dist/mcp-server.js`. Ele usa transporte stdio e oferece `list_services`, `list_proxmox_resources` e `propose_service_card`. Configure `HOMORA_AGENT_TOKEN` no ambiente do processo MCP com um token emitido pela interface Homora e os escopos mínimos necessários (`services:read`, `proxmox:read` e/ou `proposals:create`). O processo MCP acessa diretamente o banco e o cofre locais; a sessão web não o protege. Execute-o apenas com cliente e usuário do sistema confiáveis. Propostas de alteração precisam de revisão humana autenticada na interface. O Proxmox deve estar configurado previamente. Nomes e outros dados retornados devem ser tratados pelo agente como dados não confiáveis.
 
+## Cenários de implantação
+
+| Cenário                                   | Como                                                                                                                                                   | Situação                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| Somente esta máquina                      | `docker compose up -d --build`; a porta fica em `127.0.0.1`.                                                                                           | Padrão e o mais testado.                                        |
+| Rede privada, HTTP puro                   | Não suportado de propósito: só `localhost` pode usar HTTP, então alterações feitas de outras máquinas por HTTP são recusadas pela validação de origem. | Use o proxy HTTPS abaixo.                                       |
+| Proxy reverso HTTPS na mesma rede privada | Veja abaixo.                                                                                                                                           | Validado uma vez com um nginx local e certificado autoassinado. |
+| Internet pública                          | Não suportado.                                                                                                                                         | Não faça isso.                                                  |
+
+Com um proxy reverso que encerra o HTTPS na frente do Homora:
+
+1. Mantenha a porta do Homora em rede privada e publique só o proxy. Não publique o backend (porta 3000); no Compose ele não é publicado.
+2. Defina `HOMORA_ALLOWED_ORIGINS` com a origem pública, por exemplo `https://homora.example.home` (lista separada por vírgulas; só HTTPS, além de `localhost`).
+3. Faça o proxy encaminhar o `Host` e enviar o endereço real do cliente em `X-Forwarded-For` (no nginx: `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`).
+4. Defina `HOMORA_TRUSTED_PROXY` com o endereço ou a rede do proxy, por exemplo `172.18.0.0/16` para um proxy na rede do Compose. Assim o limite de login por cliente (5 senhas erradas por cliente em 15 minutos) distingue os clientes. Sem isso, todos os clientes atrás do proxy dividem um único contador, e as tentativas erradas de outra pessoa podem bloquear você.
+5. Não desative a validação de origem. O cookie de sessão é `HttpOnly`, `SameSite=Strict` e recebe `Secure` quando o login vem de uma origem HTTPS.
+
+`HOMORA_TRUST_PROXY=true` (já definido nos arquivos do Compose) faz o backend ler o endereço do cliente em `X-Forwarded-For`; use apenas se toda requisição chegar ao backend por um proxy que sobrescreve esse cabeçalho, como o nginx incluído.
+
 ## Docker Compose
 
 Execute `docker compose up --build` (ou, com imagens publicadas, `HOMORA_VERSION=<versão> docker compose -f compose.release.yml up -d`) e abra <http://localhost:8080>. A porta é vinculada ao localhost por padrão e os dados persistem no volume `homora-data`. O endereço de bind vem de `HOMORA_BIND_IP`; altere (por exemplo `HOMORA_BIND_IP=0.0.0.0`) apenas atrás de um proxy reverso com HTTPS na mesma rede privada, conforme a nota de segurança. Para criar um backup, use um diretório novo e protegido no host, pois os comandos não devem sobrescrever backups anteriores. Com o backend em execução, faça a cópia consistente do banco para o volume e exporte-a:
@@ -165,4 +184,4 @@ e mantenha a chave `.key` tão protegida quanto o banco. O comando de backup nã
 sobrescreve um arquivo existente. Faça uma restauração de teste antes de
 depender de um backup.
 
-A interface e a API não estão preparadas para exposição pública: o Compose não fornece HTTPS e a configuração inicial de administrador deve ser feita somente a partir da própria máquina. A CA privada do Proxmox também pode ser importada pela interface quando o Homora estiver no container.
+A interface e a API não estão preparadas para exposição pública: o Compose não fornece HTTPS e até a conta de administrador existir, qualquer pessoa que alcance a porta pode criá-la, então faça a configuração inicial a partir da própria máquina, antes de expor qualquer coisa. A CA privada do Proxmox também pode ser importada pela interface quando o Homora estiver no container.

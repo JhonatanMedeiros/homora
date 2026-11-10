@@ -29,7 +29,9 @@ LABEL org.opencontainers.image.title="Homora frontend" \
       org.opencontainers.image.description="Web interface for the Homora self-hosted dashboard" \
       org.opencontainers.image.source="https://github.com/JhonatanMedeiros/homora" \
       org.opencontainers.image.licenses="MIT"
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# nginx renders templates/*.template into conf.d at start, filling HOMORA_TRUSTED_PROXY.
+ENV HOMORA_TRUSTED_PROXY=127.0.0.1
+COPY docker/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 # The MIT license, third-party notices and the SIL OFL texts for the bundled fonts.
 COPY --from=build /app/LICENSE /app/THIRD_PARTY_NOTICES.md /usr/share/doc/homora/
