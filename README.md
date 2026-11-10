@@ -6,6 +6,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 
 ## Documentação
 
+- [Glossário do domínio](GLOSSARY.md)
 - [Visão e produto](docs/produto.md)
 - [Arquitetura e segurança](docs/arquitetura.md)
 - [Padrões de engenharia](docs/padroes.md)
@@ -35,7 +36,7 @@ Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify loc
 
 O monorepo usa pnpm e Turborepo, com React, Vite, Tailwind CSS e shadcn/ui no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
 
-Esta versão permite cadastrar serviços, criar uma conta de administrador local e configurar integrações de leitura em caráter experimental. Veja os serviços, requisitos e limites em [integrações](docs/integracoes.md). O MCP de leitura e o Docker Compose estão em fase inicial de validação. A aplicação é configurada para acesso local e não deve ser exposta na rede.
+Esta versão permite cadastrar serviços, criar uma conta de administrador local e configurar integrações de leitura em caráter experimental. Veja os serviços, requisitos e limites em [integrações](docs/integracoes.md). O MCP local permite consultas autorizadas e propostas de alteração de cards, sempre sujeitas à revisão humana. O Docker Compose está em fase inicial de validação. A aplicação é configurada para acesso local e não deve ser exposta na rede.
 
 O acesso local usa HTTP em loopback. Para acesso remoto, ainda não há um perfil de rede privada validado. Um proxy reverso pode ser configurado com HTTPS e a origem pública declarada em `HOMORA_ALLOWED_ORIGINS` (lista separada por vírgulas); o proxy deve encaminhar `Host` e `X-Real-IP`, manter a API inacessível diretamente e não desativar a validação de origem. Esse modo exige configuração e validação operacional próprias e não torna a exposição pública segura por si só.
 
@@ -46,7 +47,7 @@ O acesso local usa HTTP em loopback. Para acesso remoto, ainda não há um perfi
 - `pnpm lint`, `pnpm lint:fix`, `pnpm format` e `pnpm format:check`: análise e formatação.
 - O Husky executa lint-staged no pre-commit e Commitlint no commit-msg. Use mensagens como `feat: adiciona integração`. Os hooks são instalados pelo `pnpm install`; para reinstalá-los, execute `pnpm exec husky`.
 
-Os protótipos em `propostas/` e migrações geradas são excluídos das verificações globais de formatação.
+Os protótipos em `propostas/`, migrações geradas e arquivos de skills vendorizadas são excluídos das verificações globais de formatação e lint.
 
 ## Backup local
 

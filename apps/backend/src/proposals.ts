@@ -2,10 +2,11 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { validateService } from '@homora/shared';
 import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
+import { serviceProposalSchema } from './input-schemas.js';
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export const AGENT_SCOPES = ['services:read', 'proxmox:read', 'proposals:create'] as const;
-type Diff = { op: 'create' | 'update' | 'delete'; id?: number; service?: unknown };
+type Diff = ServiceChange;
 export function createProposalService(
   sqlite: DatabaseSync,
   configuration = createServiceConfiguration(sqlite),
@@ -50,60 +51,28 @@ export function createProposalService(
     return token;
   }
   function propose(authorId: string, input: unknown) {
-    if (
-      !input ||
-      typeof input !== 'object' ||
-      Object.keys(input).some((k) => !['op', 'id', 'service'].includes(k))
-    )
-      throw new Error('Invalid proposal');
-    const d = input as Diff;
-    if (
-      !['create', 'update', 'delete'].includes(d.op) ||
-      (d.op !== 'create' && !Number.isSafeInteger(d.id))
-    )
-      throw new Error('Invalid proposal');
+    const parsed = serviceProposalSchema.safeParse(input);
+    if (!parsed.success) throw new Error('Invalid proposal');
+    const d = parsed.data;
     let diff: Diff;
     if (d.op === 'delete') {
-      const id = d.id as number;
-      if (!configuration.findService(id)) throw new Error('Service not found');
-      diff = { op: 'delete', id };
+      if (!configuration.findService(d.id)) throw new Error('Service not found');
+      diff = { op: 'delete', id: d.id };
     } else {
-      if (
-        !d.service ||
-        typeof d.service !== 'object' ||
-        Array.isArray(d.service) ||
-        Object.keys(d.service as object).some(
-          (k) =>
-            ![
-              'name',
-              'url',
-              'category',
-              'description',
-              'icon',
-              'position',
-              'allowPrivate',
-            ].includes(k),
-        )
-      )
-        throw new Error('Invalid service fields');
-      const raw = d.service as Record<string, unknown>;
-      if (raw.allowPrivate !== undefined && typeof raw.allowPrivate !== 'boolean')
-        throw new Error('Invalid allowPrivate');
-      const service = validateService(raw as never);
+      const service = validateService(d.service);
       if (d.op === 'create') {
         service.position = configuration.nextServicePosition(service.category);
-        service.allowPrivate = raw.allowPrivate === true;
+        service.allowPrivate = d.service.allowPrivate === true;
       } else {
-        const current = configuration.findService(d.id as number);
+        const current = configuration.findService(d.id);
         if (!current) throw new Error('Service not found');
-        service.position =
-          Number.isSafeInteger(raw.position) && Number(raw.position) >= 0
-            ? Number(raw.position)
-            : current.position;
+        service.position = d.service.position === undefined ? current.position : d.service.position;
         service.allowPrivate =
-          raw.allowPrivate === undefined ? Boolean(current.allowPrivate) : raw.allowPrivate;
+          d.service.allowPrivate === undefined
+            ? Boolean(current.allowPrivate)
+            : d.service.allowPrivate;
       }
-      diff = { op: d.op, id: d.id, service };
+      diff = d.op === 'create' ? { op: 'create', service } : { op: 'update', id: d.id, service };
     }
     const id = randomBytes(16).toString('hex'),
       now = Date.now();

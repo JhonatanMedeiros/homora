@@ -28,10 +28,11 @@ estado atual e os critérios de conclusão de cada etapa, consulte o
 
 ## Fase 3 — MCP e aprovação
 
-- [ ] Implementar identidade, escopos e revogação para agentes.
-- [ ] Disponibilizar ferramentas de leitura e proposta de alterações de cards.
-- [ ] Criar tela de revisão com diff, expiração, controle de concorrência e aplicação transacional.
-- [ ] Auditar tentativas e testar autorização, repetição, expiração e injeção de instruções em dados externos.
+Implementada: agentes têm identidade, escopos e revogação; o MCP oferece
+consultas e propostas; a interface revisa propostas com diff e expiração; e a
+aplicação registra auditoria sob transação. A validação visual manual,
+concorrência sob carga e injeção em respostas reais continuam pendentes; veja o
+[plano de evolução](evolucao.md) para o estado atualizado.
 
 ## Fase 4 — distribuição e validação
 

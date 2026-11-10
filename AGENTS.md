@@ -6,9 +6,9 @@ Homora é uma homepage self-hosted para organizar serviços e acompanhar um
 homelab. Deve ser útil sem Proxmox ou agentes de IA. O projeto está em estágio
 inicial; diferencie recursos implementados de ideias e recursos planejados.
 
-Antes de trabalhar, leia este arquivo, o [README](README.md) e as partes
-relevantes de [produto](docs/produto.md), [arquitetura](docs/arquitetura.md) e
-[plano de evolução](docs/evolucao.md). O plano é um guia de prioridades, não
+Antes de trabalhar, leia este arquivo, o [README](README.md), o
+[glossário](GLOSSARY.md) e as partes relevantes de [produto](docs/produto.md),
+[arquitetura](docs/arquitetura.md) e [plano de evolução](docs/evolucao.md). O plano é um guia de prioridades, não
 autorização para executar tarefas fora do pedido atual. Em caso de conflito,
 siga as instruções explícitas do usuário e informe divergências relevantes.
 Confira o código e o estado atual antes de assumir que a documentação está

@@ -1,6 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
+import {
+  groupNameSchema,
+  groupOrderSchema,
+  parseId,
+  serviceInputSchema,
+  serviceOrderSchema,
+} from '../input-schemas.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
@@ -19,24 +26,24 @@ export function registerServiceConfigurationRoutes(
   app.get('/api/groups', async () => configuration.listGroups());
 
   app.post('/api/groups', async (request, reply) => {
-    const name = (request.body as { name?: unknown } | null)?.name;
-    if (typeof name !== 'string' || !name.trim() || name.trim().length > 40)
+    const parsed = groupNameSchema.safeParse(request.body);
+    if (!parsed.success)
       return reply.code(400).send({ error: 'Informe um nome de grupo com até 40 caracteres.' });
     try {
-      return reply.code(201).send(configuration.createGroup(name.trim()));
+      return reply.code(201).send(configuration.createGroup(parsed.data.name));
     } catch {
       return reply.code(409).send({ error: 'Já existe um grupo com esse nome.' });
     }
   });
 
   app.put<{ Params: { id: string } }>('/api/groups/:id', async (request, reply) => {
-    const name = (request.body as { name?: unknown } | null)?.name;
-    if (!/^\d+$/.test(request.params.id))
-      return reply.code(404).send({ error: 'Grupo não encontrado.' });
-    if (typeof name !== 'string' || !name.trim() || name.trim().length > 40)
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send({ error: 'Grupo não encontrado.' });
+    const parsed = groupNameSchema.safeParse(request.body);
+    if (!parsed.success)
       return reply.code(400).send({ error: 'Informe um nome de grupo com até 40 caracteres.' });
     try {
-      const updated = configuration.renameGroup(Number(request.params.id), name.trim());
+      const updated = configuration.renameGroup(id, parsed.data.name);
       return updated ?? reply.code(404).send({ error: 'Grupo não encontrado.' });
     } catch {
       return reply.code(409).send({ error: 'Já existe um grupo com esse nome.' });
@@ -44,9 +51,9 @@ export function registerServiceConfigurationRoutes(
   });
 
   app.delete<{ Params: { id: string } }>('/api/groups/:id', async (request, reply) => {
-    if (!/^\d+$/.test(request.params.id))
-      return reply.code(404).send({ error: 'Grupo não encontrado.' });
-    const result = configuration.deleteGroup(Number(request.params.id));
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send({ error: 'Grupo não encontrado.' });
+    const result = configuration.deleteGroup(id);
     if (result === 'missing') return reply.code(404).send({ error: 'Grupo não encontrado.' });
     if (result === 'not-empty')
       return reply
@@ -56,30 +63,26 @@ export function registerServiceConfigurationRoutes(
   });
 
   app.put('/api/groups/order', async (request, reply) => {
-    const names = (request.body as { names?: unknown } | null)?.names;
-    if (!Array.isArray(names) || names.some((name) => typeof name !== 'string'))
-      return reply.code(400).send({ error: 'Ordem de grupos inválida.' });
-    return configuration.reorderGroups(names)
+    const parsed = groupOrderSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Ordem de grupos inválida.' });
+    return configuration.reorderGroups(parsed.data.names)
       ? { ok: true }
       : reply.code(400).send({ error: 'Ordem de grupos inválida.' });
   });
 
   app.put('/api/services/order', async (request, reply) => {
-    const body = request.body as { category?: unknown; ids?: unknown } | null;
-    if (
-      typeof body?.category !== 'string' ||
-      !Array.isArray(body.ids) ||
-      body.ids.some((id) => !Number.isSafeInteger(id))
-    )
-      return reply.code(400).send({ error: 'Ordem de cards inválida.' });
-    return configuration.reorderServices(body.category, body.ids as number[])
+    const parsed = serviceOrderSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Ordem de cards inválida.' });
+    return configuration.reorderServices(parsed.data.category, parsed.data.ids)
       ? { ok: true }
       : reply.code(400).send({ error: 'Ordem de cards inválida.' });
   });
 
   app.post('/api/services', async (request, reply) => {
+    const parsed = serviceInputSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Dados inválidos.' });
     try {
-      const created = configuration.createService(request.body ?? {});
+      const created = configuration.createService(parsed.data);
       void monitor.invalidate();
       return reply.code(201).send(publicService(created));
     } catch (error) {
@@ -90,10 +93,12 @@ export function registerServiceConfigurationRoutes(
   });
 
   app.put<{ Params: { id: string } }>('/api/services/:id', async (request, reply) => {
-    if (!/^\d+$/.test(request.params.id))
-      return reply.code(404).send({ error: 'Serviço não encontrado.' });
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send({ error: 'Serviço não encontrado.' });
+    const parsed = serviceInputSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Dados inválidos.' });
     try {
-      const updated = configuration.updateService(Number(request.params.id), request.body ?? {});
+      const updated = configuration.updateService(id, parsed.data);
       if (!updated) return reply.code(404).send({ error: 'Serviço não encontrado.' });
       void monitor.invalidate();
       return publicService(updated);
@@ -105,8 +110,9 @@ export function registerServiceConfigurationRoutes(
   });
 
   app.delete<{ Params: { id: string } }>('/api/services/:id', async (request, reply) => {
-    if (!/^\d+$/.test(request.params.id)) return reply.code(404).send({ deleted: false });
-    const deleted = configuration.deleteService(Number(request.params.id));
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send({ deleted: false });
+    const deleted = configuration.deleteService(id);
     if (deleted) void monitor.invalidate();
     return reply.code(deleted ? 200 : 404).send({ deleted });
   });

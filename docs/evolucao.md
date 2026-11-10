@@ -120,8 +120,11 @@ validação do inventário e das redes reais permanece pendente.
       externos como não confiáveis.
 - [x] Implementar propostas de alterações de cards com revisão humana, diff,
       expiração e aprovação vinculada à versão exata da proposta e da configuração.
-- [ ] Aplicar alterações de forma transacional e registrar aprovação, rejeição e
-      falhas; testar autorização, concorrência, repetição e injeção de instruções.
+- [x] Aplicar alterações de forma transacional e registrar aprovação, rejeição e
+      falhas; testar escopos, concorrência entre conexões SQLite, repetição,
+      expiração, auditoria e payloads hostis.
+- [ ] Exercitar manualmente a revisão visual e validar concorrência sob carga e
+      resistência a instruções maliciosas em respostas reais de ferramentas.
 - [x] Manter ações de infraestrutura, como reiniciar VMs, fora desta etapa.
 
 **Conclusão:** agentes só acessam o que foi autorizado e alterações propostas
@@ -141,8 +144,8 @@ atomicidade com auditoria; ambos foram corrigidos para persistir os valores
 exatos aprovados e gravar proposta/auditoria juntos.
 
 Esta etapa permanece **incompleta**: o fluxo visual não foi exercitado
-manualmente; os testes cobrem replay entre conexões SQLite, não concorrência sob
-carga nem injeção de instruções em respostas de ferramentas reais. Nenhuma
+manualmente; os testes cobrem concorrência entre conexões SQLite, mas não carga
+nem injeção de instruções em respostas de ferramentas reais. Nenhuma
 infraestrutura foi acessada.
 
 ### Consolidação arquitetural (2026-11-10)
@@ -152,15 +155,19 @@ infraestrutura foi acessada.
   MCP e aprovação de propostas. Alterações e versão da configuração passam pela
   mesma transação SQLite; nenhuma migração foi necessária.
 - `app.ts` passou a compor rotas separadas por capacidade: autenticação,
-  configuração, propostas/agentes e Proxmox. Conexões mantêm seu módulo de rotas.
+  configuração, propostas/agentes, Proxmox e conexões. Schemas Zod validam
+  corpos, parâmetros e queries HTTP; mensagens de erro não refletem dados
+  recebidos.
+- Regras de credenciais, persistência, cache e execução de conexões foram
+  concentradas em `integration-connections.ts`; `routes/connections.ts` traduz
+  entradas e resultados HTTP.
 - `integration-registry.ts` agora registra metadados e execução dos cinco
   adaptadores. Conexões e consultas MCP resolvem os adaptadores pelo mesmo
   registro; Proxmox continua com armazenamento de credenciais legado e política
   de transporte própria.
-- `pnpm lint`, `pnpm format:check`, `pnpm type-check` e `pnpm build` passaram
-  após excluir os arquivos de skills vendorizadas dos verificadores. A suíte de
-  testes não foi executada localmente; a validação de comportamento permanece
-  pendente no CI/PR.
+- `pnpm check` passou: ESLint, Prettier, tipos, 119 testes Vitest e 2 testes
+  Node. `pnpm build` também passou. Os fluxos externos reais e a validação
+  manual da interface continuam fora da suíte local.
 
 ## P5 — Preparar publicação open source
 
