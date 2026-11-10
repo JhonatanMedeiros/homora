@@ -16,6 +16,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 - [Plano de evolução e acompanhamento](docs/evolucao.md)
 - [Orientações para agentes de IA](AGENTS.md)
 - [Como contribuir](CONTRIBUTING.md)
+- [Licença MIT](LICENSE) e [avisos de terceiros](THIRD_PARTY_NOTICES.md)
 - [Política de segurança](SECURITY.md)
 
 ## Princípios

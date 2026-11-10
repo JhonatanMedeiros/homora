@@ -176,7 +176,9 @@ infraestrutura foi acessada.
 
 ## P5 — Preparar publicação open source
 
-- [ ] Escolher licença e revisar licenças e atribuições das dependências e assets.
+- [x] Escolher licença e revisar licenças e atribuições das dependências e assets.
+      MIT escolhida (2026-11-10); dependências de produção e fontes revisadas em
+      `THIRD_PARTY_NOTICES.md`. Assets futuros e a imagem Docker exigem nova revisão.
 - [ ] Verificar disponibilidade do nome e possíveis conflitos de marca.
 - [x] Criar orientação inicial de contribuição e relato privado de
       vulnerabilidades, incluindo limitações e o estado de desenvolvimento.
@@ -221,8 +223,8 @@ Marque apenas com a implementação e a validação indicadas.
 - [ ] **Imagem Docker reproduzível:** fixar Node e nginx por versão/digest,
       construir amd64 e arm64 no CI e documentar o upgrade. Validar: build
       multi-arch e upgrade preservando dados.
-- [ ] **Licença e atribuições** (também pendente em P5): escolher licença e
-      revisar dependências e fontes. Necessário antes de publicar a imagem.
+- [x] **Licença e atribuições** (também em P5): MIT, `LICENSE` e
+      `THIRD_PARTY_NOTICES.md`. A imagem Docker deve incluir esses arquivos.
 - [ ] **Exportação e importação YAML/JSON** de serviços, grupos e ordem, com
       validação e relatório de itens ignorados; segredos nunca entram no arquivo.
       Validar: exportar, importar em banco limpo e comparar.
