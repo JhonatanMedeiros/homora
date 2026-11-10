@@ -205,8 +205,9 @@ com o projeto usando a documentação disponível.
 - A API autenticada oferece catálogo para Proxmox, Jellyfin, Home Assistant,
   Uptime Kuma e AdGuard Home, rotas de conexão e rotas básicas separadas para
   vínculos de widgets. A interface permite cadastrar, editar, testar, consultar
-  e remover as quatro conexões novas; ainda não há uma tela própria para
-  organizar widgets ou criar vários widgets por conexão.
+  e remover as quatro conexões novas; também permite criar, listar, consultar e
+  remover widgets nomeados, incluindo vários widgets por conexão. Widgets ainda
+  não podem ser editados nem têm configuração ou observação independentes.
 - Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home têm adaptadores somente
   de leitura. Segredos e CAs são cifrados usando a chave local; as respostas
   públicas não incluem seus valores. O backend aplica política comum de
@@ -234,7 +235,8 @@ com o projeto usando a documentação disponível.
   funcionou no ambiente do usuário; os demais cenários reais ainda exigem testes.
 - O registro de adaptadores, catálogo autenticado, cache Proxmox e migração
   aditiva de instâncias e widgets são fundações iniciais. As novas tabelas ainda
-  não possuem API ou interface completas; o cofre Proxmox antigo permanece em uso.
+  possuem API e interface de gerenciamento básicas; edição e configuração
+  própria de widgets continuam pendentes. O cofre Proxmox antigo permanece em uso.
 - Jellyfin e Home Assistant têm protótipos isolados com testes simulados, ainda
   indisponíveis na interface. Uptime Kuma e AdGuard Home foram pesquisados, mas
   ainda não foram implementados. Nenhum dos quatro foi validado em ambiente real.

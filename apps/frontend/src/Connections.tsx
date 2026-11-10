@@ -13,6 +13,7 @@ type Connection = {
   username?: string;
   slug?: string;
 };
+type IntegrationWidget = { id: number; integrationId: number; type: Kind; name: string };
 type Form = {
   type: Kind;
   name: string;
@@ -86,6 +87,10 @@ function describeData(type: Kind, value: unknown): string | null {
 export function Connections() {
   const [items, setItems] = useState<Connection[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [widgets, setWidgets] = useState<IntegrationWidget[]>([]);
+  const [widgetName, setWidgetName] = useState('');
+  const [widgetConnection, setWidgetConnection] = useState('');
+  const [widgetResult, setWidgetResult] = useState<{ id: number; data: unknown } | null>(null);
   const [form, setForm] = useState<Form | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [message, setMessage] = useState('');
@@ -94,16 +99,29 @@ export function Connections() {
   );
   const [busy, setBusy] = useState(false);
   const load = useCallback(async () => {
-    const data = await request('/api/connections');
-    if (!Array.isArray(data)) throw new Error('Resposta inválida do servidor.');
+    const [data, widgetData] = await Promise.all([
+      request('/api/connections'),
+      request('/api/widgets'),
+    ]);
+    if (!Array.isArray(data) || !Array.isArray(widgetData))
+      throw new Error('Resposta inválida do servidor.');
     setItems(data as Connection[]);
+    setWidgets(widgetData as IntegrationWidget[]);
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    request('/api/connections', { signal: controller.signal })
-      .then((data) => {
-        if (!Array.isArray(data)) throw new Error('Resposta inválida.');
-        if (!controller.signal.aborted) setItems(data as Connection[]);
+    Promise.all([
+      request('/api/connections', { signal: controller.signal }),
+      request('/api/widgets', { signal: controller.signal }),
+    ])
+      .then(([data, widgetData]) => {
+        if (!Array.isArray(data) || !Array.isArray(widgetData))
+          throw new Error('Resposta inválida.');
+        if (!controller.signal.aborted) {
+          setItems(data as Connection[]);
+          setWidgets(widgetData as IntegrationWidget[]);
+          if (data.length) setWidgetConnection(String((data[0] as Connection).id));
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -126,6 +144,54 @@ export function Connections() {
       slug: item.slug ?? '',
     });
     setMessage('');
+  }
+  async function createWidget(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage('');
+    try {
+      await request('/api/widgets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ integrationId: Number(widgetConnection), name: widgetName }),
+      });
+      setWidgetName('');
+      await load();
+      setMessage('Widget criado.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível criar o widget.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function removeWidget(widget: IntegrationWidget) {
+    if (!window.confirm(`Remover o widget ${widget.name}?`)) return;
+    setBusy(true);
+    setMessage('');
+    try {
+      await request(`/api/widgets/${widget.id}`, { method: 'DELETE' });
+      setWidgets((current) => current.filter((item) => item.id !== widget.id));
+      if (widgetResult?.id === widget.id) setWidgetResult(null);
+      setMessage('Widget removido.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível remover o widget.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function queryWidget(widget: IntegrationWidget) {
+    setBusy(true);
+    setMessage('');
+    try {
+      const response = (await request(`/api/connections/${widget.integrationId}/data`)) as {
+        data: unknown;
+      };
+      setWidgetResult({ id: widget.id, data: response.data });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível consultar o widget.');
+    } finally {
+      setBusy(false);
+    }
   }
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -195,6 +261,82 @@ export function Connections() {
       </div>
       <h3>Suas integrações</h3>
       <p>Conecte serviços para consultar informações. A verificação TLS permanece ativa.</p>
+      <section className="integration-widgets" aria-labelledby="integration-widgets-title">
+        <h4 id="integration-widgets-title">Widgets de integração</h4>
+        <p>
+          Crie vários widgets nomeados para uma mesma conexão. Os dados são exibidos como conteúdo
+          do serviço.
+        </p>
+        {items && items.length > 0 && (
+          <form onSubmit={(event) => void createWidget(event)}>
+            <label>
+              Conexão
+              <select
+                required
+                value={widgetConnection}
+                onChange={(event) => setWidgetConnection(event.target.value)}
+              >
+                {items.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Nome do widget
+              <input
+                required
+                maxLength={80}
+                value={widgetName}
+                onChange={(event) => setWidgetName(event.target.value)}
+              />
+            </label>
+            <button type="submit" className="primary" disabled={busy}>
+              Criar widget
+            </button>
+          </form>
+        )}
+        {widgets.length === 0 ? (
+          <p>Nenhum widget cadastrado.</p>
+        ) : (
+          <ul className="connection-list">
+            {widgets.map((widget) => {
+              const connection = items?.find((item) => item.id === widget.integrationId);
+              return (
+                <li key={widget.id}>
+                  <strong>{widget.name}</strong>{' '}
+                  <small>{connection?.name ?? labels[widget.type] ?? widget.type}</small>
+                  <div>
+                    <button
+                      type="button"
+                      className="cancel"
+                      disabled={busy || !connection}
+                      onClick={() => void queryWidget(widget)}
+                    >
+                      Consultar {widget.name}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="cancel"
+                      disabled={busy}
+                      onClick={() => void removeWidget(widget)}
+                    >
+                      Remover widget {widget.name}
+                    </button>
+                  </div>
+                  {widgetResult?.id === widget.id && (
+                    <p>
+                      {describeData(widget.type, widgetResult.data) ??
+                        'O serviço retornou dados inválidos.'}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
       {form ? (
         <form onSubmit={(event) => void save(event)}>
           <label>

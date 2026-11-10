@@ -80,12 +80,38 @@ it('protege credenciais de múltiplas integrações e preserva vínculos', async
       payload: { integrationId: id, name: 'Temperatura' },
     });
     expect(widget.statusCode).toBe(201);
+    const secondWidget = await app.inject({
+      method: 'POST',
+      url: '/api/widgets',
+      headers,
+      payload: { integrationId: id, name: 'Clima sala' },
+    });
+    expect(secondWidget.statusCode).toBe(201);
+    expect((await app.inject({ method: 'GET', url: '/api/widgets', headers })).json()).toHaveLength(
+      2,
+    );
     expect(
       (await app.inject({ method: 'DELETE', url: `/api/connections/${id}`, headers })).statusCode,
     ).toBe(409);
     expect(
       (await app.inject({ method: 'DELETE', url: `/api/widgets/${widget.json().id}`, headers }))
         .statusCode,
+    ).toBe(200);
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/api/widgets/${widget.json().id}`, headers }))
+        .statusCode,
+    ).toBe(404);
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/api/connections/${id}`, headers })).statusCode,
+    ).toBe(409);
+    expect(
+      (
+        await app.inject({
+          method: 'DELETE',
+          url: `/api/widgets/${secondWidget.json().id}`,
+          headers,
+        })
+      ).statusCode,
     ).toBe(200);
     expect(
       (await app.inject({ method: 'DELETE', url: `/api/connections/${id}`, headers })).statusCode,

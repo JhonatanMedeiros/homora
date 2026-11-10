@@ -56,6 +56,21 @@ logs. Dados externos são dados não confiáveis.
    limitado. Extensões de terceiros e APIs genéricas ficam para avaliação após
    estabelecer limites de confiança, manutenção e segurança.
 
+### Estado desta implementação
+
+- Conexões autenticadas e widgets já usam tabelas separadas. A interface permite
+  criar, consultar e remover vários widgets nomeados por conexão; edição e
+  configuração específica de cada widget ainda não existem. Consultas usam o
+  cache da conexão, sem observações próprias por widget.
+- Proxmox continua usando o cofre legado e não foi extraído para
+  `integration_instances`. Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home
+  têm adaptadores somente de leitura e interface de configuração, mas não foram
+  validados em instalações reais.
+- Integrações autenticadas têm política de rede compartilhada e autorização
+  explícita de endereços privados por conexão. Monitoramento de atalhos usa
+  política própria; destinos privados só serão consultados quando a opção
+  explícita por serviço estiver implementada e habilitada.
+
 Essas etapas não significam que os recursos estejam disponíveis. Consulte o
 [plano de evolução](evolucao.md) e o código para o estado atual. O acesso à
 rede privada é necessário no homelab e deve ser autorizado explicitamente;
