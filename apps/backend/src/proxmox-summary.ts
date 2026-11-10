@@ -5,6 +5,8 @@ export type ProxmoxSummary = {
   cpu: number | null;
   /** Memória usada dos nós online, em porcentagem inteira. */
   memory: number | null;
+  /** Disco usado dos nós online (o sistema de arquivos raiz de cada nó), em porcentagem inteira. */
+  disk: number | null;
 };
 
 const finite = (value: unknown): value is number =>
@@ -23,11 +25,14 @@ export function summarizeProxmox(resources: unknown): ProxmoxSummary {
     containers: { running: 0, total: 0 },
     cpu: null,
     memory: null,
+    disk: null,
   };
   let cores = 0;
   let usedCores = 0;
   let memory = 0;
   let usedMemory = 0;
+  let disk = 0;
+  let usedDisk = 0;
   if (!Array.isArray(resources)) return summary;
   for (const item of resources) {
     if (!item || typeof item !== 'object') continue;
@@ -46,9 +51,14 @@ export function summarizeProxmox(resources: unknown): ProxmoxSummary {
         memory += resource.maxmem;
         usedMemory += Math.min(resource.mem, resource.maxmem);
       }
+      if (finite(resource.maxdisk) && finite(resource.disk) && resource.maxdisk > 0) {
+        disk += resource.maxdisk;
+        usedDisk += Math.min(resource.disk, resource.maxdisk);
+      }
     }
   }
   summary.cpu = percent(usedCores, cores);
   summary.memory = percent(usedMemory, memory);
+  summary.disk = percent(usedDisk, disk);
   return summary;
 }

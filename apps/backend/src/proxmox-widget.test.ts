@@ -13,8 +13,28 @@ import { summarizeProxmox } from './proxmox-summary.js';
 afterEach(() => vi.restoreAllMocks());
 
 const inventory = [
-  { type: 'node', node: 'pve1', status: 'online', cpu: 0.1, maxcpu: 4, mem: 4, maxmem: 8 },
-  { type: 'node', node: 'pve2', status: 'online', cpu: 0.5, maxcpu: 4, mem: 2, maxmem: 8 },
+  {
+    type: 'node',
+    node: 'pve1',
+    status: 'online',
+    cpu: 0.1,
+    maxcpu: 4,
+    mem: 4,
+    maxmem: 8,
+    disk: 10,
+    maxdisk: 100,
+  },
+  {
+    type: 'node',
+    node: 'pve2',
+    status: 'online',
+    cpu: 0.5,
+    maxcpu: 4,
+    mem: 2,
+    maxmem: 8,
+    disk: 30,
+    maxdisk: 100,
+  },
   { type: 'node', node: 'pve3', status: 'offline', cpu: 1, maxcpu: 64, mem: 99, maxmem: 99 },
   { type: 'qemu', name: 'segredo-vm', status: 'running' },
   { type: 'qemu', name: 'parada', status: 'stopped' },
@@ -32,12 +52,14 @@ it('resume o inventário em números agregados, ignorando modelos, nós offline 
     containers: { running: 2, total: 2 },
     cpu: 30,
     memory: 38,
+    disk: 20,
   });
   expect(summarizeProxmox({})).toEqual({
     vms: { running: 0, total: 0 },
     containers: { running: 0, total: 0 },
     cpu: null,
     memory: null,
+    disk: null,
   });
   expect(
     summarizeProxmox([{ type: 'node', status: 'online', cpu: 5, maxcpu: 2, mem: 9, maxmem: 3 }]),
@@ -121,6 +143,7 @@ it('liga o Proxmox legado a um card sem expor recursos nem permitir editar a lin
       containers: { running: 2, total: 2 },
       cpu: 30,
       memory: 38,
+      disk: 20,
     });
     expect(data.body).not.toContain('segredo-vm');
     expect(data.body).not.toContain('pve1');
