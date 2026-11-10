@@ -10,10 +10,11 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/components/ui/item';
+import { ServiceIcon } from '@/components/service-icon';
 import { StatusTag } from '@/components/status-tag';
 import { cn } from '@/lib/utils';
 import { formatAttempt, hostOf, type ServiceStatus } from '@/lib/services';
-import { getLocale, t } from '@/i18n';
+import { t } from '@/i18n';
 
 type Props = {
   service: Service;
@@ -70,7 +71,7 @@ export function ServiceCard({
             aria-hidden="true"
             className="size-10 rounded-md bg-secondary text-lg font-semibold"
           >
-            {s.icon || s.name.slice(0, 1).toLocaleUpperCase(getLocale())}
+            <ServiceIcon icon={s.icon} name={s.name} />
           </ItemMedia>
           <ItemContent className="min-w-0 gap-0.5">
             <ItemTitle className="w-full text-base">

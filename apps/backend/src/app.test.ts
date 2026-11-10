@@ -32,6 +32,29 @@ afterEach(async () => {
     });
 });
 describe('API de serviços', () => {
+  it('persiste ícones por nome e por URL e descarta valores inválidos', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const create = async (icon: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/api/services',
+        headers,
+        payload: { name: 'Icone', url: 'http://localhost:8096', category: 'Mídia', icon },
+      });
+    const stored = async () =>
+      (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json() as {
+        icon: string;
+      }[];
+    expect((await create('lucide:film')).statusCode).toBe(201);
+    expect((await create('https://exemplo.test/film.svg')).statusCode).toBe(201);
+    expect((await create('https://user:pass@exemplo.test/a.png')).statusCode).toBe(201);
+    expect((await stored()).map((service) => service.icon).sort()).toEqual([
+      '',
+      'https://exemplo.test/film.svg',
+      'lucide:film',
+    ]);
+    expect((await create('x'.repeat(513))).statusCode).toBe(400);
+  });
   it('protege o catálogo de integrações e retorna apenas metadados', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/integrations/catalog' })).statusCode).toBe(
       401,

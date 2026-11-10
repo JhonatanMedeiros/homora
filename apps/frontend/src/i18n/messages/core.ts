@@ -56,7 +56,8 @@ export const en = {
   'form.description': 'Description',
   'form.descriptionPlaceholder': 'Movies and shows',
   'form.icon': 'Icon',
-  'form.iconHint': 'optional emoji',
+  'form.iconHint': 'emoji, icon name or image URL',
+  'form.iconPlaceholder': '🎬  lucide:film  https://…',
   'form.allowPrivate': 'Allow monitoring on a private network',
   'form.allowPrivateHint':
     'Useful for addresses on your local network, such as 192.168.x.x. Applies to this service only.',
@@ -166,7 +167,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'form.description': 'Descrição',
   'form.descriptionPlaceholder': 'Filmes e séries',
   'form.icon': 'Ícone',
-  'form.iconHint': 'emoji opcional',
+  'form.iconHint': 'emoji, nome do ícone ou URL da imagem',
+  'form.iconPlaceholder': '🎬  lucide:film  https://…',
   'form.allowPrivate': 'Permitir monitoramento em rede privada',
   'form.allowPrivateHint':
     'Útil para endereços da sua rede local, como 192.168.x.x. Vale só para este serviço.',

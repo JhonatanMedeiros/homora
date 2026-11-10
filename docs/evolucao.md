@@ -231,8 +231,8 @@ Marque apenas com a implementação e a validação indicadas.
 - [ ] **Importador do Homepage** (`services.yaml`, `bookmarks.yaml`) e do Dashy,
       com prévia revisável antes de gravar e limite às versões testadas.
       Validar com configurações reais, sem edição manual.
-- [ ] **Ícones por nome** de conjunto open source com licença compatível,
-      mantendo emoji e URL própria.
+- [x] **Ícones por nome** de conjunto open source com licença compatível,
+      mantendo emoji e URL própria (ver registro abaixo).
 - [ ] **Inglês e i18n:** interface em inglês por padrão, com pt-BR completo
       (feito, ver registro abaixo); README, instalação e capturas de tela em
       inglês (pendente, junto da imagem Docker); mensagens de erro do backend
@@ -240,6 +240,24 @@ Marque apenas com a implementação e a validação indicadas.
 
 **Conclusão:** instalação limpa e importação de uma configuração real do
 Homepage e do Dashy, sem edição manual, em ambiente de teste.
+
+### Registro R0 — ícones por nome (2026-11-10)
+
+- O campo `icon` aceita três formatos: emoji ou texto curto (até 8 caracteres,
+  como antes), `lucide:nome` (96 ícones embutidos do Lucide, ISC, curados para
+  homelab) e URL `http(s)` de imagem (até 512 caracteres, sem credenciais).
+  `normalizeIcon` em `@homora/shared` valida no servidor; valores antigos
+  continuam válidos e nenhuma migração foi necessária.
+- A interface mostra uma prévia e sugere os nomes embutidos no formulário. Se o
+  nome não existe ou a imagem não carrega, o card usa a inicial do serviço.
+  Imagens por URL são carregadas pelo navegador, sem `referrer`.
+- Limites: a lista é curada, não a biblioteca inteira; não há ícones de marcas
+  (Jellyfin, Sonarr etc.), que precisarão de outro conjunto ou de URL própria,
+  com licença revisada, quando os importadores forem feitos. Uma URL de imagem
+  revela ao host da imagem o IP de quem abre o painel; agentes podem propor
+  ícones por URL, e a proposta mostra o valor antes da aprovação.
+- Validação: `pnpm check` (143 testes Vitest e 4 testes Node) e `pnpm build`
+  passaram. Não verificado visualmente em navegador real.
 
 ### Registro R0 — i18n da interface (2026-11-10)
 

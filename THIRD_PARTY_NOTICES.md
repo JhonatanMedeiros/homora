@@ -16,6 +16,11 @@ correspondente em `node_modules`.
 | MPL-2.0      | `lightningcss` (ferramenta de build do CSS; não é executada em produção)    |
 | OFL-1.1      | Fontes Figtree, JetBrains Mono e Barlow Semi Condensed (pacotes Fontsource) |
 
+## Ícones
+
+Os ícones `lucide:nome` vêm do pacote `lucide-react` (licença ISC), já listado acima.
+Ícones por URL são de responsabilidade de quem os configura.
+
 ## Fontes
 
 As fontes são servidas localmente pelos pacotes Fontsource, sob a SIL Open Font

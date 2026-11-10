@@ -1,11 +1,13 @@
 import { forwardRef, type FormEvent } from 'react';
-import type { ServiceInput } from '@homora/shared';
+import { ICON_MAX_LENGTH, type ServiceInput } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
+import { ServiceIcon } from '@/components/service-icon';
+import { iconNames } from '@/lib/icons';
 import { t } from '@/i18n';
 
 type Props = {
@@ -98,13 +100,28 @@ export const ServiceForm = forwardRef<HTMLFormElement, Props>(function ServiceFo
                 {t('form.icon')}{' '}
                 <small className="font-normal text-muted-foreground">{t('form.iconHint')}</small>
               </FieldLabel>
-              <Input
-                id="service-icon"
-                maxLength={8}
-                value={value.icon ?? ''}
-                onChange={(e) => set({ icon: e.target.value })}
-                placeholder="🎬"
-              />
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary text-lg font-semibold"
+                >
+                  <ServiceIcon icon={value.icon} name={value.name || '?'} />
+                </span>
+                <Input
+                  id="service-icon"
+                  maxLength={ICON_MAX_LENGTH}
+                  list="icon-names"
+                  autoComplete="off"
+                  value={value.icon ?? ''}
+                  onChange={(e) => set({ icon: e.target.value })}
+                  placeholder={t('form.iconPlaceholder')}
+                />
+              </div>
+              <datalist id="icon-names">
+                {iconNames.map((name) => (
+                  <option key={name} value={`lucide:${name}`} />
+                ))}
+              </datalist>
             </Field>
             <Field orientation="horizontal" className="items-start sm:col-span-2">
               <Checkbox
