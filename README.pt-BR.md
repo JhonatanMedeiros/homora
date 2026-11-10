@@ -112,7 +112,7 @@ Após executar `pnpm build`, inicie o servidor via `node apps/backend/dist/mcp-s
 
 ## Docker Compose
 
-Execute `docker compose up --build` (ou, com imagens publicadas, `HOMORA_VERSION=<versão> docker compose -f compose.release.yml up -d`) e abra <http://localhost:8080>. A porta é vinculada ao localhost e os dados persistem no volume `homora-data`. Para criar um backup, use um diretório novo e protegido no host, pois os comandos não devem sobrescrever backups anteriores. Com o backend em execução, faça a cópia consistente do banco para o volume e exporte-a:
+Execute `docker compose up --build` (ou, com imagens publicadas, `HOMORA_VERSION=<versão> docker compose -f compose.release.yml up -d`) e abra <http://localhost:8080>. A porta é vinculada ao localhost por padrão e os dados persistem no volume `homora-data`. O endereço de bind vem de `HOMORA_BIND_IP`; altere (por exemplo `HOMORA_BIND_IP=0.0.0.0`) apenas atrás de um proxy reverso com HTTPS na mesma rede privada, conforme a nota de segurança. Para criar um backup, use um diretório novo e protegido no host, pois os comandos não devem sobrescrever backups anteriores. Com o backend em execução, faça a cópia consistente do banco para o volume e exporte-a:
 
 ```bash
 mkdir -p backups/backup-2026-11-10
