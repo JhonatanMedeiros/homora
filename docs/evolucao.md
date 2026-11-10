@@ -295,7 +295,7 @@ com o projeto usando a documentação disponível.
 
 ## Redesenho da interface
 
-- A interface foi refeita a partir da proposta `propostas/console-v2.html`:
+- A interface foi redesenhada:
   começa pelo celular (navegação inferior, alvos de toque de 44 px), usa tema
   claro e escuro conforme o sistema (com alternância manual), paleta grafite e
   azul (substituída pela paleta quente descrita em “Refinamento da interface”), e fontes Hanken Grotesk e Bricolage Grotesque servidas localmente

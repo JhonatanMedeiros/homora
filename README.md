@@ -50,7 +50,7 @@ O acesso local usa HTTP em loopback. Para acesso remoto, ainda não há um perfi
 - `pnpm lint`, `pnpm lint:fix`, `pnpm format` e `pnpm format:check`: análise e formatação.
 - O Husky executa lint-staged no pre-commit e Commitlint no commit-msg. Use mensagens como `feat: adiciona integração`. Os hooks são instalados pelo `pnpm install`; para reinstalá-los, execute `pnpm exec husky`.
 
-Os protótipos em `propostas/`, migrações geradas e arquivos de skills vendorizadas são excluídos das verificações globais de formatação e lint.
+Migrações geradas e arquivos de skills vendorizadas são excluídos das verificações globais de formatação e lint.
 
 ## Backup local
 

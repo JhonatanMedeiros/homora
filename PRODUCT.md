@@ -50,7 +50,7 @@ administrativo frio. Tema claro e escuro existentes devem continuar.
 
 ## Evidence on Hand
 
-Docs em `docs/` e protótipos em `propostas/`. Não há depoimentos, clientes nem
+Docs em `docs/`. Não há depoimentos, clientes nem
 métricas; não inventar.
 
 ## Product Principles

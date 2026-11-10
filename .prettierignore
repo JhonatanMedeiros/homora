@@ -11,7 +11,6 @@ node_modules
 data
 pnpm-lock.yaml
 packages/db/migrations
-propostas
 coverage
 # Skills de agentes instaladas por ferramentas externas
 .agent
