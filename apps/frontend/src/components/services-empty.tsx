@@ -9,7 +9,15 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 
-export function ServicesEmpty({ hasServices, onAdd }: { hasServices: boolean; onAdd: () => void }) {
+export function ServicesEmpty({
+  hasServices,
+  onAdd,
+  managing,
+}: {
+  hasServices: boolean;
+  onAdd: () => void;
+  managing: boolean;
+}) {
   return (
     <Empty className="border border-dashed">
       <EmptyHeader>
@@ -27,7 +35,7 @@ export function ServicesEmpty({ hasServices, onAdd }: { hasServices: boolean; on
         <EmptyContent>
           <Button type="button" onClick={onAdd}>
             <Plus />
-            Adicionar primeiro serviço
+            {managing ? 'Adicionar primeiro serviço' : 'Gerenciar serviços'}
           </Button>
         </EmptyContent>
       )}

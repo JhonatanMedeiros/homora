@@ -1,31 +1,18 @@
 import { StatusTag } from '@/components/status-tag';
 
-type Props = { online: number; down: number; blocked: number; monitored: number };
-
-/** Disponibilidade do painel numa linha de etiquetas, com a dica de rede privada uma vez só. */
-export function HealthSummary({ online, down, blocked, monitored }: Props) {
-  if (!online && !down && !blocked) return null;
+type Props = {
+  online: number;
+  down: number;
+  blocked: number;
+  unknown: number;
+};
+export function HealthSummary({ online, down, blocked, unknown }: Props) {
   return (
     <div aria-label="Resumo de disponibilidade" className="flex flex-wrap items-center gap-2">
-      {down > 0 && <StatusTag state="unavailable" label={`${down} fora do ar`} />}
-      {online > 0 && (
-        <StatusTag
-          state="available"
-          label={down === 0 && online === monitored ? 'Tudo no ar por aqui' : `${online} no ar`}
-        />
-      )}
-      {blocked > 0 && (
-        <>
-          <StatusTag
-            state="unknown"
-            blocked
-            label={`${blocked} sem monitoramento (rede privada não autorizada)`}
-          />
-          <small className="text-sm text-muted-foreground">
-            Autorize a rede privada em Editar.
-          </small>
-        </>
-      )}
+      {online > 0 && <StatusTag state="available" label={`${online} disponíveis`} />}
+      {down > 0 && <StatusTag state="unavailable" label={`${down} indisponíveis`} />}
+      {unknown > 0 && <StatusTag state="unknown" label={`${unknown} sem informação`} />}
+      {blocked > 0 && <StatusTag state="unknown" blocked label={`${blocked} sem monitoramento`} />}
     </div>
   );
 }

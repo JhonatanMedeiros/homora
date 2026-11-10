@@ -168,14 +168,14 @@ components:
 
 **Creative North Star: "A Etiqueta de Patch Panel"**
 
-Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de grupo e de seção, e o estado de cada serviço, saem como tiras de fita. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.
+Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de seção e o estado de cada serviço usam a linguagem de fita, enquanto grupos de serviços têm títulos mais discretos. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.
 
-O trilho lateral é grafite nos dois temas, como um rack ao lado do conteúdo. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.
+A barra superior é grafite nos dois temas, como uma referência ao rack. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.
 
 **Key Characteristics:**
 
 - Fita laminada branca com texto preto em caixa-alta como sinal-assinatura (LabelTape, StatusTag).
-- Trilho grafite de 232px nos dois temas; no celular vira barra de abas inferior de 56px.
+- Barra superior grafite nos dois temas; gerenciamento acessível por um botão.
 - Amarelo de fita só como preenchimento, nunca como texto.
 - Estado sempre com ícone, texto e cor.
 - Plano: sem sombra decorativa, profundidade por tom e borda.
@@ -187,7 +187,7 @@ Grafite aquecido e papel quente, com um único amarelo de fita e três cores de 
 
 ### Primary
 
-- **Amarelo de Fita** (`tape-yellow`, `--primary`): preenchimento da ação principal (Adicionar serviço), do item ativo no trilho e nas abas móveis, seleção de texto e `accent-color`. No escuro vira `tape-yellow-dark`. O texto sobre ele é `tape-yellow-ink`, grafite quase preto.
+- **Amarelo de Fita** (`tape-yellow`, `--primary`): preenchimento da ação principal (Adicionar serviço), de itens ativos quando aplicável, seleção de texto e `accent-color`. No escuro vira `tape-yellow-dark`. O texto sobre ele é `tape-yellow-ink`, grafite quase preto.
 
 ### Secondary
 
@@ -221,7 +221,7 @@ Grafite aquecido e papel quente, com um único amarelo de fita e três cores de 
 ### Hierarchy
 
 - **Headline** (600, 1.875rem, 1.25): título de página (`h1`), tracking -0.025em, `text-balance`.
-- **Title** (600, 1rem, 1.5): `h2`/`h3` e itens de navegação do trilho, em Barlow.
+- **Title** (600, 1rem, 1.5): `h2`/`h3` e títulos secundários, em Barlow.
 - **Body** (400, 1rem, 1.5): texto corrido e descrições; largura máxima de 65ch no cabeçalho de página. Campos usam 0.875rem a partir de `md`.
 - **Label** (700, 0.8125rem, 0.08em, caixa-alta): texto de LabelTape; StatusTag usa 0.06em.
 - **Data** (400, 0.8125rem): host do serviço, contagens com `tabular-nums`.
@@ -232,11 +232,11 @@ Grafite aquecido e papel quente, com um único amarelo de fita e três cores de 
 
 ## Layout
 
-Trilho fixo de 232px (`--sidebar-width: 14.5rem`) à esquerda a partir de `md`; à direita, barra superior sticky de 64px com busca e ação principal, e conteúdo em coluna de até 72rem (`max-w-6xl`) com margem lateral de 16px, 32px a partir de `md`. Seções empilham com 32px; título e grade com 12px. A grade de serviços é 1 coluna no celular, 2 a partir de `sm`, 3 a partir de `xl`, com intervalo de 12px. Abaixo de `md` o trilho some, a marca, o tema e Sair vão para a barra superior e a navegação vira barra de abas inferior de 56px com área segura, e o conteúdo ganha 96px de respiro embaixo. Alvos de toque crescem para 44px em ponteiro grosso (`pointer-coarse`).
+Barra superior grafite com marca, tema, saída e acesso ao gerenciamento. O conteúdo ocupa até 72rem (`max-w-6xl`), com margens laterais de 16px e 32px a partir de `md`. A tela inicial apresenta busca, resumo de disponibilidade e grupos; a navegação administrativa aparece ao entrar em Gerenciar. A grade de serviços tem uma coluna no celular, duas a partir de `sm` e três a partir de `xl`, com intervalo de 12px. Alvos de toque crescem para 44px em ponteiro grosso.
 
 ## Elevation & Depth
 
-O sistema é plano. Profundidade vem de tom (trilho mais escuro que o papel, card mais claro que o fundo) e de borda de 1px, nunca de sombra projetada. A única exceção é a borda de laminação da fita: um filete interno de 1px a 20% de preto mais um fio de 1px embaixo, que faz a tira parecer papel laminado. Ela vive só em LabelTape.
+O sistema é plano. Profundidade vem de tom (barra mais escura que o papel, card mais claro que o fundo) e de borda de 1px, nunca de sombra projetada. A única exceção é a borda de laminação da fita: um filete interno de 1px a 20% de preto mais um fio de 1px embaixo, que faz a tira parecer papel laminado. Ela vive só em LabelTape.
 
 ### Named Rules
 
@@ -269,11 +269,11 @@ O serviço é um Item com borda, fundo de card, 16px de padding e hover em `acce
 
 ### Navigation
 
-Trilho grafite com itens em Barlow 600 (1rem, tracking amplo); item ativo em amarelo de fita com texto grafite. No celular, abas inferiores de 56px com o mesmo destaque no ativo.
+Barra superior grafite com marca e botão Gerenciar. Na área administrativa, a navegação fica lateral em telas maiores e acima do conteúdo no celular; o item ativo usa a variante secundária. Voltar ao início retorna ao painel de serviços.
 
 ### LabelTape (assinatura)
 
-Tira branca laminada (24px de altura, 28px em título de seção) com Barlow 700 em caixa-alta, 0.8125rem, tracking 0.08em, texto preto, raio 3px e borda de laminação. Rotula títulos de grupo e de seção e acompanha a contagem em mono ao lado. Em `src/components/label-tape.tsx`.
+Tira branca laminada (24px de altura, 28px em título de seção) com Barlow 700 em caixa-alta, 0.8125rem, tracking 0.08em, texto preto, raio 3px e borda de laminação. Identifica tipos de recurso quando necessário; títulos de seção são discretos por padrão. Grupos de serviços usam título em Barlow, ícone de pasta, contagem discreta e um separador horizontal. Nas áreas de integrações e agentes, títulos de seção usam texto e separador discretos, sem fita. Em `src/components/label-tape.tsx`.
 
 ### StatusTag (assinatura)
 
@@ -287,11 +287,11 @@ Base shadcn/ui estilo new-york com Radix (`radix-ui`), ícones lucide, Tailwind 
 
 ### Do:
 
-- **Do** usar LabelTape para título de grupo e de seção, e StatusTag para todo estado de serviço.
+- **Do** usar títulos discretos como padrão em seções e StatusTag para todo estado de serviço; LabelTape fica reservada a usos explícitos, como o tipo de recurso.
 - **Do** reservar o amarelo de fita para a ação principal, o item ativo e o foco.
 - **Do** compor telas com primitivos de `components/ui` e componentes de `components`, colocando páginas em `pages` e módulos em `features`.
 - **Do** mostrar endereços e contagens em JetBrains Mono.
-- **Do** manter o trilho grafite nos dois temas e trocar o tema só pela classe `dark`.
+- **Do** manter a barra superior grafite nos dois temas e trocar o tema só pela classe `dark`.
 
 ### Don't:
 
@@ -300,3 +300,7 @@ Base shadcn/ui estilo new-york com Radix (`radix-ui`), ícones lucide, Tailwind 
 - **Don't** adicionar sombra decorativa; o filete de laminação da LabelTape é a única borda em relevo.
 - **Don't** voltar ao painel genérico de cards iguais com ponto de estado.
 - **Don't** usar caixa-alta com tracking aberto fora do texto de fita.
+
+## Navegação da tela inicial
+
+A tela inicial prioriza busca, disponibilidade e abertura dos serviços. A barra superior grafite mantém a marca, tema, saída e o acesso discreto a **Gerenciar**. A área de gerenciamento reúne serviços e grupos, integrações e agentes; a edição e remoção de cards ficam nessa área. A disposição se adapta a telas pequenas sem expor abas administrativas na tela inicial.

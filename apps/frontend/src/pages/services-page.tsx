@@ -3,6 +3,14 @@ import type { Service, ServiceInput } from '@homora/shared';
 import { Check, Plus, SlidersHorizontal } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { HealthSummary } from '@/components/health-summary';
@@ -20,13 +28,29 @@ const collator = 'pt-BR';
 /** Tela principal: grupos de serviços com estado, busca, edição e modo Organizar. */
 type Props = {
   query: string;
+  managing: boolean;
+  onManage: () => void;
   data: ReturnType<typeof useServices>;
   /** A busca abre o primeiro resultado com Enter; a página registra aqui como fazê-lo. */
   openFirstRef: MutableRefObject<(() => void) | null>;
 };
 
-export function ServicesPage({ query, data, openFirstRef }: Props) {
+export function ServicesPage({ query, data, openFirstRef, managing, onManage }: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
+  const [compact, setCompact] = useState(() => {
+    try {
+      return localStorage.getItem('homora-density') === 'compact';
+    } catch {
+      return false;
+    }
+  });
+  const [showDescriptions, setShowDescriptions] = useState(() => {
+    try {
+      return localStorage.getItem('homora-descriptions') !== 'hidden';
+    } catch {
+      return true;
+    }
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [formOpen, setFormOpen] = useState(false);
@@ -42,7 +66,6 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
   const [groupDraft, setGroupDraft] = useState('');
   const [groupError, setGroupError] = useState('');
   const flashTimer = useRef<number | undefined>(undefined);
-  const formRef = useRef<HTMLFormElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
 
@@ -70,7 +93,7 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
         // Indisponíveis sobem no grupo, exceto no modo Organizar (a ordem é do usuário).
         .sort((a, b) => (organizing ? 0 : Number(isDown(b)) - Number(isDown(a)))),
     }))
-    .filter((group) => group.items.length || !needle);
+    .filter((group) => group.items.length || (!needle && selected === null));
 
   useEffect(() => {
     const ref = openFirstRef;
@@ -82,13 +105,6 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
       ref.current = null;
     };
   });
-
-  useEffect(() => {
-    if (formOpen) {
-      formRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-      nameInput.current?.focus({ preventScroll: true });
-    }
-  }, [formOpen]);
 
   function focusEditTrigger(id: number | null) {
     if (id !== null)
@@ -116,15 +132,10 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
   }
   function closeForm() {
     setFormOpen(false);
-    focusEditTrigger(editing);
   }
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (formOpen) {
-        setFormOpen(false);
-        focusEditTrigger(editing);
-      }
       if (editingGroup !== null) {
         setEditingGroup(null);
         setGroupDraft('');
@@ -134,7 +145,7 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
     };
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
-  }, [formOpen, editingGroup, editing]);
+  }, [editingGroup]);
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -226,39 +237,41 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
   const blocked = services.filter(
     (s) => blockedIds.has(s.id) && statuses[s.id]?.status !== 'available',
   ).length;
-  const monitored = total - blocked;
+  const unknown = total - online - down - blocked;
   return (
     <section aria-label="Serviços" className="flex flex-col gap-6">
-      <PageHeader
-        title="Seus serviços"
-        description={
-          total
-            ? `${total} ${total === 1 ? 'serviço' : 'serviços'} em ${categories.length} ${categories.length === 1 ? 'grupo' : 'grupos'}.`
-            : 'Reúna aqui os serviços da sua casa e abra qualquer um com um clique.'
-        }
-        actions={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              aria-pressed={organizing}
-              onClick={() => {
-                setOrganizing(!organizing);
-                setConfirming(null);
-              }}
-            >
-              <SlidersHorizontal />
-              {organizing ? 'Concluir' : 'Organizar'}
-            </Button>
-            <Button ref={addButton} type="button" onClick={() => openForm()}>
-              <Plus />
-              Adicionar serviço
-            </Button>
-          </>
-        }
-      />
-      {!organizing && (
-        <HealthSummary online={online} down={down} blocked={blocked} monitored={monitored} />
+      {managing && (
+        <PageHeader
+          title="Serviços e grupos"
+          description={
+            total
+              ? `${total} ${total === 1 ? 'serviço' : 'serviços'} em ${categories.length} ${categories.length === 1 ? 'grupo' : 'grupos'}. Adicione ou edite serviços e organize os grupos.`
+              : 'Reúna aqui os serviços da sua casa e abra qualquer um com um clique.'
+          }
+          actions={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                aria-pressed={organizing}
+                onClick={() => {
+                  setOrganizing(!organizing);
+                  setConfirming(null);
+                }}
+              >
+                <SlidersHorizontal />
+                {organizing ? 'Concluir' : 'Organizar'}
+              </Button>
+              <Button ref={addButton} type="button" onClick={() => openForm()}>
+                <Plus />
+                Adicionar serviço
+              </Button>
+            </>
+          }
+        />
+      )}
+      {!managing && !organizing && (
+        <HealthSummary online={online} down={down} blocked={blocked} unknown={unknown} />
       )}
       {organizing && (
         <OrganizePanel
@@ -275,20 +288,51 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
         />
       )}
       <FormError>{groupError}</FormError>
-      {formOpen && (
-        <ServiceForm
-          ref={formRef}
-          nameRef={nameInput}
-          editing={editing !== null}
-          value={form}
-          categories={categories}
-          error={formError}
-          saving={saving}
-          onChange={setForm}
-          onSubmit={(event) => void save(event)}
-          onCancel={closeForm}
-        />
-      )}
+      <Dialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          if (!open && !saving) closeForm();
+        }}
+      >
+        <DialogContent
+          className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl"
+          showCloseButton={false}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            nameInput.current?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            focusEditTrigger(editing);
+          }}
+          onEscapeKeyDown={(event) => {
+            if (saving) event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            if (saving) event.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-label text-xl">
+              {editing !== null ? 'Editar serviço' : 'Novo serviço'}
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados para organizar e acessar o serviço no painel.
+            </DialogDescription>
+          </DialogHeader>
+          <ServiceForm
+            nameRef={nameInput}
+            editing={editing !== null}
+            value={form}
+            categories={categories}
+            error={formError}
+            saving={saving}
+            onChange={setForm}
+            onSubmit={(event) => void save(event)}
+            onCancel={closeForm}
+          />
+        </DialogContent>
+      </Dialog>
       <div role="status" id="message" className="empty:hidden">
         {(message || data.loadError) && (
           <Alert variant="destructive">
@@ -317,6 +361,47 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
           }
         />
       )}
+      {!managing && services.length > 0 && (
+        <div className="flex items-center justify-end gap-3">
+          <span className="text-sm text-muted-foreground">Visualização</span>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={compact ? 'compact' : 'comfortable'}
+            onValueChange={(value) => {
+              if (!value) return;
+              const next = value === 'compact';
+              setCompact(next);
+              try {
+                localStorage.setItem('homora-density', next ? 'compact' : 'comfortable');
+              } catch {
+                /* preferência apenas nesta sessão */
+              }
+            }}
+            aria-label="Densidade dos serviços"
+          >
+            <ToggleGroupItem value="comfortable">Confortável</ToggleGroupItem>
+            <ToggleGroupItem value="compact">Compacta</ToggleGroupItem>
+          </ToggleGroup>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-pressed={showDescriptions}
+            onClick={() => {
+              const next = !showDescriptions;
+              setShowDescriptions(next);
+              try {
+                localStorage.setItem('homora-descriptions', next ? 'visible' : 'hidden');
+              } catch {
+                /* preferência apenas nesta sessão */
+              }
+            }}
+          >
+            {showDescriptions ? 'Ocultar descrições' : 'Mostrar descrições'}
+          </Button>
+        </div>
+      )}
       {groups.map(({ category, items }) => {
         const row = groupRows.find((group) => group.name === category);
         return (
@@ -325,6 +410,8 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
             category={category}
             count={items.length}
             organizing={organizing}
+            compact={compact && !managing}
+            searching={Boolean(needle)}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
             groupId={row?.id}
@@ -345,6 +432,9 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
                   status={info}
                   blocked={blockedIds.has(s.id)}
                   organizing={organizing}
+                  managing={managing}
+                  compact={compact && !managing}
+                  showDescription={showDescriptions || managing}
                   confirmingRemoval={confirming === s.id}
                   dragging={dragging === s.id}
                   onEdit={() => openForm(s)}
@@ -387,7 +477,11 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
         );
       })}
       {!groups.length && (
-        <ServicesEmpty hasServices={services.length > 0} onAdd={() => openForm()} />
+        <ServicesEmpty
+          hasServices={services.length > 0}
+          managing={managing}
+          onAdd={() => (managing ? openForm() : onManage())}
+        />
       )}
     </section>
   );

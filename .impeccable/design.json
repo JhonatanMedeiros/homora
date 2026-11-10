@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-10T18:00:00+00:00",
+  "generatedAt": "2026-11-10T19:10:45.326091+00:00",
   "title": "Design System: Homora",
   "extensions": {
     "colorMeta": {
@@ -8,65 +8,171 @@
         "role": "primary",
         "displayName": "Amarelo de Fita",
         "canonical": "oklch(0.87 0.17 95)",
-        "tonalRamp": ["oklch(0.25 0.05 90)", "oklch(0.35 0.08 92)", "oklch(0.45 0.1 93)", "oklch(0.58 0.13 94)", "oklch(0.7 0.15 95)", "oklch(0.8 0.17 95)", "oklch(0.9 0.12 96)", "oklch(0.95 0.06 97)"]
+        "tonalRamp": [
+          "oklch(0.25 0.05 90)",
+          "oklch(0.35 0.08 92)",
+          "oklch(0.45 0.1 93)",
+          "oklch(0.58 0.13 94)",
+          "oklch(0.7 0.15 95)",
+          "oklch(0.8 0.17 95)",
+          "oklch(0.9 0.12 96)",
+          "oklch(0.95 0.06 97)"
+        ]
       },
       "warm-paper": {
         "role": "neutral",
         "displayName": "Papel Quente",
         "canonical": "oklch(0.965 0.008 85)",
-        "tonalRamp": ["oklch(0.2 0.008 70)", "oklch(0.3 0.01 72)", "oklch(0.45 0.012 75)", "oklch(0.6 0.012 78)", "oklch(0.75 0.012 80)", "oklch(0.87 0.01 85)", "oklch(0.94 0.008 85)", "oklch(0.99 0.004 85)"]
+        "tonalRamp": [
+          "oklch(0.2 0.008 70)",
+          "oklch(0.3 0.01 72)",
+          "oklch(0.45 0.012 75)",
+          "oklch(0.6 0.012 78)",
+          "oklch(0.75 0.012 80)",
+          "oklch(0.87 0.01 85)",
+          "oklch(0.94 0.008 85)",
+          "oklch(0.99 0.004 85)"
+        ]
       },
       "graphite-ink": {
         "role": "neutral",
         "displayName": "Tinta de Grafite",
         "canonical": "oklch(0.22 0.012 70)",
-        "tonalRamp": ["oklch(0.15 0.01 70)", "oklch(0.22 0.012 70)", "oklch(0.3 0.012 70)", "oklch(0.38 0.014 72)", "oklch(0.47 0.015 75)", "oklch(0.6 0.014 78)", "oklch(0.75 0.012 80)", "oklch(0.9 0.008 85)"]
+        "tonalRamp": [
+          "oklch(0.15 0.01 70)",
+          "oklch(0.22 0.012 70)",
+          "oklch(0.3 0.012 70)",
+          "oklch(0.38 0.014 72)",
+          "oklch(0.47 0.015 75)",
+          "oklch(0.6 0.014 78)",
+          "oklch(0.75 0.012 80)",
+          "oklch(0.9 0.008 85)"
+        ]
       },
       "rack-rail": {
         "role": "neutral",
         "displayName": "Trilho de Rack",
         "canonical": "oklch(0.235 0.01 70)",
-        "tonalRamp": ["oklch(0.165 0.008 70)", "oklch(0.2 0.008 70)", "oklch(0.235 0.01 70)", "oklch(0.3 0.012 70)", "oklch(0.34 0.01 70)", "oklch(0.5 0.012 70)", "oklch(0.72 0.014 80)", "oklch(0.94 0.01 85)"]
+        "tonalRamp": [
+          "oklch(0.165 0.008 70)",
+          "oklch(0.2 0.008 70)",
+          "oklch(0.235 0.01 70)",
+          "oklch(0.3 0.012 70)",
+          "oklch(0.34 0.01 70)",
+          "oklch(0.5 0.012 70)",
+          "oklch(0.72 0.014 80)",
+          "oklch(0.94 0.01 85)"
+        ]
       },
       "laminated-tape": {
         "role": "neutral",
         "displayName": "Fita Laminada",
         "canonical": "oklch(1 0 0)",
-        "tonalRamp": ["oklch(0.17 0.01 70)", "oklch(0.3 0.008 80)", "oklch(0.45 0.006 85)", "oklch(0.6 0.005 90)", "oklch(0.75 0.005 90)", "oklch(0.87 0.004 95)", "oklch(0.95 0.008 95)", "oklch(1 0 0)"]
+        "tonalRamp": [
+          "oklch(0.17 0.01 70)",
+          "oklch(0.3 0.008 80)",
+          "oklch(0.45 0.006 85)",
+          "oklch(0.6 0.005 90)",
+          "oklch(0.75 0.005 90)",
+          "oklch(0.87 0.004 95)",
+          "oklch(0.95 0.008 95)",
+          "oklch(1 0 0)"
+        ]
       },
       "status-ok": {
         "role": "secondary",
         "displayName": "Verde de Disponível",
         "canonical": "oklch(0.45 0.13 150)",
-        "tonalRamp": ["oklch(0.2 0.05 150)", "oklch(0.3 0.09 150)", "oklch(0.45 0.13 150)", "oklch(0.56 0.15 150)", "oklch(0.68 0.16 150)", "oklch(0.78 0.15 150)", "oklch(0.88 0.09 150)", "oklch(0.95 0.04 150)"]
+        "tonalRamp": [
+          "oklch(0.2 0.05 150)",
+          "oklch(0.3 0.09 150)",
+          "oklch(0.45 0.13 150)",
+          "oklch(0.56 0.15 150)",
+          "oklch(0.68 0.16 150)",
+          "oklch(0.78 0.15 150)",
+          "oklch(0.88 0.09 150)",
+          "oklch(0.95 0.04 150)"
+        ]
       },
       "status-down": {
         "role": "secondary",
         "displayName": "Vermelho de Fora do Ar",
         "canonical": "oklch(0.52 0.19 27)",
-        "tonalRamp": ["oklch(0.2 0.06 27)", "oklch(0.32 0.11 27)", "oklch(0.42 0.16 27)", "oklch(0.52 0.19 27)", "oklch(0.62 0.19 27)", "oklch(0.7 0.18 27)", "oklch(0.84 0.1 27)", "oklch(0.95 0.03 27)"]
+        "tonalRamp": [
+          "oklch(0.2 0.06 27)",
+          "oklch(0.32 0.11 27)",
+          "oklch(0.42 0.16 27)",
+          "oklch(0.52 0.19 27)",
+          "oklch(0.62 0.19 27)",
+          "oklch(0.7 0.18 27)",
+          "oklch(0.84 0.1 27)",
+          "oklch(0.95 0.03 27)"
+        ]
       }
     },
     "typographyMeta": {
-      "headline": { "displayName": "Headline", "purpose": "Título de página em Barlow Semi Condensed 600." },
-      "title": { "displayName": "Title", "purpose": "Títulos secundários e itens do trilho, em Barlow." },
-      "body": { "displayName": "Body", "purpose": "Texto corrido em Figtree." },
-      "body-compact": { "displayName": "Body Compact", "purpose": "Campos e texto denso a partir de md." },
-      "label-tape": { "displayName": "Label", "purpose": "Texto de LabelTape e StatusTag, caixa-alta com tracking aberto." },
-      "data": { "displayName": "Data", "purpose": "Hosts, endereços e contagens em JetBrains Mono." }
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Título de página em Barlow Semi Condensed 600."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Títulos secundários em Barlow."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto corrido em Figtree."
+      },
+      "body-compact": {
+        "displayName": "Body Compact",
+        "purpose": "Campos e texto denso a partir de md."
+      },
+      "label-tape": {
+        "displayName": "Label",
+        "purpose": "Texto de LabelTape e StatusTag, caixa-alta com tracking aberto."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Hosts, endereços e contagens em JetBrains Mono."
+      }
     },
     "shadows": [
-      { "name": "lamination-edge", "value": "inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18)", "purpose": "Borda de laminação da fita; só em LabelTape, nunca decorativa." },
-      { "name": "focus-ring", "value": "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)", "purpose": "Anel de foco de botões, campos e itens (ring-[3px] ring-ring/50)." }
+      {
+        "name": "lamination-edge",
+        "value": "inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18)",
+        "purpose": "Borda de laminação da fita; só em LabelTape, nunca decorativa."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)",
+        "purpose": "Anel de foco de botões, campos e itens (ring-[3px] ring-ring/50)."
+      }
     ],
     "motion": [
-      { "name": "state-transition", "value": "transition-colors / transition-all, duração padrão do Tailwind (150ms)", "purpose": "Hover e foco." },
-      { "name": "reduced-motion", "value": "animation e transition a 0.01ms sob prefers-reduced-motion: reduce", "purpose": "Respeito global a movimento reduzido." }
+      {
+        "name": "state-transition",
+        "value": "transition-colors / transition-all, duração padrão do Tailwind (150ms)",
+        "purpose": "Hover e foco."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation e transition a 0.01ms sob prefers-reduced-motion: reduce",
+        "purpose": "Respeito global a movimento reduzido."
+      }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "md", "value": "768px" },
-      { "name": "xl", "value": "1280px" }
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
     ]
   },
   "components": [
@@ -127,38 +233,57 @@
       "css": ".ds-card { display: flex; flex-direction: column; gap: 12px; width: 280px; padding: 16px; border: 1px solid oklch(0.87 0.01 85); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font-family: 'Figtree Variable', system-ui, sans-serif; } .ds-card:hover { background: oklch(0.92 0.02 90 / 0.4); } .ds-card-head { display: flex; gap: 12px; align-items: flex-start; } .ds-card-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: oklch(0.925 0.01 85); font-size: 18px; font-weight: 600; } .ds-card-name { font-size: 16px; font-weight: 600; } .ds-card-host { font: 400 13px 'JetBrains Mono Variable', ui-monospace, monospace; color: oklch(0.47 0.015 75); } .ds-card-tag { display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 24px; padding: 0 8px; border-radius: 3px; background: oklch(0.45 0.13 150); color: oklch(0.985 0.005 85); font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }"
     },
     {
-      "name": "Rack Rail Item",
+      "name": "Barra superior",
       "kind": "nav",
-      "refersTo": "rail-item-active",
-      "description": "Trilho grafite com item ativo em amarelo de fita.",
-      "html": "<nav class=\"ds-rail\"><a class=\"ds-rail-item ds-rail-active\" href=\"#\">Serviços</a><a class=\"ds-rail-item\" href=\"#\">Integrações</a><a class=\"ds-rail-item\" href=\"#\">Agentes</a></nav>",
-      "css": ".ds-rail { display: flex; flex-direction: column; gap: 4px; width: 232px; padding: 12px; background: oklch(0.235 0.01 70); border-right: 1px solid oklch(0.32 0.012 70); } .ds-rail-item { display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 8px; color: oklch(0.94 0.01 85); font: 600 16px 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.025em; text-decoration: none; } .ds-rail-item:hover { background: oklch(0.3 0.012 70); color: oklch(0.97 0.008 85); } .ds-rail-item:focus-visible { outline: 2px solid oklch(0.87 0.17 95); outline-offset: 2px; } .ds-rail-active, .ds-rail-active:hover { background: oklch(0.87 0.17 95); color: oklch(0.2 0.02 80); }"
+      "description": "Barra grafite com marca e acesso discreto ao gerenciamento.",
+      "html": "<nav class=\"ds-header\"><strong>Homora</strong><button class=\"ds-manage\">Gerenciar</button></nav>",
+      "css": ".ds-header { display:flex; align-items:center; justify-content:space-between; gap:24px; min-height:64px; padding:0 16px; background:oklch(0.235 0.01 70); color:oklch(0.94 0.01 85); font:700 20px Barlow Semi Condensed, system-ui, sans-serif; } .ds-manage { min-height:40px; padding:0 16px; border:1px solid oklch(0.32 0.012 70); border-radius:8px; background:transparent; color:inherit; font:600 14px Figtree Variable, system-ui, sans-serif; cursor:pointer; } .ds-manage:hover { background:oklch(0.3 0.012 70); } .ds-manage:focus-visible { outline:2px solid oklch(0.87 0.17 95); outline-offset:2px; }"
     }
   ],
   "narrative": {
     "northStar": "A Etiqueta de Patch Panel",
-    "overview": "Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de grupo e de seção, e o estado de cada serviço, saem como tiras de fita. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.\n\nO trilho lateral é grafite nos dois temas, como um rack ao lado do conteúdo. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.",
+    "overview": "Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de seção e o estado de cada serviço usam a linguagem de fita, enquanto grupos de serviços têm títulos mais discretos. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.\n\nA barra superior é grafite nos dois temas, como uma referência ao rack. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.",
     "keyCharacteristics": [
       "Fita laminada branca com texto preto em caixa-alta como sinal-assinatura (LabelTape, StatusTag).",
-      "Trilho grafite de 232px nos dois temas; no celular vira barra de abas inferior de 56px.",
+      "Barra superior grafite nos dois temas; gerenciamento acessível por um botão.",
       "Amarelo de fita só como preenchimento, nunca como texto.",
       "Estado sempre com ícone, texto e cor.",
       "Plano: sem sombra decorativa, profundidade por tom e borda.",
       "Base shadcn/ui (new-york, Radix, lucide, Tailwind v4), tema por classe `dark`."
     ],
     "rules": [
-      { "name": "The Never-Yellow-Text Rule", "body": "O amarelo de fita é preenchimento de ação principal, item ativo e foco. Nunca é cor de texto, de ícone solto nem de link.", "section": "colors" },
-      { "name": "The Status-Needs-Words Rule", "body": "Verde, vermelho e cinza significam estado e vêm sempre com ícone e texto. Cor sozinha nunca comunica estado.", "section": "colors" },
-      { "name": "The Tape-Voice Rule", "body": "Caixa-alta e tracking aberto pertencem só ao texto de fita (LabelTape e StatusTag). Em qualquer outro lugar o texto segue a caixa normal.", "section": "typography" },
-      { "name": "The Flat-By-Default Rule", "body": "Sem sombra decorativa em cards, botões, popovers ou campos. Foco usa anel de 3px (`ring/50`), não sombra.", "section": "elevation" },
-      { "name": "The Lamination-Edge Rule", "body": "O filete de fita pertence só a LabelTape. Não o copie para outras superfícies para ganhar relevo.", "section": "elevation" }
+      {
+        "name": "The Never-Yellow-Text Rule",
+        "body": "O amarelo de fita é preenchimento de ação principal, item ativo e foco. Nunca é cor de texto, de ícone solto nem de link.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status-Needs-Words Rule",
+        "body": "Verde, vermelho e cinza significam estado e vêm sempre com ícone e texto. Cor sozinha nunca comunica estado.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tape-Voice Rule",
+        "body": "Caixa-alta e tracking aberto pertencem só ao texto de fita (LabelTape e StatusTag). Em qualquer outro lugar o texto segue a caixa normal.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Sem sombra decorativa em cards, botões, popovers ou campos. Foco usa anel de 3px (`ring/50`), não sombra.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Lamination-Edge Rule",
+        "body": "O filete de fita pertence só a LabelTape. Não o copie para outras superfícies para ganhar relevo.",
+        "section": "elevation"
+      }
     ],
     "dos": [
-      "Do usar LabelTape para título de grupo e de seção, e StatusTag para todo estado de serviço.",
+      "Do usar LabelTape para títulos de seção e StatusTag para todo estado de serviço; grupos de serviços usam o cabeçalho discreto próprio.",
       "Do reservar o amarelo de fita para a ação principal, o item ativo e o foco.",
       "Do compor telas com primitivos de `components/ui` e componentes de `components`, colocando páginas em `pages` e módulos em `features`.",
       "Do mostrar endereços e contagens em JetBrains Mono.",
-      "Do manter o trilho grafite nos dois temas e trocar o tema só pela classe `dark`."
+      "Do manter a barra superior grafite nos dois temas e trocar o tema só pela classe `dark`."
     ],
     "donts": [
       "Don't usar amarelo como cor de texto, de link ou de ícone solto.",

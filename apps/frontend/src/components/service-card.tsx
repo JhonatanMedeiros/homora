@@ -19,6 +19,9 @@ type Props = {
   status?: ServiceStatus;
   blocked: boolean;
   organizing: boolean;
+  managing: boolean;
+  compact: boolean;
+  showDescription: boolean;
   confirmingRemoval: boolean;
   dragging: boolean;
   onEdit: () => void;
@@ -39,6 +42,9 @@ export function ServiceCard({
   status,
   blocked,
   organizing,
+  managing,
+  compact,
+  showDescription,
   confirmingRemoval,
   dragging,
   onEdit,
@@ -60,10 +66,11 @@ export function ServiceCard({
             !isBlocked &&
             'border-destructive bg-destructive/10 ring-1 ring-destructive',
           organizing && 'cursor-grab border-dashed',
+          compact && 'gap-2 p-3',
           dragging && 'opacity-50',
         )}
       >
-        <div className="flex items-start gap-3 pr-20 pointer-coarse:pr-24">
+        <div className={cn('flex items-start gap-3', managing && 'pr-20 pointer-coarse:pr-24')}>
           <ItemMedia
             variant="icon"
             aria-hidden="true"
@@ -88,7 +95,7 @@ export function ServiceCard({
             </span>
           </ItemContent>
         </div>
-        {s.description && (
+        {s.description && showDescription && !compact && (
           <ItemDescription className="line-clamp-2">{s.description}</ItemDescription>
         )}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -99,65 +106,67 @@ export function ServiceCard({
             </time>
           )}
         </div>
-        <ItemActions
-          className={cn(
-            'z-10 gap-0.5',
-            inline
-              ? 'relative -mb-1 justify-end gap-1'
-              : 'absolute top-2 right-2 pointer-fine:opacity-50 pointer-fine:transition-opacity pointer-fine:group-hover/service:opacity-100 pointer-fine:group-focus-within/service:opacity-100',
-          )}
-        >
-          {organizing ? (
-            <>
-              <GripVertical aria-hidden="true" className="mr-auto size-4 text-muted-foreground" />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Mover ${s.name} para cima`}
-                onClick={() => onMove(-1)}
-              >
-                <ArrowUp />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Mover ${s.name} para baixo`}
-                onClick={() => onMove(1)}
-              >
-                <ArrowDown />
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size={inline ? 'sm' : 'icon-sm'}
-                data-service-edit={s.id}
-                aria-label={`Editar ${s.name}`}
-                onClick={onEdit}
-              >
-                <Pencil />
-                {inline && 'Editar'}
-              </Button>
-              <Button
-                type="button"
-                variant={confirmingRemoval ? 'destructive' : 'ghost'}
-                size={inline ? 'sm' : 'icon-sm'}
-                aria-label={
-                  confirmingRemoval ? `Confirmar remoção de ${s.name}` : `Remover ${s.name}`
-                }
-                onClick={onRemove}
-                onBlur={onCancelRemoval}
-              >
-                <Trash2 />
-                {inline && (confirmingRemoval ? 'Confirmar remoção' : 'Remover')}
-              </Button>
-            </>
-          )}
-        </ItemActions>
+        {managing && (
+          <ItemActions
+            className={cn(
+              'z-10 gap-0.5',
+              inline
+                ? 'relative -mb-1 justify-end gap-1'
+                : 'absolute top-2 right-2 pointer-fine:opacity-50 pointer-fine:transition-opacity pointer-fine:group-hover/service:opacity-100 pointer-fine:group-focus-within/service:opacity-100',
+            )}
+          >
+            {organizing ? (
+              <>
+                <GripVertical aria-hidden="true" className="mr-auto size-4 text-muted-foreground" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Mover ${s.name} para cima`}
+                  onClick={() => onMove(-1)}
+                >
+                  <ArrowUp />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Mover ${s.name} para baixo`}
+                  onClick={() => onMove(1)}
+                >
+                  <ArrowDown />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size={inline ? 'sm' : 'icon-sm'}
+                  data-service-edit={s.id}
+                  aria-label={`Editar ${s.name}`}
+                  onClick={onEdit}
+                >
+                  <Pencil />
+                  {inline && 'Editar'}
+                </Button>
+                <Button
+                  type="button"
+                  variant={confirmingRemoval ? 'destructive' : 'ghost'}
+                  size={inline ? 'sm' : 'icon-sm'}
+                  aria-label={
+                    confirmingRemoval ? `Confirmar remoção de ${s.name}` : `Remover ${s.name}`
+                  }
+                  onClick={onRemove}
+                  onBlur={onCancelRemoval}
+                >
+                  <Trash2 />
+                  {inline && (confirmingRemoval ? 'Confirmar remoção' : 'Remover')}
+                </Button>
+              </>
+            )}
+          </ItemActions>
+        )}
       </Item>
     </li>
   );
