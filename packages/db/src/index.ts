@@ -2,7 +2,7 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
-export { services, integrationInstances, integrationWidgets } from './schema.js';
+export { services, serviceGroups, integrationInstances, integrationWidgets } from './schema.js';
 
 /** Apply generated Drizzle migrations atomically, adopting only the known legacy schema. */
 function migrate(sqlite: DatabaseSync) {

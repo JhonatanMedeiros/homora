@@ -43,6 +43,41 @@ it('apresenta serviços, filtra e envia um novo cadastro', async () => {
   expect(await screen.findByRole('link', { name: /Proxmox/ })).toBeTruthy();
 });
 
+it('mostra estado desconhecido e horário da última tentativa sem depender do status', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/connections') return { ok: true, json: async () => [] };
+      if (url === '/api/proxmox/status')
+        return { ok: true, json: async () => ({ configured: false }) };
+      if (url === '/api/service-status')
+        return {
+          ok: true,
+          json: async () => ({
+            11: { status: 'unavailable', lastAttempt: '2026-11-10T12:30:00.000Z' },
+          }),
+        };
+      return {
+        ok: true,
+        json: async () => [
+          {
+            id: 11,
+            name: 'Exemplo',
+            url: 'https://example.com/',
+            category: 'Web',
+            description: '',
+          },
+        ],
+      };
+    }),
+  );
+  render(<App />);
+  expect(await screen.findByText('Indisponível')).toBeTruthy();
+  expect(screen.getByText(/última tentativa/)).toBeTruthy();
+});
+
 it('permite entrar após criar a conta mesmo se o primeiro login falhar', async () => {
   let attempts = 0;
   const fetchMock = vi.fn(async (url: string) => {
@@ -160,4 +195,143 @@ it('edita um serviço existente no formulário da página', async () => {
       expect.objectContaining({ method: 'PUT' }),
     ),
   );
+});
+
+it('cria, mostra e remove um grupo vazio pela interface', async () => {
+  let groups: { id: number; name: string; position: number }[] = [];
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    if (url === '/api/connections') return { ok: true, json: async () => [] };
+    if (url === '/api/services') return { ok: true, json: async () => [] };
+    if (url === '/api/groups' && init?.method === 'POST') {
+      const group = {
+        id: groups.length + 1,
+        name: JSON.parse(String(init.body)).name,
+        position: groups.length,
+      };
+      groups.push(group);
+      return { ok: true, status: 201, json: async () => group };
+    }
+    if (url.startsWith('/api/groups/') && init?.method === 'DELETE') {
+      groups = groups.filter((group) => `/api/groups/${group.id}` !== url);
+      return { ok: true, json: async () => ({ deleted: true }) };
+    }
+    if (url.startsWith('/api/groups/') && init?.method === 'PUT') {
+      const id = Number(url.split('/').at(-1));
+      groups = groups.map((group) =>
+        group.id === id ? { ...group, name: JSON.parse(String(init.body)).name } : group,
+      );
+      return { ok: true, json: async () => groups.find((group) => group.id === id) };
+    }
+    if (url === '/api/groups') return { ok: true, json: async () => [...groups] };
+    if (url === '/api/proxmox/status')
+      return { ok: true, json: async () => ({ configured: false }) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Seus serviços' });
+  fireEvent.change(screen.getByLabelText('Novo grupo'), { target: { value: 'Infra' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Criar grupo' }));
+  expect(await screen.findByRole('heading', { name: /Infra/ })).toBeTruthy();
+  expect(screen.getByText('Este grupo ainda não tem cards.')).toBeTruthy();
+  const rename = screen.getByRole('button', { name: 'Renomear grupo Infra' });
+  fireEvent.click(rename);
+  expect(screen.queryByLabelText('Novo grupo')).toBeNull();
+  expect(document.activeElement).toBe(screen.getByLabelText('Novo nome do grupo'));
+  fireEvent.keyDown(document, { key: 'Escape' });
+  await waitFor(() => expect(document.activeElement).toBe(rename));
+  fireEvent.click(rename);
+  fireEvent.change(screen.getByLabelText('Novo nome do grupo'), {
+    target: { value: 'Infraestrutura' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar nome' }));
+  expect(await screen.findByRole('heading', { name: /Infraestrutura/ })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Remover grupo Infraestrutura' }));
+  await waitFor(() => expect(screen.queryByRole('heading', { name: /Infraestrutura/ })).toBeNull());
+});
+
+it('mantém o painel de serviços utilizável quando integrações opcionais falham', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 8,
+              name: 'Local',
+              url: 'http://localhost:8080/',
+              category: 'Casa',
+              description: '',
+            },
+          ],
+        };
+      if (url === '/api/groups')
+        return { ok: true, json: async () => [{ id: 2, name: 'Casa', position: 0 }] };
+      if (url === '/api/connections') throw new Error('offline');
+      if (url === '/api/proxmox/status' || url === '/api/integrations/catalog')
+        return { ok: false, json: async () => ({}) };
+      return { ok: false, json: async () => ({}) };
+    }),
+  );
+  render(<App />);
+  expect(await screen.findByRole('link', { name: /Local/ })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /Adicionar serviço/ })).toBeTruthy();
+});
+
+it('reordena cards e fecha o formulário com Escape devolvendo o foco', async () => {
+  const cards = [
+    {
+      id: 1,
+      name: 'A',
+      url: 'http://localhost:8101/',
+      category: 'Casa',
+      description: '',
+      position: 0,
+    },
+    {
+      id: 2,
+      name: 'B',
+      url: 'http://localhost:8102/',
+      category: 'Casa',
+      description: '',
+      position: 1,
+    },
+  ];
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    if (url === '/api/connections') return { ok: true, json: async () => [] };
+    if (url === '/api/proxmox/status')
+      return { ok: true, json: async () => ({ configured: false }) };
+    if (url === '/api/groups')
+      return { ok: true, json: async () => [{ id: 1, name: 'Casa', position: 0 }] };
+    if (url === '/api/services/order') return { ok: true, json: async () => ({ ok: true }) };
+    return { ok: true, json: async () => cards };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  await screen.findByRole('link', { name: /A/ });
+  fireEvent.click(screen.getByRole('button', { name: 'Ações de A' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mover A para baixo' }));
+  await waitFor(() =>
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/services/order',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ category: 'Casa', ids: [2, 1] }),
+      }),
+    ),
+  );
+  const add = screen.getByRole('button', { name: /Adicionar serviço/ });
+  fireEvent.click(add);
+  expect(document.activeElement).toBe(screen.getByLabelText('Nome'));
+  fireEvent.keyDown(document, { key: 'Escape' });
+  await waitFor(() => expect(document.activeElement).toBe(add));
+  expect(screen.queryByRole('form', { name: 'Novo serviço' })).toBeNull();
 });

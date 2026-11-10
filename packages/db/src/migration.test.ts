@@ -5,7 +5,13 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { expect, it } from 'vitest';
-import { createDatabase, services, integrationInstances, integrationWidgets } from './index.js';
+import {
+  createDatabase,
+  services,
+  serviceGroups,
+  integrationInstances,
+  integrationWidgets,
+} from './index.js';
 it('adota o banco anterior e preserva seus dados em reinicializações', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-migration-')),
     path = join(dir, 'data.sqlite');
@@ -17,6 +23,10 @@ it('adota o banco anterior e preserva seus dados em reinicializações', async (
     old.close();
     let database = createDatabase(path);
     expect((await database.db.select().from(services))[0].name).toBe('Jellyfin');
+    expect((await database.db.select().from(serviceGroups)).map(({ name }) => name)).toEqual([
+      'Mídia',
+    ]);
+    expect((await database.db.select().from(services))[0].position).toBe(0);
     database.close();
     database = createDatabase(path);
     expect(await database.db.select().from(services)).toHaveLength(1);

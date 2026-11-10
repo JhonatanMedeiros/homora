@@ -1,10 +1,17 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+export const serviceGroups = sqliteTable('service_groups', {
+  id: integer('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  position: integer('position').notNull().default(0),
+});
 export const services = sqliteTable('services', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
   url: text('url').notNull(),
   category: text('category').notNull(),
   description: text('description').notNull(),
+  icon: text('icon').notNull().default(''),
+  position: integer('position').notNull().default(0),
 });
 
 // Configuration stored here must never contain credentials; secretRef points to a

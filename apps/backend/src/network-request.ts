@@ -4,7 +4,11 @@ import type { LookupFunction } from 'node:net';
 import { getCACertificates } from 'node:tls';
 import { authorizeDestination, type DestinationPolicy } from './network-policy.js';
 
-export type RequestOptions = { headers?: Readonly<Record<string, string>>; ca?: string };
+export type RequestOptions = {
+  headers?: Readonly<Record<string, string>>;
+  ca?: string;
+  timeoutMs?: number;
+};
 export type AuthorizedResponse = { status: number; body: string };
 
 /** Consulta somente leitura, fixando DNS e sem seguir redirecionamentos. */
@@ -13,6 +17,8 @@ export async function getAuthorizedResponse(
   policy: DestinationPolicy,
   options: RequestOptions = {},
 ): Promise<AuthorizedResponse> {
+  const timeoutMs = options.timeoutMs ?? 8000;
+  const startedAt = Date.now();
   const headers: Record<string, string> = {};
   for (const [key, value] of Object.entries(options.headers ?? {})) {
     const name = key.toLowerCase();
@@ -26,7 +32,7 @@ export async function getAuthorizedResponse(
       throw new Error('Cabeçalhos da integração inválidos.');
     headers[name] = value;
   }
-  const dnsTimer = AbortSignal.timeout(8000);
+  const dnsTimer = AbortSignal.timeout(timeoutMs);
   const { url, address } = await Promise.race([
     authorizeDestination(destination, policy),
     new Promise<never>((_, reject) =>
@@ -37,6 +43,8 @@ export async function getAuthorizedResponse(
       ),
     ),
   ]);
+  const remainingMs = timeoutMs - (Date.now() - startedAt);
+  if (remainingMs <= 0) throw new Error('Tempo limite excedido.');
   if (url.protocol !== 'https:' && (headers.authorization || headers['x-api-key']))
     throw new Error('Credenciais exigem uma conexão HTTPS.');
   const pinnedLookup: LookupFunction = (_host, lookupOptions, callback) => {
@@ -82,7 +90,7 @@ export async function getAuthorizedResponse(
         res.on('end', () => resolve({ status, body: Buffer.concat(chunks).toString('utf8') }));
       },
     );
-    const timer = setTimeout(() => req.destroy(new Error('Tempo limite excedido.')), 8000);
+    const timer = setTimeout(() => req.destroy(new Error('Tempo limite excedido.')), remainingMs);
     req.on('close', () => clearTimeout(timer));
     req.on('error', () => reject(new Error('Falha de conexão.')));
   });

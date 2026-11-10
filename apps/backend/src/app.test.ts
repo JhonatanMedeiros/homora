@@ -22,6 +22,13 @@ afterEach(async () => {
       url: `/api/services/${service.id}`,
       headers: { origin: 'http://localhost:5173', cookie },
     });
+  const groups = await app.inject({ method: 'GET', url: '/api/groups', headers: { cookie } });
+  for (const group of groups.json() as { id: number }[])
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/groups/${group.id}`,
+      headers: { origin: 'http://localhost:5173', cookie },
+    });
 });
 describe('API de serviços', () => {
   it('protege o catálogo de integrações e retorna apenas metadados', async () => {
@@ -44,6 +51,7 @@ describe('API de serviços', () => {
   });
   it('não expõe serviços sem sessão', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/service-status' })).statusCode).toBe(401);
   });
   it('cria, lista, atualiza e remove serviços', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
@@ -74,6 +82,156 @@ describe('API de serviços', () => {
     expect(
       (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json(),
     ).toEqual([]);
+  });
+  it('gerencia grupos vazios e preserva cards ao renomear', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const createdGroup = await app.inject({
+      method: 'POST',
+      url: '/api/groups',
+      headers,
+      payload: { name: 'Painel' },
+    });
+    expect(createdGroup.statusCode).toBe(201);
+    const groupId = createdGroup.json().id;
+    const duplicate = await app.inject({
+      method: 'POST',
+      url: '/api/groups',
+      headers,
+      payload: { name: 'Painel' },
+    });
+    expect(duplicate.statusCode).toBe(409);
+    const service = await app.inject({
+      method: 'POST',
+      url: '/api/services',
+      headers,
+      payload: { name: 'App', url: 'http://localhost:8100', category: 'Painel' },
+    });
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/api/groups/${groupId}`, headers })).statusCode,
+    ).toBe(409);
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: `/api/groups/${groupId}`,
+          headers,
+          payload: { name: 'Dashboard' },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json()[0]
+        .category,
+    ).toBe('Dashboard');
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/api/services/${service.json().id}`, headers }))
+        .statusCode,
+    ).toBe(200);
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/api/groups/${groupId}`, headers })).statusCode,
+    ).toBe(200);
+  });
+  it('valida e persiste a ordenação dos grupos vazios', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    await app.inject({ method: 'POST', url: '/api/groups', headers, payload: { name: 'Sala' } });
+    await app.inject({ method: 'POST', url: '/api/groups', headers, payload: { name: 'Quarto' } });
+    const groups = (
+      await app.inject({ method: 'GET', url: '/api/groups', headers: { cookie } })
+    ).json() as { name: string }[];
+    const reversed = groups.map((group) => group.name).reverse();
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: '/api/groups/order',
+          headers,
+          payload: { names: reversed },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        (await app.inject({ method: 'GET', url: '/api/groups', headers: { cookie } })).json() as {
+          name: string;
+        }[]
+      ).map((group) => group.name),
+    ).toEqual(reversed);
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: '/api/groups/order',
+          headers,
+          payload: { names: ['ausente'] },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
+  it('valida e persiste a ordenação individual dos cards', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const ids: number[] = [];
+    for (const name of ['Primeiro', 'Segundo', 'Terceiro']) {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/services',
+        headers,
+        payload: { name, url: `http://localhost:${8100 + ids.length}`, category: 'Ordem' },
+      });
+      ids.push(response.json().id);
+    }
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: '/api/services/order',
+          headers,
+          payload: { category: 'Ordem', ids: [ids[2], ids[0], ids[1]] },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
+        .json()
+        .filter((service: { category: string }) => service.category === 'Ordem')
+        .map((service: { id: number }) => service.id),
+    ).toEqual([ids[2], ids[0], ids[1]]);
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: '/api/services/order',
+          headers,
+          payload: { category: 'Ordem', ids: [ids[0]] },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
+  it('acrescenta cards depois da maior posição mesmo quando há lacunas', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const ids: number[] = [];
+    for (const name of ['A', 'B', 'C']) {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/services',
+        headers,
+        payload: { name, url: `http://localhost:${8200 + ids.length}`, category: 'Lacunas' },
+      });
+      ids.push(response.json().id);
+    }
+    await app.inject({ method: 'DELETE', url: `/api/services/${ids[1]}`, headers });
+    const added = await app.inject({
+      method: 'POST',
+      url: '/api/services',
+      headers,
+      payload: { name: 'D', url: 'http://localhost:8203', category: 'Lacunas' },
+    });
+    expect(added.json().position).toBe(3);
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
+        .json()
+        .filter((service: { category: string }) => service.category === 'Lacunas')
+        .map((service: { name: string }) => service.name),
+    ).toEqual(['A', 'C', 'D']);
   });
   it('bloqueia origens externas e dados inválidos', async () => {
     expect(

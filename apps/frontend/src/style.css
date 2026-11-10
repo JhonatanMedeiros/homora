@@ -365,10 +365,54 @@ h1 {
   gap: 8px;
   margin-bottom: 6px;
 }
+.group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.group-title h2 {
+  margin: 0 0 6px;
+}
+.group-order {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+.group-order .btn {
+  min-width: 38px;
+}
 .group h2 small {
   font-weight: 400;
   color: var(--muted);
   font-size: 0.875rem;
+}
+.group-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.group-create label {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.group-create input {
+  min-width: min(100%, 180px);
+  min-height: 40px;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  padding: 6px 10px;
+}
+.empty-group {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 .list {
   list-style: none;
@@ -400,6 +444,7 @@ h1 {
     700 1.0625rem/1 'Bricolage Grotesque',
     sans-serif;
   color: var(--muted);
+  font-size: 1.25rem;
 }
 .who {
   min-width: 0;
@@ -431,6 +476,17 @@ h1 {
 .addr {
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.8125rem;
+}
+.availability {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.availability.available {
+  color: #4b9b72;
+}
+.availability.unavailable {
+  color: #d16b6b;
 }
 .more {
   position: relative;

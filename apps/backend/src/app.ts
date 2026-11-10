@@ -1,10 +1,12 @@
 import Fastify from 'fastify';
-import { eq } from 'drizzle-orm';
-import { createDatabase, services } from '@homora/db';
+import { eq, asc } from 'drizzle-orm';
+import { createDatabase, services, serviceGroups } from '@homora/db';
 import { validateService, type ServiceInput } from '@homora/shared';
 import { createAuth } from './auth.js';
 import { createVault, type ProxmoxConfig } from './vault.js';
 import { ProxmoxError } from './proxmox.js';
+import { createServiceMonitor, startServiceMonitor } from './service-monitor.js';
+import type { Service } from '@homora/shared';
 import { registerConnectionRoutes } from './connections.js';
 import {
   createIntegrationRegistry,
@@ -18,6 +20,7 @@ export function createApp(
   webPort: number,
   auth: ReturnType<typeof createAuth>,
   vault?: ReturnType<typeof createVault>,
+  configuredOrigins: readonly string[] = [],
 ) {
   const app = Fastify({ bodyLimit: 100_000 });
   const integrations = createIntegrationRegistry([
@@ -28,13 +31,25 @@ export function createApp(
     { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
   ]);
   const proxmoxCache = createObservationCache<unknown>(30_000);
+  const serviceMonitor = createServiceMonitor(
+    () => db.select().from(services).orderBy(services.id) as Promise<Service[]>,
+  );
+  const stopServiceMonitor = startServiceMonitor(serviceMonitor);
+  app.addHook('onClose', async () => stopServiceMonitor());
+  const allowedOrigins = new Set([
+    `http://127.0.0.1:${webPort}`,
+    `http://localhost:${webPort}`,
+    ...configuredOrigins,
+  ]);
+  async function nextGroupPosition() {
+    const groups = await db.select().from(serviceGroups);
+    return Math.max(-1, ...groups.map((group) => group.position)) + 1;
+  }
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     if (
       !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
-      ![`http://127.0.0.1:${webPort}`, `http://localhost:${webPort}`].includes(
-        request.headers.origin ?? '',
-      )
+      !allowedOrigins.has(request.headers.origin ?? '')
     )
       return reply.code(403).send({ error: 'Origem não autorizada.' });
   });
@@ -60,7 +75,7 @@ export function createApp(
     return reply
       .header(
         'Set-Cookie',
-        `homora_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800`,
+        `homora_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${request.headers.origin?.startsWith('https://') ? '; Secure' : ''}`,
       )
       .send({ ok: true });
   });
@@ -178,12 +193,120 @@ export function createApp(
     },
   );
   app.get('/api/services', async () =>
-    db.select().from(services).orderBy(services.category, services.name),
+    db.select().from(services).orderBy(services.category, services.position, services.name),
   );
+  app.get('/api/service-status', async () => serviceMonitor.snapshot());
+  app.get('/api/groups', async () =>
+    db.select().from(serviceGroups).orderBy(asc(serviceGroups.position), asc(serviceGroups.name)),
+  );
+  app.post('/api/groups', async (request, reply) => {
+    const name = (request.body as { name?: unknown })?.name;
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 40)
+      return reply.code(400).send({ error: 'Informe um nome de grupo com até 40 caracteres.' });
+    try {
+      const [created] = await db
+        .insert(serviceGroups)
+        .values({ name: name.trim(), position: await nextGroupPosition() })
+        .returning();
+      return reply.code(201).send(created);
+    } catch {
+      return reply.code(409).send({ error: 'Já existe um grupo com esse nome.' });
+    }
+  });
+  app.put<{ Params: { id: string } }>('/api/groups/:id', async (request, reply) => {
+    const name = (request.body as { name?: unknown })?.name;
+    if (!/^\d+$/.test(request.params.id))
+      return reply.code(404).send({ error: 'Grupo não encontrado.' });
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 40)
+      return reply.code(400).send({ error: 'Informe um nome de grupo com até 40 caracteres.' });
+    const current = (await db.select().from(serviceGroups)).find(
+      (group) => group.id === Number(request.params.id),
+    );
+    if (!current) return reply.code(404).send({ error: 'Grupo não encontrado.' });
+    try {
+      const [updated] = await db
+        .update(serviceGroups)
+        .set({ name: name.trim() })
+        .where(eq(serviceGroups.id, current.id))
+        .returning();
+      await db
+        .update(services)
+        .set({ category: updated.name })
+        .where(eq(services.category, current.name));
+      return updated;
+    } catch {
+      return reply.code(409).send({ error: 'Já existe um grupo com esse nome.' });
+    }
+  });
+  app.delete<{ Params: { id: string } }>('/api/groups/:id', async (request, reply) => {
+    if (!/^\d+$/.test(request.params.id))
+      return reply.code(404).send({ error: 'Grupo não encontrado.' });
+    const group = (await db.select().from(serviceGroups)).find(
+      (item) => item.id === Number(request.params.id),
+    );
+    if (!group) return reply.code(404).send({ error: 'Grupo não encontrado.' });
+    if ((await db.select().from(services)).some((service) => service.category === group.name))
+      return reply
+        .code(409)
+        .send({ error: 'Mova ou remova os cards deste grupo antes de excluí-lo.' });
+    await db.delete(serviceGroups).where(eq(serviceGroups.id, group.id));
+    return { deleted: true };
+  });
+  app.put('/api/groups/order', async (request, reply) => {
+    const names = (request.body as { names?: unknown })?.names;
+    const groups = await db.select().from(serviceGroups);
+    if (
+      !Array.isArray(names) ||
+      names.length !== groups.length ||
+      new Set(names).size !== groups.length ||
+      names.some((name) => typeof name !== 'string' || !groups.some((group) => group.name === name))
+    )
+      return reply.code(400).send({ error: 'Ordem de grupos inválida.' });
+    for (const [position, name] of names.entries())
+      await db.update(serviceGroups).set({ position }).where(eq(serviceGroups.name, name));
+    return { ok: true };
+  });
+  app.put('/api/services/order', async (request, reply) => {
+    const body = request.body as { category?: unknown; ids?: unknown };
+    if (
+      typeof body?.category !== 'string' ||
+      !Array.isArray(body.ids) ||
+      body.ids.some((id) => !Number.isSafeInteger(id))
+    )
+      return reply.code(400).send({ error: 'Ordem de cards inválida.' });
+    const current = (await db.select().from(services)).filter(
+      (service) => service.category === body.category,
+    );
+    if (
+      body.ids.length !== current.length ||
+      new Set(body.ids).size !== current.length ||
+      body.ids.some((id) => !current.some((service) => service.id === id))
+    )
+      return reply.code(400).send({ error: 'Ordem de cards inválida.' });
+    for (const [position, id] of body.ids.entries())
+      await db
+        .update(services)
+        .set({ position })
+        .where(eq(services.id, id as number));
+    return { ok: true };
+  });
   app.post('/api/services', async (request, reply) => {
     try {
-      const service = validateService((request.body ?? {}) as Partial<ServiceInput>);
-      const [created] = await db.insert(services).values(service).returning();
+      const body = (request.body ?? {}) as Partial<ServiceInput>;
+      const service = validateService(body);
+      await db
+        .insert(serviceGroups)
+        .values({ name: service.category, position: await nextGroupPosition() })
+        .onConflictDoNothing();
+      const siblings = (await db.select().from(services)).filter(
+        (item) => item.category === service.category,
+      );
+      const position = Math.max(-1, ...siblings.map((item) => item.position)) + 1;
+      const [created] = await db
+        .insert(services)
+        .values({ ...service, position })
+        .returning();
+      void serviceMonitor.invalidate();
       return reply.code(201).send(created);
     } catch (error) {
       return reply
@@ -195,12 +318,30 @@ export function createApp(
     if (!/^\d+$/.test(request.params.id))
       return reply.code(404).send({ error: 'Serviço não encontrado.' });
     try {
-      const service = validateService((request.body ?? {}) as Partial<ServiceInput>);
+      const body = (request.body ?? {}) as Partial<ServiceInput>;
+      const service = validateService(body);
+      const current = (await db.select().from(services)).find(
+        (item) => item.id === Number(request.params.id),
+      );
+      if (!current) return reply.code(404).send({ error: 'Serviço não encontrado.' });
+      await db
+        .insert(serviceGroups)
+        .values({ name: service.category, position: await nextGroupPosition() })
+        .onConflictDoNothing();
+      if (current.category === service.category) {
+        service.position = current.position;
+      } else {
+        const siblings = (await db.select().from(services)).filter(
+          (item) => item.category === service.category,
+        );
+        service.position = Math.max(-1, ...siblings.map((item) => item.position)) + 1;
+      }
       const [updated] = await db
         .update(services)
         .set(service)
         .where(eq(services.id, Number(request.params.id)))
         .returning();
+      if (updated) void serviceMonitor.invalidate();
       return updated ?? reply.code(404).send({ error: 'Serviço não encontrado.' });
     } catch (error) {
       return reply
@@ -214,6 +355,7 @@ export function createApp(
       .delete(services)
       .where(eq(services.id, Number(request.params.id)))
       .returning();
+    if (deleted.length) void serviceMonitor.invalidate();
     return reply.code(deleted.length ? 200 : 404).send({ deleted: Boolean(deleted.length) });
   });
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'Não encontrado.' }));

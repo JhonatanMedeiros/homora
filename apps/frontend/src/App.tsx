@@ -6,7 +6,12 @@ import { Proxmox } from './Proxmox';
 import { Connections } from './Connections';
 
 const empty: ServiceInput = { name: '', url: '', category: '', description: '' };
+type ServiceGroup = { id: number; name: string; position: number };
 type Tab = 'services' | 'integrations';
+type ServiceStatus = {
+  status: 'available' | 'unavailable' | 'unknown';
+  lastAttempt: string | null;
+};
 
 function hostOf(url: string) {
   try {
@@ -31,6 +36,11 @@ function toggleTheme() {
 
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [services, setServices] = useState<Service[]>([]);
+  const [serviceStatuses, setServiceStatuses] = useState<Record<number, ServiceStatus>>({});
+  const [groupRows, setGroupRows] = useState<ServiceGroup[]>([]);
+  const [groupDraft, setGroupDraft] = useState('');
+  const [editingGroup, setEditingGroup] = useState<number | null>(null);
+  const [groupError, setGroupError] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [form, setForm] = useState<ServiceInput>(empty);
@@ -51,6 +61,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       const response = await fetch('/api/services');
       if (!response.ok) throw Error();
       setServices((await response.json()) as Service[]);
+      const groupResponse = await fetch('/api/groups');
+      if (groupResponse.ok) setGroupRows((await groupResponse.json()) as ServiceGroup[]);
       setMessage('');
     } catch {
       setMessage('Não foi possível carregar os serviços. Verifique se o servidor está ativo.');
@@ -73,8 +85,16 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         if (active)
           setMessage('Não foi possível carregar os serviços. Verifique se o servidor está ativo.');
       });
+    fetch('/api/groups')
+      .then((response) => (response.ok ? (response.json() as Promise<ServiceGroup[]>) : []))
+      .then((data) => {
+        if (active) setGroupRows(data);
+      })
+      .catch(() => {});
     const key = (e: KeyboardEvent) => {
-      const typing = e.target instanceof HTMLElement && /INPUT|TEXTAREA/.test(e.target.tagName);
+      const typing =
+        e.target instanceof HTMLElement &&
+        (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable);
       if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typing)) {
         e.preventDefault();
         search.current?.focus();
@@ -88,12 +108,38 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     };
   }, []);
   useEffect(() => {
+    let active = true;
+    const refreshStatuses = () =>
+      fetch('/api/service-status')
+        .then((response) => {
+          if (!response.ok) throw new Error();
+          return response.json() as Promise<Record<number, ServiceStatus>>;
+        })
+        .then((data) => {
+          if (active) setServiceStatuses(data);
+        })
+        .catch(() => {
+          // Monitoramento é auxiliar; uma falha não interfere nos serviços.
+        });
+    void refreshStatuses();
+    const timer = window.setInterval(() => void refreshStatuses(), 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+  useEffect(() => {
     if (formOpen) {
       formRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
       nameInput.current?.focus({ preventScroll: true });
     }
   }, [formOpen]);
-  const categories = useMemo(() => [...new Set(services.map((s) => s.category))], [services]);
+  const categories = useMemo(
+    () => [
+      ...new Set([...groupRows.map((group) => group.name), ...services.map((s) => s.category)]),
+    ],
+    [services, groupRows],
+  );
   const filtered = services.filter(
     (s) =>
       (selected === null || s.category === selected) &&
@@ -101,9 +147,21 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         .toLocaleLowerCase('pt-BR')
         .includes(query.toLocaleLowerCase('pt-BR').trim()),
   );
-  const groups = categories
-    .map((category) => ({ category, items: filtered.filter((s) => s.category === category) }))
-    .filter((group) => group.items.length);
+  const groups = [...categories]
+    .sort((a, b) => {
+      const ai = groupRows.find((group) => group.name === a)?.position ?? 9999,
+        bi = groupRows.find((group) => group.name === b)?.position ?? 9999;
+      return ai - bi || a.localeCompare(b, 'pt-BR');
+    })
+    .map((category) => ({
+      category,
+      items: filtered
+        .filter((s) => s.category === category)
+        .sort(
+          (a, b) => (a.position ?? 0) - (b.position ?? 0) || a.name.localeCompare(b.name, 'pt-BR'),
+        ),
+    }))
+    .filter((group) => group.items.length || !query.trim());
   function openForm(service?: Service) {
     setTab('services');
     setMenu(null);
@@ -116,6 +174,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             url: service.url,
             category: service.category,
             description: service.description,
+            icon: service.icon ?? '',
+            position: service.position ?? 0,
           }
         : empty,
     );
@@ -124,8 +184,29 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   }
   function closeForm() {
     setFormOpen(false);
-    addButton.current?.focus();
+    if (editing !== null)
+      document.querySelector<HTMLButtonElement>(`[data-service-edit="${editing}"]`)?.focus();
+    else addButton.current?.focus();
   }
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (formOpen) {
+        setFormOpen(false);
+        if (editing !== null)
+          document.querySelector<HTMLButtonElement>(`[data-service-edit="${editing}"]`)?.focus();
+        else addButton.current?.focus();
+      }
+      if (editingGroup !== null) {
+        setEditingGroup(null);
+        setGroupDraft('');
+        document.querySelector<HTMLButtonElement>(`[data-group-edit="${editingGroup}"]`)?.focus();
+      }
+      setConfirming(null);
+    };
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, [formOpen, editingGroup, editing]);
   async function save(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -167,8 +248,100 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     }
   }
   function openFirst() {
-    const first = filtered[0];
+    const first = groups.flatMap((group) => group.items)[0];
     if (first) window.open(first.url, '_blank', 'noopener,noreferrer');
+  }
+  async function moveGroup(category: string, direction: -1 | 1) {
+    const ordered = [...categories].sort(
+      (a, b) =>
+        (groupRows.find((g) => g.name === a)?.position ?? 9999) -
+          (groupRows.find((g) => g.name === b)?.position ?? 9999) || a.localeCompare(b, 'pt-BR'),
+    );
+    const from = ordered.indexOf(category),
+      to = from + direction;
+    if (to < 0 || to >= ordered.length) return;
+    [ordered[from], ordered[to]] = [ordered[to], ordered[from]];
+    setGroupRows(
+      ordered.map((name, position) => ({
+        id: groupRows.find((group) => group.name === name)?.id ?? -1,
+        name,
+        position,
+      })),
+    );
+    try {
+      const response = await fetch('/api/groups/order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names: ordered }),
+      });
+      if (!response.ok) throw Error();
+    } catch {
+      setMessage('Não foi possível salvar a ordem dos grupos.');
+      void refresh();
+    }
+  }
+  async function saveGroup(e: FormEvent) {
+    e.preventDefault();
+    setGroupError('');
+    try {
+      const response = await fetch(
+        editingGroup === null ? '/api/groups' : `/api/groups/${editingGroup}`,
+        {
+          method: editingGroup === null ? 'POST' : 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: groupDraft }),
+        },
+      );
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw Error(data.error || 'Não foi possível salvar o grupo.');
+      const wasEditing = editingGroup !== null;
+      setEditingGroup(null);
+      setGroupDraft('');
+      setSelected(null);
+      await refresh();
+      if (wasEditing) document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
+    } catch (error) {
+      setGroupError(error instanceof Error ? error.message : 'Não foi possível salvar o grupo.');
+    }
+  }
+  async function deleteGroup(group: ServiceGroup) {
+    try {
+      const response = await fetch(`/api/groups/${group.id}`, { method: 'DELETE' });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw Error(data.error || 'Não foi possível remover o grupo.');
+      await refresh();
+      document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
+    } catch (error) {
+      setGroupError(error instanceof Error ? error.message : 'Não foi possível remover o grupo.');
+    }
+  }
+  async function moveService(service: Service, direction: -1 | 1) {
+    const ordered = services
+      .filter((item) => item.category === service.category)
+      .sort(
+        (a, b) => (a.position ?? 0) - (b.position ?? 0) || a.name.localeCompare(b.name, 'pt-BR'),
+      );
+    const from = ordered.findIndex((item) => item.id === service.id),
+      to = from + direction;
+    if (to < 0 || to >= ordered.length) return;
+    [ordered[from], ordered[to]] = [ordered[to], ordered[from]];
+    setServices((items) =>
+      items.map((item) => {
+        const index = ordered.findIndex((entry) => entry.id === item.id);
+        return index < 0 ? item : { ...item, position: index };
+      }),
+    );
+    try {
+      const response = await fetch('/api/services/order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: service.category, ids: ordered.map((item) => item.id) }),
+      });
+      if (!response.ok) throw Error();
+    } catch {
+      setMessage('Não foi possível salvar a ordem dos cards.');
+      void refresh();
+    }
   }
   return (
     <div className="shell" data-tab={tab}>
@@ -228,6 +401,61 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               Adicionar serviço
             </button>
           </div>
+          {editingGroup === null && (
+            <form className="group-create" onSubmit={(event) => void saveGroup(event)}>
+              <label htmlFor="new-group">Novo grupo</label>
+              <input
+                id="new-group"
+                data-group-input
+                value={groupDraft}
+                onChange={(event) => setGroupDraft(event.target.value)}
+                maxLength={40}
+                placeholder="Ex.: Casa"
+              />
+              <button
+                data-group-add
+                type="submit"
+                className="btn small"
+                disabled={!groupDraft.trim()}
+              >
+                Criar grupo
+              </button>
+            </form>
+          )}
+          <p className="form-error" role="alert">
+            {groupError}
+          </p>
+          {editingGroup !== null && (
+            <form
+              className="group-create"
+              aria-label="Renomear grupo"
+              onSubmit={(event) => void saveGroup(event)}
+            >
+              <label htmlFor="rename-group">Novo nome do grupo</label>
+              <input
+                id="rename-group"
+                autoFocus
+                maxLength={40}
+                value={groupDraft}
+                onChange={(event) => setGroupDraft(event.target.value)}
+              />
+              <button type="submit" className="btn small">
+                Salvar nome
+              </button>
+              <button
+                type="button"
+                className="btn small"
+                onClick={() => {
+                  const id = editingGroup;
+                  setEditingGroup(null);
+                  setGroupDraft('');
+                  document.querySelector<HTMLButtonElement>(`[data-group-edit="${id}"]`)?.focus();
+                }}
+              >
+                Cancelar
+              </button>
+            </form>
+          )}
           {formOpen && (
             <form
               ref={formRef}
@@ -288,6 +516,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     placeholder="Filmes e séries"
                   />
                 </label>
+                <label>
+                  Ícone <small>emoji opcional</small>
+                  <input
+                    maxLength={8}
+                    value={form.icon ?? ''}
+                    onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                    placeholder="🎬"
+                  />
+                </label>
               </div>
               <p className="form-error" role="alert">
                 {error}
@@ -326,9 +563,59 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           )}
           {groups.map(({ category, items }) => (
             <section className="group" key={category} aria-labelledby={`group:${category}`}>
-              <h2 id={`group:${category}`}>
-                {category} <small>{items.length}</small>
-              </h2>
+              <div className="group-title">
+                <h2 id={`group:${category}`}>
+                  {category} <small>{items.length}</small>
+                </h2>
+                <div className="group-order">
+                  {groupRows.find((group) => group.name === category) && (
+                    <>
+                      <button
+                        data-group-edit={groupRows.find((group) => group.name === category)?.id}
+                        className="btn small"
+                        type="button"
+                        aria-label={`Renomear grupo ${category}`}
+                        onClick={() => {
+                          const group = groupRows.find((item) => item.name === category)!;
+                          setEditingGroup(group.id);
+                          setGroupDraft(group.name);
+                        }}
+                      >
+                        Renomear
+                      </button>
+                      {!services.some((service) => service.category === category) && (
+                        <button
+                          className="btn small danger"
+                          type="button"
+                          aria-label={`Remover grupo ${category}`}
+                          onClick={() =>
+                            void deleteGroup(groupRows.find((item) => item.name === category)!)
+                          }
+                        >
+                          Remover
+                        </button>
+                      )}
+                    </>
+                  )}
+                  <button
+                    className="btn small"
+                    type="button"
+                    aria-label={`Mover grupo ${category} para cima`}
+                    onClick={() => void moveGroup(category, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="btn small"
+                    type="button"
+                    aria-label={`Mover grupo ${category} para baixo`}
+                    onClick={() => void moveGroup(category, 1)}
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
+              {!items.length && <p className="empty-group">Este grupo ainda não tem cards.</p>}
               <ul className="list">
                 {items.map((s) => (
                   <li
@@ -336,7 +623,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     key={s.id}
                   >
                     <span className="mono" aria-hidden="true">
-                      {s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
+                      {s.icon || s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
                     </span>
                     <span className="who">
                       <a
@@ -351,6 +638,24 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       <span className="desc">
                         {s.description && `${s.description} · `}
                         <span className="addr">{hostOf(s.url)}</span>
+                      </span>
+                      <span
+                        className={`availability ${serviceStatuses[s.id]?.status ?? 'unknown'}`}
+                      >
+                        {serviceStatuses[s.id]?.status === 'available'
+                          ? 'Disponível'
+                          : serviceStatuses[s.id]?.status === 'unavailable'
+                            ? 'Indisponível'
+                            : 'Estado desconhecido'}
+                        {serviceStatuses[s.id]?.lastAttempt && (
+                          <time dateTime={serviceStatuses[s.id].lastAttempt!}>
+                            {' · última tentativa '}
+                            {new Intl.DateTimeFormat('pt-BR', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            }).format(new Date(serviceStatuses[s.id].lastAttempt!))}
+                          </time>
+                        )}
                       </span>
                     </span>
                     <button
@@ -367,6 +672,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     </button>
                     <span className="tools">
                       <button
+                        data-service-edit={s.id}
                         type="button"
                         className="btn small"
                         aria-label={`Editar ${s.name}`}
@@ -374,6 +680,22 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       >
                         <Icon name="edit" />
                         <span className="lbl">Editar</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn small"
+                        aria-label={`Mover ${s.name} para cima`}
+                        onClick={() => void moveService(s, -1)}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="btn small"
+                        aria-label={`Mover ${s.name} para baixo`}
+                        onClick={() => void moveService(s, 1)}
+                      >
+                        ↓
                       </button>
                       <button
                         type="button"

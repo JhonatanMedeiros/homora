@@ -15,6 +15,13 @@
       "when": 1794082681948,
       "tag": "0001_messy_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794315066926,
+      "tag": "0002_rapid_proemial_gods",
+      "breakpoints": true
     }
   ]
 }
