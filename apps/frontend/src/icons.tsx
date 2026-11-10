@@ -30,6 +30,37 @@ const paths = {
     </>
   ),
   list: <path d="M4 6h16M4 12h16M4 18h16" />,
+  grid: (
+    <>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    </>
+  ),
+  agent: (
+    <>
+      <rect x="4" y="8" width="16" height="11" rx="3" />
+      <path d="M12 8V4.5M9 13v1.5M15 13v1.5" />
+    </>
+  ),
+  sliders: <path d="M5 7h9M18 7h1M5 17h1M10 17h9M14 5v4M10 15v4" />,
+  up: <path d="m6 14 6-6 6 6" />,
+  down: <path d="m6 10 6 6 6-6" />,
+  copy: (
+    <>
+      <rect x="8" y="8" width="11" height="11" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h1" />
+    </>
+  ),
+  check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  alert: (
+    <>
+      <path d="M12 4 3.5 19h17L12 4Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </>
+  ),
+  grip: <path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" strokeWidth="3" />,
   server: (
     <>
       <rect x="4" y="4" width="16" height="6" rx="1.5" />

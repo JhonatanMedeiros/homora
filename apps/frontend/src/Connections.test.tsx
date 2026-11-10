@@ -160,10 +160,6 @@ it('cria, consulta e remove widgets nomeados usando a conexão vinculada', async
     };
   });
   vi.stubGlobal('fetch', fetchMock);
-  vi.stubGlobal(
-    'confirm',
-    vi.fn(() => true),
-  );
   render(<Connections />);
   fireEvent.change(await screen.findByLabelText('Nome do widget'), {
     target: { value: 'Mídia sala' },
@@ -180,5 +176,7 @@ it('cria, consulta e remove widgets nomeados usando a conexão vinculada', async
   fireEvent.click(await screen.findByRole('button', { name: 'Consultar Mídia sala' }));
   expect(await screen.findByText('Servidor: Servidor · Versão: 10.0')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Remover widget Mídia sala' }));
+  expect(screen.queryByText('Widget removido.')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção do widget Mídia sala' }));
   expect(await screen.findByText('Widget removido.')).toBeTruthy();
 });

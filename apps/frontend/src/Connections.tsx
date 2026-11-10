@@ -100,6 +100,7 @@ export function Connections() {
   const [form, setForm] = useState<Form | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [confirming, setConfirming] = useState<string | null>(null);
   const [result, setResult] = useState<{ id: number; data: unknown; checkedAt?: string } | null>(
     null,
   );
@@ -171,7 +172,11 @@ export function Connections() {
     }
   }
   async function removeWidget(widget: IntegrationWidget) {
-    if (!window.confirm(`Remover o widget ${widget.name}?`)) return;
+    if (confirming !== `widget:${widget.id}`) {
+      setConfirming(`widget:${widget.id}`);
+      return;
+    }
+    setConfirming(null);
     setBusy(true);
     setMessage('');
     try {
@@ -234,7 +239,13 @@ export function Connections() {
     }
   }
   async function action(item: Connection, operation: 'test' | 'data' | 'delete') {
-    if (operation === 'delete' && !window.confirm(`Remover a integração ${item.name}?`)) return;
+    if (operation === 'delete') {
+      if (confirming !== `connection:${item.id}`) {
+        setConfirming(`connection:${item.id}`);
+        return;
+      }
+      setConfirming(null);
+    }
     setBusy(true);
     setMessage('');
     setResult(null);
@@ -263,7 +274,6 @@ export function Connections() {
     <section className="connections" aria-labelledby="connections-title">
       <div className="integration-card-heading">
         <div>
-          <p className="eyebrow">APLICATIVOS</p>
           <h2 id="connections-title">Suas conexões</h2>
           <p className="meta">Conecte serviços para consultar informações do seu homelab.</p>
         </div>
@@ -335,9 +345,17 @@ export function Connections() {
                       type="button"
                       className="btn quiet small"
                       disabled={busy}
+                      aria-label={
+                        confirming === `widget:${widget.id}`
+                          ? `Confirmar remoção do widget ${widget.name}`
+                          : `Remover widget ${widget.name}`
+                      }
                       onClick={() => void removeWidget(widget)}
+                      onBlur={() =>
+                        setConfirming((key) => (key === `widget:${widget.id}` ? null : key))
+                      }
                     >
-                      Remover widget {widget.name}
+                      {confirming === `widget:${widget.id}` ? 'Confirmar remoção' : 'Remover'}
                     </button>
                   </div>
                   {widgetResult?.id === widget.id && (
@@ -567,9 +585,17 @@ export function Connections() {
                       type="button"
                       className="btn quiet small"
                       disabled={busy}
+                      aria-label={
+                        confirming === `connection:${item.id}`
+                          ? `Confirmar remoção de ${item.name}`
+                          : `Remover ${item.name}`
+                      }
                       onClick={() => void action(item, 'delete')}
+                      onBlur={() =>
+                        setConfirming((key) => (key === `connection:${item.id}` ? null : key))
+                      }
                     >
-                      Remover {item.name}
+                      {confirming === `connection:${item.id}` ? 'Confirmar remoção' : 'Remover'}
                     </button>
                   </div>
                   {result?.id === item.id && (
