@@ -403,8 +403,9 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
       sem resposta, não verificado), com código HTTP e latência, sem seguir
       redirecionamentos.
 - [ ] **Limite de 25 serviços:** removê-lo ou expor cobertura e fila.
-- [ ] **Colunas por grupo:** larguras escolhidas, além da grade fixa e do modo
-      compacto. Validar em desktop e celular.
+- [x] **Colunas por grupo:** número de colunas (1 a 6) escolhido por grupo, além
+      da grade automática e do modo compacto (ver registro abaixo). Cards com
+      larguras livres dentro do grupo não foram feitos.
 - [ ] **Faixa superior opcional:** data, hora e recursos do sistema vindos de
       uma integração, sem agente no host.
 - [ ] **Intervalo por serviço e ping ICMP,** com limites.
@@ -492,6 +493,30 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
   CI constrói a imagem); a aparência de cada logo sobre fundo escuro, já que
   alguns são pretos; revisão jurídica das marcas (apenas a licença do repositório
   e o aviso de marcas de terceiros foram considerados).
+
+### Registro R1 — colunas por grupo (2026-11-10)
+
+- Escopo: cada grupo pode fixar de 1 a 6 colunas em telas largas; sem escolha,
+  vale a grade automática de antes. Em telas pequenas a grade continua em 1 ou
+  2 colunas, para o painel seguir legível no celular. Não há cards com
+  larguras diferentes dentro do mesmo grupo (o print de referência tem alguns
+  grupos assim).
+- Modelo: `service_groups.columns` (migração `0007`, nulo = automático).
+  `PUT /api/groups/:id/columns` com `{ columns: 1..6 | null }`; valor inválido
+  responde `invalid-columns`. Renomear ou reordenar grupos preserva o valor.
+- Interface: no modo Organizar, cada grupo tem o seletor de colunas; a troca é
+  otimista e volta atrás com mensagem se o servidor recusar.
+- Exportação e importação: a exportação inclui `columns` só quando há valor.
+  Na importação, o valor vale apenas para grupos novos (só adiciona, como no
+  resto); valor inválido é ignorado com aviso `columns-ignored`.
+- Validação: `pnpm check` e `pnpm build`; testes da API (definir, trocar,
+  limpar, valores inválidos, grupo inexistente, renomear, exportar e importar),
+  do componente (classes da grade, seletor só ao organizar) e dos textos nos dois
+  idiomas. Navegador real (Chromium): 2 e 3 colunas em grupos diferentes, valor
+  mantido ao mover o grupo e ao recarregar, presente na exportação, 1 coluna em
+  390 px sem rolagem horizontal e o seletor em pt-BR.
+- Não validado: uma base já em uso (a migração só adiciona uma coluna nula);
+  6 colunas com cards longos em telas de 1280 px ou menos.
 
 ## Registro inicial
 

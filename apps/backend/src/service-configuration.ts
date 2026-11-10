@@ -1,13 +1,18 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { validateService, type Service, type ServiceInput } from '@homora/shared';
-import { planImport, type ImportPlan, type ParsedImport } from './config-transfer.js';
+import {
+  MAX_GROUP_COLUMNS,
+  planImport,
+  type ImportPlan,
+  type ParsedImport,
+} from './config-transfer.js';
 
 type ServiceRow = Omit<Service, 'position' | 'allowPrivate'> & {
   position: number;
   allowPrivate: number | boolean;
 };
-type Group = { id: number; name: string; position: number };
+type Group = { id: number; name: string; position: number; columns: number | null };
 export type ServiceChange =
   | { op: 'create'; service: ServiceInput }
   | { op: 'update'; id: number; service: ServiceInput }
@@ -42,19 +47,19 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
       .get(id) as ServiceRow | undefined;
   const selectGroups = () =>
     sqlite
-      .prepare('SELECT id,name,position FROM service_groups ORDER BY position,name')
+      .prepare('SELECT id,name,position,columns FROM service_groups ORDER BY position,name')
       .all() as Group[];
   const bumpVersion = () =>
     sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
-  const ensureGroup = (name: string) => {
+  const ensureGroup = (name: string, columns: number | null = null) => {
     const exists = sqlite.prepare('SELECT id FROM service_groups WHERE name=?').get(name);
     if (exists) return;
     const next = sqlite
       .prepare('SELECT COALESCE(MAX(position), -1)+1 as position FROM service_groups')
       .get() as { position: number };
     sqlite
-      .prepare('INSERT INTO service_groups(name,position) VALUES(?,?)')
-      .run(name, next.position);
+      .prepare('INSERT INTO service_groups(name,position,columns) VALUES(?,?,?)')
+      .run(name, next.position, columns);
   };
   const nextServicePosition = (category: string) => {
     const row = sqlite
@@ -193,7 +198,10 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           group.services.map((service) => ({ group: group.name, service })),
         );
         let created = 0;
-        for (const group of plan.groups) ensureGroup(group.name);
+        const columnsOf = new Map(
+          parsed.document.groups.map((group) => [group.name, group.columns ?? null]),
+        );
+        for (const group of plan.groups) ensureGroup(group.name, columnsOf.get(group.name) ?? null);
         queue.forEach(({ group, service }, index) => {
           if (plan.services[index].status !== 'new') return;
           const valid = validateService({
@@ -227,14 +235,30 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           .prepare('INSERT INTO service_groups(name,position) VALUES(?,?)')
           .run(name, position);
         return sqlite
-          .prepare('SELECT id,name,position FROM service_groups WHERE id=?')
+          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
           .get(Number(result.lastInsertRowid)) as Group;
+      });
+    },
+    setGroupColumns(id: number, columns: number | null) {
+      if (
+        columns !== null &&
+        !(Number.isInteger(columns) && columns >= 1 && columns <= MAX_GROUP_COLUMNS)
+      )
+        throw new RangeError('columns');
+      return transaction(() => {
+        const result = sqlite
+          .prepare('UPDATE service_groups SET columns=? WHERE id=?')
+          .run(columns, id);
+        if (!result.changes) return null;
+        return sqlite
+          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
+          .get(id) as Group;
       });
     },
     renameGroup(id: number, name: string) {
       return transaction(() => {
         const current = sqlite
-          .prepare('SELECT id,name,position FROM service_groups WHERE id=?')
+          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
           .get(id) as Group | undefined;
         if (!current) return null;
         sqlite.prepare('UPDATE service_groups SET name=? WHERE id=?').run(name, id);
@@ -243,7 +267,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           .run(name, current.name);
         if (changed.changes) bumpVersion();
         return sqlite
-          .prepare('SELECT id,name,position FROM service_groups WHERE id=?')
+          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
           .get(id) as Group;
       });
     },

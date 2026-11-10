@@ -9,7 +9,13 @@ export const emptyService: ServiceInput = {
   allowPrivate: false,
 };
 
-export type ServiceGroup = { id: number; name: string; position: number };
+export type ServiceGroup = {
+  id: number;
+  name: string;
+  position: number;
+  /** Colunas da grade em telas largas (1 a 6); nulo é o ajuste automático. */
+  columns?: number | null;
+};
 export type Availability = 'available' | 'unavailable' | 'unknown';
 export type ServiceStatus = { status: Availability; lastAttempt: string | null };
 

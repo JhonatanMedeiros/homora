@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, ChevronDown, Folder } from 'lucide-react';
 import { t } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { NativeSelect } from '@/components/native-select';
 
 type Props = {
   category: string;
@@ -14,10 +15,23 @@ type Props = {
   canEdit: boolean;
   canRemove: boolean;
   groupId?: number;
+  /** Colunas escolhidas para o grupo; nulo ou ausente é o ajuste automático. */
+  columns?: number | null;
+  onColumns?: (columns: number | null) => void;
   onRename: () => void;
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
   children: ReactNode;
+};
+
+/** Classes completas (o Tailwind precisa vê-las): telas pequenas ficam em 1 ou 2 colunas. */
+const COLUMN_CLASSES: Record<number, string> = {
+  1: 'grid grid-cols-1 gap-3',
+  2: 'grid grid-cols-1 gap-3 sm:grid-cols-2',
+  3: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3',
+  4: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4',
+  5: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5',
+  6: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6',
 };
 
 export function GroupSection({
@@ -29,6 +43,8 @@ export function GroupSection({
   canEdit,
   canRemove,
   groupId,
+  columns,
+  onColumns,
   onRename,
   onRemove,
   onMove,
@@ -83,6 +99,23 @@ export function GroupSection({
         )}
         {organizing && (
           <div className="flex flex-wrap items-center gap-1">
+            {canEdit && onColumns && (
+              <NativeSelect
+                aria-label={t('group.columnsAria', { name: category })}
+                className="h-8 w-auto text-sm"
+                value={columns ?? ''}
+                onChange={(event) =>
+                  onColumns(event.target.value ? Number(event.target.value) : null)
+                }
+              >
+                <option value="">{t('group.columnsAuto')}</option>
+                {[1, 2, 3, 4, 5, 6].map((count) => (
+                  <option key={count} value={count}>
+                    {t('group.columnsCount', { count })}
+                  </option>
+                ))}
+              </NativeSelect>
+            )}
             {canEdit && (
               <>
                 <Button
@@ -135,9 +168,11 @@ export function GroupSection({
           {count === 0 && <p className="text-sm text-muted-foreground">{t('group.empty')}</p>}
           <ul
             className={
-              compact
-                ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
+              columns && COLUMN_CLASSES[columns]
+                ? COLUMN_CLASSES[columns]
+                : compact
+                  ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                  : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
             }
           >
             {children}

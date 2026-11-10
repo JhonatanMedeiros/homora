@@ -55,6 +55,8 @@ export const en = {
   'transfer.issue.pages-ignored':
     'Other pages listed in "pages" were not read. Import each file separately.',
   'transfer.issue.group-renamed': 'The group name was shortened to 40 characters.',
+  'transfer.issue.columns-ignored':
+    'The number of columns must be between 1 and 6; it was ignored.',
   'transfer.source': 'File format',
   'transfer.source.homora': 'Homora (YAML or JSON)',
   'transfer.source.homepage': 'Homepage (services.yaml or bookmarks.yaml)',
@@ -121,6 +123,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'transfer.issue.pages-ignored':
     'As outras páginas listadas em "pages" não foram lidas. Importe cada arquivo separadamente.',
   'transfer.issue.group-renamed': 'O nome do grupo foi encurtado para 40 caracteres.',
+  'transfer.issue.columns-ignored': 'O número de colunas deve estar entre 1 e 6; foi ignorado.',
   'transfer.source': 'Formato do arquivo',
   'transfer.source.homora': 'Homora (YAML ou JSON)',
   'transfer.source.homepage': 'Homepage (services.yaml ou bookmarks.yaml)',

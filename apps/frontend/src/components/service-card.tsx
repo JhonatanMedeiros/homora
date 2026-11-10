@@ -63,7 +63,7 @@ export function ServiceCard({
   const isBlocked = blocked && state !== 'available';
   const inline = organizing || confirmingRemoval;
   return (
-    <li draggable={organizing} className="group/service flex" {...dragProps}>
+    <li draggable={organizing} className="group/service flex min-w-0" {...dragProps}>
       <Item
         variant="outline"
         className={cn(
@@ -76,7 +76,12 @@ export function ServiceCard({
           dragging && 'opacity-50',
         )}
       >
-        <div className={cn('flex items-start gap-3', managing && 'pr-20 pointer-coarse:pr-24')}>
+        <div
+          className={cn(
+            'flex w-full min-w-0 items-start gap-3',
+            managing && 'pr-20 pointer-coarse:pr-24',
+          )}
+        >
           <ItemMedia
             variant="icon"
             aria-hidden="true"

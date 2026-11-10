@@ -25,6 +25,10 @@ export const serviceProposalSchema = z.discriminatedUnion('op', [
 
 export const groupNameSchema = z.object({ name: z.string().trim().min(1).max(40) }).strict();
 
+export const groupColumnsSchema = z
+  .object({ columns: z.number().int().min(1).max(6).nullable() })
+  .strict();
+
 export const groupOrderSchema = z.object({ names: z.array(z.string()) }).strict();
 
 export const serviceOrderSchema = z

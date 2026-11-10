@@ -3,6 +3,7 @@ import { ServiceValidationError } from '@homora/shared';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
 import {
+  groupColumnsSchema,
   groupNameSchema,
   groupOrderSchema,
   parseId,
@@ -48,6 +49,17 @@ export function registerServiceConfigurationRoutes(
     } catch {
       return reply.code(409).send(errorBody('group-exists'));
     }
+  });
+
+  app.put<{ Params: { id: string } }>('/api/groups/:id/columns', async (request, reply) => {
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send(errorBody('group-not-found'));
+    const parsed = groupColumnsSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-columns'));
+    return (
+      configuration.setGroupColumns(id, parsed.data.columns) ??
+      reply.code(404).send(errorBody('group-not-found'))
+    );
   });
 
   app.delete<{ Params: { id: string } }>('/api/groups/:id', async (request, reply) => {

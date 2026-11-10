@@ -5,6 +5,7 @@ import { normalizeIcon, type Service } from '@homora/shared';
 export const TRANSFER_VERSION = 1;
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
+export const MAX_GROUP_COLUMNS = 6;
 export const MAX_SERVICES = 1000;
 
 export type ImportedService = {
@@ -14,7 +15,7 @@ export type ImportedService = {
   icon: string;
   allowPrivate: boolean;
 };
-export type ImportedGroup = { name: string; services: ImportedService[] };
+export type ImportedGroup = { name: string; columns?: number; services: ImportedService[] };
 export type ImportDocument = { groups: ImportedGroup[] };
 
 /** Códigos estáveis: a interface os traduz; o servidor não devolve texto em idioma algum. */
@@ -31,6 +32,7 @@ export type IssueCode =
   | 'icon-ignored'
   | 'duplicate-in-file'
   | 'icon-unsupported'
+  | 'columns-ignored'
   | 'widget-ignored'
   | 'pages-ignored'
   | 'group-renamed';
@@ -56,7 +58,7 @@ export const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 /** Serializa grupos e cards na ordem atual. Nunca inclui segredos, conexões nem IDs. */
 export function serializeConfiguration(
-  groups: { name: string }[],
+  groups: { name: string; columns?: number | null }[],
   services: Service[],
   format: 'yaml' | 'json',
 ): string {
@@ -65,6 +67,9 @@ export function serializeConfiguration(
     version: TRANSFER_VERSION,
     groups: names.map((name) => ({
       name,
+      ...(groups.find((group) => group.name === name)?.columns
+        ? { columns: groups.find((group) => group.name === name)?.columns }
+        : {}),
       services: services
         .filter((service) => service.category === name)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0) || a.name.localeCompare(b.name))
@@ -138,6 +143,16 @@ export function parseTransfer(content: string): ParsedImport {
       return;
     }
     const group: ImportedGroup = { name, services: [] };
+    if (rawGroup.columns !== undefined && rawGroup.columns !== null) {
+      if (
+        typeof rawGroup.columns === 'number' &&
+        Number.isInteger(rawGroup.columns) &&
+        rawGroup.columns >= 1 &&
+        rawGroup.columns <= MAX_GROUP_COLUMNS
+      )
+        group.columns = rawGroup.columns;
+      else issues.push({ path: `${path}.columns`, code: 'columns-ignored', severity: 'warning' });
+    }
     for (const [si, rawService] of rawGroup.services.entries()) {
       total += 1;
       if (total > MAX_SERVICES) return;

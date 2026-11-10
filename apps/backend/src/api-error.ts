@@ -12,6 +12,7 @@ export const ERROR_MESSAGES = {
   'invalid-decision': 'Invalid decision.',
   'invalid-card-order': 'Invalid card order.',
   'invalid-group-order': 'Invalid group order.',
+  'invalid-columns': 'Choose between 1 and 6 columns, or automatic.',
   'invalid-group-name': 'Provide a group name with up to 40 characters.',
   'invalid-widget': 'Provide a valid integration and name.',
   'invalid-url': 'Provide a valid URL.',

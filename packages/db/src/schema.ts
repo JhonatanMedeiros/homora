@@ -3,6 +3,8 @@ export const serviceGroups = sqliteTable('service_groups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull().unique(),
   position: integer('position').notNull().default(0),
+  // Colunas da grade em telas largas (1 a 6); nulo mantém o ajuste automático.
+  columns: integer('columns'),
 });
 export const services = sqliteTable('services', {
   id: integer('id').primaryKey(),

@@ -507,6 +507,8 @@ export function ServicesPage({
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
             groupId={row?.id}
+            columns={row?.columns}
+            onColumns={(columns) => row && void reorder(data.setGroupColumns(row.id, columns))}
             onRename={() => {
               if (!row) return;
               setEditingGroup(row.id);

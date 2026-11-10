@@ -23,7 +23,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 
 ## Recursos disponíveis
 
-- Painel de serviços com grupos, ordem por arraste (modo Organizar), busca e estado de disponibilidade.
+- Painel de serviços com grupos, ordem por arraste (modo Organizar), número de colunas por grupo (1 a 6, mantido nas exportações), busca e estado de disponibilidade.
 - Ícones por emoji, nome (`lucide:server`), logo de marca embutido (`brand:plex`, 163 apps de homelab e self-hosting, servidos localmente, sem requisições externas) ou URL de imagem. O formulário sugere o logo que coincide com o nome do serviço.
 - Interface em inglês e português (Brasil); o idioma segue o navegador e pode ser trocado no botão de idioma.
 - Exportação e importação de serviços e grupos em YAML ou JSON, e importação de arquivos do Homepage (`services.yaml`, `bookmarks.yaml`) e do Dashy (`conf.yml`), sempre com prévia. Veja [Importar e exportar](#importar-e-exportar).
