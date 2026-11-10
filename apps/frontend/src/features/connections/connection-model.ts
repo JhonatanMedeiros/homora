@@ -21,7 +21,7 @@ export type IntegrationWidget = {
   name: string;
   serviceId: number | null;
 };
-export type WidgetStat = { label: string; value: string };
+export type WidgetStat = { label: string; value: string; id?: 'cpu' | 'memory' | 'disk' };
 export type ConnectionFormState = {
   type: Kind;
   name: string;
@@ -129,12 +129,17 @@ export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | nu
         v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100);
       if (!group(data.vms) || !group(data.containers) || !share(data.cpu) || !share(data.memory))
         return null;
+      // Respostas de versões anteriores não tinham o disco; tratar como ausente.
+      const disk = data.disk === undefined ? null : data.disk;
+      if (!share(disk)) return null;
       const stats: WidgetStat[] = [
         { label: t('stat.vms'), value: `${data.vms.running} / ${data.vms.total}` },
         { label: t('stat.lxc'), value: `${data.containers.running} / ${data.containers.total}` },
       ];
-      if (data.cpu !== null) stats.push({ label: t('stat.cpu'), value: `${data.cpu}%` });
-      if (data.memory !== null) stats.push({ label: t('stat.memory'), value: `${data.memory}%` });
+      if (data.cpu !== null) stats.push({ id: 'cpu', label: t('stat.cpu'), value: `${data.cpu}%` });
+      if (data.memory !== null)
+        stats.push({ id: 'memory', label: t('stat.memory'), value: `${data.memory}%` });
+      if (disk !== null) stats.push({ id: 'disk', label: t('stat.disk'), value: `${disk}%` });
       return stats;
     }
     case 'jellyfin':

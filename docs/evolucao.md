@@ -406,8 +406,9 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
 - [x] **Colunas por grupo:** número de colunas (1 a 6) escolhido por grupo, além
       da grade automática e do modo compacto (ver registro abaixo). Cards com
       larguras livres dentro do grupo não foram feitos.
-- [ ] **Faixa superior opcional:** data, hora e recursos do sistema vindos de
-      uma integração, sem agente no host.
+- [x] **Faixa superior opcional:** data, hora e recursos do sistema vindos de
+      uma integração, sem agente no host (ver registro abaixo). Só há CPU,
+      memória e disco do Proxmox; sem outra fonte de recursos por enquanto.
 - [ ] **Intervalo por serviço e ping ICMP,** com limites.
 - [ ] **Descoberta Docker por labels,** com sugestões revisáveis e acesso
       somente leitura ao socket. É o item de maior risco; avaliar depois dos
@@ -517,6 +518,31 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
   390 px sem rolagem horizontal e o seletor em pt-BR.
 - Não validado: uma base já em uso (a migração só adiciona uma coluna nula);
   6 colunas com cards longos em telas de 1280 px ou menos.
+
+### Registro R1 — faixa superior (2026-11-10)
+
+- Escopo: faixa opcional na página inicial com hora e data (relógio do
+  navegador, no idioma escolhido) e o uso de CPU, memória e disco, vindos do
+  widget do Proxmox. Não há agente no host: o dado é o que o Proxmox já
+  informa sobre os nós online. Quem não tem Proxmox vê só o relógio.
+- Ativação: caixa em Configurações, desligada por padrão. A preferência fica
+  no `localStorage` do navegador (não vai para o servidor, nem para a
+  exportação), então vale por navegador.
+- Dados: o resumo do Proxmox ganhou `disk` (disco dos nós online, em %); a
+  faixa usa o primeiro widget do tipo Proxmox, esteja ele ligado a um card ou
+  não, e consulta uma vez por minuto. Se a consulta falha, mostra um aviso curto
+  e o relógio continua. Respostas sem `disk` continuam aceitas.
+- Fora do escopo: temperatura, rede, carga, uptime e a busca dentro da faixa (a
+  busca segue no cabeçalho da página); fontes diferentes do Proxmox.
+- Validação: `pnpm check`; testes do resumo (disco ponderado, nós offline
+  ignorados, ausente = nulo), da faixa (dados, só relógio, falha) e do modelo.
+  Navegador real (Chromium) com Proxmox falso por HTTPS e CA própria: faixa
+  desligada por padrão, ativada em Configurações, hora e CPU 6%, Mem 54% e
+  Disco 33%, preferência mantida ao recarregar e sem rolagem horizontal em 320,
+  390 e 768 px.
+- Não validado: Proxmox real (o disco de um nó é o sistema de arquivos raiz,
+  não todos os armazenamentos); faixa em pt-BR no navegador (só no teste);
+  vários nós com discos de tamanhos muito diferentes.
 
 ## Registro inicial
 

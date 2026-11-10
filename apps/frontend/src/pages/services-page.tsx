@@ -15,6 +15,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { HealthSummary } from '@/components/health-summary';
+import { TopBar } from '@/components/top-bar';
+import { useTopBar } from '@/hooks/use-top-bar';
 import { GroupSection } from '@/components/group-section';
 import { OrganizePanel } from '@/components/organize-panel';
 import { PageHeader } from '@/components/page-header';
@@ -49,6 +51,7 @@ export function ServicesPage({
 }: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
+  const [topBar] = useTopBar();
   const [compact, setCompact] = useState(() => {
     try {
       return localStorage.getItem('homora-density') === 'compact';
@@ -341,6 +344,7 @@ export function ServicesPage({
           }
         />
       )}
+      {!managing && !organizing && topBar && <TopBar />}
       {!managing && !organizing && (
         <HealthSummary online={online} down={down} blocked={blocked} unknown={unknown} />
       )}

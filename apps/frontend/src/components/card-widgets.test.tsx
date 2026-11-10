@@ -46,8 +46,8 @@ it('resume cada tipo de integração e rejeita dados fora do formato', () => {
   ).toEqual([
     { label: 'VMs', value: '1 / 1' },
     { label: 'LXC', value: '16 / 25' },
-    { label: 'CPU', value: '6%' },
-    { label: 'Mem', value: '54%' },
+    { id: 'cpu', label: 'CPU', value: '6%' },
+    { id: 'memory', label: 'Mem', value: '54%' },
   ]);
   expect(
     widgetStats('proxmox', {

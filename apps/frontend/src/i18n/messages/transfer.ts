@@ -2,6 +2,11 @@
 export const en = {
   'nav.settings': 'Settings',
   'settings.title': 'Settings',
+  'settings.topBar': 'Show the top bar on the home page',
+  'settings.topBarHint':
+    'Shows the date, the time and CPU, memory and disk usage from the Proxmox widget. Saved in this browser only.',
+  'topBar.label': 'Date, time and system resources',
+  'topBar.unavailable': 'System resources unavailable',
   'settings.description': 'Export your dashboard, bring in an existing one and keep it versioned.',
   'transfer.exportTitle': 'Export',
   'transfer.exportHint':
@@ -70,6 +75,11 @@ export const en = {
 export const ptBR: Record<keyof typeof en, string> = {
   'nav.settings': 'Configurações',
   'settings.title': 'Configurações',
+  'settings.topBar': 'Mostrar a faixa superior na página inicial',
+  'settings.topBarHint':
+    'Mostra data, hora e o uso de CPU, memória e disco do widget do Proxmox. Salvo apenas neste navegador.',
+  'topBar.label': 'Data, hora e recursos do sistema',
+  'topBar.unavailable': 'Recursos do sistema indisponíveis',
   'settings.description': 'Exporte o seu painel, traga um já existente e mantenha-o versionado.',
   'transfer.exportTitle': 'Exportar',
   'transfer.exportHint':
