@@ -9,9 +9,9 @@ describe('dados de desenvolvimento', () => {
       const sqlite = getSqliteHandle(database.db);
       seedDevelopmentDatabase(sqlite);
       expect(sqlite.prepare('SELECT name FROM service_groups ORDER BY position').all()).toEqual([
-        { name: 'Essenciais' },
-        { name: 'Entretenimento' },
-        { name: 'Infraestrutura' },
+        { name: 'Essentials' },
+        { name: 'Entertainment' },
+        { name: 'Infrastructure' },
       ]);
       const rows = sqlite.prepare('SELECT url, allow_private FROM services').all();
       expect(rows).toHaveLength(8);

@@ -4,26 +4,26 @@ import type { DatabaseSync } from 'node:sqlite';
 export function seedDevelopmentDatabase(sqlite: DatabaseSync) {
   const groups = [
     {
-      name: 'Essenciais',
+      name: 'Essentials',
       services: [
-        ['Nextcloud', 'Arquivos e documentos'],
-        ['Home Assistant', 'Sua casa conectada'],
-        ['Vaultwarden', 'Senhas e informações'],
+        ['Nextcloud', 'Files and documents'],
+        ['Home Assistant', 'Your connected home'],
+        ['Vaultwarden', 'Passwords and secrets'],
       ],
     },
     {
-      name: 'Entretenimento',
+      name: 'Entertainment',
       services: [
-        ['Jellyfin', 'Filmes e séries'],
-        ['Audiobookshelf', 'Audiolivros e podcasts'],
+        ['Jellyfin', 'Movies and shows'],
+        ['Audiobookshelf', 'Audiobooks and podcasts'],
       ],
     },
     {
-      name: 'Infraestrutura',
+      name: 'Infrastructure',
       services: [
-        ['Proxmox', 'Máquinas virtuais e containers'],
-        ['AdGuard Home', 'DNS e proteção da rede'],
-        ['Uptime Kuma', 'Monitoramento de serviços'],
+        ['Proxmox', 'Virtual machines and containers'],
+        ['AdGuard Home', 'DNS and network protection'],
+        ['Uptime Kuma', 'Service monitoring'],
       ],
     },
   ];
