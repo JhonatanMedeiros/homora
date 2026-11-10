@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes, X509Certificate } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 export type ProxmoxConfig = { url: string; tokenId: string; secret: string; ca?: string };
 export function validateProxmoxConfig(input: ProxmoxConfig): ProxmoxConfig {
   let url: URL;
@@ -58,6 +58,7 @@ export function createVault(base: string) {
       return value;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT' || !create) throw error;
+      if (existsSync(dataPath)) throw new Error('Chave de integração ausente.', { cause: error });
       const value = randomBytes(32);
       writeFileSync(keyPath, value, { mode: 0o600, flag: 'wx' });
       return value;
@@ -96,5 +97,24 @@ export function createVault(base: string) {
       ]).toString('utf8'),
     ) as ProxmoxConfig;
   }
-  return { save, load };
+  function seal(value: string, allowCreate: boolean): string {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', key(allowCreate), iv);
+    const data = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+    return JSON.stringify({
+      iv: iv.toString('base64'),
+      tag: cipher.getAuthTag().toString('base64'),
+      data: data.toString('base64'),
+    });
+  }
+  function unseal(value: string): string {
+    const stored = JSON.parse(value) as { iv: string; tag: string; data: string };
+    const decipher = createDecipheriv('aes-256-gcm', key(false), Buffer.from(stored.iv, 'base64'));
+    decipher.setAuthTag(Buffer.from(stored.tag, 'base64'));
+    return Buffer.concat([
+      decipher.update(Buffer.from(stored.data, 'base64')),
+      decipher.final(),
+    ]).toString('utf8');
+  }
+  return { save, load, seal, unseal };
 }

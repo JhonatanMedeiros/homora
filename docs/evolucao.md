@@ -126,9 +126,42 @@ com o projeto usando a documentação disponível.
   apresentação de inventário antigo após falha de consulta.
 - Arquivos de IDE foram incluídos no `.gitignore`. Dados e segredos nos caminhos
   locais padrão estão ignorados; caminhos personalizados devem ser protegidos
-  separadamente. A revisão completa antes do primeiro commit permanece pendente.
+  separadamente. A revisão de arquivos e dados locais foi realizada antes do
+  commit desta etapa.
 
-## Trabalho em andamento — integrações
+## Entrega local — integrações experimentais
+
+- Revisadas as dependências e atualizados MCP SDK, Fastify, Vitest e cobertura.
+  `pnpm audit --prod` não encontrou vulnerabilidades conhecidas. `pnpm audit`
+  ainda aponta duas moderadas de desenvolvimento: `minimatch` na árvore do
+  ESLint e `esbuild` na cadeia interna legada do `drizzle-kit`; não foram usados
+  overrides incompatíveis para mascará-las.
+- A API autenticada oferece catálogo para Proxmox, Jellyfin, Home Assistant,
+  Uptime Kuma e AdGuard Home, rotas de conexão e rotas básicas separadas para
+  vínculos de widgets. A interface permite cadastrar, editar, testar, consultar
+  e remover as quatro conexões novas; ainda não há uma tela própria para
+  organizar widgets ou criar vários widgets por conexão.
+- Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home têm adaptadores somente
+  de leitura. Segredos e CAs são cifrados usando a chave local; as respostas
+  públicas não incluem seus valores. O backend aplica política comum de
+  destino, fixação do IP DNS autorizado, TLS, rejeição de redirecionamentos,
+  timeout e limite de resposta. O acesso a endereços privados é explícito por
+  conexão. A lista de endereços especiais bloqueados não é exaustiva.
+- Resultados são armazenados por 30 segundos em cache por conexão; edição e
+  remoção invalidam o cache, consulta manual força atualização e erros não são
+  armazenados como sucesso. Os widgets ainda não têm cache/observação próprios.
+- Backup e restauração local cobrem credenciais cifradas no banco quando a mesma
+  chave `.key` é restaurada junto aos arquivos de conta e credenciais legadas.
+  Foi validado com dados sintéticos em arquivo temporário; não substitui um
+  procedimento operacional de backup protegido.
+- `pnpm check` passou (20 arquivos Vitest, 85 testes e 2 testes de scripts),
+  assim como `pnpm build`, `git diff --check` e o teste TLS local, que rejeita
+  CA desconhecida e aceita CA temporária confiável.
+- Adaptadores e interface foram validados com mocks, não com Jellyfin, Home
+  Assistant, Uptime Kuma ou AdGuard Home reais. Compatibilidade de versões,
+  permissões e certificados precisa ser confirmada em ambientes de usuário.
+
+## Trabalho prévio de integrações
 
 - A análise e o plano técnico estão em [integrações](integracoes.md). A primeira
   versão do projeto foi registrada no Git e a conexão Proxmox com CA importada

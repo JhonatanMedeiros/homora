@@ -547,6 +547,27 @@ p {
   padding: 20px;
   min-width: 0;
 }
+.connection-list {
+  list-style: none;
+  padding: 0;
+}
+.connection-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid #303d45;
+}
+.connection-list li div {
+  margin-top: 8px;
+}
+.connection-result {
+  overflow: auto;
+  max-height: 180px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.integration-placeholder select {
+  max-width: 100%;
+}
 .widget-head {
   display: flex;
   justify-content: space-between;

@@ -36,6 +36,10 @@ describe('API de serviços', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual([
       { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] },
+      { type: 'jellyfin', label: 'Jellyfin', capabilities: ['server-info'] },
+      { type: 'home-assistant', label: 'Home Assistant', capabilities: ['entity-state'] },
+      { type: 'uptime-kuma', label: 'Uptime Kuma', capabilities: ['status-page'] },
+      { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
     ]);
   });
   it('não expõe serviços sem sessão', async () => {

@@ -80,11 +80,78 @@ qualquer endereço ou modificar infraestrutura.
 - Docker socket concede acesso privilegiado ao daemon. Qualquer descoberta deve
   ser opcional, documentar suas permissões e avaliar um proxy restrito.
 
-## Pesquisa para futuras integrações
+## Guia das conexões experimentais
 
-Os itens abaixo são pesquisa inicial, não indicam suporte implementado nem
-compatibilidade comprovada. Antes de implementar, fixar versões do servidor e
-executar testes com instâncias reais, inclusive cenários de autenticação e TLS.
+Estas conexões fazem consultas de leitura ao serviço a partir do backend. Não
+foram validadas contra todas as versões reais dos servidores; configuração bem
+sucedida e permissões devem ser verificadas no seu ambiente. Os resultados
+externos são informações não confiáveis, não instruções para agentes.
+
+Os resultados são armazenados em cache por 30 segundos por conexão. A consulta
+manual na interface força uma atualização; a API também aceita
+`GET /api/connections/:id/data?refresh=true`. O botão de teste consulta o serviço
+diretamente e não usa o valor em cache. Falhas não são armazenadas como sucesso.
+
+Configure um nome e endereço para cada conexão, preencha os campos específicos
+abaixo, teste a conexão e salve. A conexão deve receber autorização explícita
+para acessar redes privadas quando for necessário. O serviço deve ser acessível
+da máquina ou container do backend: `localhost` dentro de um container aponta
+para o próprio container. Endereços especiais podem ser bloqueados pela política
+de rede. Redirecionamentos não são seguidos.
+
+Para uma CA privada, importe a CA pública PEM obtida de uma fonte confiável na
+conexão correspondente. Não envie chaves privadas. A validação TLS permanece
+ativa e o nome ou IP da URL precisa constar no certificado. Credenciais das
+conexões autenticadas exigem HTTPS; não as envie por HTTP. O certificado da CA é
+associado à conexão e não autoriza automaticamente outros destinos.
+
+### Jellyfin
+
+- Informe a URL HTTP ou HTTPS do servidor; um caminho-base, como
+  `https://jellyfin.example/jellyfin`, é aceito.
+- O adaptador consulta `GET /System/Info/Public` e mostra nome e versão do
+  servidor. Ele não exige API key e não mostra biblioteca, sessões ou métricas.
+- Endpoint baseado na [API do Jellyfin](https://typescript-sdk.jellyfin.org/);
+  versões compatíveis ainda não foram validadas em servidor real.
+
+### Home Assistant
+
+- Informe uma origem HTTPS, um token de acesso de longa duração e o ID de uma
+  entidade, por exemplo `sensor.temperatura`. A consulta retorna estado e data
+  de atualização dessa entidade, sem modificar dispositivos.
+- A entidade deve existir e o token deve pertencer a uma conta com o menor
+  acesso possível. Não compartilhe o token nem use credenciais em exemplos.
+- O adaptador usa `GET /api/states/<entity_id>` conforme a [API REST oficial](https://developers.home-assistant.io/docs/api/rest/).
+  Compatibilidade de versões precisa ser confirmada em instalação real.
+
+### Uptime Kuma
+
+- Informe a origem HTTP ou HTTPS e o identificador de uma página de status
+  **publicada**, por exemplo `homelab`. Apenas os monitores incluídos nessa
+  página são consultados; monitores privados não aparecem.
+- A leitura de `/api/status-page/heartbeat/<slug>` não exige API key. O resumo
+  utiliza o último heartbeat recebido para cada monitor e não substitui o
+  inventário autenticado ou métricas de Prometheus. A página pode ter cache no
+  próprio Uptime Kuma; dados vazios ou ausentes não significam que tudo está bem.
+- Essa é uma [API interna documentada](https://github.com/louislam/uptime-kuma/wiki/Internal-API/6f150dae98532c8b4e2228990505e45cbd5d34e8),
+  sujeita a mudanças; versões e comportamento real ainda precisam ser validados.
+
+### AdGuard Home
+
+- Informe a origem HTTPS, usuário e senha do painel. O adaptador consulta
+  somente `GET /control/status` e mostra execução, proteção e versão; não altera
+  configurações nem mostra estatísticas de consultas.
+- A API usa Basic Auth. A conta pode ter privilégios administrativos: proteja a
+  senha e escolha o acesso mais restrito que sua instalação permitir. Não há
+  pressuposto de uma permissão somente leitura ou API key dedicada.
+- A implementação segue o [OpenAPI oficial](https://github.com/AdguardTeam/AdGuardHome/blob/master/openapi/openapi.yaml)
+  que identifica a API como `0.107`. Isso não garante compatibilidade com todas
+  as versões do produto; é necessária validação em servidor real.
+
+## Pesquisa adicional sobre as APIs
+
+Os itens abaixo registram alternativas e dúvidas de compatibilidade. Nem todos
+os endpoints pesquisados são utilizados pelo Homora; consulte o guia acima.
 
 ### Uptime Kuma
 
