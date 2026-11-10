@@ -1,3 +1,4 @@
+import { BRAND_ICON_NAMES } from '@homora/shared';
 import {
   Server,
   HardDrive,
@@ -203,10 +204,25 @@ export const iconRegistry: Record<string, LucideIcon> = {
 
 export const iconNames = Object.keys(iconRegistry);
 
+const brandNames: ReadonlySet<string> = new Set(BRAND_ICON_NAMES);
+export const brandIconNames: readonly string[] = BRAND_ICON_NAMES;
+export const brandIconUrl = (name: string) => `/brand-icons/${name}.svg`;
+
+const compact = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
+const brandByCompactName = new Map(BRAND_ICON_NAMES.map((name) => [compact(name), name]));
+
+/** Logo de marca que coincide com o nome do serviço (ignora maiúsculas, espaços e hífens). */
+export function suggestBrandIcon(serviceName: string): string | null {
+  const key = compact(serviceName);
+  return key ? (brandByCompactName.get(key) ?? null) : null;
+}
+
 /** Como um valor de ícone será desenhado. */
-export function iconKind(value: string): 'empty' | 'lucide' | 'image' | 'text' {
+export function iconKind(value: string): 'empty' | 'lucide' | 'brand' | 'image' | 'text' {
   if (!value) return 'empty';
   if (value.startsWith('lucide:')) return 'lucide';
+  if (value.startsWith('brand:'))
+    return brandNames.has(value.slice('brand:'.length)) ? 'brand' : 'empty';
   if (/^https?:\/\//i.test(value)) return 'image';
   return 'text';
 }

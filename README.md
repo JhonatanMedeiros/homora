@@ -11,7 +11,7 @@ A self-hosted home page to organize your services and keep an eye on your homela
 ## What works today
 
 - A dashboard of service cards with groups, drag-and-drop ordering (Organize mode), search (`Ctrl K` or `/`) and an availability state per service.
-- Card icons as an emoji, a built-in icon name (`lucide:server`) or an image URL.
+- Card icons as an emoji, a built-in icon name (`lucide:server`), a bundled brand logo (`brand:plex`, 163 homelab and self-hosted apps, served locally with no external requests) or an image URL. The service form suggests the logo that matches the service name.
 - English and Portuguese (Brazil) interface. The language follows your browser and can be switched with the language button.
 - Export your groups and cards to YAML or JSON, and import from Homora, [Homepage](https://github.com/gethomepage/homepage) (`services.yaml`, `bookmarks.yaml`) or [Dashy](https://github.com/Lissy93/dashy) (`conf.yml`), always with a preview. See [Import and export](#import-and-export).
 - Local administrator account, SQLite storage with migrations, backup and restore scripts.
@@ -56,7 +56,7 @@ Open **Settings**. Download your groups, cards and their order as YAML or JSON (
 
 To import, pick the file format (Homora, Homepage or Dashy) and a file. Homora shows a preview of what will be added, what already exists and what was ignored, and writes nothing until you confirm. Import only adds: nothing is overwritten or removed. Imported cards are not allowed to monitor your private network unless you tick that option for a Homora file you trust.
 
-Icons from other dashboards are kept only when Homora has an equivalent (an image URL, an emoji or one of the built-in icons); the others are left empty with a warning. Widgets, monitoring settings and Docker links from Homepage and Dashy are not imported. The formats were checked against those projects' documentation; real files may vary.
+Icons from other dashboards are kept only when Homora has an equivalent (an image URL, an emoji, a brand logo or one of the built-in icons); the others are left empty with a warning. Widgets, monitoring settings and Docker links from Homepage and Dashy are not imported. The formats were checked against those projects' documentation; real files may vary.
 
 ## Backup and restore
 

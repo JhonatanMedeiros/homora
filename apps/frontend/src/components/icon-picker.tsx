@@ -10,7 +10,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { iconNames, iconRegistry } from '@/lib/icons';
+import { brandIconNames, brandIconUrl, iconNames, iconRegistry } from '@/lib/icons';
 import { t } from '@/i18n';
 
 const portugueseKeywords: Record<string, string> = {
@@ -82,6 +82,29 @@ export function IconPicker({
                   </CommandItem>
                 );
               })}
+            </CommandGroup>
+            <CommandGroup heading={t('icon.brands')}>
+              {brandIconNames.map((name) => (
+                <CommandItem
+                  key={`brand-${name}`}
+                  value={`brand ${name}`}
+                  keywords={[name.replaceAll('-', ' ')]}
+                  onSelect={() => {
+                    onChange(`brand:${name}`);
+                    setOpen(false);
+                  }}
+                >
+                  <img
+                    src={brandIconUrl(name)}
+                    alt=""
+                    loading="lazy"
+                    aria-hidden="true"
+                    className="size-4 object-contain"
+                  />
+                  <span className="flex-1">{name}</span>
+                  {value === `brand:${name}` && <Check aria-label={t('icon.selected')} />}
+                </CommandItem>
+              ))}
             </CommandGroup>
           </CommandList>
         </Command>

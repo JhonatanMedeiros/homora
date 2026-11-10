@@ -3,6 +3,7 @@ import { ICON_MAX_LENGTH, type ServiceInput } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { IconPicker } from '@/components/icon-picker';
+import { suggestBrandIcon } from '@/lib/icons';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ export function ServiceForm({
   onCancel,
 }: Props) {
   const set = (patch: Partial<ServiceInput>) => onChange({ ...value, ...patch });
+  const suggestion = suggestBrandIcon(value.name);
   return (
     <form
       aria-label={editing ? t('form.editTitle') : t('form.newTitle')}
@@ -120,7 +122,19 @@ export function ServiceForm({
               placeholder={t('form.iconPlaceholder')}
             />
           </div>
-          <IconPicker value={value.icon ?? ''} onChange={(icon) => set({ icon })} />
+          <div className="flex flex-wrap items-center gap-2">
+            <IconPicker value={value.icon ?? ''} onChange={(icon) => set({ icon })} />
+            {!value.icon && suggestion && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => set({ icon: `brand:${suggestion}` })}
+              >
+                <ServiceIcon icon={`brand:${suggestion}`} name={value.name} />
+                {t('icon.suggested', { icon: suggestion })}
+              </Button>
+            )}
+          </div>
         </Field>
         <Field orientation="horizontal" className="items-start sm:col-span-2">
           <Checkbox

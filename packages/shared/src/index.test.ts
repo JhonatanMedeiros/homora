@@ -35,6 +35,9 @@ describe('validateService', () => {
 describe('normalizeIcon', () => {
   it('mantém emoji e texto curto, truncando em oito caracteres', () => {
     expect(normalizeIcon(' 🎬 ')).toBe('🎬');
+    expect(normalizeIcon('brand:proxmox')).toBe('brand:proxmox');
+    expect(normalizeIcon('brand:nao-existe')).toBe('');
+    expect(normalizeIcon('brand:../x')).toBe('');
     expect(normalizeIcon('abcdefghij')).toBe('abcdefgh');
     expect(normalizeIcon(undefined)).toBe('');
   });

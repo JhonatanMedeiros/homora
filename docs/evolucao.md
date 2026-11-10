@@ -303,7 +303,8 @@ Homepage e do Dashy, sem edição manual, em ambiente de teste.
   aviso e não são lidos; `appConfig` e `pageInfo` são ignorados.
 - Ícones: só são mantidos URL, emoji e nomes que coincidem com um dos 96 ícones
   embutidos (`mdi-server`, `fas fa-database` etc.). O restante (por exemplo
-  `sonarr.png`) fica vazio com aviso: não há ícones de marcas nem busca em CDN
+  `sonarr.png`; a R1 passou a mapeá-lo, ver "Registro R1 — logos de marca")
+  fica vazio com aviso: não há busca em CDN
   de terceiros, para não revelar o IP de quem abre o painel nem depender de
   licença de marca. Esta é a maior perda de fidelidade da migração.
 - Itens sem URL válida (incluindo `{{HOMEPAGE_VAR_*}}`) são relatados e
@@ -394,10 +395,10 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
       para Proxmox (VMs, LXC, CPU e memória), Jellyfin, Home Assistant, Uptime
       Kuma e AdGuard (ver registros abaixo); **pendente:** validação com
       instâncias reais.
-- [ ] **Ícones de marca por nome:** conjunto open source com licença compatível,
-      registrado em `THIRD_PARTY_NOTICES.md`, mantendo `lucide:`, emoji e URL.
-      Atualizar os importadores do Homepage e do Dashy para mapear os nomes de
-      ícone que hoje ficam vazios com aviso.
+- [x] **Ícones de marca por nome:** 163 logos do dashboard-icons (Apache-2.0)
+      embutidos, registrados em `THIRD_PARTY_NOTICES.md`, mantendo `lucide:`,
+      emoji e URL; importadores do Homepage e do Dashy mapeiam os nomes (ver
+      registro abaixo). Cobertura limitada à lista curada.
 - [ ] **Estado semântico do monitor** (responde, exige login, não encontrado,
       sem resposta, não verificado), com código HTTP e latência, sem seguir
       redirecionamentos.
@@ -460,6 +461,37 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
 - Não validado: um Proxmox real (clusters com vários nós, permissões
   restritas do token, modelos reais); a atualização de uma base com linha
   `proxmox` criada por versões anteriores.
+
+### Registro R1 — logos de marca (2026-11-10)
+
+- Escolha: 163 logos SVG do dashboard-icons (Apache-2.0; commit `d767d73`),
+  copiados para `apps/frontend/public/brand-icons` e servidos pelo próprio Homora.
+  Nada é buscado em CDN, então abrir o painel não revela o IP a terceiros. A
+  lista é curada para homelab e self-hosting; só entraram SVG vetoriais (5 foram
+  descartados por imagem embutida ou `foreignObject`). Ficaram de fora logos
+  que só existem em PNG no projeto de origem (por exemplo Homepage, Dashy,
+  Linkwarden e Speedtest Tracker).
+- Formato: `brand:nome` (nomes da lista em `packages/shared/src/brand-icons.ts`;
+  nomes fora da lista são descartados por `normalizeIcon`). A interface mostra
+  o logo e volta à inicial se ele não carregar.
+- Interface: o seletor de ícones lista os logos junto dos ícones embutidos, e o
+  formulário oferece "Usar o logo de X" quando o nome do serviço coincide com um
+  logo. O `pnpm dev` já cria os cards de exemplo com logos.
+- Importadores: `sonarr.png`, `sh-plex`, `hl-jellyfin` e `si-docker` viram
+  `brand:`; `mdi-` e `fa-` continuam indo para `lucide:`. Nomes sem equivalente
+  ficam vazios com aviso, como antes.
+- Validação: `pnpm check` e `pnpm build` (os 163 arquivos vão para o `dist`).
+  Testes: lista e arquivos coincidem, SVG sem script/imagem/referência externa,
+  sugestão por nome, `normalizeIcon`, importadores e o componente de ícone.
+  Navegador real (Chromium): sugestão no formulário, busca "plex" no seletor,
+  salvar com `brand:proxmox` e importar um `services.yaml` do Homepage com
+  `sonarr.png`, `sh-plex` e `speedtest-tracker.png`; os logos carregaram
+  (largura natural maior que zero), sem erro de console, e o ícone sem
+  equivalente gerou aviso.
+- Não validado: a imagem Docker com os novos arquivos e a licença copiada (o
+  CI constrói a imagem); a aparência de cada logo sobre fundo escuro, já que
+  alguns são pretos; revisão jurídica das marcas (apenas a licença do repositório
+  e o aviso de marcas de terceiros foram considerados).
 
 ## Registro inicial
 

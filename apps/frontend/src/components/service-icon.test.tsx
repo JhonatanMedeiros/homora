@@ -47,3 +47,18 @@ it('expõe somente nomes válidos no registro', () => {
 it('mantém o registro da interface igual à lista compartilhada com o servidor', () => {
   expect([...iconNames].sort()).toEqual([...ICON_NAMES].sort());
 });
+
+it('desenha o logo de marca embutido a partir do caminho local', () => {
+  const { container } = render(<ServiceIcon icon="brand:proxmox" name="Proxmox" />);
+  expect(container.querySelector('img')?.getAttribute('src')).toBe('/brand-icons/proxmox.svg');
+});
+
+it('volta à inicial se o logo não carrega ou se o nome não existe', () => {
+  const failing = render(<ServiceIcon icon="brand:proxmox" name="Proxmox" />);
+  fireEvent.error(failing.container.querySelector('img') as HTMLImageElement);
+  expect(failing.container.textContent).toBe('P');
+  cleanup();
+  const unknown = render(<ServiceIcon icon="brand:inexistente" name="Casa" />);
+  expect(unknown.container.querySelector('img')).toBeNull();
+  expect(unknown.container.textContent).toBe('C');
+});

@@ -13,12 +13,17 @@ describe('mapIcon', () => {
     ['https://exemplo.test/a.svg', 'https://exemplo.test/a.svg', false],
     ['🎬', '🎬', false],
     ['mdi-server', 'lucide:server', false],
-    ['si-docker', '', true],
+    ['si-docker', 'brand:docker', false],
+    ['mdi-docker', '', true],
     ['mdi-server-outline', 'lucide:server', false],
     ['router.png', 'lucide:router', false],
     ['fas fa-database', 'lucide:database', false],
-    ['sonarr.png', '', true],
-    ['hl-plex', '', true],
+    ['sonarr.png', 'brand:sonarr', false],
+    ['hl-plex', 'brand:plex', false],
+    ['sh-proxmox', 'brand:proxmox', false],
+    ['brand:plex', 'brand:plex', false],
+    ['brand:inexistente', '', true],
+    ['speedtest-tracker.png', '', true],
     ['javascript:alert(1)', '', true],
   ])('%s -> %s', (raw, icon, unsupported) => {
     expect(mapIcon(raw)).toEqual({ icon, unsupported });
@@ -42,7 +47,7 @@ describe('Homepage', () => {
           type: jellyfin
           key: segredo
     - Sonarr:
-        icon: sonarr.png
+        icon: speedtest-tracker.png
         href: http://192.168.1.10:8989
 - Infra:
     - Docker:

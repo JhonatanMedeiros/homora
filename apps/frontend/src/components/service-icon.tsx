@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { iconKind, iconRegistry } from '@/lib/icons';
+import { brandIconUrl, iconKind, iconRegistry } from '@/lib/icons';
 import { upper } from '@/i18n';
 
 /**
- * Ícone de um serviço: nome embutido (`lucide:server`), imagem por URL, emoji ou texto
+ * Ícone de um serviço: nome embutido (`lucide:server`), logo de marca (`brand:plex`), imagem por URL, emoji ou texto
  * curto. Se o nome não existe ou a imagem não carrega, usa a inicial do nome.
  */
 export function ServiceIcon({ icon, name }: { icon?: string; name: string }) {
@@ -15,10 +15,10 @@ export function ServiceIcon({ icon, name }: { icon?: string; name: string }) {
     const Icon = iconRegistry[value.slice('lucide:'.length)];
     if (Icon) return <Icon aria-hidden="true" className="size-5" />;
   }
-  if (kind === 'image' && failedUrl !== value) {
+  if ((kind === 'image' || kind === 'brand') && failedUrl !== value) {
     return (
       <img
-        src={value}
+        src={kind === 'brand' ? brandIconUrl(value.slice('brand:'.length)) : value}
         alt=""
         loading="lazy"
         referrerPolicy="no-referrer"
