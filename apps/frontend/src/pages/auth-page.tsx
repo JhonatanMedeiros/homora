@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import type { AuthStatus } from '@/hooks/use-auth';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { BrandMark } from '@/components/brand-mark';
@@ -19,10 +19,20 @@ type Props = {
 /** Criação da conta de administrador e entrada. */
 export function AuthPage({ status, error, onSubmit }: Props) {
   const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const pending = useRef(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (await onSubmit(password)) setPassword('');
+    if (pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      if (await onSubmit(password)) setPassword('');
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
   }
 
   return (
@@ -60,8 +70,13 @@ export function AuthPage({ status, error, onSubmit }: Props) {
                       />
                     </Field>
                     <FormError>{error}</FormError>
-                    <Button type="submit">
-                      {status.configured ? t('auth.signIn') : t('auth.createAccount')}
+                    <Button type="submit" disabled={busy}>
+                      {busy && <Spinner data-icon="inline-start" />}
+                      {busy
+                        ? t('auth.submitting')
+                        : status.configured
+                          ? t('auth.signIn')
+                          : t('auth.createAccount')}
                     </Button>
                   </FieldGroup>
                 </form>
