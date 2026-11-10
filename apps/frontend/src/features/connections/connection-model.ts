@@ -12,10 +12,12 @@ export type Connection = {
   username?: string;
   slug?: string;
 };
+/** Tipos que um widget pode ter: as conexões e o Proxmox, que ainda usa o cofre legado. */
+export type WidgetKind = Kind | 'proxmox';
 export type IntegrationWidget = {
   id: number;
   integrationId: number;
-  type: Kind;
+  type: WidgetKind;
   name: string;
   serviceId: number | null;
 };
@@ -38,6 +40,7 @@ export const labels: Record<Kind, string> = {
   'uptime-kuma': 'Uptime Kuma',
   'adguard-home': 'AdGuard Home',
 };
+export const widgetLabels: Record<WidgetKind, string> = { ...labels, proxmox: 'Proxmox VE' };
 export const marks: Record<Kind, string> = {
   jellyfin: 'J',
   'home-assistant': 'HA',
@@ -65,12 +68,18 @@ export async function request(url: string, init?: RequestInit): Promise<unknown>
   return data;
 }
 
-export function describeData(type: Kind, value: unknown): string | null {
+export function describeData(type: WidgetKind, value: unknown): string | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const data = value as Record<string, unknown>;
   const text = (v: unknown) => typeof v === 'string' && v.length <= 1024;
   const count = (v: unknown) => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
   switch (type) {
+    case 'proxmox':
+      return (
+        widgetStats(type, value)
+          ?.map((stat) => `${stat.label}: ${stat.value}`)
+          .join(' · ') ?? null
+      );
     case 'jellyfin':
       return text(data.name) && text(data.version)
         ? t('data.jellyfin', { name: String(data.name), version: String(data.version) })
@@ -103,13 +112,31 @@ export function describeData(type: Kind, value: unknown): string | null {
 }
 
 /** Números e textos curtos de uma consulta, para exibir dentro de um card. */
-export function widgetStats(type: Kind, value: unknown): WidgetStat[] | null {
+export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const data = value as Record<string, unknown>;
   const text = (v: unknown): v is string => typeof v === 'string' && v.length <= 1024;
   const count = (v: unknown): v is number =>
     typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
   switch (type) {
+    case 'proxmox': {
+      const group = (v: unknown): v is { running: number; total: number } =>
+        !!v &&
+        typeof v === 'object' &&
+        count((v as Record<string, unknown>).running) &&
+        count((v as Record<string, unknown>).total);
+      const share = (v: unknown): v is number | null =>
+        v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100);
+      if (!group(data.vms) || !group(data.containers) || !share(data.cpu) || !share(data.memory))
+        return null;
+      const stats: WidgetStat[] = [
+        { label: t('stat.vms'), value: `${data.vms.running} / ${data.vms.total}` },
+        { label: t('stat.lxc'), value: `${data.containers.running} / ${data.containers.total}` },
+      ];
+      if (data.cpu !== null) stats.push({ label: t('stat.cpu'), value: `${data.cpu}%` });
+      if (data.memory !== null) stats.push({ label: t('stat.memory'), value: `${data.memory}%` });
+      return stats;
+    }
     case 'jellyfin':
       return text(data.name) && text(data.version)
         ? [

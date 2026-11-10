@@ -81,11 +81,13 @@ export const updateConnectionSchema = connectionFields;
 
 export const createWidgetSchema = z
   .object({
-    integrationId: z.number().int().safe().positive(),
+    integrationId: z.number().int().safe().positive().optional(),
+    source: z.literal('proxmox').optional(),
     name: z.string().trim().min(1).max(80),
     serviceId: z.number().int().safe().positive().nullable().optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => (value.integrationId === undefined) !== (value.source === undefined));
 
 export const updateWidgetSchema = z
   .object({ serviceId: z.number().int().safe().positive().nullable() })

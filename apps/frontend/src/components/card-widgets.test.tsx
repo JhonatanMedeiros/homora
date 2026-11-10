@@ -36,6 +36,36 @@ it('resume cada tipo de integração e rejeita dados fora do formato', () => {
   expect(
     widgetStats('uptime-kuma', { up: -1, down: 0, pending: 0, maintenance: 0, unknown: 0 }),
   ).toBeNull();
+  expect(
+    widgetStats('proxmox', {
+      vms: { running: 1, total: 1 },
+      containers: { running: 16, total: 25 },
+      cpu: 6,
+      memory: 54,
+    }),
+  ).toEqual([
+    { label: 'VMs', value: '1 / 1' },
+    { label: 'LXC', value: '16 / 25' },
+    { label: 'CPU', value: '6%' },
+    { label: 'Mem', value: '54%' },
+  ]);
+  expect(
+    widgetStats('proxmox', {
+      vms: { running: 0, total: 0 },
+      containers: { running: 0, total: 0 },
+      cpu: null,
+      memory: null,
+    }),
+  ).toHaveLength(2);
+  expect(widgetStats('proxmox', { vms: 3 })).toBeNull();
+  expect(
+    widgetStats('proxmox', {
+      vms: { running: 0, total: 0 },
+      containers: { running: 0, total: 0 },
+      cpu: 120,
+      memory: null,
+    }),
+  ).toBeNull();
   expect(widgetStats('jellyfin', { name: 1 })).toBeNull();
   expect(widgetStats('jellyfin', [])).toBeNull();
   expect(widgetStats('jellyfin', null)).toBeNull();

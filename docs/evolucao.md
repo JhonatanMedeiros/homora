@@ -391,9 +391,9 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
 
 - [ ] **Widgets dentro do card:** cada card pode exibir dados de uma conexão
       existente, com estado de carregamento e de erro por widget. Implementado
-      para Jellyfin, Home Assistant, Uptime Kuma e AdGuard (ver registro abaixo);
-      **pendente:** Proxmox (VMs, LXC, CPU, MEM), que exige extrair o Proxmox do
-      cofre legado, e validação com instâncias reais.
+      para Proxmox (VMs, LXC, CPU e memória), Jellyfin, Home Assistant, Uptime
+      Kuma e AdGuard (ver registros abaixo); **pendente:** validação com
+      instâncias reais.
 - [ ] **Ícones de marca por nome:** conjunto open source com licença compatível,
       registrado em `THIRD_PARTY_NOTICES.md`, mantendo `lucide:`, emoji e URL.
       Atualizar os importadores do Homepage e do Dashy para mapear os nomes de
@@ -434,9 +434,32 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
   horizontal em 390 px. A política de destinos bloqueou 127.0.0.1 mesmo com
   rede privada permitida, como projetado.
 - Não validado: instâncias reais de Jellyfin, Home Assistant, Uptime Kuma e
-  AdGuard; widgets do Proxmox; atualização de uma base existente com widgets
+  AdGuard; atualização de uma base existente com widgets
   criados antes da migração (a coluna é nula por padrão e a migração só
   adiciona a coluna).
+
+### Registro R1 — widget do Proxmox (2026-11-10)
+
+- Modelo: o Proxmox segue no cofre legado (a extração é do R2). Uma linha ponte
+  em `integration_instances` (tipo `proxmox`, sem segredo, criada ao ligar o
+  primeiro widget) permite usar o mesmo mecanismo de widgets. Ela fica fora de
+  `/api/connections` e responde 404 a edição, teste e remoção por lá. A API
+  aceita `source: "proxmox"` em `POST /api/widgets` (exclusivo com
+  `integrationId`) e responde `proxmox-not-configured` sem configuração.
+- Dados: o card recebe só números agregados (VMs e LXC em execução/total, CPU
+  ponderada por núcleos e memória dos nós online); modelos e nós offline são
+  ignorados, e nomes, IDs e endereços não saem do backend por esse caminho. O
+  cache é invalidado quando endereço, token, segredo ou CA mudam.
+- Validação: `pnpm check` e `pnpm build`; testes do resumo (modelos, nós
+  offline, itens inválidos, limites), da API (exclusividade, 404 sem
+  configuração, linha ponte protegida, ausência de nomes, cache e invalidação) e
+  da interface (opção "Proxmox" no formulário, corpo `source`, resumo). Navegador
+  real (Chromium) com um servidor HTTPS simulado e CA própria, TLS validado: a
+  opção Proxmox só aparece depois de configurar; o card mostrou "1 / 1 VMs,
+  16 / 25 LXC, 6% CPU, 54% MEM" e a página não continha nomes de recursos.
+- Não validado: um Proxmox real (clusters com vários nós, permissões
+  restritas do token, modelos reais); a atualização de uma base com linha
+  `proxmox` criada por versões anteriores.
 
 ## Registro inicial
 

@@ -27,7 +27,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 - Ícones por emoji, nome (`lucide:server`) ou URL de imagem.
 - Interface em inglês e português (Brasil); o idioma segue o navegador e pode ser trocado no botão de idioma.
 - Exportação e importação de serviços e grupos em YAML ou JSON, e importação de arquivos do Homepage (`services.yaml`, `bookmarks.yaml`) e do Dashy (`conf.yml`), sempre com prévia. Veja [Importar e exportar](#importar-e-exportar).
-- Widgets dentro do card: ligue um widget (dados do Jellyfin, Home Assistant, Uptime Kuma ou AdGuard Home) a um card na página Integrações. Cada widget mostra o próprio estado de carregamento ou erro, e uma conexão com falha não afeta os outros cards. Os dados do Proxmox ainda não estão disponíveis como widget de card.
+- Widgets dentro do card: ligue um widget (dados do Proxmox, Jellyfin, Home Assistant, Uptime Kuma ou AdGuard Home) a um card na página Integrações. Cada widget mostra o próprio estado de carregamento ou erro, e uma conexão com falha não afeta os outros cards.
 - Integrações experimentais de leitura (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) e agentes de IA com permissões, via MCP local.
 
 Ideias e recursos planejados estão em [estratégia](docs/estrategia.md) e no [plano de evolução](docs/evolucao.md), separados do que já existe.

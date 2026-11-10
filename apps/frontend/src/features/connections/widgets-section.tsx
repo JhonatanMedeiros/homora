@@ -12,7 +12,12 @@ import {
 } from '@/components/ui/item';
 import { SectionTitle } from '@/components/section-title';
 import { ConnectionMark } from './connection-mark';
-import { describeData, labels, type Connection, type IntegrationWidget } from './connection-model';
+import {
+  describeData,
+  widgetLabels,
+  type Connection,
+  type IntegrationWidget,
+} from './connection-model';
 import { EmptyNote } from '@/components/empty-note';
 import { NativeSelect } from '@/components/native-select';
 import { t } from '@/i18n';
@@ -24,6 +29,7 @@ type Props = {
   confirming: string | null;
   widgetName: string;
   widgetConnection: string;
+  proxmoxConfigured: boolean;
   cards: { id: number; name: string }[];
   widgetCard: string;
   onCardChange: (value: string) => void;
@@ -44,6 +50,7 @@ export function WidgetsSection({
   confirming,
   widgetName,
   widgetConnection,
+  proxmoxConfigured,
   cards,
   widgetCard,
   onCardChange,
@@ -60,7 +67,7 @@ export function WidgetsSection({
     <section aria-labelledby="integration-widgets-title" className="flex flex-col gap-3">
       <SectionTitle id="integration-widgets-title">{t('widgets.title')}</SectionTitle>
       <p className="text-sm text-muted-foreground">{t('widgets.description')}</p>
-      {items && items.length > 0 && (
+      {((items && items.length > 0) || proxmoxConfigured) && (
         <form onSubmit={onCreate}>
           <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
             <Field>
@@ -71,11 +78,12 @@ export function WidgetsSection({
                 value={widgetConnection}
                 onChange={(event) => onConnectionChange(event.target.value)}
               >
-                {items.map((item) => (
+                {(items ?? []).map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>
                 ))}
+                {proxmoxConfigured && <option value="proxmox">{widgetLabels.proxmox}</option>}
               </NativeSelect>
             </Field>
             <Field>
@@ -125,7 +133,7 @@ export function WidgetsSection({
                   <ItemContent>
                     <ItemTitle>{widget.name}</ItemTitle>
                     <ItemDescription>
-                      {connection?.name ?? labels[widget.type] ?? widget.type}
+                      {connection?.name ?? widgetLabels[widget.type] ?? widget.type}
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions className="flex-wrap">
@@ -146,7 +154,7 @@ export function WidgetsSection({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={busy || !connection}
+                      disabled={busy || (!connection && widget.type !== 'proxmox')}
                       onClick={() => onQuery(widget)}
                     >
                       {t('connections.query', { name: widget.name })}
