@@ -166,6 +166,9 @@ validação do inventário e das redes reais permanece pendente.
       expiração, auditoria e payloads hostis.
 - [ ] Exercitar manualmente a revisão visual e validar concorrência sob carga e
       resistência a instruções maliciosas em respostas reais de ferramentas.
+      Revisão visual e conteúdo hostil exercitados em 2026-11-10 (ver
+      "Validação P4 — revisão visual"); carga e respostas de ferramentas
+      reais seguem pendentes.
 - [x] Manter ações de infraestrutura, como reiniciar VMs, fora desta etapa.
 
 **Conclusão:** agentes só acessam o que foi autorizado e alterações propostas
@@ -1007,3 +1010,20 @@ up` subiu backend, frontend e proxy; no backend não existe
   da página Configurações é acionado pelo rótulo.
 - **Não validado:** leitor de tela e aparelho móvel real. Por isso o item do P1
   segue aberto.
+
+## Validação P4 — revisão visual das propostas (2026-11-10)
+
+- Banco temporário e stack local. Identidade criada pela interface (token de 43
+  caracteres exibido uma vez) e usado por um cliente MCP real do SDK sobre o
+  `mcp-server.js` compilado, via stdio, com `HOMORA_AGENT_TOKEN`.
+- `list_services` respondeu; `propose_service_card` criou duas propostas e
+  rejeitou `javascript:` como URL inválida.
+- Conteúdo hostil (instruções no nome e na descrição, `<img onerror>` e
+  `<script>`) apareceu como texto na revisão; nenhum script executou e não houve
+  erro de console. Aprovação pela interface aplicou o card na home.
+- Uma proposta para `http://127.0.0.1:1` é aceita e aprovável; o card aparece
+  como "Monitoring blocked", pela política de destinos. A revisão não avisa de
+  antemão que o destino ficará bloqueado (melhoria de UX possível, não
+  corrigida).
+- **Não validado:** concorrência sob carga e respostas reais de ferramentas
+  externas a um agente de IA (só um cliente MCP de teste foi usado).
