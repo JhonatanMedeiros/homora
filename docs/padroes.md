@@ -22,6 +22,29 @@ estão em [arquitetura](arquitetura.md).
 - Evite dependências circulares entre capacidades. O fluxo esperado é interface
   → API/serviço de aplicação → persistência ou adaptador externo.
 
+## Interface (frontend)
+
+- A interface usa React, Tailwind CSS v4 e shadcn/ui (base Radix, estilo
+  `new-york`, ícones lucide). `apps/frontend/components.json` configura a CLI;
+  a skill `shadcn` em `.agents/skills/shadcn` orienta agentes. Adicione
+  primitivos com `npx shadcn@latest add <componente>` (dentro de `apps/frontend`)
+  e confira os arquivos gerados: a CLI deste projeto grava o import de `cn`
+  como `"cn"`; corrija para `@/lib/utils`.
+- Todo elemento de UI é um componente: primitivos em `src/components/ui`
+  (shadcn, ajustados aos tokens), componentes do produto em `src/components`
+  (`LabelTape`, `StatusTag`, `ServiceCard`, `AppShell`...), telas em `src/pages`
+  e módulos por capacidade em `src/features`. Estado e chamadas de API ficam em
+  `src/hooks`; regras puras em `src/lib`.
+- Estilo só por tokens semânticos (`bg-primary`, `text-muted-foreground`),
+  definidos em `src/style.css` e documentados em `DESIGN.md`. Não use cores
+  cruas, `space-*`, CSS avulso por tela nem classes genéricas antigas.
+  `className` serve a layout, não a trocar cor ou tipografia de um componente.
+- Formulários usam `FieldGroup`/`Field`; avisos usam `Alert`; vazios, `Empty`;
+  estado de serviço, sempre `StatusTag` (ícone, texto e cor). O tema é a classe
+  `dark` em `<html>` (`useTheme`).
+- Os arquivos em `src/components/ui` seguem o upstream do shadcn; o ESLint os
+  isenta de regras de Fast Refresh e pureza.
+
 ## Contratos e validação
 
 - Valide dados não confiáveis na entrada: corpo, parâmetros, query, variáveis de

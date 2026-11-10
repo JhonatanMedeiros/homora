@@ -313,6 +313,24 @@ com o projeto usando a documentação disponível.
   tela, navegação completa por teclado, aparelho móvel real e Proxmox real.
   Por isso os itens de telas pequenas e teclado do P1 seguem abertos.
 
+## Migração para shadcn/ui e Tailwind v4 (nova identidade)
+
+- `apps/frontend` passou a usar Tailwind CSS 4.3, shadcn/ui (CLI 4.23, base
+  Radix) e lucide-react. O `style.css` de 1.539 linhas foi substituído por
+  tokens semânticos; telas e módulos viraram componentes (`components/ui`,
+  `components`, `pages`, `features`, `hooks`, `lib`). A skill `shadcn` foi
+  instalada em `.agents/skills/shadcn` e registrada em `skills-lock.json`.
+- Nova identidade, escolhida entre as opções do fluxo do Impeccable: “Etiqueta
+  de patch panel” (grafite aquecido, fita de rotuladora branca, amarelo de fita
+  só em ação e foco; Barlow Semi Condensed, Figtree e JetBrains Mono servidas
+  localmente por pacotes Fontsource, SIL OFL). `PRODUCT.md` registra o tom
+  caloroso; `DESIGN.md` descreve o sistema.
+- Comportamento, textos, rotas de API e nomes acessíveis foram preservados; os
+  testes existentes passam sem mudança de expectativa. A remoção de serviço
+  continua com confirmação na própria linha.
+- Validação: ver o resumo da entrega. Não verificados: leitor de tela, aparelho
+  móvel real, Proxmox real e navegação completa por teclado.
+
 ## Refinamento da interface (crítica de design)
 
 - Uma crítica da interface (nota 23/40 nas heurísticas de usabilidade) levou a
