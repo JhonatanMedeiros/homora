@@ -5,6 +5,7 @@ import { createIntegrationConnections } from '../integration-connections.js';
 import {
   createConnectionSchema,
   createWidgetSchema,
+  updateWidgetSchema,
   parseId,
   refreshQuerySchema,
   updateConnectionSchema,
@@ -27,9 +28,24 @@ export function registerConnectionRoutes(app: FastifyInstance, db: Db, vault?: V
   app.post('/api/widgets', async (request, reply) => {
     const parsed = createWidgetSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-widget'));
-    const widget = await connections.createWidget(parsed.data.integrationId, parsed.data.name);
+    const widget = await connections.createWidget(
+      parsed.data.integrationId,
+      parsed.data.name,
+      parsed.data.serviceId ?? null,
+    );
+    if (widget === 'service-missing') return reply.code(404).send(errorBody('service-not-found'));
     if (!widget) return reply.code(404).send(errorBody('integration-not-found'));
     return reply.code(201).send(widget);
+  });
+
+  app.patch<{ Params: { id: string } }>('/api/widgets/:id', async (request, reply) => {
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send(errorBody('widget-not-found'));
+    const parsed = updateWidgetSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
+    const widget = await connections.setWidgetService(id, parsed.data.serviceId);
+    if (widget === 'service-missing') return reply.code(404).send(errorBody('service-not-found'));
+    return widget ?? reply.code(404).send(errorBody('widget-not-found'));
   });
 
   app.delete<{ Params: { id: string } }>('/api/widgets/:id', async (request, reply) => {

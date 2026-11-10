@@ -1,0 +1,1 @@
+ALTER TABLE `integration_widgets` ADD `service_id` integer REFERENCES services(id) ON DELETE SET NULL;

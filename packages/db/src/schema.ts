@@ -34,6 +34,8 @@ export const integrationWidgets = sqliteTable('integration_widgets', {
   type: text('type').notNull(),
   name: text('name').notNull(),
   publicConfig: text('public_config').notNull().default('{}'),
+  // Card que exibe o widget; nulo mantém o widget só na página Integrações.
+  serviceId: integer('service_id').references(() => services.id, { onDelete: 'set null' }),
 });
 
 export const agentIdentities = sqliteTable('agent_identities', {

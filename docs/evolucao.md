@@ -390,10 +390,10 @@ migração de um Homepage real. Nenhum item iniciado. Marque apenas com a
 implementação e a validação indicadas. A ordem abaixo é a sugerida.
 
 - [ ] **Widgets dentro do card:** cada card pode exibir dados de uma conexão
-      existente (por exemplo Proxmox: VMs, LXC, CPU, MEM), com estado vazio e de
-      erro por widget. Hoje os widgets só aparecem na página Integrações e não
-      têm configuração própria (ver `docs/integracoes.md`). Validar com instância
-      real e com falha simulada de uma integração.
+      existente, com estado de carregamento e de erro por widget. Implementado
+      para Jellyfin, Home Assistant, Uptime Kuma e AdGuard (ver registro abaixo);
+      **pendente:** Proxmox (VMs, LXC, CPU, MEM), que exige extrair o Proxmox do
+      cofre legado, e validação com instâncias reais.
 - [ ] **Ícones de marca por nome:** conjunto open source com licença compatível,
       registrado em `THIRD_PARTY_NOTICES.md`, mantendo `lucide:`, emoji e URL.
       Atualizar os importadores do Homepage e do Dashy para mapear os nomes de
@@ -414,6 +414,29 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
 **Conclusão:** a home responde "o que caiu?" sem abrir outra aba, nenhum card
 parece monitorado sem ter sido verificado e a página de referência do
 mantenedor pode ser reproduzida (ver o caso em estrategia.md).
+
+### Registro R1 — widgets dentro do card (2026-11-10)
+
+- Modelo: `integration_widgets.service_id` (migração `0006`, nulo, `ON DELETE
+SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
+  `serviceId` na criação e `PATCH /api/widgets/:id` com `{ serviceId }` (ou
+  `null`); card inexistente responde `service-not-found`.
+- Interface: o formulário de widget e cada widget em Integrações têm o seletor
+  "Mostrar no card". O card mostra números em destaque; o modo compacto os
+  oculta. A home consulta cada conexão uma vez por minuto, mesmo com vários
+  widgets nela; falha da lista ou de uma conexão não afeta os cards.
+- Validação: `pnpm check` e `pnpm build`; testes de API (ligar, trocar, desligar,
+  card ou widget inexistente, remoção do card) e de interface (resumo por tipo,
+  dados, falha isolada, lista indisponível). Navegador real (Chromium): servidor
+  Uptime Kuma simulado em endereço de rede privada, dois widgets em cards
+  diferentes, troca de card, dados exibidos ("3 up, 1 down"), conexão
+  inacessível mostrando "Data unavailable" só no seu card, sem rolagem
+  horizontal em 390 px. A política de destinos bloqueou 127.0.0.1 mesmo com
+  rede privada permitida, como projetado.
+- Não validado: instâncias reais de Jellyfin, Home Assistant, Uptime Kuma e
+  AdGuard; widgets do Proxmox; atualização de uma base existente com widgets
+  criados antes da migração (a coluna é nula por padrão e a migração só
+  adiciona a coluna).
 
 ## Registro inicial
 

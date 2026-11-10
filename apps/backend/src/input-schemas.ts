@@ -83,7 +83,12 @@ export const createWidgetSchema = z
   .object({
     integrationId: z.number().int().safe().positive(),
     name: z.string().trim().min(1).max(80),
+    serviceId: z.number().int().safe().positive().nullable().optional(),
   })
+  .strict();
+
+export const updateWidgetSchema = z
+  .object({ serviceId: z.number().int().safe().positive().nullable() })
   .strict();
 
 export const proxmoxInputSchema = z

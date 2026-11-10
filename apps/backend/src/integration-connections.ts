@@ -1,7 +1,7 @@
 import { X509Certificate } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { createDatabase, integrationInstances, integrationWidgets } from '@homora/db';
+import { createDatabase, integrationInstances, integrationWidgets, services } from '@homora/db';
 import { createVault } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
 import { createObservationCache } from './integrations.js';
@@ -56,6 +56,7 @@ const widgetSchema = z
     type: z.string(),
     name: z.string(),
     publicConfig: z.string(),
+    serviceId: z.number().nullable(),
   })
   .strict();
 
@@ -205,6 +206,12 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     return await prepareAdapter(row.type, data, keys)();
   }
 
+  async function serviceExists(id: number) {
+    return (
+      (await db.select({ id: services.id }).from(services).where(eq(services.id, id))).length > 0
+    );
+  }
+
   return {
     async listConnections() {
       return (await db.select().from(integrationInstances)).map(publicRow);
@@ -213,9 +220,11 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       const rows = await db.select().from(integrationWidgets);
       return rows.map((row) => widgetSchema.parse(row));
     },
-    async createWidget(integrationId: number, name: string) {
+    async createWidget(integrationId: number, name: string, serviceId: number | null = null) {
       const connection = await find(integrationId);
       if (!connection) return null;
+      if (serviceId !== null && !(await serviceExists(serviceId)))
+        return 'service-missing' as const;
       const [widget] = await db
         .insert(integrationWidgets)
         .values({
@@ -223,9 +232,20 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
           type: connection.type,
           name,
           publicConfig: '{}',
+          serviceId,
         })
         .returning();
       return widgetSchema.parse(widget);
+    },
+    async setWidgetService(id: number, serviceId: number | null) {
+      if (serviceId !== null && !(await serviceExists(serviceId)))
+        return 'service-missing' as const;
+      const [widget] = await db
+        .update(integrationWidgets)
+        .set({ serviceId })
+        .where(eq(integrationWidgets.id, id))
+        .returning();
+      return widget ? widgetSchema.parse(widget) : null;
     },
     async deleteWidget(id: number) {
       const rows = await db
