@@ -1,200 +1,171 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-10T16:27:37.670806+00:00",
+  "generatedAt": "2026-11-10T18:00:00+00:00",
   "title": "Design System: Homora",
   "extensions": {
     "colorMeta": {
-      "honey": {
+      "tape-yellow": {
         "role": "primary",
-        "displayName": "Mel",
-        "canonical": "oklch(0.8 0.13 70)",
-        "tonalRamp": [
-          "oklch(0.25 0.05 65)",
-          "oklch(0.35 0.08 65)",
-          "oklch(0.45 0.11 62)",
-          "oklch(0.55 0.12 60)",
-          "oklch(0.65 0.13 65)",
-          "oklch(0.75 0.13 70)",
-          "oklch(0.85 0.1 75)",
-          "oklch(0.94 0.04 80)"
-        ]
+        "displayName": "Amarelo de Fita",
+        "canonical": "oklch(0.87 0.17 95)",
+        "tonalRamp": ["oklch(0.25 0.05 90)", "oklch(0.35 0.08 92)", "oklch(0.45 0.1 93)", "oklch(0.58 0.13 94)", "oklch(0.7 0.15 95)", "oklch(0.8 0.17 95)", "oklch(0.9 0.12 96)", "oklch(0.95 0.06 97)"]
       },
-      "honey-ink": {
-        "role": "primary",
-        "displayName": "Mel no papel",
-        "canonical": "oklch(0.5 0.12 55)",
-        "tonalRamp": [
-          "oklch(0.25 0.05 55)",
-          "oklch(0.33 0.08 55)",
-          "oklch(0.42 0.11 55)",
-          "oklch(0.5 0.12 55)",
-          "oklch(0.6 0.12 58)",
-          "oklch(0.72 0.1 65)",
-          "oklch(0.85 0.06 75)",
-          "oklch(0.94 0.03 80)"
-        ]
-      },
-      "ember-night": {
+      "warm-paper": {
         "role": "neutral",
-        "displayName": "Noite de Cozinha",
-        "canonical": "oklch(0.17 0.012 55)",
-        "tonalRamp": [
-          "oklch(0.15 0.01 55)",
-          "oklch(0.17 0.012 55)",
-          "oklch(0.215 0.014 55)",
-          "oklch(0.265 0.017 55)",
-          "oklch(0.345 0.02 55)",
-          "oklch(0.6 0.02 70)",
-          "oklch(0.75 0.02 75)",
-          "oklch(0.95 0.012 85)"
-        ]
+        "displayName": "Papel Quente",
+        "canonical": "oklch(0.965 0.008 85)",
+        "tonalRamp": ["oklch(0.2 0.008 70)", "oklch(0.3 0.01 72)", "oklch(0.45 0.012 75)", "oklch(0.6 0.012 78)", "oklch(0.75 0.012 80)", "oklch(0.87 0.01 85)", "oklch(0.94 0.008 85)", "oklch(0.99 0.004 85)"]
       },
-      "cream-paper": {
+      "graphite-ink": {
         "role": "neutral",
-        "displayName": "Papel Creme",
-        "canonical": "oklch(0.965 0.014 85)",
-        "tonalRamp": [
-          "oklch(0.25 0.03 55)",
-          "oklch(0.47 0.03 60)",
-          "oklch(0.7 0.03 70)",
-          "oklch(0.85 0.025 80)",
-          "oklch(0.92 0.02 82)",
-          "oklch(0.94 0.02 82)",
-          "oklch(0.965 0.014 85)",
-          "oklch(0.99 0.008 85)"
-        ]
+        "displayName": "Tinta de Grafite",
+        "canonical": "oklch(0.22 0.012 70)",
+        "tonalRamp": ["oklch(0.15 0.01 70)", "oklch(0.22 0.012 70)", "oklch(0.3 0.012 70)", "oklch(0.38 0.014 72)", "oklch(0.47 0.015 75)", "oklch(0.6 0.014 78)", "oklch(0.75 0.012 80)", "oklch(0.9 0.008 85)"]
+      },
+      "rack-rail": {
+        "role": "neutral",
+        "displayName": "Trilho de Rack",
+        "canonical": "oklch(0.235 0.01 70)",
+        "tonalRamp": ["oklch(0.165 0.008 70)", "oklch(0.2 0.008 70)", "oklch(0.235 0.01 70)", "oklch(0.3 0.012 70)", "oklch(0.34 0.01 70)", "oklch(0.5 0.012 70)", "oklch(0.72 0.014 80)", "oklch(0.94 0.01 85)"]
+      },
+      "laminated-tape": {
+        "role": "neutral",
+        "displayName": "Fita Laminada",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": ["oklch(0.17 0.01 70)", "oklch(0.3 0.008 80)", "oklch(0.45 0.006 85)", "oklch(0.6 0.005 90)", "oklch(0.75 0.005 90)", "oklch(0.87 0.004 95)", "oklch(0.95 0.008 95)", "oklch(1 0 0)"]
+      },
+      "status-ok": {
+        "role": "secondary",
+        "displayName": "Verde de Disponível",
+        "canonical": "oklch(0.45 0.13 150)",
+        "tonalRamp": ["oklch(0.2 0.05 150)", "oklch(0.3 0.09 150)", "oklch(0.45 0.13 150)", "oklch(0.56 0.15 150)", "oklch(0.68 0.16 150)", "oklch(0.78 0.15 150)", "oklch(0.88 0.09 150)", "oklch(0.95 0.04 150)"]
+      },
+      "status-down": {
+        "role": "secondary",
+        "displayName": "Vermelho de Fora do Ar",
+        "canonical": "oklch(0.52 0.19 27)",
+        "tonalRamp": ["oklch(0.2 0.06 27)", "oklch(0.32 0.11 27)", "oklch(0.42 0.16 27)", "oklch(0.52 0.19 27)", "oklch(0.62 0.19 27)", "oklch(0.7 0.18 27)", "oklch(0.84 0.1 27)", "oklch(0.95 0.03 27)"]
       }
     },
     "typographyMeta": {
-      "display": {
-        "displayName": "Título de página",
-        "purpose": "h1 de cada painel."
-      },
-      "headline": {
-        "displayName": "Título de seção",
-        "purpose": "h2 de grupos e seções."
-      },
-      "body": {
-        "displayName": "Texto",
-        "purpose": "Texto corrido e controles."
-      },
-      "label": {
-        "displayName": "Rótulo",
-        "purpose": "Estado, etiquetas, contadores e dicas."
-      }
+      "headline": { "displayName": "Headline", "purpose": "Título de página em Barlow Semi Condensed 600." },
+      "title": { "displayName": "Title", "purpose": "Títulos secundários e itens do trilho, em Barlow." },
+      "body": { "displayName": "Body", "purpose": "Texto corrido em Figtree." },
+      "body-compact": { "displayName": "Body Compact", "purpose": "Campos e texto denso a partir de md." },
+      "label-tape": { "displayName": "Label", "purpose": "Texto de LabelTape e StatusTag, caixa-alta com tracking aberto." },
+      "data": { "displayName": "Data", "purpose": "Hosts, endereços e contagens em JetBrains Mono." }
     },
     "shadows": [
-      {
-        "name": "focus-halo",
-        "value": "0 0 0 3px color-mix(in oklch, var(--accent) 28%, transparent)",
-        "purpose": "Anel de foco de campos; não é elevação."
-      }
+      { "name": "lamination-edge", "value": "inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18)", "purpose": "Borda de laminação da fita; só em LabelTape, nunca decorativa." },
+      { "name": "focus-ring", "value": "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)", "purpose": "Anel de foco de botões, campos e itens (ring-[3px] ring-ring/50)." }
     ],
     "motion": [
-      {
-        "name": "ease-out-expo",
-        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Entrada de painel e mensagem de sucesso (6 px, 350 ms)."
-      },
-      {
-        "name": "state-fast",
-        "value": "0.15s to 0.2s ease",
-        "purpose": "Hover de botões, chips e bordas de cartão."
-      }
+      { "name": "state-transition", "value": "transition-colors / transition-all, duração padrão do Tailwind (150ms)", "purpose": "Hover e foco." },
+      { "name": "reduced-motion", "value": "animation e transition a 0.01ms sob prefers-reduced-motion: reduce", "purpose": "Respeito global a movimento reduzido." }
     ],
     "breakpoints": [
-      {
-        "name": "tablet",
-        "value": "640px"
-      },
-      {
-        "name": "desktop",
-        "value": "980px"
-      }
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "xl", "value": "1280px" }
     ]
   },
   "components": [
     {
-      "name": "Botão primário",
+      "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Ação principal da tela; um por tela.",
-      "html": "<button class=\"ds-btn ds-btn-primary\">Adicionar serviço</button>",
-      "css": ".ds-btn{height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line,#555);font-weight:600;font-size:.9375rem;cursor:pointer}.ds-btn-primary{background:var(--accent,#e8b34a);border-color:var(--accent,#e8b34a);color:var(--accent-ink,#2a1d08)}.ds-btn-primary:hover{filter:brightness(1.08)}.ds-btn:focus-visible{outline:2px solid var(--accent,#e8b34a);outline-offset:2px}"
+      "description": "Ação principal em amarelo de fita com texto grafite.",
+      "html": "<button class=\"ds-btn-primary\">Adicionar serviço</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: 0; border-radius: 8px; background: oklch(0.87 0.17 95); color: oklch(0.2 0.02 80); font: 600 14px 'Figtree Variable', system-ui, sans-serif; cursor: pointer; transition: background-color 150ms; } .ds-btn-primary:hover { background: oklch(0.87 0.17 95 / 0.9); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
     },
     {
-      "name": "Botão secundário",
+      "name": "Outline Button",
       "kind": "button",
-      "refersTo": "button-secondary",
-      "description": "Ações de apoio, como Organizar.",
-      "html": "<button class=\"ds-btn ds-btn-secondary\">Organizar</button>",
-      "css": ".ds-btn{height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line,#555);font-weight:600;font-size:.9375rem;cursor:pointer}.ds-btn-secondary{background:var(--panel-2,#333);color:var(--text,#eee)}.ds-btn-secondary:hover{border-color:var(--muted,#aaa)}.ds-btn:focus-visible{outline:2px solid var(--accent,#e8b34a);outline-offset:2px}"
+      "refersTo": "button-outline",
+      "description": "Ação secundária em card com borda de campo.",
+      "html": "<button class=\"ds-btn-outline\">Cancelar</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: 1px solid oklch(0.72 0.012 80); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font: 600 14px 'Figtree Variable', system-ui, sans-serif; cursor: pointer; } .ds-btn-outline:hover { background: oklch(0.92 0.02 90); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
     },
     {
-      "name": "Chip de filtro",
-      "kind": "chip",
-      "description": "Filtro por grupo, com contagem.",
-      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Mídia <small>3</small></button>",
-      "css": ".ds-chip{height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line,#555);background:var(--panel-2,#333);color:var(--text,#eee);font-weight:550;cursor:pointer}.ds-chip small{margin-left:6px;font-size:.8125rem}"
-    },
-    {
-      "name": "Campo de texto",
+      "name": "Text Field",
       "kind": "input",
-      "description": "Campo padrão de formulários.",
-      "html": "<input class=\"ds-input\" placeholder=\"Ex.: Casa\">",
-      "css": ".ds-input{height:46px;width:100%;padding:0 12px;border:1px solid var(--line,#555);border-radius:10px;background:var(--bg,#111);color:var(--text,#eee);font-size:1rem}.ds-input:focus-visible{outline:0;border-color:var(--accent,#e8b34a);box-shadow:0 0 0 3px color-mix(in oklch,var(--accent,#e8b34a) 28%,transparent)}"
+      "refersTo": "input-field",
+      "description": "Campo de texto com borda firme e anel de foco.",
+      "html": "<input class=\"ds-input\" placeholder=\"Buscar serviços\" />",
+      "css": ".ds-input { height: 40px; width: 240px; padding: 4px 12px; border: 1px solid oklch(0.72 0.012 80); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font: 400 14px 'Figtree Variable', system-ui, sans-serif; outline: none; } .ds-input::placeholder { color: oklch(0.47 0.015 75); } .ds-input:focus-visible { border-color: oklch(0.38 0.02 70); box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
     },
     {
-      "name": "Card de serviço",
+      "name": "LabelTape",
+      "kind": "chip",
+      "refersTo": "label-tape",
+      "description": "Assinatura: tira branca laminada com texto preto em caixa-alta, rotula grupos e seções.",
+      "html": "<span class=\"ds-label-tape\">Infraestrutura</span>",
+      "css": ".ds-label-tape { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; background: oklch(1 0 0); color: oklch(0.17 0.01 70); font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18); }"
+    },
+    {
+      "name": "StatusTag Disponível",
+      "kind": "chip",
+      "refersTo": "status-tag-available",
+      "description": "Estado disponível: ícone, texto e verde.",
+      "html": "<span class=\"ds-status ds-status-ok\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Disponível</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; } .ds-status-ok { background: oklch(0.45 0.13 150); color: oklch(0.985 0.005 85); }"
+    },
+    {
+      "name": "StatusTag Indisponível",
+      "kind": "chip",
+      "refersTo": "status-tag-unavailable",
+      "description": "Estado fora do ar: ícone, texto e vermelho.",
+      "html": "<span class=\"ds-status ds-status-down\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/></svg>Indisponível</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; } .ds-status-down { background: oklch(0.52 0.19 27); color: oklch(0.985 0.005 85); }"
+    },
+    {
+      "name": "Service Card",
       "kind": "card",
       "refersTo": "service-card",
-      "description": "Abre um serviço; mostra endereço, descrição e disponibilidade.",
-      "html": "<div class=\"ds-card\"><span class=\"ds-icon\">J</span><div><strong>Jellyfin</strong><div class=\"ds-addr\">192.168.1.10:8096</div></div><p class=\"ds-desc\">Filmes e séries da família</p><span class=\"ds-status\">Disponível</span></div>",
-      "css": ".ds-card{display:grid;grid-template-columns:44px 1fr;gap:0 12px;padding:16px;border:1px solid var(--line,#555);border-radius:14px;background:var(--panel,#222);color:var(--text,#eee)}.ds-card:hover{border-color:color-mix(in oklch,var(--accent,#e8b34a) 60%,var(--line,#555))}.ds-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:color-mix(in oklch,var(--accent,#e8b34a) 18%,var(--panel-2,#333));color:var(--accent,#e8b34a);font-weight:700;font-size:1.3rem}.ds-addr{color:var(--muted,#aaa);font:.8125rem ui-monospace,monospace}.ds-desc{grid-column:1/-1;margin:12px 0 0;color:var(--muted,#aaa);font-size:.9375rem}.ds-status{grid-column:1/-1;margin-top:12px;color:var(--ok,#6c6);font-size:.8125rem;font-weight:600}.ds-status::before{content:'';display:inline-block;width:9px;height:9px;margin-right:8px;border-radius:50%;background:var(--ok,#6c6)}"
+      "description": "Serviço com ícone, host em mono e StatusTag; nunca só um ponto de estado.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\"><span class=\"ds-card-icon\">J</span><div><div class=\"ds-card-name\">Jellyfin</div><div class=\"ds-card-host\">jellyfin.casa.lan</div></div></div><span class=\"ds-card-tag\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Disponível</span></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 12px; width: 280px; padding: 16px; border: 1px solid oklch(0.87 0.01 85); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font-family: 'Figtree Variable', system-ui, sans-serif; } .ds-card:hover { background: oklch(0.92 0.02 90 / 0.4); } .ds-card-head { display: flex; gap: 12px; align-items: flex-start; } .ds-card-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: oklch(0.925 0.01 85); font-size: 18px; font-weight: 600; } .ds-card-name { font-size: 16px; font-weight: 600; } .ds-card-host { font: 400 13px 'JetBrains Mono Variable', ui-monospace, monospace; color: oklch(0.47 0.015 75); } .ds-card-tag { display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 24px; padding: 0 8px; border-radius: 3px; background: oklch(0.45 0.13 150); color: oklch(0.985 0.005 85); font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }"
     },
     {
-      "name": "Navegação superior",
+      "name": "Rack Rail Item",
       "kind": "nav",
-      "description": "Abas do desktop; no celular vira barra inferior.",
-      "html": "<nav class=\"ds-nav\"><button aria-current=\"page\">Serviços</button><button>Integrações</button><button>Agentes</button></nav>",
-      "css": ".ds-nav{display:flex;gap:4px}.ds-nav button{min-height:40px;padding:0 14px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted,#aaa);font-weight:600;cursor:pointer}.ds-nav button:hover{background:var(--panel-2,#333);color:var(--text,#eee)}.ds-nav button[aria-current=page]{background:color-mix(in oklch,var(--accent,#e8b34a) 14%,var(--panel,#222));color:var(--accent,#e8b34a)}"
+      "refersTo": "rail-item-active",
+      "description": "Trilho grafite com item ativo em amarelo de fita.",
+      "html": "<nav class=\"ds-rail\"><a class=\"ds-rail-item ds-rail-active\" href=\"#\">Serviços</a><a class=\"ds-rail-item\" href=\"#\">Integrações</a><a class=\"ds-rail-item\" href=\"#\">Agentes</a></nav>",
+      "css": ".ds-rail { display: flex; flex-direction: column; gap: 4px; width: 232px; padding: 12px; background: oklch(0.235 0.01 70); border-right: 1px solid oklch(0.32 0.012 70); } .ds-rail-item { display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 8px; color: oklch(0.94 0.01 85); font: 600 16px 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.025em; text-decoration: none; } .ds-rail-item:hover { background: oklch(0.3 0.012 70); color: oklch(0.97 0.008 85); } .ds-rail-item:focus-visible { outline: 2px solid oklch(0.87 0.17 95); outline-offset: 2px; } .ds-rail-active, .ds-rail-active:hover { background: oklch(0.87 0.17 95); color: oklch(0.2 0.02 80); }"
     }
   ],
   "narrative": {
-    "northStar": "A Cozinha da Casa",
-    "overview": "Homora é o lugar da casa onde tudo fica à mão: quente, de uso diário, sem cerimônia. Neutros quentes e um único acento âmbar; plano, com bordas finas; usar vem antes de organizar.",
+    "northStar": "A Etiqueta de Patch Panel",
+    "overview": "Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de grupo e de seção, e o estado de cada serviço, saem como tiras de fita. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.\n\nO trilho lateral é grafite nos dois temas, como um rack ao lado do conteúdo. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.",
     "keyCharacteristics": [
-      "Neutros quentes e um único acento âmbar.",
-      "Estado sempre com cor, forma e texto.",
-      "Bordas finas no lugar de sombras.",
-      "Gestão escondida atrás de Organizar."
+      "Fita laminada branca com texto preto em caixa-alta como sinal-assinatura (LabelTape, StatusTag).",
+      "Trilho grafite de 232px nos dois temas; no celular vira barra de abas inferior de 56px.",
+      "Amarelo de fita só como preenchimento, nunca como texto.",
+      "Estado sempre com ícone, texto e cor.",
+      "Plano: sem sombra decorativa, profundidade por tom e borda.",
+      "Base shadcn/ui (new-york, Radix, lucide, Tailwind v4), tema por classe `dark`."
     ],
     "rules": [
-      {
-        "name": "The One Honey Rule",
-        "body": "O âmbar ocupa no máximo 10% de qualquer tela.",
-        "section": "colors"
-      },
-      {
-        "name": "The Never Color Alone Rule",
-        "body": "Estado nunca é só cor: forma e texto sempre juntos.",
-        "section": "colors"
-      },
-      {
-        "name": "The Border Only Rule",
-        "body": "Elevação se declara uma vez, com borda; sem sombra decorativa.",
-        "section": "elevation"
-      }
+      { "name": "The Never-Yellow-Text Rule", "body": "O amarelo de fita é preenchimento de ação principal, item ativo e foco. Nunca é cor de texto, de ícone solto nem de link.", "section": "colors" },
+      { "name": "The Status-Needs-Words Rule", "body": "Verde, vermelho e cinza significam estado e vêm sempre com ícone e texto. Cor sozinha nunca comunica estado.", "section": "colors" },
+      { "name": "The Tape-Voice Rule", "body": "Caixa-alta e tracking aberto pertencem só ao texto de fita (LabelTape e StatusTag). Em qualquer outro lugar o texto segue a caixa normal.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Sem sombra decorativa em cards, botões, popovers ou campos. Foco usa anel de 3px (`ring/50`), não sombra.", "section": "elevation" },
+      { "name": "The Lamination-Edge Rule", "body": "O filete de fita pertence só a LabelTape. Não o copie para outras superfícies para ganhar relevo.", "section": "elevation" }
     ],
     "dos": [
-      "Do manter o mel em ações principais, foco e estado ativo.",
-      "Do mostrar estado com cor, forma e texto.",
-      "Do deixar 'usar' na frente e 'organizar' atrás de um botão."
+      "Do usar LabelTape para título de grupo e de seção, e StatusTag para todo estado de serviço.",
+      "Do reservar o amarelo de fita para a ação principal, o item ativo e o foco.",
+      "Do compor telas com primitivos de `components/ui` e componentes de `components`, colocando páginas em `pages` e módulos em `features`.",
+      "Do mostrar endereços e contagens em JetBrains Mono.",
+      "Do manter o trilho grafite nos dois temas e trocar o tema só pela classe `dark`."
     ],
     "donts": [
-      "Don't criar um visual de painel corporativo frio.",
-      "Don't usar sombra ou blur como decoração.",
-      "Don't colocar rótulos em maiúsculas acima de títulos."
+      "Don't usar amarelo como cor de texto, de link ou de ícone solto.",
+      "Don't comunicar estado só por cor: sempre ícone mais texto.",
+      "Don't adicionar sombra decorativa; o filete de laminação da LabelTape é a única borda em relevo.",
+      "Don't voltar ao painel genérico de cards iguais com ponto de estado.",
+      "Don't usar caixa-alta com tracking aberto fora do texto de fita."
     ]
   }
 }

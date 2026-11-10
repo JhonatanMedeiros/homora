@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 export default defineConfig(({ mode }) => {
@@ -14,7 +15,8 @@ export default defineConfig(({ mode }) => {
     apiPort = parsePort(env.HOMORA_API_PORT, 3000);
   if (port === apiPort) throw new Error('As portas da API e da interface devem ser diferentes.');
   return {
-    plugins: [react()],
+    plugins: [react(), tailwindcss()],
+    resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
     server: {
       host: '127.0.0.1',
       port,

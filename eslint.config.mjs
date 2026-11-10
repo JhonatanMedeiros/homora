@@ -47,5 +47,17 @@ export default tseslint.config(
     files: ['apps/frontend/src/main.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
+  {
+    // Código gerado pelo shadcn/ui e mantido como veio: o upstream usa esses padrões.
+    files: [
+      'apps/frontend/src/components/ui/**/*.{ts,tsx}',
+      'apps/frontend/src/hooks/use-mobile.ts',
+    ],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
   prettier,
 );

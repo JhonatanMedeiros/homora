@@ -1,243 +1,302 @@
 ---
 name: Homora
-description: Homepage self-hosted para abrir serviços da casa e acompanhar o homelab, com visual quente e calmo.
+description: Painel self-hosted de homelab em que tudo é rotulado como num patch panel, grafite aquecido com fita laminada de rotuladora.
 colors:
-  honey: 'oklch(0.8 0.13 70)'
-  honey-ink: 'oklch(0.5 0.12 55)'
-  ember-night: 'oklch(0.17 0.012 55)'
-  kitchen-panel: 'oklch(0.215 0.014 55)'
-  cream-paper: 'oklch(0.965 0.014 85)'
-  paper-panel: 'oklch(0.99 0.008 85)'
-  ok: 'oklch(0.78 0.14 150)'
-  bad: 'oklch(0.73 0.16 25)'
-  none: 'oklch(0.6 0.015 70)'
+  tape-yellow: 'oklch(0.87 0.17 95)'
+  tape-yellow-dark: 'oklch(0.88 0.17 95)'
+  tape-yellow-ink: 'oklch(0.2 0.02 80)'
+  warm-paper: 'oklch(0.965 0.008 85)'
+  paper-card: 'oklch(0.99 0.004 85)'
+  paper-muted: 'oklch(0.94 0.008 85)'
+  paper-secondary: 'oklch(0.925 0.01 85)'
+  paper-accent: 'oklch(0.92 0.02 90)'
+  graphite-ink: 'oklch(0.22 0.012 70)'
+  graphite-muted-ink: 'oklch(0.47 0.015 75)'
+  paper-border: 'oklch(0.87 0.01 85)'
+  paper-input-border: 'oklch(0.72 0.012 80)'
+  focus-graphite: 'oklch(0.38 0.02 70)'
+  laminated-tape: 'oklch(1 0 0)'
+  tape-ink: 'oklch(0.17 0.01 70)'
+  rack-rail: 'oklch(0.235 0.01 70)'
+  rack-rail-dark: 'oklch(0.165 0.008 70)'
+  rack-rail-ink: 'oklch(0.94 0.01 85)'
+  rack-rail-hover: 'oklch(0.3 0.012 70)'
+  rack-rail-border: 'oklch(0.32 0.012 70)'
+  night-graphite: 'oklch(0.2 0.008 70)'
+  night-card: 'oklch(0.245 0.009 70)'
+  night-popover: 'oklch(0.27 0.01 70)'
+  night-ink: 'oklch(0.95 0.01 90)'
+  night-muted: 'oklch(0.28 0.01 70)'
+  night-muted-ink: 'oklch(0.72 0.014 80)'
+  night-border: 'oklch(0.34 0.01 70)'
+  night-input-border: 'oklch(0.5 0.012 70)'
+  night-tape: 'oklch(0.95 0.008 95)'
+  status-ok: 'oklch(0.45 0.13 150)'
+  status-ok-night: 'oklch(0.78 0.15 150)'
+  status-down: 'oklch(0.52 0.19 27)'
+  status-down-night: 'oklch(0.7 0.18 27)'
+  status-on-color: 'oklch(0.985 0.005 85)'
 typography:
-  display:
-    fontFamily: 'Bricolage Grotesque, system-ui, sans-serif'
-    fontSize: '2.125rem'
-    fontWeight: 700
-    lineHeight: 1.12
-    letterSpacing: '-0.03em'
   headline:
-    fontFamily: 'Bricolage Grotesque, system-ui, sans-serif'
-    fontSize: '1.1875rem'
-    fontWeight: 650
+    fontFamily: "'Barlow Semi Condensed', 'Figtree Variable', system-ui, sans-serif"
+    fontSize: '1.875rem'
+    fontWeight: 600
     lineHeight: 1.25
-    letterSpacing: '-0.02em'
+    letterSpacing: '-0.025em'
   title:
-    fontFamily: 'Hanken Grotesk, system-ui, sans-serif'
-    fontSize: '1.0625rem'
-    fontWeight: 650
-    lineHeight: 1.3
+    fontFamily: "'Barlow Semi Condensed', 'Figtree Variable', system-ui, sans-serif"
+    fontSize: '1rem'
+    fontWeight: 600
+    lineHeight: 1.5
+    letterSpacing: '-0.025em'
   body:
-    fontFamily: 'Hanken Grotesk, system-ui, sans-serif'
+    fontFamily: "'Figtree Variable', system-ui, sans-serif"
     fontSize: '1rem'
     fontWeight: 400
     lineHeight: 1.5
-  body-small:
-    fontFamily: 'Hanken Grotesk, system-ui, sans-serif'
-    fontSize: '0.9375rem'
-    fontWeight: 400
-    lineHeight: 1.45
-  hint:
-    fontFamily: 'Hanken Grotesk, system-ui, sans-serif'
+  body-compact:
+    fontFamily: "'Figtree Variable', system-ui, sans-serif"
     fontSize: '0.875rem'
     fontWeight: 400
-    lineHeight: 1.5
-  mono:
-    fontFamily: 'ui-monospace, SF Mono, Menlo, Consolas, monospace'
+    lineHeight: 1.43
+  label-tape:
+    fontFamily: "'Barlow Semi Condensed', 'Figtree Variable', system-ui, sans-serif"
+    fontSize: '0.8125rem'
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: '0.08em'
+  data:
+    fontFamily: "'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: '0.8125rem'
     fontWeight: 400
     lineHeight: 1.4
-  label:
-    fontFamily: 'Hanken Grotesk, system-ui, sans-serif'
-    fontSize: '0.8125rem'
-    fontWeight: 600
-    lineHeight: 1.4
 rounded:
-  xs: '4px'
+  tape: '3px'
   sm: '6px'
-  md: '10px'
-  card: '12px'
-  lg: '14px'
-  pill: '999px'
+  md: '8px'
+  lg: '10px'
+  xl: '14px'
 spacing:
   xs: '4px'
   sm: '8px'
-  md: '16px'
-  lg: '24px'
+  md: '12px'
+  lg: '16px'
   xl: '32px'
+  rail-width: '232px'
+  header-height: '64px'
+  content-max: '72rem'
 components:
   button-primary:
-    backgroundColor: '{colors.honey}'
-    textColor: '{colors.ember-night}'
+    backgroundColor: '{colors.tape-yellow}'
+    textColor: '{colors.tape-yellow-ink}'
     rounded: '{rounded.md}'
-    height: '44px'
-    padding: '0 16px'
-  button-secondary:
-    backgroundColor: '{colors.kitchen-panel}'
-    textColor: '{colors.cream-paper}'
+    padding: '8px 16px'
+    height: '40px'
+  button-outline:
+    backgroundColor: '{colors.paper-card}'
+    textColor: '{colors.graphite-ink}'
     rounded: '{rounded.md}'
-    height: '44px'
-    padding: '0 16px'
+    padding: '8px 16px'
+    height: '40px'
+  button-ghost-hover:
+    backgroundColor: '{colors.paper-accent}'
+    textColor: '{colors.graphite-ink}'
+  button-destructive:
+    backgroundColor: '{colors.status-down}'
+    textColor: '{colors.status-on-color}'
+    rounded: '{rounded.md}'
+    height: '40px'
+  input-field:
+    backgroundColor: '{colors.paper-card}'
+    textColor: '{colors.graphite-ink}'
+    rounded: '{rounded.md}'
+    padding: '4px 12px'
+    height: '40px'
+  label-tape:
+    backgroundColor: '{colors.laminated-tape}'
+    textColor: '{colors.tape-ink}'
+    typography: '{typography.label-tape}'
+    rounded: '{rounded.tape}'
+    padding: '0 8px'
+    height: '24px'
+  label-tape-section:
+    backgroundColor: '{colors.laminated-tape}'
+    textColor: '{colors.tape-ink}'
+    rounded: '{rounded.tape}'
+    padding: '0 10px'
+    height: '28px'
+  status-tag-available:
+    backgroundColor: '{colors.status-ok}'
+    textColor: '{colors.status-on-color}'
+    typography: '{typography.label-tape}'
+    rounded: '{rounded.tape}'
+    padding: '0 8px'
+    height: '24px'
+  status-tag-unavailable:
+    backgroundColor: '{colors.status-down}'
+    textColor: '{colors.status-on-color}'
+    typography: '{typography.label-tape}'
+    rounded: '{rounded.tape}'
+    padding: '0 8px'
+    height: '24px'
+  status-tag-unknown:
+    backgroundColor: '{colors.paper-muted}'
+    textColor: '{colors.graphite-muted-ink}'
+    typography: '{typography.label-tape}'
+    rounded: '{rounded.tape}'
+    padding: '0 8px'
+    height: '24px'
   service-card:
-    backgroundColor: '{colors.kitchen-panel}'
-    rounded: '{rounded.lg}'
+    backgroundColor: '{colors.paper-card}'
+    textColor: '{colors.graphite-ink}'
+    rounded: '{rounded.md}'
     padding: '16px'
+  rail:
+    backgroundColor: '{colors.rack-rail}'
+    textColor: '{colors.rack-rail-ink}'
+    width: '{spacing.rail-width}'
+  rail-item-active:
+    backgroundColor: '{colors.tape-yellow}'
+    textColor: '{colors.tape-yellow-ink}'
+    typography: '{typography.title}'
+    rounded: '{rounded.md}'
 ---
 
 # Design System: Homora
 
 ## Overview
 
-**Creative North Star: "A Cozinha da Casa"**
+**Creative North Star: "A Etiqueta de Patch Panel"**
 
-Homora é o lugar da casa onde tudo fica à mão: quente, de uso diário, sem cerimônia. O visual vem de neutros com um fundo levemente acastanhado (grafite quente à noite, papel creme de manhã) e de um único acento âmbar, cor de mel. Nada grita; o que importa é abrir o serviço certo em um clique e saber, de relance, se ele está no ar.
+Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de grupo e de seção, e o estado de cada serviço, saem como tiras de fita. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.
 
-A interface separa dois modos: **usar** (cards, busca e estado) e **organizar** (criar grupos, renomear, reordenar), que fica atrás do botão "Organizar". Densidade média, cantos suaves, bordas finas, nenhuma sombra. A personalidade vem da cor, da fonte Bricolage nos títulos e do tom de voz em português, próximo e direto.
-
-Rejeita o **painel corporativo frio**: azul e cinza genéricos, tabelas densas e todos os elementos com o mesmo peso.
+O trilho lateral é grafite nos dois temas, como um rack ao lado do conteúdo. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.
 
 **Key Characteristics:**
 
-- Neutros quentes e um único acento âmbar.
-- Verde, vermelho e cinza significam só estado, e sempre com texto e forma.
-- Bordas finas no lugar de sombras; cantos de 10 a 14 px.
-- Títulos em Bricolage Grotesque, texto em Hanken Grotesk.
-- Claro e escuro seguem o sistema, com alternância manual.
+- Fita laminada branca com texto preto em caixa-alta como sinal-assinatura (LabelTape, StatusTag).
+- Trilho grafite de 232px nos dois temas; no celular vira barra de abas inferior de 56px.
+- Amarelo de fita só como preenchimento, nunca como texto.
+- Estado sempre com ícone, texto e cor.
+- Plano: sem sombra decorativa, profundidade por tom e borda.
+- Base shadcn/ui (new-york, Radix, lucide, Tailwind v4), tema por classe `dark`.
 
 ## Colors
 
-Paleta de neutros quentes com um acento único; as cores de estado ficam fora da identidade.
+Grafite aquecido e papel quente, com um único amarelo de fita e três cores de estado. Todos os valores vêm de `src/style.css` e são mantidos em OKLCH, fonte normativa do projeto. Os nomes do frontmatter mapeiam as variáveis shadcn (`--primary`, `--background`, `--sidebar` e assim por diante); o tema escuro redefine as mesmas variáveis sob `.dark`.
 
 ### Primary
 
-- **Mel** (`oklch(0.8 0.13 70)` no escuro, `oklch(0.5 0.12 55)` no claro): botão primário, item de navegação ativo, anel de foco, ícones de card, barras de uso. É o único acento.
+- **Amarelo de Fita** (`tape-yellow`, `--primary`): preenchimento da ação principal (Adicionar serviço), do item ativo no trilho e nas abas móveis, seleção de texto e `accent-color`. No escuro vira `tape-yellow-dark`. O texto sobre ele é `tape-yellow-ink`, grafite quase preto.
+
+### Secondary
+
+- **Verde de Disponível** (`status-ok`, `status-ok-night`): estado disponível, preenchimento da etiqueta com texto claro.
+- **Vermelho de Fora do Ar** (`status-down`, `status-down-night`): estado indisponível e ações destrutivas; borda, fundo a 10% e anel no card do serviço fora do ar.
 
 ### Neutral
 
-- **Noite de Cozinha** (`oklch(0.17 0.012 55)`): fundo no tema escuro.
-- **Painel Escuro** (`oklch(0.215 0.014 55)` e `oklch(0.265 0.017 55)`): topo, cartões e superfícies elevadas.
-- **Papel Creme** (`oklch(0.965 0.014 85)`): fundo no tema claro.
-- **Painel Claro** (`oklch(0.99 0.008 85)` e `oklch(0.94 0.02 82)`): cartões e superfícies.
-- **Texto** (`oklch(0.95 0.012 85)` escuro, `oklch(0.25 0.03 55)` claro) e **apagado** (`oklch(0.75 0.02 75)` escuro, `oklch(0.47 0.03 60)` claro): texto principal e secundário, ambos acima de 4.5:1.
-
-### Estado
-
-- **No ar** `--ok`, **fora do ar** `--bad`, **sem informação** `--none`. Nunca decoram: só aparecem no indicador de disponibilidade, em etiquetas de estado e em erros.
+- **Papel Quente** (`warm-paper`): fundo do conteúdo no claro. **Papel de Card** (`paper-card`): cards, campos, popovers.
+- **Tinta de Grafite** (`graphite-ink`) e **Tinta Apagada** (`graphite-muted-ink`): texto principal e secundário no claro.
+- **Borda de Papel** (`paper-border`) para divisões; **Borda de Campo** (`paper-input-border`) mais firme para campos; **Foco Grafite** (`focus-graphite`) para o anel de foco no claro. No escuro o anel de foco é o amarelo.
+- **Trilho de Rack** (`rack-rail`, `rack-rail-dark` no escuro) com tinta `rack-rail-ink`, hover `rack-rail-hover` e borda `rack-rail-border`.
+- **Fita Laminada** (`laminated-tape`, `night-tape` no escuro) com tinta `tape-ink`: só em LabelTape.
+- **Grafite Noturno** (`night-graphite`), `night-card`, `night-popover`, `night-ink`, `night-muted`, `night-muted-ink`, `night-border`, `night-input-border`: superfícies e texto do tema escuro.
+- **Cinza de Sem Informação** usa `paper-muted` com `graphite-muted-ink` e anel de borda: estado desconhecido ou monitoramento bloqueado.
 
 ### Named Rules
 
-**The One Honey Rule.** O âmbar ocupa no máximo 10% de qualquer tela. Sua raridade é o que marca a ação principal.
+**The Never-Yellow-Text Rule.** O amarelo de fita é preenchimento de ação principal, item ativo e foco. Nunca é cor de texto, de ícone solto nem de link.
 
-**The Never Color Alone Rule.** Estado nunca é só cor: círculo cheio (no ar), triângulo (fora do ar), anel vazio (sem informação), sempre com rótulo em texto.
+**The Status-Needs-Words Rule.** Verde, vermelho e cinza significam estado e vêm sempre com ícone e texto. Cor sozinha nunca comunica estado.
 
 ## Typography
 
-**Display Font:** Bricolage Grotesque (com system-ui)
-**Body Font:** Hanken Grotesk (com system-ui)
+**Display/Label Font:** Barlow Semi Condensed 500/600/700 (com Figtree Variable e system-ui)
+**Body Font:** Figtree Variable (com system-ui, sans-serif)
+**Data Font:** JetBrains Mono Variable (com ui-monospace)
 
-**Character:** Bricolage dá calor e um pouco de personalidade nos títulos; Hanken mantém o texto neutro e legível. Ambas são servidas localmente (SIL OFL 1.1, ver `apps/frontend/src/fonts/README.md`). Números tabulares em toda a interface.
+**Character:** Condensada e firme nos rótulos, como letra de rotuladora; legível e amigável no corpo; monoespaçada onde a pessoa copia ou compara endereços e números.
 
 ### Hierarchy
 
-- **Display** (700, 1.75rem no celular e 2.125rem no tablet em diante, 1.12, -0.03em): título de cada página (`h1`).
-- **Headline** (650, 1.1875rem, 1.25, -0.02em): títulos de grupo e de seção (`h2`).
-- **Title** (650, 1.0625rem; 1rem em `h3`): nome do serviço no card, subtítulos.
-- **Body** (400, 1rem, 1.5): texto corrido; descrições limitadas a 58 a 62 caracteres por linha.
-- **Body small** (400, 0.9375rem, 1.45): descrição do card, texto de botões, campos e mensagens.
-- **Hint** (400, 0.875rem): dicas, textos de apoio e legendas de formulário.
-- **Mono** (400, 0.8125rem a 0.875rem): endereços e tokens.
-- **Label** (600, 0.8125rem): estado, etiquetas, contadores e dicas. Nada abaixo de 0.8125rem.
+- **Headline** (600, 1.875rem, 1.25): título de página (`h1`), tracking -0.025em, `text-balance`.
+- **Title** (600, 1rem, 1.5): `h2`/`h3` e itens de navegação do trilho, em Barlow.
+- **Body** (400, 1rem, 1.5): texto corrido e descrições; largura máxima de 65ch no cabeçalho de página. Campos usam 0.875rem a partir de `md`.
+- **Label** (700, 0.8125rem, 0.08em, caixa-alta): texto de LabelTape; StatusTag usa 0.06em.
+- **Data** (400, 0.8125rem): host do serviço, contagens com `tabular-nums`.
 
 ### Named Rules
 
-**The Two Voices Rule.** Bricolage só em títulos e marca; tudo o mais é Hanken. A monoespaçada do sistema (`ui-monospace`, SF Mono, Menlo, Consolas) só em endereços e tokens.
+**The Tape-Voice Rule.** Caixa-alta e tracking aberto pertencem só ao texto de fita (LabelTape e StatusTag). Em qualquer outro lugar o texto segue a caixa normal.
 
 ## Layout
 
-Começa pelo celular e se expande. Contêiner de até 1180 px com margens de 16 px (24 px a partir de 640 px). Painéis aparecem um por vez (Serviços, Integrações, Agentes). Abaixo de 980 px a navegação é uma barra inferior de 64 px com ícones e rótulos; a partir de 980 px vira abas no topo.
-
-Os cards formam uma grade de 1 coluna (celular), 2 (a partir de 640 px) e 3 (a partir de 980 px), com 12 px entre eles. Grupos têm 32 px de separação, e o título do grupo sempre tem espaço maior acima do que abaixo. Todos os alvos de toque têm 44 px (40 px no desktop com mouse).
+Trilho fixo de 232px (`--sidebar-width: 14.5rem`) à esquerda a partir de `md`; à direita, barra superior sticky de 64px com busca e ação principal, e conteúdo em coluna de até 72rem (`max-w-6xl`) com margem lateral de 16px, 32px a partir de `md`. Seções empilham com 32px; título e grade com 12px. A grade de serviços é 1 coluna no celular, 2 a partir de `sm`, 3 a partir de `xl`, com intervalo de 12px. Abaixo de `md` o trilho some, a marca, o tema e Sair vão para a barra superior e a navegação vira barra de abas inferior de 56px com área segura, e o conteúdo ganha 96px de respiro embaixo. Alvos de toque crescem para 44px em ponteiro grosso (`pointer-coarse`).
 
 ## Elevation & Depth
 
-Plano por padrão: **sem sombras**. A profundidade vem da camada tonal (fundo, painel, painel elevado) e de uma borda de 1 px. No hover ou foco, o card troca a cor da borda para uma mistura com o âmbar e ganha um leve tom de fundo.
+O sistema é plano. Profundidade vem de tom (trilho mais escuro que o papel, card mais claro que o fundo) e de borda de 1px, nunca de sombra projetada. A única exceção é a borda de laminação da fita: um filete interno de 1px a 20% de preto mais um fio de 1px embaixo, que faz a tira parecer papel laminado. Ela vive só em LabelTape.
 
 ### Named Rules
 
-**The Border Only Rule.** A elevação se declara uma vez, com borda. Sem sombra sob borda, sem blur decorativo no topo ou na navegação inferior.
+**The Flat-By-Default Rule.** Sem sombra decorativa em cards, botões, popovers ou campos. Foco usa anel de 3px (`ring/50`), não sombra.
+
+**The Lamination-Edge Rule.** O filete de fita pertence só a LabelTape. Não o copie para outras superfícies para ganhar relevo.
 
 ## Shapes
 
-Cantos suaves e consistentes: 4 px (marcas e barras pequenas), 6 px (foco), 10 px (botões, campos, chips), 12 px (blocos internos, listas de conexão e áreas de aviso), 14 px (cartões e painéis), pílula só para etiquetas e contadores pequenos. Bordas de 1 px; no modo Organizar, os cards passam a ter borda tracejada.
+Raio base de 8px (`--radius`), com 6px, 10px e 14px nos degraus. Controles e cards usam 8px; a fita usa 3px, quase reta, como corte de rotuladora. Bordas de 1px definem os cards; o card em modo Organizar troca para borda tracejada. Serviço fora do ar ganha borda e anel vermelhos e fundo vermelho a 10%. Ícones são sempre Lucide, 16px em botões e 14px dentro de fita.
 
 ## Components
 
 ### Buttons
 
-- **Shape:** 10 px de raio, 44 px de altura (40 px no desktop; `.small` 40 e 36 px).
-- **Primary:** fundo mel, texto escuro, um por tela ("Adicionar serviço", "Aprovar e aplicar").
-- **Secondary:** fundo de painel elevado com borda; **quiet** sem fundo; **danger** com texto na cor de erro.
-- **Hover / Focus:** a borda escurece; o primário clareia levemente. Foco: anel de 2 px em mel com 2 px de afastamento.
-- **Pressed:** o botão "Organizar" usa `aria-pressed` com fundo mel a 16%.
-
-### Chips
-
-- **Style:** sem fundo no repouso, texto apagado, contagem ao lado.
-- **State:** selecionado ganha fundo de painel elevado e borda; só aparecem com mais de um grupo.
-
-### Cards / Containers
-
-- **Corner Style:** 14 px.
-- **Background:** painel; hover mistura 5% de mel.
-- **Shadow Strategy:** nenhuma (ver Elevation).
-- **Border:** 1 px de linha; tracejada no modo Organizar.
-- **Internal Padding:** 16 px (20 px em cartões de integração e formulários).
+- **Shape:** cantos de 8px, altura 40px (44px em ponteiro grosso); `sm` 36px, `xs` 24px, `lg` 44px, ícone 40px.
+- **Primary:** amarelo de fita com texto grafite, peso 600, padding 8px 16px; hover a 90% de opacidade.
+- **Outline / Secondary / Ghost / Destructive / Link:** outline em card com borda de campo; secondary em papel; ghost só ganha fundo no hover; destructive em vermelho com texto claro; link sem fundo.
+- **Focus:** anel de 3px a 50%; desabilitado a 50% de opacidade.
 
 ### Inputs / Fields
 
-- **Style:** 46 px de altura, borda de linha, fundo da página, raio de 10 px.
-- **Focus:** borda em mel e halo de 3 px a 28% de mel.
-- **Error:** texto na cor de erro abaixo do campo, em `role="alert"`.
+- **Style:** fundo de card, borda `paper-input-border`, 8px, altura 40px.
+- **Focus:** borda e anel de 3px na cor de foco.
+- **Error / Disabled:** borda e anel vermelhos em `aria-invalid`; desabilitado a 50%.
+
+### Cards / Containers
+
+O serviço é um Item com borda, fundo de card, 16px de padding e hover em `accent/40`. O link cobre o card inteiro; ações de editar e remover ficam no canto, a 50% de opacidade em ponteiro fino até hover ou foco.
 
 ### Navigation
 
-- Topo (desktop): itens de texto com 40 px de altura; ativo com fundo de mel a 14% e texto em mel. Celular: barra inferior com ícone e rótulo; ativo com texto mel e marca de 3 px no topo.
+Trilho grafite com itens em Barlow 600 (1rem, tracking amplo); item ativo em amarelo de fita com texto grafite. No celular, abas inferiores de 56px com o mesmo destaque no ativo.
 
-### Service Card (componente central)
+### LabelTape (assinatura)
 
-Ícone de 44 px (emoji do usuário ou inicial), nome com link que cobre o cartão inteiro, endereço em monoespaçada, descrição em até 2 linhas e indicador de disponibilidade. As ações ficam atrás de "⋯" (Editar e Remover); no modo Organizar, o "⋯" dá lugar a alça e botões de mover.
+Tira branca laminada (24px de altura, 28px em título de seção) com Barlow 700 em caixa-alta, 0.8125rem, tracking 0.08em, texto preto, raio 3px e borda de laminação. Rotula títulos de grupo e de seção e acompanha a contagem em mono ao lado. Em `src/components/label-tape.tsx`.
 
-### Organize Bar
+### StatusTag (assinatura)
 
-Faixa de borda tracejada em mel, com texto explicando o modo e o formulário de novo grupo. Aparece só em "Organizar" e substitui os filtros.
+Etiqueta de estado com a mesma geometria da fita: ícone Lucide de 14px mais texto em caixa-alta. Disponível em verde com CircleCheck; Indisponível em vermelho com CircleX; Sem informação e Monitoramento bloqueado em cinza com anel de borda, com CircleHelp e ShieldOff. Em `src/components/status-tag.tsx`; o resumo de saúde reúne várias numa linha.
 
-### Proposal Card
+### Base shadcn e componentização
 
-Proposta pendente tem borda mel e fundo com 6% de mel; as já decididas ficam num histórico recolhido. Alterações mostram "Antes" (riscado, apagado) e "Depois" por campo.
-
-### Token Box
-
-Caixa com borda mel que exibe um token uma única vez, com botão de copiar e "Já guardei".
+Base shadcn/ui estilo new-york com Radix (`radix-ui`), ícones lucide, Tailwind v4 com tokens em `@theme inline` e tema por classe `dark` (`@custom-variant dark`). Primitivos vivem em `src/components/ui`, componentes de produto em `src/components`, telas em `src/pages` e módulos de domínio em `src/features`. Todo elemento da interface é um componente; não se escreve marcação solta nas páginas.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** manter o mel em no máximo 10% da tela e em ações principais, foco e estado ativo.
-- **Do** mostrar estado com cor, forma e texto juntos.
-- **Do** usar borda de 1 px como única declaração de elevação.
-- **Do** pedir confirmação de remoção no próprio botão, nunca com diálogo nativo.
-- **Do** deixar "usar" na frente e esconder a gestão atrás de "Organizar".
-- **Do** escrever em português claro e próximo; descrever permissões do agente em frases.
-- **Do** respeitar `prefers-reduced-motion` e manter alvos de toque de 44 px.
+- **Do** usar LabelTape para título de grupo e de seção, e StatusTag para todo estado de serviço.
+- **Do** reservar o amarelo de fita para a ação principal, o item ativo e o foco.
+- **Do** compor telas com primitivos de `components/ui` e componentes de `components`, colocando páginas em `pages` e módulos em `features`.
+- **Do** mostrar endereços e contagens em JetBrains Mono.
+- **Do** manter o trilho grafite nos dois temas e trocar o tema só pela classe `dark`.
 
 ### Don't:
 
-- **Don't** criar um visual de painel corporativo frio: azul e cinza genéricos, tabelas densas, tudo com o mesmo peso.
-- **Don't** usar sombra, blur ou vidro como decoração.
-- **Don't** colocar rótulos pequenos em maiúsculas acima de títulos.
-- **Don't** usar cor de estado (verde, vermelho) como decoração.
-- **Don't** usar glifos de texto como ícones; os ícones são SVG em traço de 1.75 px.
-- **Don't** aninhar cartões dentro de cartões.
+- **Don't** usar amarelo como cor de texto, de link ou de ícone solto.
+- **Don't** comunicar estado só por cor: sempre ícone mais texto.
+- **Don't** adicionar sombra decorativa; o filete de laminação da LabelTape é a única borda em relevo.
+- **Don't** voltar ao painel genérico de cards iguais com ponto de estado.
+- **Don't** usar caixa-alta com tracking aberto fora do texto de fita.

@@ -33,7 +33,7 @@ pnpm dev
 
 Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. Copie `.env.example` para `.env` para personalizar portas ou caminho do banco. O banco fica em `data/homora.sqlite`; a estrutura existente é preservada. Para encerrar, use Ctrl+C.
 
-O monorepo usa pnpm e Turborepo, com React, Vite e TypeScript no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
+O monorepo usa pnpm e Turborepo, com React, Vite, Tailwind CSS e shadcn/ui no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
 
 Esta versão permite cadastrar serviços, criar uma conta de administrador local e configurar integrações de leitura em caráter experimental. Veja os serviços, requisitos e limites em [integrações](docs/integracoes.md). O MCP de leitura e o Docker Compose estão em fase inicial de validação. A aplicação é configurada para acesso local e não deve ser exposta na rede.
 

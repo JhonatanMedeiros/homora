@@ -32,7 +32,7 @@ não necessariamente a implementação existente.
 
 ## Estrutura e comandos
 
-- `apps/frontend`: React e Vite; `apps/backend`: API Fastify, Proxmox e MCP.
+- `apps/frontend`: React, Vite, Tailwind v4 e shadcn/ui (use a skill `shadcn` e as convenções de interface em `docs/padroes.md`); `apps/backend`: API Fastify, Proxmox e MCP.
 - `packages/db`: esquema e migrações SQLite; `packages/shared`: contratos e
   validação compartilhados. `scripts/` contém utilitários e testes de backup.
 - Consulte [padrões de engenharia](docs/padroes.md) para limites entre módulos,
