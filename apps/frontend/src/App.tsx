@@ -13,7 +13,7 @@ const empty: ServiceInput = {
   allowPrivate: false,
 };
 type ServiceGroup = { id: number; name: string; position: number };
-type Tab = 'services' | 'integrations';
+type Tab = 'services' | 'integrations' | 'proposals';
 type ServiceStatus = {
   status: 'available' | 'unavailable' | 'unknown';
   lastAttempt: string | null;
@@ -58,6 +58,59 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>('services');
   const [menu, setMenu] = useState<number | null>(null);
   const [confirming, setConfirming] = useState<number | null>(null);
+  const [proposals, setProposals] = useState<
+    { id: string; diff: string; expiresAt: number; state: string; author: string }[]
+  >([]);
+  const [agentName, setAgentName] = useState('');
+  const [agentScopes, setAgentScopes] = useState<string[]>(['services:read', 'proposals:create']);
+  const [newAgentToken, setNewAgentToken] = useState('');
+  const [agents, setAgents] = useState<
+    { id: string; name: string; scopes: string; revokedAt: number | null }[]
+  >([]);
+  async function loadAgents() {
+    const r = await fetch('/api/agents');
+    if (r.ok) setAgents(await r.json());
+  }
+  async function loadProposals() {
+    const r = await fetch('/api/proposals');
+    if (r.ok) setProposals(await r.json());
+  }
+  async function reviewProposal(id: string, approve: boolean) {
+    const r = await fetch(`/api/proposals/${id}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approve }),
+    });
+    if (r.ok) {
+      await loadProposals();
+      await refresh();
+    } else setMessage('A proposta expirou ou a configuração mudou.');
+  }
+  async function createAgent() {
+    const r = await fetch('/api/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: agentName, scopes: agentScopes }),
+    });
+    if (r.ok) {
+      const result = await r.json();
+      setNewAgentToken(result.token);
+      setAgentName('');
+      await loadAgents();
+    }
+  }
+  async function rotateAgent(id: string) {
+    const r = await fetch(`/api/agents/${id}/rotate`, { method: 'POST' });
+    if (r.ok) {
+      const result = await r.json();
+      setNewAgentToken(result.token);
+      await loadAgents();
+    }
+  }
+  async function revokeAgent(id: string) {
+    const r = await fetch(`/api/agents/${id}/revoke`, { method: 'POST' });
+    if (r.ok) await loadAgents();
+  }
   const formRef = useRef<HTMLFormElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
@@ -763,6 +816,109 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <IntegrationCatalog />
           </section>
         </aside>
+        <section
+          className="panel p-proposals"
+          aria-label="Propostas do agente"
+          hidden={tab !== 'proposals'}
+        >
+          <div className="title">
+            <div>
+              <h1>Propostas de cards</h1>
+              <p className="lede">Revise cada alteração antes de aplicá-la.</p>
+            </div>
+            <button className="btn" onClick={() => void loadProposals()}>
+              Atualizar
+            </button>
+          </div>
+          <label>
+            Nome do agente
+            <input value={agentName} onChange={(e) => setAgentName(e.target.value)} />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={agentScopes.includes('services:read')}
+              onChange={(e) =>
+                setAgentScopes((s) =>
+                  e.target.checked
+                    ? [...new Set([...s, 'services:read'])]
+                    : s.filter((x) => x !== 'services:read'),
+                )
+              }
+            />{' '}
+            Ler serviços
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={agentScopes.includes('proxmox:read')}
+              onChange={(e) =>
+                setAgentScopes((s) =>
+                  e.target.checked
+                    ? [...new Set([...s, 'proxmox:read'])]
+                    : s.filter((x) => x !== 'proxmox:read'),
+                )
+              }
+            />{' '}
+            Ler recursos Proxmox
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={agentScopes.includes('proposals:create')}
+              onChange={(e) =>
+                setAgentScopes((s) =>
+                  e.target.checked
+                    ? [...new Set([...s, 'proposals:create'])]
+                    : s.filter((x) => x !== 'proposals:create'),
+                )
+              }
+            />{' '}
+            Criar propostas
+          </label>
+          <button className="btn" onClick={() => void createAgent()}>
+            Criar identidade
+          </button>
+          {newAgentToken && (
+            <p role="alert">
+              Copie o token agora; ele não será exibido novamente: <code>{newAgentToken}</code>
+            </p>
+          )}
+          <h2>Identidades</h2>
+          {agents.map((agent) => (
+            <article key={agent.id}>
+              <strong>{agent.name}</strong> · {JSON.parse(agent.scopes).join(', ')} ·{' '}
+              {agent.revokedAt ? 'revogada' : 'ativa'}
+              {!agent.revokedAt && (
+                <div>
+                  <button className="btn" onClick={() => void rotateAgent(agent.id)}>
+                    Rotacionar token
+                  </button>{' '}
+                  <button className="btn" onClick={() => void revokeAgent(agent.id)}>
+                    Revogar
+                  </button>
+                </div>
+              )}
+            </article>
+          ))}
+          {proposals.map((p) => (
+            <article key={p.id}>
+              <h2>{p.state}</h2>
+              <pre>{p.diff}</pre>
+              <small>Expira: {new Date(p.expiresAt).toLocaleString()}</small>
+              {p.state === 'pending' && (
+                <div>
+                  <button className="btn primary" onClick={() => void reviewProposal(p.id, true)}>
+                    Aprovar
+                  </button>{' '}
+                  <button className="btn" onClick={() => void reviewProposal(p.id, false)}>
+                    Rejeitar
+                  </button>
+                </div>
+              )}
+            </article>
+          ))}
+        </section>
       </main>
       <div className="wrap">
         <footer>Homora · ambiente local, acessível somente nesta máquina</footer>
@@ -775,6 +931,18 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         >
           <Icon name="list" />
           Serviços
+        </button>
+        <button
+          type="button"
+          aria-current={tab === 'proposals' ? 'page' : undefined}
+          onClick={() => {
+            setTab('proposals');
+            void loadProposals();
+            void loadAgents();
+          }}
+        >
+          <Icon name="list" />
+          Propostas
         </button>
         <button
           type="button"

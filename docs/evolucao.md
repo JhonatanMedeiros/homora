@@ -113,19 +113,37 @@ validação do inventário e das redes reais permanece pendente.
 
 ## P4 — MCP e alterações com aprovação
 
-- [ ] Definir identidade, escopos e revogação de agentes e alinhar o acesso MCP
+- [x] Definir identidade, escopos e revogação de agentes e alinhar o acesso MCP
       às regras da aplicação. O MCP atual é local, somente leitura e acessa arquivos
       diretamente; a sessão web não o protege.
-- [ ] Disponibilizar consultas autorizadas sem expor segredos e tratar dados
+- [x] Disponibilizar consultas autorizadas sem expor segredos e tratar dados
       externos como não confiáveis.
-- [ ] Implementar propostas de alterações de cards com revisão humana, diff,
+- [x] Implementar propostas de alterações de cards com revisão humana, diff,
       expiração e aprovação vinculada à versão exata da proposta e da configuração.
 - [ ] Aplicar alterações de forma transacional e registrar aprovação, rejeição e
       falhas; testar autorização, concorrência, repetição e injeção de instruções.
-- [ ] Manter ações de infraestrutura, como reiniciar VMs, fora desta etapa.
+- [x] Manter ações de infraestrutura, como reiniciar VMs, fora desta etapa.
 
 **Conclusão:** agentes só acessam o que foi autorizado e alterações propostas
 são revisáveis e auditáveis antes de serem aplicadas.
+
+**Registro de implementação (2026-11-10):** foram adicionadas tabelas para
+identidades, propostas, versão de configuração e auditoria, além de uma tela
+autenticada para revisar propostas de cards. A API permite emitir, rotacionar e
+revogar tokens com escopos explícitos; o MCP exige token para consultas de
+serviços/Proxmox e usa `proposals:create` para propor cards. Aprovação/rejeição
+ocorre sob transação SQLite, verifica hash e versão base, expiração e estado
+pendente, e registra resultados sem incluir payloads de credenciais. Há testes
+de escopo, rotação/revogação, stale state, repetição com duas conexões SQLite,
+expiração, auditoria e campos hostis. A revisão independente encontrou um diff
+que não refletia posição/permissão aplicada e uma gravação de proposta sem
+atomicidade com auditoria; ambos foram corrigidos para persistir os valores
+exatos aprovados e gravar proposta/auditoria juntos.
+
+Esta etapa permanece **incompleta**: o fluxo visual não foi exercitado
+manualmente; os testes cobrem replay entre conexões SQLite, não concorrência sob
+carga nem injeção de instruções em respostas de ferramentas reais. Nenhuma
+infraestrutura foi acessada.
 
 ## P5 — Preparar publicação open source
 

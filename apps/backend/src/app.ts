@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import { eq, asc } from 'drizzle-orm';
-import { createDatabase, services, serviceGroups } from '@homora/db';
+import { createDatabase, getSqliteHandle, services, serviceGroups } from '@homora/db';
 import { validateService, type ServiceInput } from '@homora/shared';
 import { createAuth } from './auth.js';
 import { createVault, type ProxmoxConfig } from './vault.js';
@@ -8,6 +8,7 @@ import { ProxmoxError } from './proxmox.js';
 import { createServiceMonitor, startServiceMonitor } from './service-monitor.js';
 import type { Service } from '@homora/shared';
 import { registerConnectionRoutes } from './connections.js';
+import { createProposalService } from './proposals.js';
 import {
   createIntegrationRegistry,
   createObservationCache,
@@ -23,6 +24,7 @@ export function createApp(
   configuredOrigins: readonly string[] = [],
 ) {
   const app = Fastify({ bodyLimit: 100_000 });
+  const proposals = createProposalService(getSqliteHandle(db));
   const integrations = createIntegrationRegistry([
     proxmoxAdapter,
     { type: 'jellyfin', label: 'Jellyfin', capabilities: ['server-info'] },
@@ -36,6 +38,15 @@ export function createApp(
   );
   const stopServiceMonitor = startServiceMonitor(serviceMonitor);
   app.addHook('onClose', async () => stopServiceMonitor());
+  app.addHook('onResponse', async (request, reply) => {
+    if (
+      reply.statusCode < 400 &&
+      request.method !== 'GET' &&
+      /^\/api\/services(?:\/|$)/.test(request.url)
+    ) {
+      getSqliteHandle(db).prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
+    }
+  });
   const allowedOrigins = new Set([
     `http://127.0.0.1:${webPort}`,
     `http://localhost:${webPort}`,
@@ -198,6 +209,44 @@ export function createApp(
   app.get('/api/services', async () =>
     db.select().from(services).orderBy(services.category, services.position, services.name),
   );
+  app.get('/api/proposals', async () => proposals.list());
+  app.post('/api/agents', async (request, reply) => {
+    try {
+      return reply
+        .code(201)
+        .send(
+          proposals.issue(
+            (request.body as { name: string; scopes: string[] }).name,
+            (request.body as { scopes: string[] }).scopes,
+          ),
+        );
+    } catch {
+      return reply.code(400).send({ error: 'Identidade ou escopos inválidos.' });
+    }
+  });
+  app.get('/api/agents', async () => proposals.listAgents());
+  app.post<{ Params: { id: string } }>('/api/agents/:id/revoke', async (request) => {
+    proposals.revoke(request.params.id);
+    return { ok: true };
+  });
+  app.post<{ Params: { id: string } }>('/api/agents/:id/rotate', async (request, reply) => {
+    try {
+      return { token: proposals.rotate(request.params.id) };
+    } catch {
+      return reply.code(404).send({ error: 'Identidade não encontrada.' });
+    }
+  });
+  app.post<{ Params: { id: string } }>('/api/proposals/:id/review', async (request, reply) => {
+    const accept = (request.body as { approve?: unknown })?.approve;
+    if (typeof accept !== 'boolean') return reply.code(400).send({ error: 'Decisão inválida.' });
+    try {
+      return { state: proposals.decide(request.params.id, accept, 'local-admin') };
+    } catch (error) {
+      return reply
+        .code(409)
+        .send({ error: error instanceof Error ? error.message : 'Proposta indisponível.' });
+    }
+  });
   app.get('/api/service-status', async () => serviceMonitor.snapshot());
   app.get('/api/groups', async () =>
     db.select().from(serviceGroups).orderBy(asc(serviceGroups.position), asc(serviceGroups.name)),

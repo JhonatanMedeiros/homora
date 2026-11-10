@@ -1,9 +1,9 @@
-import { DatabaseSync } from 'node:sqlite';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { createDatabase, getSqliteHandle } from '@homora/db';
 import { loadConfig } from './config.js';
 import { createVault } from './vault.js';
 import { createMcp } from './mcp.js';
 const config = loadConfig();
-const database = new DatabaseSync(config.databasePath, { readOnly: true });
-const server = createMcp(database, createVault(config.databasePath));
+const storage = createDatabase(config.databasePath);
+const server = createMcp(getSqliteHandle(storage.db), createVault(config.databasePath));
 await server.connect(new StdioServerTransport());

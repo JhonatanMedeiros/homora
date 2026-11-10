@@ -287,7 +287,8 @@ kbd {
   display: none;
 }
 .shell[data-tab='services'] .p-services,
-.shell[data-tab='integrations'] .p-integrations {
+.shell[data-tab='integrations'] .p-integrations,
+.shell[data-tab='proposals'] .p-proposals {
   display: block;
 }
 
