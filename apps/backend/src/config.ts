@@ -3,6 +3,32 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 export const root = fileURLToPath(new URL('../../../', import.meta.url));
+export function parseAllowedOrigins(value: string | undefined): string[] {
+  if (value === undefined || value.trim() === '') return [];
+  const origins = value.split(',').map((part) => part.trim());
+  if (origins.some((origin) => !origin)) throw new Error('Origem permitida inválida.');
+  return [
+    ...new Set(
+      origins.map((origin) => {
+        let parsed: URL;
+        try {
+          parsed = new URL(origin);
+        } catch {
+          throw new Error('Origem permitida inválida.');
+        }
+        if (
+          !['http:', 'https:'].includes(parsed.protocol) ||
+          parsed.origin !== origin ||
+          parsed.username ||
+          parsed.password ||
+          (parsed.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(parsed.hostname))
+        )
+          throw new Error('Origem permitida inválida. Use HTTPS ou HTTP apenas em localhost.');
+        return parsed.origin;
+      }),
+    ),
+  ];
+}
 export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   if (env === process.env && existsSync(resolve(root, '.env'))) loadEnvFile(resolve(root, '.env'));
   const port = (value: string | undefined, fallback: number) => {
@@ -16,24 +42,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   if (apiPort === webPort) throw new Error('As portas da API e da interface devem ser diferentes.');
   const bindHost = env.HOMORA_BIND_HOST ?? '127.0.0.1';
   if (!['127.0.0.1', '0.0.0.0'].includes(bindHost)) throw new Error('Endereço de escuta inválido.');
-  const allowedOrigins = (env.HOMORA_ALLOWED_ORIGINS ?? '')
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-  for (const value of allowedOrigins) {
-    let origin: URL;
-    try {
-      origin = new URL(value);
-    } catch {
-      throw new Error('Origem permitida inválida.');
-    }
-    if (
-      !['https:', 'http:'].includes(origin.protocol) ||
-      origin.origin !== value ||
-      (origin.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(origin.hostname))
-    )
-      throw new Error('Origem permitida inválida. Use HTTPS ou HTTP apenas em localhost.');
-  }
+  const allowedOrigins = parseAllowedOrigins(env.HOMORA_ALLOWED_ORIGINS);
   return {
     bindHost,
     apiPort,

@@ -82,7 +82,10 @@ export function createApp(
   app.post('/api/auth/logout', async (request, reply) => {
     auth.logout(request.headers.cookie);
     return reply
-      .header('Set-Cookie', 'homora_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0')
+      .header(
+        'Set-Cookie',
+        `homora_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${request.headers.origin?.startsWith('https://') ? '; Secure' : ''}`,
+      )
       .send({ ok: true });
   });
   app.addHook('onRequest', async (request, reply) => {

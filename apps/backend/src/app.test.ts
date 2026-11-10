@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { rmSync } from 'node:fs';
 import { rootCertificates } from 'node:tls';
 import { createVault } from './vault.js';
+import { parseAllowedOrigins } from './config.js';
 const database = createDatabase(':memory:');
 const auth = createAuth(join(mkdtempSync(join(tmpdir(), 'homora-auth-')), 'auth'));
 auth.setup('senha-super-segura');
@@ -255,6 +256,22 @@ describe('API de serviços', () => {
       ).statusCode,
     ).toBe(400);
   });
+  it('exige correspondência exata da origem em toda mutação', async () => {
+    const headers = { cookie, origin: 'http://localhost:51730' };
+    for (const [method, url] of [
+      ['POST', '/api/services'],
+      ['POST', '/api/auth/logout'],
+      ['POST', '/api/proxmox/config'],
+      ['POST', '/api/connections'],
+      ['POST', '/api/widgets'],
+    ] as const) {
+      expect((await app.inject({ method, url, headers, payload: {} })).statusCode).toBe(403);
+    }
+    expect(
+      (await app.inject({ method: 'POST', url: '/api/services', headers: { cookie }, payload: {} }))
+        .statusCode,
+    ).toBe(403);
+  });
 });
 
 describe('autenticação pela API', () => {
@@ -302,6 +319,7 @@ describe('autenticação pela API', () => {
     expect(login.statusCode).toBe(200);
     const cookie = login.headers['set-cookie'] as string;
     expect(cookie).toContain('HttpOnly');
+    expect(cookie).not.toContain('Secure');
     expect(
       (await localApp.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
         .statusCode,
@@ -316,6 +334,55 @@ describe('autenticação pela API', () => {
         .statusCode,
     ).toBe(401);
     await localApp.close();
+  });
+  it('define Secure em login HTTPS permitido e no encerramento HTTPS', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'homora-https-auth-'));
+    const localAuth = createAuth(join(dir, 'auth'));
+    const localApp = createApp(database.db, 5173, localAuth, undefined, ['https://homora.example']);
+    try {
+      await localApp.inject({
+        method: 'POST',
+        url: '/api/auth/setup',
+        headers: { origin: 'https://homora.example' },
+        payload: { password: 'senha-super-segura' },
+      });
+      const login = await localApp.inject({
+        method: 'POST',
+        url: '/api/auth/login',
+        headers: { origin: 'https://homora.example' },
+        payload: { password: 'senha-super-segura' },
+      });
+      expect(login.headers['set-cookie']).toContain('; Secure');
+      const logout = await localApp.inject({
+        method: 'POST',
+        url: '/api/auth/logout',
+        headers: {
+          origin: 'https://homora.example',
+          cookie: login.headers['set-cookie'] as string,
+        },
+      });
+      expect(logout.headers['set-cookie']).toContain('; Secure');
+    } finally {
+      await localApp.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('HOMORA_ALLOWED_ORIGINS', () => {
+  it('separa origens exatas, remove duplicatas e rejeita valores inválidos', () => {
+    expect(
+      parseAllowedOrigins('https://homora.example, http://localhost:8080,https://homora.example'),
+    ).toEqual(['https://homora.example', 'http://localhost:8080']);
+    for (const value of [
+      'https://example.test/path',
+      'https://example.test/',
+      'http://example.test',
+      '*,https://ok.test',
+      'https://u:p@example.test',
+    ])
+      expect(() => parseAllowedOrigins(value)).toThrow();
+    expect(parseAllowedOrigins(undefined)).toEqual([]);
   });
 });
 

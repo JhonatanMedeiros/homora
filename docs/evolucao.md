@@ -61,6 +61,11 @@ suportados; não anunciar exposição em rede antes dessa validação.
   declaradas em `HOMORA_ALLOWED_ORIGINS`; HTTP adicional é restrito a localhost.
   O cookie recebe `Secure` para login originado em HTTPS. A validação de origem
   segue obrigatória para métodos que alteram estado.
+- Testes automatizados cobrem parsing de origens exatas, rejeição de caminhos,
+  curingas e HTTP remoto, bloqueio de mutações sem origem permitida e cookies
+  `Secure` em login/logout HTTPS; HTTP local permanece compatível. `pnpm check`
+  passou com 104 testes Vitest e 2 testes Node; `pnpm build` e
+  `git diff --check` também passaram na branch integrada.
 - Revisão de código: sessão em memória de oito horas, cookie HttpOnly e
   SameSite=Strict, senha scrypt com salt aleatório, limite de tentativas de
   login por endereço visto pelo backend, corpo limitado e destinos de integração
