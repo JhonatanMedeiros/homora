@@ -18,7 +18,6 @@ export default tseslint.config(
       '.impeccable/**',
       '.turbo/**',
       '.idea/**',
-      'propostas/**',
       'packages/db/migrations/**',
       'coverage/**',
       // Skills de agentes instaladas por ferramentas externas.

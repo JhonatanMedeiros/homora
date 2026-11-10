@@ -6,7 +6,15 @@ import { ConnectionMark } from '@/features/connections/connection-mark';
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@/components/ui/item';
 import { SectionTitle } from '@/components/section-title';
 import { Spinner } from '@/components/ui/spinner';
-import { t } from '@/i18n';
+import { t, type MessageKey } from '@/i18n';
+
+const capabilities = new Set([
+  'inventory',
+  'server-info',
+  'entity-state',
+  'status-page',
+  'dns-status',
+]);
 
 type Entry = { type: string; label: string; capabilities: string[] };
 
@@ -80,7 +88,15 @@ export function IntegrationCatalog() {
                   <ItemContent>
                     <ItemTitle>{entry.label}</ItemTitle>
                     {entry.capabilities.length > 0 && (
-                      <ItemDescription>{entry.capabilities.join(', ')}</ItemDescription>
+                      <ItemDescription>
+                        {entry.capabilities
+                          .map((capability) =>
+                            capabilities.has(capability)
+                              ? t(`catalog.${capability}` as MessageKey)
+                              : capability,
+                          )
+                          .join(', ')}
+                      </ItemDescription>
                     )}
                   </ItemContent>
                 </Item>

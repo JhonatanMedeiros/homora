@@ -1,5 +1,10 @@
 /** Textos do catálogo de integrações e do Proxmox. */
 export const en = {
+  'catalog.inventory': 'Infrastructure inventory',
+  'catalog.server-info': 'Server information',
+  'catalog.entity-state': 'Device and entity state',
+  'catalog.status-page': 'Service status',
+  'catalog.dns-status': 'DNS status',
   'catalog.title': 'Available integrations',
   'catalog.loadFailed': 'Could not load the catalog.',
   'catalog.retry': 'Try again',
@@ -45,6 +50,11 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
+  'catalog.inventory': 'Inventário da infraestrutura',
+  'catalog.server-info': 'Informações do servidor',
+  'catalog.entity-state': 'Estado de dispositivos e entidades',
+  'catalog.status-page': 'Estado dos serviços',
+  'catalog.dns-status': 'Estado do DNS',
   'catalog.title': 'Integrações disponíveis',
   'catalog.loadFailed': 'Não foi possível carregar o catálogo.',
   'catalog.retry': 'Tentar novamente',

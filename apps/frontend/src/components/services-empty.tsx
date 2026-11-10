@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { Plus, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,9 +9,16 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { t } from '@/i18n';
 
-export function ServicesEmpty({ hasServices, onAdd }: { hasServices: boolean; onAdd: () => void }) {
+export function ServicesEmpty({
+  hasServices,
+  onAdd,
+  managing,
+}: {
+  hasServices: boolean;
+  onAdd: () => void;
+  managing: boolean;
+}) {
   return (
     <Empty className="border border-dashed">
       <EmptyHeader>
@@ -26,7 +34,7 @@ export function ServicesEmpty({ hasServices, onAdd }: { hasServices: boolean; on
         <EmptyContent>
           <Button type="button" onClick={onAdd}>
             <Plus />
-            {t('empty.addFirst')}
+            {managing ? t('empty.addFirst') : t('empty.manage')}
           </Button>
         </EmptyContent>
       )}

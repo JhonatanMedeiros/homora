@@ -12,12 +12,14 @@ export function useServices() {
   const [groupRows, setGroupRows] = useState<ServiceGroup[]>([]);
   const [statuses, setStatuses] = useState<Record<number, ServiceStatus>>({});
   const [loadError, setLoadError] = useState('');
+  const [loaded, setLoaded] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
       const response = await fetch('/api/services');
       if (!response.ok) throw Error();
       setServices((await response.json()) as Service[]);
+      setLoaded(true);
       const groupResponse = await fetch('/api/groups');
       if (groupResponse.ok) setGroupRows((await groupResponse.json()) as ServiceGroup[]);
       setLoadError('');
@@ -36,6 +38,7 @@ export function useServices() {
       .then((data) => {
         if (active) {
           setServices(data);
+          setLoaded(true);
           setLoadError('');
         }
       })
@@ -157,6 +160,7 @@ export function useServices() {
 
   return {
     services,
+    loaded,
     groupRows,
     statuses,
     loadError,

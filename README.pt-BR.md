@@ -46,7 +46,9 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. Copie `.env.example` para `.env` para personalizar portas ou caminho do banco. O banco fica em `data/homora.sqlite`; a estrutura existente é preservada. Para encerrar, use Ctrl+C.
+A autenticação usa `/login` e retorna à rota local solicitada após a entrada. O painel fica em `/`; o gerenciamento usa `/manage/services`, `/manage/integrations`, `/manage/agents` e `/manage/settings`, com navegação pelo histórico do navegador. Os formulários de serviço usam `/manage/services/new` e `/manage/services/:id/edit`; rotas desconhecidas mostram uma página de erro. Em hospedagem própria da interface, configure o servidor para retornar `index.html` nessas rotas.
+
+Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. `pnpm dev` usa o banco isolado `data/homora-dev.sqlite`, criado com serviços fictícios na primeira execução. Alterações persistem entre reinícios e serviços removidos não são recriados. Os endereços são ilustrativos, sem autorização de monitoramento privado. O primeiro acesso exige criar uma senha. Fora do desenvolvimento, o banco padrão é `data/homora.sqlite` e pode ser configurado por `HOMORA_DATABASE_PATH`; essa variável não altera o banco isolado de `pnpm dev`. Para encerrar, use Ctrl+C.
 
 O monorepo usa pnpm e Turborepo, com React, Vite, Tailwind CSS e shadcn/ui no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
 
@@ -67,7 +69,7 @@ Em **Configurações** você baixa grupos, cards e a ordem deles em YAML ou JSON
 - `pnpm lint`, `pnpm lint:fix`, `pnpm format` e `pnpm format:check`: análise e formatação.
 - O Husky executa lint-staged no pre-commit e Commitlint no commit-msg. Use mensagens como `feat: adiciona integração`. Os hooks são instalados pelo `pnpm install`; para reinstalá-los, execute `pnpm exec husky`.
 
-Os protótipos em `propostas/`, migrações geradas e arquivos de skills vendorizadas são excluídos das verificações globais de formatação e lint.
+Migrações geradas e arquivos de skills vendorizadas são excluídos das verificações globais de formatação e lint.
 
 ## Backup local
 

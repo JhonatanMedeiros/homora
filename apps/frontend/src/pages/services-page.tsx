@@ -3,6 +3,15 @@ import type { Service, ServiceInput } from '@homora/shared';
 import { Check, Plus, SlidersHorizontal } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { HealthSummary } from '@/components/health-summary';
@@ -13,19 +22,45 @@ import { ServiceCard } from '@/components/service-card';
 import { ServiceForm } from '@/components/service-form';
 import { ServicesEmpty } from '@/components/services-empty';
 import type { useServices } from '@/hooks/use-services';
-import { emptyService } from '@/lib/services';
 import { apiError, lower, t } from '@/i18n';
+import { emptyService } from '@/lib/services';
 
 /** Tela principal: grupos de serviços com estado, busca, edição e modo Organizar. */
 type Props = {
   query: string;
+  managing: boolean;
+  formRoute: 'new' | number | null;
+  navigate: (path: string, replace?: boolean) => void;
+  onManage: () => void;
   data: ReturnType<typeof useServices>;
   /** A busca abre o primeiro resultado com Enter; a página registra aqui como fazê-lo. */
   openFirstRef: MutableRefObject<(() => void) | null>;
 };
 
-export function ServicesPage({ query, data, openFirstRef }: Props) {
+export function ServicesPage({
+  query,
+  data,
+  openFirstRef,
+  managing,
+  onManage,
+  formRoute,
+  navigate,
+}: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
+  const [compact, setCompact] = useState(() => {
+    try {
+      return localStorage.getItem('homora-density') === 'compact';
+    } catch {
+      return false;
+    }
+  });
+  const [showDescriptions, setShowDescriptions] = useState(() => {
+    try {
+      return localStorage.getItem('homora-descriptions') !== 'hidden';
+    } catch {
+      return true;
+    }
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [formOpen, setFormOpen] = useState(false);
@@ -41,7 +76,7 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
   const [groupDraft, setGroupDraft] = useState('');
   const [groupError, setGroupError] = useState('');
   const flashTimer = useRef<number | undefined>(undefined);
-  const formRef = useRef<HTMLFormElement>(null);
+  const initializedRoute = useRef<'new' | number | null>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
 
@@ -67,7 +102,7 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
         // Indisponíveis sobem no grupo, exceto no modo Organizar (a ordem é do usuário).
         .sort((a, b) => (organizing ? 0 : Number(isDown(b)) - Number(isDown(a)))),
     }))
-    .filter((group) => group.items.length || !needle);
+    .filter((group) => group.items.length || (!needle && selected === null));
 
   useEffect(() => {
     const ref = openFirstRef;
@@ -80,19 +115,13 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
     };
   });
 
-  useEffect(() => {
-    if (formOpen) {
-      formRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-      nameInput.current?.focus({ preventScroll: true });
-    }
-  }, [formOpen]);
-
   function focusEditTrigger(id: number | null) {
     if (id !== null)
       document.querySelector<HTMLButtonElement>(`[data-service-edit="${id}"]`)?.focus();
     else addButton.current?.focus();
   }
   function openForm(service?: Service) {
+    navigate(service ? `/manage/services/${service.id}/edit` : '/manage/services/new');
     setConfirming(null);
     setEditing(service?.id ?? null);
     setForm(
@@ -112,16 +141,70 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
     setFormOpen(true);
   }
   function closeForm() {
+    try {
+      sessionStorage.setItem('homora-focus-service', editing === null ? 'new' : String(editing));
+    } catch {
+      /* armazenamento indisponível */
+    }
     setFormOpen(false);
-    focusEditTrigger(editing);
+    navigate('/manage/services', true);
   }
+  useEffect(() => {
+    if (!managing || formRoute !== null) return;
+    try {
+      const value = sessionStorage.getItem('homora-focus-service');
+      if (!value || (value !== 'new' && !data.loaded)) return;
+      const target =
+        value === 'new'
+          ? addButton.current
+          : (document.querySelector<HTMLButtonElement>(`[data-service-edit="${Number(value)}"]`) ??
+            addButton.current);
+      if (target) {
+        target.focus();
+        sessionStorage.removeItem('homora-focus-service');
+      }
+    } catch {
+      /* armazenamento indisponível */
+    }
+  }, [managing, formRoute, data.loaded, services]);
+  useEffect(() => {
+    if (formRoute === null) {
+      initializedRoute.current = null;
+      // Synchronize the controlled dialog with browser history.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormOpen(false);
+      return;
+    }
+    const service =
+      typeof formRoute === 'number' ? services.find((item) => item.id === formRoute) : undefined;
+    if (initializedRoute.current === formRoute) return;
+    if (typeof formRoute === 'number' && !service) {
+      setFormOpen(false);
+      return;
+    }
+    initializedRoute.current = formRoute;
+    // Initialize the draft once per route after service data arrives.
+    setEditing(service?.id ?? null);
+    setForm(
+      service
+        ? {
+            name: service.name,
+            url: service.url,
+            category: service.category,
+            description: service.description,
+            icon: service.icon ?? '',
+            position: service.position ?? 0,
+            allowPrivate: service.allowPrivate === true,
+          }
+        : emptyService,
+    );
+    setFormError('');
+    setFormOpen(true);
+  }, [formRoute, services]);
+
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (formOpen) {
-        setFormOpen(false);
-        focusEditTrigger(editing);
-      }
       if (editingGroup !== null) {
         setEditingGroup(null);
         setGroupDraft('');
@@ -131,7 +214,7 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
     };
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
-  }, [formOpen, editingGroup, editing]);
+  }, [editingGroup]);
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -223,42 +306,41 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
   const blocked = services.filter(
     (s) => blockedIds.has(s.id) && statuses[s.id]?.status !== 'available',
   ).length;
-  const monitored = total - blocked;
+  const unknown = total - online - down - blocked;
   return (
     <section aria-label={t('nav.services')} className="flex flex-col gap-6">
-      <PageHeader
-        title={t('page.title')}
-        description={
-          total
-            ? t('page.summary', {
-                services: t('page.servicesCount', { count: total }),
-                groups: t('page.groupsCount', { count: categories.length }),
-              })
-            : t('page.emptyDescription')
-        }
-        actions={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              aria-pressed={organizing}
-              onClick={() => {
-                setOrganizing(!organizing);
-                setConfirming(null);
-              }}
-            >
-              <SlidersHorizontal />
-              {organizing ? t('page.done') : t('page.organize')}
-            </Button>
-            <Button ref={addButton} type="button" onClick={() => openForm()}>
-              <Plus />
-              {t('page.add')}
-            </Button>
-          </>
-        }
-      />
-      {!organizing && (
-        <HealthSummary online={online} down={down} blocked={blocked} monitored={monitored} />
+      {managing && (
+        <PageHeader
+          title={t('manage.services')}
+          description={
+            total
+              ? `${t('page.summary', { services: t('page.servicesCount', { count: total }), groups: t('page.groupsCount', { count: categories.length }) })} ${t('manage.serviceDescription')}`
+              : t('page.emptyDescription')
+          }
+          actions={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                aria-pressed={organizing}
+                onClick={() => {
+                  setOrganizing(!organizing);
+                  setConfirming(null);
+                }}
+              >
+                <SlidersHorizontal />
+                {organizing ? t('page.done') : t('page.organize')}
+              </Button>
+              <Button ref={addButton} type="button" onClick={() => openForm()}>
+                <Plus />
+                {t('page.add')}
+              </Button>
+            </>
+          }
+        />
+      )}
+      {!managing && !organizing && (
+        <HealthSummary online={online} down={down} blocked={blocked} unknown={unknown} />
       )}
       {organizing && (
         <OrganizePanel
@@ -275,24 +357,76 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
         />
       )}
       <FormError>{groupError}</FormError>
-      {formOpen && (
-        <ServiceForm
-          ref={formRef}
-          nameRef={nameInput}
-          editing={editing !== null}
-          value={form}
-          categories={categories}
-          error={formError}
-          saving={saving}
-          onChange={setForm}
-          onSubmit={(event) => void save(event)}
-          onCancel={closeForm}
-        />
-      )}
+      {typeof formRoute === 'number' &&
+        data.loaded &&
+        !services.some((item) => item.id === formRoute) && (
+          <Alert>
+            <AlertDescription>
+              {t('route.serviceNotFound')}{' '}
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => navigate('/manage/services', true)}
+              >
+                {t('route.services')}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+      <Dialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          if (!open && !saving) closeForm();
+        }}
+      >
+        <DialogContent
+          className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl"
+          showCloseButton={false}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            nameInput.current?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            focusEditTrigger(editing);
+          }}
+          onEscapeKeyDown={(event) => {
+            if (saving) event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            if (saving) event.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-label text-xl">
+              {editing !== null ? t('form.editTitle') : t('form.newTitle')}
+            </DialogTitle>
+            <DialogDescription>{t('form.dialogDescription')}</DialogDescription>
+          </DialogHeader>
+          <ServiceForm
+            nameRef={nameInput}
+            editing={editing !== null}
+            value={form}
+            categories={categories}
+            error={formError}
+            saving={saving}
+            onChange={setForm}
+            onSubmit={(event) => void save(event)}
+            onCancel={closeForm}
+          />
+        </DialogContent>
+      </Dialog>
       <div role="status" id="message" className="empty:hidden">
         {(message || data.loadError) && (
           <Alert variant="destructive">
-            <AlertDescription>{message || data.loadError}</AlertDescription>
+            <AlertDescription>
+              {message || data.loadError}
+              {data.loadError && (
+                <Button type="button" variant="link" onClick={() => void data.refresh()}>
+                  {t('catalog.retry')}
+                </Button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
       </div>
@@ -317,6 +451,47 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
           }
         />
       )}
+      {!managing && services.length > 0 && (
+        <div className="flex items-center justify-end gap-3">
+          <span className="text-sm text-muted-foreground">{t('view.label')}</span>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={compact ? 'compact' : 'comfortable'}
+            onValueChange={(value) => {
+              if (!value) return;
+              const next = value === 'compact';
+              setCompact(next);
+              try {
+                localStorage.setItem('homora-density', next ? 'compact' : 'comfortable');
+              } catch {
+                /* preferência apenas nesta sessão */
+              }
+            }}
+            aria-label={t('view.label')}
+          >
+            <ToggleGroupItem value="comfortable">{t('view.comfortable')}</ToggleGroupItem>
+            <ToggleGroupItem value="compact">{t('view.compact')}</ToggleGroupItem>
+          </ToggleGroup>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-pressed={showDescriptions}
+            onClick={() => {
+              const next = !showDescriptions;
+              setShowDescriptions(next);
+              try {
+                localStorage.setItem('homora-descriptions', next ? 'visible' : 'hidden');
+              } catch {
+                /* preferência apenas nesta sessão */
+              }
+            }}
+          >
+            {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
+          </Button>
+        </div>
+      )}
       {groups.map(({ category, items }) => {
         const row = groupRows.find((group) => group.name === category);
         return (
@@ -325,6 +500,8 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
             category={category}
             count={items.length}
             organizing={organizing}
+            compact={compact && !managing}
+            searching={Boolean(needle)}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
             groupId={row?.id}
@@ -345,6 +522,9 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
                   status={info}
                   blocked={blockedIds.has(s.id)}
                   organizing={organizing}
+                  managing={managing}
+                  compact={compact && !managing}
+                  showDescription={showDescriptions || managing}
                   confirmingRemoval={confirming === s.id}
                   dragging={dragging === s.id}
                   onEdit={() => openForm(s)}
@@ -386,8 +566,18 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
           </GroupSection>
         );
       })}
-      {!groups.length && (
-        <ServicesEmpty hasServices={services.length > 0} onAdd={() => openForm()} />
+      {!data.loaded && !data.loadError && (
+        <p role="status" className="flex items-center gap-2 text-muted-foreground">
+          <Spinner />
+          {t('common.loading')}
+        </p>
+      )}
+      {data.loaded && !data.loadError && !groups.length && (
+        <ServicesEmpty
+          hasServices={services.length > 0}
+          managing={managing}
+          onAdd={() => (managing ? openForm() : onManage())}
+        />
       )}
     </section>
   );
