@@ -53,11 +53,7 @@ export async function request(url: string, init?: RequestInit): Promise<unknown>
   const response = await fetch(url, init);
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const message =
-      data && typeof data === 'object' ? (data as { error?: unknown }).error : undefined;
-    throw new Error(
-      typeof message === 'string' ? apiError(message) : t('connections.operationFailed'),
-    );
+    throw new Error(apiError(data, t('connections.operationFailed')));
   }
   return data;
 }

@@ -146,15 +146,15 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
           body: JSON.stringify(form),
         },
       );
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error);
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(apiError(body, t('error.save')));
       const wasNew = editing === null;
       closeForm();
       setSelected(null);
       await refresh();
       announce(wasNew ? t('page.added') : t('page.saved'));
     } catch (e) {
-      setFormError(e instanceof Error && e.message ? apiError(e.message) : t('error.save'));
+      setFormError(e instanceof Error && e.message ? e.message : t('error.save'));
     } finally {
       setSaving(false);
     }
@@ -187,8 +187,8 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
           body: JSON.stringify({ name: groupDraft }),
         },
       );
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || t('error.saveGroup'));
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(apiError(body, t('error.saveGroup')));
       const wasEditing = editingGroup !== null;
       setEditingGroup(null);
       setGroupDraft('');
@@ -196,18 +196,18 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
       await refresh();
       if (wasEditing) document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? apiError(error.message) : t('error.saveGroup'));
+      setGroupError(error instanceof Error ? error.message : t('error.saveGroup'));
     }
   }
   async function deleteGroup(id: number) {
     try {
       const response = await fetch(`/api/groups/${id}`, { method: 'DELETE' });
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || t('error.removeGroup'));
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(apiError(body, t('error.removeGroup')));
       await refresh();
       document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? apiError(error.message) : t('error.removeGroup'));
+      setGroupError(error instanceof Error ? error.message : t('error.removeGroup'));
     }
   }
   async function reorder(task: Promise<string | null>) {

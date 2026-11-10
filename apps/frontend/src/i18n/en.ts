@@ -3,7 +3,15 @@ import { en as agents } from './messages/agents';
 import { en as integrations } from './messages/integrations';
 import { en as connections } from './messages/connections';
 import { en as transfer } from './messages/transfer';
+import { en as apiErrors } from './messages/api-errors';
 
 /** Fonte das chaves: toda língua precisa ter exatamente estas mensagens. */
-export const en = { ...core, ...agents, ...integrations, ...connections, ...transfer } as const;
+export const en = {
+  ...core,
+  ...agents,
+  ...integrations,
+  ...connections,
+  ...transfer,
+  ...apiErrors,
+} as const;
 export type MessageKey = keyof typeof en;

@@ -4,6 +4,7 @@ import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
 import { MAX_TRANSFER_CHARS, serializeConfiguration } from '../config-transfer.js';
 import { IMPORT_SOURCES, parseBySource } from '../importers.js';
+import { errorBody } from '../api-error.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
@@ -41,7 +42,7 @@ export function registerConfigTransferRoutes(
     { bodyLimit: MAX_TRANSFER_CHARS + 1024 },
     async (request, reply) => {
       const body = previewSchema.safeParse(request.body);
-      if (!body.success) return reply.code(400).send({ error: 'Dados inválidos.' });
+      if (!body.success) return reply.code(400).send(errorBody('invalid-data'));
       return configuration.previewImport(
         parseBySource(body.data.source ?? 'homora', body.data.content),
       );
@@ -53,7 +54,7 @@ export function registerConfigTransferRoutes(
     { bodyLimit: MAX_TRANSFER_CHARS + 1024 },
     async (request, reply) => {
       const body = applySchema.safeParse(request.body);
-      if (!body.success) return reply.code(400).send({ error: 'Dados inválidos.' });
+      if (!body.success) return reply.code(400).send(errorBody('invalid-data'));
       const result = configuration.applyImport(
         parseBySource(body.data.source ?? 'homora', body.data.content),
         {
@@ -61,8 +62,7 @@ export function registerConfigTransferRoutes(
           expectedVersion: body.data.expectedVersion,
         },
       );
-      if (result.status === 'stale')
-        return reply.code(409).send({ error: 'A configuração mudou. Revise a prévia novamente.' });
+      if (result.status === 'stale') return reply.code(409).send(errorBody('config-changed'));
       void monitor.invalidate();
       return { created: result.created, plan: result.plan };
     },

@@ -656,7 +656,7 @@ it('atualiza e remove CA sem apagar as credenciais existentes', async () => {
       for (const route of ['/api/proxmox/config', '/api/proxmox/test']) {
         const response = await localApp.inject({ method: 'POST', url: route, headers, payload });
         expect(response.statusCode).toBe(400);
-        expect(response.json().error).toContain('Informe novamente o segredo');
+        expect(response.json().code).toBe('secret-required');
       }
     }
     expect(vault.load()?.secret).toBe('segredo');

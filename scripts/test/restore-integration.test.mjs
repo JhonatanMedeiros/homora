@@ -6,8 +6,23 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { rootCertificates } from 'node:tls';
-import { createAuth } from '../../apps/backend/src/auth.ts';
-import { createVault } from '../../apps/backend/src/vault.ts';
+import { register } from 'node:module';
+
+// O código do backend importa './x.js' (resolvido para .ts pelo TypeScript); o Node precisa do mesmo mapeamento.
+register(
+  'data:text/javascript,' +
+    encodeURIComponent(`export async function resolve(specifier, context, next) {
+      try { return await next(specifier, context); }
+      catch (error) {
+        if (specifier.startsWith('.') && specifier.endsWith('.js')) {
+          return next(specifier.slice(0, -3) + '.ts', context);
+        }
+        throw error;
+      }
+    }`),
+);
+const { createAuth } = await import('../../apps/backend/src/auth.ts');
+const { createVault } = await import('../../apps/backend/src/vault.ts');
 
 test('restaura banco, autenticação, chave e integração em outro caminho', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'homora-restore-full-'));

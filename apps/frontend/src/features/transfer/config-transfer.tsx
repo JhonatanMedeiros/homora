@@ -94,6 +94,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
       });
       const body = (await response.json().catch(() => null)) as {
         created?: number;
+        code?: string;
         error?: string;
       } | null;
       if (response.status === 409) {
@@ -101,7 +102,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
         setPreview(null);
         return;
       }
-      if (!response.ok) throw new Error(body?.error ? apiError(body.error) : undefined);
+      if (!response.ok) throw new Error(apiError(body, t('transfer.applyFailed')));
       reset();
       setMessage(t('transfer.done', { count: body?.created ?? 0 }));
       await onImported();

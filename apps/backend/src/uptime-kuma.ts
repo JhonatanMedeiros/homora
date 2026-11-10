@@ -1,4 +1,5 @@
 import type { IntegrationAdapter } from './integrations.js';
+import { InputError } from './api-error.js';
 
 export type UptimeKumaConfig = { url: string; slug: string };
 export type UptimeKumaSummary = {
@@ -18,7 +19,7 @@ function validate(config: UptimeKumaConfig): UptimeKumaConfig {
   try {
     url = new URL(config.url);
   } catch {
-    throw new Error('Informe uma URL válida para o Uptime Kuma.');
+    throw new InputError('invalid-url');
   }
   if (
     !['http:', 'https:'].includes(url.protocol) ||
@@ -28,9 +29,9 @@ function validate(config: UptimeKumaConfig): UptimeKumaConfig {
     url.search ||
     url.hash
   )
-    throw new Error('Informe uma origem HTTP ou HTTPS sem caminho ou credenciais.');
+    throw new InputError('invalid-url');
   if (typeof config.slug !== 'string' || !/^[a-z0-9_-]{1,100}$/i.test(config.slug))
-    throw new Error('Informe um identificador de página de status válido.');
+    throw new InputError('invalid-status-page');
   return { url: url.origin, slug: config.slug };
 }
 

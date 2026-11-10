@@ -25,10 +25,8 @@ export function Proxmox() {
     try {
       const response = await fetch(`/api/proxmox/resources${force ? '?refresh=true' : ''}`);
       if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
-        throw new Error(
-          typeof body?.error === 'string' ? apiError(body.error) : t('proxmox.queryFailed'),
-        );
+        const body: unknown = await response.json().catch(() => null);
+        throw new Error(apiError(body, t('proxmox.queryFailed')));
       }
       const body = (await response.json()) as { data: unknown; checkedAt?: unknown };
       if (!Array.isArray(body.data)) throw Error();
@@ -44,7 +42,7 @@ export function Proxmox() {
       setCheckedAt(null);
       setMessage(
         error instanceof Error && !(error instanceof TypeError)
-          ? apiError(error.message)
+          ? error.message || t('proxmox.queryFailed')
           : t('proxmox.serverUnreachable'),
       );
     }
@@ -72,8 +70,8 @@ export function Proxmox() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, tokenId, secret, ca, removeCa }),
       });
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || t('proxmox.saveFailed'));
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(apiError(body, t('proxmox.saveFailed')));
       if (test) {
         setMessage(t('proxmox.testOk'));
         return;
@@ -89,7 +87,7 @@ export function Proxmox() {
     } catch (error) {
       setMessage(
         error instanceof Error && !(error instanceof TypeError)
-          ? apiError(error.message)
+          ? error.message || t('proxmox.saveFailed')
           : t('proxmox.serverUnreachable'),
       );
     } finally {

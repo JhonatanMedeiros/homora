@@ -6,6 +6,7 @@ import { createVault } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
 import { createObservationCache } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
+import { InputError } from './api-error.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
@@ -65,11 +66,11 @@ function validateCa(ca: string) {
       ca,
     )
   )
-    throw new Error('Certificado de CA inválido.');
+    throw new InputError('invalid-ca');
   try {
     if (!new X509Certificate(ca).ca) throw new Error();
   } catch {
-    throw new Error('Certificado de CA inválido.');
+    throw new InputError('invalid-ca');
   }
 }
 
@@ -113,7 +114,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     const old = current ? parseData(current) : undefined;
     const type = input.type || current?.type || '';
     const name = input.name || current?.name || '';
-    if (!connectionTypes.has(type) || !name) throw new Error('Informe nome e tipo válidos.');
+    if (!connectionTypes.has(type) || !name) throw new InputError('invalid-name-or-type');
     const data: ConnectionData = {
       url: input.url || old?.url || '',
       allowPrivate: input.allowPrivate ?? old?.allowPrivate ?? false,
@@ -126,7 +127,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       try {
         originChanged = new URL(data.url).origin !== new URL(old.url).origin;
       } catch {
-        throw new Error('Informe uma URL válida.');
+        throw new InputError('invalid-url');
       }
     }
     const identityChanged =
@@ -134,8 +135,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       (current.type !== type ||
         originChanged ||
         (type === 'adguard-home' && old?.username !== data.username));
-    if (identityChanged && saved.secret && !input.secret)
-      throw new Error('Informe novamente o segredo ao alterar a origem, tipo ou usuário.');
+    if (identityChanged && saved.secret && !input.secret) throw new InputError('secret-required');
     const keys: Credentials = {
       secret: input.secret || (identityChanged ? undefined : saved.secret),
       ca: input.removeCa ? undefined : input.ca || (identityChanged ? undefined : saved.ca),

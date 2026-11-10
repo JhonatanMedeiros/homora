@@ -9,6 +9,18 @@ export type ServiceInput = {
 };
 export type Service = ServiceInput & { id: number };
 
+/** Entrada inválida de serviço; `code` é estável e a mensagem está em inglês. */
+export class ServiceValidationError extends Error {
+  constructor(readonly code: 'invalid-url' | 'invalid-name-or-category') {
+    super(
+      code === 'invalid-url'
+        ? 'Provide a valid HTTP or HTTPS URL without credentials.'
+        : 'Provide a valid name and category.',
+    );
+    this.name = 'ServiceValidationError';
+  }
+}
+
 /** Ícones embutidos (`lucide:nome`). A interface registra um componente para cada um. */
 export const ICON_NAMES = [
   'server',
@@ -142,12 +154,12 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
   try {
     url = new URL(input.url ?? '');
   } catch {
-    throw new Error('Informe uma URL válida.');
+    throw new ServiceValidationError('invalid-url');
   }
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
-    throw new Error('Use uma URL HTTP ou HTTPS sem credenciais.');
+    throw new ServiceValidationError('invalid-url');
   if (!name || name.length > 80 || !category || category.length > 40)
-    throw new Error('Informe nome e categoria válidos.');
+    throw new ServiceValidationError('invalid-name-or-category');
   return {
     name,
     category,

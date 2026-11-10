@@ -13,6 +13,7 @@ import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
 import { registerProxmoxRoutes } from './routes/proxmox.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
+import { errorBody } from './api-error.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -44,7 +45,7 @@ export function createApp(
       !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
       !allowedOrigins.has(request.headers.origin ?? '')
     )
-      return reply.code(403).send({ error: 'Origem não autorizada.' });
+      return reply.code(403).send(errorBody('origin-not-allowed'));
   });
   app.addHook('onRequest', async (request, reply) => {
     if (
@@ -52,7 +53,7 @@ export function createApp(
       !request.url.startsWith('/api/auth/') &&
       !auth.authorized(request.headers.cookie)
     )
-      return reply.code(401).send({ error: 'Autenticação necessária.' });
+      return reply.code(401).send(errorBody('auth-required'));
   });
 
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
@@ -64,6 +65,6 @@ export function createApp(
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
 
-  app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'Não encontrado.' }));
+  app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));
   return app;
 }

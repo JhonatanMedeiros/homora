@@ -77,7 +77,7 @@ it.each(['aborted', 'error'])('rejeita uma resposta interrompida (%s)', async (e
   });
   await expect(
     readProxmox({ url: 'https://pve.example', tokenId: 'user@pve!homora', secret: 'token' }),
-  ).rejects.toThrow('Resposta incompleta');
+  ).rejects.toMatchObject({ code: 'proxmox-incomplete-response' });
 });
 
 it('rejeita inventário que não seja uma lista', async () => {
@@ -98,16 +98,16 @@ it('rejeita inventário que não seja uma lista', async () => {
   });
   await expect(
     readProxmox({ url: 'https://pve.example', tokenId: 'user@pve!homora', secret: 'token' }),
-  ).rejects.toThrow('Resposta inválida');
+  ).rejects.toMatchObject({ code: 'proxmox-invalid-response' });
 });
 
 it.each([
-  ['DEPTH_ZERO_SELF_SIGNED_CERT', 'Certificado TLS'],
-  ['ENOTFOUND', 'resolver o endereço'],
-  ['ECONNREFUSED', 'Conexão recusada'],
-  ['ETIMEDOUT', 'alcançar o Proxmox'],
-  ['OUTRO', 'Falha de conexão'],
-])('apresenta diagnóstico seguro para erro de rede %s', async (code, message) => {
+  ['DEPTH_ZERO_SELF_SIGNED_CERT', 'proxmox-tls'],
+  ['ENOTFOUND', 'proxmox-dns'],
+  ['ECONNREFUSED', 'proxmox-refused'],
+  ['ETIMEDOUT', 'proxmox-unreachable'],
+  ['OUTRO', 'proxmox-connection-failed'],
+])('apresenta diagnóstico seguro para erro de rede %s', async (code, errorCode) => {
   const request = Object.assign(new EventEmitter(), { destroy: vi.fn() });
   vi.spyOn(https, 'get').mockImplementation(() => {
     queueMicrotask(() =>
@@ -117,14 +117,14 @@ it.each([
   });
   await expect(
     readProxmox({ url: 'https://pve.example', tokenId: 'user@pve!homora', secret: 'token' }),
-  ).rejects.toThrow(message);
+  ).rejects.toMatchObject({ code: errorCode });
 });
 
 it.each([
-  [401, 'autenticação'],
-  [403, 'permissões'],
-  [500, 'HTTP 500'],
-])('identifica resposta HTTP %i sem divulgar o corpo', async (statusCode, message) => {
+  [401, 'proxmox-unauthorized'],
+  [403, 'proxmox-forbidden'],
+  [500, 'proxmox-http-error'],
+])('identifica resposta HTTP %i sem divulgar o corpo', async (statusCode, errorCode) => {
   const response = Object.assign(new EventEmitter(), { statusCode, resume: vi.fn() });
   const request = Object.assign(new EventEmitter(), { destroy: vi.fn() });
   vi.spyOn(https, 'get').mockImplementation((...args: unknown[]) => {
@@ -133,5 +133,5 @@ it.each([
   });
   await expect(
     readProxmox({ url: 'https://pve.example', tokenId: 'user@pve!homora', secret: 'token' }),
-  ).rejects.toThrow(message);
+  ).rejects.toMatchObject({ code: errorCode });
 });

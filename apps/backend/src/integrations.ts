@@ -1,5 +1,6 @@
 import { readProxmox } from './proxmox.js';
 import { validateProxmoxConfig, type ProxmoxConfig } from './vault.js';
+import { InputError } from './api-error.js';
 
 /** An adapter never exposes credentials through its public metadata. */
 export interface IntegrationAdapter<Config, Data> {
@@ -53,15 +54,16 @@ export function createIntegrationRegistry<T extends IntegrationRegistration>(
     get: (type: string) => entries.get(type),
     prepare: (type: string, context: IntegrationContext) => {
       const entry = entries.get(type);
-      if (!entry?.prepare) throw new Error('Tipo de integração indisponível.');
+      if (!entry?.prepare) throw new InputError('integration-type-unavailable');
       return entry.prepare(context);
     },
   };
 }
 
 export class IntegrationInvalidatedError extends Error {
+  readonly code = 'integration-changed' as const;
   constructor() {
-    super('A configuração mudou durante a consulta. Atualize novamente.');
+    super('The configuration changed during the query. Refresh and try again.');
   }
 }
 

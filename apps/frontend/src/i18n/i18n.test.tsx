@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from '../App';
@@ -40,10 +42,23 @@ it('formata números conforme o idioma', () => {
 });
 
 it('traduz mensagens conhecidas da API apenas em inglês', () => {
-  expect(apiError('Serviço não encontrado.')).toBe('Service not found.');
-  expect(apiError('Mensagem desconhecida.')).toBe('Mensagem desconhecida.');
+  const body = { code: 'service-not-found', error: 'Service not found.' };
+  expect(apiError(body, 'x')).toBe('Service not found.');
   setLocale('pt-BR');
-  expect(apiError('Serviço não encontrado.')).toBe('Serviço não encontrado.');
+  expect(apiError(body, 'x')).toBe('Serviço não encontrado.');
+  expect(apiError({ code: 'novo', error: 'Mensagem nova.' }, 'x')).toBe('Mensagem nova.');
+  expect(apiError({ code: 'novo' }, 'reserva')).toBe('reserva');
+  expect(apiError(null, 'reserva')).toBe('reserva');
+});
+
+it('tem tradução para todos os códigos de erro do backend', () => {
+  const source = readFileSync(resolve(__dirname, '../../../backend/src/api-error.ts'), 'utf8');
+  const codes = [...source.matchAll(/^ {2}'([a-z-]+)':/gm)].map((match) => match[1]);
+  expect(codes.length).toBeGreaterThan(40);
+  for (const code of codes) {
+    expect(`apiError.${code}` in en, code).toBe(true);
+    expect(`apiError.${code}` in ptBR, code).toBe(true);
+  }
 });
 
 it('lembra a escolha e atualiza o atributo lang do documento', () => {

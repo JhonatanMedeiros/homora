@@ -238,10 +238,11 @@ Marque apenas com a implementação e a validação indicadas.
       edição manual, que é o critério de conclusão do R0.
 - [x] **Ícones por nome** de conjunto open source com licença compatível,
       mantendo emoji e URL própria (ver registro abaixo).
-- [ ] **Inglês e i18n:** interface em inglês por padrão, com pt-BR completo
+- [x] **Inglês e i18n:** interface em inglês por padrão, com pt-BR completo
       (feito, ver registro abaixo); README, instalação e capturas de tela em
       inglês (feito; `README.pt-BR.md` mantém o texto em português);
-      mensagens de erro do backend ainda em português (pendente).
+      a API devolve códigos de erro estáveis, traduzidos pela interface
+      (feito, ver registro abaixo).
 
 **Conclusão:** instalação limpa e importação de uma configuração real do
 Homepage e do Dashy, sem edição manual, em ambiente de teste.
@@ -370,11 +371,15 @@ Homepage e do Dashy, sem edição manual, em ambiente de teste.
   conexões). Os testes existentes fixam pt-BR em `test-setup.ts`; novos testes
   cobrem paridade de chaves e marcadores, plural, formatação, detecção e a
   troca de idioma na interface.
-- Limitação: o backend ainda responde erros em português. A interface traduz
-  as mensagens HTTP conhecidas por uma tabela (`i18n/api-errors.ts`); os erros
-  dos adaptadores aparecem como recebidos. Próximo passo sugerido: a API
-  devolver códigos de erro estáveis e a interface traduzi-los.
-- Validação: `pnpm check` (126 testes Vitest e 4 testes Node) e `pnpm build`
+- Erros da API: toda resposta de erro tem `{ code, error }`, com `code`
+  estável e `error` em inglês (catálogo em `apps/backend/src/api-error.ts`).
+  Adaptadores, Proxmox e validação compartilhada lançam erros com `code`;
+  falhas inesperadas viram um código genérico, sem detalhes internos. A
+  interface traduz por `code` (`apiError`, chaves `apiError.*`) e usa `error`
+  para códigos desconhecidos. Um teste garante tradução em inglês e pt-BR de
+  todos os códigos do backend. Mudança de contrato: clientes que liam o texto
+  em português de `error` passam a receber inglês; use `code`.
+- Validação: `pnpm check` (195 testes Vitest e 4 testes Node) e `pnpm build`
   passaram. Não verificados: a interface em inglês em navegador real (largura,
   quebras de texto), leitor de tela e revisão do inglês por falante nativo.
 
