@@ -1,23 +1,49 @@
 import { Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { locales, useI18n } from '@/i18n';
 
-/** Alterna entre os idiomas disponíveis; o rótulo do botão nomeia o idioma de destino. */
+/** Escolha explícita entre os idiomas disponíveis. */
 export function LocaleSwitcher({ className }: { className?: string }) {
   const { t, locale, setLocale } = useI18n();
-  const next = locales.find((item) => item.id !== locale) ?? locales[0];
+  const current = locales.find((item) => item.id === locale);
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      className={className}
-      lang={next.id}
-      onClick={() => setLocale(next.id)}
-      aria-label={`${t('locale.label')}: ${next.label}`}
-      title={next.label}
-    >
-      <Languages />
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={className}
+          aria-label={`${t('locale.label')}: ${current?.label ?? locale}`}
+          title={`${t('locale.label')}: ${current?.label ?? locale}`}
+        >
+          <Languages />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{t('locale.label')}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={locale}
+          onValueChange={(value) => {
+            const selected = locales.find((item) => item.id === value);
+            if (selected) setLocale(selected.id);
+          }}
+        >
+          {locales.map((item) => (
+            <DropdownMenuRadioItem key={item.id} value={item.id} lang={item.id}>
+              {item.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

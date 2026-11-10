@@ -8,7 +8,6 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
 import { ServiceIcon } from '@/components/service-icon';
-import { iconNames } from '@/lib/icons';
 import { t } from '@/i18n';
 
 type Props = {
@@ -115,18 +114,12 @@ export function ServiceForm({
             <Input
               id="service-icon"
               maxLength={ICON_MAX_LENGTH}
-              list="icon-names"
               autoComplete="off"
               value={value.icon ?? ''}
               onChange={(e) => set({ icon: e.target.value })}
               placeholder={t('form.iconPlaceholder')}
             />
           </div>
-          <datalist id="icon-names">
-            {iconNames.map((name) => (
-              <option key={name} value={`lucide:${name}`} />
-            ))}
-          </datalist>
           <IconPicker value={value.icon ?? ''} onChange={(icon) => set({ icon })} />
         </Field>
         <Field orientation="horizontal" className="items-start sm:col-span-2">

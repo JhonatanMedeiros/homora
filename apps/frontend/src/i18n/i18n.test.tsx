@@ -11,6 +11,7 @@ import { ptBR } from './pt-br';
 beforeEach(() => setLocale('en'));
 afterEach(() => {
   cleanup();
+  window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
   setLocale('pt-BR');
 });
@@ -81,7 +82,14 @@ it('mostra a interface em inglês e troca para português sem recarregar', async
   );
   render(<App />);
   expect(await screen.findByText('Your dashboard is empty')).toBeTruthy();
-  fireEvent.click(screen.getAllByRole('button', { name: /Language: Português/ })[0]);
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Language: English' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  expect(screen.getByRole('menuitemradio', { name: 'English' }).getAttribute('aria-checked')).toBe(
+    'true',
+  );
+  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Português (Brasil)' }));
   expect(await screen.findByText('Seu painel está vazio')).toBeTruthy();
   expect(getLocale()).toBe('pt-BR');
 });

@@ -5,6 +5,7 @@ import { App } from './App';
 
 afterEach(() => {
   cleanup();
+  window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
 });
 it('apresenta serviços, filtra e envia um novo cadastro', async () => {
@@ -40,6 +41,12 @@ it('apresenta serviços, filtra e envia um novo cadastro', async () => {
   fireEvent.change(within(dialog).getByLabelText('Categoria'), {
     target: { value: 'Infraestrutura' },
   });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Escolher ícone' }));
+  fireEvent.change(screen.getByPlaceholderText('Buscar ícones pelo nome'), {
+    target: { value: 'film' },
+  });
+  fireEvent.click(screen.getByRole('option', { name: 'film' }));
+  expect((within(dialog).getByLabelText(/Ícone/) as HTMLInputElement).value).toBe('lucide:film');
   fireEvent.click(within(dialog).getByRole('button', { name: 'Salvar serviço' }));
   await waitFor(() =>
     expect(fetchMock).toHaveBeenCalledWith(
@@ -205,7 +212,7 @@ it('edita um serviço existente no formulário da página', async () => {
     }),
   );
   fireEvent.click(screen.getByRole('button', { name: 'Editar Jellyfin' }));
-  expect(screen.getByRole('dialog', { name: 'Editar serviço' })).toBeTruthy();
+  expect(await screen.findByRole('dialog', { name: 'Editar serviço' })).toBeTruthy();
   const form = screen.getByRole('form', { name: 'Editar serviço' });
   expect((within(form).getByLabelText('Nome') as HTMLInputElement).value).toBe('Jellyfin');
   fireEvent.change(within(form).getByLabelText('Nome'), { target: { value: 'Jellyfin 2' } });
@@ -574,6 +581,7 @@ it('abre a gestão de serviços diretamente e retorna ao painel', async () => {
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
+  expect(window.location.pathname).toBe('/manage/services');
   expect(screen.getByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
   const navigation = screen.getByRole('navigation', { name: 'Gerenciamento' });
   expect(
@@ -584,4 +592,80 @@ it('abre a gestão de serviços diretamente e retorna ao painel', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
   expect(screen.getByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
   expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
+});
+
+it('abre uma rota de gerenciamento diretamente e responde ao histórico', async () => {
+  window.history.replaceState(null, '', '/manage/integrations');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/proxmox/status')
+        return { ok: true, json: async () => ({ configured: false }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Integrações' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Agentes' }));
+  expect(window.location.pathname).toBe('/manage/agents');
+  window.history.replaceState(null, '', '/');
+  fireEvent.popState(window);
+  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  window.history.replaceState(null, '', '/manage/services');
+  fireEvent.popState(window);
+  expect(await screen.findByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
+});
+
+it('encaminha ao login e retorna à rota protegida após autenticar', async () => {
+  window.history.replaceState(null, '', '/manage/agents');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: false }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('button', { name: 'Entrar' });
+  expect(window.location.pathname).toBe('/login');
+  expect(new URLSearchParams(window.location.search).get('returnTo')).toBe('/manage/agents');
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-teste' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/agents'));
+});
+
+it('rejeita redirecionamento externo após o login', async () => {
+  window.history.replaceState(null, '', '/login?returnTo=%2F%2Fexample.com');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  expect(window.location.pathname).toBe('/');
+});
+
+it('mostra erro para páginas desconhecidas e serviço ausente', async () => {
+  window.history.replaceState(null, '', '/manage/nao-existe');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  const view = render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeTruthy();
+  view.unmount();
+  window.history.replaceState(null, '', '/manage/services/99/edit');
+  render(<App />);
+  expect(await screen.findByText('Serviço não encontrado.')).toBeTruthy();
 });

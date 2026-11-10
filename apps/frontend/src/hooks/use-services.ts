@@ -12,6 +12,7 @@ export function useServices() {
   const [groupRows, setGroupRows] = useState<ServiceGroup[]>([]);
   const [statuses, setStatuses] = useState<Record<number, ServiceStatus>>({});
   const [loadError, setLoadError] = useState('');
+  const [loaded, setLoaded] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -36,6 +37,7 @@ export function useServices() {
       .then((data) => {
         if (active) {
           setServices(data);
+          setLoaded(true);
           setLoadError('');
         }
       })
@@ -157,6 +159,7 @@ export function useServices() {
 
   return {
     services,
+    loaded,
     groupRows,
     statuses,
     loadError,

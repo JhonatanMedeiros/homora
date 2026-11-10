@@ -1,7 +1,17 @@
-import { t } from '@/i18n';
+import { useState } from 'react';
+import { Check, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const icons = ['🎬', '🏠', '☁️', '🔒', '🎵', '📚', '🖥️', '🌐', '📷', '⚙️'];
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { iconNames, iconRegistry } from '@/lib/icons';
+import { t } from '@/i18n';
 
 export function IconPicker({
   value,
@@ -10,21 +20,42 @@ export function IconPicker({
   value: string;
   onChange: (icon: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-wrap gap-1" role="group" aria-label={t('icon.suggestions')}>
-      {icons.map((icon) => (
-        <Button
-          key={icon}
-          type="button"
-          variant={value === icon ? 'secondary' : 'outline'}
-          size="icon"
-          aria-label={t('icon.use', { icon })}
-          aria-pressed={value === icon}
-          onClick={() => onChange(icon)}
-        >
-          {icon}
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline">
+          <Search data-icon="inline-start" />
+          {t('icon.browse')}
         </Button>
-      ))}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-0">
+        <Command label={t('icon.search')}>
+          <CommandInput placeholder={t('icon.search')} aria-label={t('icon.search')} />
+          <CommandList>
+            <CommandEmpty>{t('icon.empty')}</CommandEmpty>
+            <CommandGroup heading={t('icon.available')}>
+              {iconNames.map((name) => {
+                const Icon = iconRegistry[name];
+                return (
+                  <CommandItem
+                    key={name}
+                    value={name}
+                    onSelect={() => {
+                      onChange(`lucide:${name}`);
+                      setOpen(false);
+                    }}
+                  >
+                    <Icon aria-hidden="true" />
+                    <span className="flex-1">{name}</span>
+                    {value === `lucide:${name}` && <Check aria-label={t('icon.selected')} />}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

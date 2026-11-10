@@ -1,5 +1,9 @@
 /** Textos do shell, da autenticação e da tela de serviços. */
 export const en = {
+  'route.notFound': 'Page not found',
+  'route.home': 'Go to dashboard',
+  'route.serviceNotFound': 'Service not found.',
+  'route.services': 'Back to services',
   'home.title': 'Everything in its place.',
   'home.description': 'Your services, ready whenever you need them.',
   'manage.title': 'Management',
@@ -26,6 +30,11 @@ export const en = {
   'quick.hint': 'Quick access · use arrow keys to navigate',
   'quick.results': 'Quick results',
   'quick.unmonitored': 'Not monitored',
+  'icon.browse': 'Choose icon',
+  'icon.search': 'Search icons by name',
+  'icon.empty': 'No icons found.',
+  'icon.available': 'Available icons',
+  'icon.selected': 'Selected',
   'icon.suggestions': 'Icon suggestions',
   'icon.use': 'Use icon {icon}',
   'common.cancel': 'Cancel',
@@ -139,6 +148,10 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
+  'route.notFound': 'Página não encontrada',
+  'route.home': 'Ir para o painel',
+  'route.serviceNotFound': 'Serviço não encontrado.',
+  'route.services': 'Voltar para serviços',
   'home.title': 'Tudo em seu lugar.',
   'home.description': 'Seus serviços, prontos para abrir quando precisar.',
   'manage.title': 'Gerenciamento',
@@ -164,6 +177,11 @@ export const ptBR: Record<keyof typeof en, string> = {
   'quick.hint': 'Acesso rápido · use as setas para navegar',
   'quick.results': 'Resultados rápidos',
   'quick.unmonitored': 'Sem monitoramento',
+  'icon.browse': 'Escolher ícone',
+  'icon.search': 'Buscar ícones pelo nome',
+  'icon.empty': 'Nenhum ícone encontrado.',
+  'icon.available': 'Ícones disponíveis',
+  'icon.selected': 'Selecionado',
   'icon.suggestions': 'Sugestões de ícone',
   'icon.use': 'Usar ícone {icon}',
   'common.cancel': 'Cancelar',

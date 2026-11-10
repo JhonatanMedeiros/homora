@@ -28,13 +28,23 @@ import { emptyService } from '@/lib/services';
 type Props = {
   query: string;
   managing: boolean;
+  formRoute: 'new' | number | null;
+  navigate: (path: string, replace?: boolean) => void;
   onManage: () => void;
   data: ReturnType<typeof useServices>;
   /** A busca abre o primeiro resultado com Enter; a página registra aqui como fazê-lo. */
   openFirstRef: MutableRefObject<(() => void) | null>;
 };
 
-export function ServicesPage({ query, data, openFirstRef, managing, onManage }: Props) {
+export function ServicesPage({
+  query,
+  data,
+  openFirstRef,
+  managing,
+  onManage,
+  formRoute,
+  navigate,
+}: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const [compact, setCompact] = useState(() => {
     try {
@@ -65,6 +75,7 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
   const [groupDraft, setGroupDraft] = useState('');
   const [groupError, setGroupError] = useState('');
   const flashTimer = useRef<number | undefined>(undefined);
+  const initializedRoute = useRef<'new' | number | null>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
 
@@ -109,6 +120,7 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
     else addButton.current?.focus();
   }
   function openForm(service?: Service) {
+    navigate(service ? `/manage/services/${service.id}/edit` : '/manage/services/new');
     setConfirming(null);
     setEditing(service?.id ?? null);
     setForm(
@@ -129,7 +141,43 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
   }
   function closeForm() {
     setFormOpen(false);
+    navigate('/manage/services', true);
   }
+  useEffect(() => {
+    if (formRoute === null) {
+      initializedRoute.current = null;
+      // Synchronize the controlled dialog with browser history.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormOpen(false);
+      return;
+    }
+    const service =
+      typeof formRoute === 'number' ? services.find((item) => item.id === formRoute) : undefined;
+    if (initializedRoute.current === formRoute) return;
+    if (typeof formRoute === 'number' && !service) {
+      setFormOpen(false);
+      return;
+    }
+    initializedRoute.current = formRoute;
+    // Initialize the draft once per route after service data arrives.
+    setEditing(service?.id ?? null);
+    setForm(
+      service
+        ? {
+            name: service.name,
+            url: service.url,
+            category: service.category,
+            description: service.description,
+            icon: service.icon ?? '',
+            position: service.position ?? 0,
+            allowPrivate: service.allowPrivate === true,
+          }
+        : emptyService,
+    );
+    setFormError('');
+    setFormOpen(true);
+  }, [formRoute, services]);
+
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
@@ -285,6 +333,22 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
         />
       )}
       <FormError>{groupError}</FormError>
+      {typeof formRoute === 'number' &&
+        data.loaded &&
+        !services.some((item) => item.id === formRoute) && (
+          <Alert>
+            <AlertDescription>
+              {t('route.serviceNotFound')}{' '}
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => navigate('/manage/services', true)}
+              >
+                {t('route.services')}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
       <Dialog
         open={formOpen}
         onOpenChange={(open) => {

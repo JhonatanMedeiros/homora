@@ -1,9 +1,20 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+  matchRoutes,
+} from 'react-router';
 import { AppShell } from '@/components/app-shell';
 import { SearchField } from '@/components/search-field';
 import { QuickResults } from '@/components/quick-results';
 import type { Tab } from '@/components/app-nav';
-import { useI18n } from '@/i18n';
+import { t, useI18n } from '@/i18n';
+import { Button } from '@/components/ui/button';
 import { SettingsPage } from '@/pages/settings-page';
 import { useAuth } from '@/hooks/use-auth';
 import { useServices } from '@/hooks/use-services';
@@ -12,10 +23,44 @@ import { AuthPage } from '@/pages/auth-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
 import { ServicesPage } from '@/pages/services-page';
 
-function Dashboard({ onLogout }: { onLogout: () => void }) {
-  const [tab, setTab] = useState<Tab>('services');
+type DashboardRoute = { tab: Tab; managing: boolean; form: 'new' | number | null; valid: boolean };
+const validPaths = [
+  '/',
+  '/manage',
+  '/manage/services',
+  '/manage/services/new',
+  '/manage/services/:id/edit',
+  '/manage/integrations',
+  '/manage/agents',
+  '/manage/settings',
+].map((path) => ({ path }));
+function validDestination(path: string) {
+  return (
+    path.startsWith('/') &&
+    !path.startsWith('//') &&
+    !path.includes('?') &&
+    !path.includes('#') &&
+    Boolean(matchRoutes(validPaths, path))
+  );
+}
+
+function Dashboard({
+  onLogout,
+  tab,
+  managing,
+  form = null,
+  valid = true,
+}: {
+  onLogout: () => void;
+  tab: Tab;
+  managing: boolean;
+  form?: 'new' | number | null;
+  valid?: boolean;
+}) {
+  const routerNavigate = useNavigate();
+  const navigate = (path: string, replace = false) => routerNavigate(path, { replace });
+  const route: DashboardRoute = { tab, managing, form, valid };
   const [query, setQuery] = useState('');
-  const [managing, setManaging] = useState(false);
   const data = useServices();
   const search = useRef<HTMLInputElement>(null);
   const openFirst = useRef<(() => void) | null>(null);
@@ -40,12 +85,10 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       tab={tab}
       managing={managing}
       onManageChange={(value) => {
-        setManaging(value);
-        setTab('services');
-        setQuery('');
+        navigate(value ? '/manage/services' : '/');
       }}
       onTabChange={(next) => {
-        setTab(next);
+        navigate(`/manage/${next}`);
       }}
       onLogout={onLogout}
       toolbar={
@@ -55,7 +98,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
-              setTab('services');
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') openFirst.current?.();
@@ -79,17 +121,28 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         </div>
       }
     >
-      {tab === 'services' && (
-        <ServicesPage
-          key={String(managing)}
-          query={query}
-          data={data}
-          openFirstRef={openFirst}
-          managing={managing}
-          onManage={() => {
-            setManaging(true);
-          }}
-        />
+      {!route.valid ? (
+        <section>
+          <h1 className="text-3xl">{t('route.notFound')}</h1>
+          <Button className="mt-4" onClick={() => navigate('/')}>
+            {t('route.home')}
+          </Button>
+        </section>
+      ) : (
+        tab === 'services' && (
+          <ServicesPage
+            key={String(managing)}
+            query={query}
+            data={data}
+            openFirstRef={openFirst}
+            managing={managing}
+            formRoute={route.form}
+            navigate={navigate}
+            onManage={() => {
+              navigate('/manage/services');
+            }}
+          />
+        )
       )}
       {managing && tab === 'integrations' && <IntegrationsPage />}
       {managing && tab === 'settings' && <SettingsPage onImported={data.refresh} />}
@@ -98,16 +151,79 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-export function App() {
+function EditServiceRoute({ onLogout }: { onLogout: () => void }) {
+  const { id } = useParams();
+  const number = Number(id);
+  if (!id || !/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(number))
+    return <Dashboard onLogout={onLogout} tab="services" managing={false} valid={false} />;
+  return <Dashboard onLogout={onLogout} tab="services" managing form={number} />;
+}
+
+function AppRoutes() {
   const { status, error, submit, logout } = useAuth();
   const { locale } = useI18n();
+  const location = useLocation();
+  const onLogout = () => void logout();
+  if (!status) return <AuthPage status={status} error={error} onSubmit={submit} />;
+  if (!status.authenticated) {
+    if (location.pathname !== '/login')
+      return (
+        <Navigate
+          replace
+          to={`/login?returnTo=${encodeURIComponent(validDestination(location.pathname) ? location.pathname : '/')}`}
+        />
+      );
+    return <AuthPage status={status} error={error} onSubmit={submit} />;
+  }
+  if (location.pathname === '/login') {
+    const destination = new URLSearchParams(location.search).get('returnTo') ?? '/';
+    return <Navigate replace to={validDestination(destination) ? destination : '/'} />;
+  }
   return (
     <Fragment key={locale}>
-      {status?.authenticated ? (
-        <Dashboard onLogout={() => void logout()} />
-      ) : (
-        <AuthPage status={status} error={error} onSubmit={submit} />
-      )}
+      <Routes>
+        <Route
+          path="/"
+          element={<Dashboard onLogout={onLogout} tab="services" managing={false} />}
+        />
+        <Route path="/manage" element={<Navigate replace to="/manage/services" />} />
+        <Route
+          path="/manage/services"
+          element={<Dashboard onLogout={onLogout} tab="services" managing />}
+        />
+        <Route
+          path="/manage/services/new"
+          element={<Dashboard onLogout={onLogout} tab="services" managing form="new" />}
+        />
+        <Route
+          path="/manage/services/:id/edit"
+          element={<EditServiceRoute onLogout={onLogout} />}
+        />
+        <Route
+          path="/manage/integrations"
+          element={<Dashboard onLogout={onLogout} tab="integrations" managing />}
+        />
+        <Route
+          path="/manage/agents"
+          element={<Dashboard onLogout={onLogout} tab="agents" managing />}
+        />
+        <Route
+          path="/manage/settings"
+          element={<Dashboard onLogout={onLogout} tab="settings" managing />}
+        />
+        <Route
+          path="*"
+          element={<Dashboard onLogout={onLogout} tab="services" managing={false} valid={false} />}
+        />
+      </Routes>
     </Fragment>
+  );
+}
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
