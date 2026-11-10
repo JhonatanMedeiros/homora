@@ -7,3 +7,13 @@ pnpm-lock.yaml
 packages/db/migrations
 propostas
 coverage
+# Skills de agentes instaladas por ferramentas externas
+.agent
+.agents
+.claude
+.codex
+.hermes
+.github/skills
+.github/agents
+.impeccable
+skills-lock.json
