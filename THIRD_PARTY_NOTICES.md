@@ -8,7 +8,7 @@ correspondente em `node_modules`.
 
 | Licença      | Pacotes                                                                     |
 | ------------ | --------------------------------------------------------------------------- |
-| MIT e ISC    | A grande maioria das dependências.                                          |
+| MIT e ISC    | A grande maioria das dependências, incluindo `yaml` (ISC).                  |
 | Apache-2.0   | `class-variance-authority`, `detect-libc`, `drizzle-orm`                    |
 | BSD-3-Clause | `fast-uri`, `light-my-request`, `qs`, `secure-json-parse`, `source-map-js`  |
 | BSD-2-Clause | `json-schema-typed`                                                         |

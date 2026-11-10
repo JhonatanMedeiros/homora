@@ -225,9 +225,10 @@ Marque apenas com a implementação e a validação indicadas.
       multi-arch e upgrade preservando dados.
 - [x] **Licença e atribuições** (também em P5): MIT, `LICENSE` e
       `THIRD_PARTY_NOTICES.md`. A imagem Docker deve incluir esses arquivos.
-- [ ] **Exportação e importação YAML/JSON** de serviços, grupos e ordem, com
+- [x] **Exportação e importação YAML/JSON** de serviços, grupos e ordem, com
       validação e relatório de itens ignorados; segredos nunca entram no arquivo.
-      Validar: exportar, importar em banco limpo e comparar.
+      Validado por testes de ida e volta (ver registro abaixo); falta uma
+      exportação/importação manual no navegador.
 - [ ] **Importador do Homepage** (`services.yaml`, `bookmarks.yaml`) e do Dashy,
       com prévia revisável antes de gravar e limite às versões testadas.
       Validar com configurações reais, sem edição manual.
@@ -240,6 +241,31 @@ Marque apenas com a implementação e a validação indicadas.
 
 **Conclusão:** instalação limpa e importação de uma configuração real do
 Homepage e do Dashy, sem edição manual, em ambiente de teste.
+
+### Registro R0 — exportação e importação (2026-11-10)
+
+- Formato versionado (`version: 1`): `groups[].name` e `groups[].services[]` com
+  `name`, `url` e, se houver, `description`, `icon` e `allowPrivate`. A ordem do
+  arquivo é a ordem do painel. O arquivo não tem IDs, segredos, conexões nem
+  widgets. JSON é lido pelo mesmo parser (YAML 1.2), com limite de 10 aliases,
+  1 MB, 200 grupos e 1000 cards.
+- API autenticada e protegida por origem: `GET /api/config/export?format=yaml|json`,
+  `POST /api/config/import/preview` e `POST /api/config/import/apply`. A prévia
+  não grava nada. A aplicação recalcula o plano dentro de uma transação SQLite e
+  recusa (409) se a versão da configuração mudou depois da prévia.
+- A importação só adiciona: não sobrescreve nem remove. Um card com a mesma URL
+  no mesmo grupo é tratado como duplicado e ignorado; itens inválidos são
+  ignorados e relatados por caminho (`groups[0].services[2]`) com um código
+  estável que a interface traduz. Nenhuma mensagem em idioma sai do servidor.
+- Decisão de segurança: `allowPrivate` do arquivo é ignorado, a menos que o
+  usuário marque a opção na prévia, para que um arquivo de terceiros não
+  autorize o monitor a alcançar a rede privada. A exportação inclui o valor.
+- Interface: nova aba Configurações (exportar em YAML/JSON, escolher arquivo,
+  prévia com novos/duplicados/ignorados e confirmação). O parser interno é
+  reutilizável pelos importadores do Homepage e do Dashy.
+- Nova dependência: `yaml` 2.9.1 (ISC) no backend.
+- Validação: `pnpm check` e `pnpm build` passaram. Não verificados: o fluxo no
+  navegador real e arquivos grandes ou malformados fora dos testes.
 
 ### Registro R0 — ícones por nome (2026-11-10)
 

@@ -11,6 +11,7 @@ import { createServiceConfiguration } from './service-configuration.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
 import { registerProxmoxRoutes } from './routes/proxmox.js';
+import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -61,6 +62,7 @@ export function createApp(
   registerProxmoxRoutes(app, vault);
   registerAgentProposalRoutes(app, proposals);
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
+  registerConfigTransferRoutes(app, configuration, serviceMonitor);
 
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'Não encontrado.' }));
   return app;

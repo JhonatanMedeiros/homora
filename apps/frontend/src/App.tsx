@@ -8,6 +8,7 @@ import { useServices } from '@/hooks/use-services';
 import { Agents } from '@/features/agents/agents';
 import { AuthPage } from '@/pages/auth-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
+import { SettingsPage } from '@/pages/settings-page';
 import { ServicesPage } from '@/pages/services-page';
 
 function Dashboard({ onLogout }: { onLogout: () => void }) {
@@ -54,6 +55,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     >
       {tab === 'services' && <ServicesPage query={query} data={data} openFirstRef={openFirst} />}
       {tab === 'integrations' && <IntegrationsPage />}
+      {tab === 'settings' && <SettingsPage onImported={data.refresh} />}
       {tab === 'agents' && <Agents services={data.services} onApplied={data.refresh} />}
     </AppShell>
   );

@@ -38,6 +38,8 @@ const english: Record<string, string> = {
     'Remove the linked widgets before deleting the integration.',
   'Serviço não encontrado.': 'Service not found.',
   'Widget não encontrado.': 'Widget not found.',
+  'A configuração mudou. Revise a prévia novamente.':
+    'The configuration changed. Review the preview again.',
   'Informe nome e tipo válidos.': 'Provide a valid name and type.',
   'Informe um token válido.': 'Provide a valid token.',
   'Informe uma URL válida.': 'Provide a valid URL.',

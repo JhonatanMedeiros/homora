@@ -32,6 +32,103 @@ afterEach(async () => {
     });
 });
 describe('API de serviços', () => {
+  it('exporta, pré-visualiza e importa configuração sem sobrescrever nada', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const post = (url: string, payload: unknown) =>
+      app.inject({ method: 'POST', url, headers, payload: payload as object });
+    for (const [name, category] of [
+      ['Jellyfin', 'Mídia'],
+      ['Proxmox', 'Infra'],
+    ])
+      await post('/api/services', {
+        name,
+        url: `http://localhost/${name}`,
+        category,
+        icon: 'lucide:server',
+        allowPrivate: true,
+      });
+    expect((await app.inject({ method: 'GET', url: '/api/config/export' })).statusCode).toBe(401);
+    const exported = await app.inject({
+      method: 'GET',
+      url: '/api/config/export?format=yaml',
+      headers: { cookie },
+    });
+    expect(exported.statusCode).toBe(200);
+    expect(exported.headers['content-disposition']).toContain('homora-config.yaml');
+    expect(exported.body).toContain('lucide:server');
+    expect(exported.body).not.toContain('"id"');
+
+    const preview = await post('/api/config/import/preview', { content: exported.body });
+    expect(preview.json().plan.summary).toMatchObject({ newServices: 0, duplicates: 2 });
+    const applied = await post('/api/config/import/apply', {
+      content: exported.body,
+      expectedVersion: preview.json().version,
+    });
+    expect(applied.statusCode).toBe(200);
+    expect(applied.json().created).toBe(0);
+
+    const fresh = `version: 1
+groups:
+  - name: Casa
+    services:
+      - { name: Pi-hole, url: "http://192.168.1.2/admin", allowPrivate: true }
+      - { name: Quebrado, url: "nada" }
+`;
+    const plan = await post('/api/config/import/preview', { content: fresh });
+    expect(plan.json().plan.summary).toMatchObject({ newGroups: 1, newServices: 1, errors: 1 });
+    const stale = await post('/api/config/import/apply', {
+      content: fresh,
+      expectedVersion: plan.json().version - 1,
+    });
+    expect(stale.statusCode).toBe(409);
+    const done = await post('/api/config/import/apply', {
+      content: fresh,
+      expectedVersion: plan.json().version,
+    });
+    expect(done.json().created).toBe(1);
+    const list = (
+      await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })
+    ).json() as { name: string; category: string; allowPrivate: boolean }[];
+    const imported = list.find((item) => item.name === 'Pi-hole');
+    expect(imported).toMatchObject({ category: 'Casa', allowPrivate: false });
+    expect(list.find((item) => item.name === 'Jellyfin')?.allowPrivate).toBe(true);
+    const kept = await post('/api/config/import/apply', {
+      content: fresh.replace('Pi-hole', 'Pi-hole 2').replace('/admin', '/outro'),
+      keepPrivate: true,
+    });
+    expect(kept.json().created).toBe(1);
+    expect(
+      (
+        (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json() as {
+          name: string;
+          allowPrivate: boolean;
+        }[]
+      ).find((item) => item.name === 'Pi-hole 2')?.allowPrivate,
+    ).toBe(true);
+  });
+
+  it('recusa importação sem origem permitida e com corpo inválido', async () => {
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/api/config/import/preview',
+          headers: { cookie },
+          payload: { content: 'x' },
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/api/config/import/apply',
+          headers: { origin: 'http://localhost:5173', cookie },
+          payload: { content: 'x', extra: true },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
   it('persiste ícones por nome e por URL e descarta valores inválidos', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const create = async (icon: string) =>
