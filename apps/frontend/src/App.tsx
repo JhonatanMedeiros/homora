@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { Service, ServiceInput } from '@homora/shared';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 import { IntegrationCatalog } from './IntegrationCatalog';
 import { Proxmox } from './Proxmox';
 import { Connections } from './Connections';
+import { Agents } from './Agents';
 
 const empty: ServiceInput = {
   name: '',
@@ -13,7 +14,7 @@ const empty: ServiceInput = {
   allowPrivate: false,
 };
 type ServiceGroup = { id: number; name: string; position: number };
-type Tab = 'services' | 'integrations' | 'proposals';
+type Tab = 'services' | 'integrations' | 'agents';
 type ServiceStatus = {
   status: 'available' | 'unavailable' | 'unknown';
   lastAttempt: string | null;
@@ -25,6 +26,20 @@ function hostOf(url: string) {
   } catch {
     return url;
   }
+}
+
+// Endereços que a política de rede do monitor só consulta com autorização explícita.
+function isPrivateHost(url: string) {
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  } catch {
+    return false;
+  }
+  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.lan')) return true;
+  if (/^(10|127)\./.test(host) || /^192\.168\./.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host) || /^169\.254\./.test(host)) return true;
+  return host === '::1' || /^f[cd][0-9a-f]{2}:/.test(host) || /^fe80:/.test(host);
 }
 
 function toggleTheme() {
@@ -58,59 +73,16 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>('services');
   const [menu, setMenu] = useState<number | null>(null);
   const [confirming, setConfirming] = useState<number | null>(null);
-  const [proposals, setProposals] = useState<
-    { id: string; diff: string; expiresAt: number; state: string; author: string }[]
-  >([]);
-  const [agentName, setAgentName] = useState('');
-  const [agentScopes, setAgentScopes] = useState<string[]>(['services:read', 'proposals:create']);
-  const [newAgentToken, setNewAgentToken] = useState('');
-  const [agents, setAgents] = useState<
-    { id: string; name: string; scopes: string; revokedAt: number | null }[]
-  >([]);
-  async function loadAgents() {
-    const r = await fetch('/api/agents');
-    if (r.ok) setAgents(await r.json());
+  const [organizing, setOrganizing] = useState(false);
+  const [dragging, setDragging] = useState<number | null>(null);
+  const [flash, setFlash] = useState('');
+  const flashTimer = useRef<number | undefined>(undefined);
+  function announce(text: string) {
+    setFlash(text);
+    window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(''), 5000);
   }
-  async function loadProposals() {
-    const r = await fetch('/api/proposals');
-    if (r.ok) setProposals(await r.json());
-  }
-  async function reviewProposal(id: string, approve: boolean) {
-    const r = await fetch(`/api/proposals/${id}/review`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approve }),
-    });
-    if (r.ok) {
-      await loadProposals();
-      await refresh();
-    } else setMessage('A proposta expirou ou a configuração mudou.');
-  }
-  async function createAgent() {
-    const r = await fetch('/api/agents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: agentName, scopes: agentScopes }),
-    });
-    if (r.ok) {
-      const result = await r.json();
-      setNewAgentToken(result.token);
-      setAgentName('');
-      await loadAgents();
-    }
-  }
-  async function rotateAgent(id: string) {
-    const r = await fetch(`/api/agents/${id}/rotate`, { method: 'POST' });
-    if (r.ok) {
-      const result = await r.json();
-      setNewAgentToken(result.token);
-      await loadAgents();
-    }
-  }
-  async function revokeAgent(id: string) {
-    const r = await fetch(`/api/agents/${id}/revoke`, { method: 'POST' });
-    if (r.ok) await loadAgents();
-  }
+  useEffect(() => () => window.clearTimeout(flashTimer.current), []);
   const formRef = useRef<HTMLFormElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
@@ -282,9 +254,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       );
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw Error(data.error);
+      const wasNew = editing === null;
       closeForm();
       setSelected(null);
       await refresh();
+      announce(wasNew ? 'Serviço adicionado.' : 'Alterações salvas.');
     } catch (e) {
       setError(e instanceof Error && e.message ? e.message : 'Não foi possível salvar.');
     } finally {
@@ -303,6 +277,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       setSelected(null);
       setMenu(null);
       await refresh();
+      announce('Serviço removido.');
     } catch {
       setMessage('Não foi possível remover o serviço.');
     }
@@ -375,16 +350,17 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       setGroupError(error instanceof Error ? error.message : 'Não foi possível remover o grupo.');
     }
   }
-  async function moveService(service: Service, direction: -1 | 1) {
-    const ordered = services
-      .filter((item) => item.category === service.category)
+  const sortedIn = (category: string) =>
+    services
+      .filter((item) => item.category === category)
       .sort(
         (a, b) => (a.position ?? 0) - (b.position ?? 0) || a.name.localeCompare(b.name, 'pt-BR'),
       );
-    const from = ordered.findIndex((item) => item.id === service.id),
-      to = from + direction;
-    if (to < 0 || to >= ordered.length) return;
-    [ordered[from], ordered[to]] = [ordered[to], ordered[from]];
+  async function placeService(service: Service, to: number) {
+    const ordered = sortedIn(service.category);
+    const from = ordered.findIndex((item) => item.id === service.id);
+    if (from < 0 || to < 0 || to >= ordered.length || to === from) return;
+    ordered.splice(to, 0, ordered.splice(from, 1)[0]);
     setServices((items) =>
       items.map((item) => {
         const index = ordered.findIndex((entry) => entry.id === item.id);
@@ -403,6 +379,66 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       void refresh();
     }
   }
+  function moveService(service: Service, direction: -1 | 1) {
+    const ordered = sortedIn(service.category);
+    return placeService(service, ordered.findIndex((item) => item.id === service.id) + direction);
+  }
+  const total = services.length;
+  const blockedIds = new Set(
+    services.filter((s) => s.allowPrivate !== true && isPrivateHost(s.url)).map((s) => s.id),
+  );
+  const online = services.filter((s) => serviceStatuses[s.id]?.status === 'available').length;
+  const down = services.filter(
+    (s) => serviceStatuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id),
+  ).length;
+  const blocked = services.filter(
+    (s) => blockedIds.has(s.id) && serviceStatuses[s.id]?.status !== 'available',
+  ).length;
+  const monitored = total - blocked;
+  const healthParts = [
+    down
+      ? `${online} no ar e ${down} fora do ar`
+      : online > 0
+        ? online === monitored
+          ? 'Tudo no ar por aqui'
+          : `${online} no ar`
+        : '',
+    blocked ? `${blocked} sem monitoramento (rede privada não autorizada)` : '',
+  ].filter(Boolean);
+  const healthSummary =
+    Object.keys(serviceStatuses).length && healthParts.length
+      ? `. ${healthParts.join('. ')}.`
+      : '.';
+  const navItems: { id: Tab; label: string; icon: IconName }[] = [
+    { id: 'services', label: 'Serviços', icon: 'grid' },
+    { id: 'integrations', label: 'Integrações', icon: 'server' },
+    { id: 'agents', label: 'Agentes', icon: 'agent' },
+  ];
+  const renderNav = (className: string, label: string, withIcons: boolean) => (
+    <nav className={className} aria-label={label}>
+      {navItems.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          aria-current={tab === item.id ? 'page' : undefined}
+          onClick={() => setTab(item.id)}
+        >
+          {withIcons && <Icon name={item.icon} />}
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+  function statusLabel(id: number) {
+    if (blockedIds.has(id) && serviceStatuses[id]?.status !== 'available')
+      return 'Monitoramento bloqueado';
+    const status = serviceStatuses[id]?.status;
+    return status === 'available'
+      ? 'Disponível'
+      : status === 'unavailable'
+        ? 'Indisponível'
+        : 'Sem informação';
+  }
   return (
     <div className="shell" data-tab={tab}>
       <header className="top">
@@ -411,33 +447,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <Icon name="mark" />
             <span>Homora</span>
           </a>
-          <nav className="desktop-nav" aria-label="Navegação principal">
-            <button
-              type="button"
-              aria-current={tab === 'services' ? 'page' : undefined}
-              onClick={() => setTab('services')}
-            >
-              Serviços
-            </button>
-            <button
-              type="button"
-              aria-current={tab === 'integrations' ? 'page' : undefined}
-              onClick={() => setTab('integrations')}
-            >
-              Integrações
-            </button>
-            <button
-              type="button"
-              aria-current={tab === 'proposals' ? 'page' : undefined}
-              onClick={() => {
-                setTab('proposals');
-                void loadProposals();
-                void loadAgents();
-              }}
-            >
-              Agentes
-            </button>
-          </nav>
+          {renderNav('desktop-nav', 'Navegação principal', false)}
           <button type="button" className="ibtn" onClick={toggleTheme} aria-label="Alternar tema">
             <Icon name="contrast" />
           </button>
@@ -473,41 +483,67 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <div>
               <h1>Seus serviços</h1>
               <p className="lede">
-                {services.length
-                  ? `${services.length} ${services.length === 1 ? 'serviço' : 'serviços'} em ${categories.length} ${categories.length === 1 ? 'grupo' : 'grupos'}.`
-                  : 'Nenhum serviço cadastrado ainda.'}
+                {total
+                  ? `${total} ${total === 1 ? 'serviço' : 'serviços'} em ${categories.length} ${categories.length === 1 ? 'grupo' : 'grupos'}${healthSummary}`
+                  : 'Reúna aqui os serviços da sua casa e abra qualquer um com um clique.'}
               </p>
             </div>
-            <button
-              ref={addButton}
-              type="button"
-              className="btn primary"
-              onClick={() => openForm()}
-            >
-              <Icon name="plus" />
-              Adicionar serviço
-            </button>
-          </div>
-          {editingGroup === null && (
-            <form className="group-create" onSubmit={(event) => void saveGroup(event)}>
-              <label htmlFor="new-group">Novo grupo</label>
-              <input
-                id="new-group"
-                data-group-input
-                value={groupDraft}
-                onChange={(event) => setGroupDraft(event.target.value)}
-                maxLength={40}
-                placeholder="Ex.: Casa"
-              />
+            <div className="title-actions">
               <button
-                data-group-add
-                type="submit"
-                className="btn small"
-                disabled={!groupDraft.trim()}
+                type="button"
+                className="btn"
+                aria-pressed={organizing}
+                onClick={() => {
+                  setOrganizing(!organizing);
+                  setMenu(null);
+                  setConfirming(null);
+                }}
               >
-                Criar grupo
+                <Icon name="sliders" />
+                {organizing ? 'Concluir' : 'Organizar'}
               </button>
-            </form>
+              <button
+                ref={addButton}
+                type="button"
+                className="btn primary"
+                onClick={() => openForm()}
+              >
+                <Icon name="plus" />
+                Adicionar serviço
+              </button>
+            </div>
+          </div>
+          {organizing && (
+            <div className="organize-bar" role="group" aria-label="Modo organizar">
+              <p>
+                <Icon name="sliders" />
+                <span>
+                  Você está organizando. Arraste os cards ou use as setas para mudar a ordem e toque
+                  em Concluir ao terminar.
+                </span>
+              </p>
+              {editingGroup === null && (
+                <form className="group-create" onSubmit={(event) => void saveGroup(event)}>
+                  <label htmlFor="new-group">Novo grupo</label>
+                  <input
+                    id="new-group"
+                    data-group-input
+                    value={groupDraft}
+                    onChange={(event) => setGroupDraft(event.target.value)}
+                    maxLength={40}
+                    placeholder="Ex.: Casa"
+                  />
+                  <button
+                    data-group-add
+                    type="submit"
+                    className="btn small"
+                    disabled={!groupDraft.trim()}
+                  >
+                    Criar grupo
+                  </button>
+                </form>
+              )}
+            </div>
           )}
           <p className="form-error" role="alert">
             {groupError}
@@ -619,7 +655,10 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     onChange={(e) => setForm({ ...form, allowPrivate: e.target.checked })}
                   />
                   Permitir monitoramento em rede privada
-                  <small>Autoriza apenas RFC1918 e ULA para este serviço.</small>
+                  <small>
+                    Útil para endereços da sua rede local, como 192.168.x.x. Vale só para este
+                    serviço.
+                  </small>
                 </label>
               </div>
               <p className="form-error" role="alert">
@@ -638,7 +677,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <div className="notice" id="message" role="status">
             {message}
           </div>
-          {services.length > 0 && (
+          {flash && (
+            <div className="flash" role="status">
+              <Icon name="check" />
+              {flash}
+            </div>
+          )}
+          {!organizing && services.length > 0 && categories.length > 1 && (
             <div className="filters" role="group" aria-label="Filtrar por categoria">
               {[null, ...categories].map((category) => (
                 <button
@@ -657,171 +702,200 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               ))}
             </div>
           )}
-          {groups.map(({ category, items }) => (
-            <section className="group" key={category} aria-labelledby={`group:${category}`}>
-              <div className="group-title">
-                <h2 id={`group:${category}`}>
-                  {category} <small>{items.length}</small>
-                </h2>
-                <div className="group-order">
-                  {groupRows.find((group) => group.name === category) && (
-                    <>
+          {groups.map(({ category, items }) => {
+            const groupRow = groupRows.find((group) => group.name === category);
+            return (
+              <section className="group" key={category} aria-labelledby={`group:${category}`}>
+                <div className="group-title">
+                  <h2 id={`group:${category}`}>
+                    {category} <small>{items.length}</small>
+                  </h2>
+                  {organizing && (
+                    <div className="group-order">
+                      {groupRow && (
+                        <>
+                          <button
+                            data-group-edit={groupRow.id}
+                            className="btn small quiet"
+                            type="button"
+                            aria-label={`Renomear grupo ${category}`}
+                            onClick={() => {
+                              setEditingGroup(groupRow.id);
+                              setGroupDraft(groupRow.name);
+                            }}
+                          >
+                            Renomear
+                          </button>
+                          {!services.some((service) => service.category === category) && (
+                            <button
+                              className="btn small quiet danger"
+                              type="button"
+                              aria-label={`Remover grupo ${category}`}
+                              onClick={() => void deleteGroup(groupRow)}
+                            >
+                              Remover
+                            </button>
+                          )}
+                        </>
+                      )}
                       <button
-                        data-group-edit={groupRows.find((group) => group.name === category)?.id}
-                        className="btn small"
+                        className="ibtn compact"
                         type="button"
-                        aria-label={`Renomear grupo ${category}`}
-                        onClick={() => {
-                          const group = groupRows.find((item) => item.name === category)!;
-                          setEditingGroup(group.id);
-                          setGroupDraft(group.name);
+                        aria-label={`Mover grupo ${category} para cima`}
+                        onClick={() => void moveGroup(category, -1)}
+                      >
+                        <Icon name="up" />
+                      </button>
+                      <button
+                        className="ibtn compact"
+                        type="button"
+                        aria-label={`Mover grupo ${category} para baixo`}
+                        onClick={() => void moveGroup(category, 1)}
+                      >
+                        <Icon name="down" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {!items.length && <p className="empty-group">Este grupo ainda não tem cards.</p>}
+                <ul className="list service-grid">
+                  {items.map((s) => {
+                    const info = serviceStatuses[s.id];
+                    const state = info?.status ?? 'unknown';
+                    const isBlocked = blockedIds.has(s.id) && state !== 'available';
+                    return (
+                      <li
+                        className={`service-card${menu === s.id ? ' open' : ''}${confirming === s.id ? ' confirming' : ''}${organizing ? ' organizing' : ''}${dragging === s.id ? ' dragging' : ''}`}
+                        key={s.id}
+                        draggable={organizing}
+                        onDragStart={(event) => {
+                          setDragging(s.id);
+                          event.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragEnd={() => setDragging(null)}
+                        onDragOver={(event) => {
+                          if (dragging !== null && dragging !== s.id) event.preventDefault();
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const dragged = services.find((item) => item.id === dragging);
+                          setDragging(null);
+                          if (!dragged || dragged.category !== s.category) return;
+                          void placeService(
+                            dragged,
+                            sortedIn(s.category).findIndex((item) => item.id === s.id),
+                          );
                         }}
                       >
-                        Renomear
-                      </button>
-                      {!services.some((service) => service.category === category) && (
-                        <button
-                          className="btn small danger"
-                          type="button"
-                          aria-label={`Remover grupo ${category}`}
-                          onClick={() =>
-                            void deleteGroup(groupRows.find((item) => item.name === category)!)
-                          }
-                        >
-                          Remover
-                        </button>
-                      )}
-                    </>
-                  )}
-                  <button
-                    className="btn small"
-                    type="button"
-                    aria-label={`Mover grupo ${category} para cima`}
-                    onClick={() => void moveGroup(category, -1)}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    className="btn small"
-                    type="button"
-                    aria-label={`Mover grupo ${category} para baixo`}
-                    onClick={() => void moveGroup(category, 1)}
-                  >
-                    ↓
-                  </button>
-                </div>
-              </div>
-              {!items.length && <p className="empty-group">Este grupo ainda não tem cards.</p>}
-              <ul className="list service-grid">
-                {items.map((s) => (
-                  <li
-                    className={`row service-card${menu === s.id ? ' open' : ''}${confirming === s.id ? ' confirming' : ''}`}
-                    key={s.id}
-                  >
-                    <span className="mono service-icon" aria-hidden="true">
-                      {s.icon || s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
-                    </span>
-                    <span className="who">
-                      <a
-                        className="service-link"
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {s.name}
-                        <span className="sr"> (abre em nova aba)</span>
-                      </a>
-                      <span className="desc">
-                        {s.description && `${s.description} · `}
-                        <span className="addr">{hostOf(s.url)}</span>
-                      </span>
-                      <span
-                        className={`availability ${serviceStatuses[s.id]?.status ?? 'unknown'}`}
-                      >
-                        {serviceStatuses[s.id]?.status === 'available'
-                          ? 'Disponível'
-                          : serviceStatuses[s.id]?.status === 'unavailable'
-                            ? 'Indisponível'
-                            : 'Estado desconhecido'}
-                        {serviceStatuses[s.id]?.lastAttempt && (
-                          <time dateTime={serviceStatuses[s.id].lastAttempt!}>
-                            {' · última tentativa '}
-                            {new Intl.DateTimeFormat('pt-BR', {
-                              dateStyle: 'short',
-                              timeStyle: 'short',
-                            }).format(new Date(serviceStatuses[s.id].lastAttempt!))}
-                          </time>
-                        )}
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      className="ibtn more"
-                      aria-expanded={menu === s.id}
-                      aria-label={`Ações de ${s.name}`}
-                      onClick={() => {
-                        setMenu(menu === s.id ? null : s.id);
-                        setConfirming(null);
-                      }}
-                    >
-                      <Icon name="more" />
-                    </button>
-                    <span className="tools">
-                      <button
-                        data-service-edit={s.id}
-                        type="button"
-                        className="btn small"
-                        aria-label={`Editar ${s.name}`}
-                        onClick={() => openForm(s)}
-                      >
-                        <Icon name="edit" />
-                        <span className="lbl">Editar</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn small"
-                        aria-label={`Mover ${s.name} para cima`}
-                        onClick={() => void moveService(s, -1)}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        className="btn small"
-                        aria-label={`Mover ${s.name} para baixo`}
-                        onClick={() => void moveService(s, 1)}
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        className="btn small danger"
-                        aria-label={
-                          confirming === s.id
-                            ? `Confirmar remoção de ${s.name}`
-                            : `Remover ${s.name}`
-                        }
-                        onClick={() => void remove(s)}
-                        onBlur={() => setConfirming((c) => (c === s.id ? null : c))}
-                      >
-                        <Icon name="trash" />
-                        <span className="lbl">
-                          {confirming === s.id ? 'Confirmar remoção' : 'Remover'}
+                        <span className="service-icon" aria-hidden="true">
+                          {s.icon || s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
                         </span>
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+                        <span className="who">
+                          <a
+                            className="service-link"
+                            href={s.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {s.name}
+                            <span className="sr"> (abre em nova aba)</span>
+                          </a>
+                          <span className="addr">{hostOf(s.url)}</span>
+                        </span>
+                        {s.description && <span className="desc">{s.description}</span>}
+                        <span className={`availability ${isBlocked ? 'unknown' : state}`}>
+                          {statusLabel(s.id)}
+                          {isBlocked ? (
+                            <small>Autorize a rede privada em Editar.</small>
+                          ) : (
+                            info?.lastAttempt &&
+                            state !== 'available' && (
+                              <time dateTime={info.lastAttempt}>
+                                {' · última tentativa '}
+                                {new Intl.DateTimeFormat('pt-BR', {
+                                  dateStyle: 'short',
+                                  timeStyle: 'short',
+                                }).format(new Date(info.lastAttempt))}
+                              </time>
+                            )
+                          )}
+                        </span>
+                        {organizing ? (
+                          <span className="reorder">
+                            <Icon name="grip" />
+                            <button
+                              type="button"
+                              className="ibtn compact"
+                              aria-label={`Mover ${s.name} para cima`}
+                              onClick={() => void moveService(s, -1)}
+                            >
+                              <Icon name="up" />
+                            </button>
+                            <button
+                              type="button"
+                              className="ibtn compact"
+                              aria-label={`Mover ${s.name} para baixo`}
+                              onClick={() => void moveService(s, 1)}
+                            >
+                              <Icon name="down" />
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="ibtn more"
+                            aria-expanded={menu === s.id}
+                            aria-label={`Ações de ${s.name}`}
+                            onClick={() => {
+                              setMenu(menu === s.id ? null : s.id);
+                              setConfirming(null);
+                            }}
+                          >
+                            <Icon name="more" />
+                          </button>
+                        )}
+                        <span className="tools">
+                          <button
+                            data-service-edit={s.id}
+                            type="button"
+                            className="btn small"
+                            aria-label={`Editar ${s.name}`}
+                            onClick={() => openForm(s)}
+                          >
+                            <Icon name="edit" />
+                            <span className="lbl">Editar</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn small danger"
+                            aria-label={
+                              confirming === s.id
+                                ? `Confirmar remoção de ${s.name}`
+                                : `Remover ${s.name}`
+                            }
+                            onClick={() => void remove(s)}
+                            onBlur={() => setConfirming((c) => (c === s.id ? null : c))}
+                          >
+                            <Icon name="trash" />
+                            <span className="lbl">
+                              {confirming === s.id ? 'Confirmar remoção' : 'Remover'}
+                            </span>
+                          </button>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })}
           {!groups.length && (
             <div className="empty">
-              <h3>{services.length ? 'Nenhum serviço encontrado' : 'Seu painel está vazio'}</h3>
+              <h2>{services.length ? 'Nenhum serviço encontrado' : 'Seu painel está vazio'}</h2>
               <p>
                 {services.length
                   ? 'Experimente outro termo ou escolha “Todos”.'
-                  : 'Adicione o primeiro serviço para abrir tudo a partir daqui.'}
+                  : 'Comece pelo serviço que você mais abre. Depois é só ir juntando o resto.'}
               </p>
               {!services.length && (
                 <button type="button" className="btn primary" onClick={() => openForm()}>
@@ -835,9 +909,10 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         <aside>
           <section className="panel p-integrations" aria-label="Integrações">
             <div className="integration-page-header">
-              <p className="eyebrow">HOMELAB / CONEXÕES</p>
               <h1>Integrações</h1>
-              <p className="lede">Acompanhe seus serviços conectados e gerencie acessos.</p>
+              <p className="lede">
+                Conecte o Proxmox e outros serviços para ver o estado do seu homelab aqui.
+              </p>
             </div>
             <div className="block integration-card proxmox-card">
               <Proxmox />
@@ -848,143 +923,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <IntegrationCatalog />
           </section>
         </aside>
-        <section
-          className="panel p-proposals"
-          aria-label="Propostas do agente"
-          hidden={tab !== 'proposals'}
-        >
-          <div className="title">
-            <div>
-              <h1>Propostas de cards</h1>
-              <p className="lede">Revise cada alteração antes de aplicá-la.</p>
-            </div>
-            <button className="btn" onClick={() => void loadProposals()}>
-              Atualizar
-            </button>
-          </div>
-          <label>
-            Nome do agente
-            <input value={agentName} onChange={(e) => setAgentName(e.target.value)} />
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={agentScopes.includes('services:read')}
-              onChange={(e) =>
-                setAgentScopes((s) =>
-                  e.target.checked
-                    ? [...new Set([...s, 'services:read'])]
-                    : s.filter((x) => x !== 'services:read'),
-                )
-              }
-            />{' '}
-            Ler serviços
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={agentScopes.includes('proxmox:read')}
-              onChange={(e) =>
-                setAgentScopes((s) =>
-                  e.target.checked
-                    ? [...new Set([...s, 'proxmox:read'])]
-                    : s.filter((x) => x !== 'proxmox:read'),
-                )
-              }
-            />{' '}
-            Ler recursos Proxmox
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={agentScopes.includes('proposals:create')}
-              onChange={(e) =>
-                setAgentScopes((s) =>
-                  e.target.checked
-                    ? [...new Set([...s, 'proposals:create'])]
-                    : s.filter((x) => x !== 'proposals:create'),
-                )
-              }
-            />{' '}
-            Criar propostas
-          </label>
-          <button className="btn" onClick={() => void createAgent()}>
-            Criar identidade
-          </button>
-          {newAgentToken && (
-            <p role="alert">
-              Copie o token agora; ele não será exibido novamente: <code>{newAgentToken}</code>
-            </p>
-          )}
-          <h2>Identidades</h2>
-          {agents.map((agent) => (
-            <article key={agent.id}>
-              <strong>{agent.name}</strong> · {JSON.parse(agent.scopes).join(', ')} ·{' '}
-              {agent.revokedAt ? 'revogada' : 'ativa'}
-              {!agent.revokedAt && (
-                <div>
-                  <button className="btn" onClick={() => void rotateAgent(agent.id)}>
-                    Rotacionar token
-                  </button>{' '}
-                  <button className="btn" onClick={() => void revokeAgent(agent.id)}>
-                    Revogar
-                  </button>
-                </div>
-              )}
-            </article>
-          ))}
-          {proposals.map((p) => (
-            <article key={p.id}>
-              <h2>{p.state}</h2>
-              <pre>{p.diff}</pre>
-              <small>Expira: {new Date(p.expiresAt).toLocaleString()}</small>
-              {p.state === 'pending' && (
-                <div>
-                  <button className="btn primary" onClick={() => void reviewProposal(p.id, true)}>
-                    Aprovar
-                  </button>{' '}
-                  <button className="btn" onClick={() => void reviewProposal(p.id, false)}>
-                    Rejeitar
-                  </button>
-                </div>
-              )}
-            </article>
-          ))}
+        <section className="panel p-agents" aria-label="Agentes" hidden={tab !== 'agents'}>
+          {tab === 'agents' && <Agents services={services} onApplied={refresh} />}
         </section>
       </main>
       <div className="wrap">
         <footer>Homora · ambiente local, acessível somente nesta máquina</footer>
       </div>
-      <nav className="tabs" aria-label="Seções">
-        <button
-          type="button"
-          aria-current={tab === 'services' ? 'page' : undefined}
-          onClick={() => setTab('services')}
-        >
-          <Icon name="list" />
-          Serviços
-        </button>
-        <button
-          type="button"
-          aria-current={tab === 'proposals' ? 'page' : undefined}
-          onClick={() => {
-            setTab('proposals');
-            void loadProposals();
-            void loadAgents();
-          }}
-        >
-          <Icon name="list" />
-          Propostas
-        </button>
-        <button
-          type="button"
-          aria-current={tab === 'integrations' ? 'page' : undefined}
-          onClick={() => setTab('integrations')}
-        >
-          <Icon name="server" />
-          Integrações
-        </button>
-      </nav>
+      {renderNav('tabs', 'Seções', true)}
     </div>
   );
 }

@@ -232,6 +232,8 @@ it('cria, mostra e remove um grupo vazio pela interface', async () => {
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('heading', { name: 'Seus serviços' });
+  expect(screen.queryByLabelText('Novo grupo')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
   fireEvent.change(screen.getByLabelText('Novo grupo'), { target: { value: 'Infra' } });
   fireEvent.click(screen.getByRole('button', { name: 'Criar grupo' }));
   expect(await screen.findByRole('heading', { name: /Infra/ })).toBeTruthy();
@@ -317,7 +319,8 @@ it('reordena cards e fecha o formulário com Escape devolvendo o foco', async ()
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('link', { name: /A/ });
-  fireEvent.click(screen.getByRole('button', { name: 'Ações de A' }));
+  expect(screen.queryByRole('button', { name: 'Mover A para baixo' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Mover A para baixo' }));
   await waitFor(() =>
     expect(fetchMock).toHaveBeenCalledWith(
@@ -328,10 +331,150 @@ it('reordena cards e fecha o formulário com Escape devolvendo o foco', async ()
       }),
     ),
   );
+  fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
   const add = screen.getByRole('button', { name: /Adicionar serviço/ });
   fireEvent.click(add);
   expect(document.activeElement).toBe(screen.getByLabelText('Nome'));
   fireEvent.keyDown(document, { key: 'Escape' });
   await waitFor(() => expect(document.activeElement).toBe(add));
   expect(screen.queryByRole('form', { name: 'Novo serviço' })).toBeNull();
+});
+
+it('mostra propostas pendentes em linguagem clara e aprova com um clique', async () => {
+  const proposals = [
+    {
+      id: 'p1',
+      author: 'a1',
+      state: 'pending',
+      expiresAt: Date.now() + 600_000,
+      diff: JSON.stringify({
+        op: 'create',
+        service: { name: 'Immich', url: 'http://x.local/', category: 'Mídia' },
+      }),
+    },
+  ];
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    if (url === '/api/agents')
+      return {
+        ok: true,
+        json: async () => [
+          { id: 'a1', name: 'Assistente', scopes: '["services:read"]', revokedAt: null },
+        ],
+      };
+    if (url === '/api/proposals') return { ok: true, json: async () => proposals };
+    if (url === '/api/proposals/p1/review' && init?.method === 'POST')
+      return { ok: true, json: async () => ({}) };
+    if (url === '/api/connections') return { ok: true, json: async () => [] };
+    if (url === '/api/proxmox/status')
+      return { ok: true, json: async () => ({ configured: false }) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Seus serviços' });
+  fireEvent.click(screen.getAllByRole('button', { name: 'Agentes' })[0]);
+  expect(await screen.findByText('Adicionar “Immich”')).toBeTruthy();
+  expect(screen.getByText('Aguardando você')).toBeTruthy();
+  expect(screen.getAllByText('Ler serviços').length).toBeGreaterThan(0);
+  fireEvent.click(screen.getByRole('button', { name: /Aprovar e aplicar/ }));
+  await waitFor(() =>
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/proposals/p1/review',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ approve: true }) }),
+    ),
+  );
+});
+
+it('não trata rede privada não autorizada como serviço fora do ar', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/connections') return { ok: true, json: async () => [] };
+      if (url === '/api/proxmox/status')
+        return { ok: true, json: async () => ({ configured: false }) };
+      if (url === '/api/service-status')
+        return {
+          ok: true,
+          json: async () => ({
+            1: { status: 'unavailable', lastAttempt: '2026-11-10T12:30:00.000Z' },
+            2: { status: 'available', lastAttempt: '2026-11-10T12:30:00.000Z' },
+          }),
+        };
+      if (url === '/api/groups') return { ok: true, json: async () => [] };
+      return {
+        ok: true,
+        json: async () => [
+          { id: 1, name: 'Casa', url: 'http://192.168.1.10:80/', category: 'A', description: '' },
+          { id: 2, name: 'Web', url: 'https://example.com/', category: 'A', description: '' },
+        ],
+      };
+    }),
+  );
+  render(<App />);
+  expect(await screen.findByText('Monitoramento bloqueado')).toBeTruthy();
+  expect(screen.getByText('Autorize a rede privada em Editar.')).toBeTruthy();
+  expect(screen.queryByText('Indisponível')).toBeNull();
+  expect(screen.getByText(/Tudo no ar por aqui/)).toBeTruthy();
+  expect(screen.getByText(/1 sem monitoramento/)).toBeTruthy();
+});
+
+it('mostra antes e depois de uma proposta de alteração', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/agents') return { ok: true, json: async () => [] };
+      if (url === '/api/proposals')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 'p2',
+              author: 'a1',
+              state: 'pending',
+              expiresAt: Date.now() + 600_000,
+              diff: JSON.stringify({
+                op: 'update',
+                id: 5,
+                service: {
+                  name: 'Jellyfin',
+                  url: 'http://novo.local:8096/',
+                  category: 'Mídia',
+                  description: '',
+                },
+              }),
+            },
+          ],
+        };
+      if (url === '/api/connections') return { ok: true, json: async () => [] };
+      if (url === '/api/proxmox/status')
+        return { ok: true, json: async () => ({ configured: false }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 5,
+              name: 'Jellyfin',
+              url: 'http://antigo.local:8096/',
+              category: 'Mídia',
+              description: '',
+            },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Jellyfin/ });
+  fireEvent.click(screen.getAllByRole('button', { name: 'Agentes' })[0]);
+  expect(await screen.findByText('Alterar “Jellyfin”')).toBeTruthy();
+  expect(screen.getByText('http://antigo.local:8096/')).toBeTruthy();
+  expect(screen.getByText('http://novo.local:8096/')).toBeTruthy();
+  expect(screen.getByText('2 campos continuam iguais.')).toBeTruthy();
 });

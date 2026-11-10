@@ -286,7 +286,7 @@ com o projeto usando a documentação disponível.
 - A interface foi refeita a partir da proposta `propostas/console-v2.html`:
   começa pelo celular (navegação inferior, alvos de toque de 44 px), usa tema
   claro e escuro conforme o sistema (com alternância manual), paleta grafite e
-  azul, e fontes Hanken Grotesk e Bricolage Grotesque servidas localmente
+  azul (substituída pela paleta quente descrita em “Refinamento da interface”), e fontes Hanken Grotesk e Bricolage Grotesque servidas localmente
   (SIL OFL 1.1, ver `apps/frontend/src/fonts/README.md`).
 - O cadastro e a edição de serviços passaram a usar um formulário na própria
   página, em vez de diálogo modal. A remoção exige confirmação na própria linha.
@@ -305,6 +305,45 @@ com o projeto usando a documentação disponível.
   erros no console nem rolagem horizontal. Não foram verificados: leitor de
   tela, navegação completa por teclado, aparelho móvel real e Proxmox real.
   Por isso os itens de telas pequenas e teclado do P1 seguem abertos.
+
+## Refinamento da interface (crítica de design)
+
+- Uma crítica da interface (nota 23/40 nas heurísticas de usabilidade) levou a
+  mudanças em `apps/frontend`. `PRODUCT.md` e `DESIGN.md` (com
+  `.impeccable/design.json`) agora registram usuários, princípios e o sistema
+  visual; a paleta passou a neutros quentes com um acento âmbar, e as cores de
+  estado seguem os tokens `--ok` e `--bad`.
+- A tela de serviços separa uso de gestão: o botão “Organizar” liga criar,
+  renomear, remover e ordenar grupos e mover cards (por arraste ou pelos botões
+  ↑ e ↓). Os cards mostram descrição, endereço e disponibilidade; o estado usa
+  texto e forma, não só cor, e a hora da última tentativa só aparece quando o
+  serviço não está disponível. Salvar e remover confirmam em uma região de status.
+- A aba Agentes virou o componente `Agents.tsx`: propostas em linguagem clara
+  (operação e campos alterados), aprovação e rejeição, histórico, token exibido
+  uma vez com botão de copiar, confirmação ao revogar e descrição das permissões.
+  Nenhuma regra de autorização mudou; a API é a mesma.
+- A navegação tem os mesmos três itens no desktop e no celular; removemos os
+  rótulos pequenos acima de títulos e o blur do topo.
+- Depois de uma crítica de design (25/40): serviços em rede privada sem
+  autorização aparecem como “Monitoramento bloqueado” (com dica para autorizar
+  em Editar) e não como “Indisponível”; o resumo da página separa no ar, fora do
+  ar e sem monitoramento; o menu “⋯” dos cards ficou sempre visível; chips,
+  botões pequenos e botões de mover passaram a 44 px no celular.
+- Mesma crítica, itens seguintes: propostas pendentes ganham destaque e mostram
+  antes e depois (campos alterados e quantos continuam iguais) com o nome do
+  serviço; “Nova identidade” fica recolhida quando já existe uma; a remoção de
+  conexões e widgets usa confirmação no próprio botão, no lugar de
+  `window.confirm`; o modo Organizar mostra uma faixa explicando o que está
+  ativo e esconde os filtros. Não há “Desfazer” após remover: a exclusão é
+  imediata na API e seguir adiante exigiria exclusão adiada ou restauração.
+- Validação: lint, tipos, build e os testes do frontend passaram; as telas
+  foram vistas em navegador headless com banco temporário, em 390 e 1280 px, nos
+  temas claro e escuro. Não foram verificados: arrastar cards com o mouse, leitor
+  de tela, navegação completa por teclado, aparelho móvel real, contraste medido
+  por ferramenta e a aba Agentes com propostas reais de um agente MCP.
+  `pnpm check` completo passou depois de excluir do ESLint e do Prettier as
+  pastas de skills de agentes (`.agent`, `.agents`, `.claude`, `.codex`,
+  `.hermes`, `.github/skills`, `.github/agents` e `.impeccable`).
 
 ## Núcleo da homepage — fluxos implementados
 
