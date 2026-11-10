@@ -213,7 +213,34 @@ com o projeto usando a documentação disponível.
   existente mostra que ele usa tabelas sintéticas e não inicia o backend após
   restaurar. Upgrade e restauração operacional seguem pendentes.
 
+## R0 — Adoção sem atrito (tarefas)
+
+Origem: [estrategia.md](estrategia.md), fase R0. Nenhum item iniciado.
+Marque apenas com a implementação e a validação indicadas.
+
+- [ ] **Imagem Docker reproduzível:** fixar Node e nginx por versão/digest,
+      construir amd64 e arm64 no CI e documentar o upgrade. Validar: build
+      multi-arch e upgrade preservando dados.
+- [ ] **Licença e atribuições** (também pendente em P5): escolher licença e
+      revisar dependências e fontes. Necessário antes de publicar a imagem.
+- [ ] **Exportação e importação YAML/JSON** de serviços, grupos e ordem, com
+      validação e relatório de itens ignorados; segredos nunca entram no arquivo.
+      Validar: exportar, importar em banco limpo e comparar.
+- [ ] **Importador do Homepage** (`services.yaml`, `bookmarks.yaml`) e do Dashy,
+      com prévia revisável antes de gravar e limite às versões testadas.
+      Validar com configurações reais, sem edição manual.
+- [ ] **Ícones por nome** de conjunto open source com licença compatível,
+      mantendo emoji e URL própria.
+- [ ] **Inglês e i18n:** README, instalação e interface em inglês por padrão,
+      com pt-BR completo; capturas de tela.
+
+**Conclusão:** instalação limpa e importação de uma configuração real do
+Homepage e do Dashy, sem edição manual, em ambiente de teste.
+
 ## Registro inicial
+
+> **Histórico:** esta seção descreve a análise inicial. O estado atual está nas
+> seções P0 a P5 e nas validações posteriores abaixo.
 
 - Análise inicial: a base inclui CRUD de serviços, autenticação local, SQLite,
   Proxmox experimental, MCP local de leitura, testes e configuração de Compose.
@@ -278,6 +305,12 @@ com o projeto usando a documentação disponível.
   permissões e certificados precisa ser confirmada em ambientes de usuário.
 
 ## Trabalho prévio de integrações
+
+> **Histórico:** o texto abaixo é anterior à "Entrega local — integrações
+> experimentais". Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home já têm
+> adaptadores e interface (validados só com mocks), e a política de rede já
+> protege os adaptadores; as lacunas descritas aqui foram em grande parte
+> resolvidas.
 
 - A análise e o plano técnico estão em [integrações](integracoes.md). A primeira
   versão do projeto foi registrada no Git e a conexão Proxmox com CA importada
