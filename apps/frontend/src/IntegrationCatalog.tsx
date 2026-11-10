@@ -32,18 +32,16 @@ export function IntegrationCatalog() {
     return () => controller.abort();
   }, [attempt]);
   return (
-    <article className="widget integration-placeholder">
-      <div className="widget-head">
-        <span>◈ &nbsp; INTEGRAÇÕES</span>
-        <span>CATÁLOGO</span>
-      </div>
-      <h3>Integrações disponíveis</h3>
+    <section className="block catalog" aria-labelledby="catalog-title">
+      <h2 id="catalog-title">Integrações disponíveis</h2>
       {error ? (
         <>
-          <p role="alert">Não foi possível carregar o catálogo.</p>
+          <p className="notice" role="alert">
+            Não foi possível carregar o catálogo.
+          </p>
           <button
             type="button"
-            className="cancel"
+            className="btn"
             onClick={() => {
               setError(false);
               setEntries(null);
@@ -54,16 +52,20 @@ export function IntegrationCatalog() {
           </button>
         </>
       ) : entries === null ? (
-        <p role="status">Carregando integrações...</p>
+        <p className="hint" role="status">
+          Carregando integrações...
+        </p>
       ) : entries.length === 0 ? (
-        <p>Nenhuma integração disponível.</p>
+        <p className="hint">Nenhuma integração disponível.</p>
       ) : (
-        <ul className="integration-catalog">
+        <ul className="res">
           {entries.map((entry) => (
-            <li key={entry.type}>{entry.label}</li>
+            <li key={entry.type}>
+              <span className="n">{entry.label}</span>
+            </li>
           ))}
         </ul>
       )}
-    </article>
+    </section>
   );
 }

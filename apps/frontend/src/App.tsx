@@ -1,22 +1,50 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { Service, ServiceInput } from '@homora/shared';
-import { Proxmox } from './Proxmox';
+import { Icon } from './icons';
 import { IntegrationCatalog } from './IntegrationCatalog';
+import { Proxmox } from './Proxmox';
 import { Connections } from './Connections';
 
 const empty: ServiceInput = { name: '', url: '', category: '', description: '' };
-const colors = ['orange', 'blue', 'green', 'purple', 'rose', 'cyan', 'sky', 'lime'];
+type Tab = 'services' | 'integrations';
+
+function hostOf(url: string) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current =
+    root.dataset.theme ?? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.dataset.theme = next;
+  try {
+    localStorage.setItem('homora-theme', next);
+  } catch {
+    // Sem armazenamento disponível: a escolha vale só nesta página.
+  }
+}
+
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [services, setServices] = useState<Service[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [form, setForm] = useState<ServiceInput>(empty);
+  const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
-  const [time, setTime] = useState(new Date());
-  const dialog = useRef<HTMLDialogElement>(null);
+  const [tab, setTab] = useState<Tab>('services');
+  const [menu, setMenu] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState<number | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
   const search = useRef<HTMLInputElement>(null);
   async function refresh() {
     try {
@@ -45,29 +73,41 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         if (active)
           setMessage('Não foi possível carregar os serviços. Verifique se o servidor está ativo.');
       });
-    const timer = setInterval(() => setTime(new Date()), 30000);
     const key = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      const typing = e.target instanceof HTMLElement && /INPUT|TEXTAREA/.test(e.target.tagName);
+      if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typing)) {
         e.preventDefault();
         search.current?.focus();
+        search.current?.select();
       }
     };
     document.addEventListener('keydown', key);
     return () => {
       active = false;
-      clearInterval(timer);
       document.removeEventListener('keydown', key);
     };
   }, []);
+  useEffect(() => {
+    if (formOpen) {
+      formRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      nameInput.current?.focus({ preventScroll: true });
+    }
+  }, [formOpen]);
   const categories = useMemo(() => [...new Set(services.map((s) => s.category))], [services]);
   const filtered = services.filter(
     (s) =>
       (selected === null || s.category === selected) &&
-      `${s.name} ${s.category} ${s.description}`
+      `${s.name} ${s.category} ${s.description} ${s.url}`
         .toLocaleLowerCase('pt-BR')
         .includes(query.toLocaleLowerCase('pt-BR').trim()),
   );
+  const groups = categories
+    .map((category) => ({ category, items: filtered.filter((s) => s.category === category) }))
+    .filter((group) => group.items.length);
   function openForm(service?: Service) {
+    setTab('services');
+    setMenu(null);
+    setConfirming(null);
     setEditing(service?.id ?? null);
     setForm(
       service
@@ -80,7 +120,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         : empty,
     );
     setError('');
-    dialog.current?.showModal();
+    setFormOpen(true);
+  }
+  function closeForm() {
+    setFormOpen(false);
+    addButton.current?.focus();
   }
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -97,278 +141,312 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       );
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw Error(data.error);
-      dialog.current?.close();
+      closeForm();
       setSelected(null);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível salvar.');
+      setError(e instanceof Error && e.message ? e.message : 'Não foi possível salvar.');
     } finally {
       setSaving(false);
     }
   }
   async function remove(s: Service) {
-    if (!confirm(`Remover ${s.name}?`)) return;
+    if (confirming !== s.id) {
+      setConfirming(s.id);
+      return;
+    }
+    setConfirming(null);
     try {
       const response = await fetch(`/api/services/${s.id}`, { method: 'DELETE' });
       if (!response.ok) throw Error();
       setSelected(null);
+      setMenu(null);
       await refresh();
     } catch {
       setMessage('Não foi possível remover o serviço.');
     }
   }
+  function openFirst() {
+    const first = filtered[0];
+    if (first) window.open(first.url, '_blank', 'noopener,noreferrer');
+  }
   return (
-    <div className="site">
-      <header className="topbar">
-        <a className="wordmark" href="/">
-          <span>✳</span> homora
-        </a>
-        <nav>
-          <a className="selected" href="#inicio">
-            Visão geral
+    <div className="shell" data-tab={tab}>
+      <header className="top">
+        <div className="wrap">
+          <a className="wordmark" href="/" aria-label="Homora, início">
+            <Icon name="mark" />
+            <span>Homora</span>
           </a>
-          <a href="#servicos">Aplicativos</a>
-          <a href="#widgets">Meu ambiente</a>
-        </nav>
-        <div className="top-right">
-          <span className="local-pill">
-            <i /> AMBIENTE LOCAL
-          </span>
-          <button type="button" className="profile" onClick={onLogout} aria-label="Sair">
-            H
+          <button type="button" className="ibtn" onClick={toggleTheme} aria-label="Alternar tema">
+            <Icon name="contrast" />
           </button>
-        </div>
-      </header>
-      <main id="inicio">
-        <div className="hero">
-          <div>
-            <div className="eyebrow">SEU ESPAÇO / VISÃO GERAL</div>
-            <h1>
-              Seu espaço, conectado<span>.</span>
-            </h1>
-            <p>Seus aplicativos, serviços e informações. Tudo por aqui.</p>
-          </div>
-          <div className="hero-right">
-            <strong>
-              {new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(
-                time,
-              )}
-            </strong>
-            <small>
-              {new Intl.DateTimeFormat('pt-BR', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              }).format(time)}
-            </small>
-          </div>
-        </div>
-        <div className="search-row">
+          <button type="button" className="ibtn" onClick={onLogout} aria-label="Sair">
+            <Icon name="logout" />
+          </button>
           <label className="search">
-            <span>⌕</span>
+            <Icon name="search" />
+            <span className="sr">Buscar serviço</span>
             <input
               ref={search}
               type="search"
-              placeholder="Buscar aplicativos e serviços..."
-              aria-label="Buscar aplicativos e serviços"
+              placeholder="Buscar serviço"
+              autoComplete="off"
+              enterKeyHint="go"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setTab('services');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') openFirst();
+                if (e.key === 'Escape') setQuery('');
+              }}
             />
             <kbd>Ctrl K</kbd>
           </label>
-          <span className="search-hint">✳ &nbsp; Seu espaço, do seu jeito</span>
         </div>
-        <section id="servicos">
-          <div className="section-heading">
+      </header>
+      <main className="wrap layout">
+        <section className="panel p-services" aria-label="Serviços">
+          <div className="title">
             <div>
-              <div className="eyebrow">SEU PONTO DE PARTIDA</div>
-              <h2>
-                Seus aplicativos <sup>{String(services.length).padStart(2, '0')}</sup>
-              </h2>
-              <p>Abra o que você precisa, quando precisar.</p>
-            </div>
-            <button className="primary" onClick={() => openForm()}>
-              ＋ &nbsp; Adicionar serviço
-            </button>
-          </div>
-          <div className="filters" aria-label="Filtrar aplicativos">
-            {[null, ...categories].map((category) => (
-              <button
-                key={category === null ? '__all__' : `category:${category}`}
-                className={selected === category ? 'active' : ''}
-                aria-pressed={selected === category}
-                onClick={() => setSelected(category)}
-              >
-                {category ?? 'Todos'}
-              </button>
-            ))}
-          </div>
-          <div id="message" role="status">
-            {message}
-          </div>
-          <div className="app-grid">
-            {filtered.length ? (
-              filtered.map((s) => (
-                <article className="service-card" key={s.id}>
-                  <a
-                    className="app-card service-link"
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span
-                      className={`app-icon ${colors[Array.from(s.name).reduce((n, c) => n + (c.codePointAt(0) ?? 0), 0) % colors.length]}`}
-                    >
-                      {s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
-                    </span>
-                    <span className="app-info">
-                      <b>{s.name}</b>
-                      <small>{s.description || s.category}</small>
-                    </span>
-                    <span className="arrow">↗</span>
-                  </a>
-                  <div className="card-actions">
-                    <button aria-label={`Editar ${s.name}`} onClick={() => openForm(s)}>
-                      Editar
-                    </button>
-                    <button aria-label={`Remover ${s.name}`} onClick={() => void remove(s)}>
-                      Remover
-                    </button>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <div className="empty-state">
-                <span className="empty-icon">✳</span>
-                <h3>{services.length ? 'Nenhum serviço encontrado' : 'Seu espaço começa aqui'}</h3>
-                <p>
-                  {services.length
-                    ? 'Experimente outra busca ou categoria.'
-                    : 'Adicione seu primeiro serviço para acessar tudo em um só lugar.'}
-                </p>
-                {!services.length && (
-                  <button className="primary" onClick={() => openForm()}>
-                    ＋ Adicionar primeiro serviço
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-        <section id="widgets">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">ACOMPANHE DE PERTO</div>
-              <h2>Seu ambiente</h2>
-              <p>Acompanhe suas integrações e recursos disponíveis.</p>
-            </div>
-          </div>
-          <div className="widgets">
-            <Proxmox />
-            <Connections />
-            <IntegrationCatalog />
-            {[
-              [
-                '◉  MONITORAMENTO',
-                'Veja seus serviços de perto',
-                'Disponibilidade e informações das suas integrações aparecerão aqui.',
-              ],
-              [
-                '✳  ASSISTENTE',
-                'Gerencie com ajuda de IA',
-                'A integração MCP permitirá consultar e propor mudanças no seu espaço.',
-              ],
-            ].map(([title, heading, description]) => (
-              <article className="widget integration-placeholder" key={title}>
-                <div className="widget-head">
-                  <span>{title}</span>
-                  <span>PLANEJADO</span>
-                </div>
-                <h3>{heading}</h3>
-                <p>{description}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-        <footer className="footer">
-          ✳ &nbsp; HOMORA <span>Seu espaço, conectado. &nbsp; · &nbsp; Ambiente local</span>
-        </footer>
-      </main>
-      <dialog ref={dialog}>
-        <form onSubmit={(e) => void save(e)}>
-          <div className="modal-head">
-            <div>
-              <div className="eyebrow">SEU ESPAÇO</div>
-              <h2>{editing === null ? 'Adicionar serviço' : 'Editar serviço'}</h2>
-              <p>Guarde um atalho para acessar quando precisar.</p>
+              <h1>Seus serviços</h1>
+              <p className="lede">
+                {services.length
+                  ? `${services.length} ${services.length === 1 ? 'serviço' : 'serviços'} em ${categories.length} ${categories.length === 1 ? 'grupo' : 'grupos'}.`
+                  : 'Nenhum serviço cadastrado ainda.'}
+              </p>
             </div>
             <button
+              ref={addButton}
               type="button"
-              className="close"
-              aria-label="Fechar"
-              onClick={() => dialog.current?.close()}
+              className="btn primary"
+              onClick={() => openForm()}
             >
-              ×
+              <Icon name="plus" />
+              Adicionar serviço
             </button>
           </div>
-          <label>
-            Nome
-            <input
-              required
-              maxLength={80}
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Ex.: Jellyfin"
-            />
-          </label>
-          <label>
-            URL
-            <input
-              type="url"
-              required
-              value={form.url}
-              onChange={(e) => setForm({ ...form, url: e.target.value })}
-              placeholder="http://192.168.1.10:8096"
-            />
-          </label>
-          <label>
-            Categoria
-            <input
-              required
-              maxLength={40}
-              list="categories"
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              placeholder="Ex.: Entretenimento"
-            />
-            <datalist id="categories">
-              {categories.map((c) => (
-                <option key={c} value={c} />
+          {formOpen && (
+            <form
+              ref={formRef}
+              className="form"
+              aria-labelledby="form-title"
+              onSubmit={(e) => void save(e)}
+            >
+              <h2 id="form-title">{editing === null ? 'Novo serviço' : 'Editar serviço'}</h2>
+              <div className="fields">
+                <label>
+                  Nome
+                  <input
+                    ref={nameInput}
+                    required
+                    maxLength={80}
+                    autoComplete="off"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Jellyfin"
+                  />
+                </label>
+                <label>
+                  URL
+                  <input
+                    type="url"
+                    inputMode="url"
+                    required
+                    autoComplete="off"
+                    value={form.url}
+                    onChange={(e) => setForm({ ...form, url: e.target.value })}
+                    placeholder="http://192.168.1.10:8096"
+                  />
+                </label>
+                <label>
+                  Categoria
+                  <input
+                    required
+                    maxLength={40}
+                    list="categories"
+                    autoComplete="off"
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    placeholder="Mídia"
+                  />
+                  <datalist id="categories">
+                    {categories.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                </label>
+                <label>
+                  Descrição <small>opcional</small>
+                  <input
+                    maxLength={140}
+                    autoComplete="off"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Filmes e séries"
+                  />
+                </label>
+              </div>
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+              <div className="actions">
+                <button type="button" className="btn quiet" onClick={closeForm}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn primary" disabled={saving}>
+                  {editing === null ? 'Salvar serviço' : 'Salvar alterações'}
+                </button>
+              </div>
+            </form>
+          )}
+          <div className="notice" id="message" role="status">
+            {message}
+          </div>
+          {services.length > 0 && (
+            <div className="filters" role="group" aria-label="Filtrar por categoria">
+              {[null, ...categories].map((category) => (
+                <button
+                  key={category === null ? '__all__' : `category:${category}`}
+                  className="chip"
+                  aria-pressed={selected === category}
+                  onClick={() => setSelected(category)}
+                >
+                  {category ?? 'Todos'}
+                  <small aria-hidden="true">
+                    {category === null
+                      ? services.length
+                      : services.filter((s) => s.category === category).length}
+                  </small>
+                </button>
               ))}
-            </datalist>
-          </label>
-          <label>
-            Descrição <small>opcional</small>
-            <input
-              maxLength={140}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Uma breve descrição"
-            />
-          </label>
-          <p id="form-error" role="alert">
-            {error}
-          </p>
-          <div className="modal-actions">
-            <button type="button" className="cancel" onClick={() => dialog.current?.close()}>
-              Cancelar
-            </button>
-            <button type="submit" className="primary" disabled={saving}>
-              {editing === null ? 'Adicionar serviço' : 'Salvar alterações'}
-            </button>
-          </div>
-        </form>
-      </dialog>
+            </div>
+          )}
+          {groups.map(({ category, items }) => (
+            <section className="group" key={category} aria-labelledby={`group:${category}`}>
+              <h2 id={`group:${category}`}>
+                {category} <small>{items.length}</small>
+              </h2>
+              <ul className="list">
+                {items.map((s) => (
+                  <li
+                    className={`row${menu === s.id ? ' open' : ''}${confirming === s.id ? ' confirming' : ''}`}
+                    key={s.id}
+                  >
+                    <span className="mono" aria-hidden="true">
+                      {s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
+                    </span>
+                    <span className="who">
+                      <a
+                        className="service-link"
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {s.name}
+                        <span className="sr"> (abre em nova aba)</span>
+                      </a>
+                      <span className="desc">
+                        {s.description && `${s.description} · `}
+                        <span className="addr">{hostOf(s.url)}</span>
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      className="ibtn more"
+                      aria-expanded={menu === s.id}
+                      aria-label={`Ações de ${s.name}`}
+                      onClick={() => {
+                        setMenu(menu === s.id ? null : s.id);
+                        setConfirming(null);
+                      }}
+                    >
+                      <Icon name="more" />
+                    </button>
+                    <span className="tools">
+                      <button
+                        type="button"
+                        className="btn small"
+                        aria-label={`Editar ${s.name}`}
+                        onClick={() => openForm(s)}
+                      >
+                        <Icon name="edit" />
+                        <span className="lbl">Editar</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn small danger"
+                        aria-label={
+                          confirming === s.id
+                            ? `Confirmar remoção de ${s.name}`
+                            : `Remover ${s.name}`
+                        }
+                        onClick={() => void remove(s)}
+                        onBlur={() => setConfirming((c) => (c === s.id ? null : c))}
+                      >
+                        <Icon name="trash" />
+                        <span className="lbl">
+                          {confirming === s.id ? 'Confirmar remoção' : 'Remover'}
+                        </span>
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          {!groups.length && (
+            <div className="empty">
+              <h3>{services.length ? 'Nenhum serviço encontrado' : 'Seu painel está vazio'}</h3>
+              <p>
+                {services.length
+                  ? 'Experimente outro termo ou escolha “Todos”.'
+                  : 'Adicione o primeiro serviço para abrir tudo a partir daqui.'}
+              </p>
+              {!services.length && (
+                <button type="button" className="btn primary" onClick={() => openForm()}>
+                  <Icon name="plus" />
+                  Adicionar primeiro serviço
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+        <aside>
+          <section className="panel p-integrations" aria-label="Integrações">
+            <div className="block">
+              <Proxmox />
+            </div>
+            <div className="block connections">
+              <Connections />
+            </div>
+            <IntegrationCatalog />
+          </section>
+        </aside>
+      </main>
+      <div className="wrap">
+        <footer>Homora · ambiente local, acessível somente nesta máquina</footer>
+      </div>
+      <nav className="tabs" aria-label="Seções">
+        <button
+          type="button"
+          aria-current={tab === 'services' ? 'page' : undefined}
+          onClick={() => setTab('services')}
+        >
+          <Icon name="list" />
+          Serviços
+        </button>
+        <button
+          type="button"
+          aria-current={tab === 'integrations' ? 'page' : undefined}
+          onClick={() => setTab('integrations')}
+        >
+          <Icon name="server" />
+          Integrações
+        </button>
+      </nav>
     </div>
   );
 }
@@ -424,14 +502,15 @@ export function App() {
     <main className="auth-page">
       <div className="auth-box">
         <div className="wordmark">
-          <span>✳</span> homora
+          <Icon name="mark" />
+          <span>Homora</span>
         </div>
         {status ? (
           <>
             <h1>{status.configured ? 'Bem-vindo de volta.' : 'Crie sua senha.'}</h1>
             <p>
               {status.configured
-                ? 'Entre para acessar seu espaço.'
+                ? 'Entre para acessar seus serviços.'
                 : 'Configure o acesso de administrador deste Homora.'}
             </p>
             <form onSubmit={(e) => void submit(e)}>
@@ -448,7 +527,7 @@ export function App() {
                 />
               </label>
               <p role="alert">{error}</p>
-              <button className="primary" type="submit">
+              <button className="btn primary" type="submit">
                 {status.configured ? 'Entrar' : 'Criar conta'}
               </button>
             </form>
