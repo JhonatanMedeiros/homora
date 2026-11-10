@@ -411,6 +411,33 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <Icon name="mark" />
             <span>Homora</span>
           </a>
+          <nav className="desktop-nav" aria-label="Navegação principal">
+            <button
+              type="button"
+              aria-current={tab === 'services' ? 'page' : undefined}
+              onClick={() => setTab('services')}
+            >
+              Serviços
+            </button>
+            <button
+              type="button"
+              aria-current={tab === 'integrations' ? 'page' : undefined}
+              onClick={() => setTab('integrations')}
+            >
+              Integrações
+            </button>
+            <button
+              type="button"
+              aria-current={tab === 'proposals' ? 'page' : undefined}
+              onClick={() => {
+                setTab('proposals');
+                void loadProposals();
+                void loadAgents();
+              }}
+            >
+              Agentes
+            </button>
+          </nav>
           <button type="button" className="ibtn" onClick={toggleTheme} aria-label="Alternar tema">
             <Icon name="contrast" />
           </button>
@@ -685,13 +712,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 </div>
               </div>
               {!items.length && <p className="empty-group">Este grupo ainda não tem cards.</p>}
-              <ul className="list">
+              <ul className="list service-grid">
                 {items.map((s) => (
                   <li
-                    className={`row${menu === s.id ? ' open' : ''}${confirming === s.id ? ' confirming' : ''}`}
+                    className={`row service-card${menu === s.id ? ' open' : ''}${confirming === s.id ? ' confirming' : ''}`}
                     key={s.id}
                   >
-                    <span className="mono" aria-hidden="true">
+                    <span className="mono service-icon" aria-hidden="true">
                       {s.icon || s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
                     </span>
                     <span className="who">
@@ -807,10 +834,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         </section>
         <aside>
           <section className="panel p-integrations" aria-label="Integrações">
-            <div className="block">
+            <div className="integration-page-header">
+              <p className="eyebrow">HOMELAB / CONEXÕES</p>
+              <h1>Integrações</h1>
+              <p className="lede">Acompanhe seus serviços conectados e gerencie acessos.</p>
+            </div>
+            <div className="block integration-card proxmox-card">
               <Proxmox />
             </div>
-            <div className="block connections">
+            <div className="block integration-card connections-card">
               <Connections />
             </div>
             <IntegrationCatalog />

@@ -32,6 +32,12 @@ const labels: Record<Kind, string> = {
   'uptime-kuma': 'Uptime Kuma',
   'adguard-home': 'AdGuard Home',
 };
+const marks: Record<Kind, string> = {
+  jellyfin: 'J',
+  'home-assistant': 'HA',
+  'uptime-kuma': 'UK',
+  'adguard-home': 'A',
+};
 const empty: Form = {
   type: 'jellyfin',
   name: '',
@@ -254,19 +260,23 @@ export function Connections() {
     }
   }
   return (
-    <article className="widget integration-placeholder">
-      <div className="widget-head">
-        <span>◈ &nbsp; CONEXÕES</span>
-        <span>INTEGRAÇÕES</span>
+    <section className="connections" aria-labelledby="connections-title">
+      <div className="integration-card-heading">
+        <div>
+          <p className="eyebrow">APLICATIVOS</p>
+          <h2 id="connections-title">Suas conexões</h2>
+          <p className="meta">Conecte serviços para consultar informações do seu homelab.</p>
+        </div>
+        <span className="integration-count">{items?.length ?? '—'}</span>
       </div>
-      <h3>Suas integrações</h3>
-      <p>Conecte serviços para consultar informações. A verificação TLS permanece ativa.</p>
       <section className="integration-widgets" aria-labelledby="integration-widgets-title">
-        <h4 id="integration-widgets-title">Widgets de integração</h4>
-        <p>
-          Crie vários widgets nomeados para uma mesma conexão. Os dados são exibidos como conteúdo
-          do serviço.
-        </p>
+        <div className="subsection-heading">
+          <div>
+            <h3 id="integration-widgets-title">Widgets</h3>
+            <p>Atalhos para informações importantes das suas conexões.</p>
+          </div>
+        </div>
+        <p className="trust-note">Os dados são fornecidos pelo serviço conectado.</p>
         {items && items.length > 0 && (
           <form onSubmit={(event) => void createWidget(event)}>
             <label>
@@ -292,25 +302,30 @@ export function Connections() {
                 onChange={(event) => setWidgetName(event.target.value)}
               />
             </label>
-            <button type="submit" className="primary" disabled={busy}>
+            <button type="submit" className="btn primary" disabled={busy}>
               Criar widget
             </button>
           </form>
         )}
         {widgets.length === 0 ? (
-          <p>Nenhum widget cadastrado.</p>
+          <p className="empty-hint">Nenhum widget cadastrado ainda.</p>
         ) : (
-          <ul className="connection-list">
+          <ul className="connection-list widget-list">
             {widgets.map((widget) => {
               const connection = items?.find((item) => item.id === widget.integrationId);
               return (
                 <li key={widget.id}>
-                  <strong>{widget.name}</strong>{' '}
-                  <small>{connection?.name ?? labels[widget.type] ?? widget.type}</small>
-                  <div>
+                  <span className={`connection-mark mark-${widget.type}`} aria-hidden="true">
+                    {marks[widget.type]}
+                  </span>
+                  <span className="connection-summary">
+                    <strong>{widget.name}</strong>
+                    <small>{connection?.name ?? labels[widget.type] ?? widget.type}</small>
+                  </span>
+                  <div className="connection-actions">
                     <button
                       type="button"
-                      className="cancel"
+                      className="btn quiet small"
                       disabled={busy || !connection}
                       onClick={() => void queryWidget(widget)}
                     >
@@ -318,7 +333,7 @@ export function Connections() {
                     </button>{' '}
                     <button
                       type="button"
-                      className="cancel"
+                      className="btn quiet small"
                       disabled={busy}
                       onClick={() => void removeWidget(widget)}
                     >
@@ -326,7 +341,7 @@ export function Connections() {
                     </button>
                   </div>
                   {widgetResult?.id === widget.id && (
-                    <p>
+                    <p className="widget-result">
                       {describeData(widget.type, widgetResult.data) ??
                         'O serviço retornou dados inválidos.'}
                     </p>
@@ -338,7 +353,7 @@ export function Connections() {
         )}
       </section>
       {form ? (
-        <form onSubmit={(event) => void save(event)}>
+        <form className="connection-form" onSubmit={(event) => void save(event)}>
           <label>
             Tipo de serviço
             <select
@@ -467,12 +482,12 @@ export function Connections() {
             Autorize a rede privada somente para um endereço de sua confiança. Credenciais exigem
             HTTPS.
           </p>
-          <button type="submit" className="primary" disabled={busy}>
+          <button type="submit" className="btn primary" disabled={busy}>
             Salvar conexão
           </button>{' '}
           <button
             type="button"
-            className="cancel"
+            className="btn quiet"
             disabled={busy}
             onClick={() => {
               setForm(null);
@@ -487,7 +502,7 @@ export function Connections() {
           {items === null && loadFailed ? (
             <button
               type="button"
-              className="cancel"
+              className="btn"
               onClick={() => {
                 setLoadFailed(false);
                 setMessage('');
@@ -504,14 +519,29 @@ export function Connections() {
           ) : items.length === 0 ? (
             <p>Nenhuma conexão cadastrada.</p>
           ) : (
-            <ul className="connection-list">
+            <ul className="connection-list connected-list">
               {items.map((item) => (
-                <li key={item.id}>
-                  <strong>{item.name}</strong> <small>{labels[item.type] ?? item.type}</small>
-                  <div>
+                <li className="connection-item" key={item.id}>
+                  <span className={`connection-mark mark-${item.type}`} aria-hidden="true">
+                    {marks[item.type]}
+                  </span>
+                  <span className="connection-summary">
+                    <strong>{item.name}</strong>
+                    <small>{labels[item.type] ?? item.type}</small>
+                    <span className="connection-origin">
+                      {(() => {
+                        try {
+                          return new URL(item.url).host;
+                        } catch {
+                          return item.url;
+                        }
+                      })()}
+                    </span>
+                  </span>
+                  <div className="connection-actions">
                     <button
                       type="button"
-                      className="cancel"
+                      className="btn quiet small"
                       disabled={busy}
                       onClick={() => edit(item)}
                     >
@@ -519,7 +549,7 @@ export function Connections() {
                     </button>{' '}
                     <button
                       type="button"
-                      className="cancel"
+                      className="btn quiet small"
                       disabled={busy}
                       onClick={() => void action(item, 'test')}
                     >
@@ -527,7 +557,7 @@ export function Connections() {
                     </button>{' '}
                     <button
                       type="button"
-                      className="cancel"
+                      className="btn quiet small"
                       disabled={busy}
                       onClick={() => void action(item, 'data')}
                     >
@@ -535,7 +565,7 @@ export function Connections() {
                     </button>{' '}
                     <button
                       type="button"
-                      className="cancel"
+                      className="btn quiet small"
                       disabled={busy}
                       onClick={() => void action(item, 'delete')}
                     >
@@ -562,7 +592,7 @@ export function Connections() {
           )}
           <button
             type="button"
-            className="primary integration-action"
+            className="btn primary integration-action"
             onClick={() => {
               setEditing(null);
               setForm(empty);
@@ -573,7 +603,11 @@ export function Connections() {
           </button>
         </>
       )}
-      {message && <p role="status">{message}</p>}
-    </article>
+      {message && (
+        <p className="integration-message" role="status">
+          {message}
+        </p>
+      )}
+    </section>
   );
 }
