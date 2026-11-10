@@ -103,6 +103,13 @@ atualizada. Não há procedimento automatizado de downgrade de migração; se um
 migração falhar, mantenha o volume original e restaure uma cópia de segurança
 em uma cópia de trabalho antes de retomar o serviço.
 
+## Sessões, redefinição de senha e rotação de segredos
+
+- **Sessões** ficam em memória por oito horas e terminam quando o backend reinicia. O cookie é `HttpOnly`, `SameSite=Strict` e, ao entrar por uma origem HTTPS, `Secure`. Requisições que alteram estado só são aceitas de uma origem permitida. Cinco senhas erradas de um mesmo endereço bloqueiam esse endereço por 15 minutos (o contador também fica em memória).
+- **Esqueceu a senha:** pare o backend, apague `<banco>.auth` (no Compose, `/app/data/homora.sqlite.auth` no volume), inicie de novo e abra o Homora para criar uma nova conta. Cards e conexões cifradas são mantidos. Até a primeira conta ser criada, qualquer pessoa que alcance a interface por uma origem permitida pode reivindicá-la; faça isso em rede privada. Reiniciar também encerra as sessões antigas.
+- **Rotação de segredos de conexões:** a rotação da própria chave de cifragem não é suportada, e remover `<banco>.key` com conexões cifradas as torna ilegíveis (o Homora não cria uma chave nova por cima delas). Na prática, crie um novo token na origem (Proxmox, Home Assistant etc.), informe-o de novo na conexão em Integrações e então revogue o token antigo. Tokens de agentes podem ser trocados na página Agentes ("Gerar novo token") ou revogados.
+- Trate o banco, `.key`, `.auth` e os backups como um único conjunto secreto: quem tem a chave e o banco lê as credenciais guardadas.
+
 ## Descoberta Docker
 
 Desativada por padrão. Sugere cards a partir de labels de contêineres em execução e não adiciona nada até você revisar e confirmar na página **Configurações**.

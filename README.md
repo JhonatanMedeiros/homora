@@ -105,6 +105,13 @@ docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11
 
 `.auth` and `.proxmox` may not exist on every installation; skip a copy if the file is missing. Keep the key as protected as the database, and do a test restore before relying on a backup.
 
+## Sessions, password reset and secret rotation
+
+- **Sessions** live in memory for eight hours and end when the backend restarts. The cookie is `HttpOnly`, `SameSite=Strict` and, when you sign in from an HTTPS origin, `Secure`. State-changing requests are accepted only from an allowed origin. Five wrong passwords from one client address block that address for 15 minutes (the counter is in memory too).
+- **Forgot the password:** stop the backend, delete `<database>.auth` (for Compose, `/app/data/homora.sqlite.auth` in the volume), start it again and open Homora to create a new account. Cards and encrypted connections are kept. Until the first account is created, anyone who can reach the interface from an allowed origin can claim it, so do this on a private network. Restarting also ends every old session.
+- **Rotating connection secrets:** rotating the encryption key itself is not supported, and removing `<database>.key` while encrypted connections exist makes them unreadable (Homora will not create a new key over them). To rotate what matters in practice, create a new token at the source (Proxmox, Home Assistant, and so on), enter it again on the connection in Integrations, then revoke the old token. Agent tokens can be replaced in the Agents page ("Generate new token") or revoked.
+- Treat the database, `.key`, `.auth` and backups as one secret set: anyone holding the key and the database can read the stored credentials.
+
 ## Docker discovery
 
 Off by default. It suggests cards from labels on running containers and adds nothing until you review and confirm on the **Settings** page.
