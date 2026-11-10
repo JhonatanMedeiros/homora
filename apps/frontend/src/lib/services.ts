@@ -17,7 +17,22 @@ export type ServiceGroup = {
   columns?: number | null;
 };
 export type Availability = 'available' | 'unavailable' | 'unknown';
-export type ServiceStatus = { status: Availability; lastAttempt: string | null };
+/** Motivo do estado, vindo do monitor; ausente em respostas de versões anteriores. */
+export type StatusReason =
+  | 'responding'
+  | 'redirect'
+  | 'login-required'
+  | 'not-found'
+  | 'error-status'
+  | 'no-response'
+  | 'unchecked';
+export type ServiceStatus = {
+  status: Availability;
+  lastAttempt: string | null;
+  reason?: StatusReason;
+  httpStatus?: number | null;
+  latencyMs?: number | null;
+};
 
 export function hostOf(url: string) {
   try {
