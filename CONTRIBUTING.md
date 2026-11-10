@@ -7,6 +7,10 @@ uma vulnerabilidade.
 
 ## Preparar e validar
 
+Siga os [padrões de engenharia](docs/padroes.md) e consulte a
+[arquitetura atual](docs/arquitetura.md) antes de mudanças que cruzem módulos,
+persistência ou integrações.
+
 Use Node.js 24 (`.nvmrc`) e pnpm 12.4.2 (`packageManager`):
 
 ```sh

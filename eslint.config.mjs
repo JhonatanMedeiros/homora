@@ -10,6 +10,12 @@ export default tseslint.config(
     ignores: [
       '**/dist/**',
       '**/node_modules/**',
+      '.agent/**',
+      '.agents/**',
+      '.claude/**',
+      '.github/agents/**',
+      '.github/skills/**',
+      '.impeccable/**',
       '.turbo/**',
       '.idea/**',
       'propostas/**',

@@ -2,11 +2,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { createVault } from './vault.js';
-import { proxmoxAdapter } from './integrations.js';
 import { createProposalService } from './proposals.js';
+import { createServiceConfiguration } from './service-configuration.js';
+import { integrationRegistry } from './integration-registry.js';
 
 export function createMcp(database: DatabaseSync, vault: ReturnType<typeof createVault>) {
-  const proposalService = createProposalService(database);
+  const configuration = createServiceConfiguration(database);
+  const proposalService = createProposalService(database, configuration);
   const server = new McpServer({ name: 'homora', version: '0.1.0' });
   server.registerTool(
     'list_services',
@@ -24,11 +26,7 @@ export function createMcp(database: DatabaseSync, vault: ReturnType<typeof creat
           ],
           isError: true,
         };
-      const rows = database
-        .prepare(
-          'SELECT id, name, url, category, description FROM services ORDER BY category, name',
-        )
-        .all();
+      const rows = configuration.listMcpServices();
       return { content: [{ type: 'text', text: JSON.stringify(rows) }] };
     },
   );
@@ -94,7 +92,11 @@ export function createMcp(database: DatabaseSync, vault: ReturnType<typeof creat
         const config = vault.load();
         if (!config)
           return { content: [{ type: 'text', text: 'Proxmox não configurado.' }], isError: true };
-        const data = await proxmoxAdapter.collect(config);
+        const data = await integrationRegistry.prepare('proxmox', {
+          publicConfig: {},
+          credentials: {},
+          legacyConfig: config,
+        })();
         return { content: [{ type: 'text', text: JSON.stringify(data) }] };
       } catch {
         return {

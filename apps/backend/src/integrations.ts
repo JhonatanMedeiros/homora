@@ -19,21 +19,43 @@ export const proxmoxAdapter: IntegrationAdapter<ProxmoxConfig, unknown> = {
 };
 
 export type IntegrationMetadata = { type: string; label: string; capabilities: readonly string[] };
+export type IntegrationTransport = (request: {
+  origin: string;
+  path: string;
+  authorization?: string;
+}) => Promise<{ status: number; body: unknown }>;
+export type IntegrationContext = {
+  publicConfig: Record<string, unknown>;
+  credentials: { secret?: string; ca?: string };
+  transport?: IntegrationTransport;
+  legacyConfig?: unknown;
+};
+export type IntegrationRegistration = IntegrationMetadata & {
+  prepare?: (context: IntegrationContext) => () => Promise<unknown>;
+};
 
 /** Explicit registration keeps untrusted or unknown integration types from executing code. */
-export function createIntegrationRegistry(adapters: readonly IntegrationMetadata[]) {
-  const entries = new Map<string, IntegrationMetadata>();
+export function createIntegrationRegistry<T extends IntegrationRegistration>(
+  adapters: readonly T[],
+) {
+  const entries = new Map<string, T>();
   for (const adapter of adapters) {
     if (entries.has(adapter.type)) throw new Error(`Tipo de integração duplicado: ${adapter.type}`);
-    entries.set(adapter.type, {
-      type: adapter.type,
-      label: adapter.label,
-      capabilities: [...adapter.capabilities],
-    });
+    entries.set(adapter.type, adapter);
   }
   return {
     list: () =>
-      [...entries.values()].map((entry) => ({ ...entry, capabilities: [...entry.capabilities] })),
+      [...entries.values()].map(({ type, label, capabilities }) => ({
+        type,
+        label,
+        capabilities: [...capabilities],
+      })),
+    get: (type: string) => entries.get(type),
+    prepare: (type: string, context: IntegrationContext) => {
+      const entry = entries.get(type);
+      if (!entry?.prepare) throw new Error('Tipo de integração indisponível.');
+      return entry.prepare(context);
+    },
   };
 }
 

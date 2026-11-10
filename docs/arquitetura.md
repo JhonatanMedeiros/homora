@@ -1,10 +1,13 @@
-# Arquitetura proposta
+# Arquitetura do Homora
 
-Decisões iniciais, sujeitas a validação durante a implementação. Um monólito modular reduz a complexidade operacional inicial.
+Homora segue um monólito modular: uma aplicação web, uma API Node e um banco
+SQLite, distribuídos como um conjunto pequeno de processos/pacotes. Essa forma
+mantém a instalação pessoal simples sem impedir que módulos sejam extraídos se
+houver uma necessidade concreta.
 
-A comparação de projetos e a proposta de evolução das integrações estão em
-[integrações](integracoes.md). O diagrama abaixo descreve a arquitetura alvo;
-em particular, o MCP existente ainda acessa o banco e o cofre local diretamente.
+A comparação de projetos e a direção para integrações estão em
+[integrações](integracoes.md). O diagrama descreve a direção desejada. A seção
+[implementação atual](#implementação-atual) registra diferenças importantes.
 
 ```mermaid
 flowchart LR
@@ -18,13 +21,22 @@ flowchart LR
   INT --> S[Serviços cadastrados]
 ```
 
-## Componentes
+## Componentes e direção
 
-- Interface web: painel, configuração, aprovação de propostas e histórico.
-- API: autenticação, autorização, validação, regras de negócio e armazenamento. A interface e o MCP usam as mesmas regras.
-- Adaptadores: contrato comum para capacidades, configuração, teste de conexão e coleta; isolamento de falhas, limites de tempo e cache.
-- MCP: ferramentas tipadas para consultar e propor configurações; não recebe acesso direto ao banco nem retorna segredos.
-- Persistência: SQLite é candidato para instalação individual; migrações e backup precisam ser testados. Credenciais criptografadas com chave externa ao banco e instruções de recuperação; detalhes criptográficos serão definidos antes da implementação.
+- Interface web: painel, configuração, revisão de propostas e gestão dos agentes.
+- API HTTP: autenticação da sessão web, validação, regras de aplicação e
+  armazenamento. O módulo de configuração de cards é compartilhado com o MCP;
+  outras rotas permanecem específicas ao HTTP.
+- Adaptadores: validam configurações e coletam dados externos. O registro
+  central expõe metadados e execução; cada integração mantém seu formato de
+  credencial e limites específicos.
+- MCP atual: processo local stdio com token e escopos, que abre banco e cofre
+  diretamente. Oferece consultas e criação de propostas; não usa a sessão web,
+  não grava cards sem aprovação humana e não retorna segredos.
+- Persistência: SQLite, migrações e recuperação estão implementados. Credenciais
+  de algumas integrações ficam cifradas no banco com chave lateral; Proxmox usa
+  arquivo legado. Rotação automática e proteção contra comprometimento do host
+  ainda não existem.
 
 ## Modelo inicial
 
@@ -33,7 +45,10 @@ Serviço (nome, URL, ícone, grupo), grupo (nome e ordem), integração (tipo, c
 ## Segurança
 
 - Autenticação obrigatória para interface e MCP; identidades separadas para agentes, permissões mínimas e revogação. Não presumir que rede local é confiável.
-- MCP somente leitura por padrão. Escritas criam propostas com diff legível, escopo, autor e prazo. Aprovação humana autenticada cobre a versão exata; rejeitar alterações obsoletas, expiradas ou já aplicadas. Não permitir autoaprovação pelo agente.
+- O MCP pode consultar e criar propostas; alteração persistente de cards ocorre
+  após revisão humana autenticada da proposta exata. Propostas obsoletas,
+  expiradas ou já aplicadas são rejeitadas. Não permitir autoaprovação pelo
+  agente nem escrita direta em integrações.
 - Proxmox com token restrito e TLS validado; orientar a instalação de certificados confiáveis. Não aceitar credenciais em prompts ou retorná-las em ferramentas.
 - Evitar SSRF: verificar destinos e redirecionamentos no servidor, restringir redes e portas configuradas pelo administrador, bloquear destinos sensíveis e revalidar DNS na conexão. O acesso à rede privada deve ser autorizado explicitamente, pois é necessário ao homelab.
 - A implantação atualmente suportada por padrão é local em loopback. Origens adicionais são configuradas explicitamente em `HOMORA_ALLOWED_ORIGINS`; origens HTTP só são aceitas em localhost. Para proxy reverso, o proxy deve terminar HTTPS e isolar a API. A aplicação não confia em `X-Forwarded-For`/`X-Forwarded-Proto`; portanto não configure proxies não confiáveis nem use cabeçalhos encaminhados para decidir identidade ou segurança.
@@ -46,4 +61,72 @@ Serviço (nome, URL, ícone, grupo), grupo (nome e ordem), integração (tipo, c
 
 ## Implantação e escolhas pendentes
 
-Primeiro alvo: serviço em container com volume persistente, utilizável em um LXC ou host próprio. Avaliar TypeScript para interface e backend e Docker Compose para distribuição; não são decisões definitivas. Um script Community Scripts pode ser estudado posteriormente, após haver releases, instalação reproduzível e atualização com backup.
+React, TypeScript, Node.js, SQLite e Docker Compose já são escolhas
+implementadas. Compose usa volume persistente e publicação local em loopback.
+Upgrade e recuperação têm instruções e validações documentadas, mas releases e
+exposição em rede continuam sem perfil operacional validado. Um script
+Community Scripts pode ser estudado após haver releases confiáveis.
+
+## Implementação atual
+
+- `apps/frontend` contém a interface React/Vite. `apps/backend` contém a API
+  Fastify, o processo MCP stdio, autenticação, integrações, política de rede e
+  serviços de domínio. `packages/shared` publica validação/contratos TypeScript;
+  `packages/db` contém esquema, inicialização e migrações Drizzle/SQLite.
+- `app.ts` compõe hooks globais, autenticação e módulos de rota. As rotas de
+  autenticação, configuração de cards/grupos, agentes/propostas e Proxmox ficam
+  em `routes/`; conexões seguem em `connections.ts`. O módulo
+  `service-configuration.ts` centraliza invariantes de cards/grupos, transações
+  e versão da configuração para HTTP, MCP e aprovação de propostas. O frontend
+  ainda concentra a composição principal em `App.tsx` e a gestão de conexões em
+  `Connections.tsx`.
+- `integration-registry.ts` registra metadados e execução dos adaptadores
+  Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home e Proxmox. As quatro
+  conexões novas usam o transporte com política de destino; Proxmox usa seu
+  cofre legado e transporte próprio, mas aparece no mesmo catálogo e registro
+  de execução.
+- O MCP executa em processo separado e abre SQLite/cofre diretamente. Ele
+  autentica tokens de agente com escopos; oferece consultas e criação de
+  propostas. Ele não passa pela API HTTP nem pela sessão web. Essa fronteira é
+  intencional por enquanto e precisa ser considerada ao alterar autorização.
+- SQLite é fonte persistente. Atualizações de esquema são migrações versionadas;
+  estado de sessão e alguns caches de observação são mantidos em memória.
+
+## Avaliação e prioridades arquiteturais
+
+A base é coerente para produto inicial: limites entre frontend, backend e
+pacotes compartilhados estão estabelecidos, as integrações externas ficam no
+backend, o banco tem migrações e há testes unitários/de integração. TypeScript
+estrito, pnpm workspaces, Turborepo, ESLint, Prettier, Vitest e CI dão uma
+fundação de consistência. A arquitetura não precisa de microserviços ou de uma
+camada genérica adicional agora.
+
+Os principais pontos de atenção são evolução e consistência, não a escolha de
+tecnologia:
+
+1. `service-configuration.ts` já reúne regras de configuração de cards e grupos,
+   inclusive a versão usada por propostas. Parte da validação HTTP ainda usa
+   casts manuais; schemas Zod nos limites HTTP/MCP reduziriam divergências e
+   respostas 500 acidentais.
+2. Algumas operações de conexão ainda combinam validação, cofre, persistência,
+   cache e tradução de erros em `connections.ts`. Extraia lógica adicional
+   quando uma regra for compartilhada ou a mudança precisar de menor localidade;
+   evite arquivos que apenas reexportem handlers.
+3. O MCP e HTTP compartilham regras de configuração de cards, mas ainda leem e
+   gravam parte dos dados por mecanismos diferentes. Mudanças de autorização e
+   propostas precisam considerar ambos os caminhos. Contratos públicos devem
+   continuar livres de segredos.
+4. Validação HTTP é parcialmente manual com casts de `request.body`; schemas Zod
+   nos limites reduziriam divergência e respostas 500 acidentais.
+5. `App.tsx` e `Connections.tsx` já são grandes o bastante para justificar
+   extração incremental de telas/componentes/hooks por capacidade, preservando
+   comportamento e sem reescrita ampla.
+6. O registro de execução está centralizado, mas armazenamento de credenciais e
+   configuração Proxmox continuam diferentes das demais integrações. Manter
+   essa diferença explícita até haver necessidade de produto e migração
+   compatível para unificá-los.
+
+Para regras contínuas de contribuição e revisão, consulte
+[Padrões de engenharia](padroes.md). Mudanças estruturais que afetem limites,
+persistência, segurança ou implantação devem registrar decisão e consequências
+em uma nota curta de arquitetura (ADR), além de atualizar este documento.

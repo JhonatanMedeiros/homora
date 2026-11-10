@@ -2,6 +2,12 @@ node_modules
 **/dist
 .turbo
 .idea
+.agent
+.agents
+.claude
+.github/agents
+.github/skills
+.impeccable
 data
 pnpm-lock.yaml
 packages/db/migrations
