@@ -13,18 +13,18 @@ fluxo completo já foi validado. As etapas podem ser divididas em tarefas menore
 
 ## P0 — Consolidar e validar a base
 
-- [ ] Revisar os arquivos modificados e não rastreados, preservando o trabalho
+- [x] Revisar os arquivos modificados e não rastreados, preservando o trabalho
       existente e verificando se dados locais e segredos estão fora do Git.
-- [ ] Registrar uma primeira versão coerente no Git após a revisão.
-- [ ] Instalar as dependências em ambiente com acesso ao registro npm e executar
+- [x] Registrar uma primeira versão coerente no Git após a revisão.
+- [x] Instalar as dependências em ambiente com acesso ao registro npm e executar
       `pnpm check` e `pnpm build`; registrar e corrigir falhas encontradas.
-- [ ] Validar uma instalação limpa e o fluxo local: primeiro acesso, cadastro,
+- [x] Validar uma instalação limpa e o fluxo local: primeiro acesso, cadastro,
       edição, exclusão, busca e persistência após reinicialização.
-- [ ] Subir o Docker Compose e validar inicialização, persistência e atualização
+- [x] Subir o Docker Compose e validar inicialização, persistência e atualização
       preservando dados.
-- [ ] Testar backup e restauração completos, incluindo os arquivos de conta,
+- [x] Testar backup e restauração completos, incluindo os arquivos de conta,
       chave e integração quando aplicável; documentar a proteção e a recuperação.
-- [ ] Registrar problemas encontrados, sua prioridade e limitações conhecidas.
+- [x] Registrar problemas encontrados, sua prioridade e limitações conhecidas.
 
 **Conclusão:** instalação e fluxo principal reproduzíveis, verificações passando
 e restauração comprovada em ambiente de teste.
@@ -309,7 +309,20 @@ com o projeto usando a documentação disponível.
   Os testes de migração usam bancos SQLite temporários e verificam adoção de
   esquema legado, migração aditiva, preservação de serviços e referências,
   reinicialização e esquemas incompatíveis.
-- Nenhum banco real ou caminho `data/` foi acessado. Não foi iniciado Compose;
-  os testes não validam atualização entre imagens/releases nem iniciam o
-  backend após a restauração. Backup/restauração sintéticos e migração de
-  esquema foram comprovados; validação de volume/container segue pendente.
+- Validação Compose isolada: Docker Server 29.9.2 e Compose v5.6.1. A versão
+  base `f66c3ef` e o Homora integrado em `04fb017` foram construídos e iniciados
+  no projeto `homora-p0upg-4ab7d329`, volume descartável
+  `homora-p0upg-4ab7d329_homora-data` e porta loopback 49381. Um serviço
+  sintético criado pela API preservou ID 1, nome, URL e categoria após a
+  atualização; posição 0, ícone vazio e `allowPrivate: false` também foram
+  confirmados. Projeto e volume foram removidos ao final.
+- Restauração operacional completa validada com backend real em containers
+  temporários: o banco e os sidecars `.auth`, `.key` e `.proxmox` foram copiados
+  para outro caminho. O backend restaurado autenticou a conta sintética, leu o
+  serviço persistido e carregou/salvou novamente configuração Proxmox cifrada
+  com chave e CA sintéticas, sem realizar conexão externa. Containers e
+  diretório temporário foram removidos.
+- Nenhum banco real, caminho `data/` ou serviço real foi acessado. Os relatórios
+  e logs redigidos dessas execuções ficaram em `/tmp` e não foram adicionados ao
+  repositório. A validação cobre os commits até `04fb017`; repetir upgrade e
+  restauração após P4 antes da PR final.
