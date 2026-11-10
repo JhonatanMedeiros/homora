@@ -114,8 +114,8 @@ validação do inventário e das redes reais permanece pendente.
 ## P4 — MCP e alterações com aprovação
 
 - [x] Definir identidade, escopos e revogação de agentes e alinhar o acesso MCP
-      às regras da aplicação. O MCP atual é local, somente leitura e acessa arquivos
-      diretamente; a sessão web não o protege.
+      ao modelo de autorização. O MCP atual é local, acessa banco/cofre
+      diretamente e não é protegido pela sessão web.
 - [x] Disponibilizar consultas autorizadas sem expor segredos e tratar dados
       externos como não confiáveis.
 - [x] Implementar propostas de alterações de cards com revisão humana, diff,
@@ -144,6 +144,21 @@ Esta etapa permanece **incompleta**: o fluxo visual não foi exercitado
 manualmente; os testes cobrem replay entre conexões SQLite, não concorrência sob
 carga nem injeção de instruções em respostas de ferramentas reais. Nenhuma
 infraestrutura foi acessada.
+
+### Consolidação arquitetural (2026-11-10)
+
+- Regras de cards e grupos foram concentradas em
+  `apps/backend/src/service-configuration.ts`, compartilhadas pelas rotas HTTP,
+  MCP e aprovação de propostas. Alterações e versão da configuração passam pela
+  mesma transação SQLite; nenhuma migração foi necessária.
+- `app.ts` passou a compor rotas separadas por capacidade: autenticação,
+  configuração, propostas/agentes e Proxmox. Conexões mantêm seu módulo de rotas.
+- `integration-registry.ts` agora registra metadados e execução dos cinco
+  adaptadores. Conexões e consultas MCP resolvem os adaptadores pelo mesmo
+  registro; Proxmox continua com armazenamento de credenciais legado e política
+  de transporte própria.
+- `pnpm type-check` passou. Lint, formatação global e testes não foram
+  executados nesta mudança; a validação de comportamento fica pendente no CI/PR.
 
 ## P5 — Preparar publicação open source
 

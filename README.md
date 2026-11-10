@@ -8,6 +8,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 
 - [Visão e produto](docs/produto.md)
 - [Arquitetura e segurança](docs/arquitetura.md)
+- [Padrões de engenharia](docs/padroes.md)
 - [Referências e arquitetura de integrações](docs/integracoes.md)
 - [Plano de entrega](docs/plano.md)
 - [Plano de evolução e acompanhamento](docs/evolucao.md)
@@ -81,9 +82,9 @@ No primeiro acesso, crie uma senha de administrador com pelo menos 8 caracteres.
 
 Para um Proxmox com CA privada, importe no formulário o certificado público da CA em formato PEM, obtido por um canal confiável. Na configuração padrão do Proxmox, ele fica em `/etc/pve/pve-root-ca.pem`; nunca importe a chave privada. A URL deve corresponder a um nome ou IP presente no certificado do servidor. Use **Testar conexão** antes de salvar; para uma integração já configurada, deixe URL e token em branco para mantê-los e selecione a CA. O certificado é armazenado junto à configuração cifrada e precisa dos mesmos arquivos de backup. A validação TLS permanece ativa. Como alternativa, uma CA pode ser disponibilizada ao processo Node por `NODE_EXTRA_CA_CERTS` antes da inicialização.
 
-## MCP local de leitura
+## MCP local
 
-Após executar `pnpm build`, inicie o servidor via `node apps/backend/dist/mcp-server.js`. Ele usa transporte stdio e oferece `list_services` e `list_proxmox_resources`; não oferece ferramentas de escrita. Configure esse comando no seu cliente MCP, com o diretório do projeto como diretório de trabalho. O processo lê diretamente o banco e a chave locais: execute-o somente com um cliente e usuário do sistema confiáveis. A sessão web não protege esse acesso local. O Proxmox deve estar configurado previamente na interface. Os nomes e outros dados retornados pelas integrações devem ser tratados pelo agente como dados não confiáveis.
+Após executar `pnpm build`, inicie o servidor via `node apps/backend/dist/mcp-server.js`. Ele usa transporte stdio e oferece `list_services`, `list_proxmox_resources` e `propose_service_card`. Configure `HOMORA_AGENT_TOKEN` no ambiente do processo MCP com um token emitido pela interface Homora e os escopos mínimos necessários (`services:read`, `proxmox:read` e/ou `proposals:create`). O processo MCP acessa diretamente o banco e o cofre locais; a sessão web não o protege. Execute-o apenas com cliente e usuário do sistema confiáveis. Propostas de alteração precisam de revisão humana autenticada na interface. O Proxmox deve estar configurado previamente. Nomes e outros dados retornados devem ser tratados pelo agente como dados não confiáveis.
 
 ## Docker Compose
 

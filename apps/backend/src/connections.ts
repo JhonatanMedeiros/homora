@@ -3,12 +3,9 @@ import { X509Certificate } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { createDatabase, integrationInstances, integrationWidgets } from '@homora/db';
 import { createVault } from './vault.js';
-import { createHomeAssistantAdapter } from './home-assistant.js';
-import { createJellyfinAdapter } from './jellyfin.js';
-import { createAdGuardAdapter } from './adguard.js';
-import { createUptimeKumaAdapter } from './uptime-kuma.js';
 import { getAuthorizedResponse } from './network-request.js';
 import { createObservationCache } from './integrations.js';
+import { integrationRegistry } from './integration-registry.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
@@ -21,7 +18,12 @@ type Data = {
 };
 type Credentials = { secret?: string; ca?: string };
 type Row = typeof integrationInstances.$inferSelect;
-const types = ['jellyfin', 'home-assistant', 'adguard-home', 'uptime-kuma'] as const;
+const types = new Set(
+  integrationRegistry
+    .list()
+    .filter(({ type }) => type !== 'proxmox')
+    .map(({ type }) => type),
+);
 function parseData(row: Row): Data {
   return JSON.parse(row.publicConfig) as Data;
 }
@@ -73,38 +75,11 @@ function adapter(type: string, data: Data, keys: Credentials) {
     }
     return { status: response.status, body };
   };
-  switch (type) {
-    case 'jellyfin': {
-      const a = createJellyfinAdapter(transport);
-      const c = a.validate({ url: data.url });
-      return () => a.collect(c);
-    }
-    case 'home-assistant': {
-      const a = createHomeAssistantAdapter(transport);
-      const c = a.validate({
-        url: data.url,
-        token: keys.secret ?? '',
-        entityId: data.entityId ?? '',
-      });
-      return () => a.collect(c);
-    }
-    case 'adguard-home': {
-      const a = createAdGuardAdapter(transport);
-      const c = a.validate({
-        url: data.url,
-        username: data.username ?? '',
-        password: keys.secret ?? '',
-      });
-      return () => a.collect(c);
-    }
-    case 'uptime-kuma': {
-      const a = createUptimeKumaAdapter(transport);
-      const c = a.validate({ url: data.url, slug: data.slug ?? '' });
-      return () => a.collect(c);
-    }
-    default:
-      throw new Error('Tipo de integração inválido.');
-  }
+  return integrationRegistry.prepare(type, {
+    publicConfig: { ...data },
+    credentials: keys,
+    transport,
+  });
 }
 function prepare(body: unknown, current?: Row, saved: Credentials = {}) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Dados inválidos.');
@@ -133,7 +108,7 @@ function prepare(body: unknown, current?: Row, saved: Credentials = {}) {
   const old = current ? parseData(current) : undefined;
   const type = (input.type as string) || current?.type || '';
   const name = ((input.name as string) || current?.name || '').trim();
-  if (!types.includes(type as (typeof types)[number]) || !name || name.length > 80)
+  if (!types.has(type) || !name || name.length > 80)
     throw new Error('Informe nome e tipo válidos.');
   const data: Data = {
     url: (input.url as string) || old?.url || '',

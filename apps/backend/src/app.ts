@@ -1,21 +1,20 @@
 import Fastify from 'fastify';
-import { eq, asc } from 'drizzle-orm';
-import { createDatabase, getSqliteHandle, services, serviceGroups } from '@homora/db';
-import { validateService, type ServiceInput } from '@homora/shared';
-import { createAuth } from './auth.js';
-import { createVault, type ProxmoxConfig } from './vault.js';
-import { ProxmoxError } from './proxmox.js';
-import { createServiceMonitor, startServiceMonitor } from './service-monitor.js';
 import type { Service } from '@homora/shared';
+import { createDatabase, getSqliteHandle, services } from '@homora/db';
+import { createAuth } from './auth.js';
+import { createVault } from './vault.js';
+import { createServiceMonitor, startServiceMonitor } from './service-monitor.js';
 import { registerConnectionRoutes } from './connections.js';
 import { createProposalService } from './proposals.js';
-import {
-  createIntegrationRegistry,
-  createObservationCache,
-  IntegrationInvalidatedError,
-  proxmoxAdapter,
-} from './integrations.js';
+import { integrationRegistry } from './integration-registry.js';
+import { createServiceConfiguration } from './service-configuration.js';
+import { registerAuthRoutes } from './routes/auth.js';
+import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
+import { registerProxmoxRoutes } from './routes/proxmox.js';
+import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
+
 type Database = ReturnType<typeof createDatabase>['db'];
+
 export function createApp(
   db: Database,
   webPort: number,
@@ -24,38 +23,20 @@ export function createApp(
   configuredOrigins: readonly string[] = [],
 ) {
   const app = Fastify({ bodyLimit: 100_000 });
-  const proposals = createProposalService(getSqliteHandle(db));
-  const integrations = createIntegrationRegistry([
-    proxmoxAdapter,
-    { type: 'jellyfin', label: 'Jellyfin', capabilities: ['server-info'] },
-    { type: 'home-assistant', label: 'Home Assistant', capabilities: ['entity-state'] },
-    { type: 'uptime-kuma', label: 'Uptime Kuma', capabilities: ['status-page'] },
-    { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
-  ]);
-  const proxmoxCache = createObservationCache<unknown>(30_000);
+  const sqlite = getSqliteHandle(db);
+  const configuration = createServiceConfiguration(sqlite);
+  const proposals = createProposalService(sqlite, configuration);
   const serviceMonitor = createServiceMonitor(
     () => db.select().from(services).orderBy(services.id) as Promise<Service[]>,
   );
   const stopServiceMonitor = startServiceMonitor(serviceMonitor);
   app.addHook('onClose', async () => stopServiceMonitor());
-  app.addHook('onResponse', async (request, reply) => {
-    if (
-      reply.statusCode < 400 &&
-      request.method !== 'GET' &&
-      /^\/api\/services(?:\/|$)/.test(request.url)
-    ) {
-      getSqliteHandle(db).prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
-    }
-  });
+
   const allowedOrigins = new Set([
     `http://127.0.0.1:${webPort}`,
     `http://localhost:${webPort}`,
     ...configuredOrigins,
   ]);
-  async function nextGroupPosition() {
-    const groups = await db.select().from(serviceGroups);
-    return Math.max(-1, ...groups.map((group) => group.position)) + 1;
-  }
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     if (
@@ -63,41 +44,6 @@ export function createApp(
       !allowedOrigins.has(request.headers.origin ?? '')
     )
       return reply.code(403).send({ error: 'Origem não autorizada.' });
-  });
-  app.get('/api/auth/status', async (request) => ({
-    configured: auth.configured(),
-    authenticated: auth.authorized(request.headers.cookie),
-  }));
-  app.post('/api/auth/setup', async (request, reply) => {
-    if (auth.configured()) return reply.code(403).send({ error: 'Conta já configurada.' });
-    try {
-      auth.setup((request.body as { password?: unknown })?.password);
-      return reply.code(201).send({ ok: true });
-    } catch {
-      return reply.code(400).send({
-        error: 'Não foi possível criar a conta. Use uma senha com pelo menos 8 caracteres.',
-      });
-    }
-  });
-  app.post('/api/auth/login', async (request, reply) => {
-    const token = auth.login((request.body as { password?: unknown })?.password, request.ip);
-    if (!token)
-      return reply.code(401).send({ error: 'Credenciais inválidas ou tentativas excedidas.' });
-    return reply
-      .header(
-        'Set-Cookie',
-        `homora_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${request.headers.origin?.startsWith('https://') ? '; Secure' : ''}`,
-      )
-      .send({ ok: true });
-  });
-  app.post('/api/auth/logout', async (request, reply) => {
-    auth.logout(request.headers.cookie);
-    return reply
-      .header(
-        'Set-Cookie',
-        `homora_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${request.headers.origin?.startsWith('https://') ? '; Secure' : ''}`,
-      )
-      .send({ ok: true });
   });
   app.addHook('onRequest', async (request, reply) => {
     if (
@@ -107,309 +53,15 @@ export function createApp(
     )
       return reply.code(401).send({ error: 'Autenticação necessária.' });
   });
+
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
-  app.get('/api/integrations/catalog', async () => integrations.list());
+  registerAuthRoutes(app, auth);
+  app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
-  app.get('/api/proxmox/status', async () => {
-    const config = vault?.load();
-    return { configured: Boolean(config), hasCa: Boolean(config?.ca) };
-  });
-  function prepareConfig(body: unknown): ProxmoxConfig {
-    if (!body || typeof body !== 'object') throw new Error('Dados inválidos.');
-    const input = body as Record<string, unknown>;
-    for (const key of ['url', 'tokenId', 'secret', 'ca']) {
-      if (input[key] !== undefined && typeof input[key] !== 'string')
-        throw new Error('Dados inválidos.');
-    }
-    if (input.removeCa !== undefined && typeof input.removeCa !== 'boolean')
-      throw new Error('Dados inválidos.');
-    const existing = vault?.load();
-    if (existing && !input.secret) {
-      let changedUrl = false;
-      if (input.url) {
-        try {
-          changedUrl = new URL(input.url as string).origin !== existing.url;
-        } catch {
-          throw new Error('Informe uma URL HTTPS válida.');
-        }
-      }
-      if (changedUrl || (input.tokenId && input.tokenId !== existing.tokenId))
-        throw new Error('Informe novamente o segredo ao alterar a URL ou o ID do token.');
-    }
-    return proxmoxAdapter.validate({
-      url: (input.url as string) || existing?.url || '',
-      tokenId: (input.tokenId as string) || existing?.tokenId || '',
-      secret: (input.secret as string) || existing?.secret || '',
-      ca: input.removeCa ? undefined : (input.ca as string) || existing?.ca,
-    });
-  }
-  app.post('/api/proxmox/config', async (request, reply) => {
-    if (!vault) return reply.code(503).send({ error: 'Integração indisponível.' });
-    let config: ProxmoxConfig;
-    try {
-      config = prepareConfig(request.body);
-    } catch (error) {
-      return reply.code(400).send({
-        error:
-          error instanceof Error && /^(Informe|Certificado|Dados)/.test(error.message)
-            ? error.message
-            : 'Não foi possível carregar a configuração existente.',
-      });
-    }
-    try {
-      await vault.save(config);
-      proxmoxCache.invalidate();
-      return { ok: true };
-    } catch {
-      return reply.code(500).send({ error: 'Não foi possível salvar a configuração.' });
-    }
-  });
-  app.post('/api/proxmox/test', async (request, reply) => {
-    if (!vault) return reply.code(503).send({ error: 'Integração indisponível.' });
-    let config: ProxmoxConfig;
-    try {
-      config = prepareConfig(request.body);
-    } catch (error) {
-      return reply.code(400).send({
-        error:
-          error instanceof Error && /^(Informe|Certificado|Dados)/.test(error.message)
-            ? error.message
-            : 'Não foi possível carregar a configuração existente.',
-      });
-    }
-    try {
-      await proxmoxAdapter.collect(config);
-      return { ok: true };
-    } catch (error) {
-      return reply.code(502).send({
-        error: error instanceof ProxmoxError ? error.message : 'Não foi possível testar a conexão.',
-      });
-    }
-  });
-  app.get<{ Querystring: { refresh?: string } }>(
-    '/api/proxmox/resources',
-    async (request, reply) => {
-      try {
-        const config = vault?.load();
-        if (!config) return reply.code(404).send({ error: 'Proxmox não configurado.' });
-        return await proxmoxCache.collect(
-          () => proxmoxAdapter.collect(config),
-          request.query.refresh === 'true',
-        );
-      } catch (error) {
-        return reply.code(502).send({
-          error:
-            error instanceof ProxmoxError || error instanceof IntegrationInvalidatedError
-              ? error.message
-              : 'Não foi possível carregar a configuração do Proxmox. Verifique os arquivos de integração e a chave.',
-        });
-      }
-    },
-  );
-  app.get('/api/services', async () =>
-    db.select().from(services).orderBy(services.category, services.position, services.name),
-  );
-  app.get('/api/proposals', async () => proposals.list());
-  app.post('/api/agents', async (request, reply) => {
-    try {
-      return reply
-        .code(201)
-        .send(
-          proposals.issue(
-            (request.body as { name: string; scopes: string[] }).name,
-            (request.body as { scopes: string[] }).scopes,
-          ),
-        );
-    } catch {
-      return reply.code(400).send({ error: 'Identidade ou escopos inválidos.' });
-    }
-  });
-  app.get('/api/agents', async () => proposals.listAgents());
-  app.post<{ Params: { id: string } }>('/api/agents/:id/revoke', async (request) => {
-    proposals.revoke(request.params.id);
-    return { ok: true };
-  });
-  app.post<{ Params: { id: string } }>('/api/agents/:id/rotate', async (request, reply) => {
-    try {
-      return { token: proposals.rotate(request.params.id) };
-    } catch {
-      return reply.code(404).send({ error: 'Identidade não encontrada.' });
-    }
-  });
-  app.post<{ Params: { id: string } }>('/api/proposals/:id/review', async (request, reply) => {
-    const accept = (request.body as { approve?: unknown })?.approve;
-    if (typeof accept !== 'boolean') return reply.code(400).send({ error: 'Decisão inválida.' });
-    try {
-      return { state: proposals.decide(request.params.id, accept, 'local-admin') };
-    } catch (error) {
-      return reply
-        .code(409)
-        .send({ error: error instanceof Error ? error.message : 'Proposta indisponível.' });
-    }
-  });
-  app.get('/api/service-status', async () => serviceMonitor.snapshot());
-  app.get('/api/groups', async () =>
-    db.select().from(serviceGroups).orderBy(asc(serviceGroups.position), asc(serviceGroups.name)),
-  );
-  app.post('/api/groups', async (request, reply) => {
-    const name = (request.body as { name?: unknown })?.name;
-    if (typeof name !== 'string' || !name.trim() || name.trim().length > 40)
-      return reply.code(400).send({ error: 'Informe um nome de grupo com até 40 caracteres.' });
-    try {
-      const [created] = await db
-        .insert(serviceGroups)
-        .values({ name: name.trim(), position: await nextGroupPosition() })
-        .returning();
-      return reply.code(201).send(created);
-    } catch {
-      return reply.code(409).send({ error: 'Já existe um grupo com esse nome.' });
-    }
-  });
-  app.put<{ Params: { id: string } }>('/api/groups/:id', async (request, reply) => {
-    const name = (request.body as { name?: unknown })?.name;
-    if (!/^\d+$/.test(request.params.id))
-      return reply.code(404).send({ error: 'Grupo não encontrado.' });
-    if (typeof name !== 'string' || !name.trim() || name.trim().length > 40)
-      return reply.code(400).send({ error: 'Informe um nome de grupo com até 40 caracteres.' });
-    const current = (await db.select().from(serviceGroups)).find(
-      (group) => group.id === Number(request.params.id),
-    );
-    if (!current) return reply.code(404).send({ error: 'Grupo não encontrado.' });
-    try {
-      const [updated] = await db
-        .update(serviceGroups)
-        .set({ name: name.trim() })
-        .where(eq(serviceGroups.id, current.id))
-        .returning();
-      await db
-        .update(services)
-        .set({ category: updated.name })
-        .where(eq(services.category, current.name));
-      return updated;
-    } catch {
-      return reply.code(409).send({ error: 'Já existe um grupo com esse nome.' });
-    }
-  });
-  app.delete<{ Params: { id: string } }>('/api/groups/:id', async (request, reply) => {
-    if (!/^\d+$/.test(request.params.id))
-      return reply.code(404).send({ error: 'Grupo não encontrado.' });
-    const group = (await db.select().from(serviceGroups)).find(
-      (item) => item.id === Number(request.params.id),
-    );
-    if (!group) return reply.code(404).send({ error: 'Grupo não encontrado.' });
-    if ((await db.select().from(services)).some((service) => service.category === group.name))
-      return reply
-        .code(409)
-        .send({ error: 'Mova ou remova os cards deste grupo antes de excluí-lo.' });
-    await db.delete(serviceGroups).where(eq(serviceGroups.id, group.id));
-    return { deleted: true };
-  });
-  app.put('/api/groups/order', async (request, reply) => {
-    const names = (request.body as { names?: unknown })?.names;
-    const groups = await db.select().from(serviceGroups);
-    if (
-      !Array.isArray(names) ||
-      names.length !== groups.length ||
-      new Set(names).size !== groups.length ||
-      names.some((name) => typeof name !== 'string' || !groups.some((group) => group.name === name))
-    )
-      return reply.code(400).send({ error: 'Ordem de grupos inválida.' });
-    for (const [position, name] of names.entries())
-      await db.update(serviceGroups).set({ position }).where(eq(serviceGroups.name, name));
-    return { ok: true };
-  });
-  app.put('/api/services/order', async (request, reply) => {
-    const body = request.body as { category?: unknown; ids?: unknown };
-    if (
-      typeof body?.category !== 'string' ||
-      !Array.isArray(body.ids) ||
-      body.ids.some((id) => !Number.isSafeInteger(id))
-    )
-      return reply.code(400).send({ error: 'Ordem de cards inválida.' });
-    const current = (await db.select().from(services)).filter(
-      (service) => service.category === body.category,
-    );
-    if (
-      body.ids.length !== current.length ||
-      new Set(body.ids).size !== current.length ||
-      body.ids.some((id) => !current.some((service) => service.id === id))
-    )
-      return reply.code(400).send({ error: 'Ordem de cards inválida.' });
-    for (const [position, id] of body.ids.entries())
-      await db
-        .update(services)
-        .set({ position })
-        .where(eq(services.id, id as number));
-    return { ok: true };
-  });
-  app.post('/api/services', async (request, reply) => {
-    try {
-      const body = (request.body ?? {}) as Partial<ServiceInput>;
-      const service = validateService(body);
-      await db
-        .insert(serviceGroups)
-        .values({ name: service.category, position: await nextGroupPosition() })
-        .onConflictDoNothing();
-      const siblings = (await db.select().from(services)).filter(
-        (item) => item.category === service.category,
-      );
-      const position = Math.max(-1, ...siblings.map((item) => item.position)) + 1;
-      const [created] = await db
-        .insert(services)
-        .values({ ...service, position })
-        .returning();
-      void serviceMonitor.invalidate();
-      return reply.code(201).send(created);
-    } catch (error) {
-      return reply
-        .code(400)
-        .send({ error: error instanceof Error ? error.message : 'Dados inválidos.' });
-    }
-  });
-  app.put<{ Params: { id: string } }>('/api/services/:id', async (request, reply) => {
-    if (!/^\d+$/.test(request.params.id))
-      return reply.code(404).send({ error: 'Serviço não encontrado.' });
-    try {
-      const body = (request.body ?? {}) as Partial<ServiceInput>;
-      const service = validateService(body);
-      const current = (await db.select().from(services)).find(
-        (item) => item.id === Number(request.params.id),
-      );
-      if (!current) return reply.code(404).send({ error: 'Serviço não encontrado.' });
-      await db
-        .insert(serviceGroups)
-        .values({ name: service.category, position: await nextGroupPosition() })
-        .onConflictDoNothing();
-      if (current.category === service.category) {
-        service.position = current.position;
-      } else {
-        const siblings = (await db.select().from(services)).filter(
-          (item) => item.category === service.category,
-        );
-        service.position = Math.max(-1, ...siblings.map((item) => item.position)) + 1;
-      }
-      const [updated] = await db
-        .update(services)
-        .set(service)
-        .where(eq(services.id, Number(request.params.id)))
-        .returning();
-      if (updated) void serviceMonitor.invalidate();
-      return updated ?? reply.code(404).send({ error: 'Serviço não encontrado.' });
-    } catch (error) {
-      return reply
-        .code(400)
-        .send({ error: error instanceof Error ? error.message : 'Dados inválidos.' });
-    }
-  });
-  app.delete<{ Params: { id: string } }>('/api/services/:id', async (request, reply) => {
-    if (!/^\d+$/.test(request.params.id)) return reply.code(404).send({ deleted: false });
-    const deleted = await db
-      .delete(services)
-      .where(eq(services.id, Number(request.params.id)))
-      .returning();
-    if (deleted.length) void serviceMonitor.invalidate();
-    return reply.code(deleted.length ? 200 : 404).send({ deleted: Boolean(deleted.length) });
-  });
+  registerProxmoxRoutes(app, vault);
+  registerAgentProposalRoutes(app, proposals);
+  registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
+
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'Não encontrado.' }));
   return app;
 }

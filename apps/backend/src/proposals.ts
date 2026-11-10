@@ -1,21 +1,16 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { validateService } from '@homora/shared';
+import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export const AGENT_SCOPES = ['services:read', 'proxmox:read', 'proposals:create'] as const;
 type Diff = { op: 'create' | 'update' | 'delete'; id?: number; service?: unknown };
-export function createProposalService(sqlite: DatabaseSync) {
-  const state = sqlite.prepare('SELECT version FROM config_version WHERE id=1').get() as
-    { version: number } | undefined;
-  if (!state) sqlite.prepare('INSERT INTO config_version(id, version) VALUES(1, 1)').run();
-  const snapshot = () =>
-    sqlite
-      .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate FROM services ORDER BY id',
-      )
-      .all();
-  const configHash = () => hash(snapshot());
+export function createProposalService(
+  sqlite: DatabaseSync,
+  configuration = createServiceConfiguration(sqlite),
+) {
+  const configHash = configuration.configHash;
   function issue(name: string, scopes: string[]) {
     if (
       !name.trim() ||
@@ -70,8 +65,7 @@ export function createProposalService(sqlite: DatabaseSync) {
     let diff: Diff;
     if (d.op === 'delete') {
       const id = d.id as number;
-      const row = sqlite.prepare('SELECT id FROM services WHERE id=?').get(id);
-      if (!row) throw new Error('Service not found');
+      if (!configuration.findService(id)) throw new Error('Service not found');
       diff = { op: 'delete', id };
     } else {
       if (
@@ -97,15 +91,10 @@ export function createProposalService(sqlite: DatabaseSync) {
         throw new Error('Invalid allowPrivate');
       const service = validateService(raw as never);
       if (d.op === 'create') {
-        const siblings = sqlite
-          .prepare('SELECT position FROM services WHERE category=?')
-          .all(service.category) as { position: number }[];
-        service.position = Math.max(-1, ...siblings.map((s) => s.position)) + 1;
+        service.position = configuration.nextServicePosition(service.category);
         service.allowPrivate = raw.allowPrivate === true;
       } else {
-        const current = sqlite
-          .prepare('SELECT position,allow_private as allowPrivate FROM services WHERE id=?')
-          .get(d.id as number) as { position: number; allowPrivate: number } | undefined;
+        const current = configuration.findService(d.id as number);
         if (!current) throw new Error('Service not found');
         service.position =
           Number.isSafeInteger(raw.position) && Number(raw.position) >= 0
@@ -118,11 +107,8 @@ export function createProposalService(sqlite: DatabaseSync) {
     }
     const id = randomBytes(16).toString('hex'),
       now = Date.now();
-    const baseVersion = (
-      sqlite.prepare('SELECT version FROM config_version WHERE id=1').get() as { version: number }
-    ).version;
-    sqlite.exec('BEGIN IMMEDIATE');
-    try {
+    const baseVersion = configuration.version();
+    configuration.transaction(() => {
       sqlite
         .prepare(
           'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at) VALUES(?,?,?,?,?,?,?,?)',
@@ -142,100 +128,58 @@ export function createProposalService(sqlite: DatabaseSync) {
           'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
         )
         .run(authorId, 'proposal', id, 'created', now);
-      sqlite.exec('COMMIT');
-    } catch (error) {
-      sqlite.exec('ROLLBACK');
-      throw error;
-    }
+    });
     return { id, diff, expiresAt: now + 15 * 60_000, state: 'pending' };
   }
   function decide(id: string, accept: boolean, human: string) {
-    sqlite.exec('BEGIN IMMEDIATE');
     try {
-      const p = sqlite.prepare('SELECT * FROM service_proposals WHERE id=?').get(id) as
-        | {
-            id: string;
-            author_id: string;
-            diff: string;
-            base_hash: string;
-            base_version: number;
-            expires_at: number;
-            state: string;
-          }
-        | undefined;
-      const now = Date.now();
-      if (!p || p.state !== 'pending' || p.expires_at <= now)
-        throw new Error('Proposal is unavailable');
-      if (human === p.author_id) throw new Error('Agent cannot approve its own proposal');
-      if (!accept) {
+      return configuration.transaction(() => {
+        const p = sqlite.prepare('SELECT * FROM service_proposals WHERE id=?').get(id) as
+          | {
+              id: string;
+              author_id: string;
+              diff: string;
+              base_hash: string;
+              base_version: number;
+              expires_at: number;
+              state: string;
+            }
+          | undefined;
+        const now = Date.now();
+        if (!p || p.state !== 'pending' || p.expires_at <= now)
+          throw new Error('Proposal is unavailable');
+        if (human === p.author_id) throw new Error('Agent cannot approve its own proposal');
+        if (!accept) {
+          sqlite
+            .prepare(
+              "UPDATE service_proposals SET state='rejected',reviewed_at=?,reviewer=? WHERE id=? AND state='pending'",
+            )
+            .run(now, human, id);
+          sqlite
+            .prepare(
+              'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+            )
+            .run(human, 'review', id, 'rejected', now);
+          return 'rejected';
+        }
+        const version = configuration.version();
+        if (version !== p.base_version || configHash() !== p.base_hash)
+          throw new Error('Configuration has changed');
+        const d = JSON.parse(p.diff) as Diff;
+        configuration.applyProposal(d as ServiceChange);
         sqlite
           .prepare(
-            "UPDATE service_proposals SET state='rejected',reviewed_at=?,reviewer=? WHERE id=? AND state='pending'",
+            "UPDATE service_proposals SET state='approved',reviewed_at=?,reviewer=? WHERE id=? AND state='pending'",
           )
           .run(now, human, id);
         sqlite
           .prepare(
             'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
           )
-          .run(human, 'review', id, 'rejected', now);
-        sqlite.exec('COMMIT');
-        return 'rejected';
-      }
-      const version = (
-        sqlite.prepare('SELECT version FROM config_version WHERE id=1').get() as { version: number }
-      ).version;
-      if (version !== p.base_version || configHash() !== p.base_hash)
-        throw new Error('Configuration has changed');
-      const d = JSON.parse(p.diff) as Diff;
-      if (d.op === 'create') {
-        const s = d.service as Record<string, unknown>;
-        sqlite
-          .prepare(
-            'INSERT INTO services(name,url,category,description,icon,position,allow_private) VALUES(?,?,?,?,?,?,?)',
-          )
-          .run(
-            String(s.name),
-            String(s.url),
-            String(s.category),
-            String(s.description),
-            String(s.icon ?? ''),
-            Number(s.position),
-            s.allowPrivate === true ? 1 : 0,
-          );
-      }
-      if (d.op === 'update') {
-        const s = d.service as Record<string, unknown>;
-        sqlite
-          .prepare(
-            'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=? WHERE id=?',
-          )
-          .run(
-            String(s.name),
-            String(s.url),
-            String(s.category),
-            String(s.description),
-            String(s.icon ?? ''),
-            Number(s.position),
-            s.allowPrivate === true ? 1 : 0,
-            d.id as number,
-          );
-      }
-      if (d.op === 'delete') sqlite.prepare('DELETE FROM services WHERE id=?').run(d.id as number);
-      sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
-      sqlite
-        .prepare(
-          "UPDATE service_proposals SET state='approved',reviewed_at=?,reviewer=? WHERE id=? AND state='pending'",
-        )
-        .run(now, human, id);
-      sqlite
-        .prepare(
-          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
-        )
-        .run(human, 'review', id, 'approved', now);
-      sqlite.exec('COMMIT');
-      return 'approved';
+          .run(human, 'review', id, 'approved', now);
+        return 'approved';
+      });
     } catch (error) {
-      sqlite.exec('ROLLBACK');
       try {
         sqlite
           .prepare(
