@@ -60,6 +60,7 @@ export function AuthPage({ status, error, onSubmit }: Props) {
                       <FieldLabel htmlFor="password">{t('auth.password')}</FieldLabel>
                       <PasswordInput
                         id="password"
+                        autoFocus
                         required
                         minLength={8}
                         maxLength={1024}

@@ -481,8 +481,12 @@ export function ServicesPage({
             }}
             aria-label={t('view.label')}
           >
-            <ToggleGroupItem value="comfortable">{t('view.comfortable')}</ToggleGroupItem>
-            <ToggleGroupItem value="compact">{t('view.compact')}</ToggleGroupItem>
+            <ToggleGroupItem value="comfortable" className="pointer-coarse:h-11">
+              {t('view.comfortable')}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="compact" className="pointer-coarse:h-11">
+              {t('view.compact')}
+            </ToggleGroupItem>
           </ToggleGroup>
           <Button
             variant="outline"

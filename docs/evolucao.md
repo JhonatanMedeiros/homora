@@ -992,3 +992,18 @@ up` subiu backend, frontend e proxy; no backend não existe
 - Nenhum banco real, caminho `data/` ou serviço real foi acessado. Os relatórios
   e logs redigidos dessas execuções ficaram em `/tmp` e não foram adicionados ao
   repositório.
+
+## Validação P1 — teclado e telas pequenas (2026-11-10)
+
+- Chromium headless (playwright-core) contra o servidor de desenvolvimento, em
+  390 px com ponteiro `coarse` e em 768 px. Sem rolagem horizontal em nenhuma
+  página. Fluxos por teclado (busca, formulários, ordenação, Escape devolvendo o
+  foco, ordem de tabulação) passaram.
+- Corrigido: o campo de senha do login agora recebe o foco ao abrir; chips de
+  categoria, alternância de densidade e link do logotipo tinham 32 px com
+  ponteiro `coarse` e passaram a ter 44 px (`pointer-coarse:`).
+- Os alvos restantes abaixo de 44 px na medição são falsos positivos: o link do
+  card estende a área de toque ao card inteiro (`after:inset-0`) e o checkbox
+  da página Configurações é acionado pelo rótulo.
+- **Não validado:** leitor de tela e aparelho móvel real. Por isso o item do P1
+  segue aberto.

@@ -8,7 +8,7 @@ export function BrandMark({ className, compact }: { className?: string; compact?
       href="/"
       aria-label={t('brand.home')}
       className={cn(
-        'inline-flex items-center gap-2.5 rounded-md font-label text-xl font-bold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'inline-flex items-center gap-2.5 rounded-md pointer-coarse:min-h-11 font-label text-xl font-bold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className,
       )}
     >

@@ -18,7 +18,7 @@ export function CategoryFilter({ categories, selected, counts, onSelect }: Props
           size="sm"
           pressed={selected === category}
           onPressedChange={() => onSelect(category)}
-          className="font-label text-sm font-semibold tracking-wide data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          className="font-label text-sm font-semibold tracking-wide pointer-coarse:h-11 pointer-coarse:min-w-11 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
         >
           {category ?? t('filter.all')}
           <small aria-hidden="true" className="font-mono text-xs opacity-80">
