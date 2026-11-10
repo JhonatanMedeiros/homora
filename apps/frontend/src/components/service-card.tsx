@@ -41,6 +41,16 @@ type Props = {
   };
 };
 
+const REASON_LABEL = {
+  responding: 'status.available',
+  redirect: 'status.redirect',
+  'login-required': 'status.loginRequired',
+  'not-found': 'status.notFound',
+  'error-status': 'status.errorStatus',
+  'no-response': 'status.noResponse',
+  unchecked: 'status.unchecked',
+} as const;
+
 /** Um serviço: abre em nova aba, mostra o estado em fita e tem ações de edição. */
 export function ServiceCard({
   service: s,
@@ -60,6 +70,16 @@ export function ServiceCard({
   dragProps,
 }: Props) {
   const state = status?.status ?? 'unknown';
+  const reason = status?.reason;
+  const detail =
+    reason && reason !== 'responding' && typeof status?.httpStatus === 'number'
+      ? [
+          `HTTP ${status.httpStatus}`,
+          typeof status.latencyMs === 'number' && `${status.latencyMs} ms`,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : null;
   const isBlocked = blocked && state !== 'available';
   const inline = organizing || confirmingRemoval;
   return (
@@ -111,7 +131,16 @@ export function ServiceCard({
         )}
         {!compact && <CardWidgets widgets={widgets} />}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <StatusTag state={state} blocked={isBlocked} />
+          <StatusTag
+            state={state}
+            blocked={isBlocked}
+            label={
+              !isBlocked && reason && reason !== 'responding' ? t(REASON_LABEL[reason]) : undefined
+            }
+          />
+          {!isBlocked && detail && (
+            <span className="font-mono text-xs text-muted-foreground">{detail}</span>
+          )}
           {!isBlocked && status?.lastAttempt && state !== 'available' && (
             <time dateTime={status.lastAttempt} className="text-xs text-muted-foreground">
               {t('card.lastAttempt', { time: formatAttempt(status.lastAttempt) })}

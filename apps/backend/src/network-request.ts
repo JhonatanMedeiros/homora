@@ -8,6 +8,8 @@ export type RequestOptions = {
   headers?: Readonly<Record<string, string>>;
   ca?: string;
   timeoutMs?: number;
+  /** Devolve o código 3xx em vez de falhar. O redirecionamento continua sem ser seguido. */
+  reportRedirect?: boolean;
 };
 export type AuthorizedResponse = { status: number; body: string };
 
@@ -67,6 +69,10 @@ export async function getAuthorizedResponse(
         const status = res.statusCode ?? 0;
         if (status >= 300 && status < 400) {
           res.destroy();
+          if (options.reportRedirect) {
+            resolve({ status, body: '' });
+            return;
+          }
           reject(new Error(`Redirecionamento HTTP ${status} não permitido.`));
           return;
         }

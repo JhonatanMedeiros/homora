@@ -106,3 +106,25 @@ it('rejeita redirecionamentos sem seguir o destino', async () => {
   expect(spy).toHaveBeenCalledTimes(1);
   expect(res.destroy).toHaveBeenCalled();
 });
+
+it('informa o código 3xx só quando pedido, ainda sem seguir o destino', async () => {
+  vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
+    url: new URL('http://service.test/'),
+    address: { address: '10.0.0.4', family: 4 },
+  });
+  const req = Object.assign(new EventEmitter(), { destroy: vi.fn() });
+  const res = Object.assign(new EventEmitter(), { statusCode: 302, destroy: vi.fn() });
+  const spy = vi.spyOn(http, 'get').mockImplementation((...args: unknown[]) => {
+    queueMicrotask(() => {
+      (args[2] as (response: typeof res) => void)(res);
+      req.emit('close');
+    });
+    return req as unknown as ReturnType<typeof http.get>;
+  });
+  const policy = { origins: ['http://service.test'], allowPrivate: true };
+  await expect(
+    getAuthorizedResponse('http://service.test/', policy, { reportRedirect: true }),
+  ).resolves.toEqual({ status: 302, body: '' });
+  await expect(getAuthorizedResponse('http://service.test/', policy)).rejects.toThrow('302');
+  expect(spy).toHaveBeenCalledTimes(2);
+});

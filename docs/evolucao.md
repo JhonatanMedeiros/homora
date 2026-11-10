@@ -399,9 +399,9 @@ implementação e a validação indicadas. A ordem abaixo é a sugerida.
       embutidos, registrados em `THIRD_PARTY_NOTICES.md`, mantendo `lucide:`,
       emoji e URL; importadores do Homepage e do Dashy mapeiam os nomes (ver
       registro abaixo). Cobertura limitada à lista curada.
-- [ ] **Estado semântico do monitor** (responde, exige login, não encontrado,
+- [x] **Estado semântico do monitor** (responde, exige login, não encontrado,
       sem resposta, não verificado), com código HTTP e latência, sem seguir
-      redirecionamentos.
+      redirecionamentos (ver registro abaixo).
 - [ ] **Limite de 25 serviços:** removê-lo ou expor cobertura e fila.
 - [x] **Colunas por grupo:** número de colunas (1 a 6) escolhido por grupo, além
       da grade automática e do modo compacto (ver registro abaixo). Cards com
@@ -518,6 +518,45 @@ SET NULL`). Remover o card desliga o widget sem apagá-lo. A API aceita
   390 px sem rolagem horizontal e o seletor em pt-BR.
 - Não validado: uma base já em uso (a migração só adiciona uma coluna nula);
   6 colunas com cards longos em telas de 1280 px ou menos.
+
+### Registro R1 — estado semântico do monitor (2026-11-10)
+
+- Antes: só HTTP 2xx era "Disponível"; login (401/403), redirecionamento e 404
+  viravam "Indisponível" sem explicação, e o card não dizia o que foi visto.
+- Agora `/api/service-status` devolve, além de `status` e `lastAttempt`, um
+  `reason`, o `httpStatus` e a `latencyMs`:
+
+  | Resposta                         | `status`       | `reason`         | Etiqueta no card  |
+  | -------------------------------- | -------------- | ---------------- | ----------------- |
+  | 2xx                              | disponível     | `responding`     | Disponível        |
+  | 3xx (não seguido)                | disponível     | `redirect`       | Redireciona       |
+  | 401, 403                         | disponível     | `login-required` | Exige login       |
+  | 404                              | indisponível   | `not-found`      | Não encontrado    |
+  | outros 4xx, 5xx                  | indisponível   | `error-status`   | Resposta com erro |
+  | falha de rede, DNS, TLS ou tempo | indisponível   | `no-response`    | Sem resposta      |
+  | ainda não verificado             | sem informação | `unchecked`      | Não verificado    |
+
+  O card mostra `HTTP <código> · <ms>` quando o motivo não é uma resposta 2xx.
+
+- Decisão de produto: um serviço que responde pedindo login ou redirecionando
+  está no ar, então não conta como queda. Isso muda o comportamento anterior,
+  em que 3xx e 401/403 apareciam como indisponíveis. 404 continua como
+  indisponível (o endereço cadastrado não leva a uma página).
+- Redirecionamentos continuam sem ser seguidos. Só o monitor pede o código 3xx
+  (`reportRedirect`); as integrações seguem rejeitando redirecionamentos.
+- A latência mede da resolução do DNS até a resposta, em um único `GET`; não é
+  uma medida de desempenho do serviço.
+- Compatibilidade: a interface aceita respostas sem `reason`.
+- O limite de 25 serviços por ciclo continua: os demais aparecem como "Não
+  verificado" (antes, "Sem informação"). Remover ou expor a fila é o próximo item.
+- Validação: `pnpm check`; testes da classificação, do monitor (código, latência,
+  sem resposta, não verificado), da requisição (3xx só quando pedido) e do card
+  (rótulos e detalhe). Navegador real (Chromium) com servidor falso na rede
+  local respondendo 200, 302, 401, 404 e 500, e uma porta fechada: cada card
+  mostrou a etiqueta e o `HTTP` esperados, sem erros no console.
+- Não validado: serviços reais (certificados, proxies que respondem 200 para
+  tudo, 405 em `GET`), pt-BR no navegador (só em teste), a leitura por leitores
+  de tela dos novos rótulos.
 
 ### Registro R1 — faixa superior (2026-11-10)
 
