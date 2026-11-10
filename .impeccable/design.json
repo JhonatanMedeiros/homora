@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T16:27:37.670806+00:00",
+  "title": "Design System: Homora",
+  "extensions": {
+    "colorMeta": {
+      "honey": {
+        "role": "primary",
+        "displayName": "Mel",
+        "canonical": "oklch(0.8 0.13 70)",
+        "tonalRamp": [
+          "oklch(0.25 0.05 65)",
+          "oklch(0.35 0.08 65)",
+          "oklch(0.45 0.11 62)",
+          "oklch(0.55 0.12 60)",
+          "oklch(0.65 0.13 65)",
+          "oklch(0.75 0.13 70)",
+          "oklch(0.85 0.1 75)",
+          "oklch(0.94 0.04 80)"
+        ]
+      },
+      "honey-ink": {
+        "role": "primary",
+        "displayName": "Mel no papel",
+        "canonical": "oklch(0.5 0.12 55)",
+        "tonalRamp": [
+          "oklch(0.25 0.05 55)",
+          "oklch(0.33 0.08 55)",
+          "oklch(0.42 0.11 55)",
+          "oklch(0.5 0.12 55)",
+          "oklch(0.6 0.12 58)",
+          "oklch(0.72 0.1 65)",
+          "oklch(0.85 0.06 75)",
+          "oklch(0.94 0.03 80)"
+        ]
+      },
+      "ember-night": {
+        "role": "neutral",
+        "displayName": "Noite de Cozinha",
+        "canonical": "oklch(0.17 0.012 55)",
+        "tonalRamp": [
+          "oklch(0.15 0.01 55)",
+          "oklch(0.17 0.012 55)",
+          "oklch(0.215 0.014 55)",
+          "oklch(0.265 0.017 55)",
+          "oklch(0.345 0.02 55)",
+          "oklch(0.6 0.02 70)",
+          "oklch(0.75 0.02 75)",
+          "oklch(0.95 0.012 85)"
+        ]
+      },
+      "cream-paper": {
+        "role": "neutral",
+        "displayName": "Papel Creme",
+        "canonical": "oklch(0.965 0.014 85)",
+        "tonalRamp": [
+          "oklch(0.25 0.03 55)",
+          "oklch(0.47 0.03 60)",
+          "oklch(0.7 0.03 70)",
+          "oklch(0.85 0.025 80)",
+          "oklch(0.92 0.02 82)",
+          "oklch(0.94 0.02 82)",
+          "oklch(0.965 0.014 85)",
+          "oklch(0.99 0.008 85)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Título de página",
+        "purpose": "h1 de cada painel."
+      },
+      "headline": {
+        "displayName": "Título de seção",
+        "purpose": "h2 de grupos e seções."
+      },
+      "body": {
+        "displayName": "Texto",
+        "purpose": "Texto corrido e controles."
+      },
+      "label": {
+        "displayName": "Rótulo",
+        "purpose": "Estado, etiquetas, contadores e dicas."
+      }
+    },
+    "shadows": [
+      {
+        "name": "focus-halo",
+        "value": "0 0 0 3px color-mix(in oklch, var(--accent) 28%, transparent)",
+        "purpose": "Anel de foco de campos; não é elevação."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Entrada de painel e mensagem de sucesso (6 px, 350 ms)."
+      },
+      {
+        "name": "state-fast",
+        "value": "0.15s to 0.2s ease",
+        "purpose": "Hover de botões, chips e bordas de cartão."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "tablet",
+        "value": "640px"
+      },
+      {
+        "name": "desktop",
+        "value": "980px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão primário",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal da tela; um por tela.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Adicionar serviço</button>",
+      "css": ".ds-btn{height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line,#555);font-weight:600;font-size:.9375rem;cursor:pointer}.ds-btn-primary{background:var(--accent,#e8b34a);border-color:var(--accent,#e8b34a);color:var(--accent-ink,#2a1d08)}.ds-btn-primary:hover{filter:brightness(1.08)}.ds-btn:focus-visible{outline:2px solid var(--accent,#e8b34a);outline-offset:2px}"
+    },
+    {
+      "name": "Botão secundário",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ações de apoio, como Organizar.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Organizar</button>",
+      "css": ".ds-btn{height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line,#555);font-weight:600;font-size:.9375rem;cursor:pointer}.ds-btn-secondary{background:var(--panel-2,#333);color:var(--text,#eee)}.ds-btn-secondary:hover{border-color:var(--muted,#aaa)}.ds-btn:focus-visible{outline:2px solid var(--accent,#e8b34a);outline-offset:2px}"
+    },
+    {
+      "name": "Chip de filtro",
+      "kind": "chip",
+      "description": "Filtro por grupo, com contagem.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Mídia <small>3</small></button>",
+      "css": ".ds-chip{height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line,#555);background:var(--panel-2,#333);color:var(--text,#eee);font-weight:550;cursor:pointer}.ds-chip small{margin-left:6px;font-size:.8125rem}"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "description": "Campo padrão de formulários.",
+      "html": "<input class=\"ds-input\" placeholder=\"Ex.: Casa\">",
+      "css": ".ds-input{height:46px;width:100%;padding:0 12px;border:1px solid var(--line,#555);border-radius:10px;background:var(--bg,#111);color:var(--text,#eee);font-size:1rem}.ds-input:focus-visible{outline:0;border-color:var(--accent,#e8b34a);box-shadow:0 0 0 3px color-mix(in oklch,var(--accent,#e8b34a) 28%,transparent)}"
+    },
+    {
+      "name": "Card de serviço",
+      "kind": "card",
+      "refersTo": "service-card",
+      "description": "Abre um serviço; mostra endereço, descrição e disponibilidade.",
+      "html": "<div class=\"ds-card\"><span class=\"ds-icon\">J</span><div><strong>Jellyfin</strong><div class=\"ds-addr\">192.168.1.10:8096</div></div><p class=\"ds-desc\">Filmes e séries da família</p><span class=\"ds-status\">Disponível</span></div>",
+      "css": ".ds-card{display:grid;grid-template-columns:44px 1fr;gap:0 12px;padding:16px;border:1px solid var(--line,#555);border-radius:14px;background:var(--panel,#222);color:var(--text,#eee)}.ds-card:hover{border-color:color-mix(in oklch,var(--accent,#e8b34a) 60%,var(--line,#555))}.ds-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:color-mix(in oklch,var(--accent,#e8b34a) 18%,var(--panel-2,#333));color:var(--accent,#e8b34a);font-weight:700;font-size:1.3rem}.ds-addr{color:var(--muted,#aaa);font:.8125rem ui-monospace,monospace}.ds-desc{grid-column:1/-1;margin:12px 0 0;color:var(--muted,#aaa);font-size:.9375rem}.ds-status{grid-column:1/-1;margin-top:12px;color:var(--ok,#6c6);font-size:.8125rem;font-weight:600}.ds-status::before{content:'';display:inline-block;width:9px;height:9px;margin-right:8px;border-radius:50%;background:var(--ok,#6c6)}"
+    },
+    {
+      "name": "Navegação superior",
+      "kind": "nav",
+      "description": "Abas do desktop; no celular vira barra inferior.",
+      "html": "<nav class=\"ds-nav\"><button aria-current=\"page\">Serviços</button><button>Integrações</button><button>Agentes</button></nav>",
+      "css": ".ds-nav{display:flex;gap:4px}.ds-nav button{min-height:40px;padding:0 14px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted,#aaa);font-weight:600;cursor:pointer}.ds-nav button:hover{background:var(--panel-2,#333);color:var(--text,#eee)}.ds-nav button[aria-current=page]{background:color-mix(in oklch,var(--accent,#e8b34a) 14%,var(--panel,#222));color:var(--accent,#e8b34a)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Cozinha da Casa",
+    "overview": "Homora é o lugar da casa onde tudo fica à mão: quente, de uso diário, sem cerimônia. Neutros quentes e um único acento âmbar; plano, com bordas finas; usar vem antes de organizar.",
+    "keyCharacteristics": [
+      "Neutros quentes e um único acento âmbar.",
+      "Estado sempre com cor, forma e texto.",
+      "Bordas finas no lugar de sombras.",
+      "Gestão escondida atrás de Organizar."
+    ],
+    "rules": [
+      {
+        "name": "The One Honey Rule",
+        "body": "O âmbar ocupa no máximo 10% de qualquer tela.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never Color Alone Rule",
+        "body": "Estado nunca é só cor: forma e texto sempre juntos.",
+        "section": "colors"
+      },
+      {
+        "name": "The Border Only Rule",
+        "body": "Elevação se declara uma vez, com borda; sem sombra decorativa.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do manter o mel em ações principais, foco e estado ativo.",
+      "Do mostrar estado com cor, forma e texto.",
+      "Do deixar 'usar' na frente e 'organizar' atrás de um botão."
+    ],
+    "donts": [
+      "Don't criar um visual de painel corporativo frio.",
+      "Don't usar sombra ou blur como decoração.",
+      "Don't colocar rótulos em maiúsculas acima de títulos."
+    ]
+  }
+}
