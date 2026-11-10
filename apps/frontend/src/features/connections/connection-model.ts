@@ -12,7 +12,14 @@ export type Connection = {
   username?: string;
   slug?: string;
 };
-export type IntegrationWidget = { id: number; integrationId: number; type: Kind; name: string };
+export type IntegrationWidget = {
+  id: number;
+  integrationId: number;
+  type: Kind;
+  name: string;
+  serviceId: number | null;
+};
+export type WidgetStat = { label: string; value: string };
 export type ConnectionFormState = {
   type: Kind;
   name: string;
@@ -91,6 +98,57 @@ export function describeData(type: Kind, value: unknown): string | null {
             protection: data.protectionEnabled ? t('data.enabled') : t('data.disabled'),
             version: String(data.version),
           })
+        : null;
+  }
+}
+
+/** Números e textos curtos de uma consulta, para exibir dentro de um card. */
+export function widgetStats(type: Kind, value: unknown): WidgetStat[] | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const data = value as Record<string, unknown>;
+  const text = (v: unknown): v is string => typeof v === 'string' && v.length <= 1024;
+  const count = (v: unknown): v is number =>
+    typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
+  switch (type) {
+    case 'jellyfin':
+      return text(data.name) && text(data.version)
+        ? [
+            { label: t('stat.server'), value: data.name },
+            { label: t('stat.version'), value: data.version },
+          ]
+        : null;
+    case 'home-assistant':
+      return text(data.entityId) && text(data.state)
+        ? [{ label: t('stat.state'), value: data.state }]
+        : null;
+    case 'uptime-kuma': {
+      const { up, down, pending, maintenance, unknown } = data;
+      if (!count(up) || !count(down) || !count(pending) || !count(maintenance) || !count(unknown))
+        return null;
+      const stats = [
+        { label: t('stat.up'), value: String(up) },
+        { label: t('stat.down'), value: String(down) },
+      ];
+      if (pending) stats.push({ label: t('stat.pending'), value: String(pending) });
+      if (maintenance) stats.push({ label: t('stat.maintenance'), value: String(maintenance) });
+      if (unknown) stats.push({ label: t('stat.unknown'), value: String(unknown) });
+      return stats;
+    }
+    case 'adguard-home':
+      return typeof data.running === 'boolean' &&
+        typeof data.protectionEnabled === 'boolean' &&
+        text(data.version)
+        ? [
+            {
+              label: t('stat.service'),
+              value: data.running ? t('data.running') : t('data.stopped'),
+            },
+            {
+              label: t('stat.protection'),
+              value: data.protectionEnabled ? t('data.enabled') : t('data.disabled'),
+            },
+            { label: t('stat.version'), value: data.version },
+          ]
         : null;
   }
 }

@@ -19,6 +19,7 @@ import { GroupSection } from '@/components/group-section';
 import { OrganizePanel } from '@/components/organize-panel';
 import { PageHeader } from '@/components/page-header';
 import { ServiceCard } from '@/components/service-card';
+import { useCardWidgets } from '@/hooks/use-card-widgets';
 import { ServiceForm } from '@/components/service-form';
 import { ServicesEmpty } from '@/components/services-empty';
 import type { useServices } from '@/hooks/use-services';
@@ -47,6 +48,7 @@ export function ServicesPage({
   navigate,
 }: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
+  const cardWidgets = useCardWidgets();
   const [compact, setCompact] = useState(() => {
     try {
       return localStorage.getItem('homora-density') === 'compact';
@@ -520,6 +522,7 @@ export function ServicesPage({
                   key={s.id}
                   service={s}
                   status={info}
+                  widgets={cardWidgets[s.id]}
                   blocked={blockedIds.has(s.id)}
                   organizing={organizing}
                   managing={managing}

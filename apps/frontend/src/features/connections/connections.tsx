@@ -22,6 +22,8 @@ export function Connections() {
   const [widgets, setWidgets] = useState<IntegrationWidget[]>([]);
   const [widgetName, setWidgetName] = useState('');
   const [widgetConnection, setWidgetConnection] = useState('');
+  const [widgetCard, setWidgetCard] = useState('');
+  const [cards, setCards] = useState<{ id: number; name: string }[]>([]);
   const [widgetResult, setWidgetResult] = useState<{ id: number; data: unknown } | null>(null);
   const [form, setForm] = useState<ConnectionFormState | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
@@ -64,6 +66,18 @@ export function Connections() {
       });
     return () => controller.abort();
   }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    request('/api/services', { signal: controller.signal })
+      .then((list) => {
+        if (Array.isArray(list) && !controller.signal.aborted)
+          setCards((list as { id: number; name: string }[]).map(({ id, name }) => ({ id, name })));
+      })
+      .catch(() => {
+        // Sem a lista de cards, o widget só não pode ser ligado a um card por aqui.
+      });
+    return () => controller.abort();
+  }, []);
   function edit(item: Connection) {
     setEditing(item.id);
     setForm({
@@ -86,13 +100,34 @@ export function Connections() {
       await request('/api/widgets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ integrationId: Number(widgetConnection), name: widgetName }),
+        body: JSON.stringify({
+          integrationId: Number(widgetConnection),
+          name: widgetName,
+          ...(widgetCard ? { serviceId: Number(widgetCard) } : {}),
+        }),
       });
       setWidgetName('');
       await load();
       setMessage(t('widgets.created'));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t('widgets.createFailed'));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function moveWidget(widget: IntegrationWidget, value: string) {
+    setBusy(true);
+    setMessage('');
+    try {
+      await request(`/api/widgets/${widget.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceId: value ? Number(value) : null }),
+      });
+      await load();
+      setMessage(t('widgets.cardUpdated'));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t('widgets.cardFailed'));
     } finally {
       setBusy(false);
     }
@@ -213,6 +248,10 @@ export function Connections() {
           confirming={confirming}
           widgetName={widgetName}
           widgetConnection={widgetConnection}
+          cards={cards}
+          widgetCard={widgetCard}
+          onCardChange={setWidgetCard}
+          onMoveWidget={(widget, value) => void moveWidget(widget, value)}
           widgetResult={widgetResult}
           onNameChange={setWidgetName}
           onConnectionChange={setWidgetConnection}

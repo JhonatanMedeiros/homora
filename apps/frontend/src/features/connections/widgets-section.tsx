@@ -24,6 +24,10 @@ type Props = {
   confirming: string | null;
   widgetName: string;
   widgetConnection: string;
+  cards: { id: number; name: string }[];
+  widgetCard: string;
+  onCardChange: (value: string) => void;
+  onMoveWidget: (widget: IntegrationWidget, value: string) => void;
   widgetResult: { id: number; data: unknown } | null;
   onNameChange: (value: string) => void;
   onConnectionChange: (value: string) => void;
@@ -40,6 +44,10 @@ export function WidgetsSection({
   confirming,
   widgetName,
   widgetConnection,
+  cards,
+  widgetCard,
+  onCardChange,
+  onMoveWidget,
   widgetResult,
   onNameChange,
   onConnectionChange,
@@ -54,7 +62,7 @@ export function WidgetsSection({
       <p className="text-sm text-muted-foreground">{t('widgets.description')}</p>
       {items && items.length > 0 && (
         <form onSubmit={onCreate}>
-          <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
             <Field>
               <FieldLabel htmlFor="widget-connection">{t('widgets.connection')}</FieldLabel>
               <NativeSelect
@@ -79,6 +87,21 @@ export function WidgetsSection({
                 value={widgetName}
                 onChange={(event) => onNameChange(event.target.value)}
               />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="widget-card">{t('widgets.card')}</FieldLabel>
+              <NativeSelect
+                id="widget-card"
+                value={widgetCard}
+                onChange={(event) => onCardChange(event.target.value)}
+              >
+                <option value="">{t('widgets.noCard')}</option>
+                {cards.map((card) => (
+                  <option key={card.id} value={card.id}>
+                    {card.name}
+                  </option>
+                ))}
+              </NativeSelect>
             </Field>
             <Button type="submit" disabled={busy}>
               {t('widgets.create')}
@@ -106,6 +129,19 @@ export function WidgetsSection({
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions className="flex-wrap">
+                    <NativeSelect
+                      aria-label={t('widgets.cardAria', { name: widget.name })}
+                      value={widget.serviceId ?? ''}
+                      disabled={busy}
+                      onChange={(event) => onMoveWidget(widget, event.target.value)}
+                    >
+                      <option value="">{t('widgets.noCard')}</option>
+                      {cards.map((card) => (
+                        <option key={card.id} value={card.id}>
+                          {card.name}
+                        </option>
+                      ))}
+                    </NativeSelect>
                     <Button
                       type="button"
                       variant="ghost"

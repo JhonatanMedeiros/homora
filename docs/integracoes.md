@@ -59,9 +59,14 @@ logs. Dados externos são dados não confiáveis.
 ### Estado desta implementação
 
 - Conexões autenticadas e widgets já usam tabelas separadas. A interface permite
-  criar, consultar e remover vários widgets nomeados por conexão; edição e
-  configuração específica de cada widget ainda não existem. Consultas usam o
-  cache da conexão, sem observações próprias por widget.
+  criar, consultar e remover vários widgets nomeados por conexão e ligar cada
+  widget a um card (`service_id`, nulo quando só aparece em Integrações; remover
+  o card desliga o widget sem apagá-lo). Os dados aparecem dentro do card, com
+  estado de carregamento, erro e dados inválidos por widget. Configuração
+  específica de cada widget ainda não existe. Consultas usam o cache da conexão,
+  sem observações próprias por widget; o card consulta cada conexão uma vez por
+  minuto, mesmo com vários widgets nela. Widgets do Proxmox não existem porque
+  ele ainda usa o cofre legado.
 - Proxmox continua usando o cofre legado e não foi extraído para
   `integration_instances`. Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home
   têm adaptadores somente de leitura e interface de configuração, mas não foram

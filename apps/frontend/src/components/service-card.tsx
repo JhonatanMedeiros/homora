@@ -13,12 +13,15 @@ import {
 import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusTag } from '@/components/status-tag';
+import { CardWidgets } from '@/components/card-widgets';
+import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { cn } from '@/lib/utils';
 import { formatAttempt, hostOf, type ServiceStatus } from '@/lib/services';
 
 type Props = {
   service: Service;
   status?: ServiceStatus;
+  widgets?: CardWidgetState[];
   blocked: boolean;
   organizing: boolean;
   managing: boolean;
@@ -42,6 +45,7 @@ type Props = {
 export function ServiceCard({
   service: s,
   status,
+  widgets = [],
   blocked,
   organizing,
   managing,
@@ -100,6 +104,7 @@ export function ServiceCard({
         {s.description && showDescription && !compact && (
           <ItemDescription className="line-clamp-2">{s.description}</ItemDescription>
         )}
+        {!compact && <CardWidgets widgets={widgets} />}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <StatusTag state={state} blocked={isBlocked} />
           {!isBlocked && status?.lastAttempt && state !== 'available' && (
