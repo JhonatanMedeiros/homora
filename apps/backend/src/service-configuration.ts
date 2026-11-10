@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import { validateService, type Service, type ServiceInput } from '@homora/shared';
+import { validateService, type CheckType, type Service, type ServiceInput } from '@homora/shared';
 import {
   MAX_GROUP_COLUMNS,
   planImport,
@@ -8,9 +8,11 @@ import {
   type ParsedImport,
 } from './config-transfer.js';
 
-type ServiceRow = Omit<Service, 'position' | 'allowPrivate'> & {
+type ServiceRow = Omit<Service, 'position' | 'allowPrivate' | 'checkType' | 'checkInterval'> & {
   position: number;
   allowPrivate: number | boolean;
+  checkType: CheckType;
+  checkInterval: number | null;
 };
 type Group = { id: number; name: string; position: number; columns: number | null };
 export type ServiceChange =
@@ -36,13 +38,13 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   const selectServices = (order = 'category, position, name') =>
     sqlite
       .prepare(
-        `SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate FROM services ORDER BY ${order}`,
+        `SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval FROM services ORDER BY ${order}`,
       )
       .all() as unknown as ServiceRow[];
   const selectService = (id: number) =>
     sqlite
       .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate FROM services WHERE id=?',
+        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval FROM services WHERE id=?',
       )
       .get(id) as ServiceRow | undefined;
   const selectGroups = () =>
@@ -77,7 +79,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
       ensureGroup(service.category);
       const created = sqlite
         .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private) VALUES(?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval) VALUES(?,?,?,?,?,?,?,?,?)',
         )
         .run(
           service.name,
@@ -87,6 +89,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           service.icon ?? '',
           service.position ?? 0,
           service.allowPrivate ? 1 : 0,
+          service.checkType ?? 'http',
+          service.checkInterval ?? null,
         );
       bumpVersion();
       const row = selectService(Number(created.lastInsertRowid));
@@ -106,7 +110,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     const position = change.service.position ?? current.position;
     sqlite
       .prepare(
-        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=? WHERE id=?',
+        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=? WHERE id=?',
       )
       .run(
         service.name,
@@ -116,6 +120,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         service.icon ?? '',
         position,
         service.allowPrivate ? 1 : 0,
+        service.checkType ?? current.checkType,
+        service.checkInterval === undefined ? current.checkInterval : service.checkInterval,
         change.id,
       );
     bumpVersion();
@@ -192,7 +198,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           services: selectServices().map((row) => ({ category: row.category, url: row.url })),
         });
         const insert = sqlite.prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private) VALUES(?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval) VALUES(?,?,?,?,?,?,?,?,?)',
         );
         const queue = parsed.document.groups.flatMap((group) =>
           group.services.map((service) => ({ group: group.name, service })),
@@ -217,6 +223,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             valid.icon ?? '',
             nextServicePosition(valid.category),
             valid.allowPrivate ? 1 : 0,
+            valid.checkType ?? 'http',
+            valid.checkInterval ?? null,
           );
           created += 1;
         });
@@ -303,7 +311,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         service.position = nextServicePosition(service.category);
         const result = sqlite
           .prepare(
-            'INSERT INTO services(name,url,category,description,icon,position,allow_private) VALUES(?,?,?,?,?,?,?)',
+            'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval) VALUES(?,?,?,?,?,?,?,?,?)',
           )
           .run(
             service.name,
@@ -313,6 +321,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             service.icon ?? '',
             service.position ?? 0,
             service.allowPrivate ? 1 : 0,
+            service.checkType ?? 'http',
+            service.checkInterval ?? null,
           );
         bumpVersion();
         const created = selectService(Number(result.lastInsertRowid));
@@ -332,7 +342,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             : nextServicePosition(service.category);
         sqlite
           .prepare(
-            'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=? WHERE id=?',
+            'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=? WHERE id=?',
           )
           .run(
             service.name,
@@ -342,6 +352,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             service.icon ?? '',
             service.position ?? 0,
             service.allowPrivate ? 1 : 0,
+            service.checkType ?? current.checkType,
+            service.checkInterval === undefined ? current.checkInterval : service.checkInterval,
             id,
           );
         bumpVersion();

@@ -25,18 +25,18 @@ tem a comparação detalhada com outros painéis, e não substitui o
 Fontes: README dos dois projetos, consultados em 2026-11-10. Capacidades mudam
 entre versões; confirme antes de afirmar paridade publicamente.
 
-| Área           | Homepage / Dashy (documentado)                                                                 | Homora (código atual)                                                            |
-| -------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Integrações    | Homepage descreve integrações para mais de 100 serviços.                                       | Quatro adaptadores de leitura e Proxmox; nenhum validado em instância real.      |
-| Widgets        | Dados do serviço junto ao atalho, mais widgets informativos (clima, hora, busca).              | Widgets são registros nominais, ficam na aba Integrações e não aparecem na home. |
-| Descoberta     | Homepage descobre serviços por labels Docker.                                                  | Não há descoberta.                                                               |
-| Configuração   | Homepage: YAML ou labels Docker. Dashy: um `conf.yml`, editável também pela interface.         | Banco SQLite e interface; sem importação nem exportação.                         |
-| Status         | Dashy: código HTTP e ping ICMP, com intervalos configuráveis. Homepage: estado de contêineres. | Só HTTP, com estado por código e latência; sem ICMP nem intervalo por serviço.   |
-| Acesso         | OIDC nos dois; Dashy também tem usuários, tipos e convidado somente leitura.                   | Uma conta de administrador com senha local.                                      |
-| Idiomas        | Homepage com mais de 40; Dashy com mais de 30.                                                 | Somente português do Brasil.                                                     |
-| Personalização | Temas, CSS próprio (os dois); Dashy tem configurador de cores e várias páginas.                | Tema claro e escuro; sem CSS próprio nem várias páginas.                         |
-| Busca          | Dashy: atalhos numéricos e busca web com "bangs"; Homepage: busca rápida.                      | Busca local com `Ctrl K` e `/`.                                                  |
-| Ícones         | Hipótese a confirmar: bibliotecas de ícones referenciadas por nome.                            | Apenas emoji ou inicial.                                                         |
+| Área           | Homepage / Dashy (documentado)                                                                 | Homora (código atual)                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Integrações    | Homepage descreve integrações para mais de 100 serviços.                                       | Quatro adaptadores de leitura e Proxmox; nenhum validado em instância real.        |
+| Widgets        | Dados do serviço junto ao atalho, mais widgets informativos (clima, hora, busca).              | Widgets são registros nominais, ficam na aba Integrações e não aparecem na home.   |
+| Descoberta     | Homepage descobre serviços por labels Docker.                                                  | Não há descoberta.                                                                 |
+| Configuração   | Homepage: YAML ou labels Docker. Dashy: um `conf.yml`, editável também pela interface.         | Banco SQLite e interface; sem importação nem exportação.                           |
+| Status         | Dashy: código HTTP e ping ICMP, com intervalos configuráveis. Homepage: estado de contêineres. | HTTP com estado por código e latência, ping ICMP opcional e intervalo por serviço. |
+| Acesso         | OIDC nos dois; Dashy também tem usuários, tipos e convidado somente leitura.                   | Uma conta de administrador com senha local.                                        |
+| Idiomas        | Homepage com mais de 40; Dashy com mais de 30.                                                 | Somente português do Brasil.                                                       |
+| Personalização | Temas, CSS próprio (os dois); Dashy tem configurador de cores e várias páginas.                | Tema claro e escuro; sem CSS próprio nem várias páginas.                           |
+| Busca          | Dashy: atalhos numéricos e busca web com "bangs"; Homepage: busca rápida.                      | Busca local com `Ctrl K` e `/`.                                                    |
+| Ícones         | Hipótese a confirmar: bibliotecas de ícones referenciadas por nome.                            | Apenas emoji ou inicial.                                                           |
 
 O que o Homora já tem e as fontes consultadas não descrevem: aprovação humana
 vinculada à proposta exata, identidades de agente com escopos e revogação,
@@ -75,7 +75,7 @@ Homepage e do Dashy, sem edição manual, em um ambiente de teste.
       de widget só o que tem renderização própria na home.
 - [ ] Descoberta Docker por labels com sugestões revisáveis e acesso somente
       leitura ao socket.
-- [ ] Opção de ping ICMP e de intervalo por serviço, com limites.
+- [x] Opção de ping ICMP e de intervalo por serviço, com limites.
 - [ ] Ícones de marca por nome (conjunto open source com licença compatível,
       como o dashboard-icons), além dos ícones genéricos `lucide:`.
 - [ ] Layout em colunas com larguras escolhidas por grupo, além da grade fixa.

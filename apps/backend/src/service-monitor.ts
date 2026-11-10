@@ -1,4 +1,6 @@
-import type { Service } from '@homora/shared';
+import { execFile } from 'node:child_process';
+import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
+import { authorizeDestination } from './network-policy.js';
 import { getAuthorizedResponse } from './network-request.js';
 
 /**
@@ -11,7 +13,8 @@ export type StatusReason =
   | 'login-required' // 401 ou 403: responde, mas exige credenciais
   | 'not-found' // 404
   | 'error-status' // outros 4xx e 5xx
-  | 'no-response' // falha de rede, DNS, TLS ou tempo esgotado
+  | 'reachable' // ping ICMP respondido
+  | 'no-response' // falha de rede, DNS, TLS, ping sem resposta ou tempo esgotado
   | 'unchecked'; // ainda não verificado
 
 export type ServiceStatus = {
@@ -24,7 +27,11 @@ export type ServiceStatus = {
   latencyMs: number | null;
 };
 
-export type CheckResult = { httpStatus: number; latencyMs: number };
+/** `httpStatus` é nulo quando a verificação foi um ping ICMP respondido. */
+export type CheckResult = { httpStatus: number | null; latencyMs: number };
+
+/** O binário `ping` não existe ou não pode ser usado: não é uma falha do serviço. */
+export class PingUnavailableError extends Error {}
 
 /** Traduz o código HTTP no estado exibido. Serviços que respondem, mesmo pedindo login, estão no ar. */
 export function classify(httpStatus: number): Pick<ServiceStatus, 'status' | 'reason'> {
@@ -44,40 +51,79 @@ const unchecked = (): ServiceStatus => ({
   latencyMs: null,
 });
 
-const intervalMs = 60_000;
-const cacheMs = 60_000;
+/** Frequência com que o monitor procura serviços vencidos; cada serviço tem o próprio intervalo. */
+const tickMs = 10_000;
+/** Folga para que um serviço verificado há quase um intervalo não espere mais um tick. */
+const dueSlackMs = 2_000;
 /** Tempo máximo para iniciar verificações em um ciclo; o que sobrar fica para o próximo. */
 const cycleBudgetMs = 45_000;
 const maxConcurrentChecks = 5;
 
+/** Mede um ping ICMP ao endereço já autorizado e fixado pela política de destinos. */
+function ping(address: string, family: number): Promise<CheckResult> {
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
+    // Sem shell: o endereço é um IP validado, passado como argumento isolado.
+    execFile(
+      'ping',
+      [family === 6 ? '-6' : '-4', '-c', '1', '-W', '2', '-n', address],
+      { timeout: 5000 },
+      (error, stdout) => {
+        if (error) {
+          reject(
+            // ENOENT: sem o binário; 126: sem permissão (por exemplo, contêiner sem NET_RAW).
+            (error as { code?: unknown }).code === 'ENOENT' ||
+              (error as { code?: unknown }).code === 126
+              ? new PingUnavailableError()
+              : new Error('Sem resposta ao ping.'),
+          );
+          return;
+        }
+        const reported = /time[=<]\s*([\d.]+)\s*ms/.exec(stdout)?.[1];
+        resolve({
+          httpStatus: null,
+          latencyMs: Math.round(reported ? Number(reported) : Date.now() - startedAt),
+        });
+      },
+    );
+  });
+}
+
 /** Uses the shared pinned-DNS destination policy; private ranges require the
  * per-service opt-in and special ranges remain forbidden. */
-export async function checkService(url: string, allowPrivate = false): Promise<CheckResult> {
+export async function checkService(
+  url: string,
+  allowPrivate = false,
+  type: CheckType = 'http',
+): Promise<CheckResult> {
+  const policy = { origins: [new URL(url).origin], allowPrivate };
+  if (type === 'ping') {
+    const { address } = await authorizeDestination(url, policy);
+    return ping(address.address, address.family);
+  }
   const startedAt = Date.now();
-  const response = await getAuthorizedResponse(
-    url,
-    {
-      origins: [new URL(url).origin],
-      allowPrivate,
-    },
-    { timeoutMs: 8000, reportRedirect: true },
-  );
+  const response = await getAuthorizedResponse(url, policy, {
+    timeoutMs: 8000,
+    reportRedirect: true,
+  });
   return { httpStatus: response.status, latencyMs: Date.now() - startedAt };
 }
 
 export function createServiceMonitor(
   getServices: () => Promise<Service[]>,
-  check: (url: string, allowPrivate?: boolean) => Promise<CheckResult> = checkService,
+  check: (
+    url: string,
+    allowPrivate?: boolean,
+    type?: CheckType,
+  ) => Promise<CheckResult> = checkService,
   now: () => number = Date.now,
 ) {
   const states = new Map<number, ServiceStatus>();
-  let lastRun = 0;
   let running: Promise<void> | undefined;
   let generation = 0;
   let rerunRequested = false;
 
   async function run(force = false) {
-    if (!force && now() - lastRun < cacheMs) return;
     if (running) {
       if (force) rerunRequested = true;
       return running;
@@ -100,8 +146,16 @@ export function createServiceMonitor(
       // ciclo para de iniciar verificações ao esgotar o orçamento. O restante mantém o estado
       // anterior e passa à frente no ciclo seguinte.
       const lastOf = (id: number) => states.get(id)?.lastAttempt ?? '';
-      const monitored = [...current].sort((a, b) => lastOf(a.id).localeCompare(lastOf(b.id)));
       const startedAt = now();
+      const isDue = (service: Service) => {
+        const last = lastOf(service.id);
+        if (!last) return true;
+        const interval = (service.checkInterval ?? CHECK_INTERVAL_DEFAULT) * 1000;
+        return startedAt - Date.parse(last) >= interval - dueSlackMs;
+      };
+      const monitored = current
+        .filter((service) => force || isDue(service))
+        .sort((a, b) => lastOf(a.id).localeCompare(lastOf(b.id)));
       let nextIndex = 0;
       await Promise.all(
         Array.from({ length: Math.min(maxConcurrentChecks, monitored.length) }, async () => {
@@ -113,16 +167,24 @@ export function createServiceMonitor(
             const service = monitored[nextIndex++];
             const attemptedAt = new Date(now()).toISOString();
             try {
-              const result = await check(service.url, service.allowPrivate === true);
+              const result = await check(
+                service.url,
+                service.allowPrivate === true,
+                service.checkType ?? 'http',
+              );
               if (runGeneration === generation)
                 states.set(service.id, {
-                  ...classify(result.httpStatus),
+                  ...(result.httpStatus === null
+                    ? { status: 'available' as const, reason: 'reachable' as const }
+                    : classify(result.httpStatus)),
                   lastAttempt: attemptedAt,
                   httpStatus: result.httpStatus,
                   latencyMs: result.latencyMs,
                 });
-            } catch {
-              if (runGeneration === generation)
+            } catch (error) {
+              if (runGeneration === generation && error instanceof PingUnavailableError)
+                states.set(service.id, { ...unchecked(), lastAttempt: attemptedAt });
+              else if (runGeneration === generation)
                 states.set(service.id, {
                   status: 'unavailable',
                   lastAttempt: attemptedAt,
@@ -134,7 +196,6 @@ export function createServiceMonitor(
           }
         }),
       );
-      if (runGeneration === generation) lastRun = now();
     })();
     try {
       await running;
@@ -150,7 +211,6 @@ export function createServiceMonitor(
     run,
     invalidate() {
       generation++;
-      lastRun = 0;
       states.clear();
       return run(true);
     },
@@ -162,7 +222,7 @@ export function createServiceMonitor(
 
 export function startServiceMonitor(monitor: ReturnType<typeof createServiceMonitor>) {
   const initial = setTimeout(() => void monitor.run(true), 0);
-  const interval = setInterval(() => void monitor.run(), intervalMs);
+  const interval = setInterval(() => void monitor.run(), tickMs);
   initial.unref();
   interval.unref();
   return () => {
