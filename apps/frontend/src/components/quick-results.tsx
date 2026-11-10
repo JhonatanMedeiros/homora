@@ -1,3 +1,4 @@
+import { lower, t } from '@/i18n';
 import type { Service } from '@homora/shared';
 import type { ServiceStatus } from '@/lib/services';
 
@@ -9,30 +10,24 @@ type Props = {
   onClose: () => void;
 };
 export function QuickResults({ query, services, statuses, blockedIds, onClose }: Props) {
-  const needle = query.trim().toLocaleLowerCase('pt-BR');
+  const needle = lower(query.trim());
   if (!needle) return null;
   const results = services
-    .filter((s) =>
-      `${s.name} ${s.category} ${s.description} ${s.url}`
-        .toLocaleLowerCase('pt-BR')
-        .includes(needle),
-    )
+    .filter((s) => lower(`${s.name} ${s.category} ${s.description} ${s.url}`).includes(needle))
     .slice(0, 8);
   if (!results.length) return null;
   return (
     <div className="absolute top-full z-10 mt-2 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-      <p className="px-3 py-2 text-xs text-muted-foreground">
-        Acesso rápido · use as setas para navegar
-      </p>
-      <ul aria-label="Resultados rápidos">
+      <p className="px-3 py-2 text-xs text-muted-foreground">{t('quick.hint')}</p>
+      <ul aria-label={t('quick.results')}>
         {results.map((service) => {
           const state = blockedIds.has(service.id)
-            ? 'Sem monitoramento'
+            ? t('quick.unmonitored')
             : statuses[service.id]?.status === 'available'
-              ? 'Disponível'
+              ? t('status.available')
               : statuses[service.id]?.status === 'unavailable'
-                ? 'Indisponível'
-                : 'Sem informação';
+                ? t('status.unavailable')
+                : t('status.unknown');
           return (
             <li key={service.id}>
               <a

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { SCOPES } from './agent-model';
+import { t } from '@/i18n';
 
 type Props = {
   /** Aberto por padrão quando ainda não existe nenhuma identidade. */
@@ -38,7 +39,7 @@ export function NewAgentForm({
     <Collapsible open={isOpen} onOpenChange={setOpen} className="rounded-lg border bg-card">
       <CollapsibleTrigger asChild>
         <Button type="button" variant="ghost" className="w-full justify-between">
-          Nova identidade
+          {t('agents.newIdentity')}
           <ChevronDown data-icon="inline-end" className={isOpen ? 'rotate-180' : undefined} />
         </Button>
       </CollapsibleTrigger>
@@ -46,7 +47,7 @@ export function NewAgentForm({
         <form onSubmit={onSubmit} className="border-t p-4">
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="agent-name">Nome do agente</FieldLabel>
+              <FieldLabel htmlFor="agent-name">{t('agents.agentName')}</FieldLabel>
               <Input
                 id="agent-name"
                 required
@@ -54,11 +55,11 @@ export function NewAgentForm({
                 autoComplete="off"
                 value={name}
                 onChange={(event) => onNameChange(event.target.value)}
-                placeholder="Ex.: Assistente da casa"
+                placeholder={t('agents.agentNamePlaceholder')}
               />
             </Field>
             <FieldSet>
-              <FieldLegend variant="label">O que ele pode fazer</FieldLegend>
+              <FieldLegend variant="label">{t('agents.canDo')}</FieldLegend>
               <FieldGroup className="gap-3">
                 {SCOPES.map((scope) => (
                   <Field key={scope.id} orientation="horizontal" className="items-start">
@@ -68,8 +69,8 @@ export function NewAgentForm({
                       onCheckedChange={(checked) => onScopeChange(scope.id, checked === true)}
                     />
                     <div className="flex flex-col gap-1">
-                      <FieldLabel htmlFor={`scope-${scope.id}`}>{scope.label}</FieldLabel>
-                      <FieldDescription>{scope.hint}</FieldDescription>
+                      <FieldLabel htmlFor={`scope-${scope.id}`}>{t(scope.label)}</FieldLabel>
+                      <FieldDescription>{t(scope.hint)}</FieldDescription>
                     </div>
                   </Field>
                 ))}
@@ -77,7 +78,7 @@ export function NewAgentForm({
             </FieldSet>
             <div className="flex justify-end">
               <Button type="submit" disabled={!name.trim()}>
-                Criar identidade
+                {t('agents.createIdentity')}
               </Button>
             </div>
           </FieldGroup>

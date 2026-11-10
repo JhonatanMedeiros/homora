@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { t } from '@/i18n';
 
 type Props = {
   /** Ao renomear, o formulário de novo grupo dá lugar ao de renomear. */
@@ -18,28 +19,25 @@ type Props = {
 export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCancelRename }: Props) {
   return (
     <>
-      <Alert role="group" aria-label="Modo organizar">
+      <Alert role="group" aria-label={t('organize.region')}>
         <SlidersHorizontal aria-hidden="true" />
         <AlertDescription className="flex flex-col gap-3 text-foreground">
-          <span>
-            Você está organizando. Arraste os cards ou use as setas para mudar a ordem e toque em
-            Concluir ao terminar.
-          </span>
+          <span>{t('organize.help')}</span>
           {!renaming && (
             <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
               <Field className="w-auto min-w-48 flex-1">
-                <FieldLabel htmlFor="new-group">Novo grupo</FieldLabel>
+                <FieldLabel htmlFor="new-group">{t('organize.newGroup')}</FieldLabel>
                 <Input
                   id="new-group"
                   data-group-input
                   value={draft}
                   onChange={(event) => onDraftChange(event.target.value)}
                   maxLength={40}
-                  placeholder="Ex.: Casa"
+                  placeholder={t('organize.placeholder')}
                 />
               </Field>
               <Button data-group-add type="submit" variant="secondary" disabled={!draft.trim()}>
-                Criar grupo
+                {t('organize.create')}
               </Button>
             </form>
           )}
@@ -47,12 +45,12 @@ export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCanc
       </Alert>
       {renaming && (
         <form
-          aria-label="Renomear grupo"
+          aria-label={t('organize.renameForm')}
           onSubmit={onSubmit}
           className="flex flex-wrap items-end gap-2"
         >
           <Field className="w-auto min-w-48 flex-1">
-            <FieldLabel htmlFor="rename-group">Novo nome do grupo</FieldLabel>
+            <FieldLabel htmlFor="rename-group">{t('organize.newName')}</FieldLabel>
             <Input
               id="rename-group"
               autoFocus
@@ -61,9 +59,9 @@ export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCanc
               onChange={(event) => onDraftChange(event.target.value)}
             />
           </Field>
-          <Button type="submit">Salvar nome</Button>
+          <Button type="submit">{t('organize.saveName')}</Button>
           <Button type="button" variant="ghost" onClick={onCancelRename}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
         </form>
       )}

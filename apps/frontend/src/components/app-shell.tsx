@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { ArrowLeft, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
+import { LocaleSwitcher } from '@/components/locale-switcher';
+import { t } from '@/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { navItems, type Tab } from '@/components/app-nav';
 
@@ -29,12 +31,13 @@ export function AppShell({
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-3 px-4 py-2 md:px-8">
           <BrandMark className="mr-auto text-sidebar-foreground" />
+          <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <Button
             variant="ghost"
             size="icon"
             onClick={onLogout}
-            aria-label="Sair"
+            aria-label={t('app.logout')}
             className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <LogOut />
@@ -44,7 +47,8 @@ export function AppShell({
             onClick={() => onManageChange(!managing)}
             className="border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            {managing ? <ArrowLeft /> : <Settings />} {managing ? 'Voltar ao início' : 'Gerenciar'}
+            {managing ? <ArrowLeft /> : <Settings />}{' '}
+            {managing ? t('manage.back') : t('manage.open')}
           </Button>
         </div>
       </header>
@@ -52,10 +56,8 @@ export function AppShell({
         {!managing && (
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-3xl">Tudo em seu lugar.</h1>
-              <p className="mt-1 text-muted-foreground">
-                Seus serviços, prontos para abrir quando precisar.
-              </p>
+              <h1 className="text-3xl">{t('home.title')}</h1>
+              <p className="mt-1 text-muted-foreground">{t('home.description')}</p>
             </div>
             <div className="w-full sm:w-80">{toolbar}</div>
           </div>
@@ -64,10 +66,10 @@ export function AppShell({
           <div className="flex flex-col gap-8 md:flex-row md:items-start">
             <aside className="shrink-0 md:sticky md:top-8 md:w-52">
               <div className="mb-3 px-3">
-                <p className="font-label text-xl font-semibold">Gerenciamento</p>
-                <p className="mt-1 text-sm text-muted-foreground">Configure seu espaço</p>
+                <p className="font-label text-xl font-semibold">{t('manage.title')}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{t('manage.description')}</p>
               </div>
-              <nav aria-label="Gerenciamento" className="flex flex-wrap gap-1 md:flex-col">
+              <nav aria-label={t('manage.title')} className="flex flex-wrap gap-1 md:flex-col">
                 {navItems.map((item) => (
                   <Button
                     key={item.id}
@@ -77,7 +79,7 @@ export function AppShell({
                     className="justify-start"
                   >
                     <item.icon />
-                    {item.label}
+                    {t(item.label)}
                   </Button>
                 ))}
               </nav>

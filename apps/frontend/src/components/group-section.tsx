@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, Folder } from 'lucide-react';
+import { t } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -62,7 +63,7 @@ export function GroupSection({
           <Folder aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
           <span className="break-words">{category}</span>
           <span className="font-mono text-xs font-normal text-muted-foreground tabular-nums">
-            <span className="sr-only">, serviços: </span>
+            <span className="sr-only">{t('group.services')}</span>
             {count}
           </span>
         </h2>
@@ -72,7 +73,7 @@ export function GroupSection({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={`${collapsed ? 'Expandir' : 'Recolher'} grupo ${category}`}
+            aria-label={t(collapsed ? 'group.expand' : 'group.collapse', { name: category })}
             aria-expanded={!collapsed || searching}
             aria-controls={`${titleId}:content`}
             onClick={toggleCollapsed}
@@ -89,7 +90,7 @@ export function GroupSection({
                   variant="ghost"
                   size="sm"
                   data-group-edit={groupId}
-                  aria-label={`Renomear grupo ${category}`}
+                  aria-label={t('group.renameAria', { name: category })}
                   onClick={onRename}
                 >
                   Renomear
@@ -100,7 +101,7 @@ export function GroupSection({
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive"
-                    aria-label={`Remover grupo ${category}`}
+                    aria-label={t('group.removeAria', { name: category })}
                     onClick={onRemove}
                   >
                     Remover
@@ -112,7 +113,7 @@ export function GroupSection({
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label={`Mover grupo ${category} para cima`}
+              aria-label={t('group.moveUp', { name: category })}
               onClick={() => onMove(-1)}
             >
               <ArrowUp />
@@ -121,7 +122,7 @@ export function GroupSection({
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label={`Mover grupo ${category} para baixo`}
+              aria-label={t('group.moveDown', { name: category })}
               onClick={() => onMove(1)}
             >
               <ArrowDown />
@@ -131,9 +132,7 @@ export function GroupSection({
       </div>
       {(!collapsed || organizing || searching) && (
         <div id={`${titleId}:content`} className="flex flex-col gap-3">
-          {count === 0 && (
-            <p className="text-sm text-muted-foreground">Este grupo ainda não tem cards.</p>
-          )}
+          {count === 0 && <p className="text-sm text-muted-foreground">{t('group.empty')}</p>}
           <ul
             className={
               compact

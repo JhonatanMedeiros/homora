@@ -8,6 +8,7 @@ import {
 } from '../integrations.js';
 import { integrationRegistry } from '../integration-registry.js';
 import { proxmoxInputSchema, refreshQuerySchema } from '../input-schemas.js';
+import { InputError, errorBody } from '../api-error.js';
 
 type Vault = ReturnType<typeof createVault>;
 
@@ -26,7 +27,7 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
 
   function prepareConfig(body: unknown): ProxmoxConfig {
     const parsed = proxmoxInputSchema.safeParse(body);
-    if (!parsed.success) throw new Error('Dados inválidos.');
+    if (!parsed.success) throw new InputError('invalid-data');
     const input = parsed.data;
     const existing = vault?.load();
     if (existing && !input.secret) {
@@ -35,11 +36,11 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
         try {
           changedUrl = new URL(input.url).origin !== existing.url;
         } catch {
-          throw new Error('Informe uma URL HTTPS válida.');
+          throw new InputError('https-url-required');
         }
       }
       if (changedUrl || (input.tokenId && input.tokenId !== existing.tokenId))
-        throw new Error('Informe novamente o segredo ao alterar a URL ou o ID do token.');
+        throw new InputError('secret-required');
     }
     return proxmoxAdapter.validate({
       url: input.url || existing?.url || '',
@@ -50,42 +51,40 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
   }
 
   const configError = (error: unknown) =>
-    error instanceof Error && /^(Informe|Certificado|Dados)/.test(error.message)
-      ? error.message
-      : 'Não foi possível carregar a configuração existente.';
+    errorBody(error instanceof InputError ? error.code : 'proxmox-config-failed');
 
   app.post('/api/proxmox/config', async (request, reply) => {
-    if (!vault) return reply.code(503).send({ error: 'Integração indisponível.' });
+    if (!vault) return reply.code(503).send(errorBody('integration-unavailable'));
     let config: ProxmoxConfig;
     try {
       config = prepareConfig(request.body);
     } catch (error) {
-      return reply.code(400).send({ error: configError(error) });
+      return reply.code(400).send(configError(error));
     }
     try {
       await vault.save(config);
       cache.invalidate();
       return { ok: true };
     } catch {
-      return reply.code(500).send({ error: 'Não foi possível salvar a configuração.' });
+      return reply.code(500).send(errorBody('proxmox-save-failed'));
     }
   });
 
   app.post('/api/proxmox/test', async (request, reply) => {
-    if (!vault) return reply.code(503).send({ error: 'Integração indisponível.' });
+    if (!vault) return reply.code(503).send(errorBody('integration-unavailable'));
     let config: ProxmoxConfig;
     try {
       config = prepareConfig(request.body);
     } catch (error) {
-      return reply.code(400).send({ error: configError(error) });
+      return reply.code(400).send(configError(error));
     }
     try {
       await collect(config);
       return { ok: true };
     } catch (error) {
-      return reply.code(502).send({
-        error: error instanceof ProxmoxError ? error.message : 'Não foi possível testar a conexão.',
-      });
+      return reply
+        .code(502)
+        .send(errorBody(error instanceof ProxmoxError ? error.code : 'proxmox-test-failed'));
     }
   });
 
@@ -94,17 +93,20 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
     async (request, reply) => {
       try {
         const query = refreshQuerySchema.safeParse(request.query);
-        if (!query.success) return reply.code(400).send({ error: 'Consulta inválida.' });
+        if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
         const config = vault?.load();
-        if (!config) return reply.code(404).send({ error: 'Proxmox não configurado.' });
+        if (!config) return reply.code(404).send(errorBody('proxmox-not-configured'));
         return await cache.collect(() => collect(config), query.data.refresh === 'true');
       } catch (error) {
-        return reply.code(502).send({
-          error:
-            error instanceof ProxmoxError || error instanceof IntegrationInvalidatedError
-              ? error.message
-              : 'Não foi possível carregar a configuração do Proxmox. Verifique os arquivos de integração e a chave.',
-        });
+        return reply
+          .code(502)
+          .send(
+            errorBody(
+              error instanceof ProxmoxError || error instanceof IntegrationInvalidatedError
+                ? error.code
+                : 'proxmox-load-failed',
+            ),
+          );
       }
     },
   );

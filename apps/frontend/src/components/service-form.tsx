@@ -1,12 +1,15 @@
 import { type FormEvent } from 'react';
-import type { ServiceInput } from '@homora/shared';
+import { ICON_MAX_LENGTH, type ServiceInput } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
+import { IconPicker } from '@/components/icon-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { IconPicker } from '@/components/icon-picker';
 import { FormError } from '@/components/form-error';
+import { ServiceIcon } from '@/components/service-icon';
+import { iconNames } from '@/lib/icons';
+import { t } from '@/i18n';
 
 type Props = {
   editing: boolean;
@@ -34,13 +37,13 @@ export function ServiceForm({
   const set = (patch: Partial<ServiceInput>) => onChange({ ...value, ...patch });
   return (
     <form
-      aria-label={editing ? 'Editar serviço' : 'Novo serviço'}
+      aria-label={editing ? t('form.editTitle') : t('form.newTitle')}
       onSubmit={onSubmit}
       className="flex flex-col gap-6"
     >
       <FieldGroup className="grid gap-4 sm:grid-cols-2">
         <Field>
-          <FieldLabel htmlFor="service-name">Nome</FieldLabel>
+          <FieldLabel htmlFor="service-name">{t('form.name')}</FieldLabel>
           <Input
             ref={nameRef}
             id="service-name"
@@ -53,7 +56,7 @@ export function ServiceForm({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="service-url">URL</FieldLabel>
+          <FieldLabel htmlFor="service-url">{t('form.url')}</FieldLabel>
           <Input
             id="service-url"
             type="url"
@@ -66,7 +69,7 @@ export function ServiceForm({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="service-category">Categoria</FieldLabel>
+          <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>
           <Input
             id="service-category"
             required
@@ -75,7 +78,7 @@ export function ServiceForm({
             autoComplete="off"
             value={value.category}
             onChange={(e) => set({ category: e.target.value })}
-            placeholder="Mídia"
+            placeholder={t('form.categoryPlaceholder')}
           />
           <datalist id="categories">
             {categories.map((c) => (
@@ -85,7 +88,8 @@ export function ServiceForm({
         </Field>
         <Field>
           <FieldLabel htmlFor="service-description">
-            Descrição <small className="font-normal text-muted-foreground">opcional</small>
+            {t('form.description')}{' '}
+            <small className="font-normal text-muted-foreground">{t('common.optional')}</small>
           </FieldLabel>
           <Input
             id="service-description"
@@ -93,21 +97,36 @@ export function ServiceForm({
             autoComplete="off"
             value={value.description}
             onChange={(e) => set({ description: e.target.value })}
-            placeholder="Filmes e séries"
+            placeholder={t('form.descriptionPlaceholder')}
           />
         </Field>
         <Field>
           <FieldLabel htmlFor="service-icon">
-            Ícone <small className="font-normal text-muted-foreground">emoji opcional</small>
+            {t('form.icon')}{' '}
+            <small className="font-normal text-muted-foreground">{t('form.iconHint')}</small>
           </FieldLabel>
-          <Input
-            id="service-icon"
-            maxLength={8}
-            value={value.icon ?? ''}
-            onChange={(e) => set({ icon: e.target.value })}
-            placeholder="🎬"
-          />
-          <FieldDescription>Escolha uma sugestão ou digite um emoji.</FieldDescription>
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary text-lg font-semibold"
+            >
+              <ServiceIcon icon={value.icon} name={value.name || '?'} />
+            </span>
+            <Input
+              id="service-icon"
+              maxLength={ICON_MAX_LENGTH}
+              list="icon-names"
+              autoComplete="off"
+              value={value.icon ?? ''}
+              onChange={(e) => set({ icon: e.target.value })}
+              placeholder={t('form.iconPlaceholder')}
+            />
+          </div>
+          <datalist id="icon-names">
+            {iconNames.map((name) => (
+              <option key={name} value={`lucide:${name}`} />
+            ))}
+          </datalist>
           <IconPicker value={value.icon ?? ''} onChange={(icon) => set({ icon })} />
         </Field>
         <Field orientation="horizontal" className="items-start sm:col-span-2">
@@ -117,22 +136,18 @@ export function ServiceForm({
             onCheckedChange={(checked) => set({ allowPrivate: checked === true })}
           />
           <div className="flex flex-col gap-1">
-            <FieldLabel htmlFor="service-private">
-              Permitir monitoramento em rede privada
-            </FieldLabel>
-            <FieldDescription>
-              Útil para endereços da sua rede local, como 192.168.x.x. Vale só para este serviço.
-            </FieldDescription>
+            <FieldLabel htmlFor="service-private">{t('form.allowPrivate')}</FieldLabel>
+            <FieldDescription>{t('form.allowPrivateHint')}</FieldDescription>
           </div>
         </Field>
       </FieldGroup>
       <FormError className="mt-3">{error}</FormError>
       <DialogFooter>
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
-          Cancelar
+          {t('common.cancel')}
         </Button>
         <Button type="submit" disabled={saving}>
-          {editing ? 'Salvar alterações' : 'Salvar serviço'}
+          {editing ? t('form.saveChanges') : t('form.saveService')}
         </Button>
       </DialogFooter>
     </form>

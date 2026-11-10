@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { Plus, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,19 +24,17 @@ export function ServicesEmpty({
       <EmptyHeader>
         <EmptyMedia variant="icon">{hasServices ? <SearchX /> : <Plus />}</EmptyMedia>
         <EmptyTitle className="font-label text-xl">
-          {hasServices ? 'Nenhum serviço encontrado' : 'Seu painel está vazio'}
+          {hasServices ? t('empty.noneFound') : t('empty.title')}
         </EmptyTitle>
         <EmptyDescription>
-          {hasServices
-            ? 'Experimente outro termo ou escolha “Todos”.'
-            : 'Comece pelo serviço que você mais abre. Depois é só ir juntando o resto.'}
+          {hasServices ? t('empty.noneFoundHint') : t('empty.hint')}
         </EmptyDescription>
       </EmptyHeader>
       {!hasServices && (
         <EmptyContent>
           <Button type="button" onClick={onAdd}>
             <Plus />
-            {managing ? 'Adicionar primeiro serviço' : 'Gerenciar serviços'}
+            {managing ? t('empty.addFirst') : t('empty.manage')}
           </Button>
         </EmptyContent>
       )}

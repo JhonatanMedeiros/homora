@@ -10,6 +10,8 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/components/ui/item';
+import { t } from '@/i18n';
+import { ServiceIcon } from '@/components/service-icon';
 import { StatusTag } from '@/components/status-tag';
 import { cn } from '@/lib/utils';
 import { formatAttempt, hostOf, type ServiceStatus } from '@/lib/services';
@@ -76,7 +78,7 @@ export function ServiceCard({
             aria-hidden="true"
             className="size-10 rounded-md bg-secondary text-lg font-semibold"
           >
-            {s.icon || s.name.slice(0, 1).toLocaleUpperCase('pt-BR')}
+            <ServiceIcon icon={s.icon} name={s.name} />
           </ItemMedia>
           <ItemContent className="min-w-0 gap-0.5">
             <ItemTitle className="w-full text-base">
@@ -87,7 +89,7 @@ export function ServiceCard({
                 className="truncate rounded-sm outline-none after:absolute after:inset-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {s.name}
-                <span className="sr-only"> (abre em nova aba)</span>
+                <span className="sr-only">{t('card.opensNewTab')}</span>
               </a>
             </ItemTitle>
             <span className="truncate font-mono text-[0.8125rem] text-muted-foreground">
@@ -102,7 +104,7 @@ export function ServiceCard({
           <StatusTag state={state} blocked={isBlocked} />
           {!isBlocked && status?.lastAttempt && state !== 'available' && (
             <time dateTime={status.lastAttempt} className="text-xs text-muted-foreground">
-              última tentativa {formatAttempt(status.lastAttempt)}
+              {t('card.lastAttempt', { time: formatAttempt(status.lastAttempt) })}
             </time>
           )}
         </div>
@@ -122,7 +124,7 @@ export function ServiceCard({
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={`Mover ${s.name} para cima`}
+                  aria-label={t('card.moveUp', { name: s.name })}
                   onClick={() => onMove(-1)}
                 >
                   <ArrowUp />
@@ -131,7 +133,7 @@ export function ServiceCard({
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={`Mover ${s.name} para baixo`}
+                  aria-label={t('card.moveDown', { name: s.name })}
                   onClick={() => onMove(1)}
                 >
                   <ArrowDown />
@@ -144,24 +146,24 @@ export function ServiceCard({
                   variant="ghost"
                   size={inline ? 'sm' : 'icon-sm'}
                   data-service-edit={s.id}
-                  aria-label={`Editar ${s.name}`}
+                  aria-label={t('card.edit', { name: s.name })}
                   onClick={onEdit}
                 >
                   <Pencil />
-                  {inline && 'Editar'}
+                  {inline && t('common.edit')}
                 </Button>
                 <Button
                   type="button"
                   variant={confirmingRemoval ? 'destructive' : 'ghost'}
                   size={inline ? 'sm' : 'icon-sm'}
-                  aria-label={
-                    confirmingRemoval ? `Confirmar remoção de ${s.name}` : `Remover ${s.name}`
-                  }
+                  aria-label={t(confirmingRemoval ? 'card.confirmRemove' : 'card.remove', {
+                    name: s.name,
+                  })}
                   onClick={onRemove}
                   onBlur={onCancelRemoval}
                 >
                   <Trash2 />
-                  {inline && (confirmingRemoval ? 'Confirmar remoção' : 'Remover')}
+                  {inline && t(confirmingRemoval ? 'card.confirmRemoveShort' : 'common.remove')}
                 </Button>
               </>
             )}

@@ -14,6 +14,7 @@ import {
   type IntegrationWidget,
 } from './connection-model';
 import { WidgetsSection } from './widgets-section';
+import { t } from '@/i18n';
 
 export function Connections() {
   const [items, setItems] = useState<Connection[] | null>(null);
@@ -36,7 +37,7 @@ export function Connections() {
       request('/api/widgets'),
     ]);
     if (!Array.isArray(data) || !Array.isArray(widgetData))
-      throw new Error('Resposta inválida do servidor.');
+      throw new Error(t('connections.invalidResponse'));
     setItems(data as Connection[]);
     setWidgets(widgetData as IntegrationWidget[]);
   }, []);
@@ -48,7 +49,7 @@ export function Connections() {
     ])
       .then(([data, widgetData]) => {
         if (!Array.isArray(data) || !Array.isArray(widgetData))
-          throw new Error('Resposta inválida.');
+          throw new Error(t('connections.invalidResponse'));
         if (!controller.signal.aborted) {
           setItems(data as Connection[]);
           setWidgets(widgetData as IntegrationWidget[]);
@@ -58,7 +59,7 @@ export function Connections() {
       .catch(() => {
         if (!controller.signal.aborted) {
           setLoadFailed(true);
-          setMessage('Não foi possível carregar as integrações.');
+          setMessage(t('connections.loadFailed'));
         }
       });
     return () => controller.abort();
@@ -89,9 +90,9 @@ export function Connections() {
       });
       setWidgetName('');
       await load();
-      setMessage('Widget criado.');
+      setMessage(t('widgets.created'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível criar o widget.');
+      setMessage(error instanceof Error ? error.message : t('widgets.createFailed'));
     } finally {
       setBusy(false);
     }
@@ -108,9 +109,9 @@ export function Connections() {
       await request(`/api/widgets/${widget.id}`, { method: 'DELETE' });
       setWidgets((current) => current.filter((item) => item.id !== widget.id));
       if (widgetResult?.id === widget.id) setWidgetResult(null);
-      setMessage('Widget removido.');
+      setMessage(t('widgets.removed'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível remover o widget.');
+      setMessage(error instanceof Error ? error.message : t('widgets.removeFailed'));
     } finally {
       setBusy(false);
     }
@@ -124,7 +125,7 @@ export function Connections() {
       };
       setWidgetResult({ id: widget.id, data: response.data });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível consultar o widget.');
+      setMessage(error instanceof Error ? error.message : t('widgets.queryFailed'));
     } finally {
       setBusy(false);
     }
@@ -156,9 +157,9 @@ export function Connections() {
       setEditing(null);
       setResult(null);
       await load();
-      setMessage('Integração salva.');
+      setMessage(t('connections.saved'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível salvar.');
+      setMessage(error instanceof Error ? error.message : t('connections.saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -178,10 +179,10 @@ export function Connections() {
       if (operation === 'delete') {
         await request(`/api/connections/${item.id}`, { method: 'DELETE' });
         await load();
-        setMessage('Integração removida.');
+        setMessage(t('connections.removed'));
       } else if (operation === 'test') {
         await request(`/api/connections/${item.id}/test`, { method: 'POST' });
-        setMessage(`Conexão com ${item.name} realizada com sucesso.`);
+        setMessage(t('connections.testOk', { name: item.name }));
       } else {
         const response = (await request(`/api/connections/${item.id}/data?refresh=true`)) as {
           data: unknown;
@@ -190,7 +191,7 @@ export function Connections() {
         setResult({ id: item.id, ...response });
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível concluir a operação.');
+      setMessage(error instanceof Error ? error.message : t('connections.operationFailed'));
     } finally {
       setBusy(false);
     }
@@ -200,11 +201,9 @@ export function Connections() {
     <section aria-labelledby="connections-title" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <SectionTitle id="connections-title" count={items?.length}>
-          Suas conexões
+          {t('connections.title')}
         </SectionTitle>
-        <p className="text-sm text-muted-foreground">
-          Conecte serviços para consultar informações do seu homelab.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('connections.description')}</p>
       </div>
       <WidgetsSection
         items={items}
@@ -250,25 +249,23 @@ export function Connections() {
                 setMessage('');
                 void load().catch(() => {
                   setLoadFailed(true);
-                  setMessage('Não foi possível carregar as integrações.');
+                  setMessage(t('connections.loadFailed'));
                 });
               }}
             >
               <RotateCw data-icon="inline-start" />
-              Tentar carregar novamente
+              {t('connections.retryLoad')}
             </Button>
           ) : items === null ? (
             <p className="flex items-center gap-2 text-muted-foreground">
               <Spinner />
-              Carregando conexões...
+              {t('connections.loading')}
             </p>
           ) : items.length === 0 ? (
             <Empty className="border border-dashed">
               <EmptyHeader>
-                <EmptyTitle className="font-label text-lg">Nenhuma conexão cadastrada.</EmptyTitle>
-                <EmptyDescription>
-                  Adicione uma conexão para consultar dados dos seus serviços.
-                </EmptyDescription>
+                <EmptyTitle className="font-label text-lg">{t('connections.empty')}</EmptyTitle>
+                <EmptyDescription>{t('connections.emptyHint')}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -294,7 +291,7 @@ export function Connections() {
             }}
           >
             <Plus data-icon="inline-start" />
-            Adicionar conexão
+            {t('connections.add')}
           </Button>
         </>
       )}

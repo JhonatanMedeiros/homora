@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import { formatDate, parseDiff, STATES, type Proposal } from './agent-model';
 import { ProposalChange } from './proposal-change';
+import { t } from '@/i18n';
 
 const badgeVariant = {
   pending: 'default',
@@ -41,11 +42,11 @@ export function ProposalCard({ proposal, agentName, current, onReview }: Props) 
             className="row-span-2 self-start"
             variant={badgeVariant[proposal.state as keyof typeof badgeVariant] ?? 'secondary'}
           >
-            {STATES[proposal.state] ?? proposal.state}
+            {STATES[proposal.state] ? t(STATES[proposal.state]) : proposal.state}
           </Badge>
           <CardDescription>
             {pending
-              ? `Expira em ${formatDate(proposal.expiresAt)}`
+              ? t('proposal.expiresAt', { date: formatDate(proposal.expiresAt) })
               : formatDate(proposal.expiresAt)}
           </CardDescription>
         </CardHeader>
@@ -62,11 +63,11 @@ export function ProposalCard({ proposal, agentName, current, onReview }: Props) 
           <CardFooter className="justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onReview(false)}>
               <X data-icon="inline-start" />
-              Rejeitar
+              {t('proposal.reject')}
             </Button>
             <Button type="button" onClick={() => onReview(true)}>
               <Check data-icon="inline-start" />
-              Aprovar e aplicar
+              {t('proposal.approve')}
             </Button>
           </CardFooter>
         )}

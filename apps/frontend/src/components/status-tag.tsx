@@ -1,27 +1,28 @@
 import { CircleCheck, CircleHelp, CircleX, ShieldOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Availability } from '@/lib/services';
+import { t } from '@/i18n';
 
 type Props = { state: Availability; blocked?: boolean; label?: string; className?: string };
 
 const view = {
   available: {
-    label: 'Disponível',
+    label: 'status.available',
     Icon: CircleCheck,
     tone: 'bg-success text-success-foreground',
   },
   unavailable: {
-    label: 'Indisponível',
+    label: 'status.unavailable',
     Icon: CircleX,
     tone: 'bg-destructive text-destructive-foreground',
   },
   unknown: {
-    label: 'Sem informação',
+    label: 'status.unknown',
     Icon: CircleHelp,
     tone: 'bg-muted text-muted-foreground ring-1 ring-inset ring-border',
   },
   blocked: {
-    label: 'Monitoramento bloqueado',
+    label: 'status.blocked',
     Icon: ShieldOff,
     tone: 'bg-muted text-muted-foreground ring-1 ring-inset ring-border',
   },
@@ -41,7 +42,7 @@ export function StatusTag({ state, blocked = false, label: custom, className }: 
       )}
     >
       <Icon aria-hidden="true" />
-      {custom ?? label}
+      {custom ?? t(label)}
     </span>
   );
 }

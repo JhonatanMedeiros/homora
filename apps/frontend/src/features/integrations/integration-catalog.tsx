@@ -6,6 +6,7 @@ import { ConnectionMark } from '@/features/connections/connection-mark';
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@/components/ui/item';
 import { SectionTitle } from '@/components/section-title';
 import { Spinner } from '@/components/ui/spinner';
+import { t } from '@/i18n';
 
 type Entry = { type: string; label: string; capabilities: string[] };
 
@@ -42,13 +43,13 @@ export function IntegrationCatalog() {
     <section aria-labelledby="catalog-title">
       <Card>
         <CardHeader>
-          <SectionTitle id="catalog-title">Integrações disponíveis</SectionTitle>
+          <SectionTitle id="catalog-title">{t('catalog.title')}</SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {error ? (
             <>
               <Alert variant="destructive">
-                <AlertDescription>Não foi possível carregar o catálogo.</AlertDescription>
+                <AlertDescription>{t('catalog.loadFailed')}</AlertDescription>
               </Alert>
               <div>
                 <Button
@@ -60,17 +61,17 @@ export function IntegrationCatalog() {
                     setAttempt((value) => value + 1);
                   }}
                 >
-                  Tentar novamente
+                  {t('catalog.retry')}
                 </Button>
               </div>
             </>
           ) : entries === null ? (
             <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
               <Spinner />
-              Carregando integrações...
+              {t('catalog.loading')}
             </p>
           ) : entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma integração disponível.</p>
+            <p className="text-sm text-muted-foreground">{t('catalog.empty')}</p>
           ) : (
             <ItemGroup>
               {entries.map((entry) => (

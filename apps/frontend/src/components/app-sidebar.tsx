@@ -12,8 +12,10 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { navItems, type Tab } from '@/components/app-nav';
+import { t } from '@/i18n';
 
 type Props = { tab: Tab; onTabChange: (tab: Tab) => void; onLogout: () => void };
 
@@ -28,7 +30,7 @@ export function AppSidebar({ tab, onTabChange, onLogout }: Props) {
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
-              <nav aria-label="Navegação principal">
+              <nav aria-label={t('nav.main')}>
                 <SidebarMenu>
                   {navItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
@@ -40,7 +42,7 @@ export function AppSidebar({ tab, onTabChange, onLogout }: Props) {
                         className="font-label text-base font-semibold tracking-wide data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
                       >
                         <item.icon />
-                        <span>{item.label}</span>
+                        <span>{t(item.label)}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -52,20 +54,19 @@ export function AppSidebar({ tab, onTabChange, onLogout }: Props) {
         <SidebarFooter className="gap-3 p-4">
           <div className="flex items-center gap-1">
             <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
+            <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               onClick={onLogout}
-              aria-label="Sair"
+              aria-label={t('app.logout')}
             >
               <LogOut />
             </Button>
           </div>
-          <p className="text-xs text-sidebar-foreground/70">
-            Ambiente local, acessível somente nesta máquina.
-          </p>
+          <p className="text-xs text-sidebar-foreground/70">{t('app.localNote')}</p>
         </SidebarFooter>
       </Sidebar>
     </div>

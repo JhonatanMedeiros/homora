@@ -1,4 +1,5 @@
 import type { IntegrationAdapter } from './integrations.js';
+import { InputError } from './api-error.js';
 
 export type AdGuardConfig = { url: string; username: string; password: string };
 export type AdGuardStatus = { running: boolean; protectionEnabled: boolean; version: string };
@@ -18,7 +19,7 @@ function validate(config: AdGuardConfig): AdGuardConfig {
   try {
     url = new URL(config.url);
   } catch {
-    throw new Error('Informe uma URL HTTPS válida para o AdGuard Home.');
+    throw new InputError('https-url-required');
   }
   if (
     url.protocol !== 'https:' ||
@@ -28,7 +29,7 @@ function validate(config: AdGuardConfig): AdGuardConfig {
     url.search ||
     url.hash
   )
-    throw new Error('Informe uma origem HTTPS sem caminho ou credenciais.');
+    throw new InputError('https-url-required');
   if (
     typeof config.username !== 'string' ||
     !config.username ||
@@ -40,7 +41,7 @@ function validate(config: AdGuardConfig): AdGuardConfig {
     config.password.length > 4096 ||
     hasControl(config.password)
   )
-    throw new Error('Informe usuário e senha válidos para o AdGuard Home.');
+    throw new InputError('invalid-credentials');
   return { url: url.origin, username: config.username, password: config.password };
 }
 

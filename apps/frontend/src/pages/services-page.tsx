@@ -21,9 +21,8 @@ import { ServiceCard } from '@/components/service-card';
 import { ServiceForm } from '@/components/service-form';
 import { ServicesEmpty } from '@/components/services-empty';
 import type { useServices } from '@/hooks/use-services';
+import { apiError, lower, t } from '@/i18n';
 import { emptyService } from '@/lib/services';
-
-const collator = 'pt-BR';
 
 /** Tela principal: grupos de serviços com estado, busca, edição e modo Organizar. */
 type Props = {
@@ -76,13 +75,11 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
     flashTimer.current = window.setTimeout(() => setFlash(''), 5000);
   }
 
-  const needle = query.toLocaleLowerCase(collator).trim();
+  const needle = lower(query).trim();
   const filtered = services.filter(
     (s) =>
       (selected === null || s.category === selected) &&
-      `${s.name} ${s.category} ${s.description} ${s.url}`
-        .toLocaleLowerCase(collator)
-        .includes(needle),
+      lower(`${s.name} ${s.category} ${s.description} ${s.url}`).includes(needle),
   );
   const isDown = (s: Service) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id);
   const groups = categories
@@ -160,15 +157,15 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
           body: JSON.stringify(form),
         },
       );
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error);
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(apiError(body, t('error.save')));
       const wasNew = editing === null;
       closeForm();
       setSelected(null);
       await refresh();
-      announce(wasNew ? 'Serviço adicionado.' : 'Alterações salvas.');
+      announce(wasNew ? t('page.added') : t('page.saved'));
     } catch (e) {
-      setFormError(e instanceof Error && e.message ? e.message : 'Não foi possível salvar.');
+      setFormError(e instanceof Error && e.message ? e.message : t('error.save'));
     } finally {
       setSaving(false);
     }
@@ -184,9 +181,9 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
       if (!response.ok) throw Error();
       setSelected(null);
       await refresh();
-      announce('Serviço removido.');
+      announce(t('page.removed'));
     } catch {
-      setMessage('Não foi possível remover o serviço.');
+      setMessage(t('error.remove'));
     }
   }
   async function saveGroup(e: FormEvent) {
@@ -201,8 +198,8 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
           body: JSON.stringify({ name: groupDraft }),
         },
       );
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || 'Não foi possível salvar o grupo.');
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(apiError(body, t('error.saveGroup')));
       const wasEditing = editingGroup !== null;
       setEditingGroup(null);
       setGroupDraft('');
@@ -210,18 +207,18 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
       await refresh();
       if (wasEditing) document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? error.message : 'Não foi possível salvar o grupo.');
+      setGroupError(error instanceof Error ? error.message : t('error.saveGroup'));
     }
   }
   async function deleteGroup(id: number) {
     try {
       const response = await fetch(`/api/groups/${id}`, { method: 'DELETE' });
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || 'Não foi possível remover o grupo.');
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(apiError(body, t('error.removeGroup')));
       await refresh();
       document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? error.message : 'Não foi possível remover o grupo.');
+      setGroupError(error instanceof Error ? error.message : t('error.removeGroup'));
     }
   }
   async function reorder(task: Promise<string | null>) {
@@ -239,14 +236,14 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
   ).length;
   const unknown = total - online - down - blocked;
   return (
-    <section aria-label="Serviços" className="flex flex-col gap-6">
+    <section aria-label={t('nav.services')} className="flex flex-col gap-6">
       {managing && (
         <PageHeader
-          title="Serviços e grupos"
+          title={t('manage.services')}
           description={
             total
-              ? `${total} ${total === 1 ? 'serviço' : 'serviços'} em ${categories.length} ${categories.length === 1 ? 'grupo' : 'grupos'}. Adicione ou edite serviços e organize os grupos.`
-              : 'Reúna aqui os serviços da sua casa e abra qualquer um com um clique.'
+              ? `${t('page.summary', { services: t('page.servicesCount', { count: total }), groups: t('page.groupsCount', { count: categories.length }) })} ${t('manage.serviceDescription')}`
+              : t('page.emptyDescription')
           }
           actions={
             <>
@@ -260,11 +257,11 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
                 }}
               >
                 <SlidersHorizontal />
-                {organizing ? 'Concluir' : 'Organizar'}
+                {organizing ? t('page.done') : t('page.organize')}
               </Button>
               <Button ref={addButton} type="button" onClick={() => openForm()}>
                 <Plus />
-                Adicionar serviço
+                {t('page.add')}
               </Button>
             </>
           }
@@ -314,11 +311,9 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
         >
           <DialogHeader>
             <DialogTitle className="font-label text-xl">
-              {editing !== null ? 'Editar serviço' : 'Novo serviço'}
+              {editing !== null ? t('form.editTitle') : t('form.newTitle')}
             </DialogTitle>
-            <DialogDescription>
-              Preencha os dados para organizar e acessar o serviço no painel.
-            </DialogDescription>
+            <DialogDescription>{t('form.dialogDescription')}</DialogDescription>
           </DialogHeader>
           <ServiceForm
             nameRef={nameInput}
@@ -363,7 +358,7 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
       )}
       {!managing && services.length > 0 && (
         <div className="flex items-center justify-end gap-3">
-          <span className="text-sm text-muted-foreground">Visualização</span>
+          <span className="text-sm text-muted-foreground">{t('view.label')}</span>
           <ToggleGroup
             type="single"
             variant="outline"
@@ -379,10 +374,10 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
                 /* preferência apenas nesta sessão */
               }
             }}
-            aria-label="Densidade dos serviços"
+            aria-label={t('view.label')}
           >
-            <ToggleGroupItem value="comfortable">Confortável</ToggleGroupItem>
-            <ToggleGroupItem value="compact">Compacta</ToggleGroupItem>
+            <ToggleGroupItem value="comfortable">{t('view.comfortable')}</ToggleGroupItem>
+            <ToggleGroupItem value="compact">{t('view.compact')}</ToggleGroupItem>
           </ToggleGroup>
           <Button
             variant="outline"
@@ -398,7 +393,7 @@ export function ServicesPage({ query, data, openFirstRef, managing, onManage }: 
               }
             }}
           >
-            {showDescriptions ? 'Ocultar descrições' : 'Mostrar descrições'}
+            {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
           </Button>
         </div>
       )}

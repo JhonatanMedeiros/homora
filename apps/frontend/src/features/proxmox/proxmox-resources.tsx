@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Item, ItemContent, ItemGroup, ItemTitle, ItemActions } from '@/components/ui/item';
 import { Progress } from '@/components/ui/progress';
 import { LabelTape } from '@/components/label-tape';
+import { formatDateTime, formatNumber, t } from '@/i18n';
 
 export type Resource = {
   type?: string;
@@ -14,8 +15,7 @@ export type Resource = {
   maxmem?: number;
 };
 
-const gb = (bytes: number) =>
-  (bytes / 1024 ** 3).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const gb = (bytes: number) => formatNumber(bytes / 1024 ** 3, { maximumFractionDigits: 1 });
 const pct = (fraction: number) => Math.min(100, Math.max(0, Math.round(fraction * 100)));
 
 function Usage({ label, value, text }: { label: string; value: number; text: string }) {
@@ -52,22 +52,24 @@ export function ProxmoxResources({ resources, checkedAt, showAll, onToggleAll }:
           )}
           {typeof node.mem === 'number' && typeof node.maxmem === 'number' && node.maxmem > 0 && (
             <Usage
-              label="Memória"
+              label={t('proxmox.memory')}
               value={pct(node.mem / node.maxmem)}
-              text={`${gb(node.mem)} de ${gb(node.maxmem)} GB`}
+              text={t('proxmox.memoryOf', { used: gb(node.mem), total: gb(node.maxmem) })}
             />
           )}
         </div>
       ))}
       <p className="text-sm text-muted-foreground">
-        {nodes.length} {nodes.length === 1 ? 'nó' : 'nós'} ·{' '}
-        {resources.filter((r) => r.type === 'qemu').length} VMs ·{' '}
-        {resources.filter((r) => r.type === 'lxc').length} containers
+        {t('proxmox.summary', {
+          nodes: t('proxmox.nodes', { count: nodes.length }),
+          vms: resources.filter((r) => r.type === 'qemu').length,
+          cts: resources.filter((r) => r.type === 'lxc').length,
+        })}
       </p>
       {checkedAt && (
         <p className="text-sm text-muted-foreground">
-          Última atualização:{' '}
-          <time dateTime={checkedAt}>{new Date(checkedAt).toLocaleString('pt-BR')}</time>
+          {t('proxmox.lastUpdate')}
+          <time dateTime={checkedAt}>{formatDateTime(checkedAt)}</time>
         </p>
       )}
       {guests.length > 0 && (
@@ -78,13 +80,13 @@ export function ProxmoxResources({ resources, checkedAt, showAll, onToggleAll }:
             return (
               <Item key={`${g.node}:${g.type}:${g.name ?? index}`} size="sm" className="px-0">
                 <ItemContent className="flex-row items-center gap-2">
-                  <ItemTitle>{g.name ?? 'sem nome'}</ItemTitle>
+                  <ItemTitle>{g.name ?? t('proxmox.unnamed')}</ItemTitle>
                   <LabelTape>{g.type === 'qemu' ? 'VM' : 'CT'}</LabelTape>
                 </ItemContent>
                 <ItemActions className={running ? 'text-success' : 'text-muted-foreground'}>
                   <StateIcon className="size-4" aria-hidden="true" />
                   <span className="text-sm font-medium">
-                    {running ? 'ativo' : (g.status ?? 'desconhecido')}
+                    {running ? t('proxmox.running') : (g.status ?? t('proxmox.unknownStatus'))}
                   </span>
                 </ItemActions>
               </Item>
@@ -95,7 +97,7 @@ export function ProxmoxResources({ resources, checkedAt, showAll, onToggleAll }:
       {guests.length > 8 && (
         <div>
           <Button type="button" variant="ghost" size="sm" onClick={onToggleAll}>
-            {showAll ? 'Mostrar menos' : `Mostrar todos (${guests.length})`}
+            {showAll ? t('proxmox.showLess') : t('proxmox.showAll', { count: guests.length })}
           </Button>
         </div>
       )}

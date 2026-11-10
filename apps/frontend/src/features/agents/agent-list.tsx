@@ -9,6 +9,7 @@ import {
   ItemTitle,
 } from '@/components/ui/item';
 import { parseScopes, scopeLabel, type Agent } from './agent-model';
+import { t } from '@/i18n';
 
 type Props = {
   agents: Agent[];
@@ -27,7 +28,7 @@ export function AgentList({ agents, revoking, onRotate, onRevoke, onRevokeBlur }
             <ItemTitle className="font-label text-base">
               {agent.name}
               <Badge variant={agent.revokedAt ? 'secondary' : 'success'}>
-                {agent.revokedAt ? 'Revogada' : 'Ativa'}
+                {agent.revokedAt ? t('agents.revoked') : t('agents.active')}
               </Badge>
             </ItemTitle>
             <ItemDescription>
@@ -37,7 +38,7 @@ export function AgentList({ agents, revoking, onRotate, onRevoke, onRevokeBlur }
           {!agent.revokedAt && (
             <ItemActions>
               <Button type="button" variant="outline" size="sm" onClick={() => onRotate(agent.id)}>
-                Gerar novo token
+                {t('agents.newToken')}
               </Button>
               <Button
                 type="button"
@@ -49,7 +50,7 @@ export function AgentList({ agents, revoking, onRotate, onRevoke, onRevokeBlur }
                 onClick={() => onRevoke(agent.id)}
                 onBlur={() => onRevokeBlur(agent.id)}
               >
-                {revoking === agent.id ? 'Confirmar revogação' : 'Revogar'}
+                {revoking === agent.id ? t('agents.confirmRevoke') : t('agents.revoke')}
               </Button>
             </ItemActions>
           )}

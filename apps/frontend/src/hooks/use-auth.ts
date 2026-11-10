@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '@/i18n';
 
 export type AuthStatus = { configured: boolean; authenticated: boolean };
 
@@ -14,7 +15,7 @@ export function useAuth() {
         return r.json() as Promise<AuthStatus>;
       })
       .then(setStatus)
-      .catch(() => setError('Não foi possível conectar ao servidor.'));
+      .catch(() => setError(t('auth.serverUnreachable')));
   }, []);
 
   async function submit(password: string) {
@@ -26,8 +27,7 @@ export function useAuth() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password }),
         });
-        if (!setup.ok)
-          throw new Error('Não foi possível criar a conta. Use pelo menos 8 caracteres.');
+        if (!setup.ok) throw new Error(t('auth.setupFailed'));
         setStatus({ configured: true, authenticated: false });
       }
       const login = await fetch('/api/auth/login', {
@@ -35,12 +35,11 @@ export function useAuth() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
-      if (!login.ok)
-        throw new Error('Senha inválida ou muitas tentativas. Tente novamente mais tarde.');
+      if (!login.ok) throw new Error(t('auth.loginFailed'));
       setStatus({ configured: true, authenticated: true });
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha de conexão.');
+      setError(err instanceof Error ? err.message : t('auth.connectionFailed'));
       return false;
     }
   }

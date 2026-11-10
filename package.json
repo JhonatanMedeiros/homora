@@ -1,6 +1,7 @@
 {
   "name": "homora",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@12.4.2",
   "engines": {
     "node": "^24.0.0",
