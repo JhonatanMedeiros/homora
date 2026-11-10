@@ -76,6 +76,11 @@ Homepage e do Dashy, sem edição manual, em um ambiente de teste.
 - [ ] Descoberta Docker por labels com sugestões revisáveis e acesso somente
       leitura ao socket.
 - [ ] Opção de ping ICMP e de intervalo por serviço, com limites.
+- [ ] Ícones de marca por nome (conjunto open source com licença compatível,
+      como o dashboard-icons), além dos ícones genéricos `lucide:`.
+- [ ] Layout em colunas com larguras escolhidas por grupo, além da grade fixa.
+- [ ] Faixa superior opcional com data, hora e recursos do sistema (CPU,
+      memória, disco) vindos de uma integração, sem agente instalado no host.
 
 **Conclusão:** a home responde "o que caiu?" sem abrir outra aba, e nenhum card
 parece monitorado sem ter sido verificado.
@@ -87,6 +92,9 @@ parece monitorado sem ter sido verificado.
 - [ ] Priorizar cerca de dez integrações de maior uso entre self-hosters,
       validando cada uma contra uma instância real. A lista é hipótese do
       mantenedor e deve ser revista com dados de uso e pedidos da comunidade.
+- [ ] Integrações pedidas pelo caso de referência (ver abaixo), após o modelo
+      declarativo: Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel e
+      Speedtest Tracker. Cada uma só conta como pronta com instância real.
 - [ ] Extrair o Proxmox do cofre legado para o mesmo modelo dos demais.
 - [ ] Guia de contribuição para novos adaptadores, com testes de contrato.
 
@@ -98,8 +106,10 @@ guia, e os adaptadores prioritários passam em instância real.
 - [ ] Login OIDC opcional e acesso de convidado somente leitura.
 - [ ] Cenários de rede suportados (P2) fechados e documentados antes de
       anunciar acesso fora do loopback.
-- [ ] Temas, CSS próprio e várias páginas ou abas.
-- [ ] Atalhos de teclado e busca web opcional.
+- [ ] Temas, CSS próprio, imagem de fundo e cards translúcidos, e várias
+      páginas ou abas.
+- [ ] Atalhos de teclado e busca web opcional (mecanismo configurável, sem
+      enviar dados do Homora).
 
 **Conclusão:** modelo de acesso validado e documentado; instância usável por
 mais de uma pessoa sem compartilhar a conta de administrador.
@@ -115,6 +125,47 @@ mais de uma pessoa sem compartilhar a conta de administrador.
       agente pode e não pode fazer.
 
 **Conclusão:** o diferencial é demonstrável por quem não leu o código.
+
+## Caso de referência: migrar um Homepage real (2026-11-10)
+
+Origem: uma captura de tela de um Homepage em uso por quem mantém o projeto
+(homelab pessoal com Proxmox, DNS, VPN, mídia e segurança). Serve de critério
+prático para a pergunta "dá para migrar para o Homora?". A captura mostra o
+resultado visual; **não** foi possível conhecer a configuração por trás dela,
+então a lista abaixo é inferida e deve ser conferida com o `services.yaml` e
+o `widgets.yaml` reais antes de virar escopo.
+
+| O que a página tem                                                     | Situação no Homora                                             | Fase |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------- | ---- |
+| Grupos de cards com descrição e busca                                  | Existe                                                         | —    |
+| Status de disponibilidade por serviço                                  | Existe; estados semânticos pendentes                           | R1   |
+| Dados do serviço dentro do card (VMs, LXC, CPU, MEM, consultas, sites) | Não: os widgets ficam numa área separada da página Integrações | R1   |
+| Logos de marca por nome (Proxmox, Portainer, Vaultwarden…)             | Não: só emoji, `lucide:` genérico e URL                        | R1   |
+| Colunas com larguras diferentes                                        | Não: grade fixa, com modo compacto                             | R1   |
+| Faixa superior com CPU, memória, disco, data e hora                    | Não                                                            | R1   |
+| Integrações Proxmox, Uptime Kuma, AdGuard, Home Assistant              | Existem (somente leitura, validadas só com mocks)              | R2   |
+| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest  | Não existem                                                    | R2   |
+| Imagem de fundo, cards translúcidos, cores                             | Não                                                            | R3   |
+| Busca que abre um buscador web (botão "G")                             | Não: a busca só filtra os cards                                | R3   |
+| Importar o `services.yaml`                                             | Existe, mas sem widgets                                        | R0   |
+
+Ordem sugerida, do que mais muda a percepção ao que mais custa:
+
+1. Widgets dentro do card, ligados a uma conexão existente. Sem isso, novas
+   integrações têm pouco valor visível.
+2. Ícones de marca por nome (barato e muda muito a aparência).
+3. Colunas e faixa superior.
+4. Integrações, na ordem de uso real de quem migra.
+5. Tema e fundo.
+
+O que o caso **não** deve mudar: a descoberta por Docker e qualquer execução de
+comandos no host continuam condicionadas ao desenho do Homora (uso local,
+privilégio mínimo, agentes que só propõem). Chaves de API (por exemplo
+Cloudflare e TrueNAS) usam o cofre de credenciais já existente.
+
+**Conclusão do caso:** a página de referência é reproduzida no Homora, com os
+mesmos serviços e os dados principais visíveis, sem editar arquivos à mão e sem
+perder a verificação de TLS nem a política de destinos.
 
 ## Riscos
 
