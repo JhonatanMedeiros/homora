@@ -4,7 +4,7 @@ import { createDatabase, getSqliteHandle, services } from '@homora/db';
 import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
 import { createServiceMonitor, startServiceMonitor } from './service-monitor.js';
-import { registerConnectionRoutes } from './connections.js';
+import { registerConnectionRoutes } from './routes/connections.js';
 import { createProposalService } from './proposals.js';
 import { integrationRegistry } from './integration-registry.js';
 import { createServiceConfiguration } from './service-configuration.js';

@@ -6,33 +6,45 @@ mantém a instalação pessoal simples sem impedir que módulos sejam extraídos
 houver uma necessidade concreta.
 
 A comparação de projetos e a direção para integrações estão em
-[integrações](integracoes.md). O diagrama descreve a direção desejada. A seção
-[implementação atual](#implementação-atual) registra diferenças importantes.
+[integrações](integracoes.md). O diagrama representa os caminhos implementados;
+as diferenças entre os processos HTTP e MCP estão descritas abaixo.
 
 ```mermaid
 flowchart LR
   U[Usuário] --> UI[Interface web]
   A[Agente MCP] --> MCP[Servidor MCP]
-  UI --> API[API de aplicação]
-  MCP --> API
-  API --> DB[(Banco local)]
-  API --> INT[Adaptadores de integração]
-  INT --> P[API Proxmox]
-  INT --> S[Serviços cadastrados]
+  UI --> HTTP[Rotas HTTP]
+  HTTP --> SC[Módulo de configuração]
+  HTTP --> PS
+  MCP --> PS[Módulo de propostas]
+  PS --> SC
+  PS --> DB
+  SC --> DB[(SQLite)]
+  HTTP --> IC[Módulo de conexões]
+  HTTP --> REG
+  HTTP --> VAULT
+  IC --> DB
+  IC --> VAULT[Credenciais cifradas]
+  IC --> REG[Registro de integrações]
+  MCP --> REG
+  MCP --> VAULT
+  REG --> EXT[Proxmox e serviços externos]
 ```
 
 ## Componentes e direção
 
 - Interface web: painel, configuração, revisão de propostas e gestão dos agentes.
-- API HTTP: autenticação da sessão web, validação, regras de aplicação e
-  armazenamento. O módulo de configuração de cards é compartilhado com o MCP;
-  outras rotas permanecem específicas ao HTTP.
+- API HTTP: autenticação da sessão web, validação Zod dos corpos, parâmetros e
+  queries, e composição das rotas por capacidade. Regras de cards/grupos são
+  delegadas ao módulo de configuração; conexões usam um módulo próprio de
+  configuração, credenciais, persistência e observações.
 - Adaptadores: validam configurações e coletam dados externos. O registro
   central expõe metadados e execução; cada integração mantém seu formato de
   credencial e limites específicos.
 - MCP atual: processo local stdio com token e escopos, que abre banco e cofre
-  diretamente. Oferece consultas e criação de propostas; não usa a sessão web,
-  não grava cards sem aprovação humana e não retorna segredos.
+  diretamente. Ferramentas validam entradas com Zod; oferece consultas e criação
+  de propostas, sem atravessar as rotas HTTP nem usar a sessão web. Não grava
+  cards sem aprovação humana e não retorna segredos.
 - Persistência: SQLite, migrações e recuperação estão implementados. Credenciais
   de algumas integrações ficam cifradas no banco com chave lateral; Proxmox usa
   arquivo legado. Rotação automática e proteção contra comprometimento do host
@@ -54,6 +66,9 @@ Serviço (nome, URL, ícone, grupo), grupo (nome e ordem), integração (tipo, c
 - A implantação atualmente suportada por padrão é local em loopback. Origens adicionais são configuradas explicitamente em `HOMORA_ALLOWED_ORIGINS`; origens HTTP só são aceitas em localhost. Para proxy reverso, o proxy deve terminar HTTPS e isolar a API. A aplicação não confia em `X-Forwarded-For`/`X-Forwarded-Proto`; portanto não configure proxies não confiáveis nem use cabeçalhos encaminhados para decidir identidade ou segurança.
 - A política de destinos de integrações e do monitoramento exige origem exata, com protocolo e porta incluídos na URL configurada, resolve DNS uma vez, fixa o IP autorizado, rejeita respostas DNS mistas e redirecionamentos, usa TLS validado e impõe timeout e limite de resposta. RFC1918 e ULA são bloqueadas por padrão; conexões de integração precisam de opt-in por conexão e o monitoramento precisa de opt-in por serviço. Faixas especiais são bloqueadas mesmo com essa permissão. A lista de faixas especiais não é uma garantia de cobertura de toda rede ou política local.
 - A senha local é derivada com scrypt e salt aleatório; sessões aleatórias são mantidas somente em memória por oito horas e invalidadas ao reiniciar. Cookies usam HttpOnly e SameSite=Strict; a sessão emitida por origem HTTPS também usa Secure. Operações que alteram estado exigem uma origem explicitamente permitida. Limite de login é em memória e baseado no endereço que o backend vê; atrás de proxy, isso pode agrupar usuários no endereço do proxy.
+- Status, configuração inicial e login são endpoints sem sessão para permitir
+  primeiro acesso. A configuração só é aceita enquanto não existe uma conta;
+  logout é idempotente e apenas invalida o cookie apresentado.
 - Credenciais de integração são cifradas com AES-256-GCM e chave aleatória em arquivo separado. `.auth`, `.key` e `.proxmox` são criados com modo 0600; a recuperação exige preservar os arquivos correspondentes e protegê-los juntos. Não há rotação automática da chave nem proteção contra comprometimento do host, processo ou cópia conjunta da chave e dados. Proteja também o arquivo SQLite, backups e volume persistente com permissões do sistema operacional.
 - Segredos fora de logs, backup e auditoria por padrão; logs com retenção configurável. Backups criptografados quando incluírem segredos.
 - Proteção contra CSRF, sessões seguras, limites de requisição e validação de entrada; não executar comandos arbitrários ou scripts recebidos de agentes.
@@ -73,13 +88,17 @@ Community Scripts pode ser estudado após haver releases confiáveis.
   Fastify, o processo MCP stdio, autenticação, integrações, política de rede e
   serviços de domínio. `packages/shared` publica validação/contratos TypeScript;
   `packages/db` contém esquema, inicialização e migrações Drizzle/SQLite.
-- `app.ts` compõe hooks globais, autenticação e módulos de rota. As rotas de
-  autenticação, configuração de cards/grupos, agentes/propostas e Proxmox ficam
-  em `routes/`; conexões seguem em `connections.ts`. O módulo
-  `service-configuration.ts` centraliza invariantes de cards/grupos, transações
-  e versão da configuração para HTTP, MCP e aprovação de propostas. O frontend
-  ainda concentra a composição principal em `App.tsx` e a gestão de conexões em
-  `Connections.tsx`.
+- `app.ts` compõe hooks globais e módulos de rota. As rotas de autenticação,
+  configuração de cards/grupos, agentes/propostas, Proxmox e conexões ficam em
+  `routes/`. `input-schemas.ts` valida contratos HTTP e entradas de ferramentas
+  MCP antes de chamar as regras de domínio. `service-configuration.ts`
+  centraliza invariantes de cards/grupos, transações e versão para HTTP, MCP e
+  aprovação de propostas.
+- `integration-connections.ts` coordena configuração de conexões, credenciais,
+  persistência, cache de observações e execução dos adaptadores; as rotas
+  correspondentes interpretam pedidos e traduzem resultados em status e
+  respostas. O frontend tem uma tela de agentes em `Agents.tsx`; `App.tsx` ainda
+  concentra o painel e `Connections.tsx` ainda reúne a interface de conexões.
 - `integration-registry.ts` registra metadados e execução dos adaptadores
   Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home e Proxmox. As quatro
   conexões novas usam o transporte com política de destino; Proxmox usa seu
@@ -104,27 +123,26 @@ camada genérica adicional agora.
 Os principais pontos de atenção são evolução e consistência, não a escolha de
 tecnologia:
 
-1. `service-configuration.ts` já reúne regras de configuração de cards e grupos,
-   inclusive a versão usada por propostas. Parte da validação HTTP ainda usa
-   casts manuais; schemas Zod nos limites HTTP/MCP reduziriam divergências e
-   respostas 500 acidentais.
-2. Algumas operações de conexão ainda combinam validação, cofre, persistência,
-   cache e tradução de erros em `connections.ts`. Extraia lógica adicional
-   quando uma regra for compartilhada ou a mudança precisar de menor localidade;
-   evite arquivos que apenas reexportem handlers.
-3. O MCP e HTTP compartilham regras de configuração de cards, mas ainda leem e
-   gravam parte dos dados por mecanismos diferentes. Mudanças de autorização e
-   propostas precisam considerar ambos os caminhos. Contratos públicos devem
-   continuar livres de segredos.
-4. Validação HTTP é parcialmente manual com casts de `request.body`; schemas Zod
-   nos limites reduziriam divergência e respostas 500 acidentais.
-5. `App.tsx` e `Connections.tsx` já são grandes o bastante para justificar
-   extração incremental de telas/componentes/hooks por capacidade, preservando
-   comportamento e sem reescrita ampla.
-6. O registro de execução está centralizado, mas armazenamento de credenciais e
-   configuração Proxmox continuam diferentes das demais integrações. Manter
-   essa diferença explícita até haver necessidade de produto e migração
-   compatível para unificá-los.
+1. A validação Zod nas rotas HTTP impede que payloads malformados alcancem as
+   regras de domínio. Mantenha mensagens externas estáveis e valide novamente
+   dados serializados lidos do banco ou cofre.
+2. O módulo de conexões agora concentra regras de credencial, persistência e
+   observação atrás de rotas HTTP pequenas. Preserve testes pelos fluxos
+   observáveis e extraia mais apenas se isso aumentar a locality das regras.
+3. MCP e HTTP compartilham regras de configuração de cards, mas o MCP continua
+   com acesso local direto ao banco/cofre e autorização própria. Mudanças de
+   escopos e propostas precisam considerar os dois processos; contratos públicos
+   devem continuar livres de segredos.
+4. `App.tsx` ainda reúne o painel e seus fluxos de estado; `Connections.tsx`
+   contém uma tela extensa. Extraia telas ou hooks quando isso reduzir o contexto
+   necessário para alterar uma capacidade e melhorar seus testes.
+5. O registro de execução é compartilhado, mas armazenamento de credenciais e
+   configuração Proxmox continuam diferentes das demais integrações. Mantenha
+   essa distinção até haver necessidade de produto e migração compatível.
+6. Tipos de integração ainda são declarados no catálogo de execução, nos schemas
+   do backend e na interface. Mantenha os quatro tipos de conexão explícitos;
+   centralize esse contrato quando a próxima integração tornar a duplicação
+   concreta, em vez de adicionar geração ou dependência compartilhada agora.
 
 Para regras contínuas de contribuição e revisão, consulte
 [Padrões de engenharia](padroes.md). Mudanças estruturais que afetem limites,

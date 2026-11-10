@@ -38,6 +38,24 @@ it('protege credenciais de múltiplas integrações e preserva vínculos', async
     expect(first.body).not.toContain('fake-test-token-123');
     expect(first.body).not.toContain('BEGIN CERTIFICATE');
     const id = first.json().id;
+    expect(
+      (
+        await app.inject({
+          method: 'GET',
+          url: `/api/connections/${id}/data?refresh=invalid`,
+          headers: { cookie },
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await app.inject({
+          method: 'GET',
+          url: '/api/connections/not-an-id/data',
+          headers: { cookie },
+        })
+      ).statusCode,
+    ).toBe(404);
     const second = await app.inject({
       method: 'POST',
       url: '/api/connections',

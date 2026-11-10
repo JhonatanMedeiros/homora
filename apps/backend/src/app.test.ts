@@ -216,6 +216,58 @@ describe('API de serviços', () => {
       ).statusCode,
     ).toBe(400);
   });
+  it('rejeita corpos e parâmetros que não correspondem aos contratos HTTP', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const invalidRequests = [
+      {
+        method: 'POST',
+        url: '/api/services',
+        payload: { name: 42, url: 'https://example.test', category: 'Casa' },
+      },
+      {
+        method: 'POST',
+        url: '/api/services',
+        payload: { name: 'Casa', url: 'https://example.test', category: 'Casa', admin: true },
+      },
+      { method: 'POST', url: '/api/groups', payload: { name: 42 } },
+      { method: 'PUT', url: '/api/groups/order', payload: { names: ['Casa', 42] } },
+      { method: 'PUT', url: '/api/services/order', payload: { category: 'Casa', ids: ['1'] } },
+      {
+        method: 'POST',
+        url: '/api/agents',
+        payload: { name: 'Agente', scopes: ['admin'] },
+      },
+      {
+        method: 'POST',
+        url: '/api/connections',
+        payload: { type: 'jellyfin', name: 'Mídia', url: 'https://media.example', admin: true },
+      },
+    ] as const;
+    for (const { method, url, payload } of invalidRequests) {
+      expect(
+        (await app.inject({ method, url, headers, payload })).statusCode,
+        `${method} ${url}`,
+      ).toBe(400);
+    }
+    expect(
+      (
+        await app.inject({
+          method: 'DELETE',
+          url: '/api/services/9007199254740992',
+          headers,
+        })
+      ).statusCode,
+    ).toBe(404);
+    expect(
+      (
+        await app.inject({
+          method: 'GET',
+          url: '/api/proxmox/resources?refresh=perhaps',
+          headers: { cookie },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
   it('acrescenta cards depois da maior posição mesmo quando há lacunas', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const ids: number[] = [];
@@ -284,6 +336,41 @@ describe('API de serviços', () => {
 });
 
 describe('autenticação pela API', () => {
+  it('contabiliza senhas curtas como tentativas inválidas de login', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'homora-api-login-limit-'));
+    const localAuth = createAuth(join(dir, 'auth'));
+    const localApp = createApp(database.db, 5173, localAuth);
+    const headers = { origin: 'http://localhost:5173' };
+    try {
+      localAuth.setup('senha-super-segura');
+      for (let attempt = 0; attempt < 5; attempt++) {
+        expect(
+          (
+            await localApp.inject({
+              method: 'POST',
+              url: '/api/auth/login',
+              headers,
+              payload: { password: 'x' },
+            })
+          ).statusCode,
+        ).toBe(401);
+      }
+      expect(
+        (
+          await localApp.inject({
+            method: 'POST',
+            url: '/api/auth/login',
+            headers,
+            payload: { password: 'senha-super-segura' },
+          })
+        ).statusCode,
+      ).toBe(401);
+    } finally {
+      await localApp.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('cria conta uma vez, autentica e encerra a sessão', async () => {
     const localAuth = createAuth(join(mkdtempSync(join(tmpdir(), 'homora-api-auth-')), 'auth'));
     const localApp = createApp(database.db, 5173, localAuth);

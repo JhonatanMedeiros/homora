@@ -7,6 +7,7 @@ import {
   proxmoxAdapter,
 } from '../integrations.js';
 import { integrationRegistry } from '../integration-registry.js';
+import { proxmoxInputSchema, refreshQuerySchema } from '../input-schemas.js';
 
 type Vault = ReturnType<typeof createVault>;
 
@@ -24,20 +25,15 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
   });
 
   function prepareConfig(body: unknown): ProxmoxConfig {
-    if (!body || typeof body !== 'object' || Array.isArray(body))
-      throw new Error('Dados inválidos.');
-    const input = body as Record<string, unknown>;
-    for (const key of ['url', 'tokenId', 'secret', 'ca'])
-      if (input[key] !== undefined && typeof input[key] !== 'string')
-        throw new Error('Dados inválidos.');
-    if (input.removeCa !== undefined && typeof input.removeCa !== 'boolean')
-      throw new Error('Dados inválidos.');
+    const parsed = proxmoxInputSchema.safeParse(body);
+    if (!parsed.success) throw new Error('Dados inválidos.');
+    const input = parsed.data;
     const existing = vault?.load();
     if (existing && !input.secret) {
       let changedUrl = false;
       if (input.url) {
         try {
-          changedUrl = new URL(input.url as string).origin !== existing.url;
+          changedUrl = new URL(input.url).origin !== existing.url;
         } catch {
           throw new Error('Informe uma URL HTTPS válida.');
         }
@@ -46,10 +42,10 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
         throw new Error('Informe novamente o segredo ao alterar a URL ou o ID do token.');
     }
     return proxmoxAdapter.validate({
-      url: (input.url as string) || existing?.url || '',
-      tokenId: (input.tokenId as string) || existing?.tokenId || '',
-      secret: (input.secret as string) || existing?.secret || '',
-      ca: input.removeCa ? undefined : (input.ca as string) || existing?.ca,
+      url: input.url || existing?.url || '',
+      tokenId: input.tokenId || existing?.tokenId || '',
+      secret: input.secret || existing?.secret || '',
+      ca: input.removeCa ? undefined : input.ca || existing?.ca,
     });
   }
 
@@ -97,9 +93,11 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
     '/api/proxmox/resources',
     async (request, reply) => {
       try {
+        const query = refreshQuerySchema.safeParse(request.query);
+        if (!query.success) return reply.code(400).send({ error: 'Consulta inválida.' });
         const config = vault?.load();
         if (!config) return reply.code(404).send({ error: 'Proxmox não configurado.' });
-        return await cache.collect(() => collect(config), request.query.refresh === 'true');
+        return await cache.collect(() => collect(config), query.data.refresh === 'true');
       } catch (error) {
         return reply.code(502).send({
           error:
