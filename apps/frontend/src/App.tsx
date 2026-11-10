@@ -13,7 +13,7 @@ import { AppShell } from '@/components/app-shell';
 import { SearchField } from '@/components/search-field';
 import { QuickResults } from '@/components/quick-results';
 import type { Tab } from '@/components/app-nav';
-import { t, useI18n } from '@/i18n';
+import { lower, t, useI18n } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { SettingsPage } from '@/pages/settings-page';
 import { useAuth } from '@/hooks/use-auth';
@@ -104,7 +104,17 @@ function Dashboard({
               setQuery(e.target.value);
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') openFirst.current?.();
+              if (e.key === 'Enter') {
+                const needle = lower(query.trim());
+                const first =
+                  needle &&
+                  data.services.find((service) =>
+                    lower(
+                      `${service.name} ${service.category} ${service.description} ${service.url}`,
+                    ).includes(needle),
+                  );
+                if (first) window.open(first.url, '_blank', 'noopener,noreferrer');
+              }
               if (e.key === 'Escape') setQuery('');
               if (e.key === 'ArrowDown' && query.trim()) {
                 e.preventDefault();
