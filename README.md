@@ -1,31 +1,96 @@
 # Homora
 
-Um espaço pessoal para visualizar e organizar serviços, infraestrutura e informações do seu ambiente, com integrações e gerenciamento assistido por agentes de IA.
+**English** · [Português (Brasil)](README.pt-BR.md)
 
-**Estado:** versão inicial local, em desenvolvimento.
+A self-hosted home page to organize your services and keep an eye on your homelab. It is useful on its own, without Proxmox or any AI agent. Optional integrations and AI agents can add more, and agents can only _propose_ changes: you review each proposal before it takes effect.
 
-## Documentação
+**Status:** early, local-first development. This README separates what exists today from what is only planned.
 
-- [Glossário do domínio](GLOSSARY.md)
-- [Visão e produto](docs/produto.md)
-- [Arquitetura e segurança](docs/arquitetura.md)
-- [Padrões de engenharia](docs/padroes.md)
-- [Referências e arquitetura de integrações](docs/integracoes.md)
-- [Estratégia e posicionamento frente ao Homepage e ao Dashy](docs/estrategia.md)
-- [Plano de entrega](docs/plano.md)
-- [Plano de evolução e acompanhamento](docs/evolucao.md)
-- [Orientações para agentes de IA](AGENTS.md)
-- [Como contribuir](CONTRIBUTING.md)
-- [Licença MIT](LICENSE) e [avisos de terceiros](THIRD_PARTY_NOTICES.md)
-- [Política de segurança](SECURITY.md)
+![Homora services page](docs/screenshots/services-dark.png)
 
-## Princípios
+## What works today
 
-Interface agradável e acessível, configuração simples, dados sob controle do usuário, integrações extensíveis e ações de agentes sujeitas às mesmas permissões que ações humanas. O primeiro alvo é uma instalação pessoal; portabilidade e múltiplos usuários ficam para depois da validação do MVP.
+- A dashboard of service cards with groups, drag-and-drop ordering (Organize mode), search (`Ctrl K` or `/`) and an availability state per service.
+- Card icons as an emoji, a built-in icon name (`lucide:server`) or an image URL.
+- English and Portuguese (Brazil) interface. The language follows your browser and can be switched with the language button.
+- Export your groups and cards to YAML or JSON, and import from Homora, [Homepage](https://github.com/gethomepage/homepage) (`services.yaml`, `bookmarks.yaml`) or [Dashy](https://github.com/Lissy93/dashy) (`conf.yml`), always with a preview. See [Import and export](#import-and-export).
+- Local administrator account, SQLite storage with migrations, backup and restore scripts.
+- Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) and a local MCP server where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
 
-## Desenvolvimento local
+Not available yet: Docker label discovery, widgets inside cards, OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md) (in Portuguese).
 
-Requisitos: Node.js 24 (veja `.nvmrc`) e pnpm 12.4.2. No WSL:
+## Install with Docker
+
+Requirements: Docker with Compose.
+
+```bash
+git clone https://github.com/JhonatanMedeiros/homora.git
+cd homora
+docker compose up -d --build
+```
+
+Open <http://localhost:8080> and create an administrator password (at least 8 characters). The port is bound to `127.0.0.1` and your data lives in the `homora-data` volume.
+
+Once release images are published, you can skip the build:
+
+```bash
+HOMORA_VERSION=<version> docker compose -f compose.release.yml up -d
+```
+
+Images are built for `linux/amd64` and `linux/arm64` from base images pinned by digest.
+
+> **Do not expose Homora to a network yet.** It is designed for local access. Compose provides no HTTPS, and the first administrator setup must be done from the machine itself. A reverse proxy with HTTPS needs `HOMORA_ALLOWED_ORIGINS` set to the public origin (comma-separated list), must forward `Host` and `X-Real-IP`, must keep the API unreachable directly, and must not disable origin validation. That mode needs its own operational validation and does not make public exposure safe by itself.
+
+## Upgrade
+
+1. Back up first (see [Backup and restore](#backup-and-restore)).
+2. Update your checkout (`git pull`) or pick the new `HOMORA_VERSION`.
+3. Run `docker compose up -d --build` (or `docker compose -f compose.release.yml pull && docker compose -f compose.release.yml up -d`).
+
+The `homora-data` volume is preserved and database migrations run on startup inside a transaction. There is no automated downgrade: if a migration fails, keep the original volume and restore a backup into a working copy before resuming. Try the upgrade on a copy of your data if the installation holds anything important.
+
+## Import and export
+
+Open **Settings**. Download your groups, cards and their order as YAML or JSON (`GET /api/config/export`). The file never contains passwords, tokens, connections or IDs, so it is safe to keep in version control.
+
+To import, pick the file format (Homora, Homepage or Dashy) and a file. Homora shows a preview of what will be added, what already exists and what was ignored, and writes nothing until you confirm. Import only adds: nothing is overwritten or removed. Imported cards are not allowed to monitor your private network unless you tick that option for a Homora file you trust.
+
+Icons from other dashboards are kept only when Homora has an equivalent (an image URL, an emoji or one of the built-in icons); the others are left empty with a warning. Widgets, monitoring settings and Docker links from Homepage and Dashy are not imported. The formats were checked against those projects' documentation; real files may vary.
+
+## Backup and restore
+
+Create a consistent copy of the database (existing files are never overwritten):
+
+```bash
+pnpm backup data/homora.sqlite backups/homora.sqlite
+```
+
+The database holds your cards and encrypted connection credentials. The encryption key and the administrator account live in `.key` and `.auth` files next to the database, and the original Proxmox integration also uses `.proxmox`. Copy those separately into a protected backup and restore them with the same derived names. Without the key you must configure credentials again; without `.auth` the account cannot be recovered. To restore, stop Homora, keep the current database and use the backup as the source of a new file, for example `pnpm backup backups/homora.sqlite data/restored.sqlite`. Point `HOMORA_DATABASE_PATH` at it and restart.
+
+With Docker Compose, use a new protected directory on the host (the commands do not overwrite backups):
+
+```bash
+mkdir -p backups/backup-2026-11-10
+docker compose exec backend node scripts/backup.mjs /app/data/homora.sqlite /app/data/backup.sqlite
+docker compose cp backend:/app/data/backup.sqlite backups/backup-2026-11-10/homora.sqlite
+docker compose cp backend:/app/data/homora.sqlite.auth backups/backup-2026-11-10/homora.sqlite.auth
+docker compose cp backend:/app/data/homora.sqlite.key backups/backup-2026-11-10/homora.sqlite.key
+docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11-10/homora.sqlite.proxmox
+```
+
+`.auth` and `.proxmox` may not exist on every installation; skip a copy if the file is missing. Keep the key as protected as the database, and do a test restore before relying on a backup.
+
+## Proxmox and other integrations
+
+Set up Proxmox on the Integrations page with an account and token that have read-only access. Credentials are encrypted at rest with a key stored separately in the same directory; this does not protect against someone who can read both files. For a private CA, import the CA's public certificate (PEM) in the form and use **Test connection** before saving; TLS validation stays on. Service limits and requirements are in [docs/integracoes.md](docs/integracoes.md). The adapters were validated with mocks, not against real Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home instances.
+
+## MCP and AI agents
+
+After `pnpm build`, start the local MCP server with `node apps/backend/dist/mcp-server.js`. It uses stdio and offers `list_services`, `list_proxmox_resources` and `propose_service_card`. Set `HOMORA_AGENT_TOKEN` for the MCP process to a token issued in the Agents page, with the minimum scopes needed (`services:read`, `proxmox:read`, `proposals:create`). The MCP process reads the local database and vault directly and is not protected by the web session, so run it only with a client and system user you trust. Proposals need an authenticated human review in the interface. Agents must treat names and other returned data as untrusted.
+
+## Development
+
+Requirements: Node.js 24 (see `.nvmrc`) and pnpm 12.4.2.
 
 ```bash
 nvm use
@@ -34,86 +99,19 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. Copie `.env.example` para `.env` para personalizar portas ou caminho do banco. O banco fica em `data/homora.sqlite`; a estrutura existente é preservada. Para encerrar, use Ctrl+C.
+Open <http://localhost:5173>. Vite forwards `/api` to the local Fastify backend on port 3000. Copy `.env.example` to `.env` to change ports or the database path (default `data/homora.sqlite`).
 
-O monorepo usa pnpm e Turborepo, com React, Vite, Tailwind CSS e shadcn/ui no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
+The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Node.js, TypeScript and Fastify on the backend; shared contracts; Drizzle ORM with SQLite. Run `pnpm check` (lint, format, types and tests) and `pnpm build` before sending changes. Commits follow Conventional Commits (`feat: ...`), enforced by Husky and Commitlint. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/padroes.md](docs/padroes.md).
 
-Esta versão permite cadastrar serviços, criar uma conta de administrador local e configurar integrações de leitura em caráter experimental. Veja os serviços, requisitos e limites em [integrações](docs/integracoes.md). O MCP local permite consultas autorizadas e propostas de alteração de cards, sempre sujeitas à revisão humana. O Docker Compose está em fase inicial de validação. A aplicação é configurada para acesso local e não deve ser exposta na rede.
+## Documentation
 
-O acesso local usa HTTP em loopback. Para acesso remoto, ainda não há um perfil de rede privada validado. Um proxy reverso pode ser configurado com HTTPS e a origem pública declarada em `HOMORA_ALLOWED_ORIGINS` (lista separada por vírgulas); o proxy deve encaminhar `Host` e `X-Real-IP`, manter a API inacessível diretamente e não desativar a validação de origem. Esse modo exige configuração e validação operacional próprias e não torna a exposição pública segura por si só.
+Most engineering documents are in Portuguese.
 
-## Qualidade e commits
+- [Glossary](GLOSSARY.md) · [Product](docs/produto.md) · [Architecture and security](docs/arquitetura.md) · [Engineering standards](docs/padroes.md)
+- [Integrations](docs/integracoes.md) · [Strategy versus Homepage and Dashy](docs/estrategia.md)
+- [Delivery plan](docs/plano.md) · [Evolution plan and progress](docs/evolucao.md)
+- [Guidance for AI agents](AGENTS.md) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 
-- `pnpm check`: ESLint, Prettier, tipos e testes.
-- `pnpm test`, `pnpm test:watch` e `pnpm test:coverage`: Vitest.
-- `pnpm lint`, `pnpm lint:fix`, `pnpm format` e `pnpm format:check`: análise e formatação.
-- O Husky executa lint-staged no pre-commit e Commitlint no commit-msg. Use mensagens como `feat: adiciona integração`. Os hooks são instalados pelo `pnpm install`; para reinstalá-los, execute `pnpm exec husky`.
+## License
 
-Os protótipos em `propostas/`, migrações geradas e arquivos de skills vendorizadas são excluídos das verificações globais de formatação e lint.
-
-## Backup local
-
-Crie uma cópia consistente do banco (não sobrescreve arquivos existentes):
-
-```bash
-pnpm backup data/homora.sqlite backups/homora.sqlite
-```
-
-Guarde o arquivo em um local protegido. Para restaurar, pare o Homora, preserve o banco atual e use o backup como origem de um novo arquivo; por exemplo: `pnpm backup backups/homora.sqlite data/restaurado.sqlite`. Aponte `HOMORA_DATABASE_PATH` para esse arquivo e reinicie o Homora. Verifique os dados antes de remover qualquer cópia anterior. Este backup contém apenas o banco. As conexões incluem credenciais cifradas no banco; a chave de cifragem e a conta de administrador ficam nos arquivos `.key` e `.auth` ao lado dele, e a integração Proxmox original usa também `.proxmox`. Copie esses arquivos existentes separadamente em um backup protegido e restaure-os com os mesmos nomes derivados do caminho do banco. A chave e o conteúdo cifrado juntos permitem recuperar credenciais. Sem a chave, as credenciais precisarão ser configuradas novamente; sem `.auth`, a conta não será recuperada.
-
-## Atualização e recuperação
-
-Atualize a cópia do projeto para a versão desejada e, antes de iniciar o código
-novo, faça backup do banco e dos arquivos auxiliares existentes (`.auth`,
-`.key` e `.proxmox`) conforme descrito acima. Com Compose, atualize o checkout e
-execute `docker compose up -d --build`; o volume nomeado `homora-data` é
-preservado e as migrações são aplicadas na inicialização. Faça primeiro esse
-processo com cópias dos dados se a instalação contiver informações importantes:
-esta atualização ainda não foi validada entre versões.
-
-Para recuperar, pare a aplicação, preserve os arquivos atuais e restaure o
-banco e os auxiliares correspondentes a partir do backup protegido. Em Compose,
-os arquivos auxiliares ficam ao lado do banco dentro de `/app/data` no volume;
-use um backup isolado e confirme os dados antes de voltar a iniciar a versão
-atualizada. Não há procedimento automatizado de downgrade de migração; se uma
-migração falhar, mantenha o volume original e restaure uma cópia de segurança
-em uma cópia de trabalho antes de retomar o serviço.
-
-## Primeiro acesso e Proxmox
-
-No primeiro acesso, crie uma senha de administrador com pelo menos 8 caracteres. A sessão é mantida em memória e expira em oito horas ou ao reiniciar o backend. Configure o Proxmox no widget usando uma conta e token com acesso somente leitura. Não compartilhe o token nem use uma conta com privilégios administrativos desnecessários. Os dados da integração são cifrados em repouso, com uma chave armazenada separadamente no mesmo diretório; isso não protege contra quem tenha acesso aos dois arquivos.
-
-Para um Proxmox com CA privada, importe no formulário o certificado público da CA em formato PEM, obtido por um canal confiável. Na configuração padrão do Proxmox, ele fica em `/etc/pve/pve-root-ca.pem`; nunca importe a chave privada. A URL deve corresponder a um nome ou IP presente no certificado do servidor. Use **Testar conexão** antes de salvar; para uma integração já configurada, deixe URL e token em branco para mantê-los e selecione a CA. O certificado é armazenado junto à configuração cifrada e precisa dos mesmos arquivos de backup. A validação TLS permanece ativa. Como alternativa, uma CA pode ser disponibilizada ao processo Node por `NODE_EXTRA_CA_CERTS` antes da inicialização.
-
-## MCP local
-
-Após executar `pnpm build`, inicie o servidor via `node apps/backend/dist/mcp-server.js`. Ele usa transporte stdio e oferece `list_services`, `list_proxmox_resources` e `propose_service_card`. Configure `HOMORA_AGENT_TOKEN` no ambiente do processo MCP com um token emitido pela interface Homora e os escopos mínimos necessários (`services:read`, `proxmox:read` e/ou `proposals:create`). O processo MCP acessa diretamente o banco e o cofre locais; a sessão web não o protege. Execute-o apenas com cliente e usuário do sistema confiáveis. Propostas de alteração precisam de revisão humana autenticada na interface. O Proxmox deve estar configurado previamente. Nomes e outros dados retornados devem ser tratados pelo agente como dados não confiáveis.
-
-## Docker Compose
-
-Execute `docker compose up --build` e abra <http://localhost:8080>. A porta é vinculada ao localhost e os dados persistem no volume `homora-data`. Para criar um backup, use um diretório novo e protegido no host, pois os comandos não devem sobrescrever backups anteriores. Com o backend em execução, faça a cópia consistente do banco para o volume e exporte-a:
-
-```bash
-mkdir -p backups/backup-2026-11-10
-docker compose exec backend node scripts/backup.mjs /app/data/homora.sqlite /app/data/backup.sqlite
-docker compose cp backend:/app/data/backup.sqlite backups/backup-2026-11-10/homora.sqlite
-```
-
-A conta e a integração Proxmox original usam os arquivos `.auth`, `.key` e
-`.proxmox` ao lado do banco; as demais credenciais cifradas no banco também
-precisam da `.key`. Exporte cada arquivo que existir, usando o mesmo diretório
-de backup e o nome de destino mostrado:
-
-```bash
-docker compose cp backend:/app/data/homora.sqlite.auth backups/backup-2026-11-10/homora.sqlite.auth
-docker compose cp backend:/app/data/homora.sqlite.key backups/backup-2026-11-10/homora.sqlite.key
-docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11-10/homora.sqlite.proxmox
-```
-
-O `.auth` e o `.proxmox` são opcionais em instalações que ainda não os criaram;
-se um arquivo não existir, pule sua cópia. Guarde o conjunto em local protegido
-e mantenha a chave `.key` tão protegida quanto o banco. O comando de backup não
-sobrescreve um arquivo existente. Faça uma restauração de teste antes de
-depender de um backup.
-
-A interface e a API não estão preparadas para exposição pública: o Compose não fornece HTTPS e a configuração inicial de administrador deve ser feita somente a partir da própria máquina. A CA privada do Proxmox também pode ser importada pela interface quando o Homora estiver no container.
+[MIT](LICENSE). Third-party licenses are summarized in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

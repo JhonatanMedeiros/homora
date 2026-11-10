@@ -221,8 +221,10 @@ Origem: [estrategia.md](estrategia.md), fase R0. Nenhum item iniciado.
 Marque apenas com a implementação e a validação indicadas.
 
 - [ ] **Imagem Docker reproduzível:** fixar Node e nginx por versão/digest,
-      construir amd64 e arm64 no CI e documentar o upgrade. Validar: build
-      multi-arch e upgrade preservando dados.
+      construir amd64 e arm64 no CI e documentar o upgrade. Implementado e
+      validado localmente (ver registro abaixo); **pendente** publicar uma
+      release: o workflow nunca foi executado e `compose.release.yml` não foi
+      testado contra imagens publicadas.
 - [x] **Licença e atribuições** (também em P5): MIT, `LICENSE` e
       `THIRD_PARTY_NOTICES.md`. A imagem Docker deve incluir esses arquivos.
 - [x] **Exportação e importação YAML/JSON** de serviços, grupos e ordem, com
@@ -238,11 +240,48 @@ Marque apenas com a implementação e a validação indicadas.
       mantendo emoji e URL própria (ver registro abaixo).
 - [ ] **Inglês e i18n:** interface em inglês por padrão, com pt-BR completo
       (feito, ver registro abaixo); README, instalação e capturas de tela em
-      inglês (pendente, junto da imagem Docker); mensagens de erro do backend
-      ainda em português (pendente).
+      inglês (feito; `README.pt-BR.md` mantém o texto em português);
+      mensagens de erro do backend ainda em português (pendente).
 
 **Conclusão:** instalação limpa e importação de uma configuração real do
 Homepage e do Dashy, sem edição manual, em ambiente de teste.
+
+### Registro R0 — imagem Docker, README e capturas (2026-11-10)
+
+- `Dockerfile`: Node e nginx fixados por digest (`node:24-bookworm-slim` e
+  `nginx:1.27-alpine`), rótulos OCI, `HEALTHCHECK` nos dois alvos e, na imagem
+  do frontend, a licença MIT, os avisos de terceiros e as licenças OFL das
+  fontes em `/usr/share/doc/homora`. O Dependabot propõe atualizações dos
+  digests e das actions.
+- CI: novo job `docker` que constrói os dois alvos em cada PR (sem publicar).
+  `release.yml`: ao receber uma tag `v*.*.*`, roda `pnpm check` e `pnpm build`
+  e publica `homora-backend` e `homora-frontend` no GHCR para `linux/amd64` e
+  `linux/arm64`, com proveniência e SBOM; as actions estão fixadas por SHA.
+  `compose.release.yml` usa essas imagens (mesma porta em loopback).
+- Validação local: build amd64 dos dois alvos e build arm64 (emulado, sem
+  executar os contêineres) concluídos; os dois contêineres amd64 ficaram
+  `healthy`. Upgrade: banco, conta e três serviços criados pela imagem do
+  commit `cc3430b` foram lidos de forma idêntica pela imagem nova no mesmo
+  volume, e a exportação funcionou sobre eles. Esta PR não adiciona migração,
+  então o teste não exercita uma migração. Projeto, volume e rede de teste
+  foram removidos.
+- Navegador real (Chromium headless, dados fictícios, instância em contêiner):
+  primeiro acesso em inglês, importação de arquivos dos três formatos pela
+  prévia (Homora com permissão de rede privada, Homepage com avisos de ícone e
+  widget e entrada inválida, Dashy com subitem e aviso de `pages`), reimportação
+  sem duplicar, download da exportação sem IDs nem chaves, estado Disponível
+  no monitor, troca para português sem novo login e celular de 390 px sem
+  rolagem horizontal; sem erros de console. A revisão visual achou o texto do
+  campo de busca cortado no celular (efeito do botão de idioma); corrigido com
+  reticências.
+- Documentação: `README.md` em inglês (instalação, upgrade, importação,
+  backup, segurança, MCP) com capturas em `docs/screenshots`, e
+  `README.pt-BR.md`.
+- **Não atendido:** o critério de conclusão do R0 pede importar uma
+  configuração real do Homepage e do Dashy sem edição manual; os testes usaram
+  amostras derivadas da documentação. Também não foram feitos: publicar imagens
+  e testar `compose.release.yml`, executar os contêineres arm64, revisão do
+  inglês por um falante nativo e leitor de tela.
 
 ### Registro R0 — importadores do Homepage e do Dashy (2026-11-10)
 

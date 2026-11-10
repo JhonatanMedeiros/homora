@@ -15,6 +15,7 @@ export const SearchField = forwardRef<HTMLInputElement, ComponentProps<'input'>>
         <InputGroupInput
           ref={ref}
           type="search"
+          className="text-ellipsis"
           aria-label={t('search.label')}
           placeholder={t('search.label')}
           autoComplete="off"
