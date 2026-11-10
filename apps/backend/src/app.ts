@@ -5,6 +5,7 @@ import { validateService, type ServiceInput } from '@homora/shared';
 import { createAuth } from './auth.js';
 import { createVault, type ProxmoxConfig } from './vault.js';
 import { ProxmoxError } from './proxmox.js';
+import { registerConnectionRoutes } from './connections.js';
 import {
   createIntegrationRegistry,
   createObservationCache,
@@ -19,7 +20,13 @@ export function createApp(
   vault?: ReturnType<typeof createVault>,
 ) {
   const app = Fastify({ bodyLimit: 100_000 });
-  const integrations = createIntegrationRegistry([proxmoxAdapter]);
+  const integrations = createIntegrationRegistry([
+    proxmoxAdapter,
+    { type: 'jellyfin', label: 'Jellyfin', capabilities: ['server-info'] },
+    { type: 'home-assistant', label: 'Home Assistant', capabilities: ['entity-state'] },
+    { type: 'uptime-kuma', label: 'Uptime Kuma', capabilities: ['status-page'] },
+    { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
+  ]);
   const proxmoxCache = createObservationCache<unknown>(30_000);
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
@@ -73,6 +80,7 @@ export function createApp(
   });
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
   app.get('/api/integrations/catalog', async () => integrations.list());
+  registerConnectionRoutes(app, db, vault);
   app.get('/api/proxmox/status', async () => {
     const config = vault?.load();
     return { configured: Boolean(config), hasCa: Boolean(config?.ca) };

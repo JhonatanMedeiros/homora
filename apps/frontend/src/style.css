@@ -910,3 +910,48 @@ footer {
     transition: none !important;
   }
 }
+
+/* Connections */
+.connections {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.connections .widget-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.connections h3 {
+  margin: 12px 0 4px;
+}
+.connections p {
+  color: var(--muted);
+  margin: 8px 0;
+}
+.connections form {
+  margin-top: 12px;
+}
+.connections label {
+  display: block;
+}
+.connections select {
+  max-width: 100%;
+}
+.connections button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 4px 4px 4px 0;
+  background: var(--panel-2);
+  color: var(--text);
+}
+.connections .connection-list {
+  list-style: none;
+  padding: 0;
+}
+.connections .connection-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}

@@ -3,6 +3,7 @@ import type { Service, ServiceInput } from '@homora/shared';
 import { Icon } from './icons';
 import { IntegrationCatalog } from './IntegrationCatalog';
 import { Proxmox } from './Proxmox';
+import { Connections } from './Connections';
 
 const empty: ServiceInput = { name: '', url: '', category: '', description: '' };
 type Tab = 'services' | 'integrations';
@@ -417,6 +418,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <section className="panel p-integrations" aria-label="Integrações">
             <div className="block">
               <Proxmox />
+            </div>
+            <div className="block connections">
+              <Connections />
             </div>
             <IntegrationCatalog />
           </section>

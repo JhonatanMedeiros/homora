@@ -1,8 +1,7 @@
 import type { IntegrationAdapter } from './integrations.js';
 
-// Experimental: no production transport, registry entry, route, or credential
-// storage exists yet. A future transport must enforce destination authorization,
-// DNS pinning, TLS, timeout, body limits and reject redirects before activation.
+// Credentials are supplied only by the backend and sent through the authorized
+// transport; this adapter intentionally exposes a single read-only entity state.
 export type HomeAssistantConfig = { url: string; token: string; entityId: string };
 type HomeAssistantState = { entityId: string; state: string; lastUpdated: string | null };
 type TrustedTransport = (request: {

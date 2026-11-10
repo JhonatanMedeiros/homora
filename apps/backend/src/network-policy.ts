@@ -24,13 +24,18 @@ for (const [network, prefix] of [
 for (const [network, prefix] of [
   ['::', 128],
   ['::1', 128],
+  ['::', 96],
+  ['100::', 64],
   ['fe80::', 10],
   ['ff00::', 8],
   ['64:ff9b::', 96],
   ['64:ff9b:1::', 48],
   ['2002::', 16],
   ['2001::', 32],
+  ['2001::', 23],
   ['2001:db8::', 32],
+  ['3fff::', 20],
+  ['5f00::', 16],
 ] as const)
   forbidden.addSubnet(network, prefix, 'ipv6');
 

@@ -27,6 +27,25 @@ test('restaura banco, autenticação, chave e integração em outro caminho', as
     db.close();
     createAuth(`${source}.auth`).setup(password);
     await createVault(source).save(integration);
+    const sourceDb = new DatabaseSync(source);
+    sourceDb.exec(`CREATE TABLE integration_instances (
+      id INTEGER PRIMARY KEY, type TEXT NOT NULL, name TEXT NOT NULL,
+      public_config TEXT NOT NULL, secret_ref TEXT, certificate_ref TEXT
+    )`);
+    const credentials = JSON.stringify({ secret: 'segredo-ha-ficticio', ca: rootCertificates[0] });
+    const encrypted = createVault(source).seal(credentials, false);
+    sourceDb.prepare('INSERT INTO integration_instances VALUES (1, ?, ?, ?, ?, ?)').run(
+      'home-assistant',
+      'Casa',
+      JSON.stringify({
+        url: 'https://ha.example',
+        entityId: 'sensor.temperatura',
+        allowPrivate: true,
+      }),
+      encrypted,
+      'both',
+    );
+    sourceDb.close();
     const runBackup = (from, to) => {
       const result = spawnSync(process.execPath, ['scripts/backup.mjs', from, to], {
         encoding: 'utf8',
@@ -48,6 +67,19 @@ test('restaura banco, autenticação, chave e integração em outro caminho', as
     const auth = createAuth(`${restored}.auth`);
     assert.ok(auth.login(password, 'teste'));
     assert.deepEqual(createVault(restored).load(), integration);
+    const restoredVault = createVault(restored);
+    const inspectDb = new DatabaseSync(restored, { readOnly: true });
+    try {
+      const row = inspectDb
+        .prepare('SELECT secret_ref FROM integration_instances WHERE type = ?')
+        .get('home-assistant');
+      assert.ok(row?.secret_ref);
+      const credentials = JSON.parse(restoredVault.unseal(row.secret_ref));
+      assert.equal(credentials.secret, 'segredo-ha-ficticio');
+      assert.equal(credentials.ca, rootCertificates[0]);
+    } finally {
+      inspectDb.close();
+    }
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

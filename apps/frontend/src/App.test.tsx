@@ -14,6 +14,7 @@ it('apresenta serviços, filtra e envia um novo cadastro', async () => {
   const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
     if (_url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    if (_url === '/api/connections') return { ok: true, json: async () => [] };
     if (init?.method === 'POST') services.push({ id: 2, ...JSON.parse(String(init.body)) });
     return { ok: true, json: async () => [...services] };
   });
@@ -49,6 +50,7 @@ it('permite entrar após criar a conta mesmo se o primeiro login falhar', async 
       return { ok: true, json: async () => ({ configured: false, authenticated: false }) };
     if (url === '/api/auth/setup') return { ok: true };
     if (url === '/api/auth/login') return { ok: ++attempts > 1 };
+    if (url === '/api/connections') return { ok: true, json: async () => [] };
     if (url === '/api/proxmox/status')
       return { ok: true, json: async () => ({ configured: false }) };
     return { ok: true, json: async () => [] };
@@ -72,6 +74,7 @@ it('mantém o filtro geral separado de uma categoria chamada Todos', async () =>
     vi.fn(async (url: string) => {
       if (url === '/api/auth/status')
         return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/connections') return { ok: true, json: async () => [] };
       if (url === '/api/proxmox/status')
         return { ok: true, json: async () => ({ configured: false }) };
       return {
@@ -94,6 +97,7 @@ it('só remove um serviço depois da confirmação na própria linha', async () 
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    if (url === '/api/connections') return { ok: true, json: async () => [] };
     if (url === '/api/proxmox/status')
       return { ok: true, json: async () => ({ configured: false }) };
     if (init?.method === 'DELETE') return { ok: true, json: async () => ({}) };
@@ -125,6 +129,7 @@ it('edita um serviço existente no formulário da página', async () => {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    if (url === '/api/connections') return { ok: true, json: async () => [] };
     if (url === '/api/proxmox/status')
       return { ok: true, json: async () => ({ configured: false }) };
     if (init?.method === 'PUT') return { ok: true, json: async () => ({}) };

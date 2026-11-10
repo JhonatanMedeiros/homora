@@ -32,7 +32,7 @@ Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify loc
 
 O monorepo usa pnpm e Turborepo, com React, Vite e TypeScript no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
 
-Esta versão permite cadastrar serviços, criar uma conta de administrador local e configurar uma integração Proxmox experimental de leitura. A conexão Proxmox exige HTTPS com certificado confiável pelo Node.js; para uma CA privada, configure `NODE_EXTRA_CA_CERTS` antes de iniciar o backend. O MCP de leitura e o Docker Compose estão em fase inicial de validação. A aplicação é configurada para acesso local e não deve ser exposta na rede.
+Esta versão permite cadastrar serviços, criar uma conta de administrador local e configurar integrações de leitura em caráter experimental. Veja os serviços, requisitos e limites em [integrações](docs/integracoes.md). O MCP de leitura e o Docker Compose estão em fase inicial de validação. A aplicação é configurada para acesso local e não deve ser exposta na rede.
 
 ## Qualidade e commits
 
@@ -51,7 +51,7 @@ Crie uma cópia consistente do banco (não sobrescreve arquivos existentes):
 pnpm backup data/homora.sqlite backups/homora.sqlite
 ```
 
-Guarde o arquivo em um local protegido. Para restaurar, pare o Homora, preserve o banco atual e use o backup como origem de um novo arquivo; por exemplo: `pnpm backup backups/homora.sqlite data/restaurado.sqlite`. Aponte `HOMORA_DATABASE_PATH` para esse arquivo e reinicie o Homora. Verifique os dados antes de remover qualquer cópia anterior. Este backup contém apenas o banco. A conta de administrador e o token Proxmox ficam em arquivos separados ao lado do banco (`.auth`, `.key` e `.proxmox`): guarde-os juntos em backup protegido e restaure-os com os mesmos nomes derivados do caminho do banco. A chave e o token cifrado juntos permitem recuperar a credencial, então proteja o backup. Sem a chave, a credencial precisará ser configurada novamente.
+Guarde o arquivo em um local protegido. Para restaurar, pare o Homora, preserve o banco atual e use o backup como origem de um novo arquivo; por exemplo: `pnpm backup backups/homora.sqlite data/restaurado.sqlite`. Aponte `HOMORA_DATABASE_PATH` para esse arquivo e reinicie o Homora. Verifique os dados antes de remover qualquer cópia anterior. Este backup contém apenas o banco. As conexões incluem credenciais cifradas no banco; a chave de cifragem e a conta de administrador ficam nos arquivos `.key` e `.auth` ao lado dele, e a integração Proxmox original usa também `.proxmox`. Copie esses arquivos existentes separadamente em um backup protegido e restaure-os com os mesmos nomes derivados do caminho do banco. A chave e o conteúdo cifrado juntos permitem recuperar credenciais. Sem a chave, as credenciais precisarão ser configuradas novamente; sem `.auth`, a conta não será recuperada.
 
 ## Primeiro acesso e Proxmox
 
@@ -65,6 +65,6 @@ Após executar `pnpm build`, inicie o servidor via `node apps/backend/dist/mcp-s
 
 ## Docker Compose
 
-Execute `docker compose up --build` e abra <http://localhost:8080>. A porta é vinculada ao localhost e os dados persistem no volume `homora-data`. Para criar um backup consistente com o container em execução, use `docker compose exec backend node scripts/backup.mjs /app/data/homora.sqlite /app/data/backup.sqlite` e copie-o para fora com `docker compose cp backend:/app/data/backup.sqlite ./homora-backup.sqlite`. A conta e a integração usam os arquivos `.auth`, `.key` e `.proxmox` ao lado do banco; faça cópia protegida deles também e mantenha a chave protegida. O comando de backup não sobrescreve um arquivo existente. Faça uma restauração de teste antes de depender de um backup.
+Execute `docker compose up --build` e abra <http://localhost:8080>. A porta é vinculada ao localhost e os dados persistem no volume `homora-data`. Para criar um backup consistente com o container em execução, use `docker compose exec backend node scripts/backup.mjs /app/data/homora.sqlite /app/data/backup.sqlite` e copie-o para fora com `docker compose cp backend:/app/data/backup.sqlite ./homora-backup.sqlite`. A conta e a integração Proxmox original usam os arquivos `.auth`, `.key` e `.proxmox` ao lado do banco; as demais credenciais cifradas no banco também precisam da `.key`. Faça cópia protegida desses arquivos quando existirem e mantenha a chave protegida. O comando de backup não sobrescreve um arquivo existente. Faça uma restauração de teste antes de depender de um backup.
 
 A interface e a API não estão preparadas para exposição pública: o Compose não fornece HTTPS e a configuração inicial de administrador deve ser feita somente a partir da própria máquina. A CA privada do Proxmox também pode ser importada pela interface quando o Homora estiver no container.

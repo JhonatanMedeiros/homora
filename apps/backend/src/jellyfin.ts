@@ -1,9 +1,11 @@
-import http from 'node:http';
-import https from 'node:https';
 import type { IntegrationAdapter } from './integrations.js';
 
 export type JellyfinConfig = { url: string };
 export type JellyfinSummary = { name: string; version: string };
+type Transport = (request: {
+  origin: string;
+  path: string;
+}) => Promise<{ status: number; body: unknown }>;
 
 function validate(config: JellyfinConfig): JellyfinConfig {
   if (!config || typeof config.url !== 'string' || config.url.length > 2048)
@@ -25,62 +27,40 @@ function validate(config: JellyfinConfig): JellyfinConfig {
   return { url: url.toString().replace(/\/+$/, '') };
 }
 
-async function collect(config: JellyfinConfig): Promise<JellyfinSummary> {
-  const { url } = validate(config);
-  return new Promise((resolve, reject) => {
-    const transport = url.startsWith('https:') ? https : http;
-    const req = transport.get(`${url}/System/Info/Public`, (res) => {
-      if (res.statusCode !== 200) {
-        res.resume();
-        reject(new Error(`Jellyfin retornou HTTP ${res.statusCode ?? 'desconhecido'}.`));
-        return;
+/** Only inject a transport that enforces destination policy, TLS and response limits. */
+export function createJellyfinAdapter(
+  transport: Transport,
+): IntegrationAdapter<JellyfinConfig, JellyfinSummary> {
+  return {
+    type: 'jellyfin',
+    label: 'Jellyfin',
+    capabilities: ['server-info'],
+    validate,
+    async collect(config) {
+      const safe = validate(config);
+      const url = new URL(safe.url);
+      let response: { status: number; body: unknown };
+      try {
+        response = await transport({
+          origin: url.origin,
+          path: `${url.pathname.replace(/\/+$/, '')}/System/Info/Public`,
+        });
+      } catch {
+        throw new Error('Não foi possível consultar o Jellyfin.');
       }
-      const chunks: Buffer[] = [];
-      let size = 0;
-      res.on('data', (chunk: Buffer) => {
-        size += chunk.length;
-        if (size > 262144) {
-          req.destroy(new Error('Resposta Jellyfin excedeu o limite.'));
-          return;
-        }
-        chunks.push(chunk);
-      });
-      res.on('aborted', () => reject(new Error('Resposta Jellyfin incompleta.')));
-      res.on('error', () => reject(new Error('Resposta Jellyfin incompleta.')));
-      res.on('end', () => {
-        try {
-          const body: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-          if (!body || typeof body !== 'object') throw new Error();
-          const data = body as Record<string, unknown>;
-          if (
-            typeof data.ServerName !== 'string' ||
-            !data.ServerName ||
-            data.ServerName.length > 256 ||
-            typeof data.Version !== 'string' ||
-            !data.Version ||
-            data.Version.length > 128
-          )
-            throw new Error();
-          resolve({ name: data.ServerName, version: data.Version });
-        } catch {
-          reject(new Error('Resposta Jellyfin inválida.'));
-        }
-      });
-    });
-    const timer = setTimeout(
-      () => req.destroy(new Error('Tempo de conexão Jellyfin esgotado.')),
-      8000,
-    );
-    req.on('close', () => clearTimeout(timer));
-    req.on('error', () => reject(new Error('Não foi possível consultar o Jellyfin.')));
-  });
+      if (response.status !== 200 || !response.body || typeof response.body !== 'object')
+        throw new Error('Resposta Jellyfin inválida.');
+      const body = response.body as Record<string, unknown>;
+      if (
+        typeof body.ServerName !== 'string' ||
+        !body.ServerName ||
+        body.ServerName.length > 256 ||
+        typeof body.Version !== 'string' ||
+        !body.Version ||
+        body.Version.length > 128
+      )
+        throw new Error('Resposta Jellyfin inválida.');
+      return { name: body.ServerName, version: body.Version };
+    },
+  };
 }
-
-/** Experimental: não disponibilizar na API até existir política de destinos de rede. */
-export const jellyfinAdapter: IntegrationAdapter<JellyfinConfig, JellyfinSummary> = {
-  type: 'jellyfin',
-  label: 'Jellyfin',
-  capabilities: ['server-info'],
-  validate,
-  collect,
-};
