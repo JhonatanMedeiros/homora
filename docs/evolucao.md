@@ -233,11 +233,34 @@ Marque apenas com a implementação e a validação indicadas.
       Validar com configurações reais, sem edição manual.
 - [ ] **Ícones por nome** de conjunto open source com licença compatível,
       mantendo emoji e URL própria.
-- [ ] **Inglês e i18n:** README, instalação e interface em inglês por padrão,
-      com pt-BR completo; capturas de tela.
+- [ ] **Inglês e i18n:** interface em inglês por padrão, com pt-BR completo
+      (feito, ver registro abaixo); README, instalação e capturas de tela em
+      inglês (pendente, junto da imagem Docker); mensagens de erro do backend
+      ainda em português (pendente).
 
 **Conclusão:** instalação limpa e importação de uma configuração real do
 Homepage e do Dashy, sem edição manual, em ambiente de teste.
+
+### Registro R0 — i18n da interface (2026-11-10)
+
+- `apps/frontend/src/i18n`: módulo próprio, sem dependência nova. Dicionários
+  por domínio em `messages/` com `en` e `pt-BR` lado a lado; o tipo exige as
+  mesmas chaves nas duas línguas. `t()` aceita `{marcadores}` e plural
+  (`chave` e `chave_one`); datas e números usam `Intl` com o idioma atual.
+- Idioma: escolha salva em `localStorage`; sem escolha, segue o navegador
+  (português vira pt-BR) e o padrão é inglês. Há um seletor na barra lateral e
+  no topo do celular. Trocar o idioma remonta a interface e preserva a sessão.
+- Todas as telas migraram (shell, serviços, agentes, integrações, Proxmox e
+  conexões). Os testes existentes fixam pt-BR em `test-setup.ts`; novos testes
+  cobrem paridade de chaves e marcadores, plural, formatação, detecção e a
+  troca de idioma na interface.
+- Limitação: o backend ainda responde erros em português. A interface traduz
+  as mensagens HTTP conhecidas por uma tabela (`i18n/api-errors.ts`); os erros
+  dos adaptadores aparecem como recebidos. Próximo passo sugerido: a API
+  devolver códigos de erro estáveis e a interface traduzi-los.
+- Validação: `pnpm check` (126 testes Vitest e 4 testes Node) e `pnpm build`
+  passaram. Não verificados: a interface em inglês em navegador real (largura,
+  quebras de texto), leitor de tela e revisão do inglês por falante nativo.
 
 ## Registro inicial
 

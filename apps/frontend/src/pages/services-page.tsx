@@ -14,8 +14,7 @@ import { ServiceForm } from '@/components/service-form';
 import { ServicesEmpty } from '@/components/services-empty';
 import type { useServices } from '@/hooks/use-services';
 import { emptyService } from '@/lib/services';
-
-const collator = 'pt-BR';
+import { apiError, lower, t } from '@/i18n';
 
 /** Tela principal: grupos de serviços com estado, busca, edição e modo Organizar. */
 type Props = {
@@ -53,13 +52,11 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
     flashTimer.current = window.setTimeout(() => setFlash(''), 5000);
   }
 
-  const needle = query.toLocaleLowerCase(collator).trim();
+  const needle = lower(query).trim();
   const filtered = services.filter(
     (s) =>
       (selected === null || s.category === selected) &&
-      `${s.name} ${s.category} ${s.description} ${s.url}`
-        .toLocaleLowerCase(collator)
-        .includes(needle),
+      lower(`${s.name} ${s.category} ${s.description} ${s.url}`).includes(needle),
   );
   const isDown = (s: Service) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id);
   const groups = categories
@@ -155,9 +152,9 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
       closeForm();
       setSelected(null);
       await refresh();
-      announce(wasNew ? 'Serviço adicionado.' : 'Alterações salvas.');
+      announce(wasNew ? t('page.added') : t('page.saved'));
     } catch (e) {
-      setFormError(e instanceof Error && e.message ? e.message : 'Não foi possível salvar.');
+      setFormError(e instanceof Error && e.message ? apiError(e.message) : t('error.save'));
     } finally {
       setSaving(false);
     }
@@ -173,9 +170,9 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
       if (!response.ok) throw Error();
       setSelected(null);
       await refresh();
-      announce('Serviço removido.');
+      announce(t('page.removed'));
     } catch {
-      setMessage('Não foi possível remover o serviço.');
+      setMessage(t('error.remove'));
     }
   }
   async function saveGroup(e: FormEvent) {
@@ -191,7 +188,7 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
         },
       );
       const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || 'Não foi possível salvar o grupo.');
+      if (!response.ok) throw Error(body.error || t('error.saveGroup'));
       const wasEditing = editingGroup !== null;
       setEditingGroup(null);
       setGroupDraft('');
@@ -199,18 +196,18 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
       await refresh();
       if (wasEditing) document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? error.message : 'Não foi possível salvar o grupo.');
+      setGroupError(error instanceof Error ? apiError(error.message) : t('error.saveGroup'));
     }
   }
   async function deleteGroup(id: number) {
     try {
       const response = await fetch(`/api/groups/${id}`, { method: 'DELETE' });
       const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || 'Não foi possível remover o grupo.');
+      if (!response.ok) throw Error(body.error || t('error.removeGroup'));
       await refresh();
       document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? error.message : 'Não foi possível remover o grupo.');
+      setGroupError(error instanceof Error ? apiError(error.message) : t('error.removeGroup'));
     }
   }
   async function reorder(task: Promise<string | null>) {
@@ -228,13 +225,16 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
   ).length;
   const monitored = total - blocked;
   return (
-    <section aria-label="Serviços" className="flex flex-col gap-6">
+    <section aria-label={t('nav.services')} className="flex flex-col gap-6">
       <PageHeader
-        title="Seus serviços"
+        title={t('page.title')}
         description={
           total
-            ? `${total} ${total === 1 ? 'serviço' : 'serviços'} em ${categories.length} ${categories.length === 1 ? 'grupo' : 'grupos'}.`
-            : 'Reúna aqui os serviços da sua casa e abra qualquer um com um clique.'
+            ? t('page.summary', {
+                services: t('page.servicesCount', { count: total }),
+                groups: t('page.groupsCount', { count: categories.length }),
+              })
+            : t('page.emptyDescription')
         }
         actions={
           <>
@@ -248,11 +248,11 @@ export function ServicesPage({ query, data, openFirstRef }: Props) {
               }}
             >
               <SlidersHorizontal />
-              {organizing ? 'Concluir' : 'Organizar'}
+              {organizing ? t('page.done') : t('page.organize')}
             </Button>
             <Button ref={addButton} type="button" onClick={() => openForm()}>
               <Plus />
-              Adicionar serviço
+              {t('page.add')}
             </Button>
           </>
         }

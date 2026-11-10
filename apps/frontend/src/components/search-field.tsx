@@ -2,6 +2,7 @@ import { forwardRef, type ComponentProps } from 'react';
 import { Search } from 'lucide-react';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Kbd } from '@/components/ui/kbd';
+import { t } from '@/i18n';
 
 /** Busca de serviços; Ctrl K ou / focam o campo (atalho tratado pela página). */
 export const SearchField = forwardRef<HTMLInputElement, ComponentProps<'input'>>(
@@ -14,8 +15,8 @@ export const SearchField = forwardRef<HTMLInputElement, ComponentProps<'input'>>
         <InputGroupInput
           ref={ref}
           type="search"
-          aria-label="Buscar serviço"
-          placeholder="Buscar serviço"
+          aria-label={t('search.label')}
+          placeholder={t('search.label')}
           autoComplete="off"
           enterKeyHint="go"
           {...props}

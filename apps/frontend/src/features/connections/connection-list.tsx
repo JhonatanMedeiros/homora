@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/item';
 import { ConnectionMark } from './connection-mark';
 import { describeData, hostOf, labels, type Connection } from './connection-model';
+import { formatDateTime, t } from '@/i18n';
 
 type Props = {
   items: Connection[];
@@ -54,7 +55,7 @@ export function ConnectionList({
                   disabled={busy}
                   onClick={() => onEdit(item)}
                 >
-                  Editar {item.name}
+                  {t('card.edit', { name: item.name })}
                 </Button>
                 <Button
                   type="button"
@@ -63,7 +64,7 @@ export function ConnectionList({
                   disabled={busy}
                   onClick={() => onAction(item, 'test')}
                 >
-                  Testar {item.name}
+                  {t('connections.test', { name: item.name })}
                 </Button>
                 <Button
                   type="button"
@@ -72,7 +73,7 @@ export function ConnectionList({
                   disabled={busy}
                   onClick={() => onAction(item, 'data')}
                 >
-                  Consultar {item.name}
+                  {t('connections.query', { name: item.name })}
                 </Button>
                 <Button
                   type="button"
@@ -80,24 +81,26 @@ export function ConnectionList({
                   size="sm"
                   disabled={busy}
                   aria-label={
-                    confirmingThis ? `Confirmar remoção de ${item.name}` : `Remover ${item.name}`
+                    confirmingThis
+                      ? t('card.confirmRemove', { name: item.name })
+                      : t('card.remove', { name: item.name })
                   }
                   onClick={() => onAction(item, 'delete')}
                   onBlur={() => onCancelRemoval(item)}
                 >
-                  {confirmingThis ? 'Confirmar remoção' : 'Remover'}
+                  {confirmingThis ? t('card.confirmRemoveShort') : t('common.remove')}
                 </Button>
               </ItemActions>
               {result?.id === item.id && (
                 <div className="flex w-full flex-col gap-1 rounded-md bg-muted px-3 py-2 text-sm">
                   <p>
-                    Última atualização:{' '}
+                    {t('connections.lastUpdate')}
                     {result.checkedAt
-                      ? new Date(result.checkedAt).toLocaleString('pt-BR')
-                      : 'não informada'}
+                      ? formatDateTime(result.checkedAt)
+                      : t('connections.notReported')}
                   </p>
                   <p className="font-mono text-[0.8125rem]">
-                    {describeData(item.type, result.data) ?? 'O serviço retornou dados inválidos.'}
+                    {describeData(item.type, result.data) ?? t('connections.invalidData')}
                   </p>
                 </div>
               )}

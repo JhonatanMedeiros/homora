@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { t } from '@/i18n';
 
 type Props = {
   configured: boolean;
@@ -27,7 +28,7 @@ export function ProxmoxForm(p: Props) {
     <form onSubmit={(e) => p.onSubmit(e)}>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="proxmox-url">URL HTTPS</FieldLabel>
+          <FieldLabel htmlFor="proxmox-url">{t('proxmox.url')}</FieldLabel>
           <Input
             id="proxmox-url"
             type="url"
@@ -38,17 +39,17 @@ export function ProxmoxForm(p: Props) {
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="proxmox-token-id">ID do token</FieldLabel>
+          <FieldLabel htmlFor="proxmox-token-id">{t('proxmox.tokenId')}</FieldLabel>
           <Input
             id="proxmox-token-id"
             required={!p.configured}
-            placeholder="usuario@realm!token"
+            placeholder={t('proxmox.tokenIdPlaceholder')}
             value={p.tokenId}
             onChange={(e) => p.onTokenId(e.target.value)}
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="proxmox-secret">Segredo do token</FieldLabel>
+          <FieldLabel htmlFor="proxmox-secret">{t('proxmox.secret')}</FieldLabel>
           <Input
             id="proxmox-secret"
             type="password"
@@ -56,25 +57,17 @@ export function ProxmoxForm(p: Props) {
             value={p.secret}
             onChange={(e) => p.onSecret(e.target.value)}
           />
-          {p.configured && (
-            <FieldDescription>
-              Deixe os campos em branco para manter os dados existentes. Ao alterar a URL ou o ID do
-              token, informe novamente o segredo.
-            </FieldDescription>
-          )}
+          {p.configured && <FieldDescription>{t('proxmox.keepHint')}</FieldDescription>}
         </Field>
         <Field>
-          <FieldLabel htmlFor="proxmox-ca">Certificado público da CA (opcional, PEM)</FieldLabel>
+          <FieldLabel htmlFor="proxmox-ca">{t('proxmox.ca')}</FieldLabel>
           <Input
             id="proxmox-ca"
             type="file"
             accept=".pem,.crt,.cer"
             onChange={(event) => p.onCaFile(event.target)}
           />
-          <FieldDescription>
-            Para a CA padrão do Proxmox, importe o arquivo público /etc/pve/pve-root-ca.pem obtido
-            de fonte confiável. A URL deve corresponder ao certificado.
-          </FieldDescription>
+          <FieldDescription>{t('proxmox.caHint')}</FieldDescription>
         </Field>
         {p.hasCa && (
           <Field orientation="horizontal">
@@ -83,7 +76,7 @@ export function ProxmoxForm(p: Props) {
               checked={p.removeCa}
               onCheckedChange={(checked) => p.onRemoveCa(checked === true)}
             />
-            <FieldLabel htmlFor="proxmox-remove-ca">Remover CA importada</FieldLabel>
+            <FieldLabel htmlFor="proxmox-remove-ca">{t('proxmox.removeCa')}</FieldLabel>
           </Field>
         )}
         <div className="flex flex-wrap gap-2">
@@ -93,13 +86,13 @@ export function ProxmoxForm(p: Props) {
             disabled={p.busy}
             onClick={(event) => p.onSubmit(event, true)}
           >
-            Testar conexão
+            {t('proxmox.test')}
           </Button>
           <Button type="submit" disabled={p.busy}>
-            Salvar integração
+            {t('proxmox.save')}
           </Button>
           <Button type="button" variant="ghost" onClick={p.onCancel}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
         </div>
       </FieldGroup>

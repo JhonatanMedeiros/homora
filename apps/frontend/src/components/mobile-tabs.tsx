@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { navItems, type Tab } from '@/components/app-nav';
+import { t } from '@/i18n';
 
 type Props = { tab: Tab; onTabChange: (tab: Tab) => void };
 
@@ -7,7 +8,7 @@ type Props = { tab: Tab; onTabChange: (tab: Tab) => void };
 export function MobileTabs({ tab, onTabChange }: Props) {
   return (
     <nav
-      aria-label="Seções"
+      aria-label={t('nav.sections')}
       className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground md:hidden"
     >
       {navItems.map((item) => (
@@ -22,7 +23,7 @@ export function MobileTabs({ tab, onTabChange }: Props) {
           )}
         >
           <item.icon aria-hidden="true" />
-          {item.label}
+          {t(item.label)}
         </button>
       ))}
     </nav>

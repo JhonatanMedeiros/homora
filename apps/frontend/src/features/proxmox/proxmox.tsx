@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/co
 import { SectionTitle } from '@/components/section-title';
 import { ProxmoxForm } from './proxmox-form';
 import { ProxmoxResources, type Resource } from './proxmox-resources';
+import { apiError, t } from '@/i18n';
 
 export function Proxmox() {
   const [configured, setConfigured] = useState(false),
@@ -26,7 +27,7 @@ export function Proxmox() {
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
         throw new Error(
-          typeof body?.error === 'string' ? body.error : 'Não foi possível consultar o Proxmox.',
+          typeof body?.error === 'string' ? apiError(body.error) : t('proxmox.queryFailed'),
         );
       }
       const body = (await response.json()) as { data: unknown; checkedAt?: unknown };
@@ -43,8 +44,8 @@ export function Proxmox() {
       setCheckedAt(null);
       setMessage(
         error instanceof Error && !(error instanceof TypeError)
-          ? error.message
-          : 'Não foi possível conectar ao servidor Homora.',
+          ? apiError(error.message)
+          : t('proxmox.serverUnreachable'),
       );
     }
   }
@@ -59,7 +60,7 @@ export function Proxmox() {
         setHasCa(Boolean(status.hasCa));
         if (status.configured) void refresh();
       })
-      .catch(() => setMessage('Não foi possível carregar a integração.'));
+      .catch(() => setMessage(t('proxmox.loadFailed')));
   }, []);
   async function submit(event: FormEvent, test = false) {
     event.preventDefault();
@@ -72,9 +73,9 @@ export function Proxmox() {
         body: JSON.stringify({ url, tokenId, secret, ca, removeCa }),
       });
       const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw Error(body.error || 'Não foi possível salvar a configuração.');
+      if (!response.ok) throw Error(body.error || t('proxmox.saveFailed'));
       if (test) {
-        setMessage('Conexão com o Proxmox realizada com sucesso.');
+        setMessage(t('proxmox.testOk'));
         return;
       }
       setSecret('');
@@ -88,8 +89,8 @@ export function Proxmox() {
     } catch (error) {
       setMessage(
         error instanceof Error && !(error instanceof TypeError)
-          ? error.message
-          : 'Não foi possível conectar ao servidor Homora.',
+          ? apiError(error.message)
+          : t('proxmox.serverUnreachable'),
       );
     } finally {
       setBusy(false);
@@ -100,7 +101,7 @@ export function Proxmox() {
     setCa('');
     if (!file) return;
     if (file.size > 65536) {
-      setMessage('O certificado deve ter no máximo 64 KB.');
+      setMessage(t('proxmox.caTooLarge'));
       input.value = '';
       return;
     }
@@ -110,14 +111,14 @@ export function Proxmox() {
         setCa(content);
         setRemoveCa(false);
       })
-      .catch(() => setMessage('Não foi possível ler o certificado.'));
+      .catch(() => setMessage(t('proxmox.caReadFailed')));
   };
   return (
     <Card>
       <CardHeader>
         <SectionTitle>Proxmox</SectionTitle>
         <CardDescription>
-          {configured ? 'Integração de somente leitura.' : 'Integração não configurada.'}
+          {configured ? t('proxmox.readOnly') : t('proxmox.notConfigured')}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -147,9 +148,7 @@ export function Proxmox() {
           />
         ) : (
           <p className="text-sm text-muted-foreground">
-            {configured
-              ? 'Os recursos não estão disponíveis no momento.'
-              : 'Conecte um token de leitura para ver seus nós, máquinas virtuais e containers.'}
+            {configured ? t('proxmox.unavailable') : t('proxmox.connectHint')}
           </p>
         )}
         {message && (
@@ -161,11 +160,11 @@ export function Proxmox() {
       {!editing && (
         <CardFooter className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => setEditing(true)}>
-            {configured ? 'Alterar integração' : 'Configurar Proxmox'}
+            {configured ? t('proxmox.change') : t('proxmox.configure')}
           </Button>
           {configured && (
             <Button type="button" variant="ghost" onClick={() => void refresh(true)}>
-              Atualizar
+              {t('proxmox.refresh')}
             </Button>
           )}
         </CardFooter>

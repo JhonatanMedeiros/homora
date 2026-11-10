@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { t } from '@/i18n';
 
 type Props = {
   status: AuthStatus | null;
@@ -32,19 +33,17 @@ export function AuthPage({ status, error, onSubmit }: Props) {
             <>
               <CardHeader>
                 <h1 className="text-2xl">
-                  {status.configured ? 'Bem-vindo de volta.' : 'Crie sua senha.'}
+                  {status.configured ? t('auth.welcomeBack') : t('auth.createPassword')}
                 </h1>
                 <CardDescription>
-                  {status.configured
-                    ? 'Entre para acessar seus serviços.'
-                    : 'Configure o acesso de administrador deste Homora.'}
+                  {status.configured ? t('auth.signInHint') : t('auth.setupHint')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={(e) => void submit(e)}>
                   <FieldGroup>
                     <Field>
-                      <FieldLabel htmlFor="password">Senha</FieldLabel>
+                      <FieldLabel htmlFor="password">{t('auth.password')}</FieldLabel>
                       <Input
                         id="password"
                         type="password"
@@ -57,7 +56,9 @@ export function AuthPage({ status, error, onSubmit }: Props) {
                       />
                     </Field>
                     <FormError>{error}</FormError>
-                    <Button type="submit">{status.configured ? 'Entrar' : 'Criar conta'}</Button>
+                    <Button type="submit">
+                      {status.configured ? t('auth.signIn') : t('auth.createAccount')}
+                    </Button>
                   </FieldGroup>
                 </form>
               </CardContent>
@@ -66,7 +67,7 @@ export function AuthPage({ status, error, onSubmit }: Props) {
             <CardContent>
               <p role="status" className="flex items-center gap-2 text-muted-foreground">
                 {!error && <Spinner />}
-                {error || 'Conectando...'}
+                {error || t('auth.connecting')}
               </p>
             </CardContent>
           )}

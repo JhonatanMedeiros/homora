@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Service } from '@homora/shared';
 import { byPosition, isPrivateHost, type ServiceGroup, type ServiceStatus } from '@/lib/services';
+import { compareText, t } from '@/i18n';
 
-const collator = (a: string, b: string) => a.localeCompare(b, 'pt-BR');
+const collator = compareText;
 const json = { 'Content-Type': 'application/json' };
 
 /** Dados da tela de serviços: lista, grupos, disponibilidade e a ordem de ambos. */
@@ -21,7 +22,7 @@ export function useServices() {
       if (groupResponse.ok) setGroupRows((await groupResponse.json()) as ServiceGroup[]);
       setLoadError('');
     } catch {
-      setLoadError('Não foi possível carregar os serviços. Verifique se o servidor está ativo.');
+      setLoadError(t('error.loadServices'));
     }
   }, []);
 
@@ -39,10 +40,7 @@ export function useServices() {
         }
       })
       .catch(() => {
-        if (active)
-          setLoadError(
-            'Não foi possível carregar os serviços. Verifique se o servidor está ativo.',
-          );
+        if (active) setLoadError(t('error.loadServices'));
       });
     fetch('/api/groups')
       .then((response) => (response.ok ? (response.json() as Promise<ServiceGroup[]>) : []))
@@ -126,7 +124,7 @@ export function useServices() {
       return null;
     } catch {
       void refresh();
-      return 'Não foi possível salvar a ordem dos cards.';
+      return t('error.saveCardOrder');
     }
   }
 
@@ -153,7 +151,7 @@ export function useServices() {
       return null;
     } catch {
       void refresh();
-      return 'Não foi possível salvar a ordem dos grupos.';
+      return t('error.saveGroupOrder');
     }
   }
 

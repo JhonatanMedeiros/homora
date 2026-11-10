@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { SearchField } from '@/components/search-field';
 import type { Tab } from '@/components/app-nav';
 import { useAuth } from '@/hooks/use-auth';
+import { useI18n } from '@/i18n';
 import { useServices } from '@/hooks/use-services';
 import { Agents } from '@/features/agents/agents';
 import { AuthPage } from '@/pages/auth-page';
@@ -60,6 +61,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
 export function App() {
   const { status, error, submit, logout } = useAuth();
-  if (status?.authenticated) return <Dashboard onLogout={() => void logout()} />;
-  return <AuthPage status={status} error={error} onSubmit={submit} />;
+  // Trocar de idioma remonta a interface; a sessão (useAuth) é preservada.
+  const { locale } = useI18n();
+  return (
+    <Fragment key={locale}>
+      {status?.authenticated ? (
+        <Dashboard onLogout={() => void logout()} />
+      ) : (
+        <AuthPage status={status} error={error} onSubmit={submit} />
+      )}
+    </Fragment>
+  );
 }

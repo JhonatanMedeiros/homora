@@ -1,4 +1,5 @@
 import { StatusTag } from '@/components/status-tag';
+import { t } from '@/i18n';
 
 type Props = { online: number; down: number; blocked: number; monitored: number };
 
@@ -6,24 +7,22 @@ type Props = { online: number; down: number; blocked: number; monitored: number 
 export function HealthSummary({ online, down, blocked, monitored }: Props) {
   if (!online && !down && !blocked) return null;
   return (
-    <div aria-label="Resumo de disponibilidade" className="flex flex-wrap items-center gap-2">
-      {down > 0 && <StatusTag state="unavailable" label={`${down} fora do ar`} />}
+    <div aria-label={t('health.label')} className="flex flex-wrap items-center gap-2">
+      {down > 0 && <StatusTag state="unavailable" label={t('health.down', { count: down })} />}
       {online > 0 && (
         <StatusTag
           state="available"
-          label={down === 0 && online === monitored ? 'Tudo no ar por aqui' : `${online} no ar`}
+          label={
+            down === 0 && online === monitored
+              ? t('health.allUp')
+              : t('health.up', { count: online })
+          }
         />
       )}
       {blocked > 0 && (
         <>
-          <StatusTag
-            state="unknown"
-            blocked
-            label={`${blocked} sem monitoramento (rede privada não autorizada)`}
-          />
-          <small className="text-sm text-muted-foreground">
-            Autorize a rede privada em Editar.
-          </small>
+          <StatusTag state="unknown" blocked label={t('health.blocked', { count: blocked })} />
+          <small className="text-sm text-muted-foreground">{t('health.hint')}</small>
         </>
       )}
     </div>
