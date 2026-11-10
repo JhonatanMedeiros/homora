@@ -16,6 +16,7 @@ describe('validateService', () => {
       description: 'Filmes',
       icon: '',
       position: 0,
+      allowPrivate: false,
     });
   });
   it.each(['javascript:alert(1)', 'http://user:pass@localhost', 'inválida'])(

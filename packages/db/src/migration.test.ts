@@ -27,6 +27,7 @@ it('adota o banco anterior e preserva seus dados em reinicializações', async (
       'Mídia',
     ]);
     expect((await database.db.select().from(services))[0].position).toBe(0);
+    expect((await database.db.select().from(services))[0].allowPrivate).toBe(false);
     database.close();
     database = createDatabase(path);
     expect(await database.db.select().from(services)).toHaveLength(1);
@@ -54,6 +55,7 @@ it('adiciona integrações e widgets ao banco anterior sem alterar serviços e p
       .insert(integrationWidgets)
       .values({ integrationId: instance.id, type: 'inventory', name: 'Recursos' });
     expect((await database.db.select().from(services))[0].name).toBe('Aplicativo');
+    expect((await database.db.select().from(services))[0].allowPrivate).toBe(false);
     await expect(database.db.delete(integrationInstances)).rejects.toThrow();
     database.close();
     database = createDatabase(path);

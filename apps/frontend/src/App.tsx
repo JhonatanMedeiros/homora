@@ -5,7 +5,13 @@ import { IntegrationCatalog } from './IntegrationCatalog';
 import { Proxmox } from './Proxmox';
 import { Connections } from './Connections';
 
-const empty: ServiceInput = { name: '', url: '', category: '', description: '' };
+const empty: ServiceInput = {
+  name: '',
+  url: '',
+  category: '',
+  description: '',
+  allowPrivate: false,
+};
 type ServiceGroup = { id: number; name: string; position: number };
 type Tab = 'services' | 'integrations';
 type ServiceStatus = {
@@ -176,6 +182,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             description: service.description,
             icon: service.icon ?? '',
             position: service.position ?? 0,
+            allowPrivate: service.allowPrivate === true,
           }
         : empty,
     );
@@ -524,6 +531,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     onChange={(e) => setForm({ ...form, icon: e.target.value })}
                     placeholder="🎬"
                   />
+                </label>
+                <label className="check-field">
+                  <input
+                    type="checkbox"
+                    checked={form.allowPrivate === true}
+                    onChange={(e) => setForm({ ...form, allowPrivate: e.target.checked })}
+                  />
+                  Permitir monitoramento em rede privada
+                  <small>Autoriza apenas RFC1918 e ULA para este serviço.</small>
                 </label>
               </div>
               <p className="form-error" role="alert">

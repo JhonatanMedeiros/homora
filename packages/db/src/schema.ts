@@ -12,6 +12,7 @@ export const services = sqliteTable('services', {
   description: text('description').notNull(),
   icon: text('icon').notNull().default(''),
   position: integer('position').notNull().default(0),
+  allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
 });
 
 // Configuration stored here must never contain credentials; secretRef points to a

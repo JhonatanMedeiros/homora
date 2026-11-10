@@ -11,14 +11,14 @@ const cacheMs = 60_000;
 const maxServicesPerRun = 25;
 const maxConcurrentChecks = 5;
 
-/** Checks are deliberately limited to public DNS destinations. Private access
- * needs a separately defined, explicit policy before monitoring can use it. */
-export async function checkPublicService(url: string): Promise<boolean> {
+/** Uses the shared pinned-DNS destination policy; private ranges require the
+ * per-service opt-in and special ranges remain forbidden. */
+export async function checkService(url: string, allowPrivate = false): Promise<boolean> {
   const response = await getAuthorizedResponse(
     url,
     {
       origins: [new URL(url).origin],
-      allowPrivate: false,
+      allowPrivate,
     },
     { timeoutMs: 8000 },
   );
@@ -27,7 +27,7 @@ export async function checkPublicService(url: string): Promise<boolean> {
 
 export function createServiceMonitor(
   getServices: () => Promise<Service[]>,
-  check: (url: string) => Promise<boolean> = checkPublicService,
+  check: (url: string, allowPrivate?: boolean) => Promise<boolean> = checkService,
   now: () => number = Date.now,
 ) {
   const states = new Map<number, ServiceStatus>();
@@ -64,7 +64,7 @@ export function createServiceMonitor(
             const service = monitored[nextIndex++];
             const attemptedAt = new Date(now()).toISOString();
             try {
-              const available = await check(service.url);
+              const available = await check(service.url, service.allowPrivate === true);
               if (runGeneration === generation)
                 states.set(service.id, {
                   status: available ? 'available' : 'unavailable',

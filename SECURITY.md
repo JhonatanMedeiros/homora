@@ -29,6 +29,11 @@ de recompensa estabelecidos.
   confiáveis.
 - Use credenciais de integração com privilégio mínimo e valide certificados
   TLS. Não desative a validação TLS.
+- O monitoramento de serviços bloqueia destinos RFC1918 e ULA por padrão. Um
+  usuário autenticado pode habilitar o acesso privado em cada serviço; isso
+  autoriza somente essas faixas na origem exata configurada. DNS é fixado para
+  a conexão e respostas mistas, faixas especiais e redirecionamentos continuam
+  bloqueados. A lista de faixas especiais não cobre toda política de rede local.
 - Trate nomes, URLs e respostas de integrações como dados não confiáveis.
 
 Consulte o [README](README.md) para backup e recuperação e

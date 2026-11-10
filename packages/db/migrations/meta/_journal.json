@@ -22,6 +22,13 @@
       "when": 1794315066926,
       "tag": "0002_rapid_proemial_gods",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794317174802,
+      "tag": "0003_giant_silverclaw",
+      "breakpoints": true
     }
   ]
 }

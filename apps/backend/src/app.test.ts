@@ -64,6 +64,7 @@ describe('API de serviços', () => {
     });
     expect(created.statusCode).toBe(201);
     const id = created.json().id;
+    expect(created.json().allowPrivate).toBe(false);
     expect(
       (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json(),
     ).toHaveLength(1);
@@ -73,10 +74,18 @@ describe('API de serviços', () => {
           method: 'PUT',
           url: `/api/services/${id}`,
           headers,
-          payload: { name: 'Novo', url: 'http://localhost:8096', category: 'Mídia' },
+          payload: {
+            name: 'Novo',
+            url: 'http://localhost:8096',
+            category: 'Mídia',
+            allowPrivate: true,
+          },
         })
-      ).json().name,
-    ).toBe('Novo');
+      ).json(),
+    ).toMatchObject({ name: 'Novo', allowPrivate: true });
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json()[0],
+    ).toMatchObject({ id, name: 'Novo', allowPrivate: true });
     expect(
       (await app.inject({ method: 'DELETE', url: `/api/services/${id}`, headers })).statusCode,
     ).toBe(200);

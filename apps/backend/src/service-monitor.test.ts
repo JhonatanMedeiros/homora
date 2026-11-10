@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { getAuthorizedResponse } from './network-request.js';
-import { checkPublicService, createServiceMonitor } from './service-monitor.js';
+import { checkService, createServiceMonitor } from './service-monitor.js';
 import type { Service } from '@homora/shared';
 
 vi.mock('./network-request.js', () => ({
@@ -16,9 +16,9 @@ const service = (id: number, url: string): Service => ({
 });
 
 describe('monitoramento de serviços', () => {
-  it('usa somente destinos públicos e considera respostas 2xx disponíveis', async () => {
+  it('nega por padrão e permite explicitamente privado mantendo a política comum', async () => {
     vi.mocked(getAuthorizedResponse).mockResolvedValue({ status: 204, body: '' });
-    expect(await checkPublicService('https://public.example/status')).toBe(true);
+    expect(await checkService('https://public.example/status')).toBe(true);
     expect(getAuthorizedResponse).toHaveBeenCalledWith(
       'https://public.example/status',
       {
@@ -27,6 +27,26 @@ describe('monitoramento de serviços', () => {
       },
       { timeoutMs: 8000 },
     );
+    expect(await checkService('http://192.168.1.20:8096/health', true)).toBe(true);
+    expect(getAuthorizedResponse).toHaveBeenLastCalledWith(
+      'http://192.168.1.20:8096/health',
+      { origins: ['http://192.168.1.20:8096'], allowPrivate: true },
+      { timeoutMs: 8000 },
+    );
+  });
+
+  it('passa o opt-in individual ao verificador e mantém falso para serviços antigos', async () => {
+    const check = vi.fn(async () => true);
+    const monitor = createServiceMonitor(
+      async () => [
+        service(1, 'http://192.168.1.2'),
+        { ...service(2, 'http://[fd00::1]'), allowPrivate: true },
+      ],
+      check,
+    );
+    await monitor.run(true);
+    expect(check).toHaveBeenNthCalledWith(1, 'http://192.168.1.2', false);
+    expect(check).toHaveBeenNthCalledWith(2, 'http://[fd00::1]', true);
   });
 
   it('retorna estado desconhecido antes da execução e armazena tentativas com cache', async () => {

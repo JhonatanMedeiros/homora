@@ -5,6 +5,7 @@ export type ServiceInput = {
   description: string;
   icon?: string;
   position?: number;
+  allowPrivate?: boolean;
 };
 export type Service = ServiceInput & { id: number };
 export function validateService(input: Partial<ServiceInput>): ServiceInput {
@@ -34,5 +35,6 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
       Number.isSafeInteger(input.position) && Number(input.position) >= 0
         ? Number(input.position)
         : 0,
+    allowPrivate: input.allowPrivate === true,
   };
 }

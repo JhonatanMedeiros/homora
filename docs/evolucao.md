@@ -84,7 +84,7 @@ suportados; não anunciar exposição em rede antes dessa validação.
 
 ## P3 — Disponibilidade e Proxmox
 
-- [ ] Implementar verificações periódicas com limites, timeout, cache e política
+- [x] Implementar verificações periódicas com limites, timeout, cache e política
       de destinos definida em P2.
 - [x] Mostrar estado desconhecido ou indisponível e horário da última tentativa,
       sem impedir o carregamento do restante do painel.
@@ -100,14 +100,16 @@ inventário Proxmox foi validado com permissões reduzidas.
 a cada 60 segundos, limitadas a 25 serviços por ciclo e cinco consultas
 simultâneas; cada consulta tem timeout total de 8 segundos, fixa o IP DNS e
 rejeita redirecionamentos. Observações ficam em cache por 60 segundos e são
-invalidadas ao criar, editar ou remover um serviço. Por segurança, só são
-permitidos destinos públicos; endereços privados continuam bloqueados até haver
-uma política explícita de autorização. O estado fica em memória e começa como
-desconhecido após reiniciar o backend. Testes focados do monitoramento, API,
-transporte e interface passaram (38 testes), assim como build, lint dos arquivos
-alterados, formatação e `git diff --check`; não houve acesso a serviços externos
-nem a Proxmox real. Validação do inventário e política para destinos privados
-seguem pendentes.
+invalidadas ao criar, editar ou remover um serviço. RFC1918 e ULA são negadas
+por padrão e podem ser autorizadas por serviço na interface autenticada. A
+migração aditiva preserva serviços existentes e define a opção como desativada.
+Faixas especiais e respostas DNS mistas continuam bloqueadas, incluindo
+endereços IPv4 mapeados em IPv6; a origem e a porta exatas vêm da URL
+configurada. O estado fica em memória e começa como desconhecido após reiniciar
+o backend. Testes cobrem política de rede, monitoramento, API, migração e
+interface; `pnpm check`, `pnpm build` e `git diff --check` passaram nos
+worktrees das tarefas. Não houve acesso a serviços externos nem a Proxmox real;
+validação do inventário e das redes reais permanece pendente.
 
 ## P4 — MCP e alterações com aprovação
 
