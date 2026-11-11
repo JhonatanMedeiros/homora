@@ -9,9 +9,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@fontsource-variable/figtree": "5.3.0",
-    "@fontsource-variable/jetbrains-mono": "5.3.0",
-    "@fontsource/barlow-semi-condensed": "5.3.0",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
     "@homora/shared": "workspace:*",
     "@tailwindcss/vite": "4.3.5",
     "class-variance-authority": "0.7.1",

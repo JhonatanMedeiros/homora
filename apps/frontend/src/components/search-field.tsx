@@ -4,7 +4,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Kbd } from '@/components/ui/kbd';
 import { t } from '@/i18n';
 
-/** Service search; Ctrl K or / focuses the field (shortcut handled by the page). */
+/** Service search; / focuses the field (shortcut handled by the page); Ctrl K opens the command palette. */
 export const SearchField = forwardRef<HTMLInputElement, ComponentProps<'input'>>(
   function SearchField(props, ref) {
     return (
@@ -23,7 +23,7 @@ export const SearchField = forwardRef<HTMLInputElement, ComponentProps<'input'>>
           {...props}
         />
         <InputGroupAddon align="inline-end" className="hidden md:flex">
-          <Kbd>Ctrl K</Kbd>
+          <Kbd>/</Kbd>
         </InputGroupAddon>
       </InputGroup>
     );

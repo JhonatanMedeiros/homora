@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ChevronDown, Folder } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
 import { t } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -10,6 +10,7 @@ type Props = {
   count: number;
   organizing: boolean;
   compact: boolean;
+  list?: boolean;
   searching: boolean;
   /** Present only for registered groups (can be renamed and removed). */
   canEdit: boolean;
@@ -39,6 +40,7 @@ export function GroupSection({
   count,
   organizing,
   compact,
+  list = false,
   searching,
   canEdit,
   canRemove,
@@ -75,8 +77,10 @@ export function GroupSection({
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
       <div className="flex min-w-0 flex-wrap items-center gap-3">
-        <h2 id={titleId} className="flex min-w-0 items-center gap-2.5 text-lg font-semibold">
-          <Folder aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+        <h2
+          id={titleId}
+          className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground"
+        >
           <span className="break-words">{category}</span>
           <span className="font-mono text-xs font-normal text-muted-foreground tabular-nums">
             <span className="sr-only">{t('group.services')}</span>
@@ -170,9 +174,11 @@ export function GroupSection({
             className={
               columns && COLUMN_CLASSES[columns]
                 ? COLUMN_CLASSES[columns]
-                : compact
-                  ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                  : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
+                : list
+                  ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
+                  : compact
+                    ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                    : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
             }
           >
             {children}

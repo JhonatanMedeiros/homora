@@ -17,9 +17,7 @@ export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
               {entry.stats.map((stat) => (
                 <div key={stat.label} className="flex min-w-0 flex-col">
                   <dd className="truncate font-mono text-sm font-medium">{stat.value}</dd>
-                  <dt className="text-[0.6875rem] tracking-wide text-muted-foreground uppercase">
-                    {stat.label}
-                  </dt>
+                  <dt className="font-mono text-[0.6875rem] text-muted-foreground">{stat.label}</dt>
                 </div>
               ))}
             </dl>

@@ -52,13 +52,16 @@ export function ServicesPage({
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
   const [topBar] = useTopBar();
-  const [compact, setCompact] = useState(() => {
+  const [density, setDensity] = useState<'list' | 'compact' | 'comfortable'>(() => {
     try {
-      return localStorage.getItem('homora-density') === 'compact';
+      const saved = localStorage.getItem('homora-density');
+      return saved === 'compact' || saved === 'comfortable' ? saved : 'list';
     } catch {
-      return false;
+      return 'list';
     }
   });
+  const compact = density === 'compact';
+  const list = density === 'list';
   const [showDescriptions, setShowDescriptions] = useState(() => {
     try {
       return localStorage.getItem('homora-descriptions') !== 'hidden';
@@ -349,8 +352,68 @@ export function ServicesPage({
         />
       )}
       {!managing && !organizing && topBar && <TopBar />}
-      {!managing && !organizing && (
-        <HealthSummary online={online} down={down} blocked={blocked} unknown={unknown} />
+      {!managing && (
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          {!organizing ? (
+            <HealthSummary
+              total={total}
+              online={online}
+              down={down}
+              blocked={blocked}
+              unknown={unknown}
+            />
+          ) : (
+            <span />
+          )}
+          {services.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                value={density}
+                onValueChange={(value) => {
+                  if (value !== 'list' && value !== 'compact' && value !== 'comfortable') return;
+                  setDensity(value);
+                  try {
+                    localStorage.setItem('homora-density', value);
+                  } catch {
+                    /* preference only in this session */
+                  }
+                }}
+                aria-label={t('view.label')}
+              >
+                <ToggleGroupItem value="list" className="pointer-coarse:h-11">
+                  {t('view.list')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="comfortable" className="pointer-coarse:h-11">
+                  {t('view.comfortable')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="compact" className="pointer-coarse:h-11">
+                  {t('view.compact')}
+                </ToggleGroupItem>
+              </ToggleGroup>
+              {!list && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-pressed={showDescriptions}
+                  onClick={() => {
+                    const next = !showDescriptions;
+                    setShowDescriptions(next);
+                    try {
+                      localStorage.setItem('homora-descriptions', next ? 'visible' : 'hidden');
+                    } catch {
+                      /* preference only in this session */
+                    }
+                  }}
+                >
+                  {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       )}
       {organizing && (
         <OrganizePanel
@@ -461,51 +524,6 @@ export function ServicesPage({
           }
         />
       )}
-      {!managing && services.length > 0 && (
-        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-          <span className="text-sm text-muted-foreground">{t('view.label')}</span>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            size="sm"
-            value={compact ? 'compact' : 'comfortable'}
-            onValueChange={(value) => {
-              if (!value) return;
-              const next = value === 'compact';
-              setCompact(next);
-              try {
-                localStorage.setItem('homora-density', next ? 'compact' : 'comfortable');
-              } catch {
-                /* preference only in this session */
-              }
-            }}
-            aria-label={t('view.label')}
-          >
-            <ToggleGroupItem value="comfortable" className="pointer-coarse:h-11">
-              {t('view.comfortable')}
-            </ToggleGroupItem>
-            <ToggleGroupItem value="compact" className="pointer-coarse:h-11">
-              {t('view.compact')}
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <Button
-            variant="outline"
-            size="sm"
-            aria-pressed={showDescriptions}
-            onClick={() => {
-              const next = !showDescriptions;
-              setShowDescriptions(next);
-              try {
-                localStorage.setItem('homora-descriptions', next ? 'visible' : 'hidden');
-              } catch {
-                /* preference only in this session */
-              }
-            }}
-          >
-            {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
-          </Button>
-        </div>
-      )}
       {groups.map(({ category, items }) => {
         const row = groupRows.find((group) => group.name === category);
         return (
@@ -515,6 +533,7 @@ export function ServicesPage({
             count={items.length}
             organizing={organizing}
             compact={compact && !managing}
+            list={list}
             searching={Boolean(needle)}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
@@ -541,6 +560,7 @@ export function ServicesPage({
                   organizing={organizing}
                   managing={managing}
                   compact={compact && !managing}
+                  list={list}
                   showDescription={showDescriptions || managing}
                   confirmingRemoval={confirming === s.id}
                   dragging={dragging === s.id}

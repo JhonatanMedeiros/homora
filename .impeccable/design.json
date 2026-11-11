@@ -1,157 +1,165 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-10T19:10:45.326091+00:00",
+  "generatedAt": "2026-11-11T16:19:59.522897+00:00",
   "title": "Design System: Homora",
   "extensions": {
     "colorMeta": {
-      "tape-yellow": {
+      "ember": {
         "role": "primary",
-        "displayName": "Tape Yellow",
-        "canonical": "oklch(0.87 0.17 95)",
+        "displayName": "Ember",
+        "canonical": "oklch(0.78 0.15 62)",
         "tonalRamp": [
-          "oklch(0.25 0.05 90)",
-          "oklch(0.35 0.08 92)",
-          "oklch(0.45 0.1 93)",
-          "oklch(0.58 0.13 94)",
-          "oklch(0.7 0.15 95)",
-          "oklch(0.8 0.17 95)",
-          "oklch(0.9 0.12 96)",
-          "oklch(0.95 0.06 97)"
+          "oklch(0.2 0.078 62)",
+          "oklch(0.3 0.087 62)",
+          "oklch(0.4 0.096 62)",
+          "oklch(0.52 0.107 62)",
+          "oklch(0.64 0.118 62)",
+          "oklch(0.76 0.109 62)",
+          "oklch(0.88 0.098 62)",
+          "oklch(0.96 0.091 62)"
         ]
       },
-      "warm-paper": {
+      "ember-text-light": {
+        "role": "primary",
+        "displayName": "Ember Text (light)",
+        "canonical": "oklch(0.55 0.15 50)",
+        "tonalRamp": [
+          "oklch(0.2 0.078 50)",
+          "oklch(0.3 0.087 50)",
+          "oklch(0.4 0.096 50)",
+          "oklch(0.52 0.107 50)",
+          "oklch(0.64 0.118 50)",
+          "oklch(0.76 0.109 50)",
+          "oklch(0.88 0.098 50)",
+          "oklch(0.96 0.091 50)"
+        ]
+      },
+      "night": {
         "role": "neutral",
-        "displayName": "Warm Paper",
-        "canonical": "oklch(0.965 0.008 85)",
+        "displayName": "Night",
+        "canonical": "oklch(0.165 0.006 60)",
         "tonalRamp": [
-          "oklch(0.2 0.008 70)",
-          "oklch(0.3 0.01 72)",
-          "oklch(0.45 0.012 75)",
-          "oklch(0.6 0.012 78)",
-          "oklch(0.75 0.012 80)",
-          "oklch(0.87 0.01 85)",
-          "oklch(0.94 0.008 85)",
-          "oklch(0.99 0.004 85)"
+          "oklch(0.2 0.003 60)",
+          "oklch(0.3 0.003 60)",
+          "oklch(0.4 0.004 60)",
+          "oklch(0.52 0.004 60)",
+          "oklch(0.64 0.005 60)",
+          "oklch(0.76 0.004 60)",
+          "oklch(0.88 0.004 60)",
+          "oklch(0.96 0.004 60)"
         ]
       },
-      "graphite-ink": {
+      "night-card": {
         "role": "neutral",
-        "displayName": "Graphite Ink",
-        "canonical": "oklch(0.22 0.012 70)",
+        "displayName": "Night Card",
+        "canonical": "oklch(0.2 0.006 60)",
         "tonalRamp": [
-          "oklch(0.15 0.01 70)",
-          "oklch(0.22 0.012 70)",
-          "oklch(0.3 0.012 70)",
-          "oklch(0.38 0.014 72)",
-          "oklch(0.47 0.015 75)",
-          "oklch(0.6 0.014 78)",
-          "oklch(0.75 0.012 80)",
-          "oklch(0.9 0.008 85)"
+          "oklch(0.2 0.003 60)",
+          "oklch(0.3 0.003 60)",
+          "oklch(0.4 0.004 60)",
+          "oklch(0.52 0.004 60)",
+          "oklch(0.64 0.005 60)",
+          "oklch(0.76 0.004 60)",
+          "oklch(0.88 0.004 60)",
+          "oklch(0.96 0.004 60)"
         ]
       },
-      "rack-rail": {
+      "day": {
         "role": "neutral",
-        "displayName": "Rack Rail",
-        "canonical": "oklch(0.235 0.01 70)",
+        "displayName": "Day",
+        "canonical": "oklch(0.985 0.004 80)",
         "tonalRamp": [
-          "oklch(0.165 0.008 70)",
-          "oklch(0.2 0.008 70)",
-          "oklch(0.235 0.01 70)",
-          "oklch(0.3 0.012 70)",
-          "oklch(0.34 0.01 70)",
-          "oklch(0.5 0.012 70)",
-          "oklch(0.72 0.014 80)",
-          "oklch(0.94 0.01 85)"
+          "oklch(0.2 0.002 80)",
+          "oklch(0.3 0.002 80)",
+          "oklch(0.4 0.003 80)",
+          "oklch(0.52 0.003 80)",
+          "oklch(0.64 0.003 80)",
+          "oklch(0.76 0.003 80)",
+          "oklch(0.88 0.003 80)",
+          "oklch(0.96 0.002 80)"
         ]
       },
-      "laminated-tape": {
+      "ink": {
         "role": "neutral",
-        "displayName": "Laminated Tape",
-        "canonical": "oklch(1 0 0)",
+        "displayName": "Ink",
+        "canonical": "oklch(0.95 0.006 80)",
         "tonalRamp": [
-          "oklch(0.17 0.01 70)",
-          "oklch(0.3 0.008 80)",
-          "oklch(0.45 0.006 85)",
-          "oklch(0.6 0.005 90)",
-          "oklch(0.75 0.005 90)",
-          "oklch(0.87 0.004 95)",
-          "oklch(0.95 0.008 95)",
-          "oklch(1 0 0)"
+          "oklch(0.2 0.003 80)",
+          "oklch(0.3 0.003 80)",
+          "oklch(0.4 0.004 80)",
+          "oklch(0.52 0.004 80)",
+          "oklch(0.64 0.005 80)",
+          "oklch(0.76 0.004 80)",
+          "oklch(0.88 0.004 80)",
+          "oklch(0.96 0.004 80)"
         ]
       },
-      "status-ok": {
+      "light-on": {
         "role": "secondary",
-        "displayName": "Status OK Green",
-        "canonical": "oklch(0.45 0.13 150)",
+        "displayName": "Light On (up)",
+        "canonical": "oklch(0.77 0.15 155)",
         "tonalRamp": [
-          "oklch(0.2 0.05 150)",
-          "oklch(0.3 0.09 150)",
-          "oklch(0.45 0.13 150)",
-          "oklch(0.56 0.15 150)",
-          "oklch(0.68 0.16 150)",
-          "oklch(0.78 0.15 150)",
-          "oklch(0.88 0.09 150)",
-          "oklch(0.95 0.04 150)"
+          "oklch(0.2 0.078 155)",
+          "oklch(0.3 0.087 155)",
+          "oklch(0.4 0.096 155)",
+          "oklch(0.52 0.107 155)",
+          "oklch(0.64 0.118 155)",
+          "oklch(0.76 0.109 155)",
+          "oklch(0.88 0.098 155)",
+          "oklch(0.96 0.091 155)"
         ]
       },
-      "status-down": {
+      "light-off": {
         "role": "secondary",
-        "displayName": "Status Down Red",
-        "canonical": "oklch(0.52 0.19 27)",
+        "displayName": "Light Off (down)",
+        "canonical": "oklch(0.7 0.19 25)",
         "tonalRamp": [
-          "oklch(0.2 0.06 27)",
-          "oklch(0.32 0.11 27)",
-          "oklch(0.42 0.16 27)",
-          "oklch(0.52 0.19 27)",
-          "oklch(0.62 0.19 27)",
-          "oklch(0.7 0.18 27)",
-          "oklch(0.84 0.1 27)",
-          "oklch(0.95 0.03 27)"
+          "oklch(0.2 0.099 25)",
+          "oklch(0.3 0.11 25)",
+          "oklch(0.4 0.122 25)",
+          "oklch(0.52 0.135 25)",
+          "oklch(0.64 0.149 25)",
+          "oklch(0.76 0.138 25)",
+          "oklch(0.88 0.124 25)",
+          "oklch(0.96 0.115 25)"
         ]
       }
     },
     "typographyMeta": {
       "headline": {
         "displayName": "Headline",
-        "purpose": "Page title in Barlow Semi Condensed 600."
-      },
-      "title": {
-        "displayName": "Title",
-        "purpose": "Secondary titles in Barlow."
+        "purpose": "Page title in Geist 600, tight tracking."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Body copy in Figtree."
-      },
-      "body-compact": {
-        "displayName": "Body Compact",
-        "purpose": "Form fields and dense text from md upwards."
-      },
-      "label-tape": {
-        "displayName": "Label",
-        "purpose": "LabelTape and StatusTag text, uppercase with wide tracking."
+        "purpose": "Interface text in Geist 400 at 14px."
       },
       "data": {
         "displayName": "Data",
-        "purpose": "Hosts, URLs, and counters in JetBrains Mono."
+        "purpose": "Hosts, URLs, counters, shortcuts, and small labels in Geist Mono."
       }
     },
     "shadows": [
       {
-        "name": "lamination-edge",
-        "value": "inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18)",
-        "purpose": "Tape lamination edge; only on LabelTape, never decorative."
+        "name": "lamplight-edge",
+        "value": "inset 0 1px 0 color-mix(in oklch, var(--primary) 16%, transparent)",
+        "purpose": "1px ember highlight on top of service rows that are up; the only raised edge."
       },
       {
         "name": "focus-ring",
         "value": "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)",
-        "purpose": "Focus ring for buttons, fields, and items (ring-[3px] ring-ring/50)."
+        "purpose": "Focus ring for buttons, fields, and items."
+      },
+      {
+        "name": "light-glow",
+        "value": "0 0 8px 1px color-mix(in oklch, var(--success) 70%, transparent)",
+        "purpose": "Soft glow on the status light when a service is up."
       }
     ],
     "motion": [
       {
         "name": "state-transition",
-        "value": "transition-colors / transition-all, standard Tailwind duration (150ms)",
+        "value": "transition-colors, 150ms",
         "purpose": "Hover and focus."
       },
       {
@@ -180,117 +188,82 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Primary action in tape yellow with graphite text.",
+      "description": "Primary action in ember with dark ink.",
       "html": "<button class=\"ds-btn-primary\">Add service</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: 0; border-radius: 8px; background: oklch(0.87 0.17 95); color: oklch(0.2 0.02 80); font: 600 14px 'Figtree Variable', system-ui, sans-serif; cursor: pointer; transition: background-color 150ms; } .ds-btn-primary:hover { background: oklch(0.87 0.17 95 / 0.9); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:40px;padding:8px 16px;border:0;border-radius:8px;background:oklch(0.78 0.15 62);color:oklch(0.2 0.03 60);font:500 14px 'Geist Variable', system-ui, sans-serif;cursor:pointer;transition:background-color 150ms}.ds-btn-primary:hover{background:oklch(0.78 0.15 62 / 0.9)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 3px oklch(0.78 0.15 62 / 0.5)}"
     },
     {
       "name": "Outline Button",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "Secondary action on card with input border.",
+      "description": "Secondary action on the card surface with a 1px border.",
       "html": "<button class=\"ds-btn-outline\">Cancel</button>",
-      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: 1px solid oklch(0.72 0.012 80); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font: 600 14px 'Figtree Variable', system-ui, sans-serif; cursor: pointer; } .ds-btn-outline:hover { background: oklch(0.92 0.02 90); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
+      "css": ".ds-btn-outline{display:inline-flex;align-items:center;gap:8px;height:40px;padding:8px 16px;border:1px solid oklch(0.4 0.008 60);border-radius:8px;background:oklch(0.2 0.006 60);color:oklch(0.95 0.006 80);font:500 14px 'Geist Variable', system-ui, sans-serif;cursor:pointer}.ds-btn-outline:hover{background:oklch(0.27 0.01 60)}.ds-btn-outline:focus-visible{outline:none;box-shadow:0 0 0 3px oklch(0.78 0.15 62 / 0.5)}"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input-field",
-      "description": "Text input with crisp border and focus ring.",
+      "description": "Text input with a 1px border and ember focus ring.",
       "html": "<input class=\"ds-input\" placeholder=\"Search services\" />",
-      "css": ".ds-input { height: 40px; width: 240px; padding: 4px 12px; border: 1px solid oklch(0.72 0.012 80); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font: 400 14px 'Figtree Variable', system-ui, sans-serif; outline: none; } .ds-input::placeholder { color: oklch(0.47 0.015 75); } .ds-input:focus-visible { border-color: oklch(0.38 0.02 70); box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
+      "css": ".ds-input{height:40px;width:240px;padding:4px 12px;border:1px solid oklch(0.4 0.008 60);border-radius:8px;background:oklch(0.2 0.006 60);color:oklch(0.95 0.006 80);font:400 14px 'Geist Variable', system-ui, sans-serif;outline:none}.ds-input::placeholder{color:oklch(0.7 0.01 70)}.ds-input:focus-visible{border-color:oklch(0.78 0.15 62);box-shadow:0 0 0 3px oklch(0.78 0.15 62 / 0.5)}"
     },
     {
-      "name": "LabelTape",
-      "kind": "chip",
-      "refersTo": "label-tape",
-      "description": "Signature mark: laminated white tape with black uppercase text, labels groups and sections.",
-      "html": "<span class=\"ds-label-tape\">Infrastructure</span>",
-      "css": ".ds-label-tape { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; background: oklch(1 0 0); color: oklch(0.17 0.01 70); font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18); }"
+      "name": "StatusLight",
+      "kind": "status",
+      "refersTo": "status-light",
+      "description": "Signature: a dot plus text. Lit green when up, red when down, empty ring when unknown.",
+      "html": "<span class=\"ds-light ds-on\"><i></i>Available</span> <span class=\"ds-light ds-off\"><i></i>Unavailable</span> <span class=\"ds-light ds-unk\"><i></i>Unknown</span>",
+      "css": ".ds-light{display:inline-flex;align-items:center;gap:8px;font:500 14px 'Geist Variable', system-ui, sans-serif}.ds-light i{width:8px;height:8px;border-radius:50%;display:inline-block}.ds-on{color:oklch(0.77 0.15 155)}.ds-on i{background:oklch(0.77 0.15 155);box-shadow:0 0 8px 1px oklch(0.77 0.15 155 / 0.7)}.ds-off{color:oklch(0.7 0.19 25)}.ds-off i{background:oklch(0.7 0.19 25)}.ds-unk{color:oklch(0.7 0.01 70)}.ds-unk i{box-shadow:inset 0 0 0 1.5px oklch(0.7 0.01 70)}"
     },
     {
-      "name": "StatusTag Available",
-      "kind": "chip",
-      "refersTo": "status-tag-available",
-      "description": "Available status: icon, text, and green.",
-      "html": "<span class=\"ds-status ds-status-ok\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Available</span>",
-      "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; } .ds-status-ok { background: oklch(0.45 0.13 150); color: oklch(0.985 0.005 85); }"
-    },
-    {
-      "name": "StatusTag Unavailable",
-      "kind": "chip",
-      "refersTo": "status-tag-unavailable",
-      "description": "Unavailable status: icon, text, and red.",
-      "html": "<span class=\"ds-status ds-status-down\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/></svg>Unavailable</span>",
-      "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; } .ds-status-down { background: oklch(0.52 0.19 27); color: oklch(0.985 0.005 85); }"
-    },
-    {
-      "name": "Service Card",
+      "name": "Service Row",
       "kind": "card",
-      "refersTo": "service-card",
-      "description": "Service card with icon, host in mono, and StatusTag; never just a status dot.",
-      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\"><span class=\"ds-card-icon\">J</span><div><div class=\"ds-card-name\">Jellyfin</div><div class=\"ds-card-host\">jellyfin.home.lan</div></div></div><span class=\"ds-card-tag\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Available</span></div>",
-      "css": ".ds-card { display: flex; flex-direction: column; gap: 12px; width: 280px; padding: 16px; border: 1px solid oklch(0.87 0.01 85); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font-family: 'Figtree Variable', system-ui, sans-serif; } .ds-card:hover { background: oklch(0.92 0.02 90 / 0.4); } .ds-card-head { display: flex; gap: 12px; align-items: flex-start; } .ds-card-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: oklch(0.925 0.01 85); font-size: 18px; font-weight: 600; } .ds-card-name { font-size: 16px; font-weight: 600; } .ds-card-host { font: 400 13px 'JetBrains Mono Variable', ui-monospace, monospace; color: oklch(0.47 0.015 75); } .ds-card-tag { display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 24px; padding: 0 8px; border-radius: 3px; background: oklch(0.45 0.13 150); color: oklch(0.985 0.005 85); font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }"
-    },
-    {
-      "name": "Top bar",
-      "kind": "nav",
-      "description": "Graphite bar with branding and subtle access to management.",
-      "html": "<nav class=\"ds-header\"><strong>Homora</strong><button class=\"ds-manage\">Manage</button></nav>",
-      "css": ".ds-header { display:flex; align-items:center; justify-content:space-between; gap:24px; min-height:64px; padding:0 16px; background:oklch(0.235 0.01 70); color:oklch(0.94 0.01 85); font:700 20px Barlow Semi Condensed, system-ui, sans-serif; } .ds-manage { min-height:40px; padding:0 16px; border:1px solid oklch(0.32 0.012 70); border-radius:8px; background:transparent; color:inherit; font:600 14px Figtree Variable, system-ui, sans-serif; cursor:pointer; } .ds-manage:hover { background:oklch(0.3 0.012 70); } .ds-manage:focus-visible { outline:2px solid oklch(0.87 0.17 95); outline-offset:2px; }"
+      "refersTo": "service-row",
+      "description": "Default home item: icon tile, name, host in mono, and status light. Lit services get the lamplight edge.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-ic\">Px</span><span class=\"ds-t\"><b>Proxmox</b><small>pve.home.lan:8006</small></span><span class=\"ds-light ds-on\"><i></i>Available</span></div>",
+      "css": ".ds-row{display:flex;align-items:center;gap:12px;width:340px;padding:8px 12px;border:1px solid oklch(0.29 0.006 60);border-radius:8px;background:oklch(0.2 0.006 60);color:oklch(0.95 0.006 80);font:14px 'Geist Variable', system-ui, sans-serif;box-shadow:inset 0 1px 0 oklch(0.78 0.15 62 / 0.16)}.ds-ic{width:32px;height:32px;border-radius:6px;display:grid;place-items:center;font-weight:600;font-size:13px;background:oklch(0.78 0.15 62 / 0.15);color:oklch(0.78 0.15 62)}.ds-t{flex:1;display:grid;min-width:0}.ds-t b{font-weight:500}.ds-t small{font:12px 'Geist Mono Variable', ui-monospace, monospace;color:oklch(0.7 0.01 70)}.ds-light{display:inline-flex;align-items:center;gap:8px;font:500 14px 'Geist Variable', system-ui, sans-serif;color:oklch(0.77 0.15 155)}.ds-light i{width:8px;height:8px;border-radius:50%;background:oklch(0.77 0.15 155);box-shadow:0 0 8px 1px oklch(0.77 0.15 155 / 0.7)}"
     }
   ],
   "narrative": {
-    "northStar": "The Patch Panel Label",
-    "overview": "Everything in Homora is labeled, like a rack organized at home. The laminated tape from a label-maker is the signature: section titles and the status of each service use tape language, while service groups have more understated titles. The rest is warm graphite (hue 70) and warm paper, calm and dense enough for a daily dashboard. The system rejects the generic dashboard of identical cards with plain status dots.\n\nThe top bar is graphite in both themes, referencing the rack. Content lives on warm paper in the light theme and on dark graphite in the dark theme. Color has a functional role: tape yellow fills primary actions, active navigation items, and focus; green, red, and gray indicate status only. Barlow Semi Condensed labels, Figtree reads, JetBrains Mono displays addresses and counts.",
+    "northStar": "Lamplight",
+    "overview": "A house at night. Surfaces are warm neutrals separated by 1px lines, never shadows. A single ember accent marks what you can act on: the primary button, the focus ring, the active item. Every service has a window light: lit green when it is up, red when it is down, an empty ring when unknown. The logo is a house with one lit window.\n\nDark is the intended default and light is a complete theme. Geist carries the interface and Geist Mono carries hosts, counts, and shortcuts. The home is a dense list with a Ctrl or Cmd K command palette; comfortable cards and a compact grid remain as options.",
     "keyCharacteristics": [
-      "White laminated tape with black uppercase text as signature mark (LabelTape, StatusTag).",
-      "Graphite top bar in both themes; management accessible via a single button.",
-      "Tape yellow only as fill, never as text.",
-      "Status always with icon, text, and color.",
-      "Flat: no decorative shadow, depth via tone and border.",
-      "shadcn/ui base (new-york, Radix, lucide, Tailwind v4), themed via `dark` class."
+      "Warm dark neutrals (hue 60-80, very low chroma) layered by tone and 1px borders.",
+      "Ember is the only brand hue; it may be text through the ember-text token.",
+      "StatusLight (dot plus text) is the status signature; the logo shares its idea.",
+      "Flat: no drop shadows; one 1px ember highlight on services that are up.",
+      "Dense list home, Ctrl or Cmd K palette, Geist plus Geist Mono.",
+      "shadcn/ui base (new-york, Radix, lucide, Tailwind v4), themed via the `dark` class."
     ],
     "rules": [
       {
-        "name": "The Never-Yellow-Text Rule",
-        "body": "Tape yellow is fill for primary actions, active items, and focus. Never a color for text, standalone icons, or links.",
-        "section": "colors"
-      },
-      {
         "name": "The Status-Needs-Words Rule",
-        "body": "Green, red, and gray signify status and always appear with an icon and text. Color alone never communicates status.",
+        "body": "The light is never alone: it always sits next to text.",
         "section": "colors"
       },
       {
-        "name": "The Tape-Voice Rule",
-        "body": "Uppercase and wide tracking belong only to tape text (LabelTape and StatusTag). Everywhere else text follows standard casing.",
-        "section": "typography"
+        "name": "The One-Accent Rule",
+        "body": "Ember is the only brand hue. Green and red mean status only; do not add a second accent.",
+        "section": "colors"
       },
       {
         "name": "The Flat-By-Default Rule",
-        "body": "No decorative shadow on cards, buttons, popovers, or fields. Focus uses a 3px ring (`ring/50`), not a drop shadow.",
-        "section": "elevation"
-      },
-      {
-        "name": "The Lamination-Edge Rule",
-        "body": "The tape bevel belongs only to LabelTape. Do not copy it to other surfaces for faux-relief.",
+        "body": "No drop shadows on cards, buttons, popovers, or fields. Depth comes from tone and 1px borders; focus uses a 3px ring.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "Do use LabelTape for section titles and StatusTag for all service statuses; service groups use their own subtle header.",
-      "Do reserve tape yellow for primary action, active item, and focus.",
-      "Do compose screens with primitives from `components/ui` and components from `components`, placing pages in `pages` and modules in `features`.",
-      "Do display hosts and counts in JetBrains Mono.",
-      "Do maintain graphite top bar in both themes and toggle theme only via `dark` class."
+      "Do use ember for primary action, active item, focus, and (via accent-text) links and active icons.",
+      "Do show status with a StatusLight and words.",
+      "Do show hosts, ports, counts, and shortcuts in Geist Mono.",
+      "Do separate surfaces with tone and 1px borders."
     ],
     "donts": [
-      "Don't use yellow as text color, link color, or standalone icon color.",
-      "Don't communicate status by color alone: always icon plus text.",
-      "Don't add decorative shadows; LabelTape's lamination bevel is the only raised edge.",
-      "Don't regress to a generic dashboard of identical cards with status dots.",
-      "Don't use uppercase with wide tracking outside tape text."
+      "Don't add a second accent hue or decorative gradients.",
+      "Don't use drop shadows for elevation.",
+      "Don't communicate status by color alone.",
+      "Don't reintroduce uppercase wide-tracking labels outside tiny mono captions."
     ]
   }
 }

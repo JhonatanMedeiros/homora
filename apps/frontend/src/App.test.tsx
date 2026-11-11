@@ -463,7 +463,7 @@ it('does not treat unauthorized private network as service down', async () => {
   render(<App />);
   expect(await screen.findByText('Monitoramento bloqueado')).toBeTruthy();
   expect(screen.queryByText('Indisponível')).toBeNull();
-  expect(screen.getByText(/1 disponíveis/)).toBeTruthy();
+  expect(screen.getByText(/1 de \d+ no ar/)).toBeTruthy();
   expect(screen.getByText(/1 sem monitoramento/)).toBeTruthy();
 });
 
@@ -668,4 +668,40 @@ it('displays error for unknown pages and missing service', async () => {
   window.history.replaceState(null, '', '/manage/services/99/edit');
   render(<App />);
   expect(await screen.findByText('Serviço não encontrado.')).toBeTruthy();
+});
+
+it('shows the list view by default and opens the command palette with Ctrl K', async () => {
+  localStorage.clear();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 1,
+              name: 'Jellyfin',
+              url: 'https://example.com/',
+              category: 'Mídia',
+              description: 'Filmes',
+            },
+          ],
+        };
+      if (url === '/api/service-status')
+        return { ok: true, json: async () => ({ 1: { status: 'available' } }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Jellyfin/ });
+  expect(screen.getByRole('radio', { name: 'Lista' }).getAttribute('data-state')).toBe('on');
+  fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+  expect(await screen.findByPlaceholderText('Buscar serviços ou executar um comando')).toBeTruthy();
+  expect(screen.getByText('Alternar tema')).toBeTruthy();
+  fireEvent.click(screen.getByText('Adicionar serviço'));
+  expect(window.location.pathname).toBe('/manage/services/new');
+  localStorage.clear();
 });

@@ -44,9 +44,7 @@ export function TopBar() {
         <dl className="flex flex-wrap gap-x-5 gap-y-1">
           {system.stats.map((stat) => (
             <div key={stat.id} className="flex items-baseline gap-1.5">
-              <dt className="text-[0.6875rem] tracking-wide text-muted-foreground uppercase">
-                {stat.label}
-              </dt>
+              <dt className="font-mono text-[0.6875rem] text-muted-foreground">{stat.label}</dt>
               <dd className="font-mono text-sm font-medium">
                 {formatNumber(Number.parseInt(stat.value, 10))}%
               </dd>
