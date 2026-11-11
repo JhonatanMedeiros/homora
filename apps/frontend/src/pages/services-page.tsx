@@ -516,7 +516,7 @@ export function ServicesPage({
       {flash && (
         <p
           role="status"
-          className="flex w-fit items-center gap-2 rounded-md bg-success px-3 py-2 text-sm font-semibold text-success-foreground"
+          className="motion-feedback flex w-fit items-center gap-2 rounded-md bg-success px-3 py-2 text-sm font-semibold text-success-foreground"
         >
           <Check className="size-4" aria-hidden="true" />
           {flash}

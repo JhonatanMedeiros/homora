@@ -127,7 +127,9 @@ export function AppShell({
                 ))}
               </nav>
             </aside>
-            <div className="min-w-0 flex-1">{children}</div>
+            <div key={tab} className="motion-panel min-w-0 flex-1">
+              {children}
+            </div>
           </div>
         ) : (
           children

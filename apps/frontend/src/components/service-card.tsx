@@ -78,7 +78,7 @@ export function ServiceCard({
           variant="outline"
           size="sm"
           className={cn(
-            'relative w-full flex-row flex-wrap items-center gap-x-3 gap-y-2 bg-card px-3 py-2 transition-colors hover:bg-accent/60 focus-within:bg-accent/60',
+            'service-surface relative w-full flex-row flex-wrap items-center gap-x-3 gap-y-2 bg-card px-3 py-2 hover:bg-accent/60 focus-within:bg-accent/60',
             state === 'available' &&
               !isBlocked &&
               'shadow-[inset_0_1px_0_color-mix(in_oklch,var(--primary)_16%,transparent)]',
@@ -165,7 +165,7 @@ export function ServiceCard({
       <Item
         variant="outline"
         className={cn(
-          'relative w-full flex-col items-stretch gap-3 bg-card transition-colors hover:bg-accent/60 focus-within:bg-accent/60',
+          'service-surface relative w-full flex-col items-stretch gap-3 bg-card hover:bg-accent/60 focus-within:bg-accent/60',
           state === 'available' &&
             !isBlocked &&
             'shadow-[inset_0_1px_0_color-mix(in_oklch,var(--primary)_16%,transparent)]',

@@ -60,7 +60,7 @@ export function OrganizeRow({
         variant="outline"
         size="sm"
         className={cn(
-          'w-full flex-row items-center gap-2 bg-card px-2 py-1.5',
+          'organize-surface w-full flex-row items-center gap-2 bg-card px-2 py-1.5',
           'cursor-grab pointer-coarse:cursor-default',
           dragging && 'opacity-50',
           dropTarget && 'border-primary bg-primary/10',

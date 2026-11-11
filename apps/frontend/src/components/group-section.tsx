@@ -138,7 +138,9 @@ export function GroupSection({
             aria-controls={`${titleId}:content`}
             onClick={toggleCollapsed}
           >
-            <ChevronDown className={collapsed ? '-rotate-90' : ''} />
+            <ChevronDown
+              className={cn('transition-transform duration-200', collapsed && '-rotate-90')}
+            />
           </Button>
         )}
         {organizing && (
@@ -229,7 +231,7 @@ export function GroupSection({
         )}
       </div>
       {(!collapsed || organizing || searching) && (
-        <div id={`${titleId}:content`} className="flex flex-col gap-3">
+        <div id={`${titleId}:content`} className="motion-group flex flex-col gap-3">
           {count === 0 && (
             <p
               data-group-drop={emptyDrop?.active ? '' : undefined}
