@@ -678,6 +678,19 @@ implementation because it changes a security default.
   unknown lights. The loading and error states of the service list itself were reviewed and left as
   they were.
 
+### Undo After Moving a Service (2026-11-11)
+
+- Moving a service to another group (row menu or drag) shows a toast with "Undo" for 8 seconds.
+  Undo puts the service back in its original group and restores that group's previous order (the
+  order is captured before the move, because a move appends to the end of the target group).
+- Sonner's `Toaster` is now mounted in `App`, at the bottom center and above the fixed mobile
+  "Organizing / Done" bar. This replaces the green banner for this message.
+- Not covered: undo for service removal (it already has inline confirmation) and for group
+  removal (it has a confirmation dialog). Arrow moves are not undoable; the arrows reverse them.
+- Verified with tests and desktop and 390 px screenshots of the toast. If another change happens
+  within the 8 seconds (for example another move), Undo still restores the order captured at the
+  time of its own move, which can overwrite the later change.
+
 ## Core Homepage — Implemented Flows
 
 - Additive migration generates persistent groups from existing categories and initializes card
