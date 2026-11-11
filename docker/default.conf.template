@@ -11,7 +11,7 @@ server {
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
-    location /api/ {
+    location ~ ^/(api/|mcp$) {
         # Resolve the backend through Docker's embedded DNS instead of resolving it once
         # at startup: the container gets a new IP on every deploy, and a static upstream
         # keeps the dead address until nginx restarts.
@@ -20,7 +20,7 @@ server {
         # $request_uri is required here: with variables nginx does not reappend the
         # original URI, so the proxied path and query string must be explicit.
         proxy_pass $homora_api$request_uri;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         # Overwrites (never appends to) anything the client sent, so the backend can trust it
         # when HOMORA_TRUST_PROXY=true. Used for the per-client login attempt limit.

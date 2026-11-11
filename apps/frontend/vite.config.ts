@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1',
       port,
       strictPort: true,
-      proxy: { '/api': `http://127.0.0.1:${apiPort}` },
+      proxy: { '/api': `http://127.0.0.1:${apiPort}`, '/mcp': `http://127.0.0.1:${apiPort}` },
     },
   };
 });

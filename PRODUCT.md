@@ -30,8 +30,7 @@ logging.
 ## Operating Context
 
 Browser on desktop and mobile, local network (HTTP on loopback). Current
-integrations: read-only Proxmox and experimental read connections. MCP is a
-local read process.
+integrations: read-only Proxmox and experimental read connections. MCP supports local stdio and HTTP, with scoped reads and human-reviewed proposals.
 
 ## Capabilities and Constraints
 

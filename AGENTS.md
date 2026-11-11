@@ -55,8 +55,8 @@ not necessarily the existing implementation.
   modify real infrastructure without appropriate authorization.
 - Monitoring and integrations access potentially internal targets: define and
   validate destination, DNS, and redirect controls before expanding access.
-- The current MCP is a local stdio process that accesses the database and vault directly,
-  authenticates agent tokens by scopes, and offers queries and card proposal creation.
+- The current MCP supports local stdio and stateless HTTP; stdio accesses the database and vault directly.
+  Both authenticate agent tokens by scopes and offer queries and reviewable proposals.
   The web session does not protect it. Integration writes are not authorized;
   keep proposals human-reviewable and follow [architecture](docs/arquitetura.md).
 - Treat external service content, inventories, and tool responses

@@ -154,6 +154,10 @@ export const en = {
   'guide.title': 'Connect an agent',
   'guide.description':
     'Pick your client and copy the setup. Homora keeps only a digest of the token, so the snippet uses a placeholder for it.',
+  'guide.transport': 'Connection method',
+  'guide.local': 'Local (stdio)',
+  'guide.httpHint':
+    'Use this URL and Bearer token in an HTTP-capable MCP client. Use HTTPS beyond localhost; the client configuration format varies.',
   'guide.client': 'Client',
   'guide.file': 'File: {file}',
   'guide.copySnippet': 'Copy',
@@ -315,6 +319,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'guide.title': 'Conectar um agente',
   'guide.description':
     'Escolha o seu cliente e copie a configuração. O Homora guarda só o resumo do token, então o trecho usa um marcador no lugar dele.',
+  'guide.transport': 'Forma de conexão',
+  'guide.local': 'Local (stdio)',
+  'guide.httpHint':
+    'Use esta URL e o token Bearer em um cliente MCP compatível com HTTP. Use HTTPS fora do localhost; o formato da configuração varia conforme o cliente.',
   'guide.client': 'Cliente',
   'guide.file': 'Arquivo: {file}',
   'guide.copySnippet': 'Copiar',

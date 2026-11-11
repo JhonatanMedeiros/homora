@@ -146,6 +146,15 @@ worktrees. Live tests against external production hosts and real Proxmox nodes r
 
 ## P4 — MCP and Human-Governed Changes
 
+### MCP Streamable HTTP (2026-11-11)
+
+- Added stateless `/mcp` alongside stdio, with Bearer authentication per request, scoped tools,
+  host and origin validation, per-client request limits, and proxy forwarding in Docker and Vite.
+- The Agents connection guide includes both transports. HTTP uses the backend's configured
+  connections and discovery source. Human review remains mandatory for proposals.
+- An SDK client test covers HTTP connection, scoped access, revocation and host/origin rejection.
+  Remote reverse-proxy deployment and visual review remain to be validated in a live environment.
+
 ### MCP catalog expansion (2026-11-11)
 
 - Added scoped queries for services, groups, status, widgets, integrations, Docker discovery,
@@ -163,7 +172,7 @@ worktrees. Live tests against external production hosts and real Proxmox nodes r
   infrastructure was accessed.
 
 - [x] Define agent identity models, granular scopes, and token revocation; align MCP server
-      access with application authorization rules. MCP runs locally, accessing database/vault
+      access with application authorization rules. MCP stdio runs locally, accessing database/vault
       directly outside web session auth.
 - [x] Expose authorized read queries without leaking credentials; treat external integration
       data as untrusted input.

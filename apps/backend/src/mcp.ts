@@ -20,6 +20,7 @@ import { createObservationStore } from './service-observations.js';
 type McpOptions = {
   connections?: ReturnType<typeof createIntegrationConnections>;
   docker?: DockerSource;
+  token?: string;
 };
 export function createMcp(
   database: DatabaseSync,
@@ -29,8 +30,8 @@ export function createMcp(
   const configuration = createServiceConfiguration(database);
   const proposalService = createProposalService(database, configuration, vault);
   const server = new McpServer({ name: 'homora', version: '0.1.0' });
-  const authorize = (scope: string) =>
-    proposalService.authenticate(process.env.HOMORA_AGENT_TOKEN, scope);
+  const token = () => options.token ?? process.env.HOMORA_AGENT_TOKEN;
+  const authorize = (scope: string) => proposalService.authenticate(token(), scope);
   const unauthorized = () => ({
     content: [
       {
@@ -133,7 +134,7 @@ export function createMcp(
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     async () => {
-      if (!proposalService.authenticate(process.env.HOMORA_AGENT_TOKEN, 'services:read'))
+      if (!proposalService.authenticate(token(), 'services:read'))
         return {
           content: [
             { type: 'text', text: 'Agent identity is missing, revoked, or lacks services:read.' },
@@ -172,7 +173,7 @@ export function createMcp(
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     async ({ id }) => {
-      if (!proposalService.authenticate(process.env.HOMORA_AGENT_TOKEN, 'services:read'))
+      if (!proposalService.authenticate(token(), 'services:read'))
         return {
           content: [
             { type: 'text', text: 'Agent identity is missing, revoked, or lacks services:read.' },
@@ -200,7 +201,7 @@ export function createMcp(
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     async () => {
-      if (!proposalService.authenticate(process.env.HOMORA_AGENT_TOKEN, 'services:read'))
+      if (!proposalService.authenticate(token(), 'services:read'))
         return {
           content: [
             { type: 'text', text: 'Agent identity is missing, revoked, or lacks services:read.' },
@@ -269,10 +270,7 @@ export function createMcp(
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
     async (input) => {
-      const author = proposalService.authenticate(
-        process.env.HOMORA_AGENT_TOKEN,
-        'proposals:create',
-      );
+      const author = proposalService.authenticate(token(), 'proposals:create');
       if (!author)
         return {
           content: [
@@ -513,7 +511,7 @@ export function createMcp(
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     async () => {
-      if (!proposalService.authenticate(process.env.HOMORA_AGENT_TOKEN, 'proxmox:read'))
+      if (!proposalService.authenticate(token(), 'proxmox:read'))
         return {
           content: [
             { type: 'text', text: 'Agent identity is missing, revoked, or lacks proxmox:read.' },
