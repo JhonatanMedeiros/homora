@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { createUptimeKumaAdapter } from './uptime-kuma.js';
 const config = { url: 'https://kuma.example', slug: 'home' };
-it('resume o último estado das páginas públicas sem expor dados dos monitores', async () => {
+it('summarizes the latest status of public pages without exposing monitor details', async () => {
   const transport = vi.fn(async () => ({
     status: 200,
     body: {
@@ -26,7 +26,7 @@ it('resume o último estado das páginas públicas sem expor dados dos monitores
     path: '/api/status-page/heartbeat/home',
   });
 });
-it('rejeita slug ou origem malformados antes de acessar a rede', async () => {
+it('rejects malformed slug or origin before reaching the network', async () => {
   const transport = vi.fn();
   const adapter = createUptimeKumaAdapter(transport);
   for (const changed of [
@@ -37,13 +37,13 @@ it('rejeita slug ou origem malformados antes de acessar a rede', async () => {
     await expect(adapter.collect({ ...config, ...changed })).rejects.toThrow();
   expect(transport).not.toHaveBeenCalled();
 });
-it('retorna falha para página ausente ou resposta malformada', async () => {
+it('fails on missing page or malformed response', async () => {
   await expect(
     createUptimeKumaAdapter(async () => ({ status: 404, body: null })).collect(config),
-  ).rejects.toThrow('não encontrada');
+  ).rejects.toThrow('not found');
   await expect(
     createUptimeKumaAdapter(async () => ({ status: 200, body: { heartbeatList: [] } })).collect(
       config,
     ),
-  ).rejects.toThrow('Resposta inválida');
+  ).rejects.toThrow('Invalid response');
 });

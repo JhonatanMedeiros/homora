@@ -8,7 +8,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('apresenta o catálogo retornado pela API', async () => {
+it('displays catalog returned by the API', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => ({
@@ -20,7 +20,7 @@ it('apresenta o catálogo retornado pela API', async () => {
   expect(await screen.findByText('Proxmox VE')).toBeTruthy();
 });
 
-it('permite tentar novamente após falha', async () => {
+it('allows retrying after failure', async () => {
   const fetchMock = vi
     .fn()
     .mockResolvedValueOnce({ ok: false })

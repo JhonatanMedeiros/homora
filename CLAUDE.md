@@ -1,5 +1,5 @@
-# Instruções para agentes
+# Agent Instructions
 
-Leia e siga [AGENTS.md](AGENTS.md), que contém as orientações compartilhadas do
-repositório. Consulte também o README e os documentos indicados nele antes de
-alterar o projeto.
+Read and follow [AGENTS.md](AGENTS.md), which contains shared guidelines for the
+repository. Also consult the README and referenced documents before
+modifying the project.

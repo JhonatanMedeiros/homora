@@ -6,7 +6,7 @@ import {
   type Service,
 } from '@homora/shared';
 
-/** Versão do formato de exportação do Homora. */
+/** Homora export format version. */
 export const TRANSFER_VERSION = 1;
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
@@ -25,7 +25,7 @@ export type ImportedService = {
 export type ImportedGroup = { name: string; columns?: number; services: ImportedService[] };
 export type ImportDocument = { groups: ImportedGroup[] };
 
-/** Códigos estáveis: a interface os traduz; o servidor não devolve texto em idioma algum. */
+/** Stable codes: the UI translates them; the server returns no language-specific text. */
 export type IssueCode =
   | 'invalid-syntax'
   | 'invalid-document'
@@ -64,7 +64,7 @@ export type ImportPlan = {
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** Serializa grupos e cards na ordem atual. Nunca inclui segredos, conexões nem IDs. */
+/** Serializes groups and cards in current order. Never includes secrets, connections or IDs. */
 export function serializeConfiguration(
   groups: { name: string; columns?: number | null }[],
   services: Service[],
@@ -140,7 +140,7 @@ export function parseService(
   };
 }
 
-/** Lê um arquivo de exportação do Homora (YAML ou JSON) e valida item a item. */
+/** Reads a Homora export file (YAML or JSON) and validates item by item. */
 export function parseTransfer(content: string): ParsedImport {
   const issues: ImportIssue[] = [];
   const document: ImportDocument = { groups: [] };
@@ -151,7 +151,7 @@ export function parseTransfer(content: string): ParsedImport {
   if (content.length > MAX_TRANSFER_CHARS) return fail('invalid-document');
   let raw: unknown;
   try {
-    // JSON é YAML válido. Aliases ficam limitados para evitar expansão excessiva.
+    // JSON is valid YAML. Aliases are limited to avoid excessive expansion.
     raw = parse(content, { maxAliasCount: 10, prettyErrors: false });
   } catch {
     return fail('invalid-syntax');
@@ -191,7 +191,7 @@ export function parseTransfer(content: string): ParsedImport {
   return { document, issues };
 }
 
-/** Compara o arquivo com a configuração atual. Só adiciona: nada é sobrescrito ou removido. */
+/** Compares file with current configuration. Additive only: nothing is overwritten or deleted. */
 export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan {
   const issues = [...parsed.issues];
   const knownGroups = new Set(existing.groups);

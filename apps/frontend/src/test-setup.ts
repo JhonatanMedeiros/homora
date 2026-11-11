@@ -1,4 +1,4 @@
 import { setLocale } from '@/i18n';
 
-// Os testes de interface afirmam os textos em português; o padrão do app é detectado do navegador.
+// UI tests assert Portuguese strings; the app's default is detected from the browser.
 setLocale('pt-BR');

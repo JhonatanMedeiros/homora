@@ -21,5 +21,5 @@ const app = createApp(
 app.addHook('onClose', async () => database.close());
 await app.listen({ port: config.apiPort, host: config.bindHost });
 console.log(
-  `API na porta ${config.apiPort}. Acesse o Homora em http://localhost:${config.webPort}`,
+  `API listening on port ${config.apiPort}. Access Homora at http://localhost:${config.webPort}`,
 );

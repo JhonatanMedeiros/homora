@@ -19,7 +19,7 @@ const base = {
   onMove: () => {},
 };
 
-it('usa a grade automática sem colunas escolhidas e a escolhida quando há', () => {
+it('uses auto grid without selected columns and custom count when specified', () => {
   const { container, rerender } = render(
     <GroupSection {...base}>
       <li>a</li>
@@ -49,7 +49,7 @@ it('usa a grade automática sem colunas escolhidas e a escolhida quando há', ()
   expect(container.querySelector('ul')?.className).toContain('xl:grid-cols-3');
 });
 
-it('só oferece escolher colunas ao organizar e informa a escolha', () => {
+it('only presents column selection in organize mode and reports selection', () => {
   const onColumns = vi.fn();
   const { rerender } = render(
     <GroupSection {...base} columns={3} onColumns={onColumns}>

@@ -1,17 +1,16 @@
-# Contribuindo
+# Contributing
 
-Homora está em desenvolvimento e ainda não tem licença definida. Até que os
-responsáveis escolham e publiquem uma licença, não presuma permissão para
-redistribuir o projeto. Veja também [segurança](SECURITY.md) antes de relatar
-uma vulnerabilidade.
+Homora is in active development and does not have a finalized license yet. Until
+maintainers choose and publish a license, do not assume permission to redistribute
+the project. See also [security](SECURITY.md) before reporting a vulnerability.
 
-## Preparar e validar
+## Setup and Validation
 
-Siga os [padrões de engenharia](docs/padroes.md) e consulte a
-[arquitetura atual](docs/arquitetura.md) antes de mudanças que cruzem módulos,
-persistência ou integrações.
+Follow the [engineering standards](docs/padroes.md) and review current
+[architecture](docs/arquitetura.md) before making changes across modules,
+persistence, or integrations.
 
-Use Node.js 24 (`.nvmrc`) e pnpm 12.4.2 (`packageManager`):
+Use Node.js 24 (`.nvmrc`) and pnpm 12.4.2 (`packageManager`):
 
 ```sh
 nvm use
@@ -21,22 +20,22 @@ pnpm check
 pnpm build
 ```
 
-Para trabalhar localmente, copie `.env.example` para `.env` quando precisar
-alterar portas ou caminho do banco e execute `pnpm dev`. Os testes de backup
-usam arquivos temporários; não use dados pessoais ou bancos reais em testes.
+For local development, copy `.env.example` to `.env` if you need to customize
+ports or database path, then run `pnpm dev`. Backup tests use temporary files;
+do not use personal data or production databases in tests.
 
-## Enviar mudanças
+## Submitting Changes
 
-- Abra uma issue ou discussão para mudanças grandes antes de implementá-las.
-- Mantenha cada proposta focada, inclua testes para mudanças de comportamento
-  e atualize a documentação quando mudar instalação, configuração ou segurança.
-- Mudanças no esquema precisam de migração aditiva e testes que demonstrem a
-  preservação dos dados existentes.
-- Não inclua segredos, bancos, backups ou dados pessoais. Confira `git status`
-  antes de enviar.
-- Use mensagens de commit no padrão Conventional Commits, por exemplo
-  `fix: preserva dados na migração`.
+- Open an issue or discussion for large changes before implementing them.
+- Keep each proposal focused, include tests for behavioral changes, and update
+  documentation when installation, configuration, or security changes.
+- Schema changes require an additive migration and tests demonstrating that
+  existing data is preserved.
+- Do not include secrets, databases, backups, or personal data. Check `git status`
+  before submitting.
+- Use commit messages following Conventional Commits, for example
+  `fix: preserve data on migration`.
 
-Pull requests devem explicar o problema, resumir a solução e listar as
-verificações executadas e limitações conhecidas. Não há garantia de prazo para
-revisão enquanto o projeto estiver em estágio inicial.
+Pull requests should explain the problem, summarize the solution, and list
+the checks executed along with known limitations. There is no guaranteed review
+turnaround while the project is in early development.

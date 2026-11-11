@@ -1,4 +1,4 @@
-// Validação opcional: requer OpenSSL e permissão para abrir sockets locais.
+// Optional validation: requires OpenSSL and permission to bind local sockets.
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { networkInterfaces, tmpdir } from 'node:os';
@@ -12,14 +12,14 @@ if (process.argv[2] === 'client') {
     origins: [new URL(url).origin],
     allowPrivate: true,
   });
-  if (JSON.stringify(result) !== '{"ok":true}') throw new Error('Resposta incorreta');
+  if (JSON.stringify(result) !== '{"ok":true}') throw new Error('Incorrect response');
   process.exit(0);
 }
 
 const ip = Object.values(networkInterfaces())
   .flat()
   .find((item) => item && item.family === 'IPv4' && !item.internal)?.address;
-if (!ip) throw new Error('É necessário um endereço IPv4 privado não loopback para este teste.');
+if (!ip) throw new Error('A private, non-loopback IPv4 address is required for this test.');
 const dir = mkdtempSync(join(tmpdir(), 'homora-tls-test-'));
 let server;
 try {
@@ -106,9 +106,9 @@ try {
       child.on('error', reject);
       child.on('exit', resolve);
     });
-  if ((await run(false)) === 0) throw new Error('Certificado desconhecido foi aceito.');
-  if ((await run(true)) !== 0) throw new Error('Certificado confiável foi rejeitado.');
-  console.log('TLS: CA desconhecida rejeitada; CA temporária confiável aceita.');
+  if ((await run(false)) === 0) throw new Error('Untrusted certificate was accepted.');
+  if ((await run(true)) !== 0) throw new Error('Trusted certificate was rejected.');
+  console.log('TLS: Untrusted CA rejected; temporary trusted CA accepted.');
 } finally {
   if (server) await new Promise((resolve) => server.close(resolve));
   rmSync(dir, { recursive: true, force: true });

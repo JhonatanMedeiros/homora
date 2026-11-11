@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { t, type MessageKey } from '@/i18n';
 import type { Plan } from './transfer-model';
 
-/** Relatório de uma importação: o que entra, o que já existe e o que foi ignorado. */
+/** Import report: what is added, what already exists, and what was skipped. */
 export function ImportPreview({ plan }: { plan: Plan }) {
   const { summary } = plan;
   return (

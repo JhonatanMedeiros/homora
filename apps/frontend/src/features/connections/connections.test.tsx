@@ -6,7 +6,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-it('cadastra Home Assistant com autorização explícita para rede privada', async () => {
+it('registers Home Assistant with explicit private network authorization', async () => {
   const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
     if (init?.method === 'POST') return { ok: true, json: async () => ({ ok: true }) };
     return { ok: true, json: async () => [] };
@@ -38,7 +38,7 @@ it('cadastra Home Assistant com autorização explícita para rede privada', asy
   );
   expect(await screen.findByText('Integração salva.')).toBeTruthy();
 });
-it('testa conexão e apresenta falha sanitizada da API', async () => {
+it('tests connection and displays sanitized API failure', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -112,7 +112,7 @@ it.each([
   expect(await screen.findByText((content) => content.includes(expected))).toBeTruthy();
 });
 
-it('permite repetir carregamento quando a API falha', async () => {
+it('allows retrying load when the API fails', async () => {
   let connectionCalls = 0;
   vi.stubGlobal(
     'fetch',
@@ -129,7 +129,7 @@ it('permite repetir carregamento quando a API falha', async () => {
   expect(await screen.findByText('Nenhuma conexão cadastrada.')).toBeTruthy();
 });
 
-it('cria, consulta e remove widgets nomeados usando a conexão vinculada', async () => {
+it('creates, queries, and removes named widgets using linked connection', async () => {
   const widget = { id: 5, integrationId: 1, type: 'jellyfin', name: 'Mídia sala' };
   let created = false;
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
@@ -181,7 +181,7 @@ it('cria, consulta e remove widgets nomeados usando a conexão vinculada', async
   expect(await screen.findByText('Widget removido.')).toBeTruthy();
 });
 
-it('oferece o Proxmox como origem de widget e consulta os números agregados', async () => {
+it('offers Proxmox as widget source and queries aggregated numbers', async () => {
   const widgets: unknown[] = [];
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/proxmox/status')

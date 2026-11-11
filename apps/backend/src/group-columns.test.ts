@@ -7,13 +7,13 @@ import { createDatabase } from '@homora/db';
 import { createAuth } from './auth.js';
 import { createApp } from './app.js';
 
-it('define, troca e limpa as colunas de um grupo, e leva o valor na exportação e importação', async () => {
+it('sets, changes, and clears group columns, persisting values in export and import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-group-columns-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
   const auth = createAuth(`${path}.auth`);
-  auth.setup('senha-para-testes');
-  const cookie = `homora_session=${auth.login('senha-para-testes', 'test')}`;
+  auth.setup('test-password');
+  const cookie = `homora_session=${auth.login('test-password', 'test')}`;
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth);
   const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>
@@ -39,44 +39,44 @@ it('define, troca e limpa as colunas de um grupo, e leva o valor na exportação
     );
     expect((await send('PUT', '/api/groups/abc/columns', { columns: 2 })).statusCode).toBe(404);
 
-    // renomear preserva as colunas
-    await send('PUT', `/api/groups/${group.id}`, { name: 'Infraestrutura' });
+    // renaming preserves columns
+    await send('PUT', `/api/groups/${group.id}`, { name: 'Infrastructure' });
     expect((await send('GET', '/api/groups')).json()[0]).toMatchObject({
-      name: 'Infraestrutura',
+      name: 'Infrastructure',
       columns: 4,
     });
 
     await send('POST', '/api/services', {
       name: 'Proxmox',
       url: 'https://pve.example:8006',
-      category: 'Infraestrutura',
+      category: 'Infrastructure',
       description: '',
     });
     const exported = (await send('GET', '/api/config/export?format=yaml')).body;
-    expect(parse(exported).groups[0]).toMatchObject({ name: 'Infraestrutura', columns: 4 });
+    expect(parse(exported).groups[0]).toMatchObject({ name: 'Infrastructure', columns: 4 });
 
-    // limpar tira a chave do arquivo
+    // clearing removes the key from exported file
     const cleared = await send('PUT', `/api/groups/${group.id}/columns`, { columns: null });
     expect(cleared.json().columns).toBeNull();
     expect(
       'columns' in parse((await send('GET', '/api/config/export?format=yaml')).body).groups[0],
     ).toBe(false);
 
-    // importação: grupo novo recebe as colunas; grupo existente não muda; valor inválido avisa
+    // import: new group receives columns; existing group is untouched; invalid value warns
     const content = [
       'version: 1',
       'groups:',
-      '  - name: Infraestrutura',
+      '  - name: Infrastructure',
       '    columns: 5',
       '    services:',
-      '      - name: Outro',
-      '        url: https://outro.example',
-      '  - name: Midia',
+      '      - name: Other',
+      '        url: https://other.example',
+      '  - name: Media',
       '    columns: 3',
       '    services:',
       '      - name: Jellyfin',
       '        url: https://jellyfin.example',
-      '  - name: Casa',
+      '  - name: Home',
       '    columns: 99',
       '    services:',
       '      - name: HA',
@@ -95,7 +95,7 @@ it('define, troca e limpa as colunas de um grupo, e leva o valor na exportação
       columns: number | null;
     }[];
     const byName = Object.fromEntries(groups.map((g) => [g.name, g.columns]));
-    expect(byName).toEqual({ Infraestrutura: null, Midia: 3, Casa: null });
+    expect(byName).toEqual({ Infrastructure: null, Media: 3, Home: null });
   } finally {
     await app.close();
     db.close();

@@ -1,4 +1,4 @@
-/** Textos da aba Agentes. */
+/** Text for the Agents tab. */
 export const en = {
   'agents.title': 'Agents',
   'agents.description':

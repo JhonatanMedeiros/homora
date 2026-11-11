@@ -40,7 +40,7 @@ function migrate(sqlite: DatabaseSync) {
           Number(row.created_at) !== migrations[i]?.folderMillis,
       )
     )
-      throw new Error('Histórico de migrações incompatível.');
+      throw new Error('Incompatible migration history.');
     const tableExists = !!sqlite
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'services'")
       .get();
@@ -68,7 +68,7 @@ function migrate(sqlite: DatabaseSync) {
             c.pk !== expected[i][3],
         )
       )
-        throw new Error('Esquema existente incompatível; nenhum dado foi alterado.');
+        throw new Error('Incompatible existing schema; no data was modified.');
       sqlite
         .prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)')
         .run(migrations[0].hash, migrations[0].folderMillis);

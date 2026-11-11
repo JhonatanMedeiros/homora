@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 
-/** Dados ilustrativos locais; nenhum destino privado é autorizado para monitoramento. */
+/** Sample local data; no private destinations are authorized for monitoring. */
 export function seedDevelopmentDatabase(sqlite: DatabaseSync) {
   const groups = [
     {

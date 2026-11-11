@@ -1,226 +1,204 @@
-# Integrações: referências e direção para o Homora
+# Integrations: Reference Projects and Direction for Homora
 
-Esta análise compara documentação e repositórios dos projetos de referência;
-não representa auditoria completa de código nem teste de todas as aplicações.
-As capacidades podem mudar entre versões. O desenho abaixo é uma proposta, e o
-código e os testes são a fonte para o que estiver efetivamente implementado.
+This analysis compares documentation and repositories from reference projects;
+it is not a comprehensive code audit or a complete suite test against all software.
+Capabilities may evolve between releases. The architectural design below is a proposal;
+the code and test suite serve as the ground truth for what is currently implemented.
 
-## Referências
+## Reference Projects
 
-| Projeto                                                                                                                                                | Abordagem observada                                                                                                                                                                                                                           | Aprendizado                                                                                  |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [Homepage](https://gethomepage.dev/configs/services/)                                                                                                  | Serviços e widgets em configuração; [Proxmox](https://github.com/gethomepage/homepage/blob/dev/docs/configs/proxmox.md) usa conexão com token e associações a recursos; [Docker](https://gethomepage.dev/configs/docker/) permite descoberta. | Separar conexão, serviço e apresentação; documentar cada integração.                         |
-| [Homarr](https://github.com/homarr-labs/homarr)                                                                                                        | Configuração visual de aplicações e integrações; [gerenciamento de certificados](https://homarr.dev/docs/management/certificates/) permite importar CAs.                                                                                      | Tornar configuração e TLS acessíveis na interface.                                           |
-| [Dashy](https://dashy.to/docs/widgets/)                                                                                                                | Widgets configuráveis e proxy; aceita opção explícita de ignorar verificação TLS por widget.                                                                                                                                                  | Isolar opções e falhas por widget; manter verificação TLS ativa no Homora.                   |
-| [Glance](https://github.com/glanceapp/glance)                                                                                                          | Widgets e feeds em YAML, com cache; oferece [API personalizada](https://github.com/glanceapp/glance/blob/main/docs/custom-api.md) e [extensões](https://github.com/glanceapp/glance/blob/main/docs/extensions.md).                            | Controlar cache e avaliar extensão apenas após amadurecer os adaptadores.                    |
-| [Heimdall](https://github.com/linuxserver/Heimdall)                                                                                                    | Links comuns e aplicativos aprimorados com dados de APIs.                                                                                                                                                                                     | O atalho permanece utilizável sem conexão à API.                                             |
-| [Flame](https://github.com/pawelmalak/flame)                                                                                                           | Editor de links e descoberta opcional por labels Docker.                                                                                                                                                                                      | Simplificar cadastro e considerar descoberta revisável.                                      |
-| [Homer](https://github.com/bastienwirtz/homer), [Mafl](https://github.com/hywax/mafl)                                                                  | Homepages orientadas à simplicidade e aos links.                                                                                                                                                                                              | Preservar uma página leve e útil mesmo sem widgets.                                          |
-| [Dynacat](https://github.com/Panonim/dynacat)                                                                                                          | Declara foco em recarga dinâmica e integração com aplicações externas.                                                                                                                                                                        | Considerar atualização de configuração; detalhes internos não foram validados nesta análise. |
-| [LinkStack](https://github.com/LinkStackOrg/LinkStack), [NodeBB](https://github.com/NodeBB/NodeBB), [Rackula](https://github.com/RackulaLives/Rackula) | Produtos de perfil de links, fórum e desenho de racks, respectivamente.                                                                                                                                                                       | Referências indiretas para apresentação, comunidade e visualização física.                   |
+| Project                                                                                                                                                | Observed Approach                                                                                                                                                                                                                                | Key Takeaway                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| [Homepage](https://gethomepage.dev/configs/services/)                                                                                                  | Services and widgets configured together; [Proxmox](https://github.com/gethomepage/homepage/blob/dev/docs/configs/proxmox.md) uses token connections and resource bindings; [Docker](https://gethomepage.dev/configs/docker/) enables discovery. | Separate connections, services, and display; document each integration thoroughly.        |
+| [Homarr](https://github.com/homarr-labs/homarr)                                                                                                        | Visual configuration of apps and integrations; [certificate management](https://homarr.dev/docs/management/certificates/) allows custom CA imports.                                                                                              | Make configuration and TLS certificates accessible via UI.                                |
+| [Dashy](https://dashy.to/docs/widgets/)                                                                                                                | Configurable widgets with proxying; allows explicit per-widget opt-in to ignore TLS validation.                                                                                                                                                  | Isolate options and failures per widget; keep strict TLS validation active in Homora.     |
+| [Glance](https://github.com/glanceapp/glance)                                                                                                          | YAML-driven widgets and feeds with caching; provides [custom API](https://github.com/glanceapp/glance/blob/main/docs/custom-api.md) and [extensions](https://github.com/glanceapp/glance/blob/main/docs/extensions.md).                          | Tightly control caching and evaluate plugin extensions only after core adapters mature.   |
+| [Heimdall](https://github.com/linuxserver/Heimdall)                                                                                                    | Simple links and enhanced application tiles pulling API data.                                                                                                                                                                                    | Shortcuts remain fully functional and clickable without a working API connection.         |
+| [Flame](https://github.com/pawelmalak/flame)                                                                                                           | Visual link editor and optional Docker label discovery.                                                                                                                                                                                          | Streamline onboarding and ensure discovery outputs are human-reviewable.                  |
+| [Homer](https://github.com/bastienwirtz/homer), [Mafl](https://github.com/hywax/mafl)                                                                  | Minimalist, link-oriented homepages.                                                                                                                                                                                                             | Maintain a lightweight, fast, and functional page even without widgets enabled.           |
+| [Dynacat](https://github.com/Panonim/dynacat)                                                                                                          | Emphasizes dynamic hot-reloading and external integrations.                                                                                                                                                                                      | Consider seamless config reloads; implementation internals unverified in this study.      |
+| [LinkStack](https://github.com/LinkStackOrg/LinkStack), [NodeBB](https://github.com/NodeBB/NodeBB), [Rackula](https://github.com/RackulaLives/Rackula) | Link directory, community forum, and rack visualization projects respectively.                                                                                                                                                                   | Indirect design references for layout, community ergonomics, and physical layout visuals. |
 
-## Modelo proposto
+## Proposed Domain Model
 
-- **Aplicativo:** atalho com nome, endereço e apresentação; pode funcionar sem
-  integração, inclusive quando o serviço ou sua API estiver indisponível.
-- **Integração:** conexão com um serviço, tipo de adaptador, opções, referência
-  ao segredo e política de certificado. Pode alimentar mais de um widget.
-- **Widget:** visualização que referencia uma integração e suas capacidades.
-- **Certificado confiável:** CA pública obtida por canal confiável, com escopo
-  de uso explícito. Uma CA confiável não corrige incompatibilidade de nome.
-- **Observação:** resultado, horário, estado de erro ou desatualização e cache.
+- **Application / Service:** a shortcut with name, URL, and display options; operates
+  independently of integrations, even when the target service or its API is offline.
+- **Integration / Connection:** connection configuration to an external system, adapter kind,
+  options, secret reference, and certificate policy. A single connection can power multiple widgets.
+- **Widget:** a visual element on the dashboard referencing an integration connection and its capabilities.
+- **Trusted Certificate:** a public PEM CA certificate obtained from a trusted channel with an
+  explicit scope. A custom CA does not bypass hostname validation mismatches.
+- **Observation:** query result, timestamp, error or staleness state, and cache TTL.
 
-O adaptador descreve configuração, capacidades, teste de conexão e coleta;
-contém os detalhes de autenticação e resposta específicos de cada API. Um
-cliente compartilhado deve impor limites e validar destinos. Chamadas com
-credenciais ocorrem no backend; segredos não são enviados à interface, MCP ou
-logs. Dados externos são dados não confiáveis.
+Adapters describe configuration schemas, capabilities, health check tests, and data fetching;
+they encapsulate authentication and response parsing for each API. A shared network client
+enforces limits and validates destinations. Authenticated requests execute solely on the backend;
+secrets are never exposed to the frontend, MCP tools, or application logs. External data is untrusted.
 
-## Ordem de evolução e critérios
+## Evolution Sequence and Criteria
 
-1. Extrair o adaptador Proxmox com compatibilidade das configurações anteriores;
-   testar migração e preservação do token e da CA.
-2. Separar integração e widget, permitindo reutilização da conexão e mantendo o
-   atalho independente. Testar inclusão, edição, remoção e reinicialização.
-3. Implementar política compartilhada de rede: destinos autorizados, DNS e
-   redirecionamentos validados, TLS, timeout, limite de resposta e cache com
-   atualização indicada; testar falhas e isolamento entre widgets.
-4. Generalizar certificados e segredos com escopo claro; testar backup,
-   restauração, substituição e remoção sem expor credenciais.
-5. Acrescentar uma segunda integração e validar o contrato com fluxos reais e
-   testes. Um monitor HTTP simples valida parte da rede e apresentação, mas não
-   substitui a validação de uma segunda API com autenticação própria.
-6. Criar catálogo e formulários com campos, permissões e versões suportadas,
-   incluindo instruções de teste e erros compreensíveis.
-7. Avaliar descoberta Docker, apresentando sugestões revisáveis e acesso
-   limitado. Extensões de terceiros e APIs genéricas ficam para avaliação após
-   estabelecer limites de confiança, manutenção e segurança.
+1. Extract Proxmox adapter while maintaining backwards compatibility; test migrations
+   and preservation of existing tokens and CA certs.
+2. Separate integration connections from widgets, allowing connection reuse while keeping
+   shortcuts independent. Test creation, editing, deletion, and restart survival.
+3. Implement shared network transport policy: authorized destinations, DNS and redirect
+   validation, TLS, timeouts, payload limits, and cache with timestamp indicators; test
+   isolated widget failures.
+4. Generalize certificates and secrets with clear scopes; test backup, restore, rotation,
+   and removal without credential leaks.
+5. Add a second integration and validate shared contracts against real-world workflows.
+   A basic HTTP health check validates simple transport and rendering, but does not replace
+   verifying a second authenticated API.
+6. Create an integrations catalog and configuration forms with field descriptions, permission
+   requirements, and clear error diagnostics.
+7. Evaluate Docker discovery, producing human-reviewable proposals under strict socket access.
+   Third-party plugins and generic APIs remain deferred until trust and maintenance boundaries are proven.
 
-### Estado desta implementação
+### Status of Current Implementation
 
-- Conexões autenticadas e widgets já usam tabelas separadas. A interface permite
-  criar, consultar e remover vários widgets nomeados por conexão e ligar cada
-  widget a um card (`service_id`, nulo quando só aparece em Integrações; remover
-  o card desliga o widget sem apagá-lo). Os dados aparecem dentro do card, com
-  estado de carregamento, erro e dados inválidos por widget. Configuração
-  específica de cada widget ainda não existe. Consultas usam o cache da conexão,
-  sem observações próprias por widget; o card consulta cada conexão uma vez por
-  minuto, mesmo com vários widgets nela.
-- Widget do Proxmox: como ele segue no cofre legado, uma linha ponte
-  (`integration_instances`, tipo `proxmox`, sem segredo) permite ligar widgets
-  a ele (`POST /api/widgets` com `source: "proxmox"`). A linha não aparece em
-  `/api/connections` e não pode ser editada, testada nem removida por lá. A
-  consulta resume o inventário em números (VMs e LXC em execução e total, CPU e
-  memória dos nós online); nomes, IDs e endereços dos recursos não chegam ao
-  navegador por esse caminho. O cache é invalidado quando o endereço, o token,
-  o segredo ou a CA mudam.
-- Proxmox continua usando o cofre legado e não foi extraído para
-  `integration_instances`. Jellyfin, Home Assistant, Uptime Kuma e AdGuard Home
-  têm adaptadores somente de leitura e interface de configuração, mas não foram
-  validados em instalações reais.
-- Integrações autenticadas têm política de rede compartilhada e autorização
-  explícita de endereços privados por conexão. Monitoramento de atalhos usa
-  a mesma política de destino; destinos privados exigem a opção explícita por
-  serviço, desativada por padrão. Essa configuração foi testada com mocks e não
-  substitui validação em redes reais.
+- Authenticated connections and widgets use separate database tables. The UI supports
+  creating, querying, and removing multiple named widgets per connection, and linking each
+  widget to a service card (`service_id`, null when only displayed on the Connections page;
+  deleting a card unlinks the widget without destroying it). Data renders inside cards with
+  loading, error, and invalid data indicators per widget. Per-widget custom config parameters
+  do not exist yet. Queries utilize connection-level caching without dedicated per-widget caches;
+  cards query each connection once per minute, even when multiple widgets share it.
+- Proxmox widget: because Proxmox remains in its legacy vault, a bridge record
+  (`integration_instances`, type `proxmox`, no secret) allows linking widgets to it
+  (`POST /api/widgets` with `source: "proxmox"`). This record is omitted from
+  `/api/connections` and cannot be modified or deleted there. Querying aggregates cluster
+  inventory counts (running and total VMs/containers, online node CPU/memory); internal names,
+  IDs, and addresses are not leaked to the browser. The cache is invalidated whenever URL,
+  token, secret, or CA certificate changes.
+- Proxmox continues using its dedicated vault and has not been migrated into
+  `integration_instances`. Jellyfin, Home Assistant, Uptime Kuma, and AdGuard Home have
+  read-only adapters and configuration forms, but have not been comprehensively validated
+  against live production instances.
+- Authenticated integrations enforce shared network policy and explicit private network
+  authorization per connection. Shortcut monitoring shares the same destination policy;
+  private network monitoring requires explicit per-service opt-in (disabled by default).
+  This setup has been verified with integration test mocks and awaits real-world LAN testing.
 
-Essas etapas não significam que os recursos estejam disponíveis. Consulte o
-[plano de evolução](evolucao.md) e o código para o estado atual. O acesso à
-rede privada é necessário no homelab e deve ser autorizado explicitamente;
-qualquer descoberta não implica autorização para executar comandos, consultar
-qualquer endereço ou modificar infraestrutura.
+These steps reflect the planned roadmap. Consult the [evolution plan](evolucao.md)
+and codebase for live status. Private network access is essential for homelabs and must
+be explicitly authorized; discovery never grants permission to execute arbitrary commands,
+probe arbitrary network addresses, or mutate infrastructure.
 
-## Limitações e riscos
+## Limitations and Risks
 
-- O Proxmox usa atualmente uma configuração própria; a sessão web não protege
-  o servidor MCP local. Identidade e permissões de agente continuam planejadas.
-- A CA e o segredo Proxmox são armazenados com a configuração cifrada, cuja
-  chave fica no mesmo diretório: acesso aos dois permite recuperar a credencial.
-  Os arquivos precisam ser incluídos em backup protegido e restauração testada.
-- Cache não prova disponibilidade atual: diferenciar a última tentativa bem
-  sucedida, erro mais recente e dados desatualizados.
-- Redirecionamentos, DNS, redes privadas e destinos sensíveis exigem política
-  de SSRF aplicada também no momento da conexão. Não liberar acesso irrestrito
-  a partir de URLs fornecidas por um usuário ou por um agente.
-- APIs mudam; validar versões, autenticação e tratamento de respostas antes de
-  declarar uma integração suportada. Testes simulados não substituem validação
-  com os serviços reais.
-- Docker socket concede acesso privilegiado ao daemon. A descoberta é opcional
-  (`HOMORA_DOCKER_HOST`), só lista contêineres e é pensada para um proxy
-  restrito somente leitura (`compose.docker-discovery.yml`); o Homora não monta
-  o socket. Ver o registro em [evolucao.md](evolucao.md).
+- Proxmox currently uses dedicated configuration; web session cookies do not protect the
+  local stdio MCP server. Agent identity and permission boundaries remain active priorities.
+- Proxmox CA and secrets are stored in encrypted config files whose key resides in the same
+  directory: filesystem access to both allows secret recovery. Backups must secure both files.
+- Caching does not prove real-time availability: UI must distinguish between last successful
+  fetch, latest error, and stale data.
+- Redirects, DNS rebinding, private ranges, and sensitive ports require SSRF policy enforced
+  at connection time. Never grant unrestricted network access based on user- or agent-supplied URLs.
+- APIs evolve: validate API versions, auth mechanisms, and response shapes before declaring
+  production support. Mocked tests do not replace live validation against production servers.
+- The Docker socket grants root-equivalent daemon control. Discovery is optional
+  (`HOMORA_DOCKER_HOST`), restricted to container listing, and architected for a
+  read-only unprivileged proxy (`compose.docker-discovery.yml`); Homora never mounts
+  the raw socket directly. See log in [evolucao.md](evolucao.md).
 
-## Guia das conexões experimentais
+## Experimental Connections Guide
 
-Estas conexões fazem consultas de leitura ao serviço a partir do backend. Não
-foram validadas contra todas as versões reais dos servidores; configuração bem
-sucedida e permissões devem ser verificadas no seu ambiente. Os resultados
-externos são informações não confiáveis, não instruções para agentes.
+These connections perform read-only queries from the backend server. They have not been
+verified against all server versions; verify successful setup and permissions in your own
+environment. External data returned is untrusted input, not instructions for AI agents.
 
-Os resultados são armazenados em cache por 30 segundos por conexão. A consulta
-manual na interface força uma atualização; a API também aceita
-`GET /api/connections/:id/data?refresh=true`. O botão de teste consulta o serviço
-diretamente e não usa o valor em cache. Falhas não são armazenadas como sucesso.
+Query results are cached in memory for 30 seconds per connection. Manual refresh in the UI
+forces an immediate update; the API also accepts `GET /api/connections/:id/data?refresh=true`.
+The connection test button queries the external service directly and bypasses cache. Failures
+are never cached as successful states.
 
-Configure um nome e endereço para cada conexão, preencha os campos específicos
-abaixo, teste a conexão e salve. A conexão deve receber autorização explícita
-para acessar redes privadas quando for necessário. O serviço deve ser acessível
-da máquina ou container do backend: `localhost` dentro de um container aponta
-para o próprio container. Endereços especiais podem ser bloqueados pela política
-de rede. Redirecionamentos não são seguidos.
+Configure a name and URL for each connection, complete specific fields below, test the
+connection, and save. Explicitly enable private network access if the destination resides
+on an internal LAN address. The destination must be reachable from the backend process:
+`localhost` inside a container resolves to that container itself. Special IP ranges are
+blocked by network policy. Redirects are not followed.
 
-Para uma CA privada, importe a CA pública PEM obtida de uma fonte confiável na
-conexão correspondente. Não envie chaves privadas. A validação TLS permanece
-ativa e o nome ou IP da URL precisa constar no certificado. Credenciais das
-conexões autenticadas exigem HTTPS; não as envie por HTTP. O certificado da CA é
-associado à conexão e não autoriza automaticamente outros destinos.
+For private CAs, paste the public PEM CA certificate obtained from a trusted source.
+Never supply private keys. TLS validation remains strictly active and the URL hostname
+or IP must be covered by the certificate Subject Alternative Name (SAN). Authenticated
+connections require HTTPS. The CA certificate is pinned to the connection and does not
+grant trust to other endpoints.
 
 ### Jellyfin
 
-- Informe a URL HTTP ou HTTPS do servidor; um caminho-base, como
-  `https://jellyfin.example/jellyfin`, é aceito.
-- O adaptador consulta `GET /System/Info/Public` e mostra nome e versão do
-  servidor. Ele não exige API key e não mostra biblioteca, sessões ou métricas.
-- Endpoint baseado na [API do Jellyfin](https://typescript-sdk.jellyfin.org/);
-  versões compatíveis ainda não foram validadas em servidor real.
+- Provide the HTTP or HTTPS base URL of the Jellyfin server (e.g. `https://jellyfin.example/jellyfin`).
+- The adapter calls `GET /System/Info/Public` and returns server name and version. Does not
+  require an API key; does not read library contents, user sessions, or playback metrics.
+- Endpoint based on the [Jellyfin TypeScript SDK](https://typescript-sdk.jellyfin.org/);
+  compatible versions pending verification on live servers.
 
 ### Home Assistant
 
-- Informe uma origem HTTPS, um token de acesso de longa duração e o ID de uma
-  entidade, por exemplo `sensor.temperatura`. A consulta retorna estado e data
-  de atualização dessa entidade, sem modificar dispositivos.
-- A entidade deve existir e o token deve pertencer a uma conta com o menor
-  acesso possível. Não compartilhe o token nem use credenciais em exemplos.
-- O adaptador usa `GET /api/states/<entity_id>` conforme a [API REST oficial](https://developers.home-assistant.io/docs/api/rest/).
-  Compatibilidade de versões precisa ser confirmada em instalação real.
+- Provide an HTTPS origin, a Long-Lived Access Token, and a target entity ID (e.g. `sensor.temperature`).
+  The query returns the state and last updated timestamp for that entity without modifying state.
+- The entity must exist and the token should belong to a dedicated service account with minimal
+  permissions. Do not share the token or use real secrets in documentation examples.
+- Uses `GET /api/states/<entity_id>` per the [Home Assistant REST API](https://developers.home-assistant.io/docs/api/rest/).
+  Version compatibility must be confirmed on real instances.
 
 ### Uptime Kuma
 
-- Informe a origem HTTP ou HTTPS e o identificador de uma página de status
-  **publicada**, por exemplo `homelab`. Apenas os monitores incluídos nessa
-  página são consultados; monitores privados não aparecem.
-- A leitura de `/api/status-page/heartbeat/<slug>` não exige API key. O resumo
-  utiliza o último heartbeat recebido para cada monitor e não substitui o
-  inventário autenticado ou métricas de Prometheus. A página pode ter cache no
-  próprio Uptime Kuma; dados vazios ou ausentes não significam que tudo está bem.
-- Essa é uma [API interna documentada](https://github.com/louislam/uptime-kuma/wiki/Internal-API/6f150dae98532c8b4e2228990505e45cbd5d34e8),
-  sujeita a mudanças; versões e comportamento real ainda precisam ser validados.
+- Provide an HTTP or HTTPS origin and the slug of a **published** status page (e.g. `homelab`).
+  Only monitors included on this public status page are read; private monitors are not exposed.
+- Reads `GET /api/status-page/heartbeat/<slug>` without requiring an API key. Summarizes
+  the latest heartbeat for each monitor; does not replace authenticated inventory or Prometheus metrics.
+  Uptime Kuma caches status pages internally; empty results do not imply all systems are operational.
+- Leverages the [documented internal API](https://github.com/louislam/uptime-kuma/wiki/Internal-API/6f150dae98532c8b4e2228990505e45cbd5d34e8),
+  which is subject to upstream breaking changes; real-world behavior pending validation.
 
 ### AdGuard Home
 
-- Informe a origem HTTPS, usuário e senha do painel. O adaptador consulta
-  somente `GET /control/status` e mostra execução, proteção e versão; não altera
-  configurações nem mostra estatísticas de consultas.
-- A API usa Basic Auth. A conta pode ter privilégios administrativos: proteja a
-  senha e escolha o acesso mais restrito que sua instalação permitir. Não há
-  pressuposto de uma permissão somente leitura ou API key dedicada.
-- A implementação segue o [OpenAPI oficial](https://github.com/AdguardTeam/AdGuardHome/blob/master/openapi/openapi.yaml)
-  que identifica a API como `0.107`. Isso não garante compatibilidade com todas
-  as versões do produto; é necessária validação em servidor real.
+- Provide an HTTPS origin, username, and password for the administrative dashboard.
+  The adapter calls `GET /control/status` to read execution status, protection status, and version;
+  it does not modify settings or query DNS statistics.
+- Uses HTTP Basic Authentication. The account may have full administrative access: protect the
+  password and use the most restricted user account your version supports. No dedicated read-only
+  role or API key is currently assumed.
+- Implemented against the [official OpenAPI specification](https://github.com/AdguardTeam/AdGuardHome/blob/master/openapi/openapi.yaml)
+  tagging API version `0.107`. Does not guarantee compatibility with all product releases;
+  validation on live instances is required.
 
-## Pesquisa adicional sobre as APIs
+## Additional API Research Notes
 
-Os itens abaixo registram alternativas e dúvidas de compatibilidade. Nem todos
-os endpoints pesquisados são utilizados pelo Homora; consulte o guia acima.
+The sections below document upstream compatibility findings. Not all researched endpoints
+are currently used by Homora; consult the guide above for active functionality.
 
 ### Uptime Kuma
 
-- A [documentação da API interna](https://github.com/louislam/uptime-kuma/wiki/Internal-API/6f150dae98532c8b4e2228990505e45cbd5d34e8)
-  afirma que ela não é oficialmente suportada para integrações externas e pode
-  sofrer alterações incompatíveis. A interface utiliza Socket.IO; o documento
-  descreve também endpoints HTTP de métricas e páginas de status.
-- `GET /metrics` retorna métricas em formato Prometheus, incluindo estado e
-  tempo de resposta dos monitores. A [documentação de chaves](https://github.com/louislam/uptime-kuma/wiki/API-Keys/705b78e014714ef7fe108e90b80db51beac05db5)
-  informa disponibilidade de API keys a partir da versão 1.21.0; o exemplo
-  usa Basic Auth com a chave como senha e nome de usuário vazio. A wiki alerta
-  para alteração permanente da autenticação por usuário/senha após criar a
-  primeira chave. Chaves podem expirar ou ser desativadas.
-- `GET /api/status-page/<slug>` fornece dados de uma página publicada; isso
-  cobre somente o conteúdo exposto nessa página, não é equivalente a inventário
-  completo autenticado. A [documentação da página de status](https://github.com/louislam/uptime-kuma/wiki/Status-Page)
-  informa cache de cinco minutos.
-- A wiki de API interna e a página de API keys diferem na descrição do fallback
-  de senha em algumas condições. Confirmar comportamento para versões alvo
-  antes de codificar; não pressupor uma chave de acesso somente leitura.
-  Também verificar se métricas estão habilitadas, formato de labels e suporte
-  de versão, limites de volume e qual subconjunto de informações será exibido.
+- The [internal API wiki](https://github.com/louislam/uptime-kuma/wiki/Internal-API/6f150dae98532c8b4e2228990505e45cbd5d34e8)
+  explicitly notes it is unsupported for external integrations and may introduce breaking
+  changes. The web UI relies on Socket.IO; documentation also covers HTTP metric and status page endpoints.
+- `GET /metrics` exports Prometheus metrics, including monitor status and ping response times.
+  The [API Keys documentation](https://github.com/louislam/uptime-kuma/wiki/API-Keys/705b78e014714ef7fe108e90b80db51beac05db5)
+  notes API key support starting in version 1.21.0, using Basic Auth with the key as password
+  and an empty username. Creating an API key permanently modifies username/password fallback behavior.
+  Keys can expire or be disabled.
+- `GET /api/status-page/<slug>` provides data for published status pages, limited to that page's
+  scope. The [status page wiki](https://github.com/louislam/uptime-kuma/wiki/Status-Page) indicates
+  a default 5-minute cache.
+- The internal API and API keys wikis describe password fallback behavior differently under
+  certain edge cases. Confirm exact target version behavior before coding; do not assume
+  a read-only API key exists. Also check if metrics are enabled, label formats, version support,
+  payload limits, and what data subset should be exposed.
 
 ### AdGuard Home
 
-- O [OpenAPI oficial](https://github.com/AdguardTeam/AdGuardHome/blob/master/openapi/openapi.yaml)
-  identifica a API como `0.107`, base `/control`, com esquema global de Basic
-  Auth. Isso identifica a versão declarada do documento, não comprova todas as
-  versões de produto compatíveis. A API alimenta a interface administrativa.
-- `GET /control/status` retorna estado e configurações gerais; `GET
-/control/stats` retorna estatísticas. O [histórico da API](https://github.com/AdguardTeam/AdGuardHome/blob/master/openapi/CHANGELOG.md)
-  descreve Basic Auth para usuário web protegido e lista campos como consultas
-  DNS e bloqueios. Estatísticas podem estar desativadas e não devem ser tratadas
-  como zeros sem verificar a resposta.
-- A credencial Basic Auth deve permanecer no backend, protegida em trânsito e
-  em repouso; ela pode conferir acesso administrativo. Não presumir suporte a
-  token ou conta restrita de leitura sem confirmação na versão escolhida.
-- O OpenAPI descreve operações de escrita; o primeiro adaptador deve limitar-se
-  às consultas aprovadas. Confirmar versões de servidor, campos presentes,
-  tempo de retenção, limites de requisições e comportamento quando estatísticas
-  estiverem desativadas. Endpoints e campos devem ser validados por testes e
-  contra uma instalação real antes de anunciar compatibilidade.
+- The [official OpenAPI specification](https://github.com/AdguardTeam/AdGuardHome/blob/master/openapi/openapi.yaml)
+  identifies the API as `0.107`, base `/control`, with global Basic Auth. This defines the
+  spec version, not universal compatibility across all releases. The API powers the admin UI.
+- `GET /control/status` returns operational state and general settings; `GET /control/stats`
+  returns query statistics. The [API changelog](https://github.com/AdguardTeam/AdGuardHome/blob/master/openapi/CHANGELOG.md)
+  describes Basic Auth for protected web users and lists metrics like DNS queries and blocked domains.
+  Statistics may be disabled on the server and must not be assumed to be zero without inspection.
+- Basic Auth credentials must remain securely in the backend, protected in transit and at rest;
+  they may carry full administrative privileges. Do not assume token-based or read-only account
+  support without version-specific confirmation.
+- The OpenAPI spec defines mutation operations; the initial adapter is strictly limited to approved
+  read queries. Verify server versions, payload schemas, retention limits, rate limits, and
+  behavior when statistics are disabled. Endpoints and fields must be verified in tests and
+  against real installations before declaring compatibility.

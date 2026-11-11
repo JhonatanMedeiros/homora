@@ -100,8 +100,8 @@ import {
 } from 'lucide-react';
 
 /**
- * Ícones embutidos que um serviço pode usar com `lucide:nome`. A lista é curada (voltada a
- * homelab) para não carregar a biblioteca inteira no navegador.
+ * Built-in icons that a service can use with `lucide:name`. The list is curated (homelab-focused)
+ * to avoid loading the entire library in the browser.
  */
 export const iconRegistry: Record<string, LucideIcon> = {
   server: Server,
@@ -211,13 +211,13 @@ export const brandIconUrl = (name: string) => `/brand-icons/${name}.svg`;
 const compact = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
 const brandByCompactName = new Map(BRAND_ICON_NAMES.map((name) => [compact(name), name]));
 
-/** Logo de marca que coincide com o nome do serviço (ignora maiúsculas, espaços e hífens). */
+/** Brand logo matching the service name (ignores casing, spaces, and hyphens). */
 export function suggestBrandIcon(serviceName: string): string | null {
   const key = compact(serviceName);
   return key ? (brandByCompactName.get(key) ?? null) : null;
 }
 
-/** Como um valor de ícone será desenhado. */
+/** How an icon value will be rendered. */
 export function iconKind(value: string): 'empty' | 'lucide' | 'brand' | 'image' | 'text' {
   if (!value) return 'empty';
   if (value.startsWith('lucide:')) return 'lucide';

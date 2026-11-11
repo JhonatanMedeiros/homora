@@ -5,19 +5,19 @@ primary_target: "src/App.tsx"
 related_targets: []
 ---
 
-# Surface brief: Homora (app inteira)
+# Surface brief: Homora (entire app)
 
-Modo: Operate. Serviços, Integrações e Agentes, mais a tela de acesso.
+Mode: Operate. Services, Connections, and Agents, plus the access screen.
 
-## Público, tarefa e restrições
-Quem mantém um homelab e abre serviços todo dia; de vez em quando organiza, conecta integrações e revisa propostas de agentes. Tarefa principal: abrir um serviço em um clique e ver se está no ar. pt-BR, teclado completo, telas pequenas, tema claro e escuro, shadcn/ui (base radix) sobre Tailwind v4 com todos os elementos como componentes.
+## Audience, task, and constraints
+Anyone maintaining a homelab and opening services daily; occasionally organizes, connects integrations, and reviews agent proposals. Main task: open a service in one click and check if it is online. English and pt-BR, full keyboard navigation, small screens, light and dark theme, shadcn/ui (radix base) over Tailwind v4 with all elements as components.
 
 ## Direction contract
 
-THESIS: Tudo no Homora é rotulado, como o rack de quem organiza a própria casa: a fita da rotuladora é a assinatura. Recusa o painel genérico de cards iguais com ponto de estado.
-OWN-WORLD: grafite aquecido (oklch ~0.2, matiz 70), barra superior grafite nos dois temas, conteúdo em papel quente no claro e grafite no escuro; amarelo de fita (oklch ~0.88 0.17 95) só como preenchimento de ação principal e foco, nunca como texto; estados verde/vermelho/cinza sempre com texto e ícone. Barlow Semi Condensed para rótulos e títulos, Figtree no corpo, JetBrains Mono para endereços e dados. Raio 6-8px, sem sombra decorativa.
-STORY: a pessoa entende em segundos o que está no ar, abre qualquer serviço em um clique e sabe o que pede atenção; propostas de agentes aparecem como mudanças revisáveis com decisão explícita.
-FIRST VIEWPORT: barra superior grafite com marca, tema, saída e Gerenciar; abaixo, título, busca, resumo de saúde e grupos de serviços em grade. A administração abre diretamente em Serviços e grupos e oferece navegação persistente para Serviços, Integrações e Agentes, com retorno para o início. Os controles de edição e remoção aparecem apenas no gerenciamento.
-FORM: Etiqueta de patch panel, escolha do Impeccable. seed:f5c5d0470b6ce9b7. Sinal-assinatura: LabelTape (título de grupo e de seção) e StatusTag (estado como etiqueta de fita com ícone e texto).
+THESIS: Everything in Homora is labeled, like a rack organized at home: label-maker tape is the signature. Rejects generic dashboards of identical cards with plain status dots.
+OWN-WORLD: warm graphite (oklch ~0.2, hue 70), graphite top bar in both themes, warm paper content in light theme and graphite in dark theme; label tape yellow (oklch ~0.88 0.17 95) only for primary action fills and focus rings, never as text color; green/red/gray status always paired with text and icon. Barlow Semi Condensed for labels and titles, Figtree in body copy, JetBrains Mono for URLs and data. Radius 6-8px, no decorative shadows.
+STORY: the user understands in seconds what is online, opens any service in one click, and spots what needs attention; agent proposals appear as reviewable diffs with explicit decisions.
+FIRST VIEWPORT: graphite top bar with branding, theme switcher, sign out, and Manage button; below, title, search, health summary, and service groups in a grid. Management opens directly on Services and groups and provides persistent navigation across Services, Connections, and Agents, with a back link to the dashboard. Edit and remove controls appear only in management.
+FORM: Patch panel label, chosen via Impeccable. seed:f5c5d0470b6ce9b7. Signature marks: LabelTape (group and section title) and StatusTag (status as tape label with icon and text).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

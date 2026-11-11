@@ -21,7 +21,7 @@ if (created) {
   } finally {
     database.close();
   }
-  console.log('Banco de desenvolvimento criado com serviços de exemplo.');
+  console.log('Development database created with sample services.');
 }
 process.env.HOMORA_DATABASE_PATH = databasePath;
 await import('./server.js');

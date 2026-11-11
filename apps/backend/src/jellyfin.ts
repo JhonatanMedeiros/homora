@@ -47,10 +47,10 @@ export function createJellyfinAdapter(
           path: `${url.pathname.replace(/\/+$/, '')}/System/Info/Public`,
         });
       } catch {
-        throw new Error('Não foi possível consultar o Jellyfin.');
+        throw new Error('Could not query Jellyfin.');
       }
       if (response.status !== 200 || !response.body || typeof response.body !== 'object')
-        throw new Error('Resposta Jellyfin inválida.');
+        throw new Error('Invalid Jellyfin response.');
       const body = response.body as Record<string, unknown>;
       if (
         typeof body.ServerName !== 'string' ||
@@ -60,7 +60,7 @@ export function createJellyfinAdapter(
         !body.Version ||
         body.Version.length > 128
       )
-        throw new Error('Resposta Jellyfin inválida.');
+        throw new Error('Invalid Jellyfin response.');
       return { name: body.ServerName, version: body.Version };
     },
   };

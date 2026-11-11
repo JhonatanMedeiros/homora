@@ -1,6 +1,6 @@
 ---
 name: Homora
-description: Painel self-hosted de homelab em que tudo é rotulado como num patch panel, grafite aquecido com fita laminada de rotuladora.
+description: Self-hosted homelab dashboard where everything is labeled like a patch panel, warm graphite with laminated label-maker tape.
 colors:
   tape-yellow: 'oklch(0.87 0.17 95)'
   tape-yellow-dark: 'oklch(0.88 0.17 95)'
@@ -166,141 +166,141 @@ components:
 
 ## Overview
 
-**Creative North Star: "A Etiqueta de Patch Panel"**
+**Creative North Star: "The Patch Panel Label"**
 
-Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de seção e o estado de cada serviço usam a linguagem de fita, enquanto grupos de serviços têm títulos mais discretos. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.
+Everything in Homora is labeled, like a rack organized at home. The laminated tape from a label-maker is the signature: section titles and the status of each service use tape language, while service groups have more understated titles. The rest is warm graphite (hue 70) and warm paper, calm and dense enough for a daily dashboard. The system rejects the generic dashboard of identical cards with plain status dots.
 
-A barra superior é grafite nos dois temas, como uma referência ao rack. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.
+The top bar is graphite in both themes, referencing the rack. Content lives on warm paper in the light theme and on dark graphite in the dark theme. Color has a functional role: tape yellow fills primary actions, active navigation items, and focus; green, red, and gray indicate status only. Barlow Semi Condensed labels, Figtree reads, JetBrains Mono displays addresses and counts.
 
 **Key Characteristics:**
 
-- Fita laminada branca com texto preto em caixa-alta como sinal-assinatura (LabelTape, StatusTag).
-- Barra superior grafite nos dois temas; gerenciamento acessível por um botão.
-- Amarelo de fita só como preenchimento, nunca como texto.
-- Estado sempre com ícone, texto e cor.
-- Plano: sem sombra decorativa, profundidade por tom e borda.
-- Base shadcn/ui (new-york, Radix, lucide, Tailwind v4), tema por classe `dark`.
+- White laminated tape with black uppercase text as signature mark (LabelTape, StatusTag).
+- Graphite top bar in both themes; management accessible via a single button.
+- Tape yellow only as fill, never as text.
+- Status always with icon, text, and color.
+- Flat: no decorative shadow, depth via tone and border.
+- shadcn/ui base (new-york, Radix, lucide, Tailwind v4), themed via `dark` class.
 
 ## Colors
 
-Grafite aquecido e papel quente, com um único amarelo de fita e três cores de estado. Todos os valores vêm de `src/style.css` e são mantidos em OKLCH, fonte normativa do projeto. Os nomes do frontmatter mapeiam as variáveis shadcn (`--primary`, `--background`, `--sidebar` e assim por diante); o tema escuro redefine as mesmas variáveis sob `.dark`.
+Warm graphite and warm paper, with a single tape yellow and three status colors. All values come from `src/style.css` and are maintained in OKLCH, the project's normative source. Frontmatter names map to shadcn variables (`--primary`, `--background`, `--sidebar`, etc.); the dark theme redefines the same variables under `.dark`.
 
 ### Primary
 
-- **Amarelo de Fita** (`tape-yellow`, `--primary`): preenchimento da ação principal (Adicionar serviço), de itens ativos quando aplicável, seleção de texto e `accent-color`. No escuro vira `tape-yellow-dark`. O texto sobre ele é `tape-yellow-ink`, grafite quase preto.
+- **Tape Yellow** (`tape-yellow`, `--primary`): fill for primary action (Add service), active items when applicable, text selection, and `accent-color`. In dark theme becomes `tape-yellow-dark`. Text on top of it is `tape-yellow-ink`, near-black graphite.
 
 ### Secondary
 
-- **Verde de Disponível** (`status-ok`, `status-ok-night`): estado disponível, preenchimento da etiqueta com texto claro.
-- **Vermelho de Fora do Ar** (`status-down`, `status-down-night`): estado indisponível e ações destrutivas; borda, fundo a 10% e anel no card do serviço fora do ar.
+- **Status OK Green** (`status-ok`, `status-ok-night`): available status, tape fill with light text.
+- **Status Down Red** (`status-down`, `status-down-night`): unavailable status and destructive actions; border, 10% background, and ring on down service cards.
 
 ### Neutral
 
-- **Papel Quente** (`warm-paper`): fundo do conteúdo no claro. **Papel de Card** (`paper-card`): cards, campos, popovers.
-- **Tinta de Grafite** (`graphite-ink`) e **Tinta Apagada** (`graphite-muted-ink`): texto principal e secundário no claro.
-- **Borda de Papel** (`paper-border`) para divisões; **Borda de Campo** (`paper-input-border`) mais firme para campos; **Foco Grafite** (`focus-graphite`) para o anel de foco no claro. No escuro o anel de foco é o amarelo.
-- **Trilho de Rack** (`rack-rail`, `rack-rail-dark` no escuro) com tinta `rack-rail-ink`, hover `rack-rail-hover` e borda `rack-rail-border`.
-- **Fita Laminada** (`laminated-tape`, `night-tape` no escuro) com tinta `tape-ink`: só em LabelTape.
-- **Grafite Noturno** (`night-graphite`), `night-card`, `night-popover`, `night-ink`, `night-muted`, `night-muted-ink`, `night-border`, `night-input-border`: superfícies e texto do tema escuro.
-- **Cinza de Sem Informação** usa `paper-muted` com `graphite-muted-ink` e anel de borda: estado desconhecido ou monitoramento bloqueado.
+- **Warm Paper** (`warm-paper`): content background in light theme. **Paper Card** (`paper-card`): cards, inputs, popovers.
+- **Graphite Ink** (`graphite-ink`) and **Muted Ink** (`graphite-muted-ink`): primary and secondary text in light theme.
+- **Paper Border** (`paper-border`) for dividers; **Field Border** (`paper-input-border`) firmer for inputs; **Focus Graphite** (`focus-graphite`) for focus ring in light theme. In dark theme the focus ring is yellow.
+- **Rack Rail** (`rack-rail`, `rack-rail-dark` in dark) with ink `rack-rail-ink`, hover `rack-rail-hover`, and border `rack-rail-border`.
+- **Laminated Tape** (`laminated-tape`, `night-tape` in dark) with ink `tape-ink`: only in LabelTape.
+- **Night Graphite** (`night-graphite`), `night-card`, `night-popover`, `night-ink`, `night-muted`, `night-muted-ink`, `night-border`, `night-input-border`: dark theme surfaces and text.
+- **No Info Gray** uses `paper-muted` with `graphite-muted-ink` and border ring: unknown status or blocked monitoring.
 
 ### Named Rules
 
-**The Never-Yellow-Text Rule.** O amarelo de fita é preenchimento de ação principal, item ativo e foco. Nunca é cor de texto, de ícone solto nem de link.
+**The Never-Yellow-Text Rule.** Tape yellow is fill for primary actions, active items, and focus. Never a color for text, standalone icons, or links.
 
-**The Status-Needs-Words Rule.** Verde, vermelho e cinza significam estado e vêm sempre com ícone e texto. Cor sozinha nunca comunica estado.
+**The Status-Needs-Words Rule.** Green, red, and gray signify status and always appear with an icon and text. Color alone never communicates status.
 
 ## Typography
 
-**Display/Label Font:** Barlow Semi Condensed 500/600/700 (com Figtree Variable e system-ui)
-**Body Font:** Figtree Variable (com system-ui, sans-serif)
-**Data Font:** JetBrains Mono Variable (com ui-monospace)
+**Display/Label Font:** Barlow Semi Condensed 500/600/700 (with Figtree Variable and system-ui)
+**Body Font:** Figtree Variable (with system-ui, sans-serif)
+**Data Font:** JetBrains Mono Variable (with ui-monospace)
 
-**Character:** Condensada e firme nos rótulos, como letra de rotuladora; legível e amigável no corpo; monoespaçada onde a pessoa copia ou compara endereços e números.
+**Character:** Condensed and sturdy in labels, like label-maker print; legible and friendly in body copy; monospaced where users copy or compare URLs, numbers, and identifiers.
 
 ### Hierarchy
 
-- **Headline** (600, 1.875rem, 1.25): título de página (`h1`), tracking -0.025em, `text-balance`.
-- **Title** (600, 1rem, 1.5): `h2`/`h3` e títulos secundários, em Barlow.
-- **Body** (400, 1rem, 1.5): texto corrido e descrições; largura máxima de 65ch no cabeçalho de página. Campos usam 0.875rem a partir de `md`.
-- **Label** (700, 0.8125rem, 0.08em, caixa-alta): texto de LabelTape; StatusTag usa 0.06em.
-- **Data** (400, 0.8125rem): host do serviço, contagens com `tabular-nums`.
+- **Headline** (600, 1.875rem, 1.25): page title (`h1`), tracking -0.025em, `text-balance`.
+- **Title** (600, 1rem, 1.5): `h2`/`h3` and secondary titles, in Barlow.
+- **Body** (400, 1rem, 1.5): body text and descriptions; max width 65ch in page header. Fields use 0.875rem from `md` upwards.
+- **Label** (700, 0.8125rem, 0.08em, uppercase): LabelTape text; StatusTag uses 0.06em.
+- **Data** (400, 0.8125rem): service host, counts with `tabular-nums`.
 
 ### Named Rules
 
-**The Tape-Voice Rule.** Caixa-alta e tracking aberto pertencem só ao texto de fita (LabelTape e StatusTag). Em qualquer outro lugar o texto segue a caixa normal.
+**The Tape-Voice Rule.** Uppercase and wide tracking belong only to tape text (LabelTape and StatusTag). Everywhere else text follows standard casing.
 
 ## Layout
 
-Barra superior grafite com marca, tema, saída e acesso ao gerenciamento. O conteúdo ocupa até 72rem (`max-w-6xl`), com margens laterais de 16px e 32px a partir de `md`. A tela inicial apresenta busca, resumo de disponibilidade e grupos; a navegação administrativa aparece ao entrar em Gerenciar. A grade de serviços tem uma coluna no celular, duas a partir de `sm` e três a partir de `xl`, com intervalo de 12px. Alvos de toque crescem para 44px em ponteiro grosso.
+Graphite top bar with branding, theme switcher, sign out, and management access. Content spans up to 72rem (`max-w-6xl`), with lateral margins of 16px and 32px from `md` upwards. The homepage presents search, availability summary, and groups; administrative navigation appears when entering Manage. The service grid has one column on mobile, two from `sm`, and three from `xl`, with a 12px gap. Touch targets expand to 44px on coarse pointers.
 
 ## Elevation & Depth
 
-O sistema é plano. Profundidade vem de tom (barra mais escura que o papel, card mais claro que o fundo) e de borda de 1px, nunca de sombra projetada. A única exceção é a borda de laminação da fita: um filete interno de 1px a 20% de preto mais um fio de 1px embaixo, que faz a tira parecer papel laminado. Ela vive só em LabelTape.
+The system is flat. Depth comes from tone (top bar darker than paper, card lighter than background) and 1px borders, never from drop shadows. The only exception is the tape lamination edge: an inner 1px bevel at 20% black plus a 1px baseline line, making the strip look like laminated label tape. It exists solely in LabelTape.
 
 ### Named Rules
 
-**The Flat-By-Default Rule.** Sem sombra decorativa em cards, botões, popovers ou campos. Foco usa anel de 3px (`ring/50`), não sombra.
+**The Flat-By-Default Rule.** No decorative shadow on cards, buttons, popovers, or fields. Focus uses a 3px ring (`ring/50`), not a drop shadow.
 
-**The Lamination-Edge Rule.** O filete de fita pertence só a LabelTape. Não o copie para outras superfícies para ganhar relevo.
+**The Lamination-Edge Rule.** The tape bevel belongs only to LabelTape. Do not copy it to other surfaces for faux-relief.
 
 ## Shapes
 
-Raio base de 8px (`--radius`), com 6px, 10px e 14px nos degraus. Controles e cards usam 8px; a fita usa 3px, quase reta, como corte de rotuladora. Bordas de 1px definem os cards; o card em modo Organizar troca para borda tracejada. Serviço fora do ar ganha borda e anel vermelhos e fundo vermelho a 10%. Ícones são sempre Lucide, 16px em botões e 14px dentro de fita.
+Base radius of 8px (`--radius`), with 6px, 10px, and 14px steps. Controls and cards use 8px; tape uses 3px, almost sharp, like a label-maker cut. 1px borders define cards; Organize mode switches cards to dashed borders. Down services get red borders, red focus rings, and 10% red background. Icons are always Lucide, 16px in buttons and 14px inside tape labels.
 
 ## Components
 
 ### Buttons
 
-- **Shape:** cantos de 8px, altura 40px (44px em ponteiro grosso); `sm` 36px, `xs` 24px, `lg` 44px, ícone 40px.
-- **Primary:** amarelo de fita com texto grafite, peso 600, padding 8px 16px; hover a 90% de opacidade.
-- **Outline / Secondary / Ghost / Destructive / Link:** outline em card com borda de campo; secondary em papel; ghost só ganha fundo no hover; destructive em vermelho com texto claro; link sem fundo.
-- **Focus:** anel de 3px a 50%; desabilitado a 50% de opacidade.
+- **Shape:** 8px corners, height 40px (44px on coarse pointers); `sm` 36px, `xs` 24px, `lg` 44px, icon 40px.
+- **Primary:** tape yellow with graphite text, weight 600, padding 8px 16px; hover at 90% opacity.
+- **Outline / Secondary / Ghost / Destructive / Link:** outline on card with field border; secondary on paper; ghost gets background on hover only; destructive in red with light text; link without background.
+- **Focus:** 3px ring at 50%; disabled at 50% opacity.
 
 ### Inputs / Fields
 
-- **Style:** fundo de card, borda `paper-input-border`, 8px, altura 40px.
-- **Focus:** borda e anel de 3px na cor de foco.
-- **Error / Disabled:** borda e anel vermelhos em `aria-invalid`; desabilitado a 50%.
+- **Style:** card background, `paper-input-border`, 8px, height 40px.
+- **Focus:** border and 3px ring in focus color.
+- **Error / Disabled:** red border and ring on `aria-invalid`; disabled at 50%.
 
 ### Cards / Containers
 
-O serviço é um Item com borda, fundo de card, 16px de padding e hover em `accent/40`. O link cobre o card inteiro; ações de editar e remover ficam no canto, a 50% de opacidade em ponteiro fino até hover ou foco.
+A service is an Item with border, card background, 16px padding, and hover in `accent/40`. The link wraps the entire card; edit and remove actions sit in the corner at 50% opacity on fine pointers until hover or focus.
 
 ### Navigation
 
-Barra superior grafite com marca e botão Gerenciar. Na área administrativa, a navegação fica lateral em telas maiores e acima do conteúdo no celular; o item ativo usa a variante secundária. Voltar ao início retorna ao painel de serviços.
+Graphite top bar with branding and Manage button. In administrative views, navigation is sidebar-based on larger screens and above content on mobile; active item uses secondary variant. Returning home goes back to the services dashboard.
 
-### LabelTape (assinatura)
+### LabelTape (signature)
 
-Tira branca laminada (24px de altura, 28px em título de seção) com Barlow 700 em caixa-alta, 0.8125rem, tracking 0.08em, texto preto, raio 3px e borda de laminação. Identifica tipos de recurso quando necessário; títulos de seção são discretos por padrão. Grupos de serviços usam título em Barlow, ícone de pasta, contagem discreta e um separador horizontal. Nas áreas de integrações e agentes, títulos de seção usam texto e separador discretos, sem fita. Em `src/components/label-tape.tsx`.
+Laminated white strip (24px height, 28px on section titles) with Barlow 700 uppercase, 0.8125rem, 0.08em tracking, black text, 3px radius, and lamination bevel. Identifies resource types when necessary; section titles are subtle by default. Service groups use Barlow titles, folder icon, subtle counter, and a horizontal divider. In integrations and agents sections, section titles use subtle text and dividers without tape. In `src/components/label-tape.tsx`.
 
-### StatusTag (assinatura)
+### StatusTag (signature)
 
-Etiqueta de estado com a mesma geometria da fita: ícone Lucide de 14px mais texto em caixa-alta. Disponível em verde com CircleCheck; Indisponível em vermelho com CircleX; Sem informação e Monitoramento bloqueado em cinza com anel de borda, com CircleHelp e ShieldOff. Em `src/components/status-tag.tsx`; o resumo de saúde reúne várias numa linha.
+Status label with the same geometry as the tape: 14px Lucide icon plus uppercase text. Available in green with CircleCheck; Unavailable in red with CircleX; No information and Blocked monitoring in gray with border ring, with CircleHelp and ShieldOff. In `src/components/status-tag.tsx`; the health summary presents several inline.
 
-### Base shadcn e componentização
+### shadcn Base and Componentization
 
-Base shadcn/ui estilo new-york com Radix (`radix-ui`), ícones lucide, Tailwind v4 com tokens em `@theme inline` e tema por classe `dark` (`@custom-variant dark`). Primitivos vivem em `src/components/ui`, componentes de produto em `src/components`, telas em `src/pages` e módulos de domínio em `src/features`. Todo elemento da interface é um componente; não se escreve marcação solta nas páginas.
+shadcn/ui new-york style base with Radix (`radix-ui`), lucide icons, Tailwind v4 with tokens in `@theme inline`, and theme switching via `dark` class (`@custom-variant dark`). Primitives live in `src/components/ui`, product components in `src/components`, pages in `src/pages`, and domain modules in `src/features`. Every UI element is a component; no raw unencapsulated markup on pages.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** usar títulos discretos como padrão em seções e StatusTag para todo estado de serviço; LabelTape fica reservada a usos explícitos, como o tipo de recurso.
-- **Do** reservar o amarelo de fita para a ação principal, o item ativo e o foco.
-- **Do** compor telas com primitivos de `components/ui` e componentes de `components`, colocando páginas em `pages` e módulos em `features`.
-- **Do** mostrar endereços e contagens em JetBrains Mono.
-- **Do** manter a barra superior grafite nos dois temas e trocar o tema só pela classe `dark`.
+- **Do** use subtle titles as default in sections and StatusTag for all service statuses; LabelTape is reserved for explicit uses, such as resource types.
+- **Do** reserve tape yellow for primary action, active item, and focus.
+- **Do** compose screens with primitives from `components/ui` and components from `components`, placing pages in `pages` and modules in `features`.
+- **Do** display hosts and counts in JetBrains Mono.
+- **Do** maintain graphite top bar in both themes and toggle theme only via `dark` class.
 
 ### Don't:
 
-- **Don't** usar amarelo como cor de texto, de link ou de ícone solto.
-- **Don't** comunicar estado só por cor: sempre ícone mais texto.
-- **Don't** adicionar sombra decorativa; o filete de laminação da LabelTape é a única borda em relevo.
-- **Don't** voltar ao painel genérico de cards iguais com ponto de estado.
-- **Don't** usar caixa-alta com tracking aberto fora do texto de fita.
+- **Don't** use yellow as text color, link color, or standalone icon color.
+- **Don't** communicate status by color alone: always icon plus text.
+- **Don't** add decorative shadows; LabelTape's lamination bevel is the only raised edge.
+- **Don't** regress to a generic dashboard of identical cards with status dots.
+- **Don't** use uppercase with wide tracking outside tape text.
 
-## Navegação da tela inicial
+## Homepage Navigation
 
-A tela inicial prioriza busca, disponibilidade e abertura dos serviços. A barra superior grafite mantém a marca, tema, saída e o acesso discreto a **Gerenciar**. A área de gerenciamento reúne serviços e grupos, integrações e agentes; a edição e remoção de cards ficam nessa área. A disposição se adapta a telas pequenas sem expor abas administrativas na tela inicial.
+The homepage prioritizes search, availability, and launching services. The graphite top bar retains branding, theme toggle, sign out, and subtle access to **Manage**. The management area brings together services and groups, connections, and agents; editing and removing cards reside in this area. Layout adapts to small screens without exposing administrative tabs on the homepage.

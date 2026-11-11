@@ -12,7 +12,7 @@ export type Connection = {
   username?: string;
   slug?: string;
 };
-/** Tipos que um widget pode ter: as conexões e o Proxmox, que ainda usa o cofre legado. */
+/** Widget kinds: connection catalog types and Proxmox, which still uses the legacy vault. */
 export type WidgetKind = Kind | 'proxmox';
 export type IntegrationWidget = {
   id: number;
@@ -111,7 +111,7 @@ export function describeData(type: WidgetKind, value: unknown): string | null {
   }
 }
 
-/** Números e textos curtos de uma consulta, para exibir dentro de um card. */
+/** Short numbers and text from a query, for display within a card. */
 export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const data = value as Record<string, unknown>;
@@ -129,7 +129,7 @@ export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | nu
         v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100);
       if (!group(data.vms) || !group(data.containers) || !share(data.cpu) || !share(data.memory))
         return null;
-      // Respostas de versões anteriores não tinham o disco; tratar como ausente.
+      // Responses from older versions lacked disk metric; treat as absent.
       const disk = data.disk === undefined ? null : data.disk;
       if (!share(disk)) return null;
       const stats: WidgetStat[] = [

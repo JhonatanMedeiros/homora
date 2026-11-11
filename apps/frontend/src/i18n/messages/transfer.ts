@@ -1,4 +1,4 @@
-/** Textos de configurações, exportação e importação. */
+/** Text for settings, export, and import. */
 export const en = {
   'nav.settings': 'Settings',
   'discovery.title': 'Docker discovery',

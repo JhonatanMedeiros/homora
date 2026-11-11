@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { FIELDS, type Diff } from './agent-model';
 import { t } from '@/i18n';
 
-/** Mudança proposta em linguagem clara: título da operação e campo a campo, antes e depois. */
+/** Proposed change in clear language: operation title and field-by-field before and after. */
 export function ProposalChange({ diff, current }: { diff: Diff; current?: Service }) {
   const name = diff.service?.name ?? current?.name;
   const fallback = t('proposal.serviceNumber', { id: diff.id ?? '' });

@@ -52,7 +52,7 @@ const REASON_LABEL = {
   unchecked: 'status.unchecked',
 } as const;
 
-/** Um serviço: abre em nova aba, mostra o estado em fita e tem ações de edição. */
+/** A service: opens in a new tab, displays status as tape label, and has edit actions. */
 export function ServiceCard({
   service: s,
   status,

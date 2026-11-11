@@ -1,4 +1,4 @@
-/** Textos das conexões e dos widgets de integração. */
+/** Text for connections and integration widgets. */
 export const en = {
   'connections.title': 'Your connections',
   'connections.description': 'Connect services to read information from your homelab.',

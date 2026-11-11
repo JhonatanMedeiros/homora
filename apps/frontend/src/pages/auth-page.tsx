@@ -16,7 +16,7 @@ type Props = {
   onSubmit: (password: string) => Promise<boolean>;
 };
 
-/** Criação da conta de administrador e entrada. */
+/** Admin account setup and sign in. */
 export function AuthPage({ status, error, onSubmit }: Props) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);

@@ -9,9 +9,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Etiqueta de patch panel: grafite aquecido, fita branca laminada para rotular e
- * amarelo de fita só como preenchimento de ação e foco. Verde, vermelho e cinza
- * significam estado, sempre acompanhados de texto e ícone.
+ * Patch panel label: warm graphite, laminated white tape for labeling, and
+ * tape yellow only for action and focus fills. Green, red, and gray
+ * denote status, always accompanied by text and icon.
  */
 :root {
   --radius: 0.5rem;

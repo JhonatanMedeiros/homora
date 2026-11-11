@@ -7,13 +7,13 @@ import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 
-it('liga um widget a um card, troca, desliga e preserva o widget ao remover o card', async () => {
+it('attaches a widget to a card, switches it, detaches it, and preserves the widget when removing the card', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-card-widgets-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
   const auth = createAuth(`${path}.auth`);
-  auth.setup('senha-para-testes');
-  const cookie = `homora_session=${auth.login('senha-para-testes', 'test')}`;
+  auth.setup('password-for-tests');
+  const cookie = `homora_session=${auth.login('password-for-tests', 'test')}`;
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, createVault(path));
   const send = (method: 'POST' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>

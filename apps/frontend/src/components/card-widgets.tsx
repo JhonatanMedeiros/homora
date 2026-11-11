@@ -1,7 +1,7 @@
 import { t } from '@/i18n';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 
-/** Dados de integrações dentro do card, com estado de carregamento, erro e dados inválidos. */
+/** Integration data within the card, with loading, error, and invalid data states. */
 export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
   if (widgets.length === 0) return null;
   return (

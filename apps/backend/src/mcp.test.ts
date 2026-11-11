@@ -8,11 +8,11 @@ import { expect, it } from 'vitest';
 import { createMcp } from './mcp.js';
 import { createVault } from './vault.js';
 import { createProposalService } from './proposals.js';
-it('valida entradas de proposta e lista serviços sem segredos', async () => {
+it('validates proposal inputs and lists services without secrets', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-'));
   const db = new DatabaseSync(':memory:');
   db.exec(
-    "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT, url TEXT, category TEXT, description TEXT, icon TEXT DEFAULT '', position INTEGER DEFAULT 0, allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER); INSERT INTO services(id,name,url,category,description) VALUES (1,'Jellyfin','http://localhost/','Mídia',''); CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT); CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);",
+    "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT, url TEXT, category TEXT, description TEXT, icon TEXT DEFAULT '', position INTEGER DEFAULT 0, allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER); INSERT INTO services(id,name,url,category,description) VALUES (1,'Jellyfin','http://localhost/','Media',''); CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT); CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);",
   );
   const identity = createProposalService(db).issue('test', ['services:read', 'proposals:create']);
   process.env.HOMORA_AGENT_TOKEN = identity.token;
@@ -38,7 +38,7 @@ it('valida entradas de proposta e lista serviços sem segredos', async () => {
       name: 'propose_service_card',
       arguments: {
         op: 'create',
-        service: { name: 'Casa', url: 'http://localhost:8000', category: 'Homelab', admin: true },
+        service: { name: 'Home', url: 'http://localhost:8000', category: 'Homelab', admin: true },
       },
     });
     expect(unknownField.isError).toBe(true);
@@ -46,7 +46,7 @@ it('valida entradas de proposta e lista serviços sem segredos', async () => {
       name: 'propose_service_card',
       arguments: {
         op: 'create',
-        service: { name: 'Casa', url: 'http://localhost:8000', category: 'Homelab' },
+        service: { name: 'Home', url: 'http://localhost:8000', category: 'Homelab' },
       },
     });
     expect(proposal.isError, JSON.stringify(proposal)).not.toBe(true);

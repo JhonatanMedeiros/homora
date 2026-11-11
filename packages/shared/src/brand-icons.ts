@@ -1,7 +1,7 @@
 /**
- * Logos de marca embutidos (`brand:nome`), servidos de `/brand-icons/<nome>.svg`.
- * Vêm do projeto dashboard-icons (Apache-2.0); veja THIRD_PARTY_NOTICES.md.
- * Marcas pertencem a seus donos e aparecem só para identificar o serviço.
+ * Built-in brand logos (`brand:name`), served from `/brand-icons/<name>.svg`.
+ * Sourced from the dashboard-icons project (Apache-2.0); see THIRD_PARTY_NOTICES.md.
+ * Trademarks belong to their respective owners and appear solely to identify the service.
  */
 export const BRAND_ICON_NAMES = [
   'actual-budget',

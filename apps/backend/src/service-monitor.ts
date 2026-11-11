@@ -4,36 +4,36 @@ import { authorizeDestination } from './network-policy.js';
 import { getAuthorizedResponse } from './network-request.js';
 
 /**
- * Por que o serviço está nesse estado. `status` continua sendo o resumo (disponível,
- * indisponível ou sem informação); `reason` explica o resultado da verificação.
+ * Explains service health status. `status` remains high-level summary (available,
+ * unavailable, or unknown); `reason` explains probe details.
  */
 export type StatusReason =
   | 'responding' // 2xx
-  | 'redirect' // 3xx, sem seguir o redirecionamento
-  | 'login-required' // 401 ou 403: responde, mas exige credenciais
+  | 'redirect' // 3xx, without following redirect
+  | 'login-required' // 401 or 403: responds, but requires credentials
   | 'not-found' // 404
-  | 'error-status' // outros 4xx e 5xx
-  | 'reachable' // ping ICMP respondido
-  | 'no-response' // falha de rede, DNS, TLS, ping sem resposta ou tempo esgotado
-  | 'unchecked'; // ainda não verificado
+  | 'error-status' // other 4xx and 5xx
+  | 'reachable' // successful ICMP ping
+  | 'no-response' // network, DNS, TLS failure, unanswered ping, or timeout
+  | 'unchecked'; // not yet probed
 
 export type ServiceStatus = {
   status: 'available' | 'unavailable' | 'unknown';
   lastAttempt: string | null;
   reason: StatusReason;
-  /** Código HTTP recebido; nulo quando não houve resposta ou ainda não foi verificado. */
+  /** HTTP status code received; null when no response or not yet checked. */
   httpStatus: number | null;
-  /** Tempo até a resposta, em milissegundos; nulo quando não houve resposta. */
+  /** Latency in milliseconds; null when no response. */
   latencyMs: number | null;
 };
 
-/** `httpStatus` é nulo quando a verificação foi um ping ICMP respondido. */
+/** `httpStatus` is null when check was a successful ICMP ping. */
 export type CheckResult = { httpStatus: number | null; latencyMs: number };
 
-/** O binário `ping` não existe ou não pode ser usado: não é uma falha do serviço. */
+/** The `ping` binary is missing or cannot be used: this is not a service failure. */
 export class PingUnavailableError extends Error {}
 
-/** Traduz o código HTTP no estado exibido. Serviços que respondem, mesmo pedindo login, estão no ar. */
+/** Translates HTTP status into displayed state. Responding services, even demanding login, are considered online. */
 export function classify(httpStatus: number): Pick<ServiceStatus, 'status' | 'reason'> {
   if (httpStatus >= 200 && httpStatus < 300) return { status: 'available', reason: 'responding' };
   if (httpStatus >= 300 && httpStatus < 400) return { status: 'available', reason: 'redirect' };
@@ -51,19 +51,19 @@ const unchecked = (): ServiceStatus => ({
   latencyMs: null,
 });
 
-/** Frequência com que o monitor procura serviços vencidos; cada serviço tem o próprio intervalo. */
+/** Polling frequency to find due services; each service configures its own interval. */
 const tickMs = 10_000;
-/** Folga para que um serviço verificado há quase um intervalo não espere mais um tick. */
+/** Tolerance buffer so services checked nearly an interval ago do not wait for another tick. */
 const dueSlackMs = 2_000;
-/** Tempo máximo para iniciar verificações em um ciclo; o que sobrar fica para o próximo. */
+/** Maximum duration to initiate checks within a cycle; remaining services carry over to next cycle. */
 const cycleBudgetMs = 45_000;
 const maxConcurrentChecks = 5;
 
-/** Mede um ping ICMP ao endereço já autorizado e fixado pela política de destinos. */
+/** Executes an ICMP ping to the authorized, DNS-pinned address from network policy. */
 function ping(address: string, family: number): Promise<CheckResult> {
   return new Promise((resolve, reject) => {
     const startedAt = Date.now();
-    // Sem shell: o endereço é um IP validado, passado como argumento isolado.
+    // No shell: address is a validated IP passed as an isolated argument.
     execFile(
       'ping',
       [family === 6 ? '-6' : '-4', '-c', '1', '-W', '2', '-n', address],
@@ -71,11 +71,11 @@ function ping(address: string, family: number): Promise<CheckResult> {
       (error, stdout) => {
         if (error) {
           reject(
-            // ENOENT: sem o binário; 126: sem permissão (por exemplo, contêiner sem NET_RAW).
+            // ENOENT: missing binary; 126: permission denied (e.g. container lacking NET_RAW).
             (error as { code?: unknown }).code === 'ENOENT' ||
               (error as { code?: unknown }).code === 126
               ? new PingUnavailableError()
-              : new Error('Sem resposta ao ping.'),
+              : new Error('No response to ping.'),
           );
           return;
         }
@@ -142,9 +142,9 @@ export function createServiceMonitor(
       for (const id of states.keys()) if (!currentIds.has(id)) states.delete(id);
       for (const service of current)
         if (!states.has(service.id)) states.set(service.id, unchecked());
-      // Sem limite fixo de quantidade: os mais antigos (ou nunca verificados) vão primeiro e o
-      // ciclo para de iniciar verificações ao esgotar o orçamento. O restante mantém o estado
-      // anterior e passa à frente no ciclo seguinte.
+      // No fixed quantity limit: oldest (or never probed) run first, and cycle stops
+      // initiating checks once time budget is exhausted. Remaining services retain previous
+      // state and take precedence in the following cycle.
       const lastOf = (id: number) => states.get(id)?.lastAttempt ?? '';
       const startedAt = now();
       const isDue = (service: Service) => {

@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { createAdGuardAdapter } from './adguard.js';
 
 const config = { url: 'https://adguard.example:3000', username: 'user', password: 'fake-secret' };
-it('consulta status usando Basic Auth e limita os campos retornados', async () => {
+it('queries status using Basic Auth and limits returned fields', async () => {
   const transport = vi.fn(async () => ({
     status: 200,
     body: {
@@ -23,7 +23,7 @@ it('consulta status usando Basic Auth e limita os campos retornados', async () =
     authorization: `Basic ${Buffer.from('user:fake-secret').toString('base64')}`,
   });
 });
-it('valida antes de consultar e não permite credenciais em HTTP', async () => {
+it('validates before querying and disallows credentials over HTTP', async () => {
   const transport = vi.fn();
   const adapter = createAdGuardAdapter(transport);
   for (const changed of [
@@ -35,14 +35,14 @@ it('valida antes de consultar e não permite credenciais em HTTP', async () => {
     await expect(adapter.collect({ ...config, ...changed })).rejects.toThrow();
   expect(transport).not.toHaveBeenCalled();
 });
-it('sanitiza falhas e recusa resposta com credencial', async () => {
+it('sanitizes failures and rejects responses containing credentials', async () => {
   const failed = createAdGuardAdapter(async () => {
     throw new Error(config.password);
   });
-  await expect(failed.collect(config)).rejects.toThrow('Não foi possível conectar');
+  await expect(failed.collect(config)).rejects.toThrow('Could not connect');
   const invalid = createAdGuardAdapter(async () => ({
     status: 200,
     body: { running: true, protection_enabled: true, version: config.password },
   }));
-  await expect(invalid.collect(config)).rejects.toThrow('Resposta inválida');
+  await expect(invalid.collect(config)).rejects.toThrow('Invalid response');
 });

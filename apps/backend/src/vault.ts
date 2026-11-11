@@ -37,9 +37,7 @@ export function validateProxmoxConfig(input: ProxmoxConfig): ProxmoxConfig {
       const cert = new X509Certificate(input.ca);
       if (!cert.ca) throw new Error();
     } catch {
-      throw new Error(
-        'Certificado de CA inválido. Envie um certificado público de CA em formato PEM.',
-      );
+      throw new Error('Invalid CA certificate. Provide a public CA certificate in PEM format.');
     }
   }
   return {
@@ -55,11 +53,11 @@ export function createVault(base: string) {
   function key(create: boolean) {
     try {
       const value = readFileSync(keyPath);
-      if (value.length !== 32) throw new Error('Chave inválida.');
+      if (value.length !== 32) throw new Error('Invalid key.');
       return value;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT' || !create) throw error;
-      if (existsSync(dataPath)) throw new Error('Chave de integração ausente.', { cause: error });
+      if (existsSync(dataPath)) throw new Error('Missing integration key.', { cause: error });
       const value = randomBytes(32);
       writeFileSync(keyPath, value, { mode: 0o600, flag: 'wx' });
       return value;

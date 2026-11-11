@@ -25,7 +25,7 @@ function setup(value: ServiceInput = emptyService) {
   return onChange;
 }
 
-it('permite escolher ping e o intervalo, e volta ao padrão com o campo vazio', () => {
+it('allows selecting ping and interval, restoring default when empty', () => {
   const onChange = setup();
   const method = screen.getByLabelText('Método de verificação') as HTMLSelectElement;
   expect(method.value).toBe('http');
@@ -39,7 +39,7 @@ it('permite escolher ping e o intervalo, e volta ao padrão com o campo vazio', 
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ checkInterval: 120 }));
 });
 
-it('avisa que o ping não diz nada sobre o serviço', () => {
+it('warns that ping proves host reachability, not service health', () => {
   setup({ ...emptyService, checkType: 'ping', checkInterval: 45 });
   expect(screen.getByText(/não diz nada sobre o serviço/)).toBeTruthy();
   expect((screen.getByLabelText('Verificar a cada (segundos)') as HTMLInputElement).value).toBe(

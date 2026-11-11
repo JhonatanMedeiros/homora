@@ -1,7 +1,7 @@
 /**
- * Erros da API: cada resposta de erro tem um `code` estável (que a interface traduz) e um
- * `error` com a mensagem padrão em inglês, útil para clientes que não traduzem.
- * Detalhes internos, caminhos e textos de terceiros nunca entram na resposta.
+ * API errors: each error response has a stable `code` (translated by the frontend) and an
+ * `error` with the default message in English, useful for clients that do not translate.
+ * Internal details, paths and third-party texts never enter the response.
  */
 export const ERROR_MESSAGES = {
   'auth-required': 'Authentication required.',
@@ -82,12 +82,12 @@ export const ERROR_MESSAGES = {
 
 export type ErrorCode = keyof typeof ERROR_MESSAGES;
 
-/** Corpo padrão de uma resposta de erro. */
+/** Standard body for an error response. */
 export const errorBody = (code: ErrorCode) => ({ code, error: ERROR_MESSAGES[code] });
 
 /**
- * Erro de entrada do usuário que pode ser mostrado ao cliente. Qualquer outro erro lançado
- * por um adaptador é tratado como interno e vira uma resposta genérica.
+ * User input error that can be displayed to the client. Any other error thrown
+ * by an adapter is treated as internal and becomes a generic response.
  */
 export class InputError extends Error {
   readonly code: ErrorCode;

@@ -1,48 +1,48 @@
-# Avisos de terceiros
+# Third-Party Notices
 
-O Homora é distribuído sob a licença MIT (veja [LICENSE](LICENSE)). Este
-arquivo resume as licenças das dependências de produção, conforme
-`pnpm licenses list --prod` em 2026-11-10. Reexecute o comando ao atualizar
-dependências; o texto completo de cada licença acompanha o pacote
-correspondente em `node_modules`.
+Homora is distributed under the MIT license (see [LICENSE](LICENSE)). This
+file summarizes licenses of production dependencies, according to
+`pnpm licenses list --prod` on 2026-11-10. Re-run this command when updating
+dependencies; the full text of each license accompanies the corresponding
+package in `node_modules`.
 
-| Licença      | Pacotes                                                                     |
-| ------------ | --------------------------------------------------------------------------- |
-| MIT e ISC    | A grande maioria das dependências, incluindo `yaml` (ISC).                  |
-| Apache-2.0   | `class-variance-authority`, `detect-libc`, `drizzle-orm`                    |
-| BSD-3-Clause | `fast-uri`, `light-my-request`, `qs`, `secure-json-parse`, `source-map-js`  |
-| BSD-2-Clause | `json-schema-typed`                                                         |
-| 0BSD         | `tslib`                                                                     |
-| MPL-2.0      | `lightningcss` (ferramenta de build do CSS; não é executada em produção)    |
-| OFL-1.1      | Fontes Figtree, JetBrains Mono e Barlow Semi Condensed (pacotes Fontsource) |
+| License      | Packages                                                                       |
+| ------------ | ------------------------------------------------------------------------------ |
+| MIT and ISC  | The vast majority of dependencies, including `yaml` (ISC).                     |
+| Apache-2.0   | `class-variance-authority`, `detect-libc`, `drizzle-orm`                       |
+| BSD-3-Clause | `fast-uri`, `light-my-request`, `qs`, `secure-json-parse`, `source-map-js`     |
+| BSD-2-Clause | `json-schema-typed`                                                            |
+| 0BSD         | `tslib`                                                                        |
+| MPL-2.0      | `lightningcss` (CSS build tool; not executed at runtime in production)         |
+| OFL-1.1      | Figtree, JetBrains Mono, and Barlow Semi Condensed fonts (Fontsource packages) |
 
-## Ícones
+## Icons
 
-Os ícones `lucide:nome` vêm do pacote `lucide-react` (licença ISC), já listado acima.
-Ícones por URL são de responsabilidade de quem os configura.
+Icons `lucide:name` come from the `lucide-react` package (ISC license), listed above.
+Icons provided by URL are the responsibility of the user configuring them.
 
-Os logos `brand:nome` (163 arquivos SVG em `apps/frontend/public/brand-icons`)
-vêm do projeto [dashboard-icons](https://github.com/homarr-labs/dashboard-icons)
-(licença Apache-2.0, texto em `licenses/dashboard-icons-Apache-2.0.txt`),
-copiados do commit `d767d73`. Foram escolhidos apenas SVG vetoriais, sem
-imagens embutidas, scripts ou referências externas (um teste verifica isso).
-Nomes de produtos, marcas e logos pertencem a seus donos e aparecem somente para
-identificar o serviço, sem sugerir apoio ou parceria; a licença Apache-2.0 do
-repositório não concede direitos sobre marcas de terceiros.
+`brand:name` logos (163 SVG files in `apps/frontend/public/brand-icons`)
+come from the [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) project
+(Apache-2.0 license, text in `licenses/dashboard-icons-Apache-2.0.txt`),
+copied from commit `d767d73`. Only clean vector SVGs were selected, without
+embedded images, scripts, or external references (verified by tests).
+Product names, brands, and logos belong to their respective owners and appear solely to
+identify the service, without implying endorsement or affiliation; the Apache-2.0 license
+of the repository does not grant rights over third-party trademarks.
 
-## Fontes
+## Fonts
 
-As fontes são servidas localmente pelos pacotes Fontsource, sob a SIL Open Font
-License 1.1. Essa licença permite uso e redistribuição, inclusive com o
-software, desde que a licença e os avisos de copyright acompanhem as fontes e
-que elas não sejam vendidas isoladamente. Os arquivos de licença estão nos
-pacotes `@fontsource*`.
+Fonts are served locally via Fontsource packages under the SIL Open Font
+License 1.1. This license permits usage and redistribution alongside software,
+provided that the license and copyright notices accompany the fonts and
+they are not sold individually. License files are included in the `@fontsource*`
+packages.
 
-## Pendências
+## Pending Items
 
-- A imagem Docker publicada deve incluir este arquivo e as licenças das
-  fontes. Isso será tratado junto da imagem reproduzível (R0).
-- A revisão cobriu dependências de produção, fontes e os logos de marca do
-  dashboard-icons (apenas pela licença do repositório; não foi feita revisão de
-  cada marca). Outros assets futuros exigem revisão própria.
-- Não foi feita análise jurídica; a checagem de nome e marca segue pendente.
+- The published Docker image must include this file and font licenses. This will
+  be addressed alongside the reproducible image build (R0).
+- This audit covered production dependencies, fonts, and brand logos from
+  dashboard-icons (under the repository license only; individual trademark review
+  was not performed). Future assets require their own review.
+- No legal analysis was performed; name and trademark checks remain pending.

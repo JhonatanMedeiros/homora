@@ -20,8 +20,8 @@ async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
 }
 
 /**
- * Recursos do sistema para a faixa superior, vindos do widget do Proxmox (sem agente no host).
- * Só CPU, memória e disco entram; VMs e containers ficam para os cards.
+ * System telemetry for top bar, polled from Proxmox widget (no host agent).
+ * Only CPU, memory, and disk are surfaced; VMs and containers remain on cards.
  */
 export function useSystemStats(enabled: boolean): SystemStats {
   const [state, setState] = useState<SystemStats>({ status: 'loading' });

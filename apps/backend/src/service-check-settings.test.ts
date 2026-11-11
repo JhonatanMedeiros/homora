@@ -7,34 +7,34 @@ import { createDatabase } from '@homora/db';
 import { createAuth } from './auth.js';
 import { createApp } from './app.js';
 
-it('guarda o método e o intervalo de verificação, valida limites e leva os valores na exportação', async () => {
+it('stores check method and interval, validates bounds, and carries values in export/import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-check-settings-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
   const auth = createAuth(`${path}.auth`);
-  auth.setup('senha-para-testes');
-  const cookie = `homora_session=${auth.login('senha-para-testes', 'test')}`;
+  auth.setup('test-password');
+  const cookie = `homora_session=${auth.login('test-password', 'test')}`;
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth);
   const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>
     app.inject({ method, url, headers, payload });
-  const base = { name: 'NAS', url: 'http://192.168.1.5', category: 'Casa', description: '' };
+  const base = { name: 'NAS', url: 'http://192.168.1.5', category: 'Home', description: '' };
   try {
-    // padrão: HTTP, intervalo nulo
+    // default: HTTP, null interval
     const plain = (await send('POST', '/api/services', base)).json();
     expect(plain).toMatchObject({ checkType: 'http', checkInterval: null });
 
     const ping = (
       await send('POST', '/api/services', {
         ...base,
-        name: 'Roteador',
+        name: 'Router',
         checkType: 'ping',
         checkInterval: 30,
       })
     ).json();
     expect(ping).toMatchObject({ checkType: 'ping', checkInterval: 30 });
 
-    // limites e valores inválidos
+    // bounds and invalid values
     for (const bad of [
       { checkInterval: 29 },
       { checkInterval: 3601 },
@@ -48,15 +48,15 @@ it('guarda o método e o intervalo de verificação, valida limites e leva os va
       (await send('POST', '/api/services', { ...base, name: 'Y', checkInterval: 3600 })).statusCode,
     ).toBe(201);
 
-    // editar sem os campos preserva; null volta ao padrão
+    // editing without fields preserves existing; null restores default
     const kept = (
-      await send('PUT', `/api/services/${ping.id}`, { ...base, name: 'Roteador novo' })
+      await send('PUT', `/api/services/${ping.id}`, { ...base, name: 'New router' })
     ).json();
-    expect(kept).toMatchObject({ name: 'Roteador novo', checkType: 'ping', checkInterval: 30 });
+    expect(kept).toMatchObject({ name: 'New router', checkType: 'ping', checkInterval: 30 });
     const reset = (
       await send('PUT', `/api/services/${ping.id}`, {
         ...base,
-        name: 'Roteador novo',
+        name: 'New router',
         checkType: 'http',
         checkInterval: null,
       })
@@ -64,24 +64,24 @@ it('guarda o método e o intervalo de verificação, valida limites e leva os va
     expect(reset).toMatchObject({ checkType: 'http', checkInterval: null });
     await send('PUT', `/api/services/${ping.id}`, {
       ...base,
-      name: 'Roteador novo',
+      name: 'New router',
       checkType: 'ping',
       checkInterval: 120,
     });
 
-    // exportação: só leva o que difere do padrão
+    // export: carries only values differing from defaults
     const exported = parse((await send('GET', '/api/config/export?format=yaml')).body);
     const items = Object.fromEntries(
       exported.groups[0].services.map((s: { name: string }) => [s.name, s]),
     );
-    expect(items['Roteador novo']).toMatchObject({ check: 'ping', interval: 120 });
+    expect(items['New router']).toMatchObject({ check: 'ping', interval: 120 });
     expect('check' in items.NAS || 'interval' in items.NAS).toBe(false);
 
-    // importação: valores válidos entram; inválidos avisam e são ignorados
+    // import: valid values apply; invalid values trigger warnings and are ignored
     const content = [
       'version: 1',
       'groups:',
-      '  - name: Rede',
+      '  - name: Network',
       '    services:',
       '      - name: Switch',
       '        url: http://192.168.1.2',

@@ -2,8 +2,8 @@ import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Assinatura do Homora: tira de fita laminada de rotuladora. Rotula grupos, seções e
- * contagens. Texto preto em caixa-alta sobre fita branca, nos dois temas.
+ * Homora signature style: laminated label maker tape. Labels groups, sections,
+ * and counters. High-contrast uppercase text over tape background across both themes.
  */
 export function LabelTape({ className, ...props }: ComponentProps<'span'>) {
   return (

@@ -10,7 +10,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('resume cada tipo de integração e rejeita dados fora do formato', () => {
+it('summarizes each integration type and rejects malformed data', () => {
   expect(
     widgetStats('uptime-kuma', { up: 6, down: 7, pending: 0, maintenance: 0, unknown: 0 }),
   ).toEqual([
@@ -71,7 +71,7 @@ it('resume cada tipo de integração e rejeita dados fora do formato', () => {
   expect(widgetStats('jellyfin', null)).toBeNull();
 });
 
-it('mostra dados no card, isola a falha de uma conexão e ignora widgets sem card', async () => {
+it('displays card data, isolates connection failure, and ignores widgets without card', async () => {
   const services = [
     { id: 1, name: 'Monitor', url: 'http://localhost:3001/', category: 'Infra', description: '' },
     { id: 2, name: 'DNS', url: 'http://localhost:3002/', category: 'Infra', description: '' },
@@ -113,7 +113,7 @@ it('mostra dados no card, isola a falha de uma conexão e ignora widgets sem car
   expect(requested.filter((url) => url === '/api/connections/10/data')).toHaveLength(1);
 });
 
-it('mantém os cards quando a lista de widgets falha', async () => {
+it('preserves cards when widget list request fails', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {

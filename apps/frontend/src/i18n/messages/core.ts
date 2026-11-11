@@ -1,4 +1,4 @@
-/** Textos do shell, da autenticação e da tela de serviços. */
+/** Text for the shell, authentication, and services screen. */
 export const en = {
   'route.notFound': 'Page not found',
   'route.home': 'Go to dashboard',

@@ -64,15 +64,15 @@ function origin(value: string): URL {
   try {
     url = new URL(value);
   } catch {
-    throw new Error('Destino inválido.');
+    throw new Error('Invalid destination.');
   }
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.hash)
-    throw new Error('Destino inválido.');
+    throw new Error('Invalid destination.');
   return url;
 }
 
-/** Resolve uma única vez; o chamador deve usar o IP retornado para conectar,
- * preservar hostname para Host/SNI e validação TLS e rejeitar redirecionamentos. */
+/** Resolves only once; caller must use returned IP to connect,
+ * preserve hostname for Host/SNI and TLS validation, and reject redirects. */
 export async function authorizeDestination(
   destination: string,
   policy: DestinationPolicy,
@@ -89,7 +89,7 @@ export async function authorizeDestination(
       }
     })
   )
-    throw new Error('Destino não autorizado.');
+    throw new Error('Unauthorized destination.');
   const hostname = url.hostname.replace(/^\[|\]$/g, '');
   const ipFamily = isIP(hostname);
   const addresses: Address[] = ipFamily
@@ -108,6 +108,6 @@ export async function authorizeDestination(
       );
     })
   )
-    throw new Error('Destino aponta para endereço não permitido.');
+    throw new Error('Destination points to disallowed address.');
   return { url, address: addresses[0] };
 }

@@ -21,13 +21,13 @@ function apply(theme: Theme) {
   root.style.colorScheme = theme;
 }
 
-/** Aplica o tema salvo (ou o do sistema) antes da primeira renderização. */
+/** Applies the saved theme (or system theme) before initial rendering. */
 export function initTheme() {
   let saved: string | null = null;
   try {
     saved = localStorage.getItem(STORAGE_KEY);
   } catch {
-    // Sem armazenamento disponível: segue o tema do sistema.
+    // No storage available: follow system theme.
   }
   apply(saved === 'light' || saved === 'dark' ? saved : systemTheme());
 }
@@ -45,7 +45,7 @@ export function useTheme() {
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // A escolha vale só nesta página.
+      // Choice only applies to this page session.
     }
     listeners.forEach((listener) => listener());
   }, []);

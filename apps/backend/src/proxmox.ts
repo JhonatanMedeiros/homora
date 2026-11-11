@@ -56,7 +56,7 @@ export async function readProxmox(config: ProxmoxConfig): Promise<unknown> {
         res.on('end', () => {
           try {
             const body = JSON.parse(text) as { data?: unknown } | null;
-            if (!body || !Array.isArray(body.data)) throw new Error('Resposta inválida.');
+            if (!body || !Array.isArray(body.data)) throw new Error('Invalid response.');
             resolve(body.data);
           } catch {
             reject(new ProxmoxError('proxmox-invalid-response'));

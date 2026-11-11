@@ -6,7 +6,7 @@
     "colorMeta": {
       "tape-yellow": {
         "role": "primary",
-        "displayName": "Amarelo de Fita",
+        "displayName": "Tape Yellow",
         "canonical": "oklch(0.87 0.17 95)",
         "tonalRamp": [
           "oklch(0.25 0.05 90)",
@@ -21,7 +21,7 @@
       },
       "warm-paper": {
         "role": "neutral",
-        "displayName": "Papel Quente",
+        "displayName": "Warm Paper",
         "canonical": "oklch(0.965 0.008 85)",
         "tonalRamp": [
           "oklch(0.2 0.008 70)",
@@ -36,7 +36,7 @@
       },
       "graphite-ink": {
         "role": "neutral",
-        "displayName": "Tinta de Grafite",
+        "displayName": "Graphite Ink",
         "canonical": "oklch(0.22 0.012 70)",
         "tonalRamp": [
           "oklch(0.15 0.01 70)",
@@ -51,7 +51,7 @@
       },
       "rack-rail": {
         "role": "neutral",
-        "displayName": "Trilho de Rack",
+        "displayName": "Rack Rail",
         "canonical": "oklch(0.235 0.01 70)",
         "tonalRamp": [
           "oklch(0.165 0.008 70)",
@@ -66,7 +66,7 @@
       },
       "laminated-tape": {
         "role": "neutral",
-        "displayName": "Fita Laminada",
+        "displayName": "Laminated Tape",
         "canonical": "oklch(1 0 0)",
         "tonalRamp": [
           "oklch(0.17 0.01 70)",
@@ -81,7 +81,7 @@
       },
       "status-ok": {
         "role": "secondary",
-        "displayName": "Verde de Disponível",
+        "displayName": "Status OK Green",
         "canonical": "oklch(0.45 0.13 150)",
         "tonalRamp": [
           "oklch(0.2 0.05 150)",
@@ -96,7 +96,7 @@
       },
       "status-down": {
         "role": "secondary",
-        "displayName": "Vermelho de Fora do Ar",
+        "displayName": "Status Down Red",
         "canonical": "oklch(0.52 0.19 27)",
         "tonalRamp": [
           "oklch(0.2 0.06 27)",
@@ -113,51 +113,51 @@
     "typographyMeta": {
       "headline": {
         "displayName": "Headline",
-        "purpose": "Título de página em Barlow Semi Condensed 600."
+        "purpose": "Page title in Barlow Semi Condensed 600."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Títulos secundários em Barlow."
+        "purpose": "Secondary titles in Barlow."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Texto corrido em Figtree."
+        "purpose": "Body copy in Figtree."
       },
       "body-compact": {
         "displayName": "Body Compact",
-        "purpose": "Campos e texto denso a partir de md."
+        "purpose": "Form fields and dense text from md upwards."
       },
       "label-tape": {
         "displayName": "Label",
-        "purpose": "Texto de LabelTape e StatusTag, caixa-alta com tracking aberto."
+        "purpose": "LabelTape and StatusTag text, uppercase with wide tracking."
       },
       "data": {
         "displayName": "Data",
-        "purpose": "Hosts, endereços e contagens em JetBrains Mono."
+        "purpose": "Hosts, URLs, and counters in JetBrains Mono."
       }
     },
     "shadows": [
       {
         "name": "lamination-edge",
         "value": "inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18)",
-        "purpose": "Borda de laminação da fita; só em LabelTape, nunca decorativa."
+        "purpose": "Tape lamination edge; only on LabelTape, never decorative."
       },
       {
         "name": "focus-ring",
         "value": "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)",
-        "purpose": "Anel de foco de botões, campos e itens (ring-[3px] ring-ring/50)."
+        "purpose": "Focus ring for buttons, fields, and items (ring-[3px] ring-ring/50)."
       }
     ],
     "motion": [
       {
         "name": "state-transition",
-        "value": "transition-colors / transition-all, duração padrão do Tailwind (150ms)",
-        "purpose": "Hover e foco."
+        "value": "transition-colors / transition-all, standard Tailwind duration (150ms)",
+        "purpose": "Hover and focus."
       },
       {
         "name": "reduced-motion",
-        "value": "animation e transition a 0.01ms sob prefers-reduced-motion: reduce",
-        "purpose": "Respeito global a movimento reduzido."
+        "value": "animation and transition at 0.01ms under prefers-reduced-motion: reduce",
+        "purpose": "Global reduced motion compliance."
       }
     ],
     "breakpoints": [
@@ -180,117 +180,117 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Ação principal em amarelo de fita com texto grafite.",
-      "html": "<button class=\"ds-btn-primary\">Adicionar serviço</button>",
+      "description": "Primary action in tape yellow with graphite text.",
+      "html": "<button class=\"ds-btn-primary\">Add service</button>",
       "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: 0; border-radius: 8px; background: oklch(0.87 0.17 95); color: oklch(0.2 0.02 80); font: 600 14px 'Figtree Variable', system-ui, sans-serif; cursor: pointer; transition: background-color 150ms; } .ds-btn-primary:hover { background: oklch(0.87 0.17 95 / 0.9); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
     },
     {
       "name": "Outline Button",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "Ação secundária em card com borda de campo.",
-      "html": "<button class=\"ds-btn-outline\">Cancelar</button>",
+      "description": "Secondary action on card with input border.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
       "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: 1px solid oklch(0.72 0.012 80); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font: 600 14px 'Figtree Variable', system-ui, sans-serif; cursor: pointer; } .ds-btn-outline:hover { background: oklch(0.92 0.02 90); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input-field",
-      "description": "Campo de texto com borda firme e anel de foco.",
-      "html": "<input class=\"ds-input\" placeholder=\"Buscar serviços\" />",
+      "description": "Text input with crisp border and focus ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search services\" />",
       "css": ".ds-input { height: 40px; width: 240px; padding: 4px 12px; border: 1px solid oklch(0.72 0.012 80); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font: 400 14px 'Figtree Variable', system-ui, sans-serif; outline: none; } .ds-input::placeholder { color: oklch(0.47 0.015 75); } .ds-input:focus-visible { border-color: oklch(0.38 0.02 70); box-shadow: 0 0 0 3px oklch(0.38 0.02 70 / 0.5); }"
     },
     {
       "name": "LabelTape",
       "kind": "chip",
       "refersTo": "label-tape",
-      "description": "Assinatura: tira branca laminada com texto preto em caixa-alta, rotula grupos e seções.",
-      "html": "<span class=\"ds-label-tape\">Infraestrutura</span>",
+      "description": "Signature mark: laminated white tape with black uppercase text, labels groups and sections.",
+      "html": "<span class=\"ds-label-tape\">Infrastructure</span>",
       "css": ".ds-label-tape { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; background: oklch(1 0 0); color: oklch(0.17 0.01 70); font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.2), 0 1px 0 oklch(0 0 0 / 0.18); }"
     },
     {
-      "name": "StatusTag Disponível",
+      "name": "StatusTag Available",
       "kind": "chip",
       "refersTo": "status-tag-available",
-      "description": "Estado disponível: ícone, texto e verde.",
-      "html": "<span class=\"ds-status ds-status-ok\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Disponível</span>",
+      "description": "Available status: icon, text, and green.",
+      "html": "<span class=\"ds-status ds-status-ok\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Available</span>",
       "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; } .ds-status-ok { background: oklch(0.45 0.13 150); color: oklch(0.985 0.005 85); }"
     },
     {
-      "name": "StatusTag Indisponível",
+      "name": "StatusTag Unavailable",
       "kind": "chip",
       "refersTo": "status-tag-unavailable",
-      "description": "Estado fora do ar: ícone, texto e vermelho.",
-      "html": "<span class=\"ds-status ds-status-down\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/></svg>Indisponível</span>",
+      "description": "Unavailable status: icon, text, and red.",
+      "html": "<span class=\"ds-status ds-status-down\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/></svg>Unavailable</span>",
       "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 3px; font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; } .ds-status-down { background: oklch(0.52 0.19 27); color: oklch(0.985 0.005 85); }"
     },
     {
       "name": "Service Card",
       "kind": "card",
       "refersTo": "service-card",
-      "description": "Serviço com ícone, host em mono e StatusTag; nunca só um ponto de estado.",
-      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\"><span class=\"ds-card-icon\">J</span><div><div class=\"ds-card-name\">Jellyfin</div><div class=\"ds-card-host\">jellyfin.casa.lan</div></div></div><span class=\"ds-card-tag\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Disponível</span></div>",
+      "description": "Service card with icon, host in mono, and StatusTag; never just a status dot.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\"><span class=\"ds-card-icon\">J</span><div><div class=\"ds-card-name\">Jellyfin</div><div class=\"ds-card-host\">jellyfin.home.lan</div></div></div><span class=\"ds-card-tag\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Available</span></div>",
       "css": ".ds-card { display: flex; flex-direction: column; gap: 12px; width: 280px; padding: 16px; border: 1px solid oklch(0.87 0.01 85); border-radius: 8px; background: oklch(0.99 0.004 85); color: oklch(0.22 0.012 70); font-family: 'Figtree Variable', system-ui, sans-serif; } .ds-card:hover { background: oklch(0.92 0.02 90 / 0.4); } .ds-card-head { display: flex; gap: 12px; align-items: flex-start; } .ds-card-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: oklch(0.925 0.01 85); font-size: 18px; font-weight: 600; } .ds-card-name { font-size: 16px; font-weight: 600; } .ds-card-host { font: 400 13px 'JetBrains Mono Variable', ui-monospace, monospace; color: oklch(0.47 0.015 75); } .ds-card-tag { display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 24px; padding: 0 8px; border-radius: 3px; background: oklch(0.45 0.13 150); color: oklch(0.985 0.005 85); font: 700 13px/1 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }"
     },
     {
-      "name": "Barra superior",
+      "name": "Top bar",
       "kind": "nav",
-      "description": "Barra grafite com marca e acesso discreto ao gerenciamento.",
-      "html": "<nav class=\"ds-header\"><strong>Homora</strong><button class=\"ds-manage\">Gerenciar</button></nav>",
+      "description": "Graphite bar with branding and subtle access to management.",
+      "html": "<nav class=\"ds-header\"><strong>Homora</strong><button class=\"ds-manage\">Manage</button></nav>",
       "css": ".ds-header { display:flex; align-items:center; justify-content:space-between; gap:24px; min-height:64px; padding:0 16px; background:oklch(0.235 0.01 70); color:oklch(0.94 0.01 85); font:700 20px Barlow Semi Condensed, system-ui, sans-serif; } .ds-manage { min-height:40px; padding:0 16px; border:1px solid oklch(0.32 0.012 70); border-radius:8px; background:transparent; color:inherit; font:600 14px Figtree Variable, system-ui, sans-serif; cursor:pointer; } .ds-manage:hover { background:oklch(0.3 0.012 70); } .ds-manage:focus-visible { outline:2px solid oklch(0.87 0.17 95); outline-offset:2px; }"
     }
   ],
   "narrative": {
-    "northStar": "A Etiqueta de Patch Panel",
-    "overview": "Tudo no Homora é rotulado, como o rack de quem organiza a própria casa. A fita laminada de rotuladora é a assinatura: títulos de seção e o estado de cada serviço usam a linguagem de fita, enquanto grupos de serviços têm títulos mais discretos. O resto é grafite aquecido (matiz 70) e papel quente, calmo e denso o suficiente para um painel de uso diário. O sistema recusa o painel genérico de cards iguais com ponto de estado.\n\nA barra superior é grafite nos dois temas, como uma referência ao rack. O conteúdo vive em papel quente no tema claro e em grafite escuro no tema escuro. A cor tem papel funcional: amarelo de fita preenche a ação principal, o item ativo de navegação e o foco; verde, vermelho e cinza dizem apenas estado. Barlow Semi Condensed rotula, Figtree lê, JetBrains Mono mostra endereços e contagens.",
+    "northStar": "The Patch Panel Label",
+    "overview": "Everything in Homora is labeled, like a rack organized at home. The laminated tape from a label-maker is the signature: section titles and the status of each service use tape language, while service groups have more understated titles. The rest is warm graphite (hue 70) and warm paper, calm and dense enough for a daily dashboard. The system rejects the generic dashboard of identical cards with plain status dots.\n\nThe top bar is graphite in both themes, referencing the rack. Content lives on warm paper in the light theme and on dark graphite in the dark theme. Color has a functional role: tape yellow fills primary actions, active navigation items, and focus; green, red, and gray indicate status only. Barlow Semi Condensed labels, Figtree reads, JetBrains Mono displays addresses and counts.",
     "keyCharacteristics": [
-      "Fita laminada branca com texto preto em caixa-alta como sinal-assinatura (LabelTape, StatusTag).",
-      "Barra superior grafite nos dois temas; gerenciamento acessível por um botão.",
-      "Amarelo de fita só como preenchimento, nunca como texto.",
-      "Estado sempre com ícone, texto e cor.",
-      "Plano: sem sombra decorativa, profundidade por tom e borda.",
-      "Base shadcn/ui (new-york, Radix, lucide, Tailwind v4), tema por classe `dark`."
+      "White laminated tape with black uppercase text as signature mark (LabelTape, StatusTag).",
+      "Graphite top bar in both themes; management accessible via a single button.",
+      "Tape yellow only as fill, never as text.",
+      "Status always with icon, text, and color.",
+      "Flat: no decorative shadow, depth via tone and border.",
+      "shadcn/ui base (new-york, Radix, lucide, Tailwind v4), themed via `dark` class."
     ],
     "rules": [
       {
         "name": "The Never-Yellow-Text Rule",
-        "body": "O amarelo de fita é preenchimento de ação principal, item ativo e foco. Nunca é cor de texto, de ícone solto nem de link.",
+        "body": "Tape yellow is fill for primary actions, active items, and focus. Never a color for text, standalone icons, or links.",
         "section": "colors"
       },
       {
         "name": "The Status-Needs-Words Rule",
-        "body": "Verde, vermelho e cinza significam estado e vêm sempre com ícone e texto. Cor sozinha nunca comunica estado.",
+        "body": "Green, red, and gray signify status and always appear with an icon and text. Color alone never communicates status.",
         "section": "colors"
       },
       {
         "name": "The Tape-Voice Rule",
-        "body": "Caixa-alta e tracking aberto pertencem só ao texto de fita (LabelTape e StatusTag). Em qualquer outro lugar o texto segue a caixa normal.",
+        "body": "Uppercase and wide tracking belong only to tape text (LabelTape and StatusTag). Everywhere else text follows standard casing.",
         "section": "typography"
       },
       {
         "name": "The Flat-By-Default Rule",
-        "body": "Sem sombra decorativa em cards, botões, popovers ou campos. Foco usa anel de 3px (`ring/50`), não sombra.",
+        "body": "No decorative shadow on cards, buttons, popovers, or fields. Focus uses a 3px ring (`ring/50`), not a drop shadow.",
         "section": "elevation"
       },
       {
         "name": "The Lamination-Edge Rule",
-        "body": "O filete de fita pertence só a LabelTape. Não o copie para outras superfícies para ganhar relevo.",
+        "body": "The tape bevel belongs only to LabelTape. Do not copy it to other surfaces for faux-relief.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "Do usar LabelTape para títulos de seção e StatusTag para todo estado de serviço; grupos de serviços usam o cabeçalho discreto próprio.",
-      "Do reservar o amarelo de fita para a ação principal, o item ativo e o foco.",
-      "Do compor telas com primitivos de `components/ui` e componentes de `components`, colocando páginas em `pages` e módulos em `features`.",
-      "Do mostrar endereços e contagens em JetBrains Mono.",
-      "Do manter a barra superior grafite nos dois temas e trocar o tema só pela classe `dark`."
+      "Do use LabelTape for section titles and StatusTag for all service statuses; service groups use their own subtle header.",
+      "Do reserve tape yellow for primary action, active item, and focus.",
+      "Do compose screens with primitives from `components/ui` and components from `components`, placing pages in `pages` and modules in `features`.",
+      "Do display hosts and counts in JetBrains Mono.",
+      "Do maintain graphite top bar in both themes and toggle theme only via `dark` class."
     ],
     "donts": [
-      "Don't usar amarelo como cor de texto, de link ou de ícone solto.",
-      "Don't comunicar estado só por cor: sempre ícone mais texto.",
-      "Don't adicionar sombra decorativa; o filete de laminação da LabelTape é a única borda em relevo.",
-      "Don't voltar ao painel genérico de cards iguais com ponto de estado.",
-      "Don't usar caixa-alta com tracking aberto fora do texto de fita."
+      "Don't use yellow as text color, link color, or standalone icon color.",
+      "Don't communicate status by color alone: always icon plus text.",
+      "Don't add decorative shadows; LabelTape's lamination bevel is the only raised edge.",
+      "Don't regress to a generic dashboard of identical cards with status dots.",
+      "Don't use uppercase with wide tracking outside tape text."
     ]
   }
 }

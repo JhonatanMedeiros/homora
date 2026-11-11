@@ -22,7 +22,7 @@ const applySchema = previewSchema
   })
   .strict();
 
-/** Exportação e importação de serviços e grupos. Nenhum segredo ou conexão entra no arquivo. */
+/** Export and import of services and groups. No secrets or connections enter the file. */
 export function registerConfigTransferRoutes(
   app: FastifyInstance,
   configuration: Configuration,

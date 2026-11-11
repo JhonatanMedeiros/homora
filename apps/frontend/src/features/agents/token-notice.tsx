@@ -5,7 +5,7 @@ import { t } from '@/i18n';
 
 type Props = { token: string; copied: boolean; onCopy: () => void; onDismiss: () => void };
 
-/** Token novo, mostrado uma única vez. */
+/** New token, displayed only once. */
 export function TokenNotice({ token, copied, onCopy, onDismiss }: Props) {
   return (
     <Alert role="alert" className="border-primary">

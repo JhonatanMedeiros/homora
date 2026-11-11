@@ -1,187 +1,174 @@
-# Estratégia: Homora como alternativa open source
+# Strategy: Homora as an Open Source Alternative
 
-**Data:** 2026-11-10
-**Estado:** decisão de direção tomada pelo mantenedor; itens abaixo são
-planejados, não implementados. O estado real de cada item fica em
+**Date:** 2026-11-10  
+**Status:** direction decision confirmed by maintainer; items below are
+planned, not yet implemented. The actual progress of each item is tracked in
 [evolucao.md](evolucao.md).
 
-Este documento reposiciona o Homora frente ao [Homepage](https://github.com/gethomepage/homepage)
-e ao [Dashy](https://github.com/Lissy93/dashy), os projetos de referência do
-mantenedor. Ele complementa a [avaliação de produto](avaliacao-produto.md), que
-tem a comparação detalhada com outros painéis, e não substitui o
-[plano de evolução](evolucao.md), que continua sendo o registro de progresso.
+This document positions Homora relative to [Homepage](https://github.com/gethomepage/homepage)
+and [Dashy](https://github.com/Lissy93/dashy), the maintainer's primary reference projects.
+It complements the [product evaluation](avaliacao-produto.md), which contains a detailed
+comparison against other dashboards, and does not replace the
+[evolution plan](evolucao.md), which remains the system of record for implementation progress.
 
-## Decisões
+## Decisions
 
-| Tema           | Decisão                                                                                                                                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Posicionamento | **Paridade nos itens que travam a adoção, mais um diferencial:** propostas de agente revisadas por humano, com permissões explícitas e auditoria. Não competir em contagem de integrações. |
-| Configuração   | O SQLite continua sendo a fonte da verdade. Arquivos YAML/JSON servem para **importar, exportar, versionar e migrar** do Homepage e do Dashy.                                              |
-| Idioma         | Inglês como idioma padrão de README, documentação de uso e interface, com i18n e pt-BR completo. Documentos internos de engenharia podem continuar em português.                           |
-| Princípio      | Continua valendo: útil sem Proxmox e sem agente de IA; segurança de destinos e segredos não é relaxada para ganhar recursos.                                                               |
+| Topic          | Decision                                                                                                                                                                          |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Positioning    | **Parity on adoption blockers, plus a clear differentiator:** human-reviewed agent proposals with explicit permissions and audit logs. Do not compete on sheer integration count. |
+| Configuration  | SQLite remains the source of truth. YAML/JSON files serve for **importing, exporting, versioning, and migrating** from Homepage and Dashy.                                        |
+| Language       | English as default language for README, documentation, and web UI, with full runtime i18n and complete pt-BR support. Engineering documentation is maintained in English.         |
+| Core Principle | Unchanged: useful without Proxmox and without AI agents; network destination policies and secret protections are never relaxed to gain convenience.                               |
 
-## Comparação factual
+## Factual Comparison
 
-Fontes: README dos dois projetos, consultados em 2026-11-10. Capacidades mudam
-entre versões; confirme antes de afirmar paridade publicamente.
+Sources: READMEs of both projects, surveyed on 2026-11-10. Capabilities evolve across
+versions; verify before publicly claiming feature parity.
 
-| Área           | Homepage / Dashy (documentado)                                                                 | Homora (código atual)                                                              |
-| -------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Integrações    | Homepage descreve integrações para mais de 100 serviços.                                       | Quatro adaptadores de leitura e Proxmox; nenhum validado em instância real.        |
-| Widgets        | Dados do serviço junto ao atalho, mais widgets informativos (clima, hora, busca).              | Widgets são registros nominais, ficam na aba Integrações e não aparecem na home.   |
-| Descoberta     | Homepage descobre serviços por labels Docker.                                                  | Sugestões por labels Docker (opcional, via proxy somente leitura), com revisão.    |
-| Configuração   | Homepage: YAML ou labels Docker. Dashy: um `conf.yml`, editável também pela interface.         | Banco SQLite e interface; sem importação nem exportação.                           |
-| Status         | Dashy: código HTTP e ping ICMP, com intervalos configuráveis. Homepage: estado de contêineres. | HTTP com estado por código e latência, ping ICMP opcional e intervalo por serviço. |
-| Acesso         | OIDC nos dois; Dashy também tem usuários, tipos e convidado somente leitura.                   | Uma conta de administrador com senha local.                                        |
-| Idiomas        | Homepage com mais de 40; Dashy com mais de 30.                                                 | Somente português do Brasil.                                                       |
-| Personalização | Temas, CSS próprio (os dois); Dashy tem configurador de cores e várias páginas.                | Tema claro e escuro; sem CSS próprio nem várias páginas.                           |
-| Busca          | Dashy: atalhos numéricos e busca web com "bangs"; Homepage: busca rápida.                      | Busca local com `Ctrl K` e `/`.                                                    |
-| Ícones         | Hipótese a confirmar: bibliotecas de ícones referenciadas por nome.                            | Apenas emoji ou inicial.                                                           |
+| Area          | Homepage / Dashy (Documented)                                                                   | Homora (Current Codebase)                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Integrations  | Homepage documents integrations for 100+ services.                                              | Four read adapters and Proxmox; none validated against live multi-version hosts.                  |
+| Widgets       | Service data directly on shortcut tiles, plus informational widgets (weather, clock, search).   | Widgets render inside service cards on the homepage with aggregated telemetry.                    |
+| Discovery     | Homepage discovers services via Docker container labels.                                        | Suggestions via Docker labels (optional, via read-only proxy) with human review.                  |
+| Configuration | Homepage: YAML files or Docker labels. Dashy: single `conf.yml`, editable via web UI.           | SQLite database, web UI, plus YAML/JSON import/export with preview.                               |
+| Status        | Dashy: HTTP status and ICMP ping with custom intervals. Homepage: container health.             | HTTP with status code and latency, optional ICMP ping, and per-service check intervals.           |
+| Access        | OIDC in both; Dashy also provides multi-user roles, granular types, and read-only guest access. | Single local administrator account with password authentication.                                  |
+| Languages     | Homepage supports 40+ languages; Dashy supports 30+.                                            | English and Brazilian Portuguese via runtime i18n.                                                |
+| Customization | Themes, custom CSS (both); Dashy has visual color customizer and multi-page layouts.            | Light and dark themes; no custom CSS injections or multi-page routing.                            |
+| Search        | Dashy: numeric hotkeys and web bang searches; Homepage: instant filter.                         | Instant client filter with `Ctrl K` and `/`.                                                      |
+| Icons         | Icon library references by name (e.g., SimpleIcons, Dashboard Icons).                           | Bundled brand icons (`brand:name`), built-in Lucide names, custom image URLs, emoji, or initials. |
 
-O que o Homora já tem e as fontes consultadas não descrevem: aprovação humana
-vinculada à proposta exata, identidades de agente com escopos e revogação,
-auditoria de alterações, política de rede contra SSRF por destino e segredos
-cifrados fora do navegador.
+What Homora already possesses that reference projects do not describe: human approval
+tied to the exact diff, agent identities with scoped permissions and revocation,
+immutable audit logging, per-destination SSRF policies, and encrypted secrets outside
+the browser.
 
-## Fases
+## Roadmap Phases
 
-Cada fase deve entregar algo que um usuário novo perceba. Os critérios de
-conclusão exigem validação em ambiente real, não apenas testes automatizados.
+Each phase delivers tangible value visible to new users. Completion criteria require
+real-world validation, not merely passing automated tests.
 
-### R0 — Adoção sem atrito
+### R0 — Frictionless Adoption
 
-Objetivo: alguém conhece o projeto, instala em minutos e traz o que já tem.
+Goal: a new user discovers the project, installs in minutes, and migrates existing dashboards.
 
-- [ ] Publicar imagem Docker reproduzível (amd64 e arm64) e documentar o upgrade.
-- [ ] Exportar e importar serviços, grupos e ordem em YAML/JSON, com validação e
-      relatório de itens ignorados. Segredos nunca entram no arquivo.
-- [ ] Importar o `services.yaml`/`bookmarks.yaml` do Homepage e a configuração do
-      Dashy, mostrando uma prévia revisável antes de gravar.
-- [ ] Biblioteca de ícones por nome (conjunto open source com licença
-      compatível), mantendo emoji e URL própria.
-- [ ] README, instalação e capturas de tela em inglês; i18n com inglês padrão e
-      pt-BR completo.
+- [ ] Publish reproducible multi-arch Docker image (amd64 and arm64) and document upgrades.
+- [ ] Export and import services, groups, and ordering in YAML/JSON, with schema validation
+      and skipped items reports. Secrets are never exported.
+- [ ] Import Homepage `services.yaml`/`bookmarks.yaml` and Dashy configurations, displaying
+      a reviewable preview before writing.
+- [ ] Icon library by name (permissively licensed open source icon set), retaining emoji and image URLs.
+- [ ] README, setup guides, and screenshots in English; runtime i18n with English default and
+      complete pt-BR localization.
 
-**Conclusão:** instalação limpa e importação de uma configuração real do
-Homepage e do Dashy, sem edição manual, em um ambiente de teste.
+**Done Definition:** clean install and seamless import of real Homepage and Dashy configuration
+files, without manual editing, verified in a test environment.
 
-### R1 — Home viva e estado honesto
+### R1 — Living Homepage and Honest Status
 
-- [ ] Estado semântico do monitor: responde, exige login, não encontrado, sem
-      resposta, não verificado; com código HTTP e latência, sem seguir
-      redirecionamentos (política de destinos de P2 preservada).
-- [x] Remover o limite silencioso de 25 serviços, ou expor cobertura e fila.
-- [ ] Widgets dentro do card, com configuração, estado vazio e de erro; chamar
-      de widget só o que tem renderização própria na home.
-- [x] Descoberta Docker por labels com sugestões revisáveis e acesso somente
-      leitura ao socket.
-- [x] Opção de ping ICMP e de intervalo por serviço, com limites.
-- [ ] Ícones de marca por nome (conjunto open source com licença compatível,
-      como o dashboard-icons), além dos ícones genéricos `lucide:`.
-- [ ] Layout em colunas com larguras escolhidas por grupo, além da grade fixa.
-- [ ] Faixa superior opcional com data, hora e recursos do sistema (CPU,
-      memória, disco) vindos de uma integração, sem agente instalado no host.
+- [ ] Semantic monitoring states: reachable, requires login, not found, unreachable, unverified;
+      with HTTP status code and latency, without following redirects (preserving P2 destination policy).
+- [x] Remove silent 25-service limit or expose queue progress and coverage.
+- [ ] In-card widgets with configuration, empty states, and error handling; only call an element
+      a widget if it renders real data on the homepage.
+- [x] Docker label discovery with reviewable suggestions and read-only socket access.
+- [x] Optional ICMP ping and per-service check intervals with safety bounds.
+- [ ] Brand icons by name (e.g. dashboard-icons with compatible open source license), alongside
+      generic `lucide:` icons.
+- [ ] Columnar layouts with per-group customizable widths, beyond fixed grids.
+- [ ] Optional top banner with date, time, and system metrics (CPU, memory, storage) polled via
+      integrations, without requiring an agent installed on the host.
 
-**Conclusão:** a home responde "o que caiu?" sem abrir outra aba, e nenhum card
-parece monitorado sem ter sido verificado.
+**Done Definition:** the homepage answers "what went down?" without clicking through tabs,
+and no card appears monitored without being checked.
 
-### R2 — Integrações extensíveis
+### R2 — Extensible Integrations
 
-- [ ] Adaptador declarativo (descrição de capacidades, campos e coleta) para
-      reduzir o custo de cada integração e permitir contribuições externas.
-- [ ] Priorizar cerca de dez integrações de maior uso entre self-hosters,
-      validando cada uma contra uma instância real. A lista é hipótese do
-      mantenedor e deve ser revista com dados de uso e pedidos da comunidade.
-- [ ] Integrações pedidas pelo caso de referência (ver abaixo), após o modelo
-      declarativo: Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel e
-      Speedtest Tracker. Cada uma só conta como pronta com instância real.
-- [ ] Extrair o Proxmox do cofre legado para o mesmo modelo dos demais.
-- [ ] Guia de contribuição para novos adaptadores, com testes de contrato.
+- [ ] Declarative adapter format (specifying capabilities, fields, and fetch logic) to lower
+      contribution friction for external developers.
+- [ ] Prioritize top ~10 most popular self-hosted integrations, validating each against live instances.
+      Maintainer list is a hypothesis and should be refined with user demand.
+- [ ] Reference case integrations: Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel,
+      and Speedtest Tracker. Each is marked complete only with live validation.
+- [ ] Extract Proxmox from legacy vault into unified connection architecture.
+- [ ] Contribution guide for new adapters with automated contract testing harnesses.
 
-**Conclusão:** uma pessoa de fora consegue adicionar um adaptador seguindo o
-guia, e os adaptadores prioritários passam em instância real.
+**Done Definition:** an external developer can contribute an adapter following documentation,
+and prioritized adapters are verified against live production services.
 
-### R3 — Acesso, alcance e personalização
+### R3 — Access, Reach, and Customization
 
-- [ ] Login OIDC opcional e acesso de convidado somente leitura.
-- [ ] Cenários de rede suportados (P2) fechados e documentados antes de
-      anunciar acesso fora do loopback.
-- [ ] Temas, CSS próprio, imagem de fundo e cards translúcidos, e várias
-      páginas ou abas.
-- [ ] Atalhos de teclado e busca web opcional (mecanismo configurável, sem
-      enviar dados do Homora).
+- [ ] Optional OIDC authentication and read-only guest access mode.
+- [ ] Finalize and document supported network topology scenarios (P2) before advertising access
+      outside localhost.
+- [ ] Theming, custom CSS, background images, translucent cards, and multi-page/tab views.
+- [ ] Keyboard shortcuts and optional web search redirection (configurable engine, without leaking
+      Homora internal data).
 
-**Conclusão:** modelo de acesso validado e documentado; instância usável por
-mais de uma pessoa sem compartilhar a conta de administrador.
+**Done Definition:** validated and documented security model; multiple users can navigate an instance
+without sharing administrator credentials.
 
-### R4 — Diferencial: agentes com aprovação
+### R4 — The Differentiator: Governed AI Agents
 
-- [ ] Agentes propondo widgets, integrações e sugestões de descoberta, sempre
-      como proposta revisável com diff e auditoria.
-- [ ] Validação visual e sob carga do fluxo de propostas (pendente em P4).
-- [ ] Mapa serviço → máquina com Proxmox: associação manual e sugestões com
-      evidência, sem deduzir só pelo nome.
-- [ ] Demonstração pública e texto de posicionamento verificável: o que o
-      agente pode e não pode fazer.
+- [ ] AI agents proposing widgets, integrations, and discovered shortcuts as reviewable diffs with
+      full audit trails.
+- [ ] Visual verification and load testing of proposal lifecycle (P4).
+- [ ] Service-to-host operational map with Proxmox: manual associations and evidence-backed
+      suggestions, never inferred by name alone.
+- [ ] Public demonstration and verifiable positioning: clear boundaries of what agents can and
+      cannot do.
 
-**Conclusão:** o diferencial é demonstrável por quem não leu o código.
+**Done Definition:** the governing agent differentiator is demonstrable to people who have not read the source code.
 
-## Caso de referência: migrar um Homepage real (2026-11-10)
+## Reference Case: Migrating a Real Homepage Instance (2026-11-10)
 
-Origem: uma captura de tela de um Homepage em uso por quem mantém o projeto
-(homelab pessoal com Proxmox, DNS, VPN, mídia e segurança). Serve de critério
-prático para a pergunta "dá para migrar para o Homora?". A captura mostra o
-resultado visual; **não** foi possível conhecer a configuração por trás dela,
-então a lista abaixo é inferida e deve ser conferida com o `services.yaml` e
-o `widgets.yaml` reais antes de virar escopo.
+Origin: screenshot of a production Homepage setup maintained by the author (homelab with Proxmox,
+DNS, VPN, media, and security). Serves as a practical benchmark: "can I migrate to Homora?".
+The screenshot displays final visual results; underlying YAML was not inspected, so the scope
+below is inferred and must be cross-checked against actual `services.yaml` and `widgets.yaml`.
 
-| O que a página tem                                                     | Situação no Homora                                                  | Fase |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------- | ---- |
-| Grupos de cards com descrição e busca                                  | Existe                                                              | —    |
-| Status de disponibilidade por serviço                                  | Existe; estados semânticos pendentes                                | R1   |
-| Dados do serviço dentro do card (VMs, LXC, CPU, MEM, consultas, sites) | Não: os widgets ficam numa área separada da página Integrações      | R1   |
-| Logos de marca por nome (Proxmox, Portainer, Vaultwarden…)             | Não: só emoji, `lucide:` genérico e URL                             | R1   |
-| Colunas com larguras diferentes                                        | Parcial: número de colunas por grupo; cards com larguras livres não | R1   |
-| Faixa superior com CPU, memória, disco, data e hora                    | Não                                                                 | R1   |
-| Integrações Proxmox, Uptime Kuma, AdGuard, Home Assistant              | Existem (somente leitura, validadas só com mocks)                   | R2   |
-| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest  | Não existem                                                         | R2   |
-| Imagem de fundo, cards translúcidos, cores                             | Não                                                                 | R3   |
-| Busca que abre um buscador web (botão "G")                             | Não: a busca só filtra os cards                                     | R3   |
-| Importar o `services.yaml`                                             | Existe, mas sem widgets                                             | R0   |
+| Element on Target Dashboard                                           | Homora Current State                                                     | Phase |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----- |
+| Card groups with descriptions and search                              | Implemented                                                              | —     |
+| Service availability status                                           | Implemented; semantic states pending                                     | R1    |
+| In-card telemetry (VMs, LXC, CPU, MEM, DNS queries, sites up)         | No: widgets were isolated in Connections tab                             | R1    |
+| Brand logos by name (Proxmox, Portainer, Vaultwarden…)                | No: emoji, generic `lucide:`, or image URL                               | R1    |
+| Columns with variable widths                                          | Partial: column count per group; arbitrary per-card widths not supported | R1    |
+| Top status bar with CPU, memory, storage, date, and clock             | No                                                                       | R1    |
+| Integrations: Proxmox, Uptime Kuma, AdGuard, Home Assistant           | Implemented (read-only, verified with mocks)                             | R2    |
+| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest | Not implemented                                                          | R2    |
+| Background image, translucent glass cards, custom accents             | No                                                                       | R3    |
+| Search bar triggering external web search ("G" button)                | No: search strictly filters local cards                                  | R3    |
+| Import `services.yaml`                                                | Implemented, but without widgets                                         | R0    |
 
-Ordem sugerida, do que mais muda a percepção ao que mais custa:
+Suggested sequence, ordered from highest visual impact to highest implementation cost:
 
-1. Widgets dentro do card, ligados a uma conexão existente. Sem isso, novas
-   integrações têm pouco valor visível.
-2. Ícones de marca por nome (barato e muda muito a aparência).
-3. Colunas e faixa superior.
-4. Integrações, na ordem de uso real de quem migra.
-5. Tema e fundo.
+1. In-card widgets tied to existing connections. Without this, new integrations provide
+   little visible user value.
+2. Brand icons by name (low cost, transformative visual polish).
+3. Column layouts and top telemetry bar.
+4. Additional integrations, prioritized by real migration usage.
+5. Theming and background styling.
 
-O que o caso **não** deve mudar: a descoberta por Docker e qualquer execução de
-comandos no host continuam condicionadas ao desenho do Homora (uso local,
-privilégio mínimo, agentes que só propõem). Chaves de API (por exemplo
-Cloudflare e TrueNAS) usam o cofre de credenciais já existente.
+What this benchmark does **not** change: Docker discovery and host command execution remain
+strictly governed by Homora's principles (local use, least privilege, proposal-only agents).
+API keys (e.g. Cloudflare, TrueNAS) utilize the existing encrypted vault.
 
-**Conclusão do caso:** a página de referência é reproduzida no Homora, com os
-mesmos serviços e os dados principais visíveis, sem editar arquivos à mão e sem
-perder a verificação de TLS nem a política de destinos.
+**Done Definition:** the reference dashboard is recreated in Homora with identical services and
+telemetry metrics visible, without manual file editing, and without compromising TLS validation
+or network destination policies.
 
-## Riscos
+## Risks
 
-- Escopo: as fases superam a capacidade de um mantenedor solo; tratar R0 e R1
-  como o mínimo para competir e adiar R3 e R4 se necessário.
-- Paridade percebida: sem integrações validadas, um catálogo grande vira dívida.
-  Prefira poucas integrações boas.
-- Importadores dependem de formatos de terceiros que mudam; limitar a versões
-  testadas e falhar com mensagem clara.
-- Descoberta Docker exige acesso ao socket; manter somente leitura, revisão
-  humana e documentar o risco.
-- Não afirmar superioridade sobre Homepage ou Dashy antes de validar os itens
-  acima com usuários reais.
+- Scope: multi-phase roadmap exceeds solo maintainer bandwidth; treat R0 and R1 as the minimum
+  bar to compete and defer R3 and R4 as necessary.
+- Perceived parity: large unvalidated catalogs become tech debt. Prioritize a small set of rock-solid adapters.
+- Importers rely on moving third-party specs; target tested schemas and fail with clear diagnostics.
+- Docker discovery grants privileged socket access; keep read-only, human-approved, and clearly document risks.
+- Do not claim superiority over Homepage or Dashy before validating above features with real homelab users.
 
-## Como acompanhar
+## Progress Tracking
 
-Quando uma fase for iniciada, transforme seus itens em tarefas em
-[evolucao.md](evolucao.md), com as mesmas regras de conclusão: um item só é
-marcado com evidência da implementação e da validação.
+When a phase begins, translate its milestones into tasks in [evolucao.md](evolucao.md),
+applying the same governance rule: items are checked off only with proof of implementation
+and automated/manual verification.

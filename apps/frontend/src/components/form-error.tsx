@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
-/** Região de erro de formulário: anunciada, e vazia (sem altura) quando não há erro. */
+/** Form error region: announced, and empty (no height) when there is no error. */
 export function FormError({ className, children, ...props }: ComponentProps<'p'>) {
   return (
     <p

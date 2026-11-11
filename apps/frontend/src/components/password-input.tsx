@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/input-group';
 import { useI18n } from '@/i18n';
 
-/** Campo de credencial que começa oculto e permite alternar sua visibilidade. */
+/** Credential input that starts obscured and allows toggling visibility. */
 export function PasswordInput({ disabled, ...props }: Omit<ComponentProps<'input'>, 'type'>) {
   const [visible, setVisible] = useState(false);
   const { t } = useI18n();

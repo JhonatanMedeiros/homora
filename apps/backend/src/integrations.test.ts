@@ -5,16 +5,16 @@ import {
   proxmoxAdapter,
 } from './integrations.js';
 
-it('expõe metadados sem expor implementação nem configurações e rejeita duplicatas', () => {
+it('exposes metadata without disclosing implementation or configs and rejects duplicates', () => {
   const registry = createIntegrationRegistry([proxmoxAdapter]);
   const list = registry.list();
   expect(list).toEqual([{ type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] }]);
-  list[0].capabilities.push('alterado');
+  list[0].capabilities.push('changed');
   expect(registry.list()[0].capabilities).toEqual(['inventory']);
-  expect(() => createIntegrationRegistry([proxmoxAdapter, proxmoxAdapter])).toThrow('duplicado');
+  expect(() => createIntegrationRegistry([proxmoxAdapter, proxmoxAdapter])).toThrow('Duplicate');
 });
 
-it('compartilha coleta, respeita TTL e permite atualização forçada', async () => {
+it('shares collection, respects TTL and allows forced refresh', async () => {
   let time = 0;
   const cache = createObservationCache<number>(1000, () => time);
   const fetch = vi.fn(async () => 42);
@@ -31,13 +31,13 @@ it('compartilha coleta, respeita TTL e permite atualização forçada', async ()
   expect(fetch).toHaveBeenCalledTimes(3);
 });
 
-it('não guarda falhas nem retorna resposta antiga após invalidação concorrente', async () => {
+it('does not store failures nor return stale response after concurrent invalidation', async () => {
   const cache = createObservationCache<number>(1000);
   const fail = vi.fn(async () => {
-    throw new Error('falha');
+    throw new Error('failure');
   });
-  await expect(cache.collect(fail)).rejects.toThrow('falha');
-  await expect(cache.collect(fail)).rejects.toThrow('falha');
+  await expect(cache.collect(fail)).rejects.toThrow('failure');
+  await expect(cache.collect(fail)).rejects.toThrow('failure');
   expect(fail).toHaveBeenCalledTimes(2);
   let finish!: (value: number) => void;
   const old = cache.collect(
@@ -53,13 +53,13 @@ it('não guarda falhas nem retorna resposta antiga após invalidação concorren
   expect((await cache.collect(async () => 3)).data).toBe(2);
 });
 
-it('descarta valor anterior quando atualização forçada falha', async () => {
+it('discards previous value when forced refresh fails', async () => {
   const cache = createObservationCache<number>(1000);
   await cache.collect(async () => 1);
   await expect(
     cache.collect(async () => {
-      throw new Error('indisponível');
+      throw new Error('unavailable');
     }, true),
-  ).rejects.toThrow('indisponível');
+  ).rejects.toThrow('unavailable');
   expect((await cache.collect(async () => 2)).data).toBe(2);
 });

@@ -1,34 +1,34 @@
-# Visão do produto
+# Product Vision
 
-Homora reúne serviços e informações úteis em um painel personalizável. O usuário pode organizar seu ambiente pela interface ou solicitar mudanças a um agente conectado por MCP. Proxmox é a primeira integração de infraestrutura planejada, mas não define o alcance do produto.
+Homora brings together services and useful environment information into a customizable dashboard. Users can organize their environment via the web UI or request changes through an MCP-connected agent. Proxmox is the first planned infrastructure integration, but does not limit the product's scope.
 
-## Público e problemas
+## Audience and Problems
 
-Pessoas que mantêm serviços próprios precisam reunir links, acompanhar disponibilidade e configurar integrações sem editar muitos arquivos. Um agente pode reduzir o trabalho, mas precisa operar com permissões explícitas e prestar contas das alterações.
+People who self-host services need a central place to aggregate links, monitor availability, and configure integrations without manually editing multiple configuration files. An AI agent can reduce routine work, but must operate with explicit permissions and remain accountable for all changes.
 
-## Experiências principais
+## Core Experiences
 
-1. Criar e organizar grupos e cards de serviços, com nome, URL, ícone e descrição.
-2. Consultar estado de disponibilidade, com indicação de última verificação e estado desconhecido quando não houver dados confiáveis.
-3. Conectar o Proxmox com credenciais de leitura e visualizar nós, VMs e containers disponíveis.
-4. Revisar sugestões de cards a partir do inventário; nomes e URLs descobertos são sugestões, não fatos garantidos.
-5. Pedir a um agente para consultar a configuração e propor uma alteração; revisar e aprovar a proposta na interface antes da aplicação.
+1. Create and organize service groups and cards with name, URL, icon, and description.
+2. View availability status, with last check timestamp and unknown status when reliable data is unavailable.
+3. Connect Proxmox using read-only credentials and visualize available nodes, VMs, and containers.
+4. Review card suggestions generated from inventory; discovered names and URLs are suggestions, not guaranteed facts.
+5. Ask an agent to query configuration and propose a change; review and approve the proposal in the UI before it is applied.
 
 ## MVP
 
-Dashboard responsivo, grupos e cards editáveis, busca, verificação de disponibilidade, integração Proxmox somente leitura, propostas MCP para mudanças de configuração, autenticação de acesso e histórico de ações. A interface deve continuar utilizável sem agente e sem Proxmox.
+Responsive dashboard, editable groups and cards, search, availability checks, read-only Proxmox integration, MCP proposals for configuration changes, access authentication, and action audit history. The UI must remain fully usable without an agent and without Proxmox.
 
-Fora do MVP: reiniciar VMs, instalação automática de serviços, descoberta irrestrita da rede, plugins de terceiros, múltiplos usuários, aplicativo móvel nativo e marketplace.
+Outside MVP: restarting VMs, automated service installation, unrestricted network discovery, third-party plugins, multi-user support, native mobile app, and marketplace.
 
-## Critérios de aceitação
+## Acceptance Criteria
 
-- Um usuário autenticado cria, edita, move e remove um card; dados persistem após reiniciar.
-- Falhas de monitoramento exibem estado desconhecido ou indisponível com horário da última tentativa, sem bloquear a página.
-- Credenciais Proxmox nunca aparecem no navegador, em respostas MCP ou logs; o inventário usa uma conta limitada à leitura.
-- O agente consegue consultar dados autorizados e criar uma proposta; a alteração só ocorre após aprovação humana vinculada à proposta exata.
-- Ações aprovadas, rejeitadas e falhas ficam registradas sem segredos.
-- Interface funciona em telas pequenas e com teclado; uma integração indisponível não impede o uso dos demais cards.
+- An authenticated user creates, edits, moves, and removes a card; data persists across restarts.
+- Monitoring failures display unknown or unavailable status with last attempt timestamp, without locking the page.
+- Proxmox credentials never appear in the browser, MCP responses, or logs; inventory uses a read-only account.
+- The agent can query authorized data and create a proposal; changes only take effect after human approval tied to the exact proposal.
+- Approved, rejected, and failed actions are logged without leaking secrets.
+- UI works on small screens and with full keyboard navigation; an unavailable integration does not impede usage of other cards.
 
-## Indicadores de validação
+## Validation Metrics
 
-Tempo para cadastrar o primeiro serviço, quantidade de etapas para conectar uma integração, sucesso das verificações, frequência de correção de sugestões e clareza das propostas. Medição é opcional e local por padrão; nenhuma telemetria externa é pressuposta.
+Time to add the first service, number of steps to connect an integration, health check success rate, frequency of suggestion corrections, and clarity of proposals. Measurement is optional and local by default; no external telemetry is assumed.

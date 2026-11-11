@@ -8,12 +8,12 @@ export default defineConfig(({ mode }) => {
   const parsePort = (value: string | undefined, fallback: number) => {
     const port = value === undefined ? fallback : Number(value);
     if (!Number.isInteger(port) || port < 1 || port > 65535)
-      throw new Error('Porta inválida na configuração.');
+      throw new Error('Invalid port in configuration.');
     return port;
   };
   const port = parsePort(env.HOMORA_WEB_PORT, 5173),
     apiPort = parsePort(env.HOMORA_API_PORT, 3000);
-  if (port === apiPort) throw new Error('As portas da API e da interface devem ser diferentes.');
+  if (port === apiPort) throw new Error('API and web interface ports must be different.');
   return {
     plugins: [react(), tailwindcss()],
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },

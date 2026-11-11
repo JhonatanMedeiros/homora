@@ -20,10 +20,10 @@ const importSchema = z
   .strict();
 
 /**
- * Descoberta Docker: `GET` lista sugestões a partir dos labels (sem gravar nada) e `POST`
- * adiciona só os contêineres escolhidos, relendo o Docker no servidor. O navegador nunca
- * envia dados de cards, apenas IDs de contêineres. Cards novos não ganham permissão de rede
- * privada, a menos que a pessoa marque a opção na revisão.
+ * Docker discovery: `GET` lists suggestions from container labels (without persisting anything)
+ * and `POST` imports only selected containers, re-reading Docker on the server. The browser
+ * never submits card payloads, only container IDs. New cards do not receive private network
+ * permissions unless explicitly opted-in during review.
  */
 export function registerDiscoveryRoutes(
   app: FastifyInstance,

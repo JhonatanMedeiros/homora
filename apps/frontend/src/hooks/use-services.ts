@@ -6,7 +6,7 @@ import { compareText, t } from '@/i18n';
 const collator = compareText;
 const json = { 'Content-Type': 'application/json' };
 
-/** Dados da tela de serviços: lista, grupos, disponibilidade e a ordem de ambos. */
+/** Services screen data: list, groups, availability, and the ordering of both. */
 export function useServices() {
   const [services, setServices] = useState<Service[]>([]);
   const [groupRows, setGroupRows] = useState<ServiceGroup[]>([]);
@@ -68,7 +68,7 @@ export function useServices() {
           if (active) setStatuses(data);
         })
         .catch(() => {
-          // Monitoramento é auxiliar; uma falha não interfere nos serviços.
+          // Monitoring is auxiliary; a failure does not interfere with services.
         });
     void refreshStatuses();
     const timer = window.setInterval(() => void refreshStatuses(), 60_000);
@@ -97,7 +97,7 @@ export function useServices() {
     [services],
   );
 
-  /** Serviços de rede privada sem autorização: o monitor não os consulta. */
+  /** Private network services without authorization: monitor does not poll them. */
   const blockedIds = useMemo(
     () =>
       new Set(

@@ -46,7 +46,7 @@ const inventory = [
   'lixo',
 ];
 
-it('resume o inventário em números agregados, ignorando modelos, nós offline e lixo', () => {
+it('summarizes inventory into aggregated numbers, ignoring templates, offline nodes and garbage', () => {
   expect(summarizeProxmox(inventory)).toEqual({
     vms: { running: 1, total: 2 },
     containers: { running: 2, total: 2 },
@@ -83,13 +83,13 @@ function mockProxmox(data: unknown) {
   });
 }
 
-it('liga o Proxmox legado a um card sem expor recursos nem permitir editar a linha ponte', async () => {
+it('attaches legacy Proxmox to a card without disclosing resources or allowing edits to the bridge row', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-proxmox-widget-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
   const auth = createAuth(`${path}.auth`);
-  auth.setup('senha-para-testes');
-  const cookie = `homora_session=${auth.login('senha-para-testes', 'test')}`;
+  auth.setup('password-for-tests');
+  const cookie = `homora_session=${auth.login('password-for-tests', 'test')}`;
   const headers = { origin: 'http://localhost:5173', cookie };
   const vault = createVault(path);
   const app = createApp(db.db, 5173, auth, vault);

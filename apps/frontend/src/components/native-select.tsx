@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Select nativo com a aparência dos campos do Homora (teclado e leitores de tela nativos). */
+/** Native select matching Homora field styling (native keyboard and screen reader support). */
 export function NativeSelect({ className, children, ...props }: ComponentProps<'select'>) {
   return (
     <div className="relative">

@@ -1,150 +1,134 @@
-# Arquitetura do Homora
+# Homora Architecture
 
-Homora segue um monólito modular: uma aplicação web, uma API Node e um banco
-SQLite, distribuídos como um conjunto pequeno de processos/pacotes. Essa forma
-mantém a instalação pessoal simples sem impedir que módulos sejam extraídos se
-houver uma necessidade concreta.
+Homora follows a modular monolith pattern: a web application, a Node API, and an
+SQLite database, distributed as a cohesive set of packages and processes. This
+structure keeps single-user installation simple without precluding module extraction
+if concrete requirements emerge.
 
-A comparação de projetos e a direção para integrações estão em
-[integrações](integracoes.md). O diagrama representa os caminhos implementados;
-as diferenças entre os processos HTTP e MCP estão descritas abaixo.
+Project comparisons and integrations roadmap are documented in
+[integrations](integracoes.md). The diagram below represents currently implemented paths;
+differences between HTTP and MCP execution models are detailed further down.
 
 ```mermaid
 flowchart LR
-  U[Usuário] --> UI[Interface web]
-  A[Agente MCP] --> MCP[Servidor MCP]
-  UI --> HTTP[Rotas HTTP]
-  HTTP --> SC[Módulo de configuração]
+  U[User] --> UI[Web Interface]
+  A[MCP Agent] --> MCP[MCP Server]
+  UI --> HTTP[HTTP Routes]
+  HTTP --> SC[Configuration Module]
   HTTP --> PS
-  MCP --> PS[Módulo de propostas]
+  MCP --> PS[Proposals Module]
   PS --> SC
   PS --> DB
   SC --> DB[(SQLite)]
-  HTTP --> IC[Módulo de conexões]
+  HTTP --> IC[Connections Module]
   HTTP --> REG
   HTTP --> VAULT
   IC --> DB
-  IC --> VAULT[Credenciais cifradas]
-  IC --> REG[Registro de integrações]
+  IC --> VAULT[Encrypted Vault]
+  IC --> REG[Integrations Registry]
   MCP --> REG
   MCP --> VAULT
-  REG --> EXT[Proxmox e serviços externos]
+  REG --> EXT[Proxmox and External Services]
 ```
 
-## Componentes e direção
+## Components and Direction
 
-- Interface web: painel, configuração, revisão de propostas e gestão dos agentes.
-- API HTTP: autenticação da sessão web, validação Zod dos corpos, parâmetros e
-  queries, e composição das rotas por capacidade. Regras de cards/grupos são
-  delegadas ao módulo de configuração; conexões usam um módulo próprio de
-  configuração, credenciais, persistência e observações.
-- Adaptadores: validam configurações e coletam dados externos. O registro
-  central expõe metadados e execução; cada integração mantém seu formato de
-  credencial e limites específicos.
-- MCP atual: processo local stdio com token e escopos, que abre banco e cofre
-  diretamente. Ferramentas validam entradas com Zod; oferece consultas e criação
-  de propostas, sem atravessar as rotas HTTP nem usar a sessão web. Não grava
-  cards sem aprovação humana e não retorna segredos.
-- Persistência: SQLite, migrações e recuperação estão implementados. Credenciais
-  de algumas integrações ficam cifradas no banco com chave lateral; Proxmox usa
-  arquivo legado. Rotação automática e proteção contra comprometimento do host
-  ainda não existem.
+- Web interface: dashboard, settings, proposal review, and agent management.
+- HTTP API: web session authentication, Zod validation of request bodies, parameters,
+  and query strings, composing routes by capability. Card and group business rules are
+  delegated to the configuration module; connections employ a dedicated module for
+  configuration, credentials, persistence, and observations.
+- Adapters: validate configuration and query external systems. The central registry
+  exposes metadata and execution; each integration encapsulates credential structures
+  and specific rate/size limits.
+- Current MCP: local stdio process with scoped token authentication that accesses SQLite
+  and the credential vault directly. MCP tools validate inputs with Zod; provides queries
+  and proposal creation without going through HTTP routes or web session cookies. Never
+  persists card changes without human approval and never returns secrets.
+- Persistence: SQLite, migrations, and database restore scripts are implemented.
+  Credentials for connection adapters are encrypted at rest with an isolated key file;
+  Proxmox retains a legacy credential file. Automatic key rotation and defense against host
+  compromise are not yet implemented.
 
-## Modelo inicial
+## Initial Domain Model
 
-Serviço (nome, URL, ícone, grupo), grupo (nome e ordem), integração (tipo, configuração e referência a segredo), observação (estado e data), proposta (autor, operações, versão da configuração, expiração e estado) e evento de auditoria (ator, ação, resultado e horário).
+Service (name, URL, icon, group), group (name and position), integration (type, config, and secret reference), observation (status and timestamp), proposal (author, diff operations, base configuration version, expiration, and status), and audit event (actor, action, result, and timestamp).
 
-## Segurança
+## Security
 
-- Autenticação obrigatória para interface e MCP; identidades separadas para agentes, permissões mínimas e revogação. Não presumir que rede local é confiável.
-- O MCP pode consultar e criar propostas; alteração persistente de cards ocorre
-  após revisão humana autenticada da proposta exata. Propostas obsoletas,
-  expiradas ou já aplicadas são rejeitadas. Não permitir autoaprovação pelo
-  agente nem escrita direta em integrações.
-- Proxmox com token restrito e TLS validado; orientar a instalação de certificados confiáveis. Não aceitar credenciais em prompts ou retorná-las em ferramentas.
-- Evitar SSRF: verificar destinos e redirecionamentos no servidor, restringir redes e portas configuradas pelo administrador, bloquear destinos sensíveis e revalidar DNS na conexão. O acesso à rede privada deve ser autorizado explicitamente, pois é necessário ao homelab.
-- A implantação atualmente suportada por padrão é local em loopback. Origens adicionais são configuradas explicitamente em `HOMORA_ALLOWED_ORIGINS`; origens HTTP só são aceitas em localhost. Para proxy reverso, o proxy deve terminar HTTPS e isolar a API. O bind padrão da interface continua em loopback e `HOMORA_BIND_IP` permite expô-la apenas a um proxy reverso na mesma rede privada, sem alterar a validação de origem. A aplicação não confia em `X-Forwarded-For`/`X-Forwarded-Proto`; portanto não configure proxies não confiáveis nem use cabeçalhos encaminhados para decidir identidade ou segurança.
-- A política de destinos de integrações e do monitoramento exige origem exata, com protocolo e porta incluídos na URL configurada, resolve DNS uma vez, fixa o IP autorizado, rejeita respostas DNS mistas e redirecionamentos, usa TLS validado e impõe timeout e limite de resposta. RFC1918 e ULA são bloqueadas por padrão; conexões de integração precisam de opt-in por conexão e o monitoramento precisa de opt-in por serviço. Faixas especiais são bloqueadas mesmo com essa permissão. A lista de faixas especiais não é uma garantia de cobertura de toda rede ou política local.
-- A senha local é derivada com scrypt e salt aleatório; sessões aleatórias são mantidas somente em memória por oito horas e invalidadas ao reiniciar. Cookies usam HttpOnly e SameSite=Strict; a sessão emitida por origem HTTPS também usa Secure. Operações que alteram estado exigem uma origem explicitamente permitida. Limite de login é em memória e baseado no endereço que o backend vê; atrás de proxy, isso pode agrupar usuários no endereço do proxy.
-- Status, configuração inicial e login são endpoints sem sessão para permitir
-  primeiro acesso. A configuração só é aceita enquanto não existe uma conta;
-  logout é idempotente e apenas invalida o cookie apresentado.
-- Credenciais de integração são cifradas com AES-256-GCM e chave aleatória em arquivo separado. `.auth`, `.key` e `.proxmox` são criados com modo 0600; a recuperação exige preservar os arquivos correspondentes e protegê-los juntos. Não há rotação automática da chave nem proteção contra comprometimento do host, processo ou cópia conjunta da chave e dados. Proteja também o arquivo SQLite, backups e volume persistente com permissões do sistema operacional.
-- Segredos fora de logs, backup e auditoria por padrão; logs com retenção configurável. Backups criptografados quando incluírem segredos.
-- Proteção contra CSRF, sessões seguras, limites de requisição e validação de entrada; não executar comandos arbitrários ou scripts recebidos de agentes.
-- Conteúdo obtido de serviços é dado não confiável: nunca interpretá-lo como instrução para o agente. Testar injeção de prompt e falhas de autorização.
+- Mandatory authentication for web UI and MCP; dedicated identities for agents, least privilege scopes, and revocation. Never assume local network is inherently trusted.
+- MCP may query and create proposals; persistent card modifications occur only after authenticated human review of the exact proposal. Stale, expired, or previously applied proposals are rejected. Never permit agent self-approval or unmediated external integration writes.
+- Proxmox integration with least-privilege token and strict TLS certificate validation; guide users through importing trusted CAs. Never accept credentials in agent prompts or leak them via tool returns.
+- SSRF mitigation: validate destinations and redirects server-side, constrain ports and hosts, block sensitive local ranges, and re-resolve/pin DNS on connection. Private network access must be explicitly authorized per service/connection, as it is foundational for homelab setups.
+- Supported production deployment binds to loopback by default. Additional origins must be explicitly listed in `HOMORA_ALLOWED_ORIGINS`; HTTP origins are accepted only on localhost. When using a reverse proxy, the proxy must terminate HTTPS and protect the API. The default UI bind remains loopback, and `HOMORA_BIND_IP` allows exposing it solely to a reverse proxy on the same private network without altering origin validation. The application does not trust `X-Forwarded-For`/`X-Forwarded-Proto` for authorization decisions; do not configure untrusted proxies or rely on forwarded headers to determine identity or security.
+- Integration destination and monitoring policy requires an exact origin (scheme and port included in configured URL), resolves DNS once, pins the authorized IP, rejects mixed DNS answers and redirects, enforces TLS validation, and sets strict timeouts and payload limits. RFC1918 and ULA are blocked by default; connection adapters require per-connection opt-in and service monitoring requires per-service opt-in. Special network ranges are blocked unconditionally even with this permission. The special ranges list does not guarantee coverage of all local network topologies or policies.
+- Local administrator passwords are hashed with scrypt and a cryptographically secure salt; session tokens are stored in memory with an 8-hour TTL, invalidated on server restart. Session cookies use HttpOnly and SameSite=Strict; HTTPS origins set Secure. State-changing operations require explicit allowed origins. Login rate limiting is in-memory based on the socket remote address seen by the backend; behind a proxy, this may aggregate users under the proxy's IP.
+- Health status, initial onboarding setup, and login are unauthenticated endpoints to allow initial setup. Onboarding is rejected once an admin account exists; logout is idempotent and clears the session cookie.
+- Integration credentials are encrypted with AES-256-GCM using an encryption key in a separate file. `.auth`, `.key`, and `.proxmox` are created with file mode 0600; backup and disaster recovery requires preserving and securing these files together. There is no automated key rotation or host-compromise protection. Protect the SQLite database file, backups, and persistent volumes using operating system permissions.
+- Secrets are excluded from application logs, backups, and audit trails by default; logs have configurable retention. Backups must be encrypted if they contain credentials.
+- CSRF protection, secure sessions, request rate limiting, and input validation; never execute arbitrary shell commands or scripts received from AI agents.
+- Content fetched from external services is untrusted: never interpret external responses as prompt instructions for agents. Test prompt injection defenses and authorization boundaries regularly.
 
-## Implantação e escolhas pendentes
+## Deployment and Open Decisions
 
-React, TypeScript, Node.js, SQLite e Docker Compose já são escolhas
-implementadas. Compose usa volume persistente e publicação local em loopback.
-Upgrade e recuperação têm instruções e validações documentadas, mas releases e
-exposição em rede continuam sem perfil operacional validado. Um script
-Community Scripts pode ser estudado após haver releases confiáveis.
+React, TypeScript, Node.js, SQLite, and Docker Compose are the active implementation choices.
+Compose uses a persistent volume and publishes to loopback. Upgrade and recovery procedures
+have documented validation, but reproducible releases and validated network exposure profiles
+remain open roadmap items. A Proxmox Community Helper script can be considered once stable
+releases exist.
 
-## Implementação atual
+## Current Implementation
 
-- `apps/frontend` contém a interface React/Vite. `apps/backend` contém a API
-  Fastify, o processo MCP stdio, autenticação, integrações, política de rede e
-  serviços de domínio. `packages/shared` publica validação/contratos TypeScript;
-  `packages/db` contém esquema, inicialização e migrações Drizzle/SQLite.
-- `app.ts` compõe hooks globais e módulos de rota. As rotas de autenticação,
-  configuração de cards/grupos, agentes/propostas, Proxmox e conexões ficam em
-  `routes/`. `input-schemas.ts` valida contratos HTTP e entradas de ferramentas
-  MCP antes de chamar as regras de domínio. `service-configuration.ts`
-  centraliza invariantes de cards/grupos, transações e versão para HTTP, MCP e
-  aprovação de propostas.
-- `integration-connections.ts` coordena configuração de conexões, credenciais,
-  persistência, cache de observações e execução dos adaptadores; as rotas
-  correspondentes interpretam pedidos e traduzem resultados em status e
-  respostas. O frontend tem uma tela de agentes em `Agents.tsx`; `App.tsx` ainda
-  concentra o painel e `Connections.tsx` ainda reúne a interface de conexões.
-- `integration-registry.ts` registra metadados e execução dos adaptadores
-  Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home e Proxmox. As quatro
-  conexões novas usam o transporte com política de destino; Proxmox usa seu
-  cofre legado e transporte próprio, mas aparece no mesmo catálogo e registro
-  de execução.
-- O MCP executa em processo separado e abre SQLite/cofre diretamente. Ele
-  autentica tokens de agente com escopos; oferece consultas e criação de
-  propostas. Ele não passa pela API HTTP nem pela sessão web. Essa fronteira é
-  intencional por enquanto e precisa ser considerada ao alterar autorização.
-- SQLite é fonte persistente. Atualizações de esquema são migrações versionadas;
-  estado de sessão e alguns caches de observação são mantidos em memória.
+- `apps/frontend` contains the React/Vite web application. `apps/backend` contains the Fastify
+  API, stdio MCP process, authentication, integrations, network policy, and domain services.
+  `packages/shared` exports shared TypeScript contracts and Zod validation; `packages/db` contains
+  Drizzle/SQLite schemas, initialization, and migrations.
+- `app.ts` composes global server hooks and route modules. Routes for authentication, service/group
+  configuration, agents/proposals, Proxmox, and connections reside in `routes/`. `input-schemas.ts`
+  validates HTTP contracts and MCP tool inputs before invoking domain logic.
+  `service-configuration.ts` encapsulates card/group domain invariants, transactional updates,
+  and optimistic version concurrency across HTTP, MCP, and proposal approval.
+- `integration-connections.ts` orchestrates connection settings, credential encryption,
+  persistence, observation caching, and adapter dispatch; route handlers parse requests and
+  translate results into HTTP status and JSON responses.
+- `integration-registry.ts` registers metadata and execution handlers for Jellyfin, Home
+  Assistant, Uptime Kuma, AdGuard Home, and Proxmox. The four connection adapters leverage
+  the network transport with destination policy; Proxmox retains its legacy vault and dedicated
+  transport, but participates in the unified catalog and execution registry.
+- MCP runs in a separate process and accesses SQLite/vault directly. It authenticates agent tokens
+  with granular scopes, offering queries and proposal creation. It intentionally bypasses the HTTP
+  stack and web cookies.
+- SQLite is the primary persistent store. Schema changes are versioned migrations; session
+  state and certain observation caches are maintained in memory.
 
-## Avaliação e prioridades arquiteturais
+## Assessment and Architectural Priorities
 
-A base é coerente para produto inicial: limites entre frontend, backend e
-pacotes compartilhados estão estabelecidos, as integrações externas ficam no
-backend, o banco tem migrações e há testes unitários/de integração. TypeScript
-estrito, pnpm workspaces, Turborepo, ESLint, Prettier, Vitest e CI dão uma
-fundação de consistência. A arquitetura não precisa de microserviços ou de uma
-camada genérica adicional agora.
+The architectural baseline is appropriate for an early-stage product: modular boundaries
+between frontend, backend, and shared packages are well-established, external integrations
+remain in the backend, the database is backed by migrations, and automated unit/integration
+tests cover critical paths. Strict TypeScript, pnpm workspaces, Turborepo, ESLint, Prettier,
+Vitest, and CI provide solid engineering hygiene. Microservices or additional generic
+frameworks are unnecessary.
 
-Os principais pontos de atenção são evolução e consistência, não a escolha de
-tecnologia:
+Key areas of attention focus on consistency and safe evolution:
 
-1. A validação Zod nas rotas HTTP impede que payloads malformados alcancem as
-   regras de domínio. Mantenha mensagens externas estáveis e valide novamente
-   dados serializados lidos do banco ou cofre.
-2. O módulo de conexões agora concentra regras de credencial, persistência e
-   observação atrás de rotas HTTP pequenas. Preserve testes pelos fluxos
-   observáveis e extraia mais apenas se isso aumentar a locality das regras.
-3. MCP e HTTP compartilham regras de configuração de cards, mas o MCP continua
-   com acesso local direto ao banco/cofre e autorização própria. Mudanças de
-   escopos e propostas precisam considerar os dois processos; contratos públicos
-   devem continuar livres de segredos.
-4. `App.tsx` ainda reúne o painel e seus fluxos de estado; `Connections.tsx`
-   contém uma tela extensa. Extraia telas ou hooks quando isso reduzir o contexto
-   necessário para alterar uma capacidade e melhorar seus testes.
-5. O registro de execução é compartilhado, mas armazenamento de credenciais e
-   configuração Proxmox continuam diferentes das demais integrações. Mantenha
-   essa distinção até haver necessidade de produto e migração compatível.
-6. Tipos de integração ainda são declarados no catálogo de execução, nos schemas
-   do backend e na interface. Mantenha os quatro tipos de conexão explícitos;
-   centralize esse contrato quando a próxima integração tornar a duplicação
-   concreta, em vez de adicionar geração ou dependência compartilhada agora.
+1. Zod validation at HTTP boundaries stops malformed payloads from reaching domain rules.
+   Maintain stable external error messages and validate serialized data read back from the database.
+2. The connections module encapsulates credential management, persistence, and observation
+   behind clean HTTP handlers. Preserve test coverage over observable flows and refactor only
+   when doing so increases cohesion.
+3. MCP and HTTP share core card configuration logic, but MCP maintains direct local database/vault
+   access and its own token auth. Scope changes and proposal lifecycles must consider both
+   interfaces; public schemas must remain strictly secret-free.
+4. Extract large pages or hooks into smaller units when doing so reduces cognitive load and
+   simplifies test boundaries.
+5. While execution dispatch is unified, credential storage and configuration for Proxmox differ
+   from connection adapters. Maintain this distinction until product requirements and a migration
+   path justify unification.
+6. Integration kinds are currently declared across execution catalogs, backend schemas, and UI.
+   Keep these types explicit; centralize this contract when future adapters make duplication
+   tangible, rather than introducing complex generic code generators now.
 
-Para regras contínuas de contribuição e revisão, consulte
-[Padrões de engenharia](padroes.md). Mudanças estruturais que afetem limites,
-persistência, segurança ou implantação devem registrar decisão e consequências
-em uma nota curta de arquitetura (ADR), além de atualizar este documento.
+For ongoing contribution and review rules, consult [Engineering Standards](padroes.md).
+Structural changes affecting boundaries, persistence, security, or deployment must be recorded
+in an Architecture Decision Record (ADR) alongside documentation updates.

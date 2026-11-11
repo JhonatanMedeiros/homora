@@ -21,7 +21,7 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - An optional top bar (turn it on in Settings) with the date, the time and CPU, memory and disk usage from the Proxmox widget.
 - Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) and a local MCP server where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
 
-Not available yet: OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md) (in Portuguese).
+Not available yet: OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md).
 
 ## Install with Docker
 
@@ -163,8 +163,6 @@ Open <http://localhost:5173>. Vite forwards `/api` to the local Fastify backend 
 The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Node.js, TypeScript and Fastify on the backend; shared contracts; Drizzle ORM with SQLite. Run `pnpm check` (lint, format, types and tests) and `pnpm build` before sending changes. Commits follow Conventional Commits (`feat: ...`), enforced by Husky and Commitlint. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/padroes.md](docs/padroes.md).
 
 ## Documentation
-
-Most engineering documents are in Portuguese.
 
 - [Glossary](GLOSSARY.md) · [Product](docs/produto.md) · [Architecture and security](docs/arquitetura.md) · [Engineering standards](docs/padroes.md)
 - [Integrations](docs/integracoes.md) · [Strategy versus Homepage and Dashy](docs/estrategia.md)

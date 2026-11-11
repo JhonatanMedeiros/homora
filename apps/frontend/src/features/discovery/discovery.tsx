@@ -26,8 +26,8 @@ type State =
   | { status: 'ready'; found: Found };
 
 /**
- * Sugestões de cards a partir de labels de contêineres Docker. Nada é adicionado sem a
- * revisão: a pessoa marca os contêineres e confirma, e o servidor relê o Docker na hora.
+ * Card suggestions from Docker container labels. Nothing is added without review:
+ * the user selects containers and confirms, and the server re-queries Docker.
  */
 export function Discovery({ onImported }: { onImported: () => void | Promise<void> }) {
   const [state, setState] = useState<State>({ status: 'loading' });
