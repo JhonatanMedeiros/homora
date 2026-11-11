@@ -4,16 +4,14 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { createDatabase } from '@homora/db';
-import { createAuth } from './auth.js';
+import { createTestAuth } from './test-auth.js';
 import { createApp } from './app.js';
 
 it('stores check method and interval, validates bounds, and carries values in export/import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-check-settings-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const auth = createAuth(`${path}.auth`);
-  auth.setup('test-password');
-  const cookie = `homora_session=${auth.login('test-password', 'test')}`;
+  const { auth, cookie } = await createTestAuth(db.db);
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth);
   const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>

@@ -17,7 +17,7 @@ data or real credentials. There is no established response SLA or bug bounty pol
 
 ## Known Precautions
 
-- Keep `.env`, `data/`, `.auth`, `.key`, and `.proxmox` files out of version control
+- Keep `.env`, `data/`, `.session-secret`, `.key`, and `.proxmox` files out of version control
   and with restricted permissions. Custom paths also need protection.
 - The database may contain encrypted credentials; the `.key` file is required to
   decrypt them. Protect and store backups separately. Without this key,

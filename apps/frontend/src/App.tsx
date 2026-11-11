@@ -22,6 +22,7 @@ import { SettingsPage } from '@/pages/settings-page';
 import { useAuth } from '@/hooks/use-auth';
 import { useServices } from '@/hooks/use-services';
 import { Agents } from '@/features/agents/agents';
+import { Toaster } from '@/components/ui/sonner';
 import { AuthPage } from '@/pages/auth-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
 import { ServicesPage } from '@/pages/services-page';
@@ -199,6 +200,8 @@ function Dashboard({
           }
         />
       )}
+      {/* Above the fixed mobile bar of organize mode. */}
+      <Toaster position="bottom-center" mobileOffset={{ bottom: 80 }} />
     </AppShell>
   );
 }

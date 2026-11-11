@@ -20,7 +20,11 @@ export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCanc
   const [adding, setAdding] = useState(false);
   return (
     <>
-      <Alert role="group" aria-label={t('organize.region')}>
+      <Alert
+        role="group"
+        aria-label={t('organize.region')}
+        className="items-center [&>svg]:translate-y-0"
+      >
         <SlidersHorizontal aria-hidden="true" />
         <AlertDescription className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-foreground">
           <span>{t('organize.help')}</span>

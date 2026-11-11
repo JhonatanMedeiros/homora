@@ -658,8 +658,38 @@ implementation because it changes a security default.
   exercised by the test environment) and real touch devices; the touch behavior relies on
   `pointer: coarse` styles and was only checked through desktop emulation.
 - Not done: dragging with a finger (would need a new dependency such as dnd-kit); the maintainer
-  chose arrows and the group menu instead. Dropping onto an empty group is not supported; use the
-  row menu.
+  chose arrows and the group menu instead.
+
+### Organize Mode Follow-ups (2026-11-11)
+
+- Removing a group now asks for confirmation in an alert dialog before the request is sent.
+- While a service is dragged, an empty group shows a dashed drop zone; dropping there moves the
+  service to that group. Previously only the row menu could do this.
+- The hint icon is now vertically centered with its text.
+- `App.test.tsx` simulates the drag events (drag start, over, drop) for a row of another group and
+  for an empty group. This exercises our handlers but not the browser's native drag and drop, nor
+  real touch devices; both still need a manual check.
+- Accessibility review (code and tests only; no screen reader was run): the row arrows used
+  `disabled`, so pressing "down" until the row reached the end dropped keyboard focus to the page.
+  They now use `aria-disabled` and stay focused. Arrow moves announce the new position ("X: position
+  2 of 5") in a visually hidden live region.
+- When `/api/service-status` fails, the page keeps the last known statuses and shows a muted note
+  ("Could not refresh availability. Trying again in a minute.") instead of silently showing stale or
+  unknown lights. The loading and error states of the service list itself were reviewed and left as
+  they were.
+
+### Undo After Moving a Service (2026-11-11)
+
+- Moving a service to another group (row menu or drag) shows a toast with "Undo" for 8 seconds.
+  Undo puts the service back in its original group and restores that group's previous order (the
+  order is captured before the move, because a move appends to the end of the target group).
+- Sonner's `Toaster` is now mounted in `App`, at the bottom center and above the fixed mobile
+  "Organizing / Done" bar. This replaces the green banner for this message.
+- Not covered: undo for service removal (it already has inline confirmation) and for group
+  removal (it has a confirmation dialog). Arrow moves are not undoable; the arrows reverse them.
+- Verified with tests and desktop and 390 px screenshots of the toast. If another change happens
+  within the 8 seconds (for example another move), Undo still restores the order captured at the
+  time of its own move, which can overwrite the later change.
 
 ## Core Homepage — Implemented Flows
 
@@ -765,3 +795,34 @@ implementation because it changes a security default.
   after deletion. Old HTTP endpoints return 410 after migration.
 - Automated tests exercise migration with and without widgets, missing keys, multiple independent
   configurations and mocked network requests. Live cluster compatibility remains unverified.
+
+## Auth Log — Better Auth for Web Authentication (2026-11-11)
+
+- Replaced the file-based account (`<database>.auth`, in-memory sessions) with Better Auth
+  1.7.19 (email and password) on the application's SQLite database. Pinned to 1.7.19 because
+  1.7.20 was younger than the project's minimum package age; no exception was added.
+  Decisions: first-run onboarding stays open as before (name, email, password); 8-hour sessions;
+  sign-in limited to 10 attempts per client in 15 minutes; telemetry disabled; only
+  `sign-in/email`, `sign-out` and `get-session` are reachable; a database hook refuses a second
+  account; the signed-in account is recorded as the proposal reviewer instead of `local-admin`.
+- Schema: migration `0010` adds `user`, `account`, `session` and `verification`; a backend test
+  compares them with Better Auth's own requirements. Existing `.auth` files are ignored (data
+  loss was accepted for this early stage). `pnpm auth:reset` replaces "delete `.auth`".
+- New `HOMORA_SESSION_SECRET` (optional, replaces a stale `.env.example` entry) and a
+  `<database>.session-secret` file (0600) created on first start. Removed the unused
+  `HOMORA_ADMIN_PASSWORD` entry from `.env.example`.
+- `pnpm-workspace.yaml` sets `dedupePeers: true`: Better Auth's optional peers made pnpm install a
+  second `drizzle-orm` for the backend, which broke SQL types shared with `@homora/db`.
+- Better Auth's in-memory rate-limit store is shared by every instance in a process; the API
+  passes its own per-instance store. Secure cookies follow the request origin (the library
+  follows its base URL), so the API adds `Secure` for HTTPS origins itself.
+- Validated: `pnpm check` (lint, format, types, 291 unit and integration tests and 6 script
+  tests); real HTTP against the compiled backend (setup, sign-in, restart keeps the session,
+  sign-out, closed sign-up, 0600 secret); Docker image build and a production-mode container
+  (Secure cookie only for the HTTPS origin, unknown origin refused, `auth:reset` inside the
+  image, onboarding available again); Chromium (headless) against the Vite dev server and the
+  compiled backend: account creation with password confirmation, session kept after reload,
+  sign-out, wrong password message, sign-in (cookie `HttpOnly`, `SameSite=Strict`, 8 hours).
+- **Not validated:** behind the bundled nginx and a real HTTPS reverse proxy (per-client limit
+  through `X-Forwarded-For`); Safari and Firefox (including Secure cookies on
+  `http://localhost`); behavior under concurrent load. The open P2 session review item stays open.

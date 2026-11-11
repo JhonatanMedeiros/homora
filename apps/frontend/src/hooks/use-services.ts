@@ -13,6 +13,7 @@ export function useServices() {
   const [statuses, setStatuses] = useState<Record<number, ServiceStatus>>({});
   const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [statusError, setStatusError] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -65,10 +66,14 @@ export function useServices() {
           return response.json() as Promise<Record<number, ServiceStatus>>;
         })
         .then((data) => {
-          if (active) setStatuses(data);
+          if (active) {
+            setStatuses(data);
+            setStatusError(false);
+          }
         })
         .catch(() => {
-          // Monitoring is auxiliary; a failure does not interfere with services.
+          // Monitoring is auxiliary and does not block services; the page only notes the lag.
+          if (active) setStatusError(true);
         });
     void refreshStatuses();
     const timer = window.setInterval(() => void refreshStatuses(), 60_000);
@@ -157,6 +162,28 @@ export function useServices() {
     }
   }
 
+  /**
+   * Undoes moveServiceToGroup: puts the service back in its original group and restores that group's
+   * previous order (`ids`, captured before the move, includes the service).
+   */
+  async function restoreService(service: Service, ids: number[]): Promise<string | null> {
+    const failure = await moveServiceToGroup(service, service.category);
+    if (failure) return failure;
+    try {
+      const response = await fetch('/api/services/order', {
+        method: 'PUT',
+        headers: json,
+        body: JSON.stringify({ category: service.category, ids }),
+      });
+      if (!response.ok) throw Error();
+      await refresh();
+      return null;
+    } catch {
+      void refresh();
+      return t('error.saveCardOrder');
+    }
+  }
+
   async function moveGroup(category: string, direction: -1 | 1): Promise<string | null> {
     const ordered = [...categories];
     const from = ordered.indexOf(category);
@@ -205,6 +232,7 @@ export function useServices() {
     loaded,
     groupRows,
     statuses,
+    statusError,
     loadError,
     setLoadError,
     categories,
@@ -213,6 +241,7 @@ export function useServices() {
     refresh,
     placeService,
     moveServiceToGroup,
+    restoreService,
     moveGroup,
     setGroupColumns,
   };

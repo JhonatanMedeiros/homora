@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createDatabase } from '@homora/db';
+import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
+import { createTestAuth } from './test-auth.js';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -10,10 +11,7 @@ import { rootCertificates } from 'node:tls';
 import { createVault } from './vault.js';
 import { parseAllowedOrigins } from './config.js';
 const database = createDatabase(':memory:');
-const auth = createAuth(join(mkdtempSync(join(tmpdir(), 'homora-auth-')), 'auth'));
-auth.setup('senha-super-segura');
-const token = auth.login('senha-super-segura', 'test')!;
-const cookie = `homora_session=${token}`;
+const { auth, cookie } = await createTestAuth(database.db);
 const app = createApp(database.db, 5173, auth);
 afterEach(async () => {
   const response = await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } });
@@ -484,7 +482,7 @@ groups:
     const headers = { cookie, origin: 'http://localhost:51730' };
     for (const [method, url] of [
       ['POST', '/api/services'],
-      ['POST', '/api/auth/logout'],
+      ['POST', '/api/auth/sign-out'],
       ['POST', '/api/proxmox/config'],
       ['POST', '/api/connections'],
       ['POST', '/api/widgets'],
@@ -499,131 +497,171 @@ groups:
 });
 
 describe('API authentication', () => {
-  it('counts short passwords as invalid login attempts', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'homora-api-login-limit-'));
-    const localAuth = createAuth(join(dir, 'auth'));
-    const localApp = createApp(database.db, 5173, localAuth);
-    const headers = { origin: 'http://localhost:5173' };
+  const origin = 'http://localhost:5173';
+  const account = {
+    name: 'Administrator',
+    email: 'admin@homora.test',
+    password: 'super-secure-password',
+  };
+  function fresh(allowedOrigins: string[] = []) {
+    const db = createDatabase(':memory:');
+    const localAuth = createAuth({
+      sqlite: getSqliteHandle(db.db),
+      secret: 'x'.repeat(48),
+      webPort: 5173,
+      allowedOrigins,
+    });
+    const localApp = createApp(db.db, 5173, localAuth, undefined, allowedOrigins);
+    return {
+      localApp,
+      signIn: (password: string, headers: Record<string, string> = { origin }) =>
+        localApp.inject({
+          method: 'POST',
+          url: '/api/auth/sign-in/email',
+          headers,
+          payload: { email: account.email, password },
+        }),
+      setup: (headers: Record<string, string> = { origin }, payload: object = account) =>
+        localApp.inject({ method: 'POST', url: '/api/auth/setup', headers, payload }),
+      done: async () => {
+        await localApp.close();
+        db.close();
+      },
+    };
+  }
+  const cookieOf = (response: { headers: Record<string, unknown> }) =>
+    String(response.headers['set-cookie']).split(';')[0];
+
+  it('rate limits sign-in attempts and keeps limiting a blocked client', async () => {
+    const { signIn, setup, done } = fresh();
     try {
-      localAuth.setup('super-secure-password');
-      for (let attempt = 0; attempt < 5; attempt++) {
-        expect(
-          (
-            await localApp.inject({
-              method: 'POST',
-              url: '/api/auth/login',
-              headers,
-              payload: { password: 'x' },
-            })
-          ).statusCode,
-        ).toBe(401);
-      }
-      expect(
-        (
-          await localApp.inject({
-            method: 'POST',
-            url: '/api/auth/login',
-            headers,
-            payload: { password: 'super-secure-password' },
-          })
-        ).statusCode,
-      ).toBe(401);
+      await setup();
+      for (let attempt = 0; attempt < 10; attempt++)
+        expect((await signIn('wrong-password')).statusCode).toBe(401);
+      expect((await signIn('wrong-password')).statusCode).toBe(429);
+      expect((await signIn(account.password)).statusCode).toBe(429);
     } finally {
-      await localApp.close();
-      rmSync(dir, { recursive: true, force: true });
+      await done();
     }
   });
 
-  it('creates account once, authenticates, and terminates session', async () => {
-    const localAuth = createAuth(join(mkdtempSync(join(tmpdir(), 'homora-api-auth-')), 'auth'));
-    const localApp = createApp(database.db, 5173, localAuth);
-    const headers = { origin: 'http://localhost:5173' };
-    expect((await localApp.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
-    expect(
-      (
-        await localApp.inject({
-          method: 'POST',
-          url: '/api/auth/setup',
-          headers,
-          payload: { password: 'super-secure-password' },
-        })
-      ).statusCode,
-    ).toBe(201);
-    expect(
-      (
-        await localApp.inject({
-          method: 'POST',
-          url: '/api/auth/setup',
-          headers,
-          payload: { password: 'another-secure-password' },
-        })
-      ).statusCode,
-    ).toBe(403);
-    expect(
-      (
-        await localApp.inject({
-          method: 'POST',
-          url: '/api/auth/login',
-          headers,
-          payload: { password: 'wrong-password' },
-        })
-      ).statusCode,
-    ).toBe(401);
-    const login = await localApp.inject({
-      method: 'POST',
-      url: '/api/auth/login',
-      headers,
-      payload: { password: 'super-secure-password' },
-    });
-    expect(login.statusCode).toBe(200);
-    const cookie = login.headers['set-cookie'] as string;
-    expect(cookie).toContain('HttpOnly');
-    expect(cookie).not.toContain('Secure');
-    expect(
-      (await localApp.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
-        .statusCode,
-    ).toBe(200);
-    await localApp.inject({
-      method: 'POST',
-      url: '/api/auth/logout',
-      headers: { ...headers, cookie },
-    });
-    expect(
-      (await localApp.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
-        .statusCode,
-    ).toBe(401);
-    await localApp.close();
-  });
-  it('sets Secure on allowed HTTPS login and HTTPS termination', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'homora-https-auth-'));
-    const localAuth = createAuth(join(dir, 'auth'));
-    const localApp = createApp(database.db, 5173, localAuth, undefined, ['https://homora.example']);
+  it('creates the account once, authenticates, and terminates the session', async () => {
+    const { localApp, signIn, setup, done } = fresh();
     try {
+      expect((await localApp.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
+      expect((await localApp.inject({ method: 'GET', url: '/api/auth/status' })).json()).toEqual({
+        configured: false,
+        authenticated: false,
+      });
+      expect((await setup({ origin }, { password: 'only-a-password' })).statusCode).toBe(400);
+      expect((await setup({ origin }, { ...account, email: 'not-an-email' })).statusCode).toBe(400);
+      expect((await setup({ origin }, { ...account, password: 'short' })).statusCode).toBe(400);
+      expect((await setup()).statusCode).toBe(201);
+      expect((await setup({ origin }, { ...account, email: 'other@homora.test' })).statusCode).toBe(
+        403,
+      );
+      expect((await signIn('wrong-password')).statusCode).toBe(401);
+      const login = await signIn(account.password);
+      expect(login.statusCode).toBe(200);
+      const setCookie = String(login.headers['set-cookie']);
+      expect(setCookie).toContain('homora.session_token=');
+      expect(setCookie).toContain('HttpOnly');
+      expect(setCookie).toContain('SameSite=Strict');
+      expect(setCookie).toContain('Max-Age=28800');
+      expect(setCookie).not.toContain('Secure');
+      const cookie = cookieOf(login);
+      expect(
+        (await localApp.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
+          .statusCode,
+      ).toBe(200);
+      expect(
+        (
+          await localApp.inject({ method: 'GET', url: '/api/auth/status', headers: { cookie } })
+        ).json(),
+      ).toEqual({ configured: true, authenticated: true });
       await localApp.inject({
         method: 'POST',
-        url: '/api/auth/setup',
-        headers: { origin: 'https://homora.example' },
-        payload: { password: 'super-secure-password' },
+        url: '/api/auth/sign-out',
+        headers: { origin, cookie },
       });
-      const login = await localApp.inject({
-        method: 'POST',
-        url: '/api/auth/login',
-        headers: { origin: 'https://homora.example' },
-        payload: { password: 'super-secure-password' },
+      expect(
+        (await localApp.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
+          .statusCode,
+      ).toBe(401);
+    } finally {
+      await done();
+    }
+  });
+
+  it('never creates a second account, even from simultaneous setups', async () => {
+    const { localApp, setup, done } = fresh();
+    try {
+      const results = await Promise.all(
+        [1, 2, 3, 4].map((n) => setup({ origin }, { ...account, email: `admin${n}@homora.test` })),
+      );
+      expect(results.map((r) => r.statusCode).sort()).toEqual([201, 403, 403, 403]);
+      expect((await localApp.inject({ method: 'GET', url: '/api/auth/status' })).json()).toEqual({
+        configured: true,
+        authenticated: false,
       });
-      expect(login.headers['set-cookie']).toContain('; Secure');
+    } finally {
+      await done();
+    }
+  });
+
+  it('keeps public sign-up and unused Better Auth routes closed', async () => {
+    const { localApp, setup, signIn, done } = fresh();
+    try {
+      await setup();
+      const cookie = cookieOf(await signIn(account.password));
+      for (const [method, url] of [
+        ['POST', '/api/auth/sign-up/email'],
+        ['POST', '/api/auth/change-password'],
+        ['GET', '/api/auth/list-sessions'],
+        ['POST', '/api/auth/request-password-reset'],
+      ] as const) {
+        const response = await localApp.inject({
+          method,
+          url,
+          headers: { origin, cookie },
+          payload: method === 'POST' ? {} : undefined,
+        });
+        expect(response.statusCode, url).toBe(404);
+      }
+    } finally {
+      await done();
+    }
+  });
+
+  it('rejects sign-in from an origin that is not allowed', async () => {
+    const { signIn, setup, done } = fresh();
+    try {
+      await setup();
+      expect((await signIn(account.password, { origin: 'http://evil.example' })).statusCode).toBe(
+        403,
+      );
+    } finally {
+      await done();
+    }
+  });
+
+  it('sets Secure on allowed HTTPS sign-in and sign-out', async () => {
+    const https = { origin: 'https://homora.example' };
+    const { localApp, setup, signIn, done } = fresh(['https://homora.example']);
+    try {
+      expect((await setup(https)).statusCode).toBe(201);
+      const login = await signIn(account.password, https);
+      expect(login.statusCode).toBe(200);
+      expect(String(login.headers['set-cookie'])).toContain('; Secure');
       const logout = await localApp.inject({
         method: 'POST',
-        url: '/api/auth/logout',
-        headers: {
-          origin: 'https://homora.example',
-          cookie: login.headers['set-cookie'] as string,
-        },
+        url: '/api/auth/sign-out',
+        headers: { ...https, cookie: cookieOf(login) },
       });
-      expect(logout.headers['set-cookie']).toContain('; Secure');
+      expect(logout.statusCode).toBe(200);
+      expect(String(logout.headers['set-cookie'])).toContain('; Secure');
     } finally {
-      await localApp.close();
-      rmSync(dir, { recursive: true, force: true });
+      await done();
     }
   });
 });

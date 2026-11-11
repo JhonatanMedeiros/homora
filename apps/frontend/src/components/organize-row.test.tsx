@@ -36,8 +36,8 @@ it('moves with the arrows and disables them at the ends', () => {
   expect(props.onMove).toHaveBeenLastCalledWith(1);
   cleanup();
   setup({ first: true, last: true });
-  expect((screen.getByLabelText('Mover Wiki para cima') as HTMLButtonElement).disabled).toBe(true);
-  expect((screen.getByLabelText('Mover Wiki para baixo') as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByLabelText('Mover Wiki para cima').getAttribute('aria-disabled')).toBe('true');
+  expect(screen.getByLabelText('Mover Wiki para baixo').getAttribute('aria-disabled')).toBe('true');
 });
 
 it('moves to the top and to another group from the menu', async () => {

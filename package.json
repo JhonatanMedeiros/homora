@@ -21,7 +21,8 @@
     "format:check": "prettier --check .",
     "check": "pnpm lint && pnpm format:check && pnpm type-check && pnpm test",
     "prepare": "husky",
-    "backup": "node scripts/backup.mjs"
+    "backup": "node scripts/backup.mjs",
+    "auth:reset": "node scripts/auth-reset.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.2",

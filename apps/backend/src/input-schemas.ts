@@ -58,9 +58,13 @@ const passwordValueSchema = z
   .max(1024)
   .refine((password) => Buffer.byteLength(password) <= 1024);
 
-export const passwordSchema = z.object({ password: passwordValueSchema.min(8) }).strict();
-
-export const loginPasswordSchema = z.object({ password: passwordValueSchema }).strict();
+export const setupSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    email: z.email().max(254),
+    password: passwordValueSchema.min(8),
+  })
+  .strict();
 
 export const createAgentSchema = z
   .object({

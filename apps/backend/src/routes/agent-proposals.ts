@@ -3,6 +3,7 @@ import type { createProposalService } from '../proposals.js';
 import { createAgentSchema, opaqueIdSchema, proposalReviewSchema } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
 import type { createServiceMonitor } from '../service-monitor.js';
+import type { createAuth } from '../auth.js';
 
 type Proposals = ReturnType<typeof createProposalService>;
 
@@ -10,6 +11,7 @@ export function registerAgentProposalRoutes(
   app: FastifyInstance,
   proposals: Proposals,
   monitor: ReturnType<typeof createServiceMonitor>,
+  auth: ReturnType<typeof createAuth>,
 ) {
   app.get('/api/proposals', async () => proposals.list());
   app.post('/api/agents', async (request, reply) => {
@@ -43,7 +45,14 @@ export function registerAgentProposalRoutes(
     const parsed = proposalReviewSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-decision'));
     try {
-      const state = proposals.decide(request.params.id, parsed.data.approve, 'local-admin');
+      // The reviewer is recorded as the signed-in account (the guard guarantees a session).
+      const session = await auth.session(request.headers);
+      if (!session) return reply.code(401).send(errorBody('auth-required'));
+      const state = proposals.decide(
+        request.params.id,
+        parsed.data.approve,
+        `user:${session.userId}`,
+      );
       if (state === 'approved') void monitor.invalidate();
       return { state };
     } catch (error) {

@@ -22,14 +22,21 @@ register(
     }`),
 );
 const { createAuth } = await import('../../apps/backend/src/auth.ts');
+const { createDatabase, getSqliteHandle } = await import('../../packages/db/src/index.ts');
 const { createVault } = await import('../../apps/backend/src/vault.ts');
 
-test('restores database, auth, key and integration to a different path', async () => {
+test('restores database (with its administrator account), key and integration to a different path', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'homora-restore-full-'));
   const source = join(dir, 'source.sqlite');
   const backup = join(dir, 'backup.sqlite');
   const restored = join(dir, 'restored.sqlite');
   const password = 'restore-test-password';
+  const email = 'admin@homora.test';
+  const authOptions = (db) => ({
+    sqlite: getSqliteHandle(db.db),
+    secret: 'restore-test-secret'.repeat(3),
+    webPort: 5173,
+  });
   const integration = {
     url: 'https://pve.example:8006',
     tokenId: 'user@pve!dashboard',
@@ -37,16 +44,14 @@ test('restores database, auth, key and integration to a different path', async (
     ca: rootCertificates[0],
   };
   try {
-    const db = new DatabaseSync(source);
-    db.exec("CREATE TABLE services (name TEXT); INSERT INTO services VALUES ('test');");
+    const db = createDatabase(source);
+    getSqliteHandle(db.db)
+      .prepare('INSERT INTO services (name, url, category, description) VALUES (?, ?, ?, ?)')
+      .run('test', 'https://service.example', 'tests', '');
+    await createAuth(authOptions(db)).setup({ name: 'Administrator', email, password });
     db.close();
-    createAuth(`${source}.auth`).setup(password);
     await createVault(source).save(integration);
     const sourceDb = new DatabaseSync(source);
-    sourceDb.exec(`CREATE TABLE integration_instances (
-      id INTEGER PRIMARY KEY, type TEXT NOT NULL, name TEXT NOT NULL,
-      public_config TEXT NOT NULL, secret_ref TEXT, certificate_ref TEXT
-    )`);
     const credentials = JSON.stringify({ secret: 'dummy-ha-secret', ca: rootCertificates[0] });
     const encrypted = createVault(source).seal(credentials, false);
     sourceDb.prepare('INSERT INTO integration_instances VALUES (1, ?, ?, ?, ?, ?)').run(
@@ -68,19 +73,24 @@ test('restores database, auth, key and integration to a different path', async (
       assert.equal(result.status, 0, result.stderr);
     };
     runBackup(source, backup);
-    for (const suffix of ['.auth', '.key', '.proxmox'])
-      await copyFile(source + suffix, backup + suffix);
+    for (const suffix of ['.key', '.proxmox']) await copyFile(source + suffix, backup + suffix);
     runBackup(backup, restored);
-    for (const suffix of ['.auth', '.key', '.proxmox'])
-      await copyFile(backup + suffix, restored + suffix);
+    for (const suffix of ['.key', '.proxmox']) await copyFile(backup + suffix, restored + suffix);
     const restoredDb = new DatabaseSync(restored, { readOnly: true });
     try {
       assert.equal(restoredDb.prepare('SELECT name FROM services').get().name, 'test');
     } finally {
       restoredDb.close();
     }
-    const auth = createAuth(`${restored}.auth`);
-    assert.ok(auth.login(password, 'test'));
+    // The account lives in the database, so restoring the database restores the sign-in.
+    const restoredAuth = createDatabase(restored);
+    try {
+      const auth = createAuth(authOptions(restoredAuth));
+      assert.ok(auth.configured());
+      assert.ok(await auth.createSessionCookie(email, password));
+    } finally {
+      restoredAuth.close();
+    }
     assert.deepEqual(createVault(restored).load(), integration);
     const restoredVault = createVault(restored);
     const inspectDb = new DatabaseSync(restored, { readOnly: true });

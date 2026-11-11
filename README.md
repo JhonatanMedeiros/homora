@@ -33,7 +33,7 @@ cd homora
 docker compose up -d --build
 ```
 
-Open <http://localhost:8080> and create an administrator password (at least 8 characters). The port is bound to `127.0.0.1` and your data lives in the `homora-data` volume.
+Open <http://localhost:8080> and create the administrator account: a name, an email and a password of at least 8 characters. The email is only your sign-in name; Homora never sends email. The port is bound to `127.0.0.1` and your data lives in the `homora-data` volume.
 
 The bind address comes from `HOMORA_BIND_IP` (default `127.0.0.1`). Override it, for example `HOMORA_BIND_IP=0.0.0.0`, only when a reverse proxy on the same private network terminates HTTPS — see the note below.
 
@@ -61,7 +61,7 @@ With a reverse proxy that terminates HTTPS in front of Homora:
 1. Keep the Homora port on a private network and publish only the proxy. Do not publish the backend (port 3000); in Compose it is not published.
 2. Set `HOMORA_ALLOWED_ORIGINS` to the public origin, for example `https://homora.example.home` (a comma-separated list; HTTPS only, plus `localhost`).
 3. Make the proxy forward `Host` and send the real client address in `X-Forwarded-For` (for example `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` in nginx).
-4. Set `HOMORA_TRUSTED_PROXY` to the proxy's address or network, for example `172.18.0.0/16` for a proxy container on the Compose network. This lets the per-client login limit (5 wrong passwords per client in 15 minutes) tell clients apart. Without it, every client behind your proxy shares one counter, so someone else's failed attempts can lock you out.
+4. Set `HOMORA_TRUSTED_PROXY` to the proxy's address or network, for example `172.18.0.0/16` for a proxy container on the Compose network. This lets the per-client login limit (10 sign-in attempts per client in 15 minutes) tell clients apart. Without it, every client behind your proxy shares one counter, so someone else's failed attempts can lock you out.
 5. Do not disable origin validation. The session cookie is `HttpOnly`, `SameSite=Strict` and gets `Secure` when you sign in from an HTTPS origin.
 
 `HOMORA_TRUST_PROXY=true` (already set in the Compose files) makes the backend read the client address from `X-Forwarded-For`; set it only if every request reaches the backend through a proxy that overwrites that header, as the bundled nginx does.
@@ -90,7 +90,7 @@ Create a consistent copy of the database (existing files are never overwritten):
 pnpm backup data/homora.sqlite backups/homora.sqlite
 ```
 
-The database holds your cards and encrypted connection credentials. The encryption key and the administrator account live in `.key` and `.auth` files next to the database, and the original Proxmox integration also uses `.proxmox`. Copy those separately into a protected backup and restore them with the same derived names. Without the key you must configure credentials again; without `.auth` the account cannot be recovered. To restore, stop Homora, keep the current database and use the backup as the source of a new file, for example `pnpm backup backups/homora.sqlite data/restored.sqlite`. Point `HOMORA_DATABASE_PATH` at it and restart.
+The database holds your cards, the administrator account (and its sessions) and encrypted connection credentials, so a database backup already includes the account. The encryption key lives in a `.key` file next to the database, and the original Proxmox integration also uses `.proxmox`. Copy those separately into a protected backup and restore them with the same derived names. Without the key you must configure credentials again. A `.auth` file left by earlier versions is no longer read and can be deleted. To restore, stop Homora, keep the current database and use the backup as the source of a new file, for example `pnpm backup backups/homora.sqlite data/restored.sqlite`. Point `HOMORA_DATABASE_PATH` at it and restart.
 
 With Docker Compose, use a new protected directory on the host (the commands do not overwrite backups):
 
@@ -98,19 +98,18 @@ With Docker Compose, use a new protected directory on the host (the commands do 
 mkdir -p backups/backup-2026-11-10
 docker compose exec backend node scripts/backup.mjs /app/data/homora.sqlite /app/data/backup.sqlite
 docker compose cp backend:/app/data/backup.sqlite backups/backup-2026-11-10/homora.sqlite
-docker compose cp backend:/app/data/homora.sqlite.auth backups/backup-2026-11-10/homora.sqlite.auth
 docker compose cp backend:/app/data/homora.sqlite.key backups/backup-2026-11-10/homora.sqlite.key
 docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11-10/homora.sqlite.proxmox
 ```
 
-`.auth` and `.proxmox` may not exist on every installation; skip a copy if the file is missing. Keep the key as protected as the database, and do a test restore before relying on a backup.
+`.proxmox` may not exist on every installation; skip the copy if the file is missing. Keep the key as protected as the database, and do a test restore before relying on a backup.
 
 ## Sessions, password reset and secret rotation
 
-- **Sessions** live in memory for eight hours and end when the backend restarts. The cookie is `HttpOnly`, `SameSite=Strict` and, when you sign in from an HTTPS origin, `Secure`. State-changing requests are accepted only from an allowed origin. Five wrong passwords from one client address block that address for 15 minutes (the counter is in memory too).
-- **Forgot the password:** stop the backend, delete `<database>.auth` (for Compose, `/app/data/homora.sqlite.auth` in the volume), start it again and open Homora to create a new account. Cards and encrypted connections are kept. Until the first account is created, anyone who can reach the interface from an allowed origin can claim it, so do this on a private network. Restarting also ends every old session.
+- **Sessions** are stored in the database and last eight hours; they survive a backend restart. The cookie (`homora.session_token`) is `HttpOnly`, `SameSite=Strict` and, when you sign in from an HTTPS origin, `Secure`. It is signed with a secret kept in `<database>.session-secret` (created automatically, mode 0600) or taken from `HOMORA_SESSION_SECRET` (at least 32 characters). Changing or losing that secret only signs everyone out. State-changing requests are accepted only from an allowed origin. Ten sign-in attempts from one client address in 15 minutes block that address until the window ends (the counter is in memory and resets on restart).
+- **Forgot the password:** run `pnpm auth:reset` to see the account, then `pnpm auth:reset --yes` to remove the account and every session (with Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`). Open Homora to create a new account; cards and encrypted connections are kept. Until the first account is created, anyone who can reach the interface from an allowed origin can claim it, so do this on a private network.
 - **Rotating connection secrets:** rotating the encryption key itself is not supported, and removing `<database>.key` while encrypted connections exist makes them unreadable (Homora will not create a new key over them). To rotate what matters in practice, create a new token at the source (Proxmox, Home Assistant, and so on), enter it again on the connection in Integrations, then revoke the old token. Agent tokens can be replaced in the Agents page ("Generate new token") or revoked.
-- Treat the database, `.key`, `.auth` and backups as one secret set: anyone holding the key and the database can read the stored credentials.
+- Treat the database, `.key` and backups as one secret set: anyone holding the key and the database can read the stored credentials.
 
 ## Docker discovery
 
@@ -174,7 +173,7 @@ pnpm dev
 
 Sign-in uses `/login` and returns to the requested local route after authentication. The dashboard uses `/`; management sections use `/manage/services`, `/manage/integrations`, `/manage/agents`, and `/manage/settings`, with browser history support. Service forms use `/manage/services/new` and `/manage/services/:id/edit`; unknown routes show a not-found page. When hosting the frontend separately, configure the server to return `index.html` for these routes.
 
-Open <http://localhost:5173>. Vite forwards `/api` to the local Fastify backend on port 3000. `pnpm dev` uses the isolated `data/homora-dev.sqlite` database and seeds example services on first creation. Changes persist between runs; deleted examples are not recreated. Example addresses are illustrative and private-network monitoring is not enabled. The first run still requires creating an administrator password. Outside development, the default database is `data/homora.sqlite` and can be configured with `HOMORA_DATABASE_PATH`; `pnpm dev` always uses its isolated database.
+Open <http://localhost:5173>. Vite forwards `/api` to the local Fastify backend on port 3000. `pnpm dev` uses the isolated `data/homora-dev.sqlite` database and seeds example services on first creation. Changes persist between runs; deleted examples are not recreated. Example addresses are illustrative and private-network monitoring is not enabled. The first run still requires creating an administrator account. Outside development, the default database is `data/homora.sqlite` and can be configured with `HOMORA_DATABASE_PATH`; `pnpm dev` always uses its isolated database.
 
 The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Node.js, TypeScript and Fastify on the backend; shared contracts; Drizzle ORM with SQLite. Run `pnpm check` (lint, format, types and tests) and `pnpm build` before sending changes. Commits follow Conventional Commits (`feat: ...`), enforced by Husky and Commitlint. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/padroes.md](docs/padroes.md).
 

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { createDatabase } from '@homora/db';
-import { createAuth } from './auth.js';
+import { createTestAuth } from './test-auth.js';
 import { createApp } from './app.js';
 import {
   createDockerSource,
@@ -167,13 +167,11 @@ it('client performs single GET /containers/json over socket and TCP, rejecting i
   }
 });
 
-function setup(source?: DockerSource) {
+async function setup(source?: DockerSource) {
   const dir = mkdtempSync(join(tmpdir(), 'homora-discovery-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const auth = createAuth(`${path}.auth`);
-  auth.setup('test-password');
-  const cookie = `homora_session=${auth.login('test-password', 'test')}`;
+  const { auth, cookie } = await createTestAuth(db.db);
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, undefined, [], source);
   const send = (method: 'GET' | 'POST', url: string, payload?: object) =>
@@ -189,7 +187,7 @@ function setup(source?: DockerSource) {
 }
 
 it('without HOMORA_DOCKER_HOST discovery remains disabled and imports nothing', async () => {
-  const { send, done } = setup();
+  const { send, done } = await setup();
   try {
     expect((await send('GET', '/api/discovery')).json()).toEqual({ enabled: false });
     const response = await send('POST', '/api/discovery/import', { ids: [id(1)] });
@@ -201,7 +199,7 @@ it('without HOMORA_DOCKER_HOST discovery remains disabled and imports nothing', 
 });
 
 it('lists suggestions without persisting, imports only selected IDs, and never grants private network without opt-in', async () => {
-  const { send, done } = setup({ list: async () => containers });
+  const { send, done } = await setup({ list: async () => containers });
   try {
     const found = (await send('GET', '/api/discovery')).json();
     expect(found).toMatchObject({ enabled: true, scanned: 6 });
@@ -246,7 +244,7 @@ it('lists suggestions without persisting, imports only selected IDs, and never g
 });
 
 it('returns stable error when Docker daemon fails to respond', async () => {
-  const { send, done } = setup({
+  const { send, done } = await setup({
     list: async () => {
       throw new InputError('docker-unavailable');
     },

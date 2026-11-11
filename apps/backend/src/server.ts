@@ -1,10 +1,10 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { createDatabase } from '@homora/db';
+import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createDockerSource } from './docker-discovery.js';
-import { createAuth } from './auth.js';
+import { createAuth, loadSessionSecret } from './auth.js';
 import { createVault } from './vault.js';
 import { createShutdownHandler } from './shutdown.js';
 const config = loadConfig();
@@ -13,7 +13,12 @@ const database = createDatabase(config.databasePath);
 const app = createApp(
   database.db,
   config.webPort,
-  createAuth(`${config.databasePath}.auth`),
+  createAuth({
+    sqlite: getSqliteHandle(database.db),
+    secret: loadSessionSecret(`${config.databasePath}.session-secret`, config.sessionSecret),
+    webPort: config.webPort,
+    allowedOrigins: config.allowedOrigins,
+  }),
   createVault(config.databasePath),
   config.allowedOrigins,
   config.dockerHost ? createDockerSource(config.dockerHost) : undefined,

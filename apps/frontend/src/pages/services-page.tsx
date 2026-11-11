@@ -27,6 +27,17 @@ import { HealthSummary } from '@/components/health-summary';
 import { TopBar } from '@/components/top-bar';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { GroupSection } from '@/components/group-section';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 import { OrganizePanel } from '@/components/organize-panel';
 import { PageHeader } from '@/components/page-header';
 import { ServiceCard } from '@/components/service-card';
@@ -74,8 +85,12 @@ export function ServicesPage({
   const [organizing, setOrganizing] = useState(false);
   const [dragging, setDragging] = useState<number | null>(null);
   const [dropOver, setDropOver] = useState<number | null>(null);
+  const [dropGroup, setDropGroup] = useState<string | null>(null);
+  const [removingGroup, setRemovingGroup] = useState<{ id: number; name: string } | null>(null);
   const [message, setMessage] = useState('');
   const [flash, setFlash] = useState('');
+  // Quiet live-region text for screen readers (e.g. new position after an arrow press).
+  const [srNote, setSrNote] = useState('');
   const [editingGroup, setEditingGroup] = useState<number | null>(null);
   const [groupDraft, setGroupDraft] = useState('');
   const [groupError, setGroupError] = useState('');
@@ -302,13 +317,34 @@ export function ServicesPage({
     }
   }
   async function moveToGroup(service: Service, group: string) {
+    // Captured before the move so Undo can restore the original position, not just the group.
+    const originalOrder = sortedIn(service.category).map((item) => item.id);
     const failure = await data.moveServiceToGroup(service, group);
-    if (failure) setMessage(failure);
-    else announce(t('page.moved', { name: service.name, group }));
+    if (failure) {
+      setMessage(failure);
+      return;
+    }
+    toast(t('page.moved', { name: service.name, group }), {
+      duration: 8000,
+      action: {
+        label: t('common.undo'),
+        onClick: () =>
+          void data.restoreService(service, originalOrder).then((undoFailure) => {
+            if (undoFailure) setMessage(undoFailure);
+          }),
+      },
+    });
   }
-  async function reorder(task: Promise<string | null>) {
+  async function reorder(
+    task: Promise<string | null>,
+    index?: number,
+    service?: Service,
+    total?: number,
+  ) {
     const failure = await task;
     if (failure) setMessage(failure);
+    else if (service && index !== undefined && total)
+      setSrNote(t('organize.position', { name: service.name, position: index + 1, total }));
   }
 
   const total = services.length;
@@ -380,6 +416,11 @@ export function ServicesPage({
             </div>
           )}
         </div>
+      )}
+      {!managing && data.statusError && (
+        <p role="status" className="text-xs text-muted-foreground">
+          {t('status.stale')}
+        </p>
       )}
       {organizing && (
         <OrganizePanel
@@ -469,6 +510,9 @@ export function ServicesPage({
           </Alert>
         )}
       </div>
+      <p role="status" className="sr-only">
+        {srNote}
+      </p>
       {flash && (
         <p
           role="status"
@@ -511,7 +555,19 @@ export function ServicesPage({
               setEditingGroup(row.id);
               setGroupDraft(row.name);
             }}
-            onRemove={() => row && void deleteGroup(row.id)}
+            onRemove={() => row && setRemovingGroup({ id: row.id, name: row.name })}
+            emptyDrop={{
+              active: dragging !== null,
+              over: dropGroup === category,
+              onOver: () => setDropGroup(category),
+              onLeave: () => setDropGroup((g) => (g === category ? null : g)),
+              onDrop: () => {
+                const dragged = services.find((item) => item.id === dragging);
+                setDragging(null);
+                setDropGroup(null);
+                if (dragged && dragged.category !== category) void moveToGroup(dragged, category);
+              },
+            }}
             onMove={(direction) => void reorder(data.moveGroup(category, direction))}
           >
             {items.map((s, index) => {
@@ -524,6 +580,7 @@ export function ServicesPage({
                   onDragEnd: () => {
                     setDragging(null);
                     setDropOver(null);
+                    setDropGroup(null);
                   },
                   onDragOver: (event: DragEvent) => {
                     if (dragging !== null && dragging !== s.id) {
@@ -558,8 +615,15 @@ export function ServicesPage({
                     last={index === items.length - 1}
                     dragging={dragging === s.id}
                     dropTarget={dropOver === s.id}
-                    onMove={(direction) => void reorder(data.placeService(s, index + direction))}
-                    onMoveToTop={() => void reorder(data.placeService(s, 0))}
+                    onMove={(direction) =>
+                      void reorder(
+                        data.placeService(s, index + direction),
+                        index + direction,
+                        s,
+                        items.length,
+                      )
+                    }
+                    onMoveToTop={() => void reorder(data.placeService(s, 0), 0, s, items.length)}
                     onMoveToGroup={(group) => void moveToGroup(s, group)}
                     dragProps={dragProps}
                   />
@@ -586,6 +650,28 @@ export function ServicesPage({
           </GroupSection>
         );
       })}
+      <AlertDialog
+        open={removingGroup !== null}
+        onOpenChange={(open) => !open && setRemovingGroup(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('group.removeTitle', { name: removingGroup?.name ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t('group.removeBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => removingGroup && void deleteGroup(removingGroup.id)}
+            >
+              {t('common.remove')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {organizing && (
         <div className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
           <span className="font-mono text-xs text-muted-foreground">{t('organize.bar')}</span>
