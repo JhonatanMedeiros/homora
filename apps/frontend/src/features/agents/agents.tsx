@@ -1,19 +1,35 @@
-import { EmptyNote } from '@/components/empty-note';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Service } from '@homora/shared';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
 import { PageHeader } from '@/components/page-header';
 import { SectionTitle } from '@/components/section-title';
 import { AgentList } from './agent-list';
 import { parseDiff, type Agent, type Proposal } from './agent-model';
-import { NewAgentForm } from './new-agent-form';
+import { ConnectDialog } from './connect-dialog';
+import { NewAgentDialog } from './new-agent-dialog';
 import { ProposalCard } from './proposal-card';
-import { TokenNotice } from './token-notice';
+import { TokenDialog } from './token-dialog';
 import { t } from '@/i18n';
 
 export function Agents({
@@ -31,11 +47,13 @@ export function Agents({
 }) {
   const [agents, setAgents] = useState<Agent[] | null>(null);
   const [proposals, setProposals] = useState<Proposal[] | null>(null);
-  const [name, setName] = useState('');
-  const [scopes, setScopes] = useState<string[]>(['services:read', 'proposals:create']);
-  const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
-  const [revoking, setRevoking] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [rotating, setRotating] = useState<Agent | null>(null);
+  const [revokingAgent, setRevokingAgent] = useState<Agent | null>(null);
+  // Name shown in the token dialog; the token itself lives in the parent so it survives navigation.
+  const [tokenFor, setTokenFor] = useState('');
   const [loadFailed, setLoadFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -74,44 +92,40 @@ export function Agents({
     };
   }, []);
 
-  async function create(event: FormEvent) {
-    event.preventDefault();
-    if (token && !window.confirm(t('token.replaceWarning'))) return;
+  async function create(name: string, scopes: string[]): Promise<boolean> {
     setMessage('');
     const response = await fetch('/api/agents', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, scopes }),
     }).catch(() => null);
-    if (!response?.ok) {
-      setMessage(t('agents.createFailed'));
-      return;
-    }
+    if (!response?.ok) return false;
     const result = (await response.json()) as { token: string };
+    setTokenFor(name);
     setToken(result.token);
-    setCopied(false);
-    setName('');
+    setCreating(false);
     await load();
+    return true;
   }
-  async function rotate(id: string) {
-    if (token && !window.confirm(t('token.replaceWarning'))) return;
-    const response = await fetch(`/api/agents/${id}/rotate`, { method: 'POST' }).catch(() => null);
+  async function rotate(agent: Agent) {
+    setRotating(null);
+    const response = await fetch(`/api/agents/${agent.id}/rotate`, { method: 'POST' }).catch(
+      () => null,
+    );
     if (!response?.ok) {
       setMessage(t('agents.rotateFailed'));
       return;
     }
     const result = (await response.json()) as { token: string };
+    setTokenFor(agent.name);
     setToken(result.token);
-    setCopied(false);
     await load();
   }
-  async function revoke(id: string) {
-    if (revoking !== id) {
-      setRevoking(id);
-      return;
-    }
-    setRevoking(null);
-    const response = await fetch(`/api/agents/${id}/revoke`, { method: 'POST' }).catch(() => null);
+  async function revoke(agent: Agent) {
+    setRevokingAgent(null);
+    const response = await fetch(`/api/agents/${agent.id}/revoke`, { method: 'POST' }).catch(
+      () => null,
+    );
     if (!response?.ok) setMessage(t('agents.revokeFailed'));
     else await load();
   }
@@ -140,20 +154,6 @@ export function Agents({
       await load();
     }
   }
-  async function copyToken() {
-    try {
-      await navigator.clipboard.writeText(token);
-      setCopied(true);
-    } catch {
-      setMessage(t('agents.copyFailed'));
-    }
-  }
-  function toggleScope(id: string, checked: boolean) {
-    setScopes((current) =>
-      checked ? [...new Set([...current, id])] : current.filter((scope) => scope !== id),
-    );
-  }
-
   const pending = (proposals ?? []).filter((proposal) => proposal.state === 'pending');
   const history = (proposals ?? []).filter((proposal) => proposal.state !== 'pending');
   const agentName = (id: string) =>
@@ -179,9 +179,18 @@ export function Agents({
         title={t('agents.title')}
         description={t('agents.description')}
         actions={
-          <Button type="button" variant="outline" onClick={() => void load()}>
-            {t('agents.refresh')}
-          </Button>
+          <>
+            <Button type="button" variant="outline" onClick={() => void load()}>
+              {t('agents.refresh')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setConnecting(true)}>
+              {t('agents.connect')}
+            </Button>
+            <Button type="button" onClick={() => setCreating(true)}>
+              <Plus />
+              {t('agents.newAgent')}
+            </Button>
+          </>
         }
       />
       <div role="status" className="empty:hidden">
@@ -231,33 +240,83 @@ export function Agents({
       </section>
 
       <section aria-labelledby="identities-title" className="flex flex-col gap-3">
-        <SectionTitle id="identities-title">{t('agents.identities')}</SectionTitle>
+        <SectionTitle id="identities-title" count={agents?.length || undefined}>
+          {t('agents.identities')}
+        </SectionTitle>
         <p className="text-sm text-muted-foreground">{t('agents.identitiesHint')}</p>
-        {token && (
-          <TokenNotice
-            token={token}
-            copied={copied}
-            onCopy={() => void copyToken()}
-            onDismiss={() => setToken('')}
+        {agents?.length === 0 ? (
+          <Empty className="border border-dashed py-8">
+            <EmptyHeader>
+              <EmptyTitle>{t('agents.noIdentities')}</EmptyTitle>
+              <EmptyDescription>{t('agents.noIdentitiesHint')}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button type="button" onClick={() => setCreating(true)}>
+                {t('agents.createFirst')}
+              </Button>
+            </EmptyContent>
+          </Empty>
+        ) : (
+          <AgentList
+            agents={agents ?? []}
+            pendingCount={(id) => pending.filter((proposal) => proposal.author === id).length}
+            onConnect={() => setConnecting(true)}
+            onRotate={setRotating}
+            onRevoke={setRevokingAgent}
           />
         )}
-        <AgentList
-          agents={agents ?? []}
-          revoking={revoking}
-          onRotate={(id) => void rotate(id)}
-          onRevoke={(id) => void revoke(id)}
-          onRevokeBlur={(id) => setRevoking((current) => (current === id ? null : current))}
-        />
-        {agents?.length === 0 && <EmptyNote>{t('agents.noIdentities')}</EmptyNote>}
-        <NewAgentForm
-          defaultOpen={agents !== null && agents.length === 0}
-          name={name}
-          scopes={scopes}
-          onNameChange={setName}
-          onScopeChange={toggleScope}
-          onSubmit={(event: FormEvent) => void create(event)}
-        />
       </section>
+
+      <NewAgentDialog open={creating} onOpenChange={setCreating} onCreate={create} />
+      <ConnectDialog open={connecting} onOpenChange={setConnecting} />
+      {token && (
+        <TokenDialog
+          token={token}
+          agentName={tokenFor || t('agents.fallbackName')}
+          onDone={() => {
+            setToken('');
+            setTokenFor('');
+          }}
+        />
+      )}
+      <AlertDialog open={rotating !== null} onOpenChange={(open) => !open && setRotating(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('agents.rotateTitle', { name: rotating?.name ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t('agents.rotateBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => rotating && void rotate(rotating)}>
+              {t('agents.newToken')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={revokingAgent !== null}
+        onOpenChange={(open) => !open && setRevokingAgent(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('agents.revokeTitle', { name: revokingAgent?.name ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t('agents.revokeBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => revokingAgent && void revoke(revokingAgent)}
+            >
+              {t('agents.revoke')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

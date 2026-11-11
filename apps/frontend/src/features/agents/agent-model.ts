@@ -1,7 +1,14 @@
 import type { Service } from '@homora/shared';
 import { formatDateTime, t, type MessageKey } from '@/i18n';
 
-export type Agent = { id: string; name: string; scopes: string; revokedAt: number | null };
+export type Agent = {
+  id: string;
+  name: string;
+  scopes: string;
+  revokedAt: number | null;
+  /** Epoch ms; older API responses may omit it. */
+  createdAt?: number;
+};
 export type Proposal = {
   id: string;
   diff: string;
@@ -52,6 +59,16 @@ export const SCOPES = [
   },
   { id: 'discovery:read', label: 'scope.discovery:read', hint: 'scope.discovery:read.hint' },
 ] as const;
+/** Scopes that let an agent suggest changes (everything else only reads). */
+export const isWriteScope = (id: string) => id === 'proposals:create' || id.endsWith(':propose');
+
+/** Ready-made permission sets offered when creating an agent; "custom" lets the user choose. */
+export const PROFILES = {
+  read: SCOPES.filter((scope) => !isWriteScope(scope.id)).map((scope) => scope.id),
+  suggest: ['services:read', 'proposals:create', 'groups:propose'],
+} as const;
+export type Profile = keyof typeof PROFILES | 'custom';
+
 export const scopeLabel = (id: string) => {
   const scope = SCOPES.find((item) => item.id === id);
   return scope ? t(scope.label) : id;
