@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ViewOptions } from '@/components/view-options';
+import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { HealthSummary } from '@/components/health-summary';
@@ -34,7 +35,7 @@ type Props = {
   managing: boolean;
   formRoute: 'new' | number | null;
   navigate: (path: string, replace?: boolean) => void;
-  onManage: () => void;
+  onAddService: () => void;
   data: ReturnType<typeof useServices>;
   /** Search opens the first result on Enter; the page registers here how to do so. */
   openFirstRef: MutableRefObject<(() => void) | null>;
@@ -45,27 +46,15 @@ export function ServicesPage({
   data,
   openFirstRef,
   managing,
-  onManage,
+  onAddService,
   formRoute,
   navigate,
 }: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
   const [topBar] = useTopBar();
-  const [compact, setCompact] = useState(() => {
-    try {
-      return localStorage.getItem('homora-density') === 'compact';
-    } catch {
-      return false;
-    }
-  });
-  const [showDescriptions, setShowDescriptions] = useState(() => {
-    try {
-      return localStorage.getItem('homora-descriptions') !== 'hidden';
-    } catch {
-      return true;
-    }
-  });
+  const { view, setView, showDescriptions, setShowDescriptions } = useViewPreferences();
+  const list = view === 'list';
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [formOpen, setFormOpen] = useState(false);
@@ -349,8 +338,30 @@ export function ServicesPage({
         />
       )}
       {!managing && !organizing && topBar && <TopBar />}
-      {!managing && !organizing && (
-        <HealthSummary online={online} down={down} blocked={blocked} unknown={unknown} />
+      {!managing && (
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          {!organizing ? (
+            <HealthSummary
+              total={total}
+              online={online}
+              down={down}
+              blocked={blocked}
+              unknown={unknown}
+            />
+          ) : (
+            <span />
+          )}
+          {services.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <ViewOptions
+                view={view}
+                onViewChange={setView}
+                showDescriptions={showDescriptions}
+                onShowDescriptionsChange={setShowDescriptions}
+              />
+            </div>
+          )}
+        </div>
       )}
       {organizing && (
         <OrganizePanel
@@ -449,7 +460,7 @@ export function ServicesPage({
           {flash}
         </p>
       )}
-      {!organizing && services.length > 0 && categories.length > 1 && (
+      {!organizing && services.length > 0 && categories.length > 2 && (
         <CategoryFilter
           categories={categories}
           selected={selected}
@@ -461,51 +472,6 @@ export function ServicesPage({
           }
         />
       )}
-      {!managing && services.length > 0 && (
-        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-          <span className="text-sm text-muted-foreground">{t('view.label')}</span>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            size="sm"
-            value={compact ? 'compact' : 'comfortable'}
-            onValueChange={(value) => {
-              if (!value) return;
-              const next = value === 'compact';
-              setCompact(next);
-              try {
-                localStorage.setItem('homora-density', next ? 'compact' : 'comfortable');
-              } catch {
-                /* preference only in this session */
-              }
-            }}
-            aria-label={t('view.label')}
-          >
-            <ToggleGroupItem value="comfortable" className="pointer-coarse:h-11">
-              {t('view.comfortable')}
-            </ToggleGroupItem>
-            <ToggleGroupItem value="compact" className="pointer-coarse:h-11">
-              {t('view.compact')}
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <Button
-            variant="outline"
-            size="sm"
-            aria-pressed={showDescriptions}
-            onClick={() => {
-              const next = !showDescriptions;
-              setShowDescriptions(next);
-              try {
-                localStorage.setItem('homora-descriptions', next ? 'visible' : 'hidden');
-              } catch {
-                /* preference only in this session */
-              }
-            }}
-          >
-            {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
-          </Button>
-        </div>
-      )}
       {groups.map(({ category, items }) => {
         const row = groupRows.find((group) => group.name === category);
         return (
@@ -514,7 +480,8 @@ export function ServicesPage({
             category={category}
             count={items.length}
             organizing={organizing}
-            compact={compact && !managing}
+            list={list}
+            managing={managing}
             searching={Boolean(needle)}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
@@ -540,7 +507,7 @@ export function ServicesPage({
                   blocked={blockedIds.has(s.id)}
                   organizing={organizing}
                   managing={managing}
-                  compact={compact && !managing}
+                  list={list}
                   showDescription={showDescriptions || managing}
                   confirmingRemoval={confirming === s.id}
                   dragging={dragging === s.id}
@@ -592,8 +559,7 @@ export function ServicesPage({
       {data.loaded && !data.loadError && !groups.length && (
         <ServicesEmpty
           hasServices={services.length > 0}
-          managing={managing}
-          onAdd={() => (managing ? openForm() : onManage())}
+          onAdd={() => (managing ? openForm() : onAddService())}
         />
       )}
     </section>

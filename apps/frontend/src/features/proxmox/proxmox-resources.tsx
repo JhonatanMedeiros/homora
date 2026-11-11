@@ -2,7 +2,7 @@ import { CircleCheck, CircleMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Item, ItemContent, ItemGroup, ItemTitle, ItemActions } from '@/components/ui/item';
 import { Progress } from '@/components/ui/progress';
-import { LabelTape } from '@/components/label-tape';
+import { Badge } from '@/components/ui/badge';
 import { formatDateTime, formatNumber, t } from '@/i18n';
 
 export type Resource = {
@@ -22,7 +22,7 @@ function Usage({ label, value, text }: { label: string; value: number; text: str
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-2 text-sm">
-        <b className="font-label font-semibold tracking-wide uppercase">{label}</b>
+        <b className="font-medium">{label}</b>
         <span className="font-mono text-muted-foreground tabular-nums">{text}</span>
       </div>
       <Progress value={value} aria-label={label} />
@@ -85,7 +85,9 @@ export function ProxmoxResources({ resources, checkedAt, showAll, onToggleAll }:
               <Item key={`${g.node}:${g.type}:${g.name ?? index}`} size="sm" className="px-0">
                 <ItemContent className="flex-row items-center gap-2">
                   <ItemTitle>{g.name ?? t('proxmox.unnamed')}</ItemTitle>
-                  <LabelTape>{g.type === 'qemu' ? 'VM' : 'CT'}</LabelTape>
+                  <Badge variant="outline" className="font-mono">
+                    {g.type === 'qemu' ? 'VM' : 'CT'}
+                  </Badge>
                 </ItemContent>
                 <ItemActions className={running ? 'text-success' : 'text-muted-foreground'}>
                   <StateIcon className="size-4" aria-hidden="true" />

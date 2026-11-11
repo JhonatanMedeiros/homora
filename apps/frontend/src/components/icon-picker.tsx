@@ -45,17 +45,25 @@ const portugueseKeywords: Record<string, string> = {
 export function IconPicker({
   value,
   onChange,
+  iconOnly = false,
 }: {
   value: string;
   onChange: (icon: string) => void;
+  /** Compact trigger for tight rows; the label stays available to assistive technology. */
+  iconOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline">
-          <Search data-icon="inline-start" />
-          {t('icon.browse')}
+        <Button
+          type="button"
+          variant="outline"
+          size={iconOnly ? 'icon' : 'default'}
+          aria-label={iconOnly ? t('icon.browse') : undefined}
+        >
+          <Search data-icon={iconOnly ? undefined : 'inline-start'} />
+          {!iconOnly && t('icon.browse')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-0">

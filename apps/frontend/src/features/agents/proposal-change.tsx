@@ -42,9 +42,7 @@ export function ProposalChange({ diff, current }: { diff: Diff; current?: Servic
         <dl className="flex flex-col gap-3">
           {changed.map((row) => (
             <div key={row.key} className="flex flex-col gap-1">
-              <dt className="font-label text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-                {row.label}
-              </dt>
+              <dt className="font-mono text-xs text-muted-foreground">{row.label}</dt>
               {diff.op === 'update' ? (
                 <dd className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
                   <span className="flex min-w-0 flex-col rounded-md border bg-muted px-3 py-2 break-words">

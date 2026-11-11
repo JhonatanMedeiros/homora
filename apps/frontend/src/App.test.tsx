@@ -41,6 +41,7 @@ it('displays services, filters, and submits a new entry', async () => {
   fireEvent.change(within(dialog).getByLabelText('Categoria'), {
     target: { value: 'Infraestrutura' },
   });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Opções avançadas' }));
   fireEvent.click(within(dialog).getByRole('button', { name: 'Escolher ícone' }));
   fireEvent.change(screen.getByPlaceholderText('Buscar ícones pelo nome'), {
     target: { value: 'film' },
@@ -463,7 +464,7 @@ it('does not treat unauthorized private network as service down', async () => {
   render(<App />);
   expect(await screen.findByText('Monitoramento bloqueado')).toBeTruthy();
   expect(screen.queryByText('Indisponível')).toBeNull();
-  expect(screen.getByText(/1 disponíveis/)).toBeTruthy();
+  expect(screen.getByText(/1 de \d+ no ar/)).toBeTruthy();
   expect(screen.getByText(/1 sem monitoramento/)).toBeTruthy();
 });
 
@@ -530,7 +531,7 @@ it('shows before and after of an update proposal', async () => {
   expect(screen.getByText('2 campos continuam iguais.')).toBeTruthy();
 });
 
-it('provides quick search, compact view, and collapsible groups', async () => {
+it('provides quick search, cards view, and collapsible groups', async () => {
   localStorage.clear();
   vi.stubGlobal(
     'fetch',
@@ -557,8 +558,9 @@ it('provides quick search, compact view, and collapsible groups', async () => {
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.click(screen.getByText('Compacta'));
-  expect(localStorage.getItem('homora-density')).toBe('compact');
+  fireEvent.click(screen.getByRole('button', { name: 'Visualização' }));
+  fireEvent.click(await screen.findByRole('radio', { name: 'Cards' }));
+  expect(localStorage.getItem('homora-density')).toBe('cards');
   fireEvent.click(screen.getByRole('button', { name: 'Recolher grupo Mídia' }));
   expect(screen.queryByRole('link', { name: /Jellyfin/ })).toBeNull();
   fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Jelly' } });
@@ -668,4 +670,61 @@ it('displays error for unknown pages and missing service', async () => {
   window.history.replaceState(null, '', '/manage/services/99/edit');
   render(<App />);
   expect(await screen.findByText('Serviço não encontrado.')).toBeTruthy();
+});
+
+it('shows the list view by default and opens the command palette with Ctrl K', async () => {
+  localStorage.clear();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 1,
+              name: 'Jellyfin',
+              url: 'https://example.com/',
+              category: 'Mídia',
+              description: 'Filmes',
+            },
+          ],
+        };
+      if (url === '/api/service-status')
+        return { ok: true, json: async () => ({ 1: { status: 'available' } }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Jellyfin/ });
+  fireEvent.click(screen.getByRole('button', { name: 'Visualização' }));
+  expect((await screen.findByRole('radio', { name: 'Lista' })).getAttribute('data-state')).toBe(
+    'on',
+  );
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+  fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+  expect(await screen.findByPlaceholderText('Buscar serviços ou executar um comando')).toBeTruthy();
+  expect(screen.getByText('Alternar tema')).toBeTruthy();
+  fireEvent.click(screen.getByText('Adicionar serviço'));
+  expect(window.location.pathname).toBe('/manage/services/new');
+  localStorage.clear();
+});
+
+it('opens the new service form straight from the empty dashboard', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar primeiro serviço' }));
+  expect(window.location.pathname).toBe('/manage/services/new');
+  expect(await screen.findByRole('form', { name: 'Novo serviço' })).toBeTruthy();
 });

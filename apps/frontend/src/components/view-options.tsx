@@ -1,0 +1,68 @@
+import { LayoutGrid, LayoutList } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { t } from '@/i18n';
+import type { View } from '@/hooks/use-view-preferences';
+
+type Props = {
+  view: View;
+  onViewChange: (view: View) => void;
+  showDescriptions: boolean;
+  onShowDescriptionsChange: (show: boolean) => void;
+};
+
+/** One button for how services are displayed; descriptions only exist in cards view. */
+export function ViewOptions({
+  view,
+  onViewChange,
+  showDescriptions,
+  onShowDescriptionsChange,
+}: Props) {
+  const Icon = view === 'cards' ? LayoutGrid : LayoutList;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="pointer-coarse:h-11">
+          <Icon aria-hidden="true" />
+          {t('view.label')}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex w-60 flex-col gap-3">
+        <p className="font-mono text-xs text-muted-foreground">{t('view.layout')}</p>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={view}
+          onValueChange={(value) => {
+            if (value === 'list' || value === 'cards') onViewChange(value);
+          }}
+          aria-label={t('view.layout')}
+          className="w-full"
+        >
+          <ToggleGroupItem value="list" className="flex-1 pointer-coarse:h-11">
+            {t('view.list')}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="cards" className="flex-1 pointer-coarse:h-11">
+            {t('view.cards')}
+          </ToggleGroupItem>
+        </ToggleGroup>
+        {view === 'cards' ? (
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="view-descriptions">{t('view.showDescriptions')}</Label>
+            <Switch
+              id="view-descriptions"
+              checked={showDescriptions}
+              onCheckedChange={onShowDescriptionsChange}
+            />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">{t('view.descriptionsHint')}</p>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}

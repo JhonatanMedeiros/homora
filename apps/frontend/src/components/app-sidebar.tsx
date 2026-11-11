@@ -39,7 +39,7 @@ export function AppSidebar({ tab, onTabChange, onLogout }: Props) {
                         isActive={tab === item.id}
                         aria-current={tab === item.id ? 'page' : undefined}
                         onClick={() => onTabChange(item.id)}
-                        className="font-label text-base font-semibold tracking-wide data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
+                        className="text-sm font-medium data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
                       >
                         <item.icon />
                         <span>{t(item.label)}</span>

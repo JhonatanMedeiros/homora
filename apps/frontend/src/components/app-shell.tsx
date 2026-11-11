@@ -30,7 +30,13 @@ export function AppShell({
     <div className="min-h-svh bg-background">
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-3 px-4 py-2 md:px-8">
-          <BrandMark className="mr-auto text-sidebar-foreground" />
+          <BrandMark className="text-sidebar-foreground" />
+          {!managing && (
+            <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-md sm:flex-1">
+              {toolbar}
+            </div>
+          )}
+          <span className="mr-auto" />
           <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <Button
@@ -52,15 +58,12 @@ export function AppShell({
           </Button>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-12">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8">
         {!managing && (
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 className="text-3xl">{t('home.title')}</h1>
-              <p className="mt-1 text-muted-foreground">{t('home.description')}</p>
-            </div>
-            <div className="w-full sm:w-80">{toolbar}</div>
-          </div>
+          <>
+            <h1 className="sr-only">{t('home.title')}</h1>
+            <p className="sr-only">{t('home.description')}</p>
+          </>
         )}
         {managing ? (
           <div className="flex flex-col gap-8 md:flex-row md:items-start">

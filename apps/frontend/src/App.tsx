@@ -12,6 +12,9 @@ import {
 import { AppShell } from '@/components/app-shell';
 import { SearchField } from '@/components/search-field';
 import { QuickResults } from '@/components/quick-results';
+import { CommandPalette } from '@/components/command-palette';
+import { useTheme } from '@/hooks/use-theme';
+import { useViewPreferences } from '@/hooks/use-view-preferences';
 import type { Tab } from '@/components/app-nav';
 import { lower, t, useI18n } from '@/i18n';
 import { Button } from '@/components/ui/button';
@@ -68,13 +71,19 @@ function Dashboard({
   const data = useServices();
   const search = useRef<HTMLInputElement>(null);
   const openFirst = useRef<(() => void) | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const { toggleTheme } = useTheme();
+  const viewPrefs = useViewPreferences();
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const typing =
         e.target instanceof HTMLElement &&
         (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable);
-      if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typing)) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((open) => !open);
+      } else if (e.key === '/' && !typing) {
         e.preventDefault();
         search.current?.focus();
         search.current?.select();
@@ -135,6 +144,25 @@ function Dashboard({
         </div>
       }
     >
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        services={data.services}
+        statuses={data.statuses}
+        blockedIds={data.blockedIds}
+        managing={managing}
+        onManageChange={(value) => {
+          navigate(value ? '/manage/services' : '/');
+        }}
+        onAddService={() => {
+          navigate('/manage/services/new');
+        }}
+        onToggleTheme={toggleTheme}
+        view={viewPrefs.view}
+        onViewChange={viewPrefs.setView}
+        showDescriptions={viewPrefs.showDescriptions}
+        onShowDescriptionsChange={viewPrefs.setShowDescriptions}
+      />
       {!route.valid ? (
         <section>
           <h1 className="text-3xl">{t('route.notFound')}</h1>
@@ -152,8 +180,8 @@ function Dashboard({
             managing={managing}
             formRoute={route.form}
             navigate={navigate}
-            onManage={() => {
-              navigate('/manage/services');
+            onAddService={() => {
+              navigate('/manage/services/new');
             }}
           />
         )

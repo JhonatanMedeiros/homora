@@ -31,7 +31,7 @@ are documented in [architecture](arquitetura.md).
   this project's CLI may generate `cn` imports as `"cn"`; correct them to `@/lib/utils`.
 - Every UI element is a component: primitives live in `src/components/ui`
   (shadcn, aligned with tokens), product components in `src/components`
-  (`LabelTape`, `StatusTag`, `ServiceCard`, `AppSidebar`...), pages in `src/pages`,
+  (`StatusLight`, `ServiceCard`, `AppSidebar`...), pages in `src/pages`,
   and capability modules in `src/features`. State and API calls reside in
   `src/hooks`; pure business rules in `src/lib`.
 - Styling must use semantic tokens (`bg-primary`, `text-muted-foreground`),
@@ -39,7 +39,7 @@ are documented in [architecture](arquitetura.md).
   `space-*` utilities, inline ad-hoc CSS per screen, or legacy generic utility classes.
   `className` is for layout, not for overriding component colors or typography.
 - Forms use `FieldGroup`/`Field`; alerts use `Alert`; empty states use `Empty`;
-  service status always uses `StatusTag` (icon, text, and color). Theming is driven by
+  service status always uses `StatusLight` (light, text, and color). Theming is driven by
   the `dark` class on `<html>` (`useTheme`).
 - Files in `src/components/ui` mirror upstream shadcn; ESLint exempts them
   from Fast Refresh and pure-render checks.

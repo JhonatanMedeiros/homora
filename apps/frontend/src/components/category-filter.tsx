@@ -10,15 +10,15 @@ type Props = {
 
 export function CategoryFilter({ categories, selected, counts, onSelect }: Props) {
   return (
-    <div role="group" aria-label={t('filter.byCategory')} className="flex flex-wrap gap-2">
+    <div role="group" aria-label={t('filter.byCategory')} className="flex flex-wrap gap-1">
       {[null, ...categories].map((category) => (
         <Toggle
           key={category === null ? '__all__' : `category:${category}`}
-          variant="outline"
+          variant="default"
           size="sm"
           pressed={selected === category}
           onPressedChange={() => onSelect(category)}
-          className="font-label text-sm font-semibold tracking-wide pointer-coarse:h-11 pointer-coarse:min-w-11 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          className="text-sm font-medium pointer-coarse:h-11 pointer-coarse:min-w-11 text-muted-foreground data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
         >
           {category ?? t('filter.all')}
           <small aria-hidden="true" className="font-mono text-xs opacity-80">

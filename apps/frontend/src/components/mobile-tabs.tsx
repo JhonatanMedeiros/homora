@@ -18,7 +18,7 @@ export function MobileTabs({ tab, onTabChange }: Props) {
           aria-current={tab === item.id ? 'page' : undefined}
           onClick={() => onTabChange(item.id)}
           className={cn(
-            'flex h-14 flex-col items-center justify-center gap-0.5 font-label text-sm font-semibold tracking-wide outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-inset [&_svg]:size-5',
+            'flex h-14 flex-col items-center justify-center gap-0.5 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-inset [&_svg]:size-5',
             tab === item.id ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground/80',
           )}
         >
