@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { t } from '@/i18n';
 
 export type AuthStatus = { configured: boolean; authenticated: boolean };
+/** `name` is only needed to create the first account. */
+export type Credentials = { email: string; password: string; name?: string };
 
 /** Access status: checks session, creates admin account, and signs in or out. */
 export function useAuth() {
@@ -18,22 +20,22 @@ export function useAuth() {
       .catch(() => setError(t('auth.serverUnreachable')));
   }, []);
 
-  async function submit(password: string) {
+  async function submit({ name, email, password }: Credentials) {
     setError('');
     try {
       if (!status?.configured) {
         const setup = await fetch('/api/auth/setup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password }),
+          body: JSON.stringify({ name, email, password }),
         });
         if (!setup.ok) throw new Error(t('auth.setupFailed'));
         setStatus({ configured: true, authenticated: false });
       }
-      const login = await fetch('/api/auth/login', {
+      const login = await fetch('/api/auth/sign-in/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       if (!login.ok) throw new Error(t('auth.loginFailed'));
       setStatus({ configured: true, authenticated: true });
@@ -45,7 +47,7 @@ export function useAuth() {
   }
 
   async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('/api/auth/sign-out', { method: 'POST' });
     setStatus({ configured: true, authenticated: false });
   }
 

@@ -46,8 +46,7 @@ export const ERROR_MESSAGES = {
   'widget-not-found': 'Widget not found.',
   'account-exists': 'Account already configured.',
   'account-setup-failed':
-    'Could not create the account. Use a password with at least 8 characters.',
-  'invalid-login': 'Invalid credentials or too many attempts.',
+    'Could not create the account. Check the name and email, and use a password with at least 8 characters.',
   'identity-invalid': 'Invalid identity or scopes.',
   'identity-not-found': 'Identity not found.',
   'proposal-unavailable': 'Proposal unavailable.',

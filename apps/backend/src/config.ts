@@ -46,11 +46,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   const allowedOrigins = parseAllowedOrigins(env.HOMORA_ALLOWED_ORIGINS);
   if (!['true', 'false', undefined, ''].includes(env.HOMORA_TRUST_PROXY))
     throw new Error('HOMORA_TRUST_PROXY must be true or false.');
+  const sessionSecret = env.HOMORA_SESSION_SECRET || undefined;
+  if (sessionSecret !== undefined && sessionSecret.length < 32)
+    throw new Error('HOMORA_SESSION_SECRET must have at least 32 characters.');
   return {
     bindHost,
     apiPort,
     webPort,
     allowedOrigins,
+    sessionSecret,
     trustProxy: env.HOMORA_TRUST_PROXY === 'true',
     dockerHost: parseDockerHost(env.HOMORA_DOCKER_HOST),
     databasePath: resolve(root, env.HOMORA_DATABASE_PATH || 'data/homora.sqlite'),

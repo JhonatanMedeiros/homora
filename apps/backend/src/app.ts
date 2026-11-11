@@ -73,17 +73,17 @@ export function createApp(
     if (
       request.url.startsWith('/api/') &&
       !request.url.startsWith('/api/auth/') &&
-      !auth.authorized(request.headers.cookie)
+      !(await auth.session(request.headers))
     )
       return reply.code(401).send(errorBody('auth-required'));
   });
 
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
-  registerAuthRoutes(app, auth);
+  registerAuthRoutes(app, auth, webPort);
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
   registerProxmoxRoutes(app, vault);
-  registerAgentProposalRoutes(app, proposals, serviceMonitor);
+  registerAgentProposalRoutes(app, proposals, serviceMonitor, auth);
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);

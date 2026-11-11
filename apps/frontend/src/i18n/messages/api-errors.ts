@@ -42,8 +42,7 @@ export const en = {
   'apiError.widget-not-found': 'Widget not found.',
   'apiError.account-exists': 'Account already configured.',
   'apiError.account-setup-failed':
-    'Could not create the account. Use a password with at least 8 characters.',
-  'apiError.invalid-login': 'Invalid credentials or too many attempts.',
+    'Could not create the account. Check the name and email, and use a password with at least 8 characters.',
   'apiError.identity-invalid': 'Invalid identity or scopes.',
   'apiError.identity-not-found': 'Identity not found.',
   'apiError.proposal-unavailable': 'Proposal unavailable.',
@@ -121,8 +120,7 @@ export const ptBR = {
   'apiError.widget-not-found': 'Widget não encontrado.',
   'apiError.account-exists': 'Conta já configurada.',
   'apiError.account-setup-failed':
-    'Não foi possível criar a conta. Use uma senha com pelo menos 8 caracteres.',
-  'apiError.invalid-login': 'Credenciais inválidas ou tentativas excedidas.',
+    'Não foi possível criar a conta. Verifique nome e e-mail, e use uma senha com pelo menos 8 caracteres.',
   'apiError.identity-invalid': 'Identidade ou escopos inválidos.',
   'apiError.identity-not-found': 'Identidade não encontrada.',
   'apiError.proposal-unavailable': 'Proposta indisponível.',
