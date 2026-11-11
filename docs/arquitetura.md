@@ -41,7 +41,7 @@ flowchart LR
 - Adapters: validate configuration and query external systems. The central registry
   exposes metadata and execution; each integration encapsulates credential structures
   and specific rate/size limits.
-- Current MCP: local stdio process with scoped token authentication that accesses SQLite
+- Current MCP: local stdio process and stateless Streamable HTTP endpoint with scoped token authentication. The stdio process accesses SQLite
   and the credential vault directly. MCP tools validate inputs with Zod; provides queries
   and proposal creation without going through HTTP routes or web session cookies. Never
   persists card, group, or widget changes without human approval. Connection suggestions open a human-completed form and do not create a connection; integration queries do not return credentials.
@@ -97,7 +97,7 @@ releases exist.
   Assistant, Uptime Kuma, AdGuard Home, and Proxmox. All connection adapters use the shared
   network transport with destination policy. Legacy Proxmox credentials are copied once into
   encrypted connection storage; the bridge row and widget references are preserved.
-- MCP runs in a separate process and accesses SQLite/vault directly. It authenticates agent tokens
+- The stdio MCP runs in a separate process and accesses SQLite/vault directly. The stateless HTTP MCP runs in the backend at `/mcp`, authenticates a Bearer token on every request, validates host and origin, and applies a per-client request limit. Both use the same tools and proposal rules. It authenticates agent tokens
   with granular scopes, offering queries and proposal creation. It intentionally bypasses the HTTP
   stack and web cookies.
 - Group, card-order, and widget proposals capture a fingerprint of groups, cards, widgets,
@@ -128,7 +128,7 @@ Key areas of attention focus on consistency and safe evolution:
 2. The connections module encapsulates credential management, persistence, and observation
    behind clean HTTP handlers. Preserve test coverage over observable flows and refactor only
    when doing so increases cohesion.
-3. MCP and HTTP share core card configuration logic, but MCP maintains direct local database/vault
+3. MCP and HTTP share core card configuration logic, and stdio MCP maintains direct local database/vault
    access and its own token auth. Scope changes and proposal lifecycles must consider both
    interfaces; public schemas must remain strictly secret-free.
 4. Extract large pages or hooks into smaller units when doing so reduces cognitive load and

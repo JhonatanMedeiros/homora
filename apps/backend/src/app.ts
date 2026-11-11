@@ -19,6 +19,7 @@ import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
 import { createObservationStore } from './service-observations.js';
+import { registerMcpHttp } from './mcp-http.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -34,7 +35,7 @@ export function createApp(
    * Enable only when all traffic traverses a reverse proxy that OVERWRITES this header,
    * such as Compose's nginx; otherwise any client could spoof it.
    */
-  options: { trustProxy?: boolean } = {},
+  options: { trustProxy?: boolean; apiPort?: number } = {},
 ) {
   const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
@@ -67,6 +68,7 @@ export function createApp(
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     if (
+      request.url.split('?')[0] !== '/mcp' &&
       !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
       !allowedOrigins.has(request.headers.origin ?? '')
     )
@@ -80,6 +82,17 @@ export function createApp(
     )
       return reply.code(401).send(errorBody('auth-required'));
   });
+
+  registerMcpHttp(
+    app,
+    sqlite,
+    proposals,
+    vault,
+    db,
+    dockerSource,
+    allowedOrigins,
+    options.apiPort ?? 3000,
+  );
 
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
   registerAuthRoutes(app, auth, webPort, audit);

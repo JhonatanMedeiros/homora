@@ -22,7 +22,7 @@ const app = createApp(
   createVault(config.databasePath),
   config.allowedOrigins,
   config.dockerHost ? createDockerSource(config.dockerHost) : undefined,
-  { trustProxy: config.trustProxy },
+  { trustProxy: config.trustProxy, apiPort: config.apiPort },
 );
 app.addHook('onClose', async () => database.close());
 await app.listen({ port: config.apiPort, host: config.bindHost });
