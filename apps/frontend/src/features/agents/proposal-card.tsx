@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import { formatDate, parseDiff, STATES, type Proposal } from './agent-model';
 import { ProposalChange } from './proposal-change';
+import { ManagedProposalChange } from './managed-proposal-change';
 import { t } from '@/i18n';
 
 const badgeVariant = {
@@ -27,10 +28,11 @@ type Props = {
   agentName: string;
   current?: Service;
   onReview: (approve: boolean) => void;
+  onSetupConnection: (draft: unknown) => void;
 };
 
 /** An agent proposal: author, validity, reviewable diff, and explicit decision. */
-export function ProposalCard({ proposal, agentName, current, onReview }: Props) {
+export function ProposalCard({ proposal, agentName, current, onReview, onSetupConnection }: Props) {
   const diff = parseDiff(proposal.diff);
   const pending = proposal.state === 'pending';
   return (
@@ -51,7 +53,9 @@ export function ProposalCard({ proposal, agentName, current, onReview }: Props) 
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {diff ? (
+          {diff?.kind === 'managed' && diff.change ? (
+            <ManagedProposalChange diff={diff} />
+          ) : diff ? (
             <ProposalChange diff={diff} current={current} />
           ) : (
             <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-sm">
@@ -67,7 +71,22 @@ export function ProposalCard({ proposal, agentName, current, onReview }: Props) 
             </Button>
             <Button type="button" onClick={() => onReview(true)}>
               <Check data-icon="inline-start" />
-              {t('proposal.approve')}
+              {t(
+                diff?.change?.kind === 'connection-setup'
+                  ? 'proposal.managed.approveSetup'
+                  : 'proposal.approve',
+              )}
+            </Button>
+          </CardFooter>
+        )}
+        {proposal.state === 'approved' && diff?.change?.kind === 'connection-setup' && (
+          <CardFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onSetupConnection(diff.change?.change)}
+            >
+              {t('proposal.managed.openSetup')}
             </Button>
           </CardFooter>
         )}

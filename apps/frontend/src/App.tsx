@@ -166,6 +166,9 @@ function Dashboard({
           onApplied={data.refresh}
           token={token}
           setToken={setToken}
+          onSetupConnection={(draft) =>
+            routerNavigate('/manage/integrations', { state: { connectionDraft: draft } })
+          }
         />
       )}
     </AppShell>

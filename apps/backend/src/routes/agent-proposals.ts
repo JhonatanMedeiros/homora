@@ -2,10 +2,15 @@ import type { FastifyInstance } from 'fastify';
 import type { createProposalService } from '../proposals.js';
 import { createAgentSchema, opaqueIdSchema, proposalReviewSchema } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
+import type { createServiceMonitor } from '../service-monitor.js';
 
 type Proposals = ReturnType<typeof createProposalService>;
 
-export function registerAgentProposalRoutes(app: FastifyInstance, proposals: Proposals) {
+export function registerAgentProposalRoutes(
+  app: FastifyInstance,
+  proposals: Proposals,
+  monitor: ReturnType<typeof createServiceMonitor>,
+) {
   app.get('/api/proposals', async () => proposals.list());
   app.post('/api/agents', async (request, reply) => {
     const parsed = createAgentSchema.safeParse(request.body);
@@ -38,7 +43,9 @@ export function registerAgentProposalRoutes(app: FastifyInstance, proposals: Pro
     const parsed = proposalReviewSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-decision'));
     try {
-      return { state: proposals.decide(request.params.id, parsed.data.approve, 'local-admin') };
+      const state = proposals.decide(request.params.id, parsed.data.approve, 'local-admin');
+      if (state === 'approved') void monitor.invalidate();
+      return { state };
     } catch (error) {
       return reply
         .code(409)

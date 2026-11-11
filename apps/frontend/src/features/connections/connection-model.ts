@@ -59,6 +59,54 @@ export const emptyForm: ConnectionFormState = {
   username: '',
   slug: '',
 };
+/** Only public fields from an approved suggestion can prefill this form. */
+export function connectionDraft(value: unknown): ConnectionFormState | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  if (
+    typeof input.type !== 'string' ||
+    !Object.hasOwn(labels, input.type) ||
+    typeof input.name !== 'string' ||
+    typeof input.url !== 'string'
+  )
+    return null;
+  try {
+    const url = new URL(input.url);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return null;
+  } catch {
+    return null;
+  }
+  return {
+    ...emptyForm,
+    type: input.type as Kind,
+    name: input.name.slice(0, 80),
+    url: input.url.slice(0, 2048),
+    entityId: typeof input.entityId === 'string' ? input.entityId.slice(0, 255) : '',
+    username: typeof input.username === 'string' ? input.username.slice(0, 255) : '',
+    slug: typeof input.slug === 'string' ? input.slug.slice(0, 255) : '',
+  };
+}
+export function proxmoxDraft(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  if (input.type !== 'proxmox' || typeof input.url !== 'string' || input.url.length > 2048)
+    return null;
+  try {
+    const url = new URL(input.url);
+    return url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash
+      ? url.origin
+      : null;
+  } catch {
+    return null;
+  }
+}
 export async function request(url: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(url, init);
   const data: unknown = await response.json().catch(() => null);

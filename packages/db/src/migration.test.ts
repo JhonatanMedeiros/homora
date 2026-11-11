@@ -112,3 +112,40 @@ it('upgrades database with first migration already registered and preserves data
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('adiciona observações a uma base da versão anterior preservando serviços e conexões', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-observation-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of migrations.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(5,'Existing','https://example.test','Home',''); INSERT INTO integration_instances(id,type,name,public_config,secret_ref) VALUES(7,'jellyfin','Media','{}','encrypted');",
+    );
+    old.close();
+    const database = createDatabase(path);
+    database.close();
+    const check = new DatabaseSync(path);
+    expect(check.prepare('SELECT name FROM services WHERE id=5').get()).toEqual({
+      name: 'Existing',
+    });
+    expect(check.prepare('SELECT secret_ref FROM integration_instances WHERE id=7').get()).toEqual({
+      secret_ref: 'encrypted',
+    });
+    expect(check.prepare('SELECT * FROM service_observations').all()).toEqual([]);
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

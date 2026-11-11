@@ -1,5 +1,6 @@
 import { CHECK_INTERVAL_MAX, CHECK_INTERVAL_MIN, ICON_MAX_LENGTH } from '@homora/shared';
 import { z } from 'zod';
+import { AGENT_SCOPES } from './agent-scopes.js';
 
 const integrationType = z.enum(['jellyfin', 'home-assistant', 'uptime-kuma', 'adguard-home']);
 const boundedText = (max: number) => z.string().max(max);
@@ -58,10 +59,7 @@ export const loginPasswordSchema = z.object({ password: passwordValueSchema }).s
 export const createAgentSchema = z
   .object({
     name: z.string().trim().min(1).max(80),
-    scopes: z
-      .array(z.enum(['services:read', 'proxmox:read', 'proposals:create']))
-      .min(1)
-      .max(3),
+    scopes: z.array(z.enum(AGENT_SCOPES)).min(1).max(AGENT_SCOPES.length),
   })
   .strict();
 

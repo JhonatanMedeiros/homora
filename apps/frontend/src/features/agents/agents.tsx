@@ -21,11 +21,13 @@ export function Agents({
   onApplied,
   token,
   setToken,
+  onSetupConnection,
 }: {
   services: Service[];
   onApplied: () => void | Promise<void>;
   token: string;
   setToken: (token: string) => void;
+  onSetupConnection: (draft: unknown) => void;
 }) {
   const [agents, setAgents] = useState<Agent[] | null>(null);
   const [proposals, setProposals] = useState<Proposal[] | null>(null);
@@ -120,7 +122,17 @@ export function Agents({
       body: JSON.stringify({ approve }),
     }).catch(() => null);
     if (response?.ok) {
-      setMessage(approve ? t('agents.approved') : t('agents.rejected'));
+      const approved = proposals?.find((proposal) => proposal.id === id);
+      const diff = approved ? parseDiff(approved.diff) : null;
+      setMessage(
+        approve
+          ? t(
+              diff?.change?.kind === 'connection-setup'
+                ? 'agents.approvedSetup'
+                : 'agents.approved',
+            )
+          : t('agents.rejected'),
+      );
       await load();
       await onApplied();
     } else {
@@ -156,6 +168,7 @@ export function Agents({
         agentName={agentName(proposal.author)}
         current={services.find((service) => service.id === diff?.id)}
         onReview={(approve) => void review(proposal.id, approve)}
+        onSetupConnection={onSetupConnection}
       />
     );
   };

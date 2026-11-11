@@ -146,6 +146,22 @@ worktrees. Live tests against external production hosts and real Proxmox nodes r
 
 ## P4 — MCP and Human-Governed Changes
 
+### MCP catalog expansion (2026-11-11)
+
+- Added scoped queries for services, groups, status, widgets, integrations, Docker discovery,
+  and each agent's own proposals. Integration queries retain the existing network policy.
+- Added reviewable proposals for groups, card order and movement, widgets, and connection
+  setup. An approved connection suggestion only pre-fills a human-completed form; the agent
+  cannot supply credentials or write to external infrastructure.
+- Group, order, and widget approvals compare the relevant configuration and apply changes
+  with audit in one SQLite transaction. Migration `0009` shares monitor observations with
+  MCP; changed or stale results are reported as unknown.
+- Tests cover scope checks, isolation, expiration, SQLite connections, hostile content, and
+  migration preservation. Chromium exercised a group proposal over MCP stdio and a connection
+  suggestion through the UI at desktop and 390 px, without horizontal overflow or page errors.
+- P4 validation under load and with real external tool responses remains outstanding; no real
+  infrastructure was accessed.
+
 - [x] Define agent identity models, granular scopes, and token revocation; align MCP server
       access with application authorization rules. MCP runs locally, accessing database/vault
       directly outside web session auth.

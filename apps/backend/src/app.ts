@@ -16,6 +16,7 @@ import { registerDiscoveryRoutes } from './routes/discovery.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
+import { createObservationStore } from './service-observations.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -36,9 +37,21 @@ export function createApp(
   const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
-  const proposals = createProposalService(sqlite, configuration);
+  const proposals = createProposalService(sqlite, configuration, vault);
+  const observations = createObservationStore(sqlite);
+  // An old backend process may have stopped without clearing its last observation.
+  observations.clear();
   const serviceMonitor = createServiceMonitor(
     () => db.select().from(services).orderBy(services.id) as Promise<Service[]>,
+    undefined,
+    undefined,
+    (rows, states) => {
+      try {
+        observations.publish(rows, states);
+      } catch {
+        /* Keep the dashboard usable on storage errors. */
+      }
+    },
   );
   const stopServiceMonitor = startServiceMonitor(serviceMonitor);
   app.addHook('onClose', async () => stopServiceMonitor());
@@ -70,7 +83,7 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
   registerProxmoxRoutes(app, vault);
-  registerAgentProposalRoutes(app, proposals);
+  registerAgentProposalRoutes(app, proposals, serviceMonitor);
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);

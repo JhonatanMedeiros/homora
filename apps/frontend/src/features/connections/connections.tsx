@@ -16,7 +16,7 @@ import {
 import { WidgetsSection } from './widgets-section';
 import { t } from '@/i18n';
 
-export function Connections() {
+export function Connections({ initialDraft }: { initialDraft?: ConnectionFormState | null } = {}) {
   const [items, setItems] = useState<Connection[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [widgets, setWidgets] = useState<IntegrationWidget[]>([]);
@@ -26,7 +26,7 @@ export function Connections() {
   const [proxmoxConfigured, setProxmoxConfigured] = useState(false);
   const [cards, setCards] = useState<{ id: number; name: string }[]>([]);
   const [widgetResult, setWidgetResult] = useState<{ id: number; data: unknown } | null>(null);
-  const [form, setForm] = useState<ConnectionFormState | null>(null);
+  const [form, setForm] = useState<ConnectionFormState | null>(initialDraft ?? null);
   const [editing, setEditing] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const [confirming, setConfirming] = useState<string | null>(null);

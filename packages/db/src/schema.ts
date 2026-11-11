@@ -20,6 +20,16 @@ export const services = sqliteTable('services', {
   checkInterval: integer('check_interval'),
 });
 
+// Last observations are shared with the separate local MCP process. The service
+// signature prevents an old result from being attributed to edited settings.
+export const serviceObservations = sqliteTable('service_observations', {
+  serviceId: integer('service_id')
+    .primaryKey()
+    .references(() => services.id, { onDelete: 'cascade' }),
+  signature: text('signature').notNull(),
+  observation: text('observation').notNull(),
+});
+
 // Configuration stored here must never contain credentials; secretRef points to a
 // future credential store. Existing Proxmox credentials remain in their vault.
 export const integrationInstances = sqliteTable('integration_instances', {

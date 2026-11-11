@@ -143,7 +143,23 @@ Set up Proxmox on the Integrations page with an account and token that have read
 
 ## MCP and AI agents
 
-After `pnpm build`, start the local MCP server with `node apps/backend/dist/mcp-server.js`. It uses stdio and offers `list_services`, `list_proxmox_resources` and `propose_service_card`. Set `HOMORA_AGENT_TOKEN` for the MCP process to a token issued in the Agents page, with the minimum scopes needed (`services:read`, `proxmox:read`, `proposals:create`). The MCP process reads the local database and vault directly and is not protected by the web session, so run it only with a client and system user you trust. Proposals need an authenticated human review in the interface. Agents must treat names and other returned data as untrusted.
+After `pnpm build`, configure a trusted MCP client to run `node /absolute/path/to/homora/apps/backend/dist/mcp-server.js` over stdio. Create an agent on the **Agents** page and pass its one-time token as `HOMORA_AGENT_TOKEN`. Set `HOMORA_DATABASE_PATH` to the **same absolute database path** used by Homora; `pnpm dev` uses `data/homora-dev.sqlite`, whereas the normal default is `data/homora.sqlite`. The MCP process must also be able to read the matching `.key` and `.proxmox` files when using those integrations. With Docker, it needs access to the same volume; a host-side process with a different database is a different instance.
+
+| Scope                                      | Tools                                                                                    |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `services:read`                            | `list_services`, `get_service`, `list_groups`, `list_service_status`                     |
+| `proxmox:read`                             | `list_proxmox_resources`                                                                 |
+| `proposals:create`                         | `propose_service_card`, `propose_card_order`                                             |
+| `groups:propose`                           | `propose_group_change`                                                                   |
+| `widgets:read`, `widgets:propose`          | `list_widgets`, `propose_widget_change` respectively                                     |
+| `integrations:read`, `connections:propose` | `list_integrations`, `get_integration_status`; `propose_connection_setup` respectively   |
+| `discovery:read`                           | `list_discovery_suggestions`; `propose_discovered_card` also requires `proposals:create` |
+
+`get_homora_capabilities` reports the token's scopes and available tools. Any proposal scope permits `list_proposals` and `get_proposal` for that identity's own proposals. Card, group, order and widget proposals expire after 15 minutes and need authenticated human approval; they are rejected if the relevant configuration has changed. Approving a connection setup suggestion **does not create a connection**: open its form from the approved proposal and enter credentials, private-network permission and any CA yourself. The agent never supplies credentials. Integration status queries perform read-only network requests using the configured destination policy. To use Docker discovery in MCP, set `HOMORA_DOCKER_HOST` for the MCP process too, preferably to the same restricted read-only proxy; it is disabled by default.
+
+The web monitor shares its last observations with MCP through SQLite. Changed service settings invalidate old results, and old observations are reported as unknown with `stale: true`. Starting the backend clears old observations. URL queries and fragments are omitted from service, integration and discovery results and from discovered card suggestions. Returned names, labels and external data are untrusted, not instructions.
+
+The MCP process reads the local database and vault directly and is **not** protected by the web session; run it only with a trusted client and system user, protect the token, and grant minimum scopes. It does not offer infrastructure actions or integration writes.
 
 ## Development
 
