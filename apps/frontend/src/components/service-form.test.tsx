@@ -27,6 +27,7 @@ function setup(value: ServiceInput = emptyService) {
 
 it('allows selecting ping and interval, restoring default when empty', () => {
   const onChange = setup();
+  fireEvent.click(screen.getByRole('button', { name: 'Opções avançadas' }));
   const method = screen.getByLabelText('Método de verificação') as HTMLSelectElement;
   expect(method.value).toBe('http');
   fireEvent.change(method, { target: { value: 'ping' } });
@@ -45,4 +46,13 @@ it('warns that ping proves host reachability, not service health', () => {
   expect((screen.getByLabelText('Verificar a cada (segundos)') as HTMLInputElement).value).toBe(
     '45',
   );
+});
+
+it('keeps advanced options collapsed for a new service and open when values exist', () => {
+  setup();
+  expect(screen.queryByLabelText('Método de verificação')).toBeNull();
+  expect(screen.getByLabelText('Nome')).toBeTruthy();
+  cleanup();
+  setup({ ...emptyService, description: 'Filmes' });
+  expect(screen.getByLabelText('Método de verificação')).toBeTruthy();
 });

@@ -41,6 +41,7 @@ it('displays services, filters, and submits a new entry', async () => {
   fireEvent.change(within(dialog).getByLabelText('Categoria'), {
     target: { value: 'Infraestrutura' },
   });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Opções avançadas' }));
   fireEvent.click(within(dialog).getByRole('button', { name: 'Escolher ícone' }));
   fireEvent.change(screen.getByPlaceholderText('Buscar ícones pelo nome'), {
     target: { value: 'film' },
@@ -709,4 +710,21 @@ it('shows the list view by default and opens the command palette with Ctrl K', a
   fireEvent.click(screen.getByText('Adicionar serviço'));
   expect(window.location.pathname).toBe('/manage/services/new');
   localStorage.clear();
+});
+
+it('opens the new service form straight from the empty dashboard', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar primeiro serviço' }));
+  expect(window.location.pathname).toBe('/manage/services/new');
+  expect(await screen.findByRole('form', { name: 'Novo serviço' })).toBeTruthy();
 });

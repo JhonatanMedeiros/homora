@@ -10,6 +10,8 @@ type Props = {
   count: number;
   organizing: boolean;
   list?: boolean;
+  /** Management shows one editable row per line; the home packs two columns. */
+  managing?: boolean;
   searching: boolean;
   /** Present only for registered groups (can be renamed and removed). */
   canEdit: boolean;
@@ -39,6 +41,7 @@ export function GroupSection({
   count,
   organizing,
   list = false,
+  managing = false,
   searching,
   canEdit,
   canRemove,
@@ -173,7 +176,9 @@ export function GroupSection({
               columns && COLUMN_CLASSES[columns]
                 ? COLUMN_CLASSES[columns]
                 : list
-                  ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
+                  ? managing
+                    ? 'grid grid-cols-1 gap-1.5'
+                    : 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
                   : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
             }
           >

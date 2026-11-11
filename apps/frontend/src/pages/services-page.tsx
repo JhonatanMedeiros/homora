@@ -35,7 +35,7 @@ type Props = {
   managing: boolean;
   formRoute: 'new' | number | null;
   navigate: (path: string, replace?: boolean) => void;
-  onManage: () => void;
+  onAddService: () => void;
   data: ReturnType<typeof useServices>;
   /** Search opens the first result on Enter; the page registers here how to do so. */
   openFirstRef: MutableRefObject<(() => void) | null>;
@@ -46,7 +46,7 @@ export function ServicesPage({
   data,
   openFirstRef,
   managing,
-  onManage,
+  onAddService,
   formRoute,
   navigate,
 }: Props) {
@@ -481,6 +481,7 @@ export function ServicesPage({
             count={items.length}
             organizing={organizing}
             list={list}
+            managing={managing}
             searching={Boolean(needle)}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
@@ -558,8 +559,7 @@ export function ServicesPage({
       {data.loaded && !data.loadError && !groups.length && (
         <ServicesEmpty
           hasServices={services.length > 0}
-          managing={managing}
-          onAdd={() => (managing ? openForm() : onManage())}
+          onAdd={() => (managing ? openForm() : onAddService())}
         />
       )}
     </section>

@@ -180,8 +180,8 @@ function Dashboard({
             managing={managing}
             formRoute={route.form}
             navigate={navigate}
-            onManage={() => {
-              navigate('/manage/services');
+            onAddService={() => {
+              navigate('/manage/services/new');
             }}
           />
         )
