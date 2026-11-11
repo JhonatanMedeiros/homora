@@ -111,7 +111,7 @@ Services default to a **list** view: one dense row per service (icon, name, host
 
 ### Organize mode
 
-Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top" and "Move to group". Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only). A one-line hint and a "New group" button replace the old form; on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group.
+Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top" and "Move to group". Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only, after a confirmation dialog). A one-line hint and a "New group" button replace the old form; on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group; while dragging, empty groups show a drop zone.
 
 ## Elevation & Depth
 

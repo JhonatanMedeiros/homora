@@ -310,6 +310,19 @@ it('creates, displays, and removes an empty group via UI', async () => {
     key: 'Enter',
   });
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
+  // Removing asks first; cancelling keeps the group.
+  const dialog = await screen.findByRole('alertdialog');
+  expect(within(dialog).getByText(/Remover o grupo "Infraestrutura"/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+  expect(screen.getByRole('heading', { name: /Infraestrutura/ })).toBeTruthy();
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções do grupo Infraestrutura' }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
+  fireEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Remover' }),
+  );
   await waitFor(() => expect(screen.queryByRole('heading', { name: /Infraestrutura/ })).toBeNull());
 });
 
@@ -792,6 +805,67 @@ it('moves a service to another group from the organize menu', async () => {
     const put = calls.find((call) => call.url === '/api/services/1' && call.method === 'PUT');
     expect(put).toBeTruthy();
     expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ name: 'Wiki', category: 'Infra' });
+  });
+  window.history.replaceState(null, '', '/');
+});
+
+it('moves a service by dragging it onto another group row or an empty group', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/manage/services');
+  const calls: { url: string; method?: string; body?: string }[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      calls.push({ url, method: init?.method, body: init?.body });
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      if (url === '/api/groups' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Casa', position: 0, columns: null },
+            { id: 2, name: 'Infra', position: 1, columns: null },
+            { id: 3, name: 'Vazio', position: 2, columns: null },
+          ],
+        };
+      return { ok: true, json: async () => (init?.method ? {} : []) };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Wiki');
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  const rowOf = (name: string) => screen.getByText(name).closest('li') as HTMLElement;
+  const dataTransfer = { effectAllowed: '', dropEffect: '', setData: vi.fn() };
+  // Onto a row of another group.
+  fireEvent.dragStart(rowOf('Wiki'), { dataTransfer });
+  fireEvent.dragOver(rowOf('Proxmox'), { dataTransfer });
+  fireEvent.drop(rowOf('Proxmox'), { dataTransfer });
+  await waitFor(() => {
+    const put = calls.find((call) => call.url === '/api/services/1' && call.method === 'PUT');
+    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ category: 'Infra' });
+  });
+  calls.length = 0;
+  // Onto an empty group's drop zone, which only exists while dragging.
+  expect(document.querySelector('[data-group-drop]')).toBeNull();
+  fireEvent.dragStart(rowOf('Proxmox'), { dataTransfer });
+  const zone = await waitFor(() => {
+    const found = document.querySelector('[data-group-drop]');
+    expect(found).toBeTruthy();
+    return found as HTMLElement;
+  });
+  fireEvent.dragOver(zone, { dataTransfer });
+  fireEvent.drop(zone, { dataTransfer });
+  await waitFor(() => {
+    const put = calls.find((call) => call.url === '/api/services/2' && call.method === 'PUT');
+    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ category: 'Vazio' });
   });
   window.history.replaceState(null, '', '/');
 });

@@ -658,8 +658,17 @@ implementation because it changes a security default.
   exercised by the test environment) and real touch devices; the touch behavior relies on
   `pointer: coarse` styles and was only checked through desktop emulation.
 - Not done: dragging with a finger (would need a new dependency such as dnd-kit); the maintainer
-  chose arrows and the group menu instead. Dropping onto an empty group is not supported; use the
-  row menu.
+  chose arrows and the group menu instead.
+
+### Organize Mode Follow-ups (2026-11-11)
+
+- Removing a group now asks for confirmation in an alert dialog before the request is sent.
+- While a service is dragged, an empty group shows a dashed drop zone; dropping there moves the
+  service to that group. Previously only the row menu could do this.
+- The hint icon is now vertically centered with its text.
+- `App.test.tsx` simulates the drag events (drag start, over, drop) for a row of another group and
+  for an empty group. This exercises our handlers but not the browser's native drag and drop, nor
+  real touch devices; both still need a manual check.
 
 ## Core Homepage — Implemented Flows
 

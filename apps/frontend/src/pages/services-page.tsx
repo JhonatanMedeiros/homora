@@ -27,6 +27,16 @@ import { HealthSummary } from '@/components/health-summary';
 import { TopBar } from '@/components/top-bar';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { GroupSection } from '@/components/group-section';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { OrganizePanel } from '@/components/organize-panel';
 import { PageHeader } from '@/components/page-header';
 import { ServiceCard } from '@/components/service-card';
@@ -74,6 +84,8 @@ export function ServicesPage({
   const [organizing, setOrganizing] = useState(false);
   const [dragging, setDragging] = useState<number | null>(null);
   const [dropOver, setDropOver] = useState<number | null>(null);
+  const [dropGroup, setDropGroup] = useState<string | null>(null);
+  const [removingGroup, setRemovingGroup] = useState<{ id: number; name: string } | null>(null);
   const [message, setMessage] = useState('');
   const [flash, setFlash] = useState('');
   const [editingGroup, setEditingGroup] = useState<number | null>(null);
@@ -511,7 +523,19 @@ export function ServicesPage({
               setEditingGroup(row.id);
               setGroupDraft(row.name);
             }}
-            onRemove={() => row && void deleteGroup(row.id)}
+            onRemove={() => row && setRemovingGroup({ id: row.id, name: row.name })}
+            emptyDrop={{
+              active: dragging !== null,
+              over: dropGroup === category,
+              onOver: () => setDropGroup(category),
+              onLeave: () => setDropGroup((g) => (g === category ? null : g)),
+              onDrop: () => {
+                const dragged = services.find((item) => item.id === dragging);
+                setDragging(null);
+                setDropGroup(null);
+                if (dragged && dragged.category !== category) void moveToGroup(dragged, category);
+              },
+            }}
             onMove={(direction) => void reorder(data.moveGroup(category, direction))}
           >
             {items.map((s, index) => {
@@ -524,6 +548,7 @@ export function ServicesPage({
                   onDragEnd: () => {
                     setDragging(null);
                     setDropOver(null);
+                    setDropGroup(null);
                   },
                   onDragOver: (event: DragEvent) => {
                     if (dragging !== null && dragging !== s.id) {
@@ -586,6 +611,28 @@ export function ServicesPage({
           </GroupSection>
         );
       })}
+      <AlertDialog
+        open={removingGroup !== null}
+        onOpenChange={(open) => !open && setRemovingGroup(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('group.removeTitle', { name: removingGroup?.name ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t('group.removeBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => removingGroup && void deleteGroup(removingGroup.id)}
+            >
+              {t('common.remove')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {organizing && (
         <div className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
           <span className="font-mono text-xs text-muted-foreground">{t('organize.bar')}</span>
