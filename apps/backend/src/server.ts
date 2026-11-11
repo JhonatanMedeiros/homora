@@ -6,6 +6,7 @@ import { loadConfig } from './config.js';
 import { createDockerSource } from './docker-discovery.js';
 import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
+import { createShutdownHandler } from './shutdown.js';
 const config = loadConfig();
 await mkdir(dirname(config.databasePath), { recursive: true });
 const database = createDatabase(config.databasePath);
@@ -20,6 +21,12 @@ const app = createApp(
 );
 app.addHook('onClose', async () => database.close());
 await app.listen({ port: config.apiPort, host: config.bindHost });
+const shutdown = createShutdownHandler({
+  close: () => app.close(),
+  exit: (code) => process.exit(code),
+});
+for (const signal of ['SIGTERM', 'SIGINT'] as const)
+  process.once(signal, () => void shutdown(signal));
 console.log(
   `API listening on port ${config.apiPort}. Access Homora at http://localhost:${config.webPort}`,
 );
