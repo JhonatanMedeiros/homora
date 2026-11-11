@@ -596,6 +596,50 @@ appears monitored without being checked, and reference migration benchmark can b
   consistent padding, refined empty states, and polished micro-interactions.
 - Added organize mode for drag-and-drop group and card reordering.
 
+## UI Rebrand — Lamplight (2026-11-11)
+
+- Replaced the label-tape identity with "Lamplight": warm dark-first neutrals, one ember accent,
+  Geist and Geist Mono. `StatusLight` (dot plus text) replaces `StatusTag` and `LabelTape`.
+  Documented in `DESIGN.md` and `.impeccable/design.json`.
+- Home: dense list by default with Cards as an option, one "View" popover (descriptions only in
+  Cards), search in the header, "N of M online" summary, group filters only with three or more
+  groups, and a `Ctrl`/`Cmd` `K` command palette (open a service, add a service, switch view,
+  toggle theme, go to management). `homora-density` stores `list` or `cards`; the older
+  `comfortable` value maps to cards and `compact` to list.
+- First-use flow: the empty dashboard opens the new service form directly; the form shows name,
+  URL, category, and the private network option first, with the rest under advanced options.
+- Management lists services one per row with edit and remove actions.
+- Validation: `pnpm check` and `pnpm build` pass. Screens were reviewed by screenshot (desktop,
+  390 px, dark and light) with mocked API data. Not reviewed visually: the View popover and
+  command palette opened, organize mode, and integrations or agents pages with real data.
+
+### Follow-up — Private network default for new services (not started)
+
+**Problem:** monitoring denies RFC1918 and ULA destinations unless each service opts in
+(`allowPrivate`). Most homelab services use private addresses, so on first use the home shows
+"Monitoring blocked" for nearly every service and the user must edit each one. This conflicts with
+the product principle "works out of the box".
+
+**Constraints (keep):** per-service authorization stays the security model (`SECURITY.md`,
+`docs/arquitetura.md`). Special ranges, pinned DNS, mixed DNS responses, and redirects stay
+blocked. Imports, Docker labels, and MCP proposals must never enable private access on their own.
+
+**Options:**
+
+1. Global switch replacing the per-service flag. Simplest, but anything added later (including
+   imports) could probe the private network. Weakens the rule above.
+2. **Preferred:** a global default ("new services allow private network") that only sets the
+   initial `allowPrivate` for services created in the authenticated UI, while each service keeps
+   its own flag. Imports, Docker discovery, and agent proposals still start blocked.
+3. Copy-only change: reword the blocked state as "Private network not authorized" with a direct
+   link to the setting. Does not remove the friction.
+
+**Work for option 2:** a settings key with a compatible migration (existing services unchanged);
+validation in the API; apply the default only on UI-created services; Settings switch; form checkbox
+initialized from the default; tests proving imports, Docker, and MCP do not inherit it; update
+`SECURITY.md` and `docs/arquitetura.md`. Needs an explicit maintainer decision before
+implementation because it changes a security default.
+
 ## Core Homepage — Implemented Flows
 
 - Additive migration generates persistent groups from existing categories and initializes card
