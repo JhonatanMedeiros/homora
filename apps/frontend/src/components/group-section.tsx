@@ -1,6 +1,7 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { t } from '@/i18n';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -32,6 +33,14 @@ type Props = {
   onRename: () => void;
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
+  /** While a service is dragged, an empty group becomes a drop zone. */
+  emptyDrop?: {
+    active: boolean;
+    over: boolean;
+    onOver: () => void;
+    onLeave: () => void;
+    onDrop: () => void;
+  };
   children: ReactNode;
 };
 
@@ -67,6 +76,7 @@ export function GroupSection({
   onRename,
   onRemove,
   onMove,
+  emptyDrop,
   children,
 }: Props) {
   const titleId = `group:${category}`;
@@ -220,7 +230,30 @@ export function GroupSection({
       </div>
       {(!collapsed || organizing || searching) && (
         <div id={`${titleId}:content`} className="flex flex-col gap-3">
-          {count === 0 && <p className="text-sm text-muted-foreground">{t('group.empty')}</p>}
+          {count === 0 && (
+            <p
+              data-group-drop={emptyDrop?.active ? '' : undefined}
+              className={cn(
+                'text-sm text-muted-foreground',
+                emptyDrop?.active &&
+                  'rounded-lg border border-dashed px-3 py-4 text-center transition-colors',
+                emptyDrop?.over && 'border-primary bg-primary/10 text-foreground',
+              )}
+              onDragOver={(event: DragEvent) => {
+                if (!emptyDrop?.active) return;
+                event.preventDefault();
+                emptyDrop.onOver();
+              }}
+              onDragLeave={() => emptyDrop?.onLeave()}
+              onDrop={(event: DragEvent) => {
+                if (!emptyDrop?.active) return;
+                event.preventDefault();
+                emptyDrop.onDrop();
+              }}
+            >
+              {emptyDrop?.active ? t('group.dropHere') : t('group.empty')}
+            </p>
+          )}
           <ul className={gridClass}>{children}</ul>
         </div>
       )}

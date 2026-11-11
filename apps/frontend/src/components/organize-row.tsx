@@ -83,15 +83,16 @@ export function OrganizeRow({
           </ItemTitle>
           <span className="truncate font-mono text-xs text-muted-foreground">{hostOf(s.url)}</span>
         </ItemContent>
+        {/* aria-disabled (not disabled) so focus stays on the arrow when the row reaches an end. */}
         <ItemActions className="gap-0.5">
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="pointer-coarse:size-11"
-            disabled={first}
+            className="pointer-coarse:size-11 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            aria-disabled={first}
             aria-label={t('card.moveUp', { name: s.name })}
-            onClick={() => onMove(-1)}
+            onClick={() => !first && onMove(-1)}
           >
             <ArrowUp />
           </Button>
@@ -99,10 +100,10 @@ export function OrganizeRow({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="pointer-coarse:size-11"
-            disabled={last}
+            className="pointer-coarse:size-11 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            aria-disabled={last}
             aria-label={t('card.moveDown', { name: s.name })}
-            onClick={() => onMove(1)}
+            onClick={() => !last && onMove(1)}
           >
             <ArrowDown />
           </Button>
