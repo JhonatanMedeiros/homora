@@ -1,5 +1,3 @@
-import { EventEmitter } from 'node:events';
-import https from 'node:https';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,6 +7,9 @@ import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { summarizeProxmox } from './proxmox-summary.js';
+import { getAuthorizedResponse } from './network-request.js';
+
+vi.mock('./network-request.js', () => ({ getAuthorizedResponse: vi.fn() }));
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -67,23 +68,12 @@ it('summarizes inventory into aggregated numbers, ignoring templates, offline no
 });
 
 function mockProxmox(data: unknown) {
-  const request = Object.assign(new EventEmitter(), { destroy: vi.fn() });
-  return vi.spyOn(https, 'get').mockImplementation((...args: unknown[]) => {
-    const response = Object.assign(new EventEmitter(), {
-      statusCode: 200,
-      setEncoding: vi.fn(),
-      resume: vi.fn(),
-    });
-    queueMicrotask(() => {
-      (args[2] as (res: typeof response) => void)(response);
-      response.emit('data', JSON.stringify({ data }));
-      response.emit('end');
-    });
-    return request as unknown as ReturnType<typeof https.get>;
-  });
+  const mock = vi.mocked(getAuthorizedResponse);
+  mock.mockClear();
+  return mock.mockResolvedValue({ status: 200, body: JSON.stringify({ data }) });
 }
 
-it('attaches legacy Proxmox to a card without disclosing resources or allowing edits to the bridge row', async () => {
+it('migrates legacy Proxmox while preserving card widgets and aggregate data', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-proxmox-widget-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
@@ -127,13 +117,14 @@ it('attaches legacy Proxmox to a card without disclosing resources or allowing e
     const again = (await send('POST', '/api/widgets', { source: 'proxmox', name: 'Outro' })).json();
     expect(again.integrationId).toBe(widget.integrationId);
 
-    expect(await send('GET', '/api/connections').then((r) => r.json())).toEqual([]);
-    for (const [method, url] of [
-      ['PUT', `/api/connections/${widget.integrationId}`],
-      ['DELETE', `/api/connections/${widget.integrationId}`],
-      ['POST', `/api/connections/${widget.integrationId}/test`],
-    ] as const)
-      expect((await send(method, url, { name: 'x' })).statusCode).toBe(404);
+    expect((await send('GET', '/api/connections')).json()).toMatchObject([
+      { id: widget.integrationId, type: 'proxmox' },
+    ]);
+    expect(
+      (await send('PUT', `/api/connections/${widget.integrationId}`, { name: 'Cluster principal' }))
+        .statusCode,
+    ).toBe(200);
+    expect((await send('DELETE', `/api/connections/${widget.integrationId}`)).statusCode).toBe(409);
 
     const spy = mockProxmox(inventory);
     const data = await send('GET', `/api/connections/${widget.integrationId}/data`);
@@ -150,7 +141,10 @@ it('attaches legacy Proxmox to a card without disclosing resources or allowing e
     await send('GET', `/api/connections/${widget.integrationId}/data`);
     expect(spy).toHaveBeenCalledTimes(1);
 
-    await vault.save({ url: 'https://pve.example:8006', tokenId: 'user@pve!outro', secret: 'x' });
+    await send('PUT', `/api/connections/${widget.integrationId}`, {
+      tokenId: 'user@pve!outro',
+      secret: 'y',
+    });
     await send('GET', `/api/connections/${widget.integrationId}/data`);
     expect(spy).toHaveBeenCalledTimes(2);
   } finally {

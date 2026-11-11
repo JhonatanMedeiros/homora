@@ -29,7 +29,6 @@ type Props = {
   confirming: string | null;
   widgetName: string;
   widgetConnection: string;
-  proxmoxConfigured: boolean;
   cards: { id: number; name: string }[];
   widgetCard: string;
   onCardChange: (value: string) => void;
@@ -50,7 +49,6 @@ export function WidgetsSection({
   confirming,
   widgetName,
   widgetConnection,
-  proxmoxConfigured,
   cards,
   widgetCard,
   onCardChange,
@@ -67,7 +65,7 @@ export function WidgetsSection({
     <section aria-labelledby="integration-widgets-title" className="flex flex-col gap-3">
       <SectionTitle id="integration-widgets-title">{t('widgets.title')}</SectionTitle>
       <p className="text-sm text-muted-foreground">{t('widgets.description')}</p>
-      {((items && items.length > 0) || proxmoxConfigured) && (
+      {items && items.length > 0 && (
         <form onSubmit={onCreate}>
           <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
             <Field>
@@ -83,7 +81,6 @@ export function WidgetsSection({
                     {item.name}
                   </option>
                 ))}
-                {proxmoxConfigured && <option value="proxmox">{widgetLabels.proxmox}</option>}
               </NativeSelect>
             </Field>
             <Field>
@@ -154,7 +151,7 @@ export function WidgetsSection({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={busy || (!connection && widget.type !== 'proxmox')}
+                      disabled={busy || !connection}
                       onClick={() => onQuery(widget)}
                     >
                       {t('connections.query', { name: widget.name })}

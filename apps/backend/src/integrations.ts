@@ -27,7 +27,7 @@ export type IntegrationTransport = (request: {
 }) => Promise<{ status: number; body: unknown }>;
 export type IntegrationContext = {
   publicConfig: Record<string, unknown>;
-  credentials: { secret?: string; ca?: string };
+  credentials: { secret?: string; ca?: string; tokenId?: string };
   transport?: IntegrationTransport;
   legacyConfig?: unknown;
 };

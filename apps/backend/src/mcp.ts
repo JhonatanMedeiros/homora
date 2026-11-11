@@ -385,11 +385,14 @@ export function createMcp(
     async () => {
       if (!authorize('integrations:read')) return unauthorized();
       try {
+        const configured = options.connections ? await options.connections.listConnections() : null;
         return result({
           catalog: integrationRegistry.list(),
-          proxmoxConfigured: Boolean(vault.load()),
-          connections: options.connections
-            ? (await options.connections.listConnections()).map((connection) => ({
+          proxmoxConfigured: configured
+            ? configured.some((item) => item.type === 'proxmox')
+            : Boolean(vault.load()),
+          connections: configured
+            ? configured.map((connection) => ({
                 ...connection,
                 url: publicUrl(connection.url),
               }))
@@ -417,8 +420,6 @@ export function createMcp(
       if (!authorize('integrations:read')) return unauthorized();
       try {
         if (!options.connections) return failed();
-        const row = database.prepare('SELECT type FROM integration_instances WHERE id=?').get(id);
-        if (!row || row.type === 'proxmox') return failed();
         const data = await options.connections.connectionData(id);
         return data ? result(data) : failed();
       } catch {
@@ -520,6 +521,29 @@ export function createMcp(
           isError: true,
         };
       try {
+        if (options.connections) {
+          const connections = (await options.connections.listConnections()).filter(
+            (item) => item.type === 'proxmox',
+          );
+          if (connections.length !== 1)
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Select a Proxmox connection with list_integrations and get_integration_status.',
+                },
+              ],
+              isError: true,
+            };
+          const data = await options.connections.connectionData(connections[0].id);
+          return data ? result(data) : failed();
+        }
+        if (
+          database
+            .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
+            .get()
+        )
+          return failed();
         const config = vault.load();
         if (!config)
           return { content: [{ type: 'text', text: 'Proxmox is not configured.' }], isError: true };

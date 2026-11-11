@@ -2,7 +2,13 @@ import { CHECK_INTERVAL_MAX, CHECK_INTERVAL_MIN, ICON_MAX_LENGTH } from '@homora
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
 
-const integrationType = z.enum(['jellyfin', 'home-assistant', 'uptime-kuma', 'adguard-home']);
+const integrationType = z.enum([
+  'jellyfin',
+  'home-assistant',
+  'uptime-kuma',
+  'adguard-home',
+  'proxmox',
+]);
 const boundedText = (max: number) => z.string().max(max);
 
 export const serviceInputSchema = z
@@ -74,6 +80,7 @@ const connectionFields = z
     allowPrivate: z.boolean().optional(),
     entityId: boundedText(255).optional(),
     username: boundedText(255).optional(),
+    tokenId: boundedText(255).optional(),
     slug: boundedText(255).optional(),
     secret: boundedText(65536).optional(),
     ca: boundedText(65536).optional(),

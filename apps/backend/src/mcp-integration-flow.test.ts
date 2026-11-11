@@ -62,3 +62,61 @@ it('queries only authorized non-Proxmox integrations through the controlled tran
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('lists and queries independent Proxmox connections without exposing their credentials', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-proxmox-connections-'));
+  const path = join(dir, 'db.sqlite');
+  const database = createDatabase(path);
+  const db = getSqliteHandle(database.db);
+  const vault = createVault(path);
+  const connections = createIntegrationConnections(database.db, vault);
+  const first = await connections.createConnection({
+    type: 'proxmox',
+    name: 'One',
+    url: 'https://one.example',
+    tokenId: 'user@pve!one',
+    secret: 'secret-one',
+  });
+  const second = await connections.createConnection({
+    type: 'proxmox',
+    name: 'Two',
+    url: 'https://two.example',
+    tokenId: 'user@pve!two',
+    secret: 'secret-two',
+  });
+  const identity = createProposalService(db).issue('integration-reader', ['integrations:read']);
+  process.env.HOMORA_AGENT_TOKEN = identity.token;
+  vi.mocked(getAuthorizedResponse).mockResolvedValue({
+    status: 200,
+    body: JSON.stringify({ data: [{ type: 'qemu', status: 'running', name: 'private-vm' }] }),
+  });
+  const server = createMcp(db, vault, { connections });
+  const client = new Client({ name: 'test', version: '1' });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  try {
+    await Promise.all([client.connect(a), server.connect(b)]);
+    const list = await client.callTool({ name: 'list_integrations', arguments: {} });
+    expect(JSON.stringify(list)).toContain('One');
+    expect(JSON.stringify(list)).toContain('Two');
+    expect(JSON.stringify(list)).not.toContain('secret-one');
+    expect(JSON.stringify(list)).not.toContain('user@pve!one');
+    const result = await client.callTool({
+      name: 'get_integration_status',
+      arguments: { id: second.id },
+    });
+    expect(result.isError).not.toBe(true);
+    expect(JSON.stringify(result)).not.toContain('private-vm');
+    expect(getAuthorizedResponse).toHaveBeenCalledWith(
+      'https://two.example/api2/json/cluster/resources',
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(first.id).not.toBe(second.id);
+  } finally {
+    await client.close();
+    await server.close();
+    database.close();
+    delete process.env.HOMORA_AGENT_TOKEN;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

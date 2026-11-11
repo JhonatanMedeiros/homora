@@ -754,3 +754,14 @@ implementation because it changes a security default.
   reaching the UI from an allowed origin can register (by design; documented accordingly).
 - **Not validated:** authentication rate limits under load and behind a real HTTPS reverse proxy;
   for this reason, session and secret review items in P2 remain open.
+
+### Named Proxmox connections
+
+- Proxmox uses named connections, with one API endpoint per connection, shared destination
+  controls, encrypted credentials, reusable widgets and selectable top-bar source. Cluster
+  data remains aggregated; node-specific widgets are not implemented.
+- Legacy credentials are migrated transactionally on first connection access, preserving the
+  bridge ID and widgets. The legacy file is retained; a migration marker prevents resurrection
+  after deletion. Old HTTP endpoints return 410 after migration.
+- Automated tests exercise migration with and without widgets, missing keys, multiple independent
+  configurations and mocked network requests. Live cluster compatibility remains unverified.
