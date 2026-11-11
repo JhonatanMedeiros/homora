@@ -691,6 +691,30 @@ implementation because it changes a security default.
   within the 8 seconds (for example another move), Undo still restores the order captured at the
   time of its own move, which can overwrite the later change.
 
+### Agents Tab Redesign (2026-11-11)
+
+- Creating an agent is now a dialog in two steps. Step 1 asks for a name and a profile (Read only,
+  Suggests changes, Custom); "Suggests changes" is the default and selects reading services,
+  creating proposals, and proposing group changes. Custom shows the nine permissions. Step 2 shows
+  the token once, with a copy button, the setup guide already containing it, and a "I saved the
+  token" checkbox that enables Done. Closing earlier asks for confirmation.
+- Generate new token and Revoke use alert dialogs that state the consequence, replacing
+  `window.confirm` and the inline confirm button. The rotated token opens the same step-2 dialog.
+- Each agent is a card with its creation date (already returned by the API as `createdAt`), a
+  pending-proposals badge, permission badges (suggest-type permissions highlighted), and a menu.
+- "Connect" in the header and "How to connect" in each agent menu open a setup guide with tabs for
+  Claude Code, Codex, Claude Desktop, Cursor, VS Code, and generic JSON. Formats were checked
+  against each client's documentation. The token is stored only as a digest, so outside of step 2
+  the snippet uses a `COLE_O_TOKEN_AQUI` placeholder. The Homora folder is typed once and saved in
+  `localStorage` (not a secret) to fill the script and database paths. No backend change.
+- On phones the dialogs rise from the bottom as a sheet and the client tabs scroll sideways.
+- Validation: `pnpm check` and tests for the snippets and the dialogs; desktop and 390 px
+  screenshots with a mocked API. **Not verified:** the snippets were not run against the real
+  clients (Claude Code, Codex, Claude Desktop, Cursor, VS Code); the VS Code format is the
+  `servers` format documented for `.vscode/mcp.json`, which VS Code's own page labels as the older
+  local format. Renaming an agent and editing its permissions after creation need backend changes
+  and were left out.
+
 ## Core Homepage — Implemented Flows
 
 - Additive migration generates persistent groups from existing categories and initializes card
