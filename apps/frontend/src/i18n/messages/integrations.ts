@@ -1,4 +1,4 @@
-/** Textos do catálogo de integrações e do Proxmox. */
+/** Text for the integrations catalog and Proxmox. */
 export const en = {
   'catalog.inventory': 'Infrastructure inventory',
   'catalog.server-info': 'Server information',

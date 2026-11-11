@@ -1,131 +1,125 @@
-# Avaliação de produto e concorrência
+# Product and Competitive Evaluation
 
-**Data:** 2026-11-10  
-**Escopo:** funcionalidades presentes no branch `feat/roadmap-completion` em
-`d98e52c`, documentação do Homora e documentação oficial de produtos similares.
+**Date:** 2026-11-10  
+**Scope:** features present in branch `feat/roadmap-completion` at commit
+`d98e52c`, Homora documentation, and official documentation of comparable products.
 
-Esta é uma comparação de capacidades publicadas, não uma avaliação completa de
-desempenho, segurança, adoção ou satisfação de usuários. O parecer visual foi
-feito por leitura do JSX e CSS, sem renderização em navegador. A recomendação de
-posicionamento abaixo é uma hipótese para validar, não uma decisão de produto.
+This is a comparison of published capabilities, not a benchmark of performance,
+security, market adoption, or user satisfaction. Visual review was conducted via
+inspection of JSX and CSS files, without browser rendering. The positioning
+recommendation below is a hypothesis to be validated, not a binding product decision.
 
-## Conclusão
+## Conclusion
 
-Como homepage genérica, o Homora ainda não oferece uma vantagem clara sobre
-alternativas maduras. Ele já organiza links, grupos e verificações simples, mas
-seu valor de homelab — dados de integrações, estado de infraestrutura e relação
-entre aplicações e máquinas — fica escondido ou não foi implementado. A interface
-também destaca “Agentes” apesar de o agente só consultar dados e propor mudanças
-em cards, sem ser parte necessária do uso diário.
+As a generic dashboard, Homora does not yet offer a clear competitive edge over
+mature alternatives. It organizes links, groups, and basic health checks, but
+its unique homelab value—integration metrics, infrastructure status, and linking
+applications to host machines—remains either unexposed or unimplemented on the
+primary dashboard. The UI also prominently highlights "Agents" despite the agent
+only reading data and submitting card proposals, without being an essential part
+of everyday use.
 
-Há uma base técnica promissora: configuração pela interface, operação local,
-integração Proxmox somente leitura, opt-in explícito para destinos privados e
-propostas MCP revisadas por uma pessoa. Isso ainda não forma uma experiência
-distintiva. A recomendação é posicionar o Homora como **mapa operacional do
-homelab**: um lugar para abrir os serviços, entender se respondem e ver onde
-estão hospedados. Proxmox e agentes seriam opcionais; o painel de links deve
-continuar útil sem ambos.
+There is a promising technical foundation: web UI configuration, local execution,
+read-only Proxmox integration, explicit opt-in for private network targets, and
+human-reviewed MCP proposals. However, this does not yet form a distinctive product
+experience. The recommendation is to position Homora as an **operational map of the
+homelab**: a single place to launch services, check responsiveness, and identify where
+they are hosted. Proxmox and AI agents remain optional; the links dashboard must
+remain useful without either.
 
-## Comparação observada
+## Observed Comparison
 
-| Produto      | Experiência documentada oficialmente                                                                                                                            | Implicação para o Homora                                                                                                                                             |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Homepage     | Widgets de serviço associados aos próprios atalhos, widgets informativos, integração Docker e um widget Proxmox para contagens de VMs/containers e CPU/memória. | Um catálogo de conexões fora da home e uma lista de serviços sem dados associados parecem rasos por comparação.                                                      |
-| Homarr       | Separa apps, integrações, widgets e boards; permite colocar e redimensionar apps/widgets no board, ligar apps a integrações e combinar estatísticas.            | O modelo mental entre serviço, conexão, widget e tela é claro e configurável. O Homora implementa as entidades, mas ainda não liga a apresentação do widget ao card. |
-| Dashy        | Oferece temas e layouts configuráveis, ícones, indicadores de estado, widgets e formas alternativas de navegar.                                                 | Mais temas e opções não são uma diferenciação sustentável para o Homora.                                                                                             |
-| Glance       | Foca numa tela configurável com várias páginas e widgets de feeds, estado de containers e estatísticas do servidor.                                             | O público também espera informação legível à primeira vista; uma homepage de apenas atalhos e pontos de estado não basta como diferencial.                           |
-| Homora atual | Grupos e atalhos editáveis, monitoramento HTTP básico, Proxmox em outra aba, quatro adaptadores experimentais e MCP local para leitura/propostas de cards.      | Ainda não exibe na home os dados que poderiam justificar uma proposta específica para homelab.                                                                       |
+| Product        | Officially Documented Experience                                                                                                                               | Implication for Homora                                                                                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Homepage       | Service widgets attached directly to shortcuts, informational widgets, Docker integration, and a Proxmox widget for VM/container counts and CPU/memory stats.  | A connections catalog separated from the homepage and a service list with no attached data appear shallow by comparison.                                            |
+| Homarr         | Separates apps, integrations, widgets, and boards; supports drag-and-drop sizing, linking apps to integrations, and aggregating stats.                         | Clear and configurable mental model between service, connection, widget, and board. Homora models these entities, but has not yet surfaced widget stats onto cards. |
+| Dashy          | Highly configurable themes and layouts, icons, status badges, widgets, and multiple navigation modes.                                                          | Competing on themes and visual options alone is not a sustainable differentiator for Homora.                                                                        |
+| Glance         | Configurable multi-page dashboard featuring RSS feeds, container health, and server stats widgets.                                                             | Users expect glanceable information at a glance; a homepage of only static links and status dots is insufficient differentiation.                                   |
+| Current Homora | Editable groups and shortcuts, basic HTTP health checks, Proxmox in a separate tab, four experimental adapters, and local MCP for querying and card proposals. | Does not yet display on the homepage the data that would justify a dedicated homelab-first proposition.                                                             |
 
-Fontes dos concorrentes: [widgets de serviço do Homepage](https://gethomepage.dev/widgets/),
-[integração Docker do Homepage](https://gethomepage.dev/configs/docker/),
-[widget Proxmox do Homepage](https://gethomepage.dev/widgets/services/proxmox/),
-[estrutura de apps, integrações e widgets do Homarr](https://homarr.dev/docs/getting-started/),
-[integrações do Homarr](https://homarr.dev/docs/management/integrations/),
-[widgets do Homarr](https://homarr.dev/docs/widgets/),
-[recursos documentados do Dashy](https://docs.dashy.to/) e
-[Glance no GitHub](https://github.com/glanceapp/glance).
+Competitor sources: [Homepage service widgets](https://gethomepage.dev/widgets/),
+[Homepage Docker integration](https://gethomepage.dev/configs/docker/),
+[Homepage Proxmox widget](https://gethomepage.dev/widgets/services/proxmox/),
+[Homarr apps, integrations, and widgets](https://homarr.dev/docs/getting-started/),
+[Homarr integrations](https://homarr.dev/docs/management/integrations/),
+[Homarr widgets](https://homarr.dev/docs/widgets/),
+[Dashy documented features](https://docs.dashy.to/), and
+[Glance on GitHub](https://github.com/glanceapp/glance).
 
-## Lacunas confirmadas no código
+## Confirmed Gaps in Code
 
-1. **A home não é uma visão operacional.** A aba Serviços mostra atalhos e um
-   estado HTTP por serviço. Proxmox, conexões e resultados de integração ficam na
-   aba Integrações; não há relação entre um serviço e sua VM ou container.
-2. **Widgets ainda são registros nominais.** Um widget armazena conexão e nome,
-   mas não configuração, posição nem campo consultado. A consulta ignora o
-   identificador do widget e chama o endpoint genérico da conexão. Widgets da
-   mesma conexão, portanto, mostram o mesmo resultado; nenhum aparece na home.
-3. **O indicador de disponibilidade é impreciso.** Só respostas HTTP 2xx viram
-   “Disponível”. 401/403, 404, redirecionamentos e falhas de rede terminam como
-   “Indisponível”, embora vários desses casos signifiquem que o serviço respondeu
-   ou que exige autenticação. A rotina verifica apenas os 25 primeiros serviços
-   em cada ciclo; os restantes ficam como desconhecidos, sem aviso específico.
-4. **Os adaptadores não são widgets de produto completos.** Jellyfin retorna
-   nome e versão; Home Assistant consulta uma entidade; Uptime Kuma retorna
-   contagens; AdGuard Home retorna estado e versão. O catálogo lista os tipos,
-   mas essas respostas são consultadas numa tela separada e não viram conteúdo
-   do card. Nenhum desses adaptadores foi validado em um serviço real.
-5. **A IA recebe mais destaque que o valor entregue.** O cliente MCP local
-   disponibiliza consulta de serviços, consulta do inventário Proxmox e criação
-   de propostas de card. A decisão é humana. Não há assistente conversacional
-   embutido nem proposta de associação entre serviço e guest Proxmox. Isso é uma
-   boa fronteira de segurança, mas não sustenta “gerenciamento assistido por IA”
-   como principal promessa de uso diário.
+1. **The homepage is not an operational view.** The Services tab shows shortcuts and
+   HTTP status per service. Proxmox, connections, and integration query results live
+   in the Connections tab; there is no link between a service card and its VM or container.
+2. **Widgets are nominal records.** A widget record stores connection ID and name, but
+   no configuration, layout coordinates, or queried fields. Data querying ignores widget
+   ID and calls the generic connection endpoint. Multiple widgets pointing to the same
+   connection return identical data; none appeared on the homepage.
+3. **Availability indicator is simplistic.** Only HTTP 2xx counts as "Available".
+   401/403, 404, redirects, and network timeouts result in "Unavailable", even though
+   several of these indicate the server is running and reachable (e.g. requires login).
+   The monitor checks only the first 25 services per cycle; remaining services sit
+   in unknown state without explicit UI notification.
+4. **Adapters are not full product widgets.** Jellyfin returns name and version; Home
+   Assistant queries one entity; Uptime Kuma returns counts; AdGuard Home returns
+   protection state and version. The catalog lists these types, but results were queried
+   in an isolated management screen rather than rendered onto cards. None had been
+   validated against real services.
+5. **AI visibility outpaces delivered value.** The local MCP server provides service
+   queries, Proxmox inventory queries, and card proposal submissions. Decisions are
+   made by humans. There is no embedded conversational assistant or automatic
+   service-to-Proxmox-guest mapping. This is sound security architecture, but does not
+   justify "AI-assisted management" as the primary value proposition.
 
-## Por que ainda pode parecer genérico
+## Why It Can Feel Generic
 
-Esta parte é julgamento de design, não fato mensurável. A tela usa padrões
-comuns de painel administrativo — abas, subtítulos genéricos, busca global,
-cards escuros e cor de destaque — sem representar uma ideia própria do
-homelab. O conteúdo também não reforça uma rotina específica: “estado
-desconhecido” se repete em cards sem contexto, enquanto dados de infraestrutura
-ficam em outra seção. Trocar cores ou ícones novamente não resolveria essa
-desconexão.
+This assessment is a design critique, not a measurable metric. The screen employs
+common administrative dashboard patterns—tabs, generic subheadings, global search,
+dark cards, and accent colors—without expressing an identity unique to homelabs.
+Content does not support an operational homelab routine: "unknown status" appears
+repeatedly on cards without context, while infrastructure metrics live elsewhere.
+Tweaking colors or icons does not solve this disconnect.
 
-## Direção recomendada para validar
+## Recommended Validation Roadmap
 
-### Release 1 — informação útil e verdadeira
+### Release 1 — Useful and Honest Information
 
-- Na home, mostrar um resumo pequeno de disponibilidade e a integração Proxmox
-  quando configurada; se ela não estiver configurada, manter a home simples.
-- Tornar o estado do monitor semanticamente honesto: “responde”, “exige login”,
-  “não encontrado”, “sem resposta” e “não verificado”, registrando o código HTTP
-  e a latência sem seguir redirecionamentos.
-- Remover o limite silencioso de 25 ou expor cobertura e fila de checagem para
-  que nenhum card pareça monitorado sem ter sido verificado.
-- Fazer o card servir primeiro como atalho; colocar administração num modo de
-  edição explícito. Mostrar ícone confiável, endereço/host e um único resumo de
-  estado.
-- Só chamar algo de widget quando tiver configuração real, renderização própria
-  na home, estado vazio/erro e relação clara com a conexão que fornece os dados.
+- On the homepage, display a compact availability summary and Proxmox metrics when
+  configured; if unconfigured, keep the homepage clean and lightweight.
+- Make monitor status semantically honest: "reachable", "requires login", "not found",
+  "unreachable", and "unverified", capturing HTTP status code and latency without following
+  redirects.
+- Eliminate the silent 25-item check limit or expose coverage and queue progress so no
+  card appears monitored when it has not been checked.
+- Cards must serve first as quick-launch shortcuts; place administrative controls in an
+  explicit edit mode. Display reliable icon, host address, and concise status badge.
+- Only designate something a "widget" when it features real configuration, dedicated
+  card rendering, empty/error states, and clear binding to the backing connection.
 
-### Release 2 — localização e impacto
+### Release 2 — Topology and Impact
 
-- Permitir associar manualmente um card a um nó e guest Proxmox; oferecer
-  sugestões revisáveis quando houver evidência confiável. Não deduzir relação
-  somente pelo nome.
-- Mostrar onde cada aplicação roda e quais cards podem ser afetados quando o
-  respectivo guest ou nó para.
-- Tratar MCP como uma interface opcional para ler e propor as mesmas operações
-  já disponíveis na interface. Manter a decisão e a auditoria visíveis no
-  produto; não usar “IA” como substituto de uma proposta de valor clara.
+- Allow manually associating a card with a Proxmox node and guest; provide reviewable
+  suggestions when strong heuristics exist. Never infer associations from names alone.
+- Show where each application runs and which cards are affected when a node or guest stops.
+- Treat MCP as an optional interface to read and propose the same operations available
+  in the web UI. Keep decisions and audit logging visible in the product; do not rely
+  on "AI" to replace a clear value proposition.
 
-### Direção visual
+### Visual Direction
 
-Antes de escolher uma nova paleta, organizar a tela pela relação **serviço →
-estado → máquina**. Usar nomes de grupo, host, VM/CT, latência e última resposta
-como conteúdo principal. Status deve combinar texto e forma, não apenas cor.
-Testar um protótipo em dados fictícios de um homelab típico e comparar o tempo
-para responder “o que caiu e onde roda?” com a home atual. Não acrescentar mais
-adaptadores rasos nem conteúdo de IA para aumentar densidade visual.
+Before choosing new palettes, structure the screen around **service → status → machine**.
+Use group names, hostnames, VM/CT names, latency, and last response as primary content.
+Status must combine text, icon, and shape, never color alone. Test prototypes using
+fictitious homelab datasets and compare time-to-answer for "what went down and where does
+it run?" against the current dashboard. Avoid adding shallow adapters or AI novelty to
+artificially increase visual density.
 
-## Decisões que precisam de validação
+## Decisions Requiring Validation
 
-- Essa hipótese deve ser testada com pessoas que administram homelabs; a leitura
-  dos concorrentes não substitui entrevistas nem uso real.
-- O vínculo card↔guest depende de ambiente Proxmox real, permissões limitadas,
-  casos com apps em vários containers e regras de privacidade do inventário.
-- O MVP deve continuar útil sem Proxmox e sem agentes, conforme a visão atual do
-  produto.
-- Não afirmar que o Homora supera os concorrentes antes de validar a home
-  operacional, comportamento multi-dispositivo na rede local e integrações
-  reais.
+- This operational hypothesis must be validated with homelab practitioners; competitor
+  surveys cannot replace user interviews and real-world usage.
+- Card↔guest associations require a live Proxmox environment, least-privilege service
+  accounts, multi-container applications, and inventory privacy controls.
+- The MVP must remain useful without Proxmox and without AI agents, per product vision.
+- Do not claim Homora surpasses competitors before validating the operational homepage,
+  multi-device LAN behavior, and real integrations.

@@ -8,7 +8,7 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
 });
-it('apresenta serviços, filtra e envia um novo cadastro', async () => {
+it('displays services, filters, and submits a new entry', async () => {
   const services = [
     { id: 1, name: 'Jellyfin', url: 'http://localhost:8096/', category: 'Mídia', description: '' },
   ];
@@ -57,7 +57,7 @@ it('apresenta serviços, filtra e envia um novo cadastro', async () => {
   expect(await screen.findByRole('link', { name: /Proxmox/ })).toBeTruthy();
 });
 
-it('mostra estado desconhecido e horário da última tentativa sem depender do status', async () => {
+it('shows unknown status and timestamp of last attempt without depending on status', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -92,7 +92,7 @@ it('mostra estado desconhecido e horário da última tentativa sem depender do s
   expect(screen.getByText(/última tentativa/)).toBeTruthy();
 });
 
-it('permite entrar após criar a conta mesmo se o primeiro login falhar', async () => {
+it('allows sign-in after account creation even if first login fails', async () => {
   let attempts = 0;
   const fetchMock = vi.fn(async (url: string) => {
     if (url === '/api/auth/status')
@@ -117,7 +117,7 @@ it('permite entrar após criar a conta mesmo se o primeiro login falhar', async 
   expect(fetchMock.mock.calls.filter(([url]) => url === '/api/auth/setup')).toHaveLength(1);
 });
 
-it('mantém o filtro geral separado de uma categoria chamada Todos', async () => {
+it('keeps global filter separate from a category named All', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -142,7 +142,7 @@ it('mantém o filtro geral separado de uma categoria chamada Todos', async () =>
   expect(screen.queryByRole('link', { name: /Dois/ })).toBeNull();
 });
 
-it('só remove um serviço depois da confirmação na própria linha', async () => {
+it('only removes a service after inline confirmation', async () => {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
@@ -181,7 +181,7 @@ it('só remove um serviço depois da confirmação na própria linha', async () 
   expect(deleted()[0][0]).toBe('/api/services/7');
 });
 
-it('edita um serviço existente no formulário da página', async () => {
+it('edits an existing service in the page form', async () => {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
@@ -225,7 +225,7 @@ it('edita um serviço existente no formulário da página', async () => {
   );
 });
 
-it('cria, mostra e remove um grupo vazio pela interface', async () => {
+it('creates, displays, and removes an empty group via UI', async () => {
   let groups: { id: number; name: string; position: number }[] = [];
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/auth/status')
@@ -288,7 +288,7 @@ it('cria, mostra e remove um grupo vazio pela interface', async () => {
   await waitFor(() => expect(screen.queryByRole('heading', { name: /Infraestrutura/ })).toBeNull());
 });
 
-it('mantém o painel de serviços utilizável quando integrações opcionais falham', async () => {
+it('keeps services dashboard usable when optional integrations fail', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -320,7 +320,7 @@ it('mantém o painel de serviços utilizável quando integrações opcionais fal
   expect(screen.getByRole('button', { name: 'Gerenciar' })).toBeTruthy();
 });
 
-it('reordena cards e fecha o formulário com Escape devolvendo o foco', async () => {
+it('reorders cards and closes form with Escape restoring focus', async () => {
   const cards = [
     {
       id: 1,
@@ -380,7 +380,7 @@ it('reordena cards e fecha o formulário com Escape devolvendo o foco', async ()
   expect(screen.queryByRole('form', { name: 'Novo serviço' })).toBeNull();
 });
 
-it('mostra propostas pendentes em linguagem clara e aprova com um clique', async () => {
+it('shows pending proposals in clear language and approves with a single click', async () => {
   const proposals = [
     {
       id: 'p1',
@@ -433,7 +433,7 @@ it('mostra propostas pendentes em linguagem clara e aprova com um clique', async
   );
 });
 
-it('não trata rede privada não autorizada como serviço fora do ar', async () => {
+it('does not treat unauthorized private network as service down', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -467,7 +467,7 @@ it('não trata rede privada não autorizada como serviço fora do ar', async () 
   expect(screen.getByText(/1 sem monitoramento/)).toBeTruthy();
 });
 
-it('mostra antes e depois de uma proposta de alteração', async () => {
+it('shows before and after of an update proposal', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -530,7 +530,7 @@ it('mostra antes e depois de uma proposta de alteração', async () => {
   expect(screen.getByText('2 campos continuam iguais.')).toBeTruthy();
 });
 
-it('oferece busca rápida, visualização compacta e recolhimento de grupos', async () => {
+it('provides quick search, compact view, and collapsible groups', async () => {
   localStorage.clear();
   vi.stubGlobal(
     'fetch',
@@ -569,7 +569,7 @@ it('oferece busca rápida, visualização compacta e recolhimento de grupos', as
   localStorage.clear();
 });
 
-it('abre a gestão de serviços diretamente e retorna ao painel', async () => {
+it('opens service management directly and returns to dashboard', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -594,7 +594,7 @@ it('abre a gestão de serviços diretamente e retorna ao painel', async () => {
   expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
 });
 
-it('abre uma rota de gerenciamento diretamente e responde ao histórico', async () => {
+it('opens a management route directly and responds to browser history', async () => {
   window.history.replaceState(null, '', '/manage/integrations');
   vi.stubGlobal(
     'fetch',
@@ -618,7 +618,7 @@ it('abre uma rota de gerenciamento diretamente e responde ao histórico', async 
   expect(await screen.findByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
 });
 
-it('encaminha ao login e retorna à rota protegida após autenticar', async () => {
+it('redirects to login and returns to protected route after authenticating', async () => {
   window.history.replaceState(null, '', '/manage/agents');
   vi.stubGlobal(
     'fetch',
@@ -637,7 +637,7 @@ it('encaminha ao login e retorna à rota protegida após autenticar', async () =
   await waitFor(() => expect(window.location.pathname).toBe('/manage/agents'));
 });
 
-it('rejeita redirecionamento externo após o login', async () => {
+it('rejects external redirect after login', async () => {
   window.history.replaceState(null, '', '/login?returnTo=%2F%2Fexample.com');
   vi.stubGlobal(
     'fetch',
@@ -652,7 +652,7 @@ it('rejeita redirecionamento externo após o login', async () => {
   expect(window.location.pathname).toBe('/');
 });
 
-it('mostra erro para páginas desconhecidas e serviço ausente', async () => {
+it('displays error for unknown pages and missing service', async () => {
   window.history.replaceState(null, '', '/manage/nao-existe');
   vi.stubGlobal(
     'fetch',

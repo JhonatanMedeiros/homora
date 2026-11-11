@@ -29,7 +29,7 @@ type Props = {
   onReview: (approve: boolean) => void;
 };
 
-/** Uma proposta de agente: autor, validade, mudança revisável e decisão explícita. */
+/** An agent proposal: author, validity, reviewable diff, and explicit decision. */
 export function ProposalCard({ proposal, agentName, current, onReview }: Props) {
   const diff = parseDiff(proposal.diff);
   const pending = proposal.state === 'pending';

@@ -11,11 +11,11 @@ type Props = {
   organizing: boolean;
   compact: boolean;
   searching: boolean;
-  /** Presente só para grupos cadastrados (podem ser renomeados e removidos). */
+  /** Present only for registered groups (can be renamed and removed). */
   canEdit: boolean;
   canRemove: boolean;
   groupId?: number;
-  /** Colunas escolhidas para o grupo; nulo ou ausente é o ajuste automático. */
+  /** Custom column count for the group; null or omitted falls back to automatic responsive grid. */
   columns?: number | null;
   onColumns?: (columns: number | null) => void;
   onRename: () => void;
@@ -24,7 +24,7 @@ type Props = {
   children: ReactNode;
 };
 
-/** Classes completas (o Tailwind precisa vê-las): telas pequenas ficam em 1 ou 2 colunas. */
+/** Complete utility classes (Tailwind must see exact tokens): small screens constrain to 1 or 2 columns. */
 const COLUMN_CLASSES: Record<number, string> = {
   1: 'grid grid-cols-1 gap-3',
   2: 'grid grid-cols-1 gap-3 sm:grid-cols-2',
@@ -69,7 +69,7 @@ export function GroupSection({
       if (next) names.push(category);
       localStorage.setItem('homora-collapsed-groups', JSON.stringify(names));
     } catch {
-      /* preferência apenas nesta sessão */
+      /* preference retained for this session only */
     }
   }
   return (

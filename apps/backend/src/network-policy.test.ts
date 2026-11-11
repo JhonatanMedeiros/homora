@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { authorizeDestination } from './network-policy.js';
 
 const policy = { origins: ['https://service.example:443'], allowPrivate: true };
-it('exige origem exata, sem credenciais ou esquemas inseguros', async () => {
+it('requires exact origin, without credentials or unsafe schemes', async () => {
   const dns = vi.fn(async () => [{ address: '10.0.0.2', family: 4 as const }]);
   for (const url of [
     'https://evil.example',
@@ -35,14 +35,14 @@ it.each([
   '64:ff9b::a9fe:a9fe',
   '2002:7f00:1::',
   'ff02::1',
-])('bloqueia endereço sensível %s mesmo com redes privadas autorizadas', async (address) => {
+])('blocks sensitive address %s even with private networks allowed', async (address) => {
   const family = address.includes(':') ? (6 as const) : (4 as const);
   await expect(
     authorizeDestination('https://service.example', policy, async () => [{ address, family }]),
-  ).rejects.toThrow('não permitido');
+  ).rejects.toThrow('disallowed');
 });
 
-it('requer permissão específica para destinos privados e rejeita DNS misto', async () => {
+it('requires explicit permission for private destinations and rejects mixed DNS', async () => {
   const privateAddress = { address: '192.168.0.5', family: 4 as const };
   await expect(
     authorizeDestination(
@@ -59,7 +59,7 @@ it('requer permissão específica para destinos privados e rejeita DNS misto', a
   ).rejects.toThrow();
 });
 
-it('rejeita resposta DNS que mistura endereço público e privado mesmo com opt-in', async () => {
+it('rejects DNS response mixing public and private address even with opt-in', async () => {
   await expect(
     authorizeDestination('https://service.example', policy, async () => [
       { address: '203.0.113.10', family: 4 },
@@ -68,7 +68,7 @@ it('rejeita resposta DNS que mistura endereço público e privado mesmo com opt-
   ).rejects.toThrow();
 });
 
-it('permite endereço IPv4-mapped público após classificação como IPv4', async () => {
+it('allows public IPv4-mapped address after classification as IPv4', async () => {
   await expect(
     authorizeDestination('https://service.example', policy, async () => [
       { address: '::ffff:8.8.8.8', family: 6 },
@@ -76,7 +76,7 @@ it('permite endereço IPv4-mapped público após classificação como IPv4', asy
   ).resolves.toMatchObject({ address: { address: '::ffff:8.8.8.8', family: 6 } });
 });
 
-it('retorna IP já autorizado para conexão sem segunda resolução DNS', async () => {
+it('returns already authorized IP for connection without second DNS resolution', async () => {
   const dns = vi
     .fn()
     .mockResolvedValueOnce([{ address: '10.0.0.1', family: 4 }])

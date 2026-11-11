@@ -14,7 +14,7 @@ import { MAX_FILE_BYTES, SOURCES, type Preview, type Source } from './transfer-m
 
 const json = { 'Content-Type': 'application/json' };
 
-/** Exportação e importação de grupos e cards, com prévia obrigatória antes de gravar. */
+/** Export and import of groups and cards, with mandatory preview before saving. */
 export function ConfigTransfer({ onImported }: { onImported: () => void | Promise<void> }) {
   const [content, setContent] = useState('');
   const [preview, setPreview] = useState<Preview | null>(null);

@@ -27,9 +27,9 @@ export function createApp(
   configuredOrigins: readonly string[] = [],
   dockerSource?: DockerSource,
   /**
-   * `trustProxy` faz o IP do cliente vir de `X-Forwarded-For` (usado no limite de tentativas de
-   * login). Só ligue quando todo o tráfego passa por um proxy que SOBRESCREVE esse cabeçalho,
-   * como o nginx do Compose; caso contrário qualquer cliente poderia forjá-lo.
+   * `trustProxy` extracts client IP from `X-Forwarded-For` (used for login rate limiting).
+   * Enable only when all traffic traverses a reverse proxy that OVERWRITES this header,
+   * such as Compose's nginx; otherwise any client could spoof it.
    */
   options: { trustProxy?: boolean } = {},
 ) {

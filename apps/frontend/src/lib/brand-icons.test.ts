@@ -6,13 +6,13 @@ import { iconKind, suggestBrandIcon } from './icons';
 
 const dir = resolve(__dirname, '../../public/brand-icons');
 
-it('cada logo listado existe como SVG e não há arquivos fora da lista', () => {
+it('each listed logo exists as SVG and no unlisted files exist in directory', () => {
   const files = readdirSync(dir).filter((file) => file.endsWith('.svg'));
   expect(files.sort()).toEqual(BRAND_ICON_NAMES.map((name) => `${name}.svg`).sort());
   expect(readdirSync(dir).length).toBe(files.length);
 });
 
-it('os SVG são vetoriais, pequenos e sem script, imagem embutida ou referência externa', () => {
+it('SVGs are vector, compact, and free of scripts, embedded bitmaps, or external references', () => {
   for (const name of BRAND_ICON_NAMES) {
     const path = resolve(dir, `${name}.svg`);
     expect(existsSync(path), name).toBe(true);
@@ -25,12 +25,12 @@ it('os SVG são vetoriais, pequenos e sem script, imagem embutida ou referência
   }
 });
 
-it('sugere o logo pelo nome do serviço e reconhece o tipo do ícone', () => {
+it('suggests logo based on service name and identifies icon type', () => {
   expect(suggestBrandIcon('Proxmox')).toBe('proxmox');
   expect(suggestBrandIcon('Home Assistant')).toBe('home-assistant');
   expect(suggestBrandIcon('uptime kuma')).toBe('uptime-kuma');
   expect(suggestBrandIcon('Pi-hole')).toBe('pi-hole');
-  expect(suggestBrandIcon('Meu servidor')).toBeNull();
+  expect(suggestBrandIcon('My Server')).toBeNull();
   expect(suggestBrandIcon('')).toBeNull();
   expect(iconKind('brand:plex')).toBe('brand');
   expect(iconKind('brand:inexistente')).toBe('empty');

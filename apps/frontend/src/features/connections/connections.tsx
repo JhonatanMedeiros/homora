@@ -75,7 +75,7 @@ export function Connections() {
           setProxmoxConfigured(Boolean((status as { configured?: unknown } | null)?.configured));
       })
       .catch(() => {
-        // Sem o estado do Proxmox, ele só não aparece como opção de widget.
+        // Without Proxmox status, it simply won't appear as a widget option.
       });
     return () => controller.abort();
   }, []);
@@ -87,7 +87,7 @@ export function Connections() {
           setCards((list as { id: number; name: string }[]).map(({ id, name }) => ({ id, name })));
       })
       .catch(() => {
-        // Sem a lista de cards, o widget só não pode ser ligado a um card por aqui.
+        // Without the card list, the widget simply cannot be linked to a card from here.
       });
     return () => controller.abort();
   }, []);

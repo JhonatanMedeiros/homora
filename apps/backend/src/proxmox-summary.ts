@@ -1,11 +1,11 @@
 export type ProxmoxSummary = {
   vms: { running: number; total: number };
   containers: { running: number; total: number };
-  /** Uso de CPU dos nós online, ponderado pelos núcleos, em porcentagem inteira. */
+  /** CPU usage of online nodes, weighted by cores, as an integer percentage. */
   cpu: number | null;
-  /** Memória usada dos nós online, em porcentagem inteira. */
+  /** Memory usage of online nodes, as an integer percentage. */
   memory: number | null;
-  /** Disco usado dos nós online (o sistema de arquivos raiz de cada nó), em porcentagem inteira. */
+  /** Disk usage of online nodes (root filesystem of each node), as an integer percentage. */
   disk: number | null;
 };
 
@@ -15,9 +15,9 @@ const percent = (part: number, whole: number) =>
   whole > 0 ? Math.min(100, Math.round((part / whole) * 100)) : null;
 
 /**
- * Resume o inventário do cluster para um card. Só números agregados saem daqui: nomes, IDs e
- * endereços dos recursos nunca chegam ao navegador por este caminho. Modelos (templates) e
- * itens fora do formato esperado são ignorados.
+ * Summarizes cluster inventory for a card. Only aggregated numbers leave here: names, IDs,
+ * and resource addresses never reach the browser through this path. Templates and
+ * unexpectedly formatted items are ignored.
  */
 export function summarizeProxmox(resources: unknown): ProxmoxSummary {
   const summary: ProxmoxSummary = {

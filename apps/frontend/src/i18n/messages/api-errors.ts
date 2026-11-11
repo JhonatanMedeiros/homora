@@ -1,4 +1,4 @@
-/** Mensagens dos códigos de erro da API. As chaves seguem `ERROR_MESSAGES` do backend. */
+/** API error code messages. Keys follow `ERROR_MESSAGES` from the backend. */
 export const en = {
   'apiError.auth-required': 'Authentication required.',
   'apiError.origin-not-allowed': 'Origin not allowed.',

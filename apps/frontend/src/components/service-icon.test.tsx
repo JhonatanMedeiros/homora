@@ -7,36 +7,36 @@ import { iconKind, iconNames, iconRegistry } from '@/lib/icons';
 
 afterEach(cleanup);
 
-it('classifica o formato do ícone', () => {
+it('classifies icon format', () => {
   expect(iconKind('')).toBe('empty');
   expect(iconKind('lucide:server')).toBe('lucide');
-  expect(iconKind('https://exemplo.test/a.png')).toBe('image');
+  expect(iconKind('https://example.test/a.png')).toBe('image');
   expect(iconKind('🎬')).toBe('text');
 });
 
-it('desenha ícone embutido, emoji, imagem e a inicial', () => {
+it('renders built-in icon, emoji, image, and initial', () => {
   const { container, rerender } = render(<ServiceIcon icon="lucide:server" name="Proxmox" />);
   expect(container.querySelector('svg')).not.toBeNull();
   rerender(<ServiceIcon icon="🎬" name="Jellyfin" />);
   expect(container.textContent).toBe('🎬');
-  rerender(<ServiceIcon icon="https://exemplo.test/a.png" name="Jellyfin" />);
+  rerender(<ServiceIcon icon="https://example.test/a.png" name="Jellyfin" />);
   const image = container.querySelector('img');
-  expect(image?.getAttribute('src')).toBe('https://exemplo.test/a.png');
+  expect(image?.getAttribute('src')).toBe('https://example.test/a.png');
   expect(image?.getAttribute('referrerpolicy')).toBe('no-referrer');
   rerender(<ServiceIcon icon="" name="jellyfin" />);
   expect(container.textContent).toBe('J');
 });
 
-it('usa a inicial quando o nome não existe ou a imagem falha', () => {
-  const { container, rerender } = render(<ServiceIcon icon="lucide:nao-existe" name="Plex" />);
+it('uses the initial when the name does not exist or image fails', () => {
+  const { container, rerender } = render(<ServiceIcon icon="lucide:does-not-exist" name="Plex" />);
   expect(container.textContent).toBe('P');
-  rerender(<ServiceIcon icon="https://exemplo.test/quebrada.png" name="Plex" />);
+  rerender(<ServiceIcon icon="https://example.test/broken.png" name="Plex" />);
   fireEvent.error(container.querySelector('img')!);
   expect(container.querySelector('img')).toBeNull();
   expect(container.textContent).toBe('P');
 });
 
-it('expõe somente nomes válidos no registro', () => {
+it('exposes only valid names in the registry', () => {
   expect(iconNames.length).toBeGreaterThan(50);
   for (const name of iconNames) {
     expect(name).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -44,21 +44,21 @@ it('expõe somente nomes válidos no registro', () => {
   }
 });
 
-it('mantém o registro da interface igual à lista compartilhada com o servidor', () => {
+it('keeps UI registry in sync with shared server list', () => {
   expect([...iconNames].sort()).toEqual([...ICON_NAMES].sort());
 });
 
-it('desenha o logo de marca embutido a partir do caminho local', () => {
+it('renders bundled brand logo from local path', () => {
   const { container } = render(<ServiceIcon icon="brand:proxmox" name="Proxmox" />);
   expect(container.querySelector('img')?.getAttribute('src')).toBe('/brand-icons/proxmox.svg');
 });
 
-it('volta à inicial se o logo não carrega ou se o nome não existe', () => {
+it('falls back to initial if logo fails to load or name does not exist', () => {
   const failing = render(<ServiceIcon icon="brand:proxmox" name="Proxmox" />);
   fireEvent.error(failing.container.querySelector('img') as HTMLImageElement);
   expect(failing.container.textContent).toBe('P');
   cleanup();
-  const unknown = render(<ServiceIcon icon="brand:inexistente" name="Casa" />);
+  const unknown = render(<ServiceIcon icon="brand:inexistente" name="Home" />);
   expect(unknown.container.querySelector('img')).toBeNull();
-  expect(unknown.container.textContent).toBe('C');
+  expect(unknown.container.textContent).toBe('H');
 });

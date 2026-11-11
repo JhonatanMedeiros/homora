@@ -12,7 +12,7 @@ export function createAuth(path: string) {
     try {
       const data = JSON.parse(readFileSync(path, 'utf8')) as Account;
       if (!/^[0-9a-f]{32}$/.test(data.salt) || !/^[0-9a-f]{128}$/.test(data.hash))
-        throw new Error('Arquivo de autenticação inválido.');
+        throw new Error('Invalid authentication file.');
       return data;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
@@ -21,7 +21,7 @@ export function createAuth(path: string) {
   }
   function setup(password: unknown) {
     if (typeof password !== 'string' || password.length < 8 || Buffer.byteLength(password) > 1024)
-      throw new Error('A senha deve ter entre 8 caracteres e 1024 bytes.');
+      throw new Error('Password must be between 8 characters and 1024 bytes.');
     const salt = randomBytes(16).toString('hex');
     const hash = scryptSync(password, salt, 64).toString('hex');
     writeFileSync(path, JSON.stringify({ salt, hash }), { flag: 'wx', mode: 0o600 });

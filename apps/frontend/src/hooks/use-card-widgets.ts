@@ -20,9 +20,9 @@ async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
 }
 
 /**
- * Widgets ligados a cards, agrupados por card. Cada conexão é consultada uma vez por ciclo,
- * mesmo que vários widgets a usem; a falha de uma não afeta as demais nem o resto da página.
- * Enquanto a lista de widgets não carrega (ou falha), os cards aparecem sem widgets.
+ * Widgets attached to cards, grouped by card. Each connection is queried once per cycle,
+ * even if multiple widgets use it; failure of one does not affect others or the rest of the page.
+ * While the widget list is loading (or fails), cards are displayed without widgets.
  */
 export function useCardWidgets(reloadKey?: unknown): Record<number, CardWidgetState[]> {
   const [byService, setByService] = useState<Record<number, CardWidgetState[]>>({});

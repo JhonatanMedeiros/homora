@@ -31,8 +31,8 @@ afterEach(async () => {
       headers: { origin: 'http://localhost:5173', cookie },
     });
 });
-describe('API de serviços', () => {
-  it('exporta, pré-visualiza e importa configuração sem sobrescrever nada', async () => {
+describe('Services API', () => {
+  it('exports, previews, and imports configuration without overwriting anything', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const post = (url: string, payload: unknown) =>
       app.inject({ method: 'POST', url, headers, payload: payload as object });
@@ -107,7 +107,7 @@ groups:
     ).toBe(true);
   });
 
-  it('importa arquivos do Homepage e do Dashy pela mesma prévia revisável', async () => {
+  it('imports Homepage and Dashy files through the same reviewable preview', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const post = (url: string, payload: unknown) =>
       app.inject({ method: 'POST', url, headers, payload: payload as object });
@@ -145,7 +145,7 @@ groups:
     ).toBe(400);
   });
 
-  it('recusa importação sem origem permitida e com corpo inválido', async () => {
+  it('rejects import without allowed origin or with invalid body', async () => {
     expect(
       (
         await app.inject({
@@ -167,30 +167,30 @@ groups:
       ).statusCode,
     ).toBe(400);
   });
-  it('persiste ícones por nome e por URL e descarta valores inválidos', async () => {
+  it('persists icons by name and URL and discards invalid values', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const create = async (icon: string) =>
       app.inject({
         method: 'POST',
         url: '/api/services',
         headers,
-        payload: { name: 'Icone', url: 'http://localhost:8096', category: 'Mídia', icon },
+        payload: { name: 'Icon', url: 'http://localhost:8096', category: 'Media', icon },
       });
     const stored = async () =>
       (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json() as {
         icon: string;
       }[];
     expect((await create('lucide:film')).statusCode).toBe(201);
-    expect((await create('https://exemplo.test/film.svg')).statusCode).toBe(201);
-    expect((await create('https://user:pass@exemplo.test/a.png')).statusCode).toBe(201);
+    expect((await create('https://example.test/film.svg')).statusCode).toBe(201);
+    expect((await create('https://user:pass@example.test/a.png')).statusCode).toBe(201);
     expect((await stored()).map((service) => service.icon).sort()).toEqual([
       '',
-      'https://exemplo.test/film.svg',
+      'https://example.test/film.svg',
       'lucide:film',
     ]);
     expect((await create('x'.repeat(513))).statusCode).toBe(400);
   });
-  it('protege o catálogo de integrações e retorna apenas metadados', async () => {
+  it('protects integration catalog and returns metadata only', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/integrations/catalog' })).statusCode).toBe(
       401,
     );
@@ -208,11 +208,11 @@ groups:
       { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
     ]);
   });
-  it('não expõe serviços sem sessão', async () => {
+  it('does not expose services without an active session', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
     expect((await app.inject({ method: 'GET', url: '/api/service-status' })).statusCode).toBe(401);
   });
-  it('cria, lista, atualiza e remove serviços', async () => {
+  it('creates, lists, updates, and deletes services', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const created = await app.inject({
       method: 'POST',
@@ -251,13 +251,13 @@ groups:
       (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })).json(),
     ).toEqual([]);
   });
-  it('gerencia grupos vazios e preserva cards ao renomear', async () => {
+  it('manages empty groups and preserves cards when renaming', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const createdGroup = await app.inject({
       method: 'POST',
       url: '/api/groups',
       headers,
-      payload: { name: 'Painel' },
+      payload: { name: 'Panel' },
     });
     expect(createdGroup.statusCode).toBe(201);
     const groupId = createdGroup.json().id;
@@ -265,14 +265,14 @@ groups:
       method: 'POST',
       url: '/api/groups',
       headers,
-      payload: { name: 'Painel' },
+      payload: { name: 'Panel' },
     });
     expect(duplicate.statusCode).toBe(409);
     const service = await app.inject({
       method: 'POST',
       url: '/api/services',
       headers,
-      payload: { name: 'App', url: 'http://localhost:8100', category: 'Painel' },
+      payload: { name: 'App', url: 'http://localhost:8100', category: 'Panel' },
     });
     expect(
       (await app.inject({ method: 'DELETE', url: `/api/groups/${groupId}`, headers })).statusCode,
@@ -299,10 +299,15 @@ groups:
       (await app.inject({ method: 'DELETE', url: `/api/groups/${groupId}`, headers })).statusCode,
     ).toBe(200);
   });
-  it('valida e persiste a ordenação dos grupos vazios', async () => {
+  it('validates and persists ordering of empty groups', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
-    await app.inject({ method: 'POST', url: '/api/groups', headers, payload: { name: 'Sala' } });
-    await app.inject({ method: 'POST', url: '/api/groups', headers, payload: { name: 'Quarto' } });
+    await app.inject({
+      method: 'POST',
+      url: '/api/groups',
+      headers,
+      payload: { name: 'Living Room' },
+    });
+    await app.inject({ method: 'POST', url: '/api/groups', headers, payload: { name: 'Bedroom' } });
     const groups = (
       await app.inject({ method: 'GET', url: '/api/groups', headers: { cookie } })
     ).json() as { name: string }[];
@@ -330,20 +335,20 @@ groups:
           method: 'PUT',
           url: '/api/groups/order',
           headers,
-          payload: { names: ['ausente'] },
+          payload: { names: ['missing'] },
         })
       ).statusCode,
     ).toBe(400);
   });
-  it('valida e persiste a ordenação individual dos cards', async () => {
+  it('validates and persists individual card ordering', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const ids: number[] = [];
-    for (const name of ['Primeiro', 'Segundo', 'Terceiro']) {
+    for (const name of ['First', 'Second', 'Third']) {
       const response = await app.inject({
         method: 'POST',
         url: '/api/services',
         headers,
-        payload: { name, url: `http://localhost:${8100 + ids.length}`, category: 'Ordem' },
+        payload: { name, url: `http://localhost:${8100 + ids.length}`, category: 'Order' },
       });
       ids.push(response.json().id);
     }
@@ -353,14 +358,14 @@ groups:
           method: 'PUT',
           url: '/api/services/order',
           headers,
-          payload: { category: 'Ordem', ids: [ids[2], ids[0], ids[1]] },
+          payload: { category: 'Order', ids: [ids[2], ids[0], ids[1]] },
         })
       ).statusCode,
     ).toBe(200);
     expect(
       (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
         .json()
-        .filter((service: { category: string }) => service.category === 'Ordem')
+        .filter((service: { category: string }) => service.category === 'Order')
         .map((service: { id: number }) => service.id),
     ).toEqual([ids[2], ids[0], ids[1]]);
     expect(
@@ -369,36 +374,36 @@ groups:
           method: 'PUT',
           url: '/api/services/order',
           headers,
-          payload: { category: 'Ordem', ids: [ids[0]] },
+          payload: { category: 'Order', ids: [ids[0]] },
         })
       ).statusCode,
     ).toBe(400);
   });
-  it('rejeita corpos e parâmetros que não correspondem aos contratos HTTP', async () => {
+  it('rejects bodies and parameters that do not match HTTP contracts', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const invalidRequests = [
       {
         method: 'POST',
         url: '/api/services',
-        payload: { name: 42, url: 'https://example.test', category: 'Casa' },
+        payload: { name: 42, url: 'https://example.test', category: 'Home' },
       },
       {
         method: 'POST',
         url: '/api/services',
-        payload: { name: 'Casa', url: 'https://example.test', category: 'Casa', admin: true },
+        payload: { name: 'Home', url: 'https://example.test', category: 'Home', admin: true },
       },
       { method: 'POST', url: '/api/groups', payload: { name: 42 } },
-      { method: 'PUT', url: '/api/groups/order', payload: { names: ['Casa', 42] } },
-      { method: 'PUT', url: '/api/services/order', payload: { category: 'Casa', ids: ['1'] } },
+      { method: 'PUT', url: '/api/groups/order', payload: { names: ['Home', 42] } },
+      { method: 'PUT', url: '/api/services/order', payload: { category: 'Home', ids: ['1'] } },
       {
         method: 'POST',
         url: '/api/agents',
-        payload: { name: 'Agente', scopes: ['admin'] },
+        payload: { name: 'Agent', scopes: ['admin'] },
       },
       {
         method: 'POST',
         url: '/api/connections',
-        payload: { type: 'jellyfin', name: 'Mídia', url: 'https://media.example', admin: true },
+        payload: { type: 'jellyfin', name: 'Media', url: 'https://media.example', admin: true },
       },
     ] as const;
     for (const { method, url, payload } of invalidRequests) {
@@ -426,7 +431,7 @@ groups:
       ).statusCode,
     ).toBe(400);
   });
-  it('acrescenta cards depois da maior posição mesmo quando há lacunas', async () => {
+  it('appends cards after the highest position even when gaps exist', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const ids: number[] = [];
     for (const name of ['A', 'B', 'C']) {
@@ -434,7 +439,7 @@ groups:
         method: 'POST',
         url: '/api/services',
         headers,
-        payload: { name, url: `http://localhost:${8200 + ids.length}`, category: 'Lacunas' },
+        payload: { name, url: `http://localhost:${8200 + ids.length}`, category: 'Gaps' },
       });
       ids.push(response.json().id);
     }
@@ -443,23 +448,23 @@ groups:
       method: 'POST',
       url: '/api/services',
       headers,
-      payload: { name: 'D', url: 'http://localhost:8203', category: 'Lacunas' },
+      payload: { name: 'D', url: 'http://localhost:8203', category: 'Gaps' },
     });
     expect(added.json().position).toBe(3);
     expect(
       (await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
         .json()
-        .filter((service: { category: string }) => service.category === 'Lacunas')
+        .filter((service: { category: string }) => service.category === 'Gaps')
         .map((service: { name: string }) => service.name),
     ).toEqual(['A', 'C', 'D']);
   });
-  it('bloqueia origens externas e dados inválidos', async () => {
+  it('blocks external origins and invalid data', async () => {
     expect(
       (
         await app.inject({
           method: 'POST',
           url: '/api/services',
-          headers: { origin: 'http://malicioso.test' },
+          headers: { origin: 'http://malicious.test' },
           payload: {},
         })
       ).statusCode,
@@ -470,12 +475,12 @@ groups:
           method: 'POST',
           url: '/api/services',
           headers: { origin: 'http://localhost:5173', cookie },
-          payload: { name: 'Teste', category: 'Casa', url: 'javascript:alert(1)' },
+          payload: { name: 'Test', category: 'Home', url: 'javascript:alert(1)' },
         })
       ).statusCode,
     ).toBe(400);
   });
-  it('exige correspondência exata da origem em toda mutação', async () => {
+  it('requires exact origin match on every mutation', async () => {
     const headers = { cookie, origin: 'http://localhost:51730' };
     for (const [method, url] of [
       ['POST', '/api/services'],
@@ -493,14 +498,14 @@ groups:
   });
 });
 
-describe('autenticação pela API', () => {
-  it('contabiliza senhas curtas como tentativas inválidas de login', async () => {
+describe('API authentication', () => {
+  it('counts short passwords as invalid login attempts', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'homora-api-login-limit-'));
     const localAuth = createAuth(join(dir, 'auth'));
     const localApp = createApp(database.db, 5173, localAuth);
     const headers = { origin: 'http://localhost:5173' };
     try {
-      localAuth.setup('senha-super-segura');
+      localAuth.setup('super-secure-password');
       for (let attempt = 0; attempt < 5; attempt++) {
         expect(
           (
@@ -519,7 +524,7 @@ describe('autenticação pela API', () => {
             method: 'POST',
             url: '/api/auth/login',
             headers,
-            payload: { password: 'senha-super-segura' },
+            payload: { password: 'super-secure-password' },
           })
         ).statusCode,
       ).toBe(401);
@@ -529,7 +534,7 @@ describe('autenticação pela API', () => {
     }
   });
 
-  it('cria conta uma vez, autentica e encerra a sessão', async () => {
+  it('creates account once, authenticates, and terminates session', async () => {
     const localAuth = createAuth(join(mkdtempSync(join(tmpdir(), 'homora-api-auth-')), 'auth'));
     const localApp = createApp(database.db, 5173, localAuth);
     const headers = { origin: 'http://localhost:5173' };
@@ -540,7 +545,7 @@ describe('autenticação pela API', () => {
           method: 'POST',
           url: '/api/auth/setup',
           headers,
-          payload: { password: 'senha-super-segura' },
+          payload: { password: 'super-secure-password' },
         })
       ).statusCode,
     ).toBe(201);
@@ -550,7 +555,7 @@ describe('autenticação pela API', () => {
           method: 'POST',
           url: '/api/auth/setup',
           headers,
-          payload: { password: 'outra-senha-segura' },
+          payload: { password: 'another-secure-password' },
         })
       ).statusCode,
     ).toBe(403);
@@ -560,7 +565,7 @@ describe('autenticação pela API', () => {
           method: 'POST',
           url: '/api/auth/login',
           headers,
-          payload: { password: 'senha-errada' },
+          payload: { password: 'wrong-password' },
         })
       ).statusCode,
     ).toBe(401);
@@ -568,7 +573,7 @@ describe('autenticação pela API', () => {
       method: 'POST',
       url: '/api/auth/login',
       headers,
-      payload: { password: 'senha-super-segura' },
+      payload: { password: 'super-secure-password' },
     });
     expect(login.statusCode).toBe(200);
     const cookie = login.headers['set-cookie'] as string;
@@ -589,7 +594,7 @@ describe('autenticação pela API', () => {
     ).toBe(401);
     await localApp.close();
   });
-  it('define Secure em login HTTPS permitido e no encerramento HTTPS', async () => {
+  it('sets Secure on allowed HTTPS login and HTTPS termination', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'homora-https-auth-'));
     const localAuth = createAuth(join(dir, 'auth'));
     const localApp = createApp(database.db, 5173, localAuth, undefined, ['https://homora.example']);
@@ -598,13 +603,13 @@ describe('autenticação pela API', () => {
         method: 'POST',
         url: '/api/auth/setup',
         headers: { origin: 'https://homora.example' },
-        payload: { password: 'senha-super-segura' },
+        payload: { password: 'super-secure-password' },
       });
       const login = await localApp.inject({
         method: 'POST',
         url: '/api/auth/login',
         headers: { origin: 'https://homora.example' },
-        payload: { password: 'senha-super-segura' },
+        payload: { password: 'super-secure-password' },
       });
       expect(login.headers['set-cookie']).toContain('; Secure');
       const logout = await localApp.inject({
@@ -624,7 +629,7 @@ describe('autenticação pela API', () => {
 });
 
 describe('HOMORA_ALLOWED_ORIGINS', () => {
-  it('separa origens exatas, remove duplicatas e rejeita valores inválidos', () => {
+  it('splits exact origins, eliminates duplicates, and rejects invalid values', () => {
     expect(
       parseAllowedOrigins('https://homora.example, http://localhost:8080,https://homora.example'),
     ).toEqual(['https://homora.example', 'http://localhost:8080']);
@@ -640,7 +645,7 @@ describe('HOMORA_ALLOWED_ORIGINS', () => {
   });
 });
 
-it('atualiza e remove CA sem apagar as credenciais existentes', async () => {
+it('updates and removes CA without erasing existing credentials', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-api-vault-'));
   const vault = createVault(join(dir, 'db'));
   const localApp = createApp(database.db, 5173, auth, vault);
@@ -649,17 +654,17 @@ it('atualiza e remove CA sem apagar as credenciais existentes', async () => {
     await vault.save({
       url: 'https://pve.example:8006',
       tokenId: 'user@pve!homora',
-      secret: 'segredo',
+      secret: 'secret',
     });
     const ca = rootCertificates[0];
-    for (const payload of [{ url: 'https://outro.example:8006' }, { tokenId: 'other@pve!token' }]) {
+    for (const payload of [{ url: 'https://other.example:8006' }, { tokenId: 'other@pve!token' }]) {
       for (const route of ['/api/proxmox/config', '/api/proxmox/test']) {
         const response = await localApp.inject({ method: 'POST', url: route, headers, payload });
         expect(response.statusCode).toBe(400);
         expect(response.json().code).toBe('secret-required');
       }
     }
-    expect(vault.load()?.secret).toBe('segredo');
+    expect(vault.load()?.secret).toBe('secret');
     expect(
       (
         await localApp.inject({
@@ -673,7 +678,7 @@ it('atualiza e remove CA sem apagar as credenciais existentes', async () => {
     expect(vault.load()).toEqual({
       url: 'https://pve.example:8006',
       tokenId: 'user@pve!homora',
-      secret: 'segredo',
+      secret: 'secret',
       ca,
     });
     expect(
@@ -682,7 +687,7 @@ it('atualiza e remove CA sem apagar as credenciais existentes', async () => {
           method: 'POST',
           url: '/api/proxmox/config',
           headers,
-          payload: { ca: 'inválido' },
+          payload: { ca: 'invalid' },
         })
       ).statusCode,
     ).toBe(400);
@@ -700,7 +705,7 @@ it('atualiza e remove CA sem apagar as credenciais existentes', async () => {
     expect(vault.load()).toEqual({
       url: 'https://pve.example:8006',
       tokenId: 'user@pve!homora',
-      secret: 'segredo',
+      secret: 'secret',
     });
   } finally {
     await localApp.close();

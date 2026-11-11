@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path';
 
 const [sourceArg, targetArg] = process.argv.slice(2);
 if (!sourceArg || !targetArg) {
-  console.error('Uso: node scripts/backup.mjs <banco-de-origem> <arquivo-de-destino>');
+  console.error('Usage: node scripts/backup.mjs <source-db> <target-file>');
   process.exitCode = 1;
 } else {
   const source = resolve(sourceArg);
@@ -13,7 +13,7 @@ if (!sourceArg || !targetArg) {
   let reserved = false;
   let db;
   try {
-    if (source === target) throw new Error('Origem e destino devem ser diferentes.');
+    if (source === target) throw new Error('Source and target must be different.');
     await access(source, constants.R_OK);
     await mkdir(dirname(target), { recursive: true });
     const file = await open(target, 'wx', 0o600);
@@ -21,14 +21,13 @@ if (!sourceArg || !targetArg) {
     await file.close();
     db = new DatabaseSync(source, { readOnly: true });
     const result = db.prepare('PRAGMA integrity_check').get();
-    if (result?.integrity_check !== 'ok')
-      throw new Error('A verificação de integridade do banco falhou.');
+    if (result?.integrity_check !== 'ok') throw new Error('Database integrity check failed.');
     await backup(db, target);
     await chmod(target, 0o600);
-    console.log(`Backup criado: ${target}`);
+    console.log(`Backup created: ${target}`);
   } catch (error) {
     if (reserved) await unlink(target).catch(() => {});
-    console.error(error instanceof Error ? error.message : 'Não foi possível criar o backup.');
+    console.error(error instanceof Error ? error.message : 'Could not create backup.');
     process.exitCode = 1;
   } finally {
     db?.close();

@@ -62,16 +62,16 @@ export function createHomeAssistantAdapter(
           authorization: `Bearer ${safe.token}`,
         });
       } catch {
-        throw new Error('Não foi possível conectar ao Home Assistant.');
+        throw new Error('Could not connect to Home Assistant.');
       }
       if (response.status === 401 || response.status === 403)
-        throw new Error('O Home Assistant recusou a autenticação ou o acesso.');
-      if (response.status === 404) throw new Error('Entidade não encontrada no Home Assistant.');
+        throw new Error('Home Assistant refused authentication or access.');
+      if (response.status === 404) throw new Error('Entity not found in Home Assistant.');
       if (response.status !== 200)
-        throw new Error('O Home Assistant não retornou uma resposta válida.');
+        throw new Error('Home Assistant did not return a valid response.');
       const body = response.body;
       if (!body || typeof body !== 'object')
-        throw new Error('Resposta inválida do Home Assistant.');
+        throw new Error('Invalid response from Home Assistant.');
       const state = body as Record<string, unknown>;
       if (
         state.entity_id !== safe.entityId ||
@@ -83,7 +83,7 @@ export function createHomeAssistantAdapter(
             state.last_updated.length > 128 ||
             state.last_updated.includes(safe.token)))
       )
-        throw new Error('Resposta inválida do Home Assistant.');
+        throw new Error('Invalid response from Home Assistant.');
       return {
         entityId: safe.entityId,
         state: state.state,

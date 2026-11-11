@@ -38,7 +38,7 @@ function show(status?: ServiceStatus, blocked = false) {
 }
 const base = { lastAttempt: '2026-11-10T12:30:00.000Z' };
 
-it('explica o estado com o motivo, o código HTTP e a latência', () => {
+it('explains status with reason, HTTP code, and latency', () => {
   show({ ...base, status: 'available', reason: 'login-required', httpStatus: 401, latencyMs: 42 });
   expect(screen.getByText('Exige login')).toBeTruthy();
   expect(screen.getByText('HTTP 401 · 42 ms')).toBeTruthy();
@@ -64,14 +64,14 @@ it('explica o estado com o motivo, o código HTTP e a latência', () => {
   expect(screen.getByText('Não verificado')).toBeTruthy();
 });
 
-it('mostra o ping respondido com a latência, sem código HTTP', () => {
+it('renders successful ping with latency without HTTP code', () => {
   show({ ...base, status: 'available', reason: 'reachable', httpStatus: null, latencyMs: 4 });
   expect(screen.getByText('Responde ao ping')).toBeTruthy();
   expect(screen.getByText('Ping · 4 ms')).toBeTruthy();
   expect(screen.queryByText(/HTTP/)).toBeNull();
 });
 
-it('mantém o rótulo simples quando responde bem e aceita respostas sem motivo', () => {
+it('retains simple badge when responding normally and tolerates responses without reason', () => {
   show({ ...base, status: 'available', reason: 'responding', httpStatus: 200, latencyMs: 30 });
   expect(screen.getByText('Disponível')).toBeTruthy();
   expect(screen.queryByText(/HTTP/)).toBeNull();

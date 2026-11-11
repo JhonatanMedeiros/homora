@@ -2,8 +2,8 @@ import { en, type MessageKey } from './en';
 import { t } from './index';
 
 /**
- * Texto de um erro da API no idioma atual. A resposta traz `code` (estável, traduzido aqui) e
- * `error` (inglês padrão). Sem código conhecido, usa `error` e, por fim, o texto de reserva.
+ * API error message in the active locale. The response provides `code` (stable, translated here) and
+ * `error` (default English). Without a known code, it falls back to `error`, and finally to fallback.
  */
 export function apiError(body: unknown, fallback: string): string {
   if (!body || typeof body !== 'object') return fallback;

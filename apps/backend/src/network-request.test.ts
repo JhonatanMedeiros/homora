@@ -5,7 +5,7 @@ import * as networkPolicy from './network-policy.js';
 import { getAuthorizedJson, getAuthorizedResponse } from './network-request.js';
 
 afterEach(() => vi.restoreAllMocks());
-it('fixa endereço validado e preserva URL original para Host e TLS', async () => {
+it('pins validated address and preserves original URL for Host and TLS', async () => {
   vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
     url: new URL('http://service.test/data'),
     address: { address: '10.0.0.4', family: 4 },
@@ -42,7 +42,7 @@ it('fixa endereço validado e preserva URL original para Host e TLS', async () =
   expect(callback).toHaveBeenCalledWith(null, '10.0.0.4', 4);
 });
 
-it('impede credenciais em HTTP e cabeçalhos arbitrários', async () => {
+it('prevents credentials over HTTP and arbitrary headers', async () => {
   const authorize = vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
     url: new URL('http://service.test/data'),
     address: { address: '10.0.0.4', family: 4 },
@@ -56,12 +56,12 @@ it('impede credenciais em HTTP e cabeçalhos arbitrários', async () => {
   ).rejects.toThrow('HTTPS');
   await expect(
     getAuthorizedResponse('http://service.test/data', policy, { headers: { Host: 'example.com' } }),
-  ).rejects.toThrow('Cabeçalhos');
+  ).rejects.toThrow('headers');
   expect(spy).not.toHaveBeenCalled();
   expect(authorize).toHaveBeenCalledTimes(1);
 });
 
-it('retorna código sanitizado sem propagar o corpo de erro remoto', async () => {
+it('returns sanitized status code without propagating remote error body', async () => {
   vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
     url: new URL('http://service.test/data'),
     address: { address: '10.0.0.4', family: 4 },
@@ -83,7 +83,7 @@ it('retorna código sanitizado sem propagar o corpo de erro remoto', async () =>
   ).resolves.toEqual({ status: 401, body: '' });
 });
 
-it('rejeita redirecionamentos sem seguir o destino', async () => {
+it('rejects redirects without following destination', async () => {
   vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
     url: new URL('http://service.test/data'),
     address: { address: '10.0.0.4', family: 4 },
@@ -107,7 +107,7 @@ it('rejeita redirecionamentos sem seguir o destino', async () => {
   expect(res.destroy).toHaveBeenCalled();
 });
 
-it('informa o código 3xx só quando pedido, ainda sem seguir o destino', async () => {
+it('reports 3xx status code only when requested, without following redirect', async () => {
   vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
     url: new URL('http://service.test/'),
     address: { address: '10.0.0.4', family: 4 },

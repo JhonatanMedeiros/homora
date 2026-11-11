@@ -1,42 +1,38 @@
-# Segurança
+# Security
 
-Homora está em desenvolvimento e é destinado a acesso local. A interface e a
-API não estão preparadas para exposição pública ou acesso remoto seguro. O
-Docker Compose vincula a interface a `127.0.0.1`; não altere esse limite nem
-coloque a aplicação atrás de um proxy público esperando que ela forneça HTTPS,
-proteção contra CSRF ou um modelo de acesso remoto.
+Homora is currently in development and intended for local access. The web interface
+and API are not designed for public exposure or secure remote access. Docker Compose
+binds the interface to `127.0.0.1`; do not change this boundary or expose the application
+behind a public reverse proxy expecting it to provide HTTPS, CSRF protection, or a
+hardened remote access model.
 
-## Relatar uma vulnerabilidade
+## Reporting a Vulnerability
 
-Não publique detalhes de uma falha ainda não corrigida em issues ou discussões
-públicas. Se o repositório oferecer GitHub Security Advisories, use um relato
-privado por esse canal. Caso contrário, procure um canal privado dos
-mantenedores antes de enviar detalhes; não há atualmente um endereço de contato
-de segurança documentado. Inclua versões afetadas, impacto e passos mínimos de
-reprodução, sem dados ou credenciais reais. Não há SLA de resposta ou política
-de recompensa estabelecidos.
+Do not publish details of an unpatched vulnerability in public issues or discussions.
+If the repository provides GitHub Security Advisories, submit a private report
+through that channel. Otherwise, seek a private contact channel with the maintainers
+before sending details; there is currently no documented security contact email.
+Include affected versions, impact, and minimal reproduction steps, without real
+data or real credentials. There is no established response SLA or bug bounty policy.
 
-## Cuidados conhecidos
+## Known Precautions
 
-- Mantenha `.env`, `data/`, arquivos `.auth`, `.key` e `.proxmox` fora de
-  controle de versão e com acesso restrito. Caminhos personalizados também
-  precisam ser protegidos.
-- O banco pode conter credenciais cifradas; a chave `.key` permite decifrá-las.
-  Proteja e armazene cópias de segurança separadamente. Sem essa chave, será
-  necessário cadastrar credenciais novamente.
-- O MCP é um processo local de leitura que acessa banco e chave diretamente.
-  A sessão web não o protege; use apenas com cliente e usuário do sistema
-  confiáveis.
-- Use credenciais de integração com privilégio mínimo e valide certificados
-  TLS. Não desative a validação TLS.
-- O monitoramento de serviços bloqueia destinos RFC1918 e ULA por padrão. Um
-  usuário autenticado pode habilitar o acesso privado em cada serviço; isso
-  autoriza somente essas faixas na origem exata configurada. DNS é fixado para
-  a conexão e respostas mistas, faixas especiais e redirecionamentos continuam
-  bloqueados. A lista de faixas especiais não cobre toda política de rede local.
-- Trate nomes, URLs e respostas de integrações como dados não confiáveis.
+- Keep `.env`, `data/`, `.auth`, `.key`, and `.proxmox` files out of version control
+  and with restricted permissions. Custom paths also need protection.
+- The database may contain encrypted credentials; the `.key` file is required to
+  decrypt them. Protect and store backups separately. Without this key,
+  credentials will need to be re-entered.
+- MCP is a local read process that accesses the database and key file directly.
+  Web sessions do not protect it; use only with trusted system users and MCP clients.
+- Use integration credentials with least privilege and validate TLS certificates.
+  Do not disable TLS validation.
+- Service monitoring blocks RFC1918 and ULA destinations by default. An
+  authenticated user can enable private network access on individual services; this
+  authorizes only those ranges at the exact configured origin. DNS is pinned for
+  the connection, and mixed responses, special ranges, and redirects remain
+  blocked. The special ranges list does not cover every local network topology policy.
+- Treat service names, URLs, and integration responses as untrusted data.
 
-Consulte o [README](README.md) para backup e recuperação e
-[arquitetura](docs/arquitetura.md) para os riscos e controles planejados. Os
-controles descritos como planejados ainda não devem ser presumidos como
-implementados.
+See the [README](README.md) for backup and recovery, and
+[architecture](docs/arquitetura.md) for risks and planned controls. Controls
+described as planned should not be assumed to be implemented yet.

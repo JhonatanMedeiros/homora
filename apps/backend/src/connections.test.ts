@@ -8,13 +8,13 @@ import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 
-it('protege credenciais de múltiplas integrações e preserva vínculos', async () => {
+it('protects credentials of multiple integrations and preserves associations', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-connections-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
   const auth = createAuth(`${path}.auth`);
-  auth.setup('senha-para-testes');
-  const cookie = `homora_session=${auth.login('senha-para-testes', 'test')}`;
+  auth.setup('password-for-tests');
+  const cookie = `homora_session=${auth.login('password-for-tests', 'test')}`;
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, createVault(path));
   try {

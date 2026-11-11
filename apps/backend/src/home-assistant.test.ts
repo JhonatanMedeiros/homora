@@ -5,7 +5,7 @@ const config = {
   token: 'fake-token',
   entityId: 'sensor.temperature',
 };
-it('consulta apenas a entidade escolhida e retorna somente campos necessários', async () => {
+it('queries only the selected entity and returns only required fields', async () => {
   const transport = vi.fn(async () => ({
     status: 200,
     body: {
@@ -27,7 +27,7 @@ it('consulta apenas a entidade escolhida e retorna somente campos necessários',
     authorization: 'Bearer fake-token',
   });
 });
-it('rejeita destinos e entidades inválidos antes de enviar credenciais', async () => {
+it('rejects invalid destinations and entities before sending credentials', async () => {
   const transport = vi.fn();
   const adapter = createHomeAssistantAdapter(transport);
   for (const overrides of [
@@ -39,16 +39,16 @@ it('rejeita destinos e entidades inválidos antes de enviar credenciais', async 
     await expect(adapter.collect({ ...config, ...overrides })).rejects.toThrow();
   expect(transport).not.toHaveBeenCalled();
 });
-it('não inclui erros ou corpo do servidor em falhas', async () => {
+it('does not include errors or server body in failures', async () => {
   const adapter = createHomeAssistantAdapter(async () => {
     throw new Error('fake-token');
   });
-  await expect(adapter.collect(config)).rejects.toThrow('Não foi possível conectar');
+  await expect(adapter.collect(config)).rejects.toThrow('Could not connect');
   const failed = createHomeAssistantAdapter(async () => ({ status: 401, body: 'fake-token' }));
-  await expect(failed.collect(config)).rejects.toThrow('autenticação');
+  await expect(failed.collect(config)).rejects.toThrow('authentication');
   const malformed = createHomeAssistantAdapter(async () => ({
     status: 200,
     body: { entity_id: 'other.entity', state: 'ok' },
   }));
-  await expect(malformed.collect(config)).rejects.toThrow('Resposta inválida');
+  await expect(malformed.collect(config)).rejects.toThrow('Invalid response');
 });

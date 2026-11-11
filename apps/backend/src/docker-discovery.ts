@@ -4,10 +4,10 @@ import type { ImportedService, ParsedImport } from './config-transfer.js';
 import { add, finish, groupFor, newCollector } from './importers.js';
 
 /**
- * Descoberta de serviços por labels de contêineres Docker. É opcional (só existe se
- * `HOMORA_DOCKER_HOST` estiver definido), somente leitura (uma única chamada `GET
- * /containers/json`) e só gera sugestões: nada vira card sem a revisão e a confirmação de
- * quem usa a interface. Labels e nomes de contêineres são dados não confiáveis.
+ * Service discovery via Docker container labels. Optional (active only if
+ * `HOMORA_DOCKER_HOST` is set), read-only (single `GET /containers/json` call),
+ * and generates suggestions only: no card is created without review and confirmation
+ * in the UI. Container labels and names are untrusted input.
  */
 export type DockerHost =
   { kind: 'unix'; path: string } | { kind: 'tcp'; host: string; port: number };
@@ -23,9 +23,9 @@ const MAX_CONTAINERS = 1000;
 const TIMEOUT_MS = 5000;
 
 /**
- * Lê `HOMORA_DOCKER_HOST`: `unix:///caminho/docker.sock` ou `http://host:porta` (de um proxy
- * restrito, por exemplo). É configuração do administrador, não entrada de usuário. Sem
- * credenciais, caminho ou HTTPS: o transporte seguro é o socket local ou a rede privada do proxy.
+ * Parses `HOMORA_DOCKER_HOST`: `unix:///path/docker.sock` or `http://host:port` (e.g. from
+ * an unprivileged proxy). Administrator setting, not user input. Without credentials, path,
+ * or HTTPS: secure transport is the local socket or the proxy private network.
  */
 export function parseDockerHost(value: string | undefined): DockerHost | null {
   if (value === undefined || value.trim() === '') return null;
@@ -33,14 +33,14 @@ export function parseDockerHost(value: string | undefined): DockerHost | null {
   if (text.startsWith('unix://')) {
     const path = text.slice('unix://'.length);
     if (!path.startsWith('/') || path.includes('\0') || path.length > 200)
-      throw new Error('HOMORA_DOCKER_HOST inválido.');
+      throw new Error('Invalid HOMORA_DOCKER_HOST.');
     return { kind: 'unix', path };
   }
   let url: URL;
   try {
     url = new URL(text);
   } catch {
-    throw new Error('HOMORA_DOCKER_HOST inválido.');
+    throw new Error('Invalid HOMORA_DOCKER_HOST.');
   }
   if (
     url.protocol !== 'http:' ||
@@ -51,11 +51,11 @@ export function parseDockerHost(value: string | undefined): DockerHost | null {
     url.hash ||
     !url.hostname
   )
-    throw new Error('HOMORA_DOCKER_HOST inválido. Use unix:///caminho ou http://host:porta.');
+    throw new Error('Invalid HOMORA_DOCKER_HOST. Use unix:///path or http://host:port.');
   return { kind: 'tcp', host: url.hostname.replace(/^\[|\]$/g, ''), port: Number(url.port || 80) };
 }
 
-/** Cliente mínimo da API do Docker: lista contêineres em execução e nada mais. */
+/** Minimal Docker API client: lists running containers and nothing more. */
 export function createDockerSource(host: DockerHost): DockerSource {
   return {
     list() {
@@ -120,11 +120,11 @@ const label = (labels: Record<string, unknown>, ...keys: string[]) => {
 export type DiscoveryEntry = { id: string; container: string; group: string; url: string };
 
 /**
- * Converte os labels em um documento de importação. Reconhece `homora.url`, `homora.name`,
- * `homora.group`, `homora.description` e `homora.icon`, e também os `homepage.*` equivalentes
- * (`href` no lugar de `url`) para quem migra do Homepage. `homora.*` tem precedência.
- * Contêineres sem URL são ignorados. `only` limita aos IDs escolhidos na revisão.
- * `entries` acompanha, na mesma ordem, os cards do documento.
+ * Converts container labels into an import document. Recognizes `homora.url`, `homora.name`,
+ * `homora.group`, `homora.description`, and `homora.icon`, as well as equivalent `homepage.*`
+ * labels (`href` instead of `url`) for users migrating from Homepage. `homora.*` takes precedence.
+ * Containers without URL are ignored. `only` limits to IDs selected during review.
+ * `entries` accompanies cards in the document in matching order.
  */
 export function parseDocker(
   containers: DockerContainer[],

@@ -53,18 +53,18 @@ export function createUptimeKumaAdapter(
           path: `/api/status-page/heartbeat/${safe.slug}`,
         });
       } catch {
-        throw new Error('Não foi possível conectar ao Uptime Kuma.');
+        throw new Error('Could not connect to Uptime Kuma.');
       }
       if (response.status === 404)
-        throw new Error('Página de status não encontrada ou não publicada no Uptime Kuma.');
+        throw new Error('Status page not found or not published on Uptime Kuma.');
       if (response.status !== 200 || !response.body || typeof response.body !== 'object')
-        throw new Error('Resposta inválida do Uptime Kuma.');
+        throw new Error('Invalid response from Uptime Kuma.');
       const heartbeatList = (response.body as Record<string, unknown>).heartbeatList;
       if (!heartbeatList || typeof heartbeatList !== 'object' || Array.isArray(heartbeatList))
-        throw new Error('Resposta inválida do Uptime Kuma.');
+        throw new Error('Invalid response from Uptime Kuma.');
       const result = { up: 0, down: 0, pending: 0, maintenance: 0, unknown: 0 };
       for (const heartbeats of Object.values(heartbeatList)) {
-        if (!Array.isArray(heartbeats)) throw new Error('Resposta inválida do Uptime Kuma.');
+        if (!Array.isArray(heartbeats)) throw new Error('Invalid response from Uptime Kuma.');
         const latest: unknown = heartbeats.at(-1);
         const status =
           latest && typeof latest === 'object'

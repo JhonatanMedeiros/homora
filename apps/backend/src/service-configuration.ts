@@ -150,7 +150,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     },
     transaction,
     applyProposal,
-    /** Grupos e cards na ordem atual, para exportação. */
+    /** Groups and cards in current order, for export. */
     exportData() {
       return {
         groups: selectGroups(),
@@ -160,7 +160,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         })) as Service[],
       };
     },
-    /** Pré-visualiza uma importação sem gravar nada. */
+    /** Previews an import without persisting anything. */
     previewImport(parsed: ParsedImport) {
       const rows = selectServices();
       return {
@@ -176,10 +176,10 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
       };
     },
     /**
-     * Aplica uma importação em uma única transação, recalculando o plano sobre o estado
-     * atual. Só adiciona grupos e cards; a autorização de rede privada vem do arquivo apenas
-     * se `keepPrivate` for verdadeiro; `grantPrivate` (escolha explícita na revisão) autoriza todos os cards novos. `expectedVersion` recusa a aplicação se a configuração
-     * mudou depois da prévia.
+     * Applies an import in a single transaction, recalculating the plan against current
+     * state. Only adds groups and cards; private network authorization is retained from the file
+     * only if `keepPrivate` is true; `grantPrivate` (explicit choice during review) authorizes all new cards. `expectedVersion` rejects application if configuration
+     * changed after the preview.
      */
     applyImport(
       parsed: ParsedImport,

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { t } from '@/i18n';
 
 type Props = {
-  /** Ao renomear, o formulário de novo grupo dá lugar ao de renomear. */
+  /** When renaming, new group form is replaced by the rename form. */
   renaming: boolean;
   draft: string;
   onDraftChange: (value: string) => void;
@@ -15,7 +15,7 @@ type Props = {
   onCancelRename: () => void;
 };
 
-/** Faixa do modo Organizar: instrução, criar grupo e renomear grupo. */
+/** Organize mode panel: instructions, group creation, and group renaming. */
 export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCancelRename }: Props) {
   return (
     <>

@@ -3,8 +3,8 @@ import { createDatabase, getSqliteHandle } from '@homora/db';
 import { normalizeIcon } from '@homora/shared';
 import { seedDevelopmentDatabase } from './dev-seed.js';
 
-describe('dados de desenvolvimento', () => {
-  it('cria grupos e serviços ilustrativos sem autorizar rede privada', () => {
+describe('development data', () => {
+  it('creates illustrative groups and services without authorizing private network', () => {
     const database = createDatabase(':memory:');
     try {
       const sqlite = getSqliteHandle(database.db);

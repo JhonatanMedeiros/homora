@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-test('backup preserva dados e não sobrescreve destino existente', async () => {
+test('backup preserves data and does not overwrite existing target', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'homora-backup-'));
   try {
     const source = join(dir, 'source.sqlite');
@@ -26,7 +26,7 @@ test('backup preserva dados e não sobrescreve destino existente', async () => {
   }
 });
 
-test('backup inclui alterações ainda presentes no WAL e permite restaurá-las', async () => {
+test('backup includes changes still in WAL and allows restoring them', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'homora-backup-wal-'));
   let db;
   try {
@@ -59,19 +59,19 @@ test('backup inclui alterações ainda presentes no WAL e permite restaurá-las'
   }
 });
 
-test('falha de origem não deixa backup incompleto nem altera destino existente', async () => {
+test('source failure does not leave incomplete backup nor modify existing target', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'homora-backup-invalid-'));
   try {
     const source = join(dir, 'invalid.sqlite');
     const target = join(dir, 'backup.sqlite');
-    await writeFile(source, 'não é um banco SQLite');
+    await writeFile(source, 'not a SQLite database');
     const run = () =>
       spawnSync(process.execPath, ['scripts/backup.mjs', source, target], { encoding: 'utf8' });
     assert.notEqual(run().status, 0);
     await assert.rejects(stat(target), { code: 'ENOENT' });
-    await writeFile(target, 'backup anterior');
+    await writeFile(target, 'previous backup');
     assert.notEqual(run().status, 0);
-    assert.equal(await readFile(target, 'utf8'), 'backup anterior');
+    assert.equal(await readFile(target, 'utf8'), 'previous backup');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

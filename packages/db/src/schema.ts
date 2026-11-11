@@ -3,7 +3,7 @@ export const serviceGroups = sqliteTable('service_groups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull().unique(),
   position: integer('position').notNull().default(0),
-  // Colunas da grade em telas largas (1 a 6); nulo mantém o ajuste automático.
+  // Grid columns on wide viewports (1 to 6); null retains automatic responsive layout.
   columns: integer('columns'),
 });
 export const services = sqliteTable('services', {
@@ -15,7 +15,7 @@ export const services = sqliteTable('services', {
   icon: text('icon').notNull().default(''),
   position: integer('position').notNull().default(0),
   allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
-  // 'http' (GET) ou 'ping' (ICMP); o intervalo em segundos é nulo para o padrão do monitor.
+  // 'http' (GET) or 'ping' (ICMP); interval in seconds is null for monitor default.
   checkType: text('check_type').notNull().default('http'),
   checkInterval: integer('check_interval'),
 });
@@ -39,7 +39,7 @@ export const integrationWidgets = sqliteTable('integration_widgets', {
   type: text('type').notNull(),
   name: text('name').notNull(),
   publicConfig: text('public_config').notNull().default('{}'),
-  // Card que exibe o widget; nulo mantém o widget só na página Integrações.
+  // Card displaying the widget; null keeps the widget only on the Integrations page.
   serviceId: integer('service_id').references(() => services.id, { onDelete: 'set null' }),
 });
 

@@ -1,7 +1,7 @@
 import { BRAND_ICON_NAMES } from './brand-icons.js';
 
 export { BRAND_ICON_NAMES };
-/** Como o monitor verifica o serviço: GET HTTP (padrão) ou ping ICMP. */
+/** Service monitor probe method: HTTP GET (default) or ICMP ping. */
 export type CheckType = 'http' | 'ping';
 export const CHECK_INTERVAL_MIN = 30;
 export const CHECK_INTERVAL_MAX = 3600;
@@ -15,14 +15,14 @@ export type ServiceInput = {
   icon?: string;
   position?: number;
   allowPrivate?: boolean;
-  /** Ausente mantém o valor atual (ou `http` em um card novo). */
+  /** When omitted preserves current value (or `http` for a new card). */
   checkType?: CheckType;
-  /** Segundos entre verificações; nulo volta ao padrão e ausente mantém o valor atual. */
+  /** Seconds between checks; null restores default and omitted preserves current value. */
   checkInterval?: number | null;
 };
 export type Service = ServiceInput & { id: number };
 
-/** Entrada inválida de serviço; `code` é estável e a mensagem está em inglês. */
+/** Invalid service input; `code` is stable and message is in English. */
 export class ServiceValidationError extends Error {
   constructor(readonly code: 'invalid-url' | 'invalid-name-or-category') {
     super(
@@ -34,7 +34,7 @@ export class ServiceValidationError extends Error {
   }
 }
 
-/** Ícones embutidos (`lucide:nome`). A interface registra um componente para cada um. */
+/** Built-in icons (`lucide:name`). The UI registers a component for each. */
 export const ICON_NAMES = [
   'server',
   'hard-drive',
@@ -139,9 +139,9 @@ const ICON_TEXT_MAX_LENGTH = 8;
 const ICON_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
- * Normaliza o ícone de um serviço. Formatos aceitos: texto curto ou emoji (até 8
- * caracteres), `lucide:nome` ou `brand:nome` (ícones embutidos) e URL http(s) de imagem sem credenciais.
- * Qualquer outra coisa vira texto curto, como antes.
+ * Normalizes a service icon. Accepted formats: short text or emoji (up to 8
+ * characters), `lucide:name` or `brand:name` (built-in icons) and http(s) image URL without credentials.
+ * Anything else falls back to short text.
  */
 export function normalizeIcon(value: unknown): string {
   const raw = String(value ?? '').trim();
@@ -158,7 +158,7 @@ export function normalizeIcon(value: unknown): string {
       const url = new URL(raw);
       if (!url.username && !url.password && url.href.length <= ICON_MAX_LENGTH) return url.href;
     } catch {
-      // Cai no tratamento de texto curto abaixo.
+      // Falls through to short text handling below.
     }
     return '';
   }

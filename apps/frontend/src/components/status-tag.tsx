@@ -28,7 +28,7 @@ const view = {
   },
 } as const;
 
-/** Estado de um serviço como etiqueta de fita: ícone, texto e cor, nunca só cor. */
+/** Service status as tape label: icon, text, and color, never color alone. */
 export function StatusTag({ state, blocked = false, label: custom, className }: Props) {
   const { label, Icon, tone } = view[blocked ? 'blocked' : state];
   return (

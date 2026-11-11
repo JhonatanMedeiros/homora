@@ -14,7 +14,7 @@ import type { UptimeKumaConfig } from './uptime-kuma.js';
 import type { ProxmoxConfig } from './vault.js';
 
 function transportFrom(context: IntegrationContext) {
-  if (!context.transport) throw new Error('Transporte da integração indisponível.');
+  if (!context.transport) throw new Error('Integration transport unavailable.');
   return context.transport;
 }
 

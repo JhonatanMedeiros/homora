@@ -201,8 +201,8 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     return publicRow(result);
   }
   /**
-   * Proxmox continua no cofre legado; uma linha ponte (sem segredo) permite ligar widgets a ele.
-   * A assinatura da configuração evita servir dados em cache de um endereço ou token anterior.
+   * Proxmox remains in legacy vault; a bridge row (without secret) allows linking widgets to it.
+   * Configuration signature prevents serving cached data from a previous address or token.
    */
   const proxmoxSignatures = new Map<number, string>();
   function proxmoxConfig() {
@@ -334,7 +334,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       }
       return cacheFor(id).collect(async () => {
         const data = await collect(id);
-        if (data === null) throw new Error('Integração não encontrada.');
+        if (data === null) throw new Error('Integration not found.');
         return data;
       }, refresh);
     },

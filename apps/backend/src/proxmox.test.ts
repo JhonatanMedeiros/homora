@@ -4,7 +4,7 @@ import { rootCertificates } from 'node:tls';
 import { afterEach, expect, it, vi } from 'vitest';
 import { readProxmox } from './proxmox.js';
 afterEach(() => vi.restoreAllMocks());
-it('envia token apenas ao endpoint HTTPS de leitura e retorna o inventário', async () => {
+it('sends token only to read HTTPS endpoint and returns inventory', async () => {
   const response = Object.assign(new EventEmitter(), {
     statusCode: 200,
     setEncoding: vi.fn(),
@@ -33,7 +33,7 @@ it('envia token apenas ao endpoint HTTPS de leitura e retorna o inventário', as
   );
 });
 
-it('usa a CA configurada sem desligar a verificação TLS', async () => {
+it('uses configured CA without disabling TLS verification', async () => {
   const request = Object.assign(new EventEmitter(), { destroy: vi.fn() });
   const spy = vi.spyOn(https, 'get').mockImplementation((...args: unknown[]) => {
     const response = Object.assign(new EventEmitter(), {
@@ -60,7 +60,7 @@ it('usa a CA configurada sem desligar a verificação TLS', async () => {
   expect(options.rejectUnauthorized).not.toBe(false);
 });
 
-it.each(['aborted', 'error'])('rejeita uma resposta interrompida (%s)', async (event) => {
+it.each(['aborted', 'error'])('rejects an interrupted response (%s)', async (event) => {
   const response = Object.assign(new EventEmitter(), {
     statusCode: 200,
     setEncoding: vi.fn(),
@@ -71,7 +71,7 @@ it.each(['aborted', 'error'])('rejeita uma resposta interrompida (%s)', async (e
     const callback = args[2] as (res: typeof response) => void;
     queueMicrotask(() => {
       callback(response);
-      response.emit(event, new Error('conexão interrompida'));
+      response.emit(event, new Error('interrupted connection'));
     });
     return request as unknown as ReturnType<typeof https.get>;
   });
@@ -80,7 +80,7 @@ it.each(['aborted', 'error'])('rejeita uma resposta interrompida (%s)', async (e
   ).rejects.toMatchObject({ code: 'proxmox-incomplete-response' });
 });
 
-it('rejeita inventário que não seja uma lista', async () => {
+it('rejects inventory that is not a list', async () => {
   const response = Object.assign(new EventEmitter(), {
     statusCode: 200,
     setEncoding: vi.fn(),
@@ -106,12 +106,12 @@ it.each([
   ['ENOTFOUND', 'proxmox-dns'],
   ['ECONNREFUSED', 'proxmox-refused'],
   ['ETIMEDOUT', 'proxmox-unreachable'],
-  ['OUTRO', 'proxmox-connection-failed'],
-])('apresenta diagnóstico seguro para erro de rede %s', async (code, errorCode) => {
+  ['OTHER', 'proxmox-connection-failed'],
+])('provides safe diagnosis for network error %s', async (code, errorCode) => {
   const request = Object.assign(new EventEmitter(), { destroy: vi.fn() });
   vi.spyOn(https, 'get').mockImplementation(() => {
     queueMicrotask(() =>
-      request.emit('error', Object.assign(new Error('segredo privado'), { code })),
+      request.emit('error', Object.assign(new Error('private secret'), { code })),
     );
     return request as unknown as ReturnType<typeof https.get>;
   });
@@ -124,7 +124,7 @@ it.each([
   [401, 'proxmox-unauthorized'],
   [403, 'proxmox-forbidden'],
   [500, 'proxmox-http-error'],
-])('identifica resposta HTTP %i sem divulgar o corpo', async (statusCode, errorCode) => {
+])('identifies HTTP response %i without disclosing body', async (statusCode, errorCode) => {
   const response = Object.assign(new EventEmitter(), { statusCode, resume: vi.fn() });
   const request = Object.assign(new EventEmitter(), { destroy: vi.fn() });
   vi.spyOn(https, 'get').mockImplementation((...args: unknown[]) => {

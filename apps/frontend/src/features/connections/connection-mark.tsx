@@ -1,6 +1,6 @@
 import { marks, type Kind } from './connection-model';
 
-/** Sigla do serviço; tipos fora do catálogo de conexões usam as duas primeiras letras. */
+/** Service badge/acronym; types outside the connection catalog use the first two letters. */
 export function ConnectionMark({ type }: { type: string }) {
   return (
     <span

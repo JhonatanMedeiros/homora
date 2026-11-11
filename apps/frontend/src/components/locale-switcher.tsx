@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { locales, useI18n } from '@/i18n';
 
-/** Escolha explícita entre os idiomas disponíveis. */
+/** Explicit selector among available languages. */
 export function LocaleSwitcher({ className }: { className?: string }) {
   const { t, locale, setLocale } = useI18n();
   const current = locales.find((item) => item.id === locale);

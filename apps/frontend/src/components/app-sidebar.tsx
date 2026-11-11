@@ -19,7 +19,7 @@ import { t } from '@/i18n';
 
 type Props = { tab: Tab; onTabChange: (tab: Tab) => void; onLogout: () => void };
 
-/** Trilho grafite do desktop: marca, navegação principal, tema e saída. */
+/** Desktop graphite rail: branding, primary navigation, theme, and sign out. */
 export function AppSidebar({ tab, onTabChange, onLogout }: Props) {
   return (
     <div className="sticky top-0 hidden h-svh shrink-0 md:block">

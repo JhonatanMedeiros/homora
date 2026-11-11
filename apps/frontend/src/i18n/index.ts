@@ -18,13 +18,13 @@ function isLocale(value: unknown): value is Locale {
   return value === 'en' || value === 'pt-BR';
 }
 
-/** Idioma salvo, depois o do navegador (português vira pt-BR); o padrão é inglês. */
+/** Saved locale, then browser locale (Portuguese becomes pt-BR); default is English. */
 function detectLocale(): Locale {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (isLocale(saved)) return saved;
   } catch {
-    // Sem armazenamento disponível: segue o idioma do navegador.
+    // No storage available: follow the browser language.
   }
   const preferred = typeof navigator === 'undefined' ? '' : navigator.language;
   return preferred.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en';
@@ -48,7 +48,7 @@ export function setLocale(next: Locale) {
   try {
     localStorage.setItem(STORAGE_KEY, next);
   } catch {
-    // A escolha vale só nesta página.
+    // Selection only applies to this page session.
   }
   applyDocumentLocale();
   listeners.forEach((listener) => listener());
@@ -62,8 +62,8 @@ const subscribe = (listener: () => void) => {
 export type Params = Record<string, string | number>;
 
 /**
- * Traduz uma chave. `{nome}` é substituído por `params.nome`. Com `count`, usa a
- * variante `chave_one` ou `chave_other` conforme a regra de plural do idioma.
+ * Translates a key. `{name}` is replaced by `params.name`. With `count`, uses
+ * the variant `key_one` or `key_other` based on the language's plural rules.
  */
 export function t(key: MessageKey, params?: Params): string {
   const dictionary = dictionaries[current];
@@ -79,7 +79,7 @@ export function t(key: MessageKey, params?: Params): string {
   );
 }
 
-/** Hook que re-renderiza ao trocar de idioma e devolve `t` e o idioma atual. */
+/** Hook that re-renders on locale change and returns `t` and the current locale. */
 export function useI18n() {
   const locale = useSyncExternalStore(subscribe, getLocale, () => 'en' as Locale);
   return { t, locale, setLocale };

@@ -4,7 +4,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Kbd } from '@/components/ui/kbd';
 import { t } from '@/i18n';
 
-/** Busca de serviços; Ctrl K ou / focam o campo (atalho tratado pela página). */
+/** Service search; Ctrl K or / focuses the field (shortcut handled by the page). */
 export const SearchField = forwardRef<HTMLInputElement, ComponentProps<'input'>>(
   function SearchField(props, ref) {
     return (

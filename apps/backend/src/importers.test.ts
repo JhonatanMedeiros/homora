@@ -28,14 +28,14 @@ describe('mapIcon', () => {
   ])('%s -> %s', (raw, icon, unsupported) => {
     expect(mapIcon(raw)).toEqual({ icon, unsupported });
   });
-  it('ignora valores que não são texto', () => {
+  it('ignores non-string values', () => {
     expect(mapIcon(42)).toEqual({ icon: '', unsupported: false });
     expect(mapIcon(null)).toEqual({ icon: '', unsupported: false });
   });
 });
 
 describe('Homepage', () => {
-  it('lê services.yaml com grupos, grupos aninhados e widgets', () => {
+  it('reads services.yaml with groups, nested groups and widgets', () => {
     const parsed = parseHomepage(`
 - Media:
     - Jellyfin:
@@ -72,7 +72,7 @@ describe('Homepage', () => {
     ]);
   });
 
-  it('lê bookmarks.yaml', () => {
+  it('reads bookmarks.yaml', () => {
     const parsed = parseHomepage(`
 - Developer:
     - Github:
@@ -92,37 +92,37 @@ describe('Homepage', () => {
     expect(codes(parsed)).toEqual(['root[1].Social[0]:icon-unsupported']);
   });
 
-  it('relata entradas sem URL válida e entradas fora de um grupo', () => {
+  it('reports entries without valid URL and entries outside a group', () => {
     const parsed = parseHomepage(`
-- Casa:
-    - Sem href:
+- Home:
+    - No href:
         description: x
-    - Variável:
+    - Variable:
         href: "{{HOMEPAGE_VAR_URL}}"
     - Ok:
         href: http://x.test
-- Solto:
+- Dangling:
     href: http://x.test
 - 42
 `);
-    expect(names(parsed)).toEqual([['Casa', ['Ok']]]);
+    expect(names(parsed)).toEqual([['Home', ['Ok']]]);
     expect(codes(parsed)).toEqual([
-      'root[0].Casa[0]:invalid-url',
-      'root[0].Casa[1]:invalid-url',
+      'root[0].Home[0]:invalid-url',
+      'root[0].Home[1]:invalid-url',
       'root[1]:invalid-group',
       'root[2]:invalid-group',
     ]);
   });
 
   it.each([
-    ['sintaxe inválida', '- a: [unclosed', 'invalid-syntax'],
-    ['raiz que não é lista', 'a: 1', 'invalid-document'],
-    ['arquivo vazio', '', 'invalid-document'],
-  ])('rejeita %s', (_n, content, code) => {
+    ['invalid syntax', '- a: [unclosed', 'invalid-syntax'],
+    ['root that is not a list', 'a: 1', 'invalid-document'],
+    ['empty file', '', 'invalid-document'],
+  ])('rejects %s', (_n, content, code) => {
     expect(parseHomepage(content).issues).toEqual([{ path: '', code, severity: 'error' }]);
   });
 
-  it('avisa quando o nome do grupo é encurtado', () => {
+  it('warns when group name is shortened', () => {
     const long = 'G'.repeat(50);
     const parsed = parseHomepage(`- ${long}:\n    - S:\n        href: http://x.test`);
     expect(parsed.document.groups[0].name).toHaveLength(40);
@@ -131,7 +131,7 @@ describe('Homepage', () => {
 });
 
 describe('Dashy', () => {
-  it('lê seções, itens, subitens e avisa sobre páginas e widgets', () => {
+  it('reads sections, items, subitems and warns about pages and widgets', () => {
     const parsed = parseDashy(`
 pageInfo:
   title: Home Lab
@@ -159,7 +159,7 @@ sections:
       - title: Firewall
         url: http://192.168.1.1/
         icon: favicon
-      - title: Sem URL
+      - title: No URL
 `);
     expect(names(parsed)).toEqual([
       ['Dev Tools', ['GitHub', 'GitHub / Issues']],
@@ -175,19 +175,19 @@ sections:
   });
 
   it.each([
-    ['sintaxe inválida', 'sections: [', 'invalid-syntax'],
-    ['sem seções', 'pageInfo:\n  title: x', 'invalid-document'],
-  ])('rejeita %s', (_n, content, code) => {
+    ['invalid syntax', 'sections: [', 'invalid-syntax'],
+    ['without sections', 'pageInfo:\n  title: x', 'invalid-document'],
+  ])('rejects %s', (_n, content, code) => {
     expect(parseDashy(content).issues).toEqual([{ path: '', code, severity: 'error' }]);
   });
 
-  it('relata seções e itens inválidos', () => {
+  it('reports invalid sections and items', () => {
     const parsed = parseDashy(`
 sections:
   - items: []
   - name: A
     items:
-      - "texto"
+      - "text"
       - { title: B, url: "http://x.test" }
 `);
     expect(names(parsed)).toEqual([['A', ['B']]]);
@@ -197,7 +197,7 @@ sections:
     ]);
   });
 
-  it('recusa arquivos com cards demais', () => {
+  it('rejects files with too many cards', () => {
     const items = Array.from(
       { length: 1001 },
       (_, i) => `{title: S${i}, url: "http://x.test/${i}"}`,
@@ -208,7 +208,7 @@ sections:
 });
 
 describe('parseBySource', () => {
-  it('escolhe o leitor pela origem', () => {
+  it('selects parser by source', () => {
     expect(
       parseBySource('homepage', '- A:\n    - S:\n        href: http://x.test').document.groups,
     ).toHaveLength(1);

@@ -24,7 +24,7 @@ const preview: Preview = {
 const file = (text: string, name = 'homora-config.yaml') => new File([text], name);
 const choose = (input: HTMLElement, f: File) => fireEvent.change(input, { target: { files: [f] } });
 
-it('oferece os downloads de exportação em YAML e JSON', () => {
+it('offers export downloads in YAML and JSON', () => {
   render(<ConfigTransfer onImported={() => {}} />);
   expect(screen.getByRole('link', { name: /Baixar YAML/ }).getAttribute('href')).toBe(
     '/api/config/export?format=yaml',
@@ -34,7 +34,7 @@ it('oferece os downloads de exportação em YAML e JSON', () => {
   );
 });
 
-it('mostra a prévia, relata itens ignorados e só grava ao confirmar', async () => {
+it('shows preview, reports skipped items, and only saves on confirmation', async () => {
   const fetchMock = vi.fn(async (url: string) => ({
     ok: true,
     status: 200,
@@ -62,7 +62,7 @@ it('mostra a prévia, relata itens ignorados e só grava ao confirmar', async ()
   expect(await screen.findByText('Importação concluída: 1 card adicionado.')).toBeTruthy();
 });
 
-it('envia keepPrivate apenas quando o usuário marca a opção', async () => {
+it('sends keepPrivate only when user checks the option', async () => {
   const fetchMock = vi.fn(async (url: string) => ({
     ok: true,
     status: 200,
@@ -78,7 +78,7 @@ it('envia keepPrivate apenas quando o usuário marca a opção', async () => {
   expect(JSON.parse(init.body).keepPrivate).toBe(true);
 });
 
-it('pede nova revisão quando a configuração mudou', async () => {
+it('prompts for new review when configuration has changed', async () => {
   const fetchMock = vi.fn(async (url: string) =>
     url.endsWith('preview')
       ? { ok: true, status: 200, json: async () => preview }
@@ -92,7 +92,7 @@ it('pede nova revisão quando a configuração mudou', async () => {
   expect(screen.queryByRole('button', { name: /Importar/ })).toBeNull();
 });
 
-it('recusa arquivos grandes sem chamar o servidor e descarta a prévia', async () => {
+it('rejects large files without calling server and discards preview', async () => {
   const fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
   render(<ConfigTransfer onImported={() => {}} />);
@@ -103,7 +103,7 @@ it('recusa arquivos grandes sem chamar o servidor e descarta a prévia', async (
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-it('não oferece importar quando não há nada novo', async () => {
+it('does not offer import when there is nothing new', async () => {
   const empty: Preview = {
     version: 1,
     plan: {
@@ -123,7 +123,7 @@ it('não oferece importar quando não há nada novo', async () => {
   expect((button as HTMLButtonElement).disabled).toBe(true);
 });
 
-it('envia a origem escolhida, refaz a prévia ao trocar de formato e oculta a opção de rede privada', async () => {
+it('sends selected source, regenerates preview on format switch, and hides private network option', async () => {
   const fetchMock = vi.fn(async (url: string) => ({
     ok: true,
     status: 200,

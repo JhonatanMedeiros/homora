@@ -7,7 +7,7 @@ export const root = fileURLToPath(new URL('../../../', import.meta.url));
 export function parseAllowedOrigins(value: string | undefined): string[] {
   if (value === undefined || value.trim() === '') return [];
   const origins = value.split(',').map((part) => part.trim());
-  if (origins.some((origin) => !origin)) throw new Error('Origem permitida inválida.');
+  if (origins.some((origin) => !origin)) throw new Error('Invalid allowed origin.');
   return [
     ...new Set(
       origins.map((origin) => {
@@ -15,7 +15,7 @@ export function parseAllowedOrigins(value: string | undefined): string[] {
         try {
           parsed = new URL(origin);
         } catch {
-          throw new Error('Origem permitida inválida.');
+          throw new Error('Invalid allowed origin.');
         }
         if (
           !['http:', 'https:'].includes(parsed.protocol) ||
@@ -24,7 +24,7 @@ export function parseAllowedOrigins(value: string | undefined): string[] {
           parsed.password ||
           (parsed.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(parsed.hostname))
         )
-          throw new Error('Origem permitida inválida. Use HTTPS ou HTTP apenas em localhost.');
+          throw new Error('Invalid allowed origin. Use HTTPS, or HTTP only on localhost.');
         return parsed.origin;
       }),
     ),
@@ -35,17 +35,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   const port = (value: string | undefined, fallback: number) => {
     const result = value === undefined ? fallback : Number(value);
     if (!Number.isInteger(result) || result < 1 || result > 65535)
-      throw new Error('Porta inválida na configuração.');
+      throw new Error('Invalid port in configuration.');
     return result;
   };
   const apiPort = port(env.HOMORA_API_PORT, 3000);
   const webPort = port(env.HOMORA_WEB_PORT, 5173);
-  if (apiPort === webPort) throw new Error('As portas da API e da interface devem ser diferentes.');
+  if (apiPort === webPort) throw new Error('API and web interface ports must be different.');
   const bindHost = env.HOMORA_BIND_HOST ?? '127.0.0.1';
-  if (!['127.0.0.1', '0.0.0.0'].includes(bindHost)) throw new Error('Endereço de escuta inválido.');
+  if (!['127.0.0.1', '0.0.0.0'].includes(bindHost)) throw new Error('Invalid bind host.');
   const allowedOrigins = parseAllowedOrigins(env.HOMORA_ALLOWED_ORIGINS);
   if (!['true', 'false', undefined, ''].includes(env.HOMORA_TRUST_PROXY))
-    throw new Error('HOMORA_TRUST_PROXY deve ser true ou false.');
+    throw new Error('HOMORA_TRUST_PROXY must be true or false.');
   return {
     bindHost,
     apiPort,

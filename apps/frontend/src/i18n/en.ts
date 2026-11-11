@@ -5,7 +5,7 @@ import { en as connections } from './messages/connections';
 import { en as transfer } from './messages/transfer';
 import { en as apiErrors } from './messages/api-errors';
 
-/** Fonte das chaves: toda língua precisa ter exatamente estas mensagens. */
+/** Source of truth for translation keys: every language must provide these exact keys. */
 export const en = {
   ...core,
   ...agents,

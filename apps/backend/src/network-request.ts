@@ -8,12 +8,12 @@ export type RequestOptions = {
   headers?: Readonly<Record<string, string>>;
   ca?: string;
   timeoutMs?: number;
-  /** Devolve o código 3xx em vez de falhar. O redirecionamento continua sem ser seguido. */
+  /** Returns 3xx status code instead of failing. Redirect is not followed. */
   reportRedirect?: boolean;
 };
 export type AuthorizedResponse = { status: number; body: string };
 
-/** Consulta somente leitura, fixando DNS e sem seguir redirecionamentos. */
+/** Read-only query, pinning DNS and not following redirects. */
 export async function getAuthorizedResponse(
   destination: string,
   policy: DestinationPolicy,
@@ -31,24 +31,22 @@ export async function getAuthorizedResponse(
       /[\r\n]/.test(value) ||
       headers[name] !== undefined
     )
-      throw new Error('Cabeçalhos da integração inválidos.');
+      throw new Error('Invalid integration headers.');
     headers[name] = value;
   }
   const dnsTimer = AbortSignal.timeout(timeoutMs);
   const { url, address } = await Promise.race([
     authorizeDestination(destination, policy),
     new Promise<never>((_, reject) =>
-      dnsTimer.addEventListener(
-        'abort',
-        () => reject(new Error('Tempo de resolução DNS esgotado.')),
-        { once: true },
-      ),
+      dnsTimer.addEventListener('abort', () => reject(new Error('DNS resolution timed out.')), {
+        once: true,
+      }),
     ),
   ]);
   const remainingMs = timeoutMs - (Date.now() - startedAt);
-  if (remainingMs <= 0) throw new Error('Tempo limite excedido.');
+  if (remainingMs <= 0) throw new Error('Timeout exceeded.');
   if (url.protocol !== 'https:' && (headers.authorization || headers['x-api-key']))
-    throw new Error('Credenciais exigem uma conexão HTTPS.');
+    throw new Error('Credentials require an HTTPS connection.');
   const pinnedLookup: LookupFunction = (_host, lookupOptions, callback) => {
     if (lookupOptions.all) callback(null, [{ address: address.address, family: address.family }]);
     else callback(null, address.address, address.family);
@@ -73,7 +71,7 @@ export async function getAuthorizedResponse(
             resolve({ status, body: '' });
             return;
           }
-          reject(new Error(`Redirecionamento HTTP ${status} não permitido.`));
+          reject(new Error(`HTTP ${status} redirect not allowed.`));
           return;
         }
         if (status < 200 || status >= 300) {
@@ -86,34 +84,33 @@ export async function getAuthorizedResponse(
         res.on('data', (chunk: Buffer) => {
           length += chunk.length;
           if (length > 262144) {
-            req.destroy(new Error('Resposta excedeu o limite.'));
+            req.destroy(new Error('Response exceeded limit.'));
             return;
           }
           chunks.push(chunk);
         });
-        res.on('aborted', () => reject(new Error('Resposta incompleta.')));
-        res.on('error', () => reject(new Error('Resposta incompleta.')));
+        res.on('aborted', () => reject(new Error('Incomplete response.')));
+        res.on('error', () => reject(new Error('Incomplete response.')));
         res.on('end', () => resolve({ status, body: Buffer.concat(chunks).toString('utf8') }));
       },
     );
-    const timer = setTimeout(() => req.destroy(new Error('Tempo limite excedido.')), remainingMs);
+    const timer = setTimeout(() => req.destroy(new Error('Timeout exceeded.')), remainingMs);
     req.on('close', () => clearTimeout(timer));
-    req.on('error', () => reject(new Error('Falha de conexão.')));
+    req.on('error', () => reject(new Error('Connection failed.')));
   });
 }
 
-/** Compatibilidade com consumidores que esperam somente JSON de resposta HTTP 200. */
+/** Compatibility with consumers expecting only JSON from HTTP 200 response. */
 export async function getAuthorizedJson(
   destination: string,
   policy: DestinationPolicy,
   options?: RequestOptions,
 ): Promise<unknown> {
   const response = await getAuthorizedResponse(destination, policy, options);
-  if (response.status !== 200)
-    throw new Error(`Resposta HTTP ${response.status || 'desconhecida'}.`);
+  if (response.status !== 200) throw new Error(`HTTP response ${response.status || 'unknown'}.`);
   try {
     return JSON.parse(response.body) as unknown;
   } catch {
-    throw new Error('Resposta JSON inválida.');
+    throw new Error('Invalid JSON response.');
   }
 }

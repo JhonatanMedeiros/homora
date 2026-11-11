@@ -64,12 +64,12 @@ export function createAdGuardAdapter(
           authorization: `Basic ${Buffer.from(`${safe.username}:${safe.password}`, 'utf8').toString('base64')}`,
         });
       } catch {
-        throw new Error('Não foi possível conectar ao AdGuard Home.');
+        throw new Error('Could not connect to AdGuard Home.');
       }
       if (response.status === 401 || response.status === 403)
-        throw new Error('O AdGuard Home recusou a autenticação ou o acesso.');
+        throw new Error('AdGuard Home refused authentication or access.');
       if (response.status !== 200 || !response.body || typeof response.body !== 'object')
-        throw new Error('Resposta inválida do AdGuard Home.');
+        throw new Error('Invalid response from AdGuard Home.');
       const body = response.body as Record<string, unknown>;
       if (
         typeof body.running !== 'boolean' ||
@@ -78,7 +78,7 @@ export function createAdGuardAdapter(
         body.version.length > 128 ||
         body.version.includes(safe.password)
       )
-        throw new Error('Resposta inválida do AdGuard Home.');
+        throw new Error('Invalid response from AdGuard Home.');
       return {
         running: body.running,
         protectionEnabled: body.protection_enabled,

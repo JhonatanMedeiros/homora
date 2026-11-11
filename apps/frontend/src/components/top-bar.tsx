@@ -11,7 +11,7 @@ function useNow() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const tick = () => setNow(new Date());
-    // Atualiza no início de cada minuto, sem reagir a cada segundo.
+    // Updates at the start of each minute, without ticking every second.
     const timer = window.setTimeout(
       () => {
         tick();
@@ -23,7 +23,7 @@ function useNow() {
   return now;
 }
 
-/** Faixa opcional com data, hora e os recursos do sistema que o Proxmox informa. */
+/** Optional top bar showing date, time, and system resources from Proxmox. */
 export function TopBar() {
   const { locale } = useI18n();
   const now = useNow();

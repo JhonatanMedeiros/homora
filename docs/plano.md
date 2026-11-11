@@ -1,51 +1,51 @@
-# Plano de entrega
+# Delivery Plan
 
-Este documento registra a visão geral das fases (checklist atualizado em 2026-11-10; a direção posterior está em [estratégia](estrategia.md)). Para a sequência priorizada, o
-estado atual e os critérios de conclusão de cada etapa, consulte o
-[plano de evolução](evolucao.md).
+This document outlines phase overviews (checklist updated on 2026-11-10; forward-looking direction is in [strategy](estrategia.md)). For prioritized sequencing,
+current state, and completion criteria for each milestone, consult the
+[evolution plan](evolucao.md).
 
-## Fase 0 — validação
+## Phase 0 — Validation
 
-- [x] Avaliar dashboards existentes e registrar lacunas reais em
-      [avaliação de produto e concorrência](avaliacao-produto.md); a hipótese de
-      posicionamento ainda precisa ser validada com usuários.
-- [ ] Definir nome final, público e exemplos de uso; verificar disponibilidade do nome e marca.
-- [x] Escolher stack (Fastify, React, SQLite), formato de distribuição (Docker
-      Compose) e modelo de autenticação (conta local) após protótipo técnico.
+- [x] Evaluate existing dashboards and document real gaps in
+      [product and competitor evaluation](avaliacao-produto.md); positioning hypothesis
+      still needs validation with users.
+- [ ] Finalize name, target audience, and usage examples; verify name and trademark availability.
+- [x] Choose tech stack (Fastify, React, SQLite), distribution format (Docker
+      Compose), and authentication model (local account) following technical prototype.
 
-## Fase 1 — fundação
+## Phase 1 — Foundation
 
-- [x] Criar estrutura do projeto, desenvolvimento local, formatação, análise estática e CI.
-- [x] Implementar autenticação, persistência, migrações, backup e restauração.
-- [ ] Modelar serviços e grupos (feito); interface responsiva e acessível (feita,
-      mas sem validação com leitor de tela e aparelho móvel real; ver P1).
-- [x] Testar operações, persistência, acesso não autorizado e restauração.
+- [x] Set up repository structure, local development, formatting, static analysis, and CI.
+- [x] Implement authentication, persistence, migrations, backup, and restore.
+- [ ] Model services and groups (done); responsive and accessible UI (done,
+      but pending validation with screen readers and real mobile hardware; see P1).
+- [x] Test operations, persistence, unauthorized access, and restoration.
 
-## Fase 2 — observabilidade e Proxmox
+## Phase 2 — Observability and Proxmox
 
-- [x] Implementar verificação periódica com limites, cache e indicação de atualização.
-- [ ] Criar adaptador Proxmox com token de leitura e validação TLS (implementado;
-      conexão com CA importada funcionou no ambiente do mantenedor, permissões
-      reduzidas e falhas ainda não validadas).
-- [ ] Exibir inventário (feito) e oferecer sugestões revisáveis (pendente), sem modificar infraestrutura.
-- [ ] Testar indisponibilidade, credenciais inválidas, permissões reduzidas e proteção de destinos
-      (proteção de destinos testada; o restante depende de Proxmox real).
+- [x] Implement periodic health checks with timeouts, caching, and refresh indicators.
+- [ ] Create Proxmox adapter with read token and TLS validation (implemented;
+      connection with imported CA succeeded in maintainer environment, reduced
+      permissions and failure scenarios pending validation).
+- [ ] Display inventory (done) and provide reviewable suggestions (pending), without modifying infrastructure.
+- [ ] Test unavailability, invalid credentials, reduced permissions, and destination policies
+      (destination protection tested; remainder depends on real Proxmox setup).
 
-## Fase 3 — MCP e aprovação
+## Phase 3 — MCP and Approval
 
-Implementada: agentes têm identidade, escopos e revogação; o MCP oferece
-consultas e propostas; a interface revisa propostas com diff e expiração; e a
-aplicação registra auditoria sob transação. A validação visual manual,
-concorrência sob carga e injeção em respostas reais continuam pendentes; veja o
-[plano de evolução](evolucao.md) para o estado atualizado.
+Implemented: agents have identity, scopes, and revocation; MCP offers
+queries and proposals; UI reviews proposals with diff and expiration; and
+application records audits under database transactions. Manual visual validation,
+high concurrency load testing, and injection tests against real responses remain pending;
+see [evolution plan](evolucao.md) for latest status.
 
-## Fase 4 — distribuição e validação
+## Phase 4 — Distribution and Validation
 
-- [ ] Documentar instalação, configuração, recuperação, atualização e limitações.
-- [ ] Criar imagem reproduzível e testar instalação limpa e upgrade preservando dados.
-- [ ] Validar os critérios do MVP com um ambiente real e registrar melhorias.
-- [ ] Avaliar script de instalação para Proxmox e integrações adicionais conforme demanda.
+- [ ] Document installation, configuration, recovery, upgrades, and limitations.
+- [ ] Create reproducible Docker image and verify clean install and upgrade data preservation.
+- [ ] Validate MVP acceptance criteria in a real environment and log improvements.
+- [ ] Evaluate Proxmox helper install script and additional integrations based on user demand.
 
-## Riscos e decisões abertas
+## Risks and Open Decisions
 
-Descoberta pode produzir sugestões incorretas; integração precisa de confirmação. Verificações de URLs internas aumentam a superfície de SSRF; definir política de destinos antes de implementá-las. Perda da chave de criptografia pode impedir recuperação de credenciais; documentar backup e rotação. Modelo de acesso remoto, identidade MCP e armazenamento de segredos exigem prova de conceito antes da implementação definitiva. Não há estimativas de prazo sem conhecer disponibilidade e requisitos adicionais.
+Discovery can produce incorrect suggestions; integrations require confirmation. Health checking internal URLs increases SSRF surface; define strict destination policy before expanding. Loss of encryption key prevents credential recovery; document backup and rotation. Remote access model, MCP identity, and secret storage require proof of concept before production commitment. No time estimates can be guaranteed without knowing resource availability and additional requirements.

@@ -36,32 +36,32 @@ function setup(trustProxy: boolean) {
   };
 }
 
-it('atrás do proxy de confiança, cada cliente tem o próprio limite de tentativas', async () => {
+it('behind trusted proxy, each client has their own rate limit bucket', async () => {
   const { login, done } = setup(true);
   try {
-    for (let i = 0; i < 5; i++) expect((await login('errada', '203.0.113.7')).statusCode).toBe(401);
-    // o cliente que errou fica bloqueado, mesmo com a senha certa...
+    for (let i = 0; i < 5; i++) expect((await login('wrong', '203.0.113.7')).statusCode).toBe(401);
+    // client that failed is locked out, even with correct password...
     expect((await login(PASSWORD, '203.0.113.7')).statusCode).toBe(401);
-    // ...mas outro cliente continua podendo entrar
+    // ...but another client can still authenticate
     expect((await login(PASSWORD, '198.51.100.9')).statusCode).toBe(200);
   } finally {
     await done();
   }
 });
 
-it('sem proxy de confiança o cabeçalho é ignorado, então forjá-lo não escapa do limite', async () => {
+it('without trusted proxy header is ignored, so spoofing it does not bypass the limit', async () => {
   const { login, done } = setup(false);
   try {
     for (let i = 0; i < 5; i++)
-      expect((await login('errada', `203.0.113.${i}`)).statusCode).toBe(401);
-    // trocar o IP informado não zera o contador: o cliente real é o mesmo
+      expect((await login('wrong', `203.0.113.${i}`)).statusCode).toBe(401);
+    // changing the reported IP does not reset the counter: real TCP peer is the same
     expect((await login(PASSWORD, '198.51.100.9')).statusCode).toBe(401);
   } finally {
     await done();
   }
 });
 
-it('lê HOMORA_TRUST_PROXY e recusa valores ambíguos', () => {
+it('reads HOMORA_TRUST_PROXY and rejects ambiguous values', () => {
   expect(loadConfig({}).trustProxy).toBe(false);
   expect(loadConfig({ HOMORA_TRUST_PROXY: 'false' }).trustProxy).toBe(false);
   expect(loadConfig({ HOMORA_TRUST_PROXY: 'true' }).trustProxy).toBe(true);

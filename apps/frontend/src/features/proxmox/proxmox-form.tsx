@@ -23,7 +23,7 @@ type Props = {
   onCancel: () => void;
 };
 
-/** Credenciais de leitura do Proxmox, com CA opcional e teste sem salvar. */
+/** Proxmox read-only credentials, with optional CA and test without saving. */
 export function ProxmoxForm(p: Props) {
   return (
     <form onSubmit={(e) => p.onSubmit(e)}>

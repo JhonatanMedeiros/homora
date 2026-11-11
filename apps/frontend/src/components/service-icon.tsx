@@ -3,8 +3,8 @@ import { brandIconUrl, iconKind, iconRegistry } from '@/lib/icons';
 import { upper } from '@/i18n';
 
 /**
- * Ícone de um serviço: nome embutido (`lucide:server`), logo de marca (`brand:plex`), imagem por URL, emoji ou texto
- * curto. Se o nome não existe ou a imagem não carrega, usa a inicial do nome.
+ * Service icon: built-in name (`lucide:server`), brand logo (`brand:plex`), image by URL, emoji, or short
+ * text. If the name does not exist or the image fails to load, uses the initial of the name.
  */
 export function ServiceIcon({ icon, name }: { icon?: string; name: string }) {
   const value = icon ?? '';

@@ -15,11 +15,11 @@ export type ServiceGroup = {
   id: number;
   name: string;
   position: number;
-  /** Colunas da grade em telas largas (1 a 6); nulo é o ajuste automático. */
+  /** Grid columns on wide viewports (1 to 6); null falls back to automatic responsive grid. */
   columns?: number | null;
 };
 export type Availability = 'available' | 'unavailable' | 'unknown';
-/** Motivo do estado, vindo do monitor; ausente em respostas de versões anteriores. */
+/** Health probe status reason from monitor; absent in responses from older versions. */
 export type StatusReason =
   | 'responding'
   | 'redirect'
@@ -45,7 +45,7 @@ export function hostOf(url: string) {
   }
 }
 
-// Endereços que a política de rede do monitor só consulta com autorização explícita.
+// Addresses that the monitor network policy only polls with explicit authorization.
 export function isPrivateHost(url: string) {
   let host: string;
   try {

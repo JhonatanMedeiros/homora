@@ -22,10 +22,10 @@ const knownBrands = new Set<string>(BRAND_ICON_NAMES);
 const EMOJI = /^\p{Extended_Pictographic}/u;
 
 /**
- * Converte o ícone de outro painel para um formato do Homora. Só mapeia o que existe de
- * fato: URL, emoji e nomes que coincidem com um logo de marca ou ícone embutido (`proxmox.png`,
- * `sh-plex`, `hl-jellyfin` viram `brand:`; `mdi-server` vira `lucide:`). Nada é buscado em CDN.
- * Devolve `unsupported` quando havia um ícone que não pôde ser mantido.
+ * Converts an icon from another dashboard to a Homora format. Only maps what actually
+ * exists: URL, emoji, and names that match a brand logo or built-in icon (`proxmox.png`,
+ * `sh-plex`, `hl-jellyfin` become `brand:`; `mdi-server` becomes `lucide:`). Nothing is fetched from CDN.
+ * Returns `unsupported` when an icon could not be retained.
  */
 export function mapIcon(raw: unknown): { icon: string; unsupported: boolean } {
   if (typeof raw !== 'string' || !raw.trim()) return { icon: '', unsupported: false };
@@ -46,7 +46,7 @@ export function mapIcon(raw: unknown): { icon: string; unsupported: boolean } {
   const brand = [candidate, candidate.replace(/-(?:light|dark)$/, '')].find((name) =>
     knownBrands.has(name),
   );
-  // Fontes de ícones genéricos (fa, mdi) não são logos de marca; as demais podem ser.
+  // Generic icon prefixes (fa, mdi) are not brand logos; other prefixes may be.
   if (brand && prefix !== 'fa' && prefix !== 'mdi')
     return { icon: `brand:${brand}`, unsupported: false };
   return knownIcons.has(candidate)
@@ -122,7 +122,7 @@ export function add(
   group.services.push(service);
 }
 
-/** Entrada `- Nome: valor` de uma lista do Homepage; devolve o par ou null. */
+/** `- Name: value` entry from a Homepage list; returns the pair or null. */
 function entryOf(item: unknown): [string, unknown] | null {
   if (!isRecord(item)) return null;
   const keys = Object.keys(item);
@@ -176,8 +176,8 @@ function walkHomepage(
 }
 
 /**
- * `services.yaml` e `bookmarks.yaml` do Homepage (mesmo esqueleto de grupos). Grupos
- * aninhados viram "Pai / Filho". Monitoramento, widgets e Docker não são importados.
+ * Homepage `services.yaml` and `bookmarks.yaml` (same group structure). Nested
+ * groups become "Parent / Child". Monitoring, widgets, and Docker are not imported.
  */
 export function parseHomepage(content: string): ParsedImport {
   const raw = load(content);
@@ -190,8 +190,8 @@ export function parseHomepage(content: string): ParsedImport {
 }
 
 /**
- * `conf.yml` do Dashy: seções viram grupos e itens viram cards; `subItems` viram cards
- * "Item / Sub". Outras páginas listadas em `pages` não são lidas.
+ * Dashy `conf.yml`: sections become groups and items become cards; `subItems` become
+ * "Item / Sub" cards. Other pages listed in `pages` are not read.
  */
 export function parseDashy(content: string): ParsedImport {
   const raw = load(content);

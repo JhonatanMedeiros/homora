@@ -15,14 +15,14 @@ function read(): boolean {
   }
 }
 
-/** Preferência (por navegador) de mostrar a faixa superior. Desligada por padrão. */
+/** Browser-local preference to display the top telemetry bar. Disabled by default. */
 export function useTopBar(): [boolean, (value: boolean) => void] {
   const enabled = useSyncExternalStore(subscribe, read, () => false);
   const set = useCallback((value: boolean) => {
     try {
       localStorage.setItem(KEY, value ? 'on' : 'off');
     } catch {
-      // Sem armazenamento: a preferência vale só até recarregar.
+      // Without storage: preference is retained in-memory only.
     }
     listeners.forEach((listener) => listener());
   }, []);

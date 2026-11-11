@@ -37,7 +37,7 @@ type Props = {
   onToggleAll: () => void;
 };
 
-/** Nós com uso de CPU e memória, resumo do inventário e lista de VMs e containers. */
+/** Nodes with CPU and memory usage, inventory summary, and list of VMs and containers. */
 export function ProxmoxResources({ resources, checkedAt, showAll, onToggleAll }: Props) {
   const nodes = resources.filter((r) => r.type === 'node');
   const guests = resources.filter((r) => r.type === 'qemu' || r.type === 'lxc');
@@ -45,7 +45,7 @@ export function ProxmoxResources({ resources, checkedAt, showAll, onToggleAll }:
   return (
     <div className="flex flex-col gap-4">
       {nodes.map((node, index) => {
-        // A API do Proxmox identifica o nó em `node`; `name` fica como alternativa.
+        // Proxmox API identifies node in 'node'; 'name' serves as fallback.
         const label = node.node ?? node.name ?? t('proxmox.unnamed');
         return (
           <div key={`${label}:${index}`} className="flex flex-col gap-3 rounded-md border p-3">

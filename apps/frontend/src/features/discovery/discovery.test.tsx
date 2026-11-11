@@ -13,14 +13,14 @@ const found = {
   scanned: 5,
   version: 7,
   entries: [
-    { id: 'aaaaaaaaaaa1', container: 'jellyfin', group: 'Mídia', url: 'http://192.168.1.10:8096/' },
-    { id: 'aaaaaaaaaaa2', container: 'sonarr', group: 'Mídia', url: 'http://192.168.1.10:8989/' },
+    { id: 'aaaaaaaaaaa1', container: 'jellyfin', group: 'Media', url: 'http://192.168.1.10:8096/' },
+    { id: 'aaaaaaaaaaa2', container: 'sonarr', group: 'Media', url: 'http://192.168.1.10:8989/' },
   ],
   plan: {
-    groups: [{ name: 'Mídia', status: 'new' }],
+    groups: [{ name: 'Media', status: 'new' }],
     services: [
-      { group: 'Mídia', name: 'jellyfin', url: 'http://192.168.1.10:8096/', status: 'new' },
-      { group: 'Mídia', name: 'Sonarr', url: 'http://192.168.1.10:8989/', status: 'duplicate' },
+      { group: 'Media', name: 'jellyfin', url: 'http://192.168.1.10:8096/', status: 'new' },
+      { group: 'Media', name: 'Sonarr', url: 'http://192.168.1.10:8989/', status: 'duplicate' },
     ],
     issues: [{ path: 'containers[3]', code: 'invalid-url', severity: 'error' }],
     summary: { newGroups: 1, newServices: 1, duplicates: 1, errors: 1, warnings: 0 },
@@ -32,7 +32,7 @@ const ok = (body: unknown, status = 200) => ({
   json: async () => body,
 });
 
-it('explica como ativar quando a descoberta está desligada', async () => {
+it('explains how to enable discovery when disabled', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => ok({ enabled: false })),
@@ -42,7 +42,7 @@ it('explica como ativar quando a descoberta está desligada', async () => {
   expect(screen.queryByRole('button', { name: /Adicionar selecionados/ })).toBeNull();
 });
 
-it('lista as sugestões, só deixa marcar o que é novo e envia apenas os IDs escolhidos', async () => {
+it('lists suggestions, allows checking only new items, and sends selected IDs', async () => {
   const calls: { url: string; body?: string }[] = [];
   vi.stubGlobal(
     'fetch',
@@ -55,7 +55,7 @@ it('lista as sugestões, só deixa marcar o que é novo e envia apenas os IDs es
   render(<Discovery onImported={onImported} />);
   const boxes = await screen.findAllByRole('checkbox');
   expect(screen.getByText('Contêiner: jellyfin')).toBeTruthy();
-  // [0] jellyfin (novo), [1] sonarr (duplicado, desabilitado), [2] rede privada
+  // [0] jellyfin (new), [1] sonarr (duplicate, disabled), [2] private network
   expect(boxes[1].hasAttribute('disabled') || boxes[1].getAttribute('data-disabled') !== null).toBe(
     true,
   );
@@ -76,7 +76,7 @@ it('lista as sugestões, só deixa marcar o que é novo e envia apenas os IDs es
   expect(await screen.findByText('1 cards adicionados.')).toBeTruthy();
 });
 
-it('mostra o erro traduzido quando o Docker não responde', async () => {
+it('displays translated error when Docker daemon does not respond', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => ok({ code: 'docker-unavailable', error: 'x' }, 502)),

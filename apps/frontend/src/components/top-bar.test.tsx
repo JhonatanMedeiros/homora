@@ -17,7 +17,7 @@ function stubApi(routes: Record<string, () => Response>) {
 }
 const json = (body: unknown) => () => new Response(JSON.stringify(body));
 
-it('mostra CPU, memória e disco do Proxmox sem expor VMs e containers', async () => {
+it('displays CPU, memory, and disk from Proxmox without exposing VMs and containers', async () => {
   stubApi({
     '/api/widgets': json([
       { id: 1, integrationId: 9, type: 'proxmox', name: 'PVE', serviceId: null },
@@ -40,7 +40,7 @@ it('mostra CPU, memória e disco do Proxmox sem expor VMs e containers', async (
   expect(screen.queryByText('VMs')).toBeNull();
 });
 
-it('mostra só o relógio quando não há widget do Proxmox', async () => {
+it('displays clock only when no Proxmox widget exists', async () => {
   stubApi({ '/api/widgets': json([]) });
   render(<TopBar />);
   await waitFor(() => expect(fetch).toHaveBeenCalled());
@@ -48,7 +48,7 @@ it('mostra só o relógio quando não há widget do Proxmox', async () => {
   expect(screen.queryByText('Recursos do sistema indisponíveis')).toBeNull();
 });
 
-it('avisa quando os recursos não carregam', async () => {
+it('warns when system resources fail to load', async () => {
   stubApi({
     '/api/widgets': json([
       { id: 1, integrationId: 9, type: 'proxmox', name: 'PVE', serviceId: null },
@@ -59,7 +59,7 @@ it('avisa quando os recursos não carregam', async () => {
   await waitFor(() => expect(screen.getByText('Recursos do sistema indisponíveis')).toBeTruthy());
 });
 
-it('aceita respostas do Proxmox sem disco e rejeita disco inválido', () => {
+it('accepts Proxmox responses without disk and rejects invalid disk values', () => {
   const base = { vms: { running: 0, total: 0 }, containers: { running: 0, total: 0 } };
   expect(widgetStats('proxmox', { ...base, cpu: 1, memory: 2 })?.some((s) => s.id === 'disk')).toBe(
     false,

@@ -12,19 +12,19 @@ import {
   integrationInstances,
   integrationWidgets,
 } from './index.js';
-it('adota o banco anterior e preserva seus dados em reinicializações', async () => {
+it('adopts legacy database and preserves its data across restarts', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-migration-')),
     path = join(dir, 'data.sqlite');
   try {
     const old = new DatabaseSync(path);
     old.exec(
-      "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, category TEXT NOT NULL, description TEXT NOT NULL); INSERT INTO services VALUES (1, 'Jellyfin', 'http://localhost/', 'Mídia', '');",
+      "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, category TEXT NOT NULL, description TEXT NOT NULL); INSERT INTO services VALUES (1, 'Jellyfin', 'http://localhost/', 'Media', '');",
     );
     old.close();
     let database = createDatabase(path);
     expect((await database.db.select().from(services))[0].name).toBe('Jellyfin');
     expect((await database.db.select().from(serviceGroups)).map(({ name }) => name)).toEqual([
-      'Mídia',
+      'Media',
     ]);
     expect((await database.db.select().from(services))[0].position).toBe(0);
     expect((await database.db.select().from(services))[0].allowPrivate).toBe(false);
@@ -37,24 +37,24 @@ it('adota o banco anterior e preserva seus dados em reinicializações', async (
   }
 });
 
-it('adiciona integrações e widgets ao banco anterior sem alterar serviços e preserva referências', async () => {
+it('adds integrations and widgets to legacy database without altering services and preserves references', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-integration-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
     const old = new DatabaseSync(path);
     old.exec(
-      "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, category TEXT NOT NULL, description TEXT NOT NULL); INSERT INTO services VALUES (1, 'Aplicativo', 'http://localhost/', 'Casa', '');",
+      "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, category TEXT NOT NULL, description TEXT NOT NULL); INSERT INTO services VALUES (1, 'App', 'http://localhost/', 'Home', '');",
     );
     old.close();
     let database = createDatabase(path);
     const [instance] = await database.db
       .insert(integrationInstances)
-      .values({ type: 'proxmox', name: 'Infraestrutura', secretRef: 'legacy-proxmox' })
+      .values({ type: 'proxmox', name: 'Infrastructure', secretRef: 'legacy-proxmox' })
       .returning();
     await database.db
       .insert(integrationWidgets)
-      .values({ integrationId: instance.id, type: 'inventory', name: 'Recursos' });
-    expect((await database.db.select().from(services))[0].name).toBe('Aplicativo');
+      .values({ integrationId: instance.id, type: 'inventory', name: 'Resources' });
+    expect((await database.db.select().from(services))[0].name).toBe('App');
     expect((await database.db.select().from(services))[0].allowPrivate).toBe(false);
     await expect(database.db.delete(integrationInstances)).rejects.toThrow();
     database.close();
@@ -69,14 +69,14 @@ it('adiciona integrações e widgets ao banco anterior sem alterar serviços e p
     rmSync(dir, { recursive: true, force: true });
   }
 });
-it('rejeita esquema anterior incompatível sem apagá-lo', () => {
+it('rejects incompatible previous schema without erasing it', () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-migration-')),
     path = join(dir, 'data.sqlite');
   try {
     const old = new DatabaseSync(path);
     old.exec('CREATE TABLE services (id INTEGER PRIMARY KEY, custom TEXT)');
     old.close();
-    expect(() => createDatabase(path)).toThrow('incompatível');
+    expect(() => createDatabase(path)).toThrow('Incompatible');
     const check = new DatabaseSync(path);
     expect(check.prepare('PRAGMA table_info(services)').all()).toHaveLength(2);
     check.close();
@@ -85,7 +85,7 @@ it('rejeita esquema anterior incompatível sem apagá-lo', () => {
   }
 });
 
-it('atualiza banco com primeira migração já registrada e mantém dados', async () => {
+it('upgrades database with first migration already registered and preserves data', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-versioned-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
@@ -101,11 +101,11 @@ it('atualiza banco com primeira migração já registrada e mantém dados', asyn
       .prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)')
       .run(migration.hash, migration.folderMillis);
     old.exec(
-      "INSERT INTO services (id, name, url, category, description) VALUES (5, 'Existente', 'http://localhost/', 'Casa', '')",
+      "INSERT INTO services (id, name, url, category, description) VALUES (5, 'Existing', 'http://localhost/', 'Home', '')",
     );
     old.close();
     const db = createDatabase(path);
-    expect((await db.db.select().from(services))[0].name).toBe('Existente');
+    expect((await db.db.select().from(services))[0].name).toBe('Existing');
     expect(await db.db.select().from(integrationInstances)).toEqual([]);
     db.close();
   } finally {

@@ -18,16 +18,16 @@ vi.mock('node:child_process', () => ({ execFile: vi.fn() }));
 
 const service = (id: number, url: string): Service => ({
   id,
-  name: `Serviço ${id}`,
+  name: `Service ${id}`,
   url,
-  category: 'Teste',
+  category: 'Test',
   description: '',
 });
 
 const ok = { httpStatus: 200, latencyMs: 12 };
 
-describe('monitoramento de serviços', () => {
-  it('classifica o código HTTP sem tratar login ou redirecionamento como queda', () => {
+describe('service monitoring', () => {
+  it('classifies HTTP status code without treating login or redirect as downtime', () => {
     expect(classify(200)).toEqual({ status: 'available', reason: 'responding' });
     expect(classify(204)).toEqual({ status: 'available', reason: 'responding' });
     expect(classify(302)).toEqual({ status: 'available', reason: 'redirect' });
@@ -38,7 +38,7 @@ describe('monitoramento de serviços', () => {
     expect(classify(503)).toEqual({ status: 'unavailable', reason: 'error-status' });
   });
 
-  it('guarda o código HTTP e a latência de cada verificação', async () => {
+  it('stores HTTP status code and latency of each check', async () => {
     const codes = [302, 401, 404, 500];
     const monitor = createServiceMonitor(
       async () => codes.map((_, index) => service(index + 1, `https://s${index}.example`)),
@@ -52,7 +52,7 @@ describe('monitoramento de serviços', () => {
     expect(snapshot[4]).toMatchObject({ status: 'unavailable', reason: 'error-status' });
   });
 
-  it('nega por padrão e permite explicitamente privado mantendo a política comum', async () => {
+  it('denies by default and explicitly allows private while keeping standard policy', async () => {
     vi.mocked(getAuthorizedResponse).mockResolvedValue({ status: 204, body: '' });
     expect(await checkService('https://public.example/status')).toMatchObject({ httpStatus: 204 });
     expect(getAuthorizedResponse).toHaveBeenCalledWith(
@@ -73,7 +73,7 @@ describe('monitoramento de serviços', () => {
     );
   });
 
-  it('passa o opt-in individual ao verificador e mantém falso para serviços antigos', async () => {
+  it('passes individual opt-in to checker and keeps false for legacy services', async () => {
     const check = vi.fn(async () => ok);
     const monitor = createServiceMonitor(
       async () => [
@@ -87,14 +87,14 @@ describe('monitoramento de serviços', () => {
     expect(check).toHaveBeenNthCalledWith(2, 'http://[fd00::1]', true, 'http');
   });
 
-  it('retorna estado desconhecido antes da execução e armazena tentativas com cache', async () => {
+  it('returns unknown status before execution and caches attempts', async () => {
     let time = 1_800_000_000_000;
     const check = vi.fn(async (url: string) => {
-      if (url.includes('falha')) throw new Error('conexão recusada');
+      if (url.includes('fail')) throw new Error('connection refused');
       return ok;
     });
     const monitor = createServiceMonitor(
-      async () => [service(1, 'https://ok.example'), service(2, 'https://falha.example')],
+      async () => [service(1, 'https://ok.example'), service(2, 'https://fail.example')],
       check,
       () => time,
     );
@@ -127,7 +127,7 @@ describe('monitoramento de serviços', () => {
     expect(monitor.snapshot()[1].lastAttempt).toBe(new Date(time).toISOString());
   });
 
-  it('isola falhas do repositório e remove estado de serviços excluídos', async () => {
+  it('isolates repository failures and prunes state for deleted services', async () => {
     let list = [service(1, 'https://ok.example')];
     const monitor = createServiceMonitor(
       async () => list,
@@ -144,7 +144,7 @@ describe('monitoramento de serviços', () => {
     expect(unavailable.snapshot()).toEqual({});
   });
 
-  it('verifica todos os serviços, sem limite fixo de quantidade', async () => {
+  it('checks all services, without a fixed limit on quantity', async () => {
     const services = Array.from({ length: 60 }, (_, index) =>
       service(index + 1, `https://service-${index + 1}.example`),
     );
@@ -155,13 +155,13 @@ describe('monitoramento de serviços', () => {
     expect(Object.values(monitor.snapshot()).every((s) => s.reason === 'responding')).toBe(true);
   });
 
-  it('para de iniciar verificações ao esgotar o orçamento e começa pelos mais antigos no ciclo seguinte', async () => {
+  it('stops initiating checks when budget is exhausted and starts with oldest in next cycle', async () => {
     let time = 1_800_000_000_000;
     const services = Array.from({ length: 12 }, (_, index) =>
       service(index + 1, `https://service-${index + 1}.example`),
     );
-    // Cada verificação "consome" 10 s do relógio, então o orçamento do ciclo se esgota
-    // depois da primeira leva de cinco em paralelo.
+    // Each check "consumes" 10s of clock, so cycle budget is exhausted
+    // after the first batch of five in parallel.
     const checked: string[] = [];
     const check = vi.fn(async (url: string) => {
       checked.push(url);
@@ -184,13 +184,13 @@ describe('monitoramento de serviços', () => {
     checked.length = 0;
     time += 60_001;
     await monitor.run(true);
-    // Os que ficaram sem verificar passam à frente dos já verificados.
+    // Those left unchecked take precedence over already checked ones.
     expect(checked.length).toBeGreaterThan(0);
     const waitingUrls = new Set(waiting.map((id) => `https://service-${id}.example`));
     expect(checked.every((url) => waitingUrls.has(url))).toBe(true);
   });
 
-  it('mantém o estado anterior de um serviço enquanto o ciclo seguinte ainda não o alcançou', async () => {
+  it('maintains previous state of a service while next cycle has not reached it yet', async () => {
     let time = 1_800_000_000_000;
     let code = 200;
     const monitor = createServiceMonitor(
@@ -208,14 +208,14 @@ describe('monitoramento de serviços', () => {
     expect(monitor.snapshot()[1]).toMatchObject({ reason: 'error-status' });
   });
 
-  it('respeita o intervalo de cada serviço e usa 60 s quando não há um definido', async () => {
+  it('respects per-service check interval and uses 60s when none is defined', async () => {
     let time = 1_800_000_000_000;
     const check = vi.fn(async (url: string) => (url ? ok : ok));
     const monitor = createServiceMonitor(
       async () => [
-        { ...service(1, 'https://rapido.example'), checkInterval: 30 },
-        service(2, 'https://padrao.example'),
-        { ...service(3, 'https://lento.example'), checkInterval: 300 },
+        { ...service(1, 'https://fast.example'), checkInterval: 30 },
+        service(2, 'https://default.example'),
+        { ...service(3, 'https://slow.example'), checkInterval: 300 },
       ],
       check,
       () => time,
@@ -224,7 +224,7 @@ describe('monitoramento de serviços', () => {
     expect(check).toHaveBeenCalledTimes(3);
     time += 30_000;
     await monitor.run();
-    expect(check.mock.calls.slice(3).map(([url]) => url)).toEqual(['https://rapido.example']);
+    expect(check.mock.calls.slice(3).map(([url]) => url)).toEqual(['https://fast.example']);
     time += 30_000;
     await monitor.run();
     expect(
@@ -232,14 +232,14 @@ describe('monitoramento de serviços', () => {
         .slice(4)
         .map(([url]) => url)
         .sort(),
-    ).toEqual(['https://padrao.example', 'https://rapido.example']);
+    ).toEqual(['https://default.example', 'https://fast.example']);
     time += 240_000;
     await monitor.run();
-    expect(check.mock.calls.some(([url]) => url === 'https://lento.example')).toBe(true);
-    expect(check.mock.calls.filter(([url]) => url === 'https://lento.example')).toHaveLength(2);
+    expect(check.mock.calls.some(([url]) => url === 'https://slow.example')).toBe(true);
+    expect(check.mock.calls.filter(([url]) => url === 'https://slow.example')).toHaveLength(2);
   });
 
-  it('passa o tipo de verificação e trata ping respondido como disponível', async () => {
+  it('passes check type and treats successful ping as available', async () => {
     const check = vi.fn(async (_url: string, _private?: boolean, type?: string) =>
       type === 'ping' ? { httpStatus: null, latencyMs: 4 } : ok,
     );
@@ -257,7 +257,7 @@ describe('monitoramento de serviços', () => {
     });
   });
 
-  it('ping sem resposta é indisponível; sem o binário ping o serviço fica sem verificação', async () => {
+  it('unanswered ping is unavailable; without ping binary service remains unchecked', async () => {
     let failure: Error = new Error('timeout');
     const monitor = createServiceMonitor(
       async () => [{ ...service(1, 'http://192.168.1.9'), checkType: 'ping' }],
@@ -272,7 +272,7 @@ describe('monitoramento de serviços', () => {
     expect(monitor.snapshot()[1]).toMatchObject({ status: 'unknown', reason: 'unchecked' });
   });
 
-  it('executa o ping só no IP autorizado, sem shell, e lê a latência', async () => {
+  it('executes ping only on authorized IP, without shell, and parses latency', async () => {
     vi.mocked(authorizeDestination).mockResolvedValue({
       url: new URL('http://nas.lan/'),
       address: { address: '192.168.1.7', family: 4 },
@@ -319,7 +319,7 @@ describe('monitoramento de serviços', () => {
     await expect(checkService('http://nas.lan/', true, 'ping')).rejects.toBeInstanceOf(
       PingUnavailableError,
     );
-    vi.mocked(authorizeDestination).mockRejectedValue(new Error('Destino não autorizado.'));
-    await expect(checkService('http://nas.lan/', false, 'ping')).rejects.toThrow('autorizado');
+    vi.mocked(authorizeDestination).mockRejectedValue(new Error('Destination not authorized.'));
+    await expect(checkService('http://nas.lan/', false, 'ping')).rejects.toThrow('authorized');
   });
 });

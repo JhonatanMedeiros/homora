@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 
 type Props = { tab: Tab; onTabChange: (tab: Tab) => void };
 
-/** Navegação inferior no celular, com alvos de 56px. */
+/** Bottom navigation on mobile, with 56px touch targets. */
 export function MobileTabs({ tab, onTabChange }: Props) {
   return (
     <nav

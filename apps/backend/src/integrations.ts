@@ -41,7 +41,7 @@ export function createIntegrationRegistry<T extends IntegrationRegistration>(
 ) {
   const entries = new Map<string, T>();
   for (const adapter of adapters) {
-    if (entries.has(adapter.type)) throw new Error(`Tipo de integração duplicado: ${adapter.type}`);
+    if (entries.has(adapter.type)) throw new Error(`Duplicate integration type: ${adapter.type}`);
     entries.set(adapter.type, adapter);
   }
   return {

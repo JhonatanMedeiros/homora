@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { LabelTape } from '@/components/label-tape';
 import { Separator } from '@/components/ui/separator';
 
-/** Título discreto por padrão; a fita é uma opção explícita. */
+/** Subtle title by default; tape is an explicit choice. */
 export function SectionTitle({
   id,
   children,

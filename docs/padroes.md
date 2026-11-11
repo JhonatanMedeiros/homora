@@ -1,122 +1,117 @@
-# Padrões de engenharia
+# Engineering Standards
 
-Este documento define convenções para manter o Homora simples, previsível e
-seguro enquanto cresce. É um guia de implementação, não uma meta para criar
-camadas ou abstrações sem necessidade. A visão dos módulos e os limites atuais
-estão em [arquitetura](arquitetura.md).
+This document establishes conventions to keep Homora simple, predictable, and
+secure as it grows. It serves as an implementation guide, not a mandate to introduce
+premature abstractions or unnecessary layers. Module boundaries and current constraints
+are documented in [architecture](arquitetura.md).
 
-## Limites entre módulos
+## Module Boundaries
 
-- `apps/frontend` apresenta e coleta dados; não acessa SQLite, arquivos locais,
-  credenciais de integração ou APIs de infraestrutura diretamente.
-- `apps/backend` é o limite confiável para autenticação, autorização, validação,
-  regras de aplicação, integrações e persistência.
-- `packages/shared` contém schemas, tipos e funções puras compartilhados. Não
-  importa código de aplicações, Node-only ou segredos.
-- `packages/db` define esquema, migrações e acesso técnico ao SQLite. Regras de
-  autorização e fluxo de produto pertencem aos serviços de aplicação, não ao
-  schema.
-- Organize módulos por capacidade (serviços, conexões, propostas, agentes), não
-  por abstrações genéricas prematuras. `createApp` deve compor módulos HTTP;
-  cada módulo de rota deve delegar regras reutilizadas a funções testáveis.
-- Evite dependências circulares entre capacidades. O fluxo esperado é interface
-  → API/serviço de aplicação → persistência ou adaptador externo.
+- `apps/frontend` presents and collects data; it never accesses SQLite, local files,
+  integration credentials, or infrastructure APIs directly.
+- `apps/backend` is the trusted boundary for authentication, authorization, validation,
+  business logic, integrations, and persistence.
+- `packages/shared` contains shared schemas, types, and pure utility functions. It never
+  imports application-specific code, Node-only runtime modules, or secrets.
+- `packages/db` defines the SQLite schema, migrations, and technical database access.
+  Authorization logic and product workflows belong in application services, not
+  in the database schema.
+- Organize code by capability (services, connections, proposals, agents), avoiding
+  premature generic abstractions. `createApp` should compose HTTP route modules;
+  each route module should delegate reusable domain rules to testable functions.
+- Prevent circular dependencies between capabilities. Expected control flow is
+  UI → API/application service → persistence or external adapter.
 
-## Interface (frontend)
+## Interface (Frontend)
 
-- A interface usa React, Tailwind CSS v4 e shadcn/ui (base Radix, estilo
-  `new-york`, ícones lucide). `apps/frontend/components.json` configura a CLI;
-  a skill `shadcn` em `.agents/skills/shadcn` orienta agentes. Adicione
-  primitivos com `npx shadcn@latest add <componente>` (dentro de `apps/frontend`)
-  e confira os arquivos gerados: a CLI deste projeto grava o import de `cn`
-  como `"cn"`; corrija para `@/lib/utils`.
-- Todo elemento de UI é um componente: primitivos em `src/components/ui`
-  (shadcn, ajustados aos tokens), componentes do produto em `src/components`
-  (`LabelTape`, `StatusTag`, `ServiceCard`, `AppShell`...), telas em `src/pages`
-  e módulos por capacidade em `src/features`. Estado e chamadas de API ficam em
-  `src/hooks`; regras puras em `src/lib`.
-- Estilo só por tokens semânticos (`bg-primary`, `text-muted-foreground`),
-  definidos em `src/style.css` e documentados em `DESIGN.md`. Não use cores
-  cruas, `space-*`, CSS avulso por tela nem classes genéricas antigas.
-  `className` serve a layout, não a trocar cor ou tipografia de um componente.
-- Formulários usam `FieldGroup`/`Field`; avisos usam `Alert`; vazios, `Empty`;
-  estado de serviço, sempre `StatusTag` (ícone, texto e cor). O tema é a classe
-  `dark` em `<html>` (`useTheme`).
-- Os arquivos em `src/components/ui` seguem o upstream do shadcn; o ESLint os
-  isenta de regras de Fast Refresh e pureza.
+- The UI is built with React, Tailwind CSS v4, and shadcn/ui (Radix primitives,
+  `new-york` style, lucide icons). `apps/frontend/components.json` configures the CLI;
+  the `shadcn` skill in `.agents/skills/shadcn` guides agents. Add primitives with
+  `npx shadcn@latest add <component>` (inside `apps/frontend`) and review generated files:
+  this project's CLI may generate `cn` imports as `"cn"`; correct them to `@/lib/utils`.
+- Every UI element is a component: primitives live in `src/components/ui`
+  (shadcn, aligned with tokens), product components in `src/components`
+  (`LabelTape`, `StatusTag`, `ServiceCard`, `AppSidebar`...), pages in `src/pages`,
+  and capability modules in `src/features`. State and API calls reside in
+  `src/hooks`; pure business rules in `src/lib`.
+- Styling must use semantic tokens (`bg-primary`, `text-muted-foreground`),
+  defined in `src/style.css` and documented in `DESIGN.md`. Do not use hardcoded colors,
+  `space-*` utilities, inline ad-hoc CSS per screen, or legacy generic utility classes.
+  `className` is for layout, not for overriding component colors or typography.
+- Forms use `FieldGroup`/`Field`; alerts use `Alert`; empty states use `Empty`;
+  service status always uses `StatusTag` (icon, text, and color). Theming is driven by
+  the `dark` class on `<html>` (`useTheme`).
+- Files in `src/components/ui` mirror upstream shadcn; ESLint exempts them
+  from Fast Refresh and pure-render checks.
 
-## Contratos e validação
+## Contracts and Validation
 
-- Valide dados não confiáveis na entrada: corpo, parâmetros, query, variáveis de
-  ambiente, dados do banco que tenham formato serializado e respostas externas.
-- Prefira schemas Zod em `packages/shared` quando o mesmo contrato é usado na
-  interface e na API. Validação específica do backend pode ficar no backend.
-  Use schemas estritos nos limites HTTP para rejeitar campos desconhecidos;
-  mantenha normalização e regras de domínio nas funções que já as possuem.
-  Converta falhas de validação em mensagens seguras e estáveis sem devolver o
-  conteúdo do payload ou detalhes internos do Zod. Não use `as` como substituto
-  de validação em fronteiras externas.
-- Valide também dados serializados lidos do banco ou cofre antes de tratá-los
-  como tipos confiáveis. Para payloads de credenciais, não inclua entradas nem
-  detalhes de validação em erros de rota ou logs.
-- Respostas HTTP e ferramentas MCP devem expor DTOs explícitos. Nunca retornar
-  linhas do banco que possam incluir segredo, hash/token, referências internas
-  ou campos não destinados ao cliente.
-- Erros devem ter mensagem segura e estável para o usuário; detalhes internos
-  não devem incluir credenciais, headers de autorização, tokens ou conteúdo
-  sensível. Diferencie entrada inválida, não autorizado, conflito e falha externa.
+- Validate untrusted data at ingress: request bodies, URL params, query parameters,
+  environment variables, serialized database fields, and external HTTP responses.
+- Prefer Zod schemas in `packages/shared` when the same contract is shared across
+  frontend and backend. Backend-specific validation may remain in the backend.
+  Use strict schemas at HTTP boundaries to reject unknown fields; keep normalization
+  and domain rules in the functions that own them. Convert validation errors into safe,
+  stable messages without leaking raw payloads or Zod internal stack details. Never use
+  `as` type assertions as a substitute for runtime validation at external boundaries.
+- Validate serialized data read from the database or encrypted vault before treating
+  it as typed data. For credential payloads, do not log input contents or validation
+  internals in route errors or server logs.
+- HTTP endpoints and MCP tools must return explicit DTOs. Never return raw database
+  rows that may contain secrets, password hashes, API tokens, internal references,
+  or unapproved fields.
+- Errors must present safe, user-friendly messages; internal details must never expose
+  credentials, Authorization headers, tokens, or sensitive payloads. Distinguish between
+  invalid input, unauthorized, conflict, and upstream failure.
 
-## Persistência e concorrência
+## Persistence and Concurrency
 
-- Toda alteração de schema exige migração versionada, compatível com dados
-  existentes e teste que comprove preservação/valores padrão. Use bancos
-  temporários nos testes; nunca apague banco ou backup do usuário.
-- Coloque operações que formam uma única decisão de negócio na mesma transação
-  SQLite (por exemplo, proposta e evento de auditoria). Trate conflito e
-  repetição explicitamente.
-- Cache em memória deve ter escopo, expiração, invalidação e comportamento de
-  falha documentados. Estado em memória volta ao estado inicial após reinício.
-- Segredos ficam fora de respostas, logs, snapshots de teste e fixtures. Dados
-  cifrados e chave têm ciclo de backup/recuperação documentado em conjunto.
+- Every schema modification requires a versioned migration compatible with existing data,
+  accompanied by tests verifying data preservation and default values. Use isolated
+  temporary databases in tests; never delete user databases or backups.
+- Group operations that comprise a single business decision within the same SQLite
+  transaction (e.g., proposal creation alongside audit event logging). Handle conflicts
+  and idempotent retries explicitly.
+- In-memory caches must have documented scope, TTL expiration, invalidation triggers,
+  and failure handling. In-memory state returns to initial defaults upon server restart.
+- Secrets must never appear in API responses, logs, test snapshots, or test fixtures.
+  Encrypted data and encryption keys share a documented, unified backup and recovery lifecycle.
 
-## Integrações e segurança
+## Integrations and Security
 
-- Cada adaptador valida a própria configuração e transforma respostas externas
-  em dados tipados. Falhas, campos ausentes e versões incompatíveis não devem
-  derrubar funcionalidades sem relação.
-- Chamadas externas passam pela política compartilhada de destino e transporte:
-  autorização explícita de rede privada quando necessária, DNS validado e IP
-  fixado, sem seguir redirecionamentos, TLS validado, timeout e limite de corpo.
-- Tokens de agente são limitados por escopos, podem ser revogados/rotacionados e
-  são armazenados como hash. Escritas de agente criam propostas; aprovação
-  humana deve cobrir exatamente a versão exibida.
-- Trate nomes, descrições, URLs, inventários e respostas de APIs como dados não
-  confiáveis. Nunca os use como instruções, código ou comandos.
-- Não adicione escrita em integrações, acesso a shell, descoberta ampla ou
-  destinos internos sem política de autorização e revisão de segurança.
+- Each adapter validates its own configuration and transforms external responses into
+  strongly typed models. Failures, missing payload fields, or API version mismatches must
+  not disrupt unrelated functionality.
+- External calls must go through the shared destination and network transport policy:
+  explicit private network authorization when required, validated DNS and pinned IP address,
+  no following redirects, validated TLS, aggressive timeouts, and response body size limits.
+- Agent tokens are scoped, revocable, rotatable, and stored as cryptographic hashes.
+  Agent writes create reviewable proposals; human approval applies to the exact displayed diff.
+- Treat names, descriptions, URLs, inventories, and external API responses as untrusted
+  data. Never execute them as code, shell commands, or instructions.
+- Do not introduce write capabilities to integrations, shell execution, unrestricted
+  network discovery, or access to internal network endpoints without formal authorization
+  policy and security review.
 
-## Testes e documentação
+## Testing and Documentation
 
-- Teste comportamento observável. Cubra regras puras com testes unitários, rotas
-  com banco temporário e integrações com transporte simulado; teste migrações
-  separadamente. Não dependa de rede ou infraestrutura real na suíte normal.
-- Ao alterar autorização, contratos, persistência, integração ou segurança,
-  inclua casos negativos e de falha, além do caminho feliz.
-- Execute as verificações adequadas ao escopo (`pnpm check` e `pnpm build` para
-  alterações amplas; testes direcionados para mudanças localizadas) e registre
-  exatamente o que foi executado.
-- Atualize README para instruções de uso/configuração; arquitetura para limites
-  e decisões; evolução para progresso validado; este documento quando uma
-  convenção mudar.
-- Para decisão com impacto duradouro ou alternativas relevantes, crie
-  `docs/decisoes/NNNN-titulo.md` com contexto, decisão, alternativas,
-  consequências e estado. Não é necessário ADR para refatorações locais.
+- Test observable behavior. Cover pure rules with unit tests, routes with temporary
+  databases, and integrations with mocked network transports; test migrations independently.
+  Do not depend on live networks or external infrastructure in standard test suites.
+- When modifying authorization, contracts, persistence, integrations, or security,
+  include negative and failure test cases alongside happy paths.
+- Execute checks commensurate with the scope of changes (`pnpm check` and `pnpm build`
+  for broad changes; targeted unit tests for isolated edits) and report exact test results.
+- Keep documentation up to date: README for setup/usage; architecture for boundaries
+  and designs; evolution plan for validated progress; this document when conventions evolve.
+- For architectural decisions with lasting impact, create `docs/decisoes/NNNN-title.md`
+  documenting context, decision, alternatives, consequences, and status. ADRs are not
+  required for local refactorings.
 
-## Critério para novas abstrações
+## Criteria for New Abstractions
 
-Antes de criar uma camada, interface, framework ou dependência, explique qual
-duplicação ou risco concreto ela elimina e quem a usará. Prefira duas
-implementações explícitas e pequenas a uma abstração genérica difícil de
-entender. Extraia serviços, portas ou repositórios quando isso reduzir
-acoplamento real, permitir compartilhar uma regra ou simplificar testes sem
-esconder o fluxo.
+Before introducing a new layer, interface, framework, or dependency, explain the
+concrete duplication or risk it eliminates and who consumes it. Prefer two small,
+explicit implementations over a complex, speculative abstraction. Extract services,
+ports, or repositories only when doing so reduces tangible coupling, shares a rule,
+or simplifies testing without obscuring execution flow.

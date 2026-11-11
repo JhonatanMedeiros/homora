@@ -28,7 +28,7 @@ import type { useServices } from '@/hooks/use-services';
 import { apiError, lower, t } from '@/i18n';
 import { emptyService } from '@/lib/services';
 
-/** Tela principal: grupos de serviços com estado, busca, edição e modo Organizar. */
+/** Main screen: service groups with status, search, edit, and Organize mode. */
 type Props = {
   query: string;
   managing: boolean;
@@ -36,7 +36,7 @@ type Props = {
   navigate: (path: string, replace?: boolean) => void;
   onManage: () => void;
   data: ReturnType<typeof useServices>;
-  /** A busca abre o primeiro resultado com Enter; a página registra aqui como fazê-lo. */
+  /** Search opens the first result on Enter; the page registers here how to do so. */
   openFirstRef: MutableRefObject<(() => void) | null>;
 };
 
@@ -104,7 +104,7 @@ export function ServicesPage({
       category,
       items: sortedIn(category)
         .filter((s) => filtered.some((f) => f.id === s.id))
-        // Indisponíveis sobem no grupo, exceto no modo Organizar (a ordem é do usuário).
+        // Unavailable services rise to top within the group, except in Organize mode (user sets order).
         .sort((a, b) => (organizing ? 0 : Number(isDown(b)) - Number(isDown(a)))),
     }))
     .filter((group) => group.items.length || (!needle && selected === null));
@@ -151,7 +151,7 @@ export function ServicesPage({
     try {
       sessionStorage.setItem('homora-focus-service', editing === null ? 'new' : String(editing));
     } catch {
-      /* armazenamento indisponível */
+      /* storage unavailable */
     }
     setFormOpen(false);
     navigate('/manage/services', true);
@@ -171,7 +171,7 @@ export function ServicesPage({
         sessionStorage.removeItem('homora-focus-service');
       }
     } catch {
-      /* armazenamento indisponível */
+      /* storage unavailable */
     }
   }, [managing, formRoute, data.loaded, services]);
   useEffect(() => {
@@ -476,7 +476,7 @@ export function ServicesPage({
               try {
                 localStorage.setItem('homora-density', next ? 'compact' : 'comfortable');
               } catch {
-                /* preferência apenas nesta sessão */
+                /* preference only in this session */
               }
             }}
             aria-label={t('view.label')}
@@ -498,7 +498,7 @@ export function ServicesPage({
               try {
                 localStorage.setItem('homora-descriptions', next ? 'visible' : 'hidden');
               } catch {
-                /* preferência apenas nesta sessão */
+                /* preference only in this session */
               }
             }}
           >

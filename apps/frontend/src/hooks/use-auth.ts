@@ -3,7 +3,7 @@ import { t } from '@/i18n';
 
 export type AuthStatus = { configured: boolean; authenticated: boolean };
 
-/** Estado de acesso: consulta a sessão, cria a conta de administrador e entra ou sai. */
+/** Access status: checks session, creates admin account, and signs in or out. */
 export function useAuth() {
   const [status, setStatus] = useState<AuthStatus | null>(null);
   const [error, setError] = useState('');

@@ -8,7 +8,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('testa a integração existente sem salvar os dados', async () => {
+it('tests existing integration without saving data', async () => {
   const fetchMock = vi.fn(async (url: string) => {
     if (url.endsWith('/status'))
       return { ok: true, json: async () => ({ configured: true, hasCa: true }) };
@@ -24,7 +24,7 @@ it('testa a integração existente sem salvar os dados', async () => {
   expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/config'))).toBe(false);
 });
 
-it('mostra o diagnóstico retornado pela API', async () => {
+it('displays diagnostic returned by the API', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) =>
@@ -37,7 +37,7 @@ it('mostra o diagnóstico retornado pela API', async () => {
   expect(await screen.findByText('Certificado TLS não confiável.')).toBeTruthy();
 });
 
-it('exibe data da consulta e força atualização ao solicitar', async () => {
+it('shows query timestamp and forces refresh when requested', async () => {
   const fetchMock = vi.fn(async (url: string) =>
     url.endsWith('/status')
       ? { ok: true, json: async () => ({ configured: true }) }
@@ -54,7 +54,7 @@ it('exibe data da consulta e força atualização ao solicitar', async () => {
   expect(screen.getByText(/Ao alterar a URL ou o ID do token/)).toBeTruthy();
 });
 
-it('mostra uso de CPU e memória dos nós e a lista de máquinas', async () => {
+it('shows node CPU and memory usage and the list of machines', async () => {
   const gib = 1024 ** 3;
   vi.stubGlobal(
     'fetch',
@@ -88,7 +88,7 @@ it('mostra uso de CPU e memória dos nós e a lista de máquinas', async () => {
   expect(screen.getByText(/1 nó · 1 VMs · 1 containers/)).toBeTruthy();
 });
 
-it('identifica o nó pelo campo node, como a API do Proxmox, sem avisos de chave', async () => {
+it('identifies node by node field matching Proxmox API without key warnings', async () => {
   const error = vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubGlobal(
     'fetch',

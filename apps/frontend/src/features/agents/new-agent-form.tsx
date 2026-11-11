@@ -16,7 +16,7 @@ import { SCOPES } from './agent-model';
 import { t } from '@/i18n';
 
 type Props = {
-  /** Aberto por padrão quando ainda não existe nenhuma identidade. */
+  /** Open by default when no identity exists yet. */
   defaultOpen: boolean;
   name: string;
   scopes: string[];
