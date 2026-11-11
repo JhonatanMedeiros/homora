@@ -117,6 +117,7 @@ export function createServiceMonitor(
     type?: CheckType,
   ) => Promise<CheckResult> = checkService,
   now: () => number = Date.now,
+  publish?: (services: Service[], states: Record<number, ServiceStatus>) => void,
 ) {
   const states = new Map<number, ServiceStatus>();
   let running: Promise<void> | undefined;
@@ -196,6 +197,7 @@ export function createServiceMonitor(
           }
         }),
       );
+      if (runGeneration === generation) publish?.(current, Object.fromEntries(states));
     })();
     try {
       await running;
@@ -212,6 +214,7 @@ export function createServiceMonitor(
     invalidate() {
       generation++;
       states.clear();
+      publish?.([], {});
       return run(true);
     },
     snapshot() {

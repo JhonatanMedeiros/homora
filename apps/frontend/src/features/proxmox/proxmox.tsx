@@ -7,10 +7,10 @@ import { ProxmoxForm } from './proxmox-form';
 import { ProxmoxResources, type Resource } from './proxmox-resources';
 import { apiError, t } from '@/i18n';
 
-export function Proxmox() {
+export function Proxmox({ initialUrl }: { initialUrl?: string | null } = {}) {
   const [configured, setConfigured] = useState(false),
-    [editing, setEditing] = useState(false);
-  const [url, setUrl] = useState(''),
+    [editing, setEditing] = useState(Boolean(initialUrl));
+  const [url, setUrl] = useState(initialUrl ?? ''),
     [tokenId, setTokenId] = useState(''),
     [secret, setSecret] = useState('');
   const [resources, setResources] = useState<Resource[] | null>(null),

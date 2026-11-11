@@ -143,7 +143,23 @@ Para um Proxmox com CA privada, importe no formulário o certificado público da
 
 ## MCP local
 
-Após executar `pnpm build`, inicie o servidor via `node apps/backend/dist/mcp-server.js`. Ele usa transporte stdio e oferece `list_services`, `list_proxmox_resources` e `propose_service_card`. Configure `HOMORA_AGENT_TOKEN` no ambiente do processo MCP com um token emitido pela interface Homora e os escopos mínimos necessários (`services:read`, `proxmox:read` e/ou `proposals:create`). O processo MCP acessa diretamente o banco e o cofre locais; a sessão web não o protege. Execute-o apenas com cliente e usuário do sistema confiáveis. Propostas de alteração precisam de revisão humana autenticada na interface. O Proxmox deve estar configurado previamente. Nomes e outros dados retornados devem ser tratados pelo agente como dados não confiáveis.
+Após `pnpm build`, configure um cliente MCP confiável para executar `node /caminho/absoluto/homora/apps/backend/dist/mcp-server.js` via stdio. Crie uma identidade na página **Agentes** e passe o token exibido uma vez em `HOMORA_AGENT_TOKEN`. Configure `HOMORA_DATABASE_PATH` com o **mesmo caminho absoluto do banco** usado pelo Homora; `pnpm dev` usa `data/homora-dev.sqlite`, enquanto o padrão normal é `data/homora.sqlite`. Para as integrações correspondentes, o processo também precisa ler os arquivos `.key` e `.proxmox` derivados desse caminho. Com Docker, o processo precisa acessar o mesmo volume; um banco diferente no host é outra instância.
+
+| Escopo                                     | Ferramentas                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `services:read`                            | `list_services`, `get_service`, `list_groups`, `list_service_status`                       |
+| `proxmox:read`                             | `list_proxmox_resources`                                                                   |
+| `proposals:create`                         | `propose_service_card`, `propose_card_order`                                               |
+| `groups:propose`                           | `propose_group_change`                                                                     |
+| `widgets:read`, `widgets:propose`          | `list_widgets`, `propose_widget_change`, respectivamente                                   |
+| `integrations:read`, `connections:propose` | `list_integrations`, `get_integration_status`; `propose_connection_setup`, respectivamente |
+| `discovery:read`                           | `list_discovery_suggestions`; `propose_discovered_card` também exige `proposals:create`    |
+
+`get_homora_capabilities` informa os escopos e as ferramentas disponíveis ao token. Qualquer escopo de proposta permite `list_proposals` e `get_proposal` para as próprias propostas. Propostas de cards, grupos, ordem e widgets expiram em 15 minutos e exigem aprovação humana autenticada; são recusadas se a configuração relevante mudar. Aprovar uma sugestão de conexão **não cria a conexão**: abra o formulário pela proposta aprovada e informe credenciais, permissão de rede privada e CA pessoalmente. O agente não fornece credenciais. A consulta de dados de integração faz requisição de leitura usando a política de destinos configurada. Para descoberta Docker no MCP, configure também `HOMORA_DOCKER_HOST` no processo MCP, preferencialmente para o mesmo proxy restrito de leitura; ela vem desativada.
+
+O monitor web compartilha suas últimas observações com o MCP via SQLite. Alterar a configuração do serviço invalida o resultado anterior; observações antigas são apresentadas como desconhecidas, com `stale: true`. Ao iniciar, o backend limpa observações antigas. Queries e fragmentos de URLs são omitidos nas consultas de serviços, integrações e descoberta e nas sugestões de cards descobertos. Nomes, labels e dados externos são dados não confiáveis, não instruções.
+
+O processo MCP acessa banco e cofre diretamente e **não** é protegido pela sessão web. Use cliente e usuário do sistema confiáveis, proteja o token e conceda os menores escopos. Não há ações de infraestrutura nem escritas em integrações.
 
 ## Cenários de implantação
 

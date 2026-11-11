@@ -15,8 +15,19 @@ export type ServiceFields = {
   category?: string;
   description?: string;
   icon?: string;
+  position?: number;
+  allowPrivate?: boolean;
+  checkType?: 'http' | 'ping';
+  checkInterval?: number | null;
 };
-export type Diff = { op?: string; id?: number; service?: ServiceFields };
+export type Diff = {
+  op?: string;
+  id?: number;
+  service?: ServiceFields;
+  kind?: string;
+  change?: { kind?: string; change?: unknown };
+  before?: unknown;
+};
 
 export const SCOPES = [
   { id: 'services:read', label: 'scope.services:read', hint: 'scope.services:read.hint' },
@@ -26,6 +37,20 @@ export const SCOPES = [
     label: 'scope.proposals:create',
     hint: 'scope.proposals:create.hint',
   },
+  { id: 'groups:propose', label: 'scope.groups:propose', hint: 'scope.groups:propose.hint' },
+  { id: 'widgets:read', label: 'scope.widgets:read', hint: 'scope.widgets:read.hint' },
+  { id: 'widgets:propose', label: 'scope.widgets:propose', hint: 'scope.widgets:propose.hint' },
+  {
+    id: 'integrations:read',
+    label: 'scope.integrations:read',
+    hint: 'scope.integrations:read.hint',
+  },
+  {
+    id: 'connections:propose',
+    label: 'scope.connections:propose',
+    hint: 'scope.connections:propose.hint',
+  },
+  { id: 'discovery:read', label: 'scope.discovery:read', hint: 'scope.discovery:read.hint' },
 ] as const;
 export const scopeLabel = (id: string) => {
   const scope = SCOPES.find((item) => item.id === id);
@@ -65,6 +90,10 @@ export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['category', 'field.category'],
   ['description', 'field.description'],
   ['icon', 'field.icon'],
+  ['position', 'field.position'],
+  ['allowPrivate', 'field.allowPrivate'],
+  ['checkType', 'field.checkType'],
+  ['checkInterval', 'field.checkInterval'],
 ];
 
 export const formatDate = formatDateTime;

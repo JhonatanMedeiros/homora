@@ -14,21 +14,126 @@ it('validates proposal inputs and lists services without secrets', async () => {
   db.exec(
     "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT, url TEXT, category TEXT, description TEXT, icon TEXT DEFAULT '', position INTEGER DEFAULT 0, allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER); INSERT INTO services(id,name,url,category,description) VALUES (1,'Jellyfin','http://localhost/','Media',''); CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT); CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);",
   );
+  db.prepare(
+    "UPDATE services SET url='http://localhost/?api_key=synthetic-secret' WHERE id=1",
+  ).run();
+  db.exec(
+    "CREATE TABLE service_groups (id INTEGER PRIMARY KEY, name TEXT, position INTEGER, columns INTEGER); INSERT INTO service_groups VALUES (1,'Mídia',0,NULL)",
+  );
+  db.exec(`CREATE TABLE integration_instances(id INTEGER PRIMARY KEY,type TEXT,name TEXT,public_config TEXT,secret_ref TEXT,certificate_ref TEXT);
+    CREATE TABLE integration_widgets(id INTEGER PRIMARY KEY,integration_id INTEGER,type TEXT,name TEXT,public_config TEXT,service_id INTEGER);
+    CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
+    INSERT INTO integration_instances VALUES(1,'jellyfin','Media','{"url":"https://media.example"}','sensitive-secret',NULL)`);
   const identity = createProposalService(db).issue('test', ['services:read', 'proposals:create']);
   process.env.HOMORA_AGENT_TOKEN = identity.token;
-  const server = createMcp(db, createVault(join(dir, 'db')));
+  const server = createMcp(db, createVault(join(dir, 'db')), {
+    docker: {
+      list: async () => [
+        {
+          Id: 'abcdefabcdef012345',
+          Names: ['/demo'],
+          Labels: { 'homora.url': 'https://demo.example/?key=synthetic-secret' },
+        },
+      ],
+    },
+  });
   const client = new Client({ name: 'test', version: '1.0.0' });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   try {
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
     const tools = await client.listTools();
     expect(tools.tools.map((t) => t.name)).toEqual([
+      'get_homora_capabilities',
       'list_services',
+      'list_service_status',
+      'get_service',
+      'list_groups',
+      'list_proposals',
+      'get_proposal',
       'propose_service_card',
+      'propose_group_change',
+      'propose_card_order',
+      'list_widgets',
+      'propose_widget_change',
+      'list_integrations',
+      'get_integration_status',
+      'propose_connection_setup',
+      'list_discovery_suggestions',
+      'propose_discovered_card',
       'list_proxmox_resources',
     ]);
     const result = await client.callTool({ name: 'list_services', arguments: {} });
     expect(JSON.stringify(result)).toContain('Jellyfin');
+    expect(JSON.stringify(result)).not.toContain('synthetic-secret');
+    expect(
+      JSON.stringify(await client.callTool({ name: 'list_service_status', arguments: {} })),
+    ).toContain('unchecked');
+    expect(
+      (
+        await client.callTool({
+          name: 'propose_group_change',
+          arguments: { op: 'create', name: 'New' },
+        })
+      ).isError,
+    ).toBe(true);
+    expect((await client.callTool({ name: 'list_widgets', arguments: {} })).isError).toBe(true);
+    expect(
+      JSON.stringify(await client.callTool({ name: 'get_service', arguments: { id: 1 } })),
+    ).toContain('Jellyfin');
+    expect((await client.callTool({ name: 'get_service', arguments: { id: 999 } })).isError).toBe(
+      true,
+    );
+    expect(JSON.stringify(await client.callTool({ name: 'list_groups', arguments: {} }))).toContain(
+      'Mídia',
+    );
+    process.env.HOMORA_AGENT_TOKEN = 'invalid';
+    expect((await client.callTool({ name: 'get_service', arguments: { id: 1 } })).isError).toBe(
+      true,
+    );
+    expect((await client.callTool({ name: 'list_groups', arguments: {} })).isError).toBe(true);
+    process.env.HOMORA_AGENT_TOKEN = identity.token;
+    const full = createProposalService(db).issue('full', [
+      'services:read',
+      'groups:propose',
+      'widgets:read',
+      'widgets:propose',
+      'integrations:read',
+      'connections:propose',
+      'discovery:read',
+      'proposals:create',
+    ]);
+    process.env.HOMORA_AGENT_TOKEN = full.token;
+    const group = await client.callTool({
+      name: 'propose_group_change',
+      arguments: { op: 'create', name: 'New' },
+    });
+    expect(group.isError, JSON.stringify(group)).not.toBe(true);
+    const widget = await client.callTool({
+      name: 'propose_widget_change',
+      arguments: { op: 'create', integrationId: 1, name: 'Stats', serviceId: 1 },
+    });
+    expect(widget.isError, JSON.stringify(widget)).not.toBe(true);
+    expect(
+      JSON.stringify(await client.callTool({ name: 'list_integrations', arguments: {} })),
+    ).not.toContain('sensitive-secret');
+    expect(
+      JSON.stringify(await client.callTool({ name: 'list_discovery_suggestions', arguments: {} })),
+    ).toContain('abcdefabcdef');
+    const discovered = await client.callTool({
+      name: 'propose_discovered_card',
+      arguments: { id: 'abcdefabcdef' },
+    });
+    expect(discovered.isError).not.toBe(true);
+    expect(JSON.stringify(discovered)).not.toContain('synthetic-secret');
+    expect(
+      (
+        await client.callTool({
+          name: 'propose_connection_setup',
+          arguments: { type: 'jellyfin', name: 'New', url: 'https://example.test', secret: 'x' },
+        })
+      ).isError,
+    ).toBe(true);
+    process.env.HOMORA_AGENT_TOKEN = identity.token;
     const invalid = await client.callTool({
       name: 'propose_service_card',
       arguments: { op: 'create', service: { name: 'x' } },
@@ -50,6 +155,23 @@ it('validates proposal inputs and lists services without secrets', async () => {
       },
     });
     expect(proposal.isError, JSON.stringify(proposal)).not.toBe(true);
+    const proposalData = JSON.parse((proposal.content as { text: string }[])[0].text) as {
+      id: string;
+    };
+    expect(
+      JSON.stringify(
+        await client.callTool({ name: 'get_proposal', arguments: { id: proposalData.id } }),
+      ),
+    ).toContain(proposalData.id);
+    const other = createProposalService(db).issue('other', ['proposals:create']);
+    process.env.HOMORA_AGENT_TOKEN = other.token;
+    expect(
+      (await client.callTool({ name: 'get_proposal', arguments: { id: proposalData.id } })).isError,
+    ).toBe(true);
+    expect(
+      JSON.stringify(await client.callTool({ name: 'list_proposals', arguments: {} })),
+    ).not.toContain(proposalData.id);
+    process.env.HOMORA_AGENT_TOKEN = identity.token;
     const absent = await client.callTool({ name: 'list_proxmox_resources', arguments: {} });
     expect(absent.isError).toBe(true);
   } finally {

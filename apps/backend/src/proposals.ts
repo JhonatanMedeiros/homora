@@ -3,15 +3,29 @@ import type { DatabaseSync } from 'node:sqlite';
 import { validateService } from '@homora/shared';
 import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
 import { serviceProposalSchema } from './input-schemas.js';
+import { AGENT_SCOPES } from './agent-scopes.js';
+import type { createVault } from './vault.js';
+import {
+  applyManagedChange,
+  managedChangeSchema,
+  managedHash,
+  managedSnapshot,
+} from './managed-proposals.js';
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-export const AGENT_SCOPES = ['services:read', 'proxmox:read', 'proposals:create'] as const;
+export { AGENT_SCOPES } from './agent-scopes.js';
 type Diff = ServiceChange;
 export function createProposalService(
   sqlite: DatabaseSync,
   configuration = createServiceConfiguration(sqlite),
+  vault?: ReturnType<typeof createVault>,
 ) {
   const configHash = configuration.configHash;
+  const isProxmoxWidget = (change: ReturnType<typeof managedChangeSchema.parse>) =>
+    change.kind === 'widget' && change.change.op === 'create' && change.change.source === 'proxmox';
+  const managedBaseHash = (change: ReturnType<typeof managedChangeSchema.parse>) =>
+    hash([managedHash(sqlite), isProxmoxWidget(change) ? (vault?.load() ?? null) : null]);
+  const proxmoxConfigured = () => Boolean(vault?.load());
   function issue(name: string, scopes: string[]) {
     if (
       !name.trim() ||
@@ -63,6 +77,8 @@ export function createProposalService(
       if (d.op === 'create') {
         service.position = configuration.nextServicePosition(service.category);
         service.allowPrivate = d.service.allowPrivate === true;
+        service.checkType ??= 'http';
+        service.checkInterval ??= null;
       } else {
         const current = configuration.findService(d.id);
         if (!current) throw new Error('Service not found');
@@ -102,6 +118,98 @@ export function createProposalService(
     });
     return { id, diff, expiresAt: now + 15 * 60_000, state: 'pending' };
   }
+  function proposeManaged(authorId: string, input: unknown) {
+    const change = managedChangeSchema.parse(input);
+    return configuration.transaction(() => {
+      const snapshot = managedSnapshot(sqlite);
+      const baseHash = managedBaseHash(change);
+      const baseVersion = configuration.version();
+      // Validate the exact operation without retaining the simulated changes.
+      sqlite.exec('SAVEPOINT validate_proposal');
+      try {
+        applyManagedChange(sqlite, change, proxmoxConfigured);
+      } finally {
+        sqlite.exec('ROLLBACK TO validate_proposal; RELEASE validate_proposal');
+      }
+      const targetId = 'id' in change.change ? change.change.id : undefined;
+      const integrationId =
+        'integrationId' in change.change ? change.change.integrationId : undefined;
+      const widgetRows =
+        change.kind === 'widget' && change.change.op !== 'create'
+          ? snapshot.widgets.filter((row) => row.id === targetId)
+          : [];
+      const widgetConnectionId = integrationId ?? widgetRows[0]?.integration_id;
+      const widgetServiceIds = [
+        widgetRows[0]?.service_id,
+        'serviceId' in change.change ? change.change.serviceId : undefined,
+      ];
+      const relevantGroups =
+        change.kind === 'group'
+          ? change.change.op === 'create'
+            ? []
+            : change.change.op === 'reorder'
+              ? snapshot.groups
+              : snapshot.groups.filter((row) => row.id === targetId)
+          : [];
+      const relevantCategories =
+        change.kind === 'card-order'
+          ? change.change.op === 'reorder'
+            ? [change.change.category]
+            : [
+                change.change.targetCategory,
+                snapshot.services.find((row) => row.id === targetId)?.category,
+              ]
+          : relevantGroups.map((row) => row.name);
+      const before =
+        change.kind === 'group' || change.kind === 'card-order'
+          ? {
+              groups: relevantGroups,
+              services: snapshot.services
+                .filter((row) => relevantCategories.includes(row.category))
+                .map(({ id, name, category, position }) => ({ id, name, category, position })),
+            }
+          : change.kind === 'widget'
+            ? {
+                widgets: widgetRows.map(({ id, integration_id, type, name, service_id }) => ({
+                  id,
+                  integration_id,
+                  type,
+                  name,
+                  service_id,
+                })),
+                connections: snapshot.connections
+                  .filter((row) => row.id === widgetConnectionId)
+                  .map(({ id, type, name }) => ({ id, type, name })),
+                services: snapshot.services
+                  .filter((row) => widgetServiceIds.includes(row.id))
+                  .map(({ id, name }) => ({ id, name })),
+              }
+            : null;
+      const diff = { kind: 'managed', change, before };
+      const id = randomBytes(16).toString('hex');
+      const now = Date.now();
+      sqlite
+        .prepare(
+          'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at) VALUES(?,?,?,?,?,?,?,?)',
+        )
+        .run(
+          id,
+          authorId,
+          JSON.stringify(diff),
+          baseHash,
+          baseVersion,
+          now + 15 * 60_000,
+          'pending',
+          now,
+        );
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+        )
+        .run(authorId, 'proposal', id, 'created', now);
+      return { id, diff, expiresAt: now + 15 * 60_000, state: 'pending' };
+    });
+  }
   function decide(id: string, accept: boolean, human: string) {
     try {
       return configuration.transaction(() => {
@@ -134,10 +242,25 @@ export function createProposalService(
           return 'rejected';
         }
         const version = configuration.version();
-        if (version !== p.base_version || configHash() !== p.base_hash)
+        const decoded: unknown = JSON.parse(p.diff);
+        const isManaged =
+          typeof decoded === 'object' &&
+          decoded !== null &&
+          'kind' in decoded &&
+          decoded.kind === 'managed';
+        const managedChange =
+          isManaged && 'change' in decoded ? managedChangeSchema.parse(decoded.change) : null;
+        if (
+          version !== p.base_version ||
+          (managedChange ? managedBaseHash(managedChange) : configHash()) !== p.base_hash
+        )
           throw new Error('Configuration has changed');
-        const d = JSON.parse(p.diff) as Diff;
-        configuration.applyProposal(d as ServiceChange);
+        if (managedChange) {
+          applyManagedChange(sqlite, managedChange, proxmoxConfigured);
+        } else {
+          const d = serviceProposalSchema.parse(decoded);
+          configuration.applyProposal(d as ServiceChange);
+        }
         sqlite
           .prepare(
             "UPDATE service_proposals SET state='approved',reviewed_at=?,reviewer=? WHERE id=? AND state='pending'",
@@ -201,15 +324,37 @@ export function createProposalService(
       )
       .all();
   }
+  function listOwn(authorId: string) {
+    const now = Date.now();
+    return sqlite
+      .prepare(
+        `SELECT id,diff,CASE WHEN state='pending' AND expires_at<=? THEN 'expired' ELSE state END AS state,
+                expires_at AS expiresAt,created_at AS createdAt,reviewed_at AS reviewedAt
+         FROM service_proposals WHERE author_id=? ORDER BY created_at DESC LIMIT 200`,
+      )
+      .all(now, authorId);
+  }
+  function getOwn(authorId: string, id: string) {
+    return sqlite
+      .prepare(
+        `SELECT id,diff,CASE WHEN state='pending' AND expires_at<=? THEN 'expired' ELSE state END AS state,
+                expires_at AS expiresAt,created_at AS createdAt,reviewed_at AS reviewedAt
+         FROM service_proposals WHERE author_id=? AND id=?`,
+      )
+      .get(Date.now(), authorId, id);
+  }
   return {
     issue,
     authenticate,
     revoke,
     rotate,
     propose,
+    proposeManaged,
     decide,
     list,
     listAgents,
+    listOwn,
+    getOwn,
     configHash,
   };
 }

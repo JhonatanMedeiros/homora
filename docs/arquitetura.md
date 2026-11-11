@@ -44,7 +44,7 @@ flowchart LR
 - Current MCP: local stdio process with scoped token authentication that accesses SQLite
   and the credential vault directly. MCP tools validate inputs with Zod; provides queries
   and proposal creation without going through HTTP routes or web session cookies. Never
-  persists card changes without human approval and never returns secrets.
+  persists card, group, or widget changes without human approval. Connection suggestions open a human-completed form and do not create a connection; integration queries do not return credentials.
 - Persistence: SQLite, migrations, and database restore scripts are implemented.
   Credentials for connection adapters are encrypted at rest with an isolated key file;
   Proxmox retains a legacy credential file. Automatic key rotation and defense against host
@@ -57,7 +57,7 @@ Service (name, URL, icon, group), group (name and position), integration (type, 
 ## Security
 
 - Mandatory authentication for web UI and MCP; dedicated identities for agents, least privilege scopes, and revocation. Never assume local network is inherently trusted.
-- MCP may query and create proposals; persistent card modifications occur only after authenticated human review of the exact proposal. Stale, expired, or previously applied proposals are rejected. Never permit agent self-approval or unmediated external integration writes.
+- MCP may query and create proposals; persistent configuration modifications occur only after authenticated human review of the exact proposal. Stale, expired, or previously applied proposals are rejected. Never permit agent self-approval or unmediated external integration writes.
 - Proxmox integration with least-privilege token and strict TLS certificate validation; guide users through importing trusted CAs. Never accept credentials in agent prompts or leak them via tool returns.
 - SSRF mitigation: validate destinations and redirects server-side, constrain ports and hosts, block sensitive local ranges, and re-resolve/pin DNS on connection. Private network access must be explicitly authorized per service/connection, as it is foundational for homelab setups.
 - Supported production deployment binds to loopback by default. Additional origins must be explicitly listed in `HOMORA_ALLOWED_ORIGINS`; HTTP origins are accepted only on localhost. When using a reverse proxy, the proxy must terminate HTTPS and protect the API. The default UI bind remains loopback, and `HOMORA_BIND_IP` allows exposing it solely to a reverse proxy on the same private network without altering origin validation. The application does not trust `X-Forwarded-For`/`X-Forwarded-Proto` for authorization decisions; do not configure untrusted proxies or rely on forwarded headers to determine identity or security.
@@ -98,6 +98,14 @@ releases exist.
 - MCP runs in a separate process and accesses SQLite/vault directly. It authenticates agent tokens
   with granular scopes, offering queries and proposal creation. It intentionally bypasses the HTTP
   stack and web cookies.
+- Group, card-order, and widget proposals capture a fingerprint of groups, cards, widgets,
+  and connections, including encrypted references without displaying them. They validate the
+  operation in a savepoint and repeat validation inside the approval transaction. The legacy
+  vault is included when proposing a Proxmox widget. MCP returns proposals only to their author.
+- The observations migration shares the web monitor's latest results with the MCP process.
+  Each result is tied to the service check settings; changed settings or stale results are
+  reported as unknown. The backend clears old observations at startup and publishes completed
+  cycles; an MCP status query does not start checks.
 - SQLite is the primary persistent store. Schema changes are versioned migrations; session
   state and certain observation caches are maintained in memory.
 

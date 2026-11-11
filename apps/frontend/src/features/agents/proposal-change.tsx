@@ -18,9 +18,14 @@ export function ProposalChange({ diff, current }: { diff: Diff; current?: Servic
           : t('proposal.unknown');
   const after = diff.service;
   const rows = FIELDS.map(([key, label]) => {
-    const before = current?.[key as keyof Service] as string | undefined;
+    const before = current?.[key as keyof Service];
     const next = after?.[key];
-    return { key, label: t(label), before: before || '', next: next || '' };
+    return {
+      key,
+      label: t(label),
+      before: before == null ? '' : String(before),
+      next: next == null ? '' : String(next),
+    };
   });
   const changed = rows.filter((row) =>
     diff.op === 'update' ? row.next !== row.before : diff.op === 'create' ? row.next : row.before,
