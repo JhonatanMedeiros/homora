@@ -63,17 +63,18 @@ secrets are never exposed to the frontend, MCP tools, or application logs. Exter
   loading, error, and invalid data indicators per widget. Per-widget custom config parameters
   do not exist yet. Queries utilize connection-level caching without dedicated per-widget caches;
   cards query each connection once per minute, even when multiple widgets share it.
-- Proxmox widget: because Proxmox remains in its legacy vault, a bridge record
-  (`integration_instances`, type `proxmox`, no secret) allows linking widgets to it
-  (`POST /api/widgets` with `source: "proxmox"`). This record is omitted from
-  `/api/connections` and cannot be modified or deleted there. Querying aggregates cluster
-  inventory counts (running and total VMs/containers, online node CPU/memory); internal names,
-  IDs, and addresses are not leaked to the browser. The cache is invalidated whenever URL,
-  token, secret, or CA certificate changes.
-- Proxmox continues using its dedicated vault and has not been migrated into
-  `integration_instances`. Jellyfin, Home Assistant, Uptime Kuma, and AdGuard Home have
-  read-only adapters and configuration forms, but have not been comprehensively validated
-  against live production instances.
+- Proxmox is a regular named connection: several independent clusters or servers may be
+  configured. A connection addresses one Proxmox API endpoint; its cluster inventory can
+  include multiple nodes. Widgets report aggregate counts and resource usage, not individual
+  node selection. The top bar can select a connection in Settings, independently of widgets.
+- On first access to connections, a legacy Proxmox configuration is copied into the encrypted
+  connection store. An existing bridge row keeps its ID and widget references. This migration
+  is transactional and recorded once, including when the connection is later deleted. The old
+  `.proxmox` file remains as a sensitive backup; after migration the legacy HTTP routes return
+  410 and cannot update it. Existing legacy connections retain private-network access, while
+  new connections require explicit opt-in. The shared destination policy can reject destinations
+  previously allowed by the legacy transport. Jellyfin, Home Assistant, Uptime Kuma, and
+  AdGuard Home also have read-only adapters; real-world validation remains incomplete.
 - Authenticated integrations enforce shared network policy and explicit private network
   authorization per connection. Shortcut monitoring shares the same destination policy;
   private network monitoring requires explicit per-service opt-in (disabled by default).
@@ -86,10 +87,8 @@ probe arbitrary network addresses, or mutate infrastructure.
 
 ## Limitations and Risks
 
-- Proxmox currently uses dedicated configuration; web session cookies do not protect the
-  local stdio MCP server. Agent identity and permission boundaries remain active priorities.
-- Proxmox CA and secrets are stored in encrypted config files whose key resides in the same
-  directory: filesystem access to both allows secret recovery. Backups must secure both files.
+- Web session cookies do not protect the local stdio MCP server. Agent identity and permission boundaries remain active priorities.
+- Connection secrets are encrypted in the database using a separate key file; a legacy `.proxmox` file may also contain old credentials. Protect the database, key and legacy file together.
 - Caching does not prove real-time availability: UI must distinguish between last successful
   fetch, latest error, and stale data.
 - Redirects, DNS rebinding, private ranges, and sensitive ports require SSRF policy enforced
@@ -123,6 +122,15 @@ Never supply private keys. TLS validation remains strictly active and the URL ho
 or IP must be covered by the certificate Subject Alternative Name (SAN). Authenticated
 connections require HTTPS. The CA certificate is pinned to the connection and does not
 grant trust to other endpoints.
+
+### Proxmox VE
+
+- Create a named connection with an HTTPS origin, API token ID and token secret. Enable
+  private network access when needed and provide the public CA certificate when applicable.
+- Save, then use **Test** on the connection. A single endpoint may return inventory across
+  its cluster, subject to token permissions. Separate clusters require separate connections.
+- The UI displays cluster aggregates; it does not yet filter individual nodes. Connections
+  are read-only. Use least-privilege tokens and verify behavior against your own environment.
 
 ### Jellyfin
 

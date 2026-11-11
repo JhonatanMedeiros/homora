@@ -82,7 +82,7 @@ export function createApp(
   registerAuthRoutes(app, auth, webPort);
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
-  registerProxmoxRoutes(app, vault);
+  registerProxmoxRoutes(app, vault, db);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth);
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);

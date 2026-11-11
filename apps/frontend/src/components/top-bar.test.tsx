@@ -6,6 +6,7 @@ import { widgetStats } from '@/features/connections/connection-model';
 
 afterEach(() => {
   cleanup();
+  localStorage.removeItem('homora-top-bar-connection');
   vi.unstubAllGlobals();
 });
 
@@ -46,6 +47,25 @@ it('displays clock only when no Proxmox widget exists', async () => {
   await waitFor(() => expect(fetch).toHaveBeenCalled());
   expect(document.querySelector('time')).toBeTruthy();
   expect(screen.queryByText('Recursos do sistema indisponíveis')).toBeNull();
+});
+
+it('queries the selected connection even without a widget', async () => {
+  localStorage.setItem('homora-top-bar-connection', '21');
+  stubApi({
+    '/api/connections/21/data': json({
+      data: {
+        vms: { running: 0, total: 0 },
+        containers: { running: 0, total: 0 },
+        cpu: 42,
+        memory: null,
+        disk: null,
+      },
+    }),
+  });
+  render(<TopBar />);
+  await waitFor(() => expect(screen.getByText('42%')).toBeTruthy());
+  expect(fetch).toHaveBeenCalledWith('/api/connections/21/data', expect.anything());
+  expect(fetch).not.toHaveBeenCalledWith('/api/widgets', expect.anything());
 });
 
 it('warns when system resources fail to load', async () => {

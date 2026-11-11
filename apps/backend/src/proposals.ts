@@ -25,7 +25,24 @@ export function createProposalService(
     change.kind === 'widget' && change.change.op === 'create' && change.change.source === 'proxmox';
   const managedBaseHash = (change: ReturnType<typeof managedChangeSchema.parse>) =>
     hash([managedHash(sqlite), isProxmoxWidget(change) ? (vault?.load() ?? null) : null]);
-  const proxmoxConfigured = () => Boolean(vault?.load());
+  const proxmoxConfigured = () => {
+    const marker = sqlite
+      .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
+      .get() as { name: string } | undefined;
+    if (marker) {
+      const id = Number(marker.name.slice('legacy-proxmox:'.length));
+      return (
+        Number.isSafeInteger(id) &&
+        id > 0 &&
+        Boolean(
+          sqlite
+            .prepare("SELECT id FROM integration_instances WHERE id=? AND type='proxmox'")
+            .get(id),
+        )
+      );
+    }
+    return Boolean(vault?.load());
+  };
   function issue(name: string, scopes: string[]) {
     if (
       !name.trim() ||

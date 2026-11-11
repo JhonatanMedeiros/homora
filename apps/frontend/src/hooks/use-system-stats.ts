@@ -34,13 +34,24 @@ export function useSystemStats(enabled: boolean): SystemStats {
 
     async function cycle() {
       try {
-        const list = await getJson('/api/widgets', signal);
-        const widget = Array.isArray(list)
-          ? (list as IntegrationWidget[]).find((item) => item.type === 'proxmox')
-          : undefined;
+        let selected: string | null = null;
+        try {
+          selected = localStorage.getItem('homora-top-bar-connection');
+        } catch {
+          /* No saved preference. */
+        }
+        let connectionId: number | undefined;
+        if (selected && /^[1-9]\d*$/.test(selected)) connectionId = Number(selected);
+        else {
+          const list = await getJson('/api/widgets', signal);
+          const widget = Array.isArray(list)
+            ? (list as IntegrationWidget[]).find((item) => item.type === 'proxmox')
+            : undefined;
+          connectionId = widget?.integrationId;
+        }
         if (signal.aborted) return;
-        if (!widget) return setState({ status: 'none' });
-        const body = (await getJson(`/api/connections/${widget.integrationId}/data`, signal)) as {
+        if (!connectionId) return setState({ status: 'none' });
+        const body = (await getJson(`/api/connections/${connectionId}/data`, signal)) as {
           data?: unknown;
         };
         const stats = widgetStats('proxmox', body.data)?.filter((stat) => stat.id !== undefined);

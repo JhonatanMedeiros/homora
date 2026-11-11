@@ -13,6 +13,7 @@ function fixture() {
     CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT NOT NULL,url TEXT NOT NULL,category TEXT NOT NULL,description TEXT NOT NULL,icon TEXT NOT NULL DEFAULT '',position INTEGER NOT NULL DEFAULT 0,allow_private INTEGER NOT NULL DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER);
     CREATE TABLE integration_instances(id INTEGER PRIMARY KEY,type TEXT NOT NULL,name TEXT NOT NULL,public_config TEXT NOT NULL,secret_ref TEXT,certificate_ref TEXT);
+    CREATE TABLE integration_migrations(name TEXT PRIMARY KEY);
     CREATE TABLE integration_widgets(id INTEGER PRIMARY KEY,integration_id INTEGER NOT NULL REFERENCES integration_instances(id) ON DELETE RESTRICT,type TEXT NOT NULL,name TEXT NOT NULL,public_config TEXT NOT NULL,service_id INTEGER REFERENCES services(id) ON DELETE SET NULL);
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);

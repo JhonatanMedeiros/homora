@@ -47,8 +47,8 @@ flowchart LR
   persists card, group, or widget changes without human approval. Connection suggestions open a human-completed form and do not create a connection; integration queries do not return credentials.
 - Persistence: SQLite, migrations, and database restore scripts are implemented.
   Credentials for connection adapters are encrypted at rest with an isolated key file;
-  Proxmox retains a legacy credential file. Automatic key rotation and defense against host
-  compromise are not yet implemented.
+  an old Proxmox credential file is retained after its transactional migration. Automatic key
+  rotation and defense against host compromise are not yet implemented.
 
 ## Initial Domain Model
 
@@ -92,9 +92,9 @@ releases exist.
   persistence, observation caching, and adapter dispatch; route handlers parse requests and
   translate results into HTTP status and JSON responses.
 - `integration-registry.ts` registers metadata and execution handlers for Jellyfin, Home
-  Assistant, Uptime Kuma, AdGuard Home, and Proxmox. The four connection adapters leverage
-  the network transport with destination policy; Proxmox retains its legacy vault and dedicated
-  transport, but participates in the unified catalog and execution registry.
+  Assistant, Uptime Kuma, AdGuard Home, and Proxmox. All connection adapters use the shared
+  network transport with destination policy. Legacy Proxmox credentials are copied once into
+  encrypted connection storage; the bridge row and widget references are preserved.
 - MCP runs in a separate process and accesses SQLite/vault directly. It authenticates agent tokens
   with granular scopes, offering queries and proposal creation. It intentionally bypasses the HTTP
   stack and web cookies.
@@ -131,9 +131,8 @@ Key areas of attention focus on consistency and safe evolution:
    interfaces; public schemas must remain strictly secret-free.
 4. Extract large pages or hooks into smaller units when doing so reduces cognitive load and
    simplifies test boundaries.
-5. While execution dispatch is unified, credential storage and configuration for Proxmox differ
-   from connection adapters. Maintain this distinction until product requirements and a migration
-   path justify unification.
+5. Legacy Proxmox files remain sensitive after migration. The migration marker prevents deleted
+   connections from being re-imported, and legacy HTTP routes are disabled after migration.
 6. Integration kinds are currently declared across execution catalogs, backend schemas, and UI.
    Keep these types explicit; centralize this contract when future adapters make duplication
    tangible, rather than introducing complex generic code generators now.

@@ -9,10 +9,22 @@ import {
 import { integrationRegistry } from '../integration-registry.js';
 import { proxmoxInputSchema, refreshQuerySchema } from '../input-schemas.js';
 import { InputError, errorBody } from '../api-error.js';
+import { getSqliteHandle, type createDatabase } from '@homora/db';
 
 type Vault = ReturnType<typeof createVault>;
 
-export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
+export function registerProxmoxRoutes(
+  app: FastifyInstance,
+  vault?: Vault,
+  db?: ReturnType<typeof createDatabase>['db'],
+) {
+  const migrated = () =>
+    Boolean(
+      db &&
+      getSqliteHandle(db)
+        .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
+        .get(),
+    );
   const cache = createObservationCache<unknown>(30_000);
   const collect = (config: ProxmoxConfig) =>
     integrationRegistry.prepare('proxmox', {
@@ -20,7 +32,8 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
       credentials: {},
       legacyConfig: config,
     })();
-  app.get('/api/proxmox/status', async () => {
+  app.get('/api/proxmox/status', async (_request, reply) => {
+    if (migrated()) return reply.code(410).send(errorBody('integration-unavailable'));
     const config = vault?.load();
     return { configured: Boolean(config), hasCa: Boolean(config?.ca) };
   });
@@ -54,6 +67,7 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
     errorBody(error instanceof InputError ? error.code : 'proxmox-config-failed');
 
   app.post('/api/proxmox/config', async (request, reply) => {
+    if (migrated()) return reply.code(410).send(errorBody('integration-unavailable'));
     if (!vault) return reply.code(503).send(errorBody('integration-unavailable'));
     let config: ProxmoxConfig;
     try {
@@ -71,6 +85,7 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
   });
 
   app.post('/api/proxmox/test', async (request, reply) => {
+    if (migrated()) return reply.code(410).send(errorBody('integration-unavailable'));
     if (!vault) return reply.code(503).send(errorBody('integration-unavailable'));
     let config: ProxmoxConfig;
     try {
@@ -91,6 +106,7 @@ export function registerProxmoxRoutes(app: FastifyInstance, vault?: Vault) {
   app.get<{ Querystring: { refresh?: string } }>(
     '/api/proxmox/resources',
     async (request, reply) => {
+      if (migrated()) return reply.code(410).send(errorBody('integration-unavailable'));
       try {
         const query = refreshQuerySchema.safeParse(request.query);
         if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
