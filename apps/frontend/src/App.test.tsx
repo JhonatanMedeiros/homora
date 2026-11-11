@@ -175,7 +175,7 @@ it('only removes a service after inline confirmation', async () => {
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Remover Immich' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Remover Immich' }));
   expect(deleted()).toHaveLength(0);
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção de Immich' }));
   await waitFor(() => expect(deleted()).toHaveLength(1));
@@ -212,8 +212,14 @@ it('edits an existing service in the page form', async () => {
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Editar Jellyfin' }));
+  const editButton = await screen.findByRole('button', { name: 'Editar Jellyfin' });
+  const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
+  fireEvent.click(editButton);
   expect(await screen.findByRole('dialog', { name: 'Editar serviço' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Editar Jellyfin', hidden: true })).toBe(editButton);
+  expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
+    serviceRequests,
+  );
   const form = screen.getByRole('form', { name: 'Editar serviço' });
   expect((within(form).getByLabelText('Nome') as HTMLInputElement).value).toBe('Jellyfin');
   fireEvent.change(within(form).getByLabelText('Nome'), { target: { value: 'Jellyfin 2' } });
@@ -362,7 +368,7 @@ it('reorders cards and closes form with Escape restoring focus', async () => {
   );
   expect(screen.queryByRole('button', { name: 'Mover A para baixo' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Mover A para baixo' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Mover A para baixo' }));
   await waitFor(() =>
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/services/order',
@@ -572,16 +578,16 @@ it('provides quick search, cards view, and collapsible groups', async () => {
 });
 
 it('opens service management directly and returns to dashboard', async () => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      return { ok: true, json: async () => [] };
-    }),
-  );
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'teste' } });
+  const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
   expect(window.location.pathname).toBe('/manage/services');
   expect(screen.getByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
@@ -591,9 +597,15 @@ it('opens service management directly and returns to dashboard', async () => {
   ).toBe('page');
   expect(within(navigation).getByRole('button', { name: 'Integrações' })).toBeTruthy();
   expect(within(navigation).getByRole('button', { name: 'Agentes' })).toBeTruthy();
+  fireEvent.click(within(navigation).getByRole('button', { name: 'Agentes' }));
+  expect(window.location.pathname).toBe('/manage/agents');
   fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
   expect(screen.getByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
   expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
+  expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('teste');
+  expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
+    serviceRequests,
+  );
 });
 
 it('opens a management route directly and responds to browser history', async () => {
