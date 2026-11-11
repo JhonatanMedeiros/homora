@@ -162,6 +162,28 @@ export function useServices() {
     }
   }
 
+  /**
+   * Undoes moveServiceToGroup: puts the service back in its original group and restores that group's
+   * previous order (`ids`, captured before the move, includes the service).
+   */
+  async function restoreService(service: Service, ids: number[]): Promise<string | null> {
+    const failure = await moveServiceToGroup(service, service.category);
+    if (failure) return failure;
+    try {
+      const response = await fetch('/api/services/order', {
+        method: 'PUT',
+        headers: json,
+        body: JSON.stringify({ category: service.category, ids }),
+      });
+      if (!response.ok) throw Error();
+      await refresh();
+      return null;
+    } catch {
+      void refresh();
+      return t('error.saveCardOrder');
+    }
+  }
+
   async function moveGroup(category: string, direction: -1 | 1): Promise<string | null> {
     const ordered = [...categories];
     const from = ordered.indexOf(category);
@@ -219,6 +241,7 @@ export function useServices() {
     refresh,
     placeService,
     moveServiceToGroup,
+    restoreService,
     moveGroup,
     setGroupColumns,
   };

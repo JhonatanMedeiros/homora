@@ -1,10 +1,13 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { toast } from 'sonner';
 import { App } from './App';
 
 afterEach(() => {
   cleanup();
+  // Toasts live in a module-level store and would leak into the next test.
+  toast.dismiss();
   window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
 });
@@ -928,4 +931,58 @@ it('notes when availability cannot be refreshed', async () => {
   render(<App />);
   await screen.findByText('Wiki');
   expect(await screen.findByText(/Não foi possível atualizar a disponibilidade/)).toBeTruthy();
+});
+
+it('undoes a move to another group, restoring group and order', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/manage/services');
+  const calls: { url: string; method?: string; body?: string }[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      calls.push({ url, method: init?.method, body: init?.body });
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 1,
+              name: 'Alfa',
+              url: 'http://a.test/',
+              category: 'Casa',
+              description: '',
+              position: 0,
+            },
+            {
+              id: 3,
+              name: 'Beta',
+              url: 'http://b.test/',
+              category: 'Casa',
+              description: '',
+              position: 1,
+            },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => (init?.method ? {} : []) };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Alfa');
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções de Alfa' }), { key: 'Enter' });
+  fireEvent.keyDown(await screen.findByRole('menuitem', { name: 'Mover para o grupo' }), {
+    key: 'ArrowRight',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Infra' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }));
+  await waitFor(() => {
+    const order = calls.find((call) => call.url === '/api/services/order');
+    expect(JSON.parse(order?.body ?? '{}')).toEqual({ category: 'Casa', ids: [1, 3] });
+  });
+  const puts = calls.filter((call) => call.url === '/api/services/1' && call.method === 'PUT');
+  expect(puts.map((call) => JSON.parse(call.body ?? '{}').category)).toEqual(['Infra', 'Casa']);
+  window.history.replaceState(null, '', '/');
 });

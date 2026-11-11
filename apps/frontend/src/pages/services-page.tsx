@@ -37,6 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 import { OrganizePanel } from '@/components/organize-panel';
 import { PageHeader } from '@/components/page-header';
 import { ServiceCard } from '@/components/service-card';
@@ -316,9 +317,23 @@ export function ServicesPage({
     }
   }
   async function moveToGroup(service: Service, group: string) {
+    // Captured before the move so Undo can restore the original position, not just the group.
+    const originalOrder = sortedIn(service.category).map((item) => item.id);
     const failure = await data.moveServiceToGroup(service, group);
-    if (failure) setMessage(failure);
-    else announce(t('page.moved', { name: service.name, group }));
+    if (failure) {
+      setMessage(failure);
+      return;
+    }
+    toast(t('page.moved', { name: service.name, group }), {
+      duration: 8000,
+      action: {
+        label: t('common.undo'),
+        onClick: () =>
+          void data.restoreService(service, originalOrder).then((undoFailure) => {
+            if (undoFailure) setMessage(undoFailure);
+          }),
+      },
+    });
   }
   async function reorder(
     task: Promise<string | null>,
