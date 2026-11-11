@@ -38,6 +38,33 @@ it('registers Home Assistant with explicit private network authorization', async
   );
   expect(await screen.findByText('Integração salva.')).toBeTruthy();
 });
+it('creates a named Proxmox connection with its own credentials', async () => {
+  const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => ({
+    ok: true,
+    json: async () => (init?.method === 'POST' ? { ok: true } : []),
+  }));
+  vi.stubGlobal('fetch', fetchMock);
+  render(<Connections />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
+  fireEvent.change(screen.getByLabelText('Tipo de serviço'), { target: { value: 'proxmox' } });
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Cluster principal' } });
+  fireEvent.change(screen.getByLabelText('URL do serviço'), {
+    target: { value: 'https://pve.example:8006' },
+  });
+  fireEvent.change(screen.getByLabelText('ID do token'), { target: { value: 'user@pve!homora' } });
+  fireEvent.change(screen.getByLabelText('Segredo do token'), { target: { value: 'test-secret' } });
+  fireEvent.click(screen.getByLabelText('Permitir acesso à rede privada para este serviço'));
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar conexão' }));
+  await waitFor(() =>
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/connections',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"tokenId":"user@pve!homora"'),
+      }),
+    ),
+  );
+});
 it('tests connection and displays sanitized API failure', async () => {
   vi.stubGlobal(
     'fetch',
@@ -184,8 +211,19 @@ it('creates, queries, and removes named widgets using linked connection', async 
 it('offers Proxmox as widget source and queries aggregated numbers', async () => {
   const widgets: unknown[] = [];
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-    if (url === '/api/proxmox/status')
-      return { ok: true, json: async () => ({ configured: true, hasCa: false }) };
+    if (url === '/api/connections')
+      return {
+        ok: true,
+        json: async () => [
+          {
+            id: 99,
+            type: 'proxmox',
+            name: 'Servidor Proxmox',
+            url: 'https://pve.example',
+            allowPrivate: true,
+          },
+        ],
+      };
     if (url === '/api/widgets' && init?.method === 'POST') {
       const body = JSON.parse(String(init.body));
       widgets.push({ id: 7, integrationId: 99, type: 'proxmox', name: body.name, serviceId: null });
@@ -209,7 +247,7 @@ it('offers Proxmox as widget source and queries aggregated numbers', async () =>
   vi.stubGlobal('fetch', fetchMock);
   render(<Connections />);
   const select = await screen.findByLabelText('Conexão');
-  await waitFor(() => expect((select as HTMLSelectElement).value).toBe('proxmox'));
+  await waitFor(() => expect((select as HTMLSelectElement).value).toBe('99'));
   fireEvent.change(screen.getByLabelText('Nome do widget'), { target: { value: 'Cluster' } });
   fireEvent.click(screen.getByRole('button', { name: 'Criar widget' }));
   await waitFor(() =>
@@ -217,7 +255,7 @@ it('offers Proxmox as widget source and queries aggregated numbers', async () =>
       '/api/widgets',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ source: 'proxmox', name: 'Cluster' }),
+        body: JSON.stringify({ integrationId: 99, name: 'Cluster' }),
       }),
     ),
   );

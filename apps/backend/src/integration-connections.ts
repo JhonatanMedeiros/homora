@@ -1,14 +1,18 @@
 import { X509Certificate } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { createDatabase, integrationInstances, integrationWidgets, services } from '@homora/db';
-import { createVault } from './vault.js';
+import {
+  createDatabase,
+  getSqliteHandle,
+  integrationInstances,
+  integrationWidgets,
+  services,
+} from '@homora/db';
+import { createVault, validateProxmoxConfig } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
 import { createObservationCache } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
 import { InputError } from './api-error.js';
-import { createHash } from 'node:crypto';
-import { summarizeProxmox } from './proxmox-summary.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
@@ -20,12 +24,13 @@ type ConnectionInput = {
   allowPrivate?: boolean;
   entityId?: string;
   username?: string;
+  tokenId?: string;
   slug?: string;
   secret?: string;
   ca?: string;
   removeCa?: boolean;
 };
-type Credentials = { secret?: string; ca?: string };
+type Credentials = { secret?: string; ca?: string; tokenId?: string };
 type ConnectionData = {
   url: string;
   allowPrivate: boolean;
@@ -33,12 +38,7 @@ type ConnectionData = {
   username?: string;
   slug?: string;
 };
-const connectionTypes = new Set(
-  integrationRegistry
-    .list()
-    .filter(({ type }) => type !== 'proxmox')
-    .map(({ type }) => type),
-);
+const connectionTypes = new Set(integrationRegistry.list().map(({ type }) => type));
 const storedConfigSchema = z
   .object({
     url: z.string().max(2048),
@@ -49,7 +49,11 @@ const storedConfigSchema = z
   })
   .strict();
 const credentialsSchema = z
-  .object({ secret: z.string().max(65536).optional(), ca: z.string().max(65536).optional() })
+  .object({
+    secret: z.string().max(65536).optional(),
+    ca: z.string().max(65536).optional(),
+    tokenId: z.string().max(255).optional(),
+  })
   .strict();
 const widgetSchema = z
   .object({
@@ -78,6 +82,67 @@ function validateCa(ca: string) {
 }
 
 export function createIntegrationConnections(db: Db, vault?: Vault) {
+  // The encrypted legacy file remains untouched as a backup. The marker prevents
+  // re-importing a deliberately deleted connection on subsequent starts.
+  function migrateLegacy(): number | null {
+    if (!vault) return null;
+    const sqlite = getSqliteHandle(db);
+    sqlite.exec('BEGIN IMMEDIATE');
+    try {
+      const marker = sqlite
+        .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
+        .get() as { name: string } | undefined;
+      if (marker) {
+        sqlite.exec('COMMIT');
+        const id = Number(marker.name.slice('legacy-proxmox:'.length));
+        return Number.isSafeInteger(id) && id > 0 ? id : null;
+      }
+      const legacy = vault.load();
+      if (!legacy) {
+        sqlite.exec('COMMIT');
+        return null;
+      }
+      const config = validateProxmoxConfig(legacy);
+      const bridge = sqlite
+        .prepare(
+          "SELECT id FROM integration_instances WHERE type = 'proxmox' AND public_config = '{}' AND secret_ref IS NULL ORDER BY id LIMIT 1",
+        )
+        .get() as { id: number } | undefined;
+      const data = JSON.stringify({ url: config.url, allowPrivate: true });
+      const secret = vault.seal(
+        JSON.stringify({
+          secret: config.secret,
+          tokenId: config.tokenId,
+          ...(config.ca ? { ca: config.ca } : {}),
+        }),
+        false,
+      );
+      let id: number;
+      if (bridge) {
+        id = bridge.id;
+        sqlite
+          .prepare(
+            'UPDATE integration_instances SET public_config = ?, secret_ref = ?, certificate_ref = ? WHERE id = ?',
+          )
+          .run(data, secret, config.ca ? 'both' : 'secret', id);
+      } else {
+        const result = sqlite
+          .prepare(
+            "INSERT INTO integration_instances(type, name, public_config, secret_ref, certificate_ref) VALUES ('proxmox', 'Proxmox VE', ?, ?, ?)",
+          )
+          .run(data, secret, config.ca ? 'both' : 'secret');
+        id = Number(result.lastInsertRowid);
+      }
+      sqlite
+        .prepare('INSERT INTO integration_migrations(name) VALUES (?)')
+        .run(`legacy-proxmox:${id}`);
+      sqlite.exec('COMMIT');
+      return id;
+    } catch (error) {
+      sqlite.exec('ROLLBACK');
+      throw error;
+    }
+  }
   const caches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
   const cacheFor = (id: number) => {
     let cache = caches.get(id);
@@ -137,10 +202,15 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       !!current &&
       (current.type !== type ||
         originChanged ||
-        (type === 'adguard-home' && old?.username !== data.username));
+        (type === 'adguard-home' && old?.username !== data.username) ||
+        (type === 'proxmox' && !!input.tokenId && saved.tokenId !== input.tokenId));
     if (identityChanged && saved.secret && !input.secret) throw new InputError('secret-required');
     const keys: Credentials = {
       secret: input.secret || (identityChanged ? undefined : saved.secret),
+      tokenId:
+        type === 'proxmox'
+          ? input.tokenId || (originChanged ? undefined : saved.tokenId)
+          : undefined,
       ca: input.removeCa ? undefined : input.ca || (identityChanged ? undefined : saved.ca),
     };
     if (keys.ca) validateCa(keys.ca);
@@ -155,6 +225,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
         {
           headers: request.authorization ? { authorization: request.authorization } : {},
           ca: keys.ca,
+          ...(type === 'proxmox' ? { maxBodyBytes: 2_000_000 } : {}),
         },
       );
       let body: unknown = null;
@@ -200,44 +271,9 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     if (current) cacheFor(current.id).invalidate();
     return publicRow(result);
   }
-  /**
-   * Proxmox remains in legacy vault; a bridge row (without secret) allows linking widgets to it.
-   * Configuration signature prevents serving cached data from a previous address or token.
-   */
-  const proxmoxSignatures = new Map<number, string>();
-  function proxmoxConfig() {
-    let config;
-    try {
-      config = vault?.load() ?? null;
-    } catch {
-      throw new InputError('proxmox-load-failed');
-    }
-    if (!config) throw new InputError('proxmox-not-configured');
-    return config;
-  }
-  async function proxmoxInstanceId() {
-    const existing = (
-      await db.select().from(integrationInstances).where(eq(integrationInstances.type, 'proxmox'))
-    )[0];
-    if (existing) return existing.id;
-    const [created] = await db
-      .insert(integrationInstances)
-      .values({ type: 'proxmox', name: 'Proxmox VE', publicConfig: '{}' })
-      .returning();
-    return created.id;
-  }
   async function collect(id: number) {
     const row = await find(id);
     if (!row) return null;
-    if (row.type === 'proxmox') {
-      const config = proxmoxConfig();
-      const raw = await integrationRegistry.prepare('proxmox', {
-        publicConfig: {},
-        credentials: {},
-        legacyConfig: config,
-      })();
-      return summarizeProxmox(raw);
-    }
     const data = parseData(row);
     const keys = credentials(row);
     return await prepareAdapter(row.type, data, keys)();
@@ -251,8 +287,9 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
 
   return {
     async listConnections() {
+      migrateLegacy();
       return (await db.select().from(integrationInstances))
-        .filter((row) => row.type !== 'proxmox')
+        .filter((row) => row.type !== 'proxmox' || row.publicConfig !== '{}')
         .map(publicRow);
     },
     async listWidgets() {
@@ -264,10 +301,9 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       name: string,
       serviceId: number | null = null,
     ) {
-      if ('source' in target) proxmoxConfig();
-      const connection = await find(
-        'source' in target ? await proxmoxInstanceId() : target.integrationId,
-      );
+      const legacyId = migrateLegacy();
+      if ('source' in target && legacyId === null) throw new InputError('proxmox-not-configured');
+      const connection = await find('source' in target ? legacyId! : target.integrationId);
       if (!connection) return null;
       if (serviceId !== null && !(await serviceExists(serviceId)))
         return 'service-missing' as const;
@@ -301,37 +337,47 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       return rows.length > 0;
     },
     createConnection(input: ConnectionInput) {
+      migrateLegacy();
       return save(input);
     },
     async updateConnection(id: number, input: ConnectionInput) {
+      migrateLegacy();
       const current = await find(id);
-      return current && current.type !== 'proxmox' ? save(input, current) : null;
+      return current ? save(input, current) : null;
     },
     async deleteConnection(id: number) {
-      const current = await find(id);
-      if (!current || current.type === 'proxmox') return 'missing' as const;
-      const widgets = await db
-        .select({ id: integrationWidgets.id })
-        .from(integrationWidgets)
-        .where(eq(integrationWidgets.integrationId, current.id));
-      if (widgets.length) return 'has-widgets' as const;
-      await db.delete(integrationInstances).where(eq(integrationInstances.id, id));
-      caches.delete(id);
-      return 'deleted' as const;
+      migrateLegacy();
+      const sqlite = getSqliteHandle(db);
+      sqlite.exec('BEGIN IMMEDIATE');
+      try {
+        if (!sqlite.prepare('SELECT id FROM integration_instances WHERE id=?').get(id)) {
+          sqlite.exec('COMMIT');
+          return 'missing' as const;
+        }
+        if (
+          sqlite
+            .prepare('SELECT id FROM integration_widgets WHERE integration_id=? LIMIT 1')
+            .get(id)
+        ) {
+          sqlite.exec('COMMIT');
+          return 'has-widgets' as const;
+        }
+        sqlite
+          .prepare('UPDATE integration_migrations SET name=? WHERE name=?')
+          .run('legacy-proxmox:deleted', `legacy-proxmox:${id}`);
+        sqlite.prepare('DELETE FROM integration_instances WHERE id=?').run(id);
+        sqlite.exec('COMMIT');
+        caches.delete(id);
+        return 'deleted' as const;
+      } catch (error) {
+        sqlite.exec('ROLLBACK');
+        throw error;
+      }
     },
     async connectionData(id: number, refresh = false) {
+      migrateLegacy();
       const row = await find(id);
       if (!row) return null;
-      if (row.type === 'proxmox') {
-        const config = proxmoxConfig();
-        const signature = createHash('sha256')
-          .update(JSON.stringify([config.url, config.tokenId, config.secret, config.ca ?? '']))
-          .digest('hex');
-        if (proxmoxSignatures.get(id) !== signature) {
-          proxmoxSignatures.set(id, signature);
-          cacheFor(id).invalidate();
-        }
-      }
       return cacheFor(id).collect(async () => {
         const data = await collect(id);
         if (data === null) throw new Error('Integration not found.');
@@ -339,8 +385,9 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       }, refresh);
     },
     async testConnection(id: number) {
+      migrateLegacy();
       const row = await find(id);
-      if (!row || row.type === 'proxmox') return false;
+      if (!row) return false;
       await collect(id);
       return true;
     },

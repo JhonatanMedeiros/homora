@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "710b370e-12ec-4492-a0b2-544173c676ae",
+  "id": "23c0d2f4-ffa7-4ede-b160-8b4615300f07",
   "prevId": "e70aa90e-25f2-4393-8553-dd70b8a15f2c",
   "tables": {
     "account": {
@@ -231,31 +231,9 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "detail": {
-          "name": "detail",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "ip_address": {
-          "name": "ip_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
-      "indexes": {
-        "audit_events_created_idx": {
-          "name": "audit_events_created_idx",
-          "columns": [
-            "created_at"
-          ],
-          "isUnique": false
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -329,6 +307,23 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "integration_migrations": {
+      "name": "integration_migrations",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
           "autoincrement": false
         }
       },

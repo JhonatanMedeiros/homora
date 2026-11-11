@@ -41,6 +41,11 @@ export const integrationInstances = sqliteTable('integration_instances', {
   certificateRef: text('certificate_ref'),
 });
 
+/** Records application-level migrations that require decrypting legacy files. */
+export const integrationMigrations = sqliteTable('integration_migrations', {
+  name: text('name').primaryKey(),
+});
+
 export const integrationWidgets = sqliteTable('integration_widgets', {
   id: integer('id').primaryKey(),
   integrationId: integer('integration_id')

@@ -1,5 +1,5 @@
 import { apiError, t } from '@/i18n';
-export type Kind = 'jellyfin' | 'home-assistant' | 'uptime-kuma' | 'adguard-home';
+export type Kind = 'jellyfin' | 'home-assistant' | 'uptime-kuma' | 'adguard-home' | 'proxmox';
 export type Connection = {
   id: number;
   type: Kind;
@@ -13,7 +13,7 @@ export type Connection = {
   slug?: string;
 };
 /** Widget kinds: connection catalog types and Proxmox, which still uses the legacy vault. */
-export type WidgetKind = Kind | 'proxmox';
+export type WidgetKind = Kind;
 export type IntegrationWidget = {
   id: number;
   integrationId: number;
@@ -32,6 +32,7 @@ export type ConnectionFormState = {
   removeCa: boolean;
   entityId: string;
   username: string;
+  tokenId: string;
   slug: string;
 };
 export const labels: Record<Kind, string> = {
@@ -39,13 +40,15 @@ export const labels: Record<Kind, string> = {
   'home-assistant': 'Home Assistant',
   'uptime-kuma': 'Uptime Kuma',
   'adguard-home': 'AdGuard Home',
+  proxmox: 'Proxmox VE',
 };
-export const widgetLabels: Record<WidgetKind, string> = { ...labels, proxmox: 'Proxmox VE' };
+export const widgetLabels: Record<WidgetKind, string> = labels;
 export const marks: Record<Kind, string> = {
   jellyfin: 'J',
   'home-assistant': 'HA',
   'uptime-kuma': 'UK',
   'adguard-home': 'A',
+  proxmox: 'PVE',
 };
 export const emptyForm: ConnectionFormState = {
   type: 'jellyfin',
@@ -57,6 +60,7 @@ export const emptyForm: ConnectionFormState = {
   removeCa: false,
   entityId: '',
   username: '',
+  tokenId: '',
   slug: '',
 };
 /** Only public fields from an approved suggestion can prefill this form. */

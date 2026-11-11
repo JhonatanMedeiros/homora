@@ -12,6 +12,7 @@ import type { HomeAssistantConfig } from './home-assistant.js';
 import type { JellyfinConfig } from './jellyfin.js';
 import type { UptimeKumaConfig } from './uptime-kuma.js';
 import type { ProxmoxConfig } from './vault.js';
+import { createProxmoxConnectionAdapter } from './proxmox-connection.js';
 
 function transportFrom(context: IntegrationContext) {
   if (!context.transport) throw new Error('Integration transport unavailable.');
@@ -24,6 +25,16 @@ export const integrationRegistry = createIntegrationRegistry([
     label: proxmoxAdapter.label,
     capabilities: proxmoxAdapter.capabilities,
     prepare(context) {
+      if (!context.legacyConfig) {
+        const adapter = createProxmoxConnectionAdapter(transportFrom(context));
+        const config = adapter.validate({
+          url: String(context.publicConfig.url ?? ''),
+          tokenId: context.credentials.tokenId ?? '',
+          secret: context.credentials.secret ?? '',
+          ca: context.credentials.ca,
+        });
+        return () => adapter.collect(config);
+      }
       const config = proxmoxAdapter.validate(context.legacyConfig as ProxmoxConfig);
       return () => proxmoxAdapter.collect(config);
     },

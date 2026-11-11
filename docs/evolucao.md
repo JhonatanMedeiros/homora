@@ -691,6 +691,30 @@ implementation because it changes a security default.
   within the 8 seconds (for example another move), Undo still restores the order captured at the
   time of its own move, which can overwrite the later change.
 
+### Agents Tab Redesign (2026-11-11)
+
+- Creating an agent is now a dialog in two steps. Step 1 asks for a name and a profile (Read only,
+  Suggests changes, Custom); "Suggests changes" is the default and selects reading services,
+  creating proposals, and proposing group changes. Custom shows the nine permissions. Step 2 shows
+  the token once, with a copy button, the setup guide already containing it, and a "I saved the
+  token" checkbox that enables Done. Closing earlier asks for confirmation.
+- Generate new token and Revoke use alert dialogs that state the consequence, replacing
+  `window.confirm` and the inline confirm button. The rotated token opens the same step-2 dialog.
+- Each agent is a card with its creation date (already returned by the API as `createdAt`), a
+  pending-proposals badge, permission badges (suggest-type permissions highlighted), and a menu.
+- "Connect" in the header and "How to connect" in each agent menu open a setup guide with tabs for
+  Claude Code, Codex, Claude Desktop, Cursor, VS Code, and generic JSON. Formats were checked
+  against each client's documentation. The token is stored only as a digest, so outside of step 2
+  the snippet uses a `COLE_O_TOKEN_AQUI` placeholder. The Homora folder is typed once and saved in
+  `localStorage` (not a secret) to fill the script and database paths. No backend change.
+- On phones the dialogs rise from the bottom as a sheet and the client tabs scroll sideways.
+- Validation: `pnpm check` and tests for the snippets and the dialogs; desktop and 390 px
+  screenshots with a mocked API. **Not verified:** the snippets were not run against the real
+  clients (Claude Code, Codex, Claude Desktop, Cursor, VS Code); the VS Code format is the
+  `servers` format documented for `.vscode/mcp.json`, which VS Code's own page labels as the older
+  local format. Renaming an agent and editing its permissions after creation need backend changes
+  and were left out.
+
 ## Core Homepage — Implemented Flows
 
 - Additive migration generates persistent groups from existing categories and initializes card
@@ -785,6 +809,17 @@ implementation because it changes a security default.
 - **Not validated:** authentication rate limits under load and behind a real HTTPS reverse proxy;
   for this reason, session and secret review items in P2 remain open.
 
+### Named Proxmox connections
+
+- Proxmox uses named connections, with one API endpoint per connection, shared destination
+  controls, encrypted credentials, reusable widgets and selectable top-bar source. Cluster
+  data remains aggregated; node-specific widgets are not implemented.
+- Legacy credentials are migrated transactionally on first connection access, preserving the
+  bridge ID and widgets. The legacy file is retained; a migration marker prevents resurrection
+  after deletion. Old HTTP endpoints return 410 after migration.
+- Automated tests exercise migration with and without widgets, missing keys, multiple independent
+  configurations and mocked network requests. Live cluster compatibility remains unverified.
+
 ## Auth Log — Better Auth for Web Authentication (2026-11-11)
 
 - Replaced the file-based account (`<database>.auth`, in-memory sessions) with Better Auth
@@ -822,7 +857,7 @@ implementation because it changes a security default.
   active sessions with two-step end and "end the others") and the **Activity** feed (who did
   what: sign-ins, failures, password and session changes, proposal decisions, agent identity
   events), plus a user menu in the top bar. The UI was approved from a design proposal first.
-- Schema: migration `0011` adds `detail`, `ip_address` and a time index to `audit_events`.
+- Schema: migration `0012` adds `detail`, `ip_address` and a time index to `audit_events`.
   Existing rows keep working. Failed sign-ins keep only address and attempt count.
 - Decisions: the email stays read-only for now (no verification without email delivery); no new
   Better Auth routes are exposed, Homora wraps them so session tokens never reach the browser;

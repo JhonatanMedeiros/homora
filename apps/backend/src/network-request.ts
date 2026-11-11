@@ -8,6 +8,8 @@ export type RequestOptions = {
   headers?: Readonly<Record<string, string>>;
   ca?: string;
   timeoutMs?: number;
+  /** Maximum response size; adapters may lower or raise it up to 2 MB. */
+  maxBodyBytes?: number;
   /** Returns 3xx status code instead of failing. Redirect is not followed. */
   reportRedirect?: boolean;
 };
@@ -20,6 +22,9 @@ export async function getAuthorizedResponse(
   options: RequestOptions = {},
 ): Promise<AuthorizedResponse> {
   const timeoutMs = options.timeoutMs ?? 8000;
+  const maxBodyBytes = options.maxBodyBytes ?? 262144;
+  if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1 || maxBodyBytes > 2_000_000)
+    throw new Error('Invalid response limit.');
   const startedAt = Date.now();
   const headers: Record<string, string> = {};
   for (const [key, value] of Object.entries(options.headers ?? {})) {
@@ -83,7 +88,7 @@ export async function getAuthorizedResponse(
         let length = 0;
         res.on('data', (chunk: Buffer) => {
           length += chunk.length;
-          if (length > 262144) {
+          if (length > maxBodyBytes) {
             req.destroy(new Error('Response exceeded limit.'));
             return;
           }

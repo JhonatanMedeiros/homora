@@ -23,7 +23,6 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
   const [widgetName, setWidgetName] = useState('');
   const [widgetConnection, setWidgetConnection] = useState('');
   const [widgetCard, setWidgetCard] = useState('');
-  const [proxmoxConfigured, setProxmoxConfigured] = useState(false);
   const [cards, setCards] = useState<{ id: number; name: string }[]>([]);
   const [widgetResult, setWidgetResult] = useState<{ id: number; data: unknown } | null>(null);
   const [form, setForm] = useState<ConnectionFormState | null>(initialDraft ?? null);
@@ -69,18 +68,6 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    request('/api/proxmox/status', { signal: controller.signal })
-      .then((status) => {
-        if (!controller.signal.aborted)
-          setProxmoxConfigured(Boolean((status as { configured?: unknown } | null)?.configured));
-      })
-      .catch(() => {
-        // Without Proxmox status, it simply won't appear as a widget option.
-      });
-    return () => controller.abort();
-  }, []);
-  useEffect(() => {
-    const controller = new AbortController();
     request('/api/services', { signal: controller.signal })
       .then((list) => {
         if (Array.isArray(list) && !controller.signal.aborted)
@@ -105,8 +92,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
     });
     setMessage('');
   }
-  const selectedConnection =
-    widgetConnection || (items?.length ? String(items[0].id) : proxmoxConfigured ? 'proxmox' : '');
+  const selectedConnection = widgetConnection || (items?.length ? String(items[0].id) : '');
   async function createWidget(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -116,9 +102,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...(selectedConnection === 'proxmox'
-            ? { source: 'proxmox' }
-            : { integrationId: Number(selectedConnection) }),
+          integrationId: Number(selectedConnection),
           name: widgetName,
           ...(widgetCard ? { serviceId: Number(widgetCard) } : {}),
         }),
@@ -198,6 +182,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
         ...(form.removeCa ? { removeCa: true } : {}),
         ...(form.type === 'home-assistant' ? { entityId: form.entityId } : {}),
         ...(form.type === 'adguard-home' ? { username: form.username } : {}),
+        ...(form.type === 'proxmox' && form.tokenId ? { tokenId: form.tokenId } : {}),
         ...(form.type === 'uptime-kuma' ? { slug: form.slug } : {}),
       };
       await request(editing === null ? '/api/connections' : `/api/connections/${editing}`, {
@@ -257,7 +242,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
         </SectionTitle>
         <p className="text-sm text-muted-foreground">{t('connections.description')}</p>
       </div>
-      {(Boolean(items?.length) || proxmoxConfigured || widgets.length > 0) && (
+      {(Boolean(items?.length) || widgets.length > 0) && (
         <WidgetsSection
           items={items}
           widgets={widgets}
@@ -265,7 +250,6 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
           confirming={confirming}
           widgetName={widgetName}
           widgetConnection={selectedConnection}
-          proxmoxConfigured={proxmoxConfigured}
           cards={cards}
           widgetCard={widgetCard}
           onCardChange={setWidgetCard}

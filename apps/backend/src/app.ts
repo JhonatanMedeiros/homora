@@ -86,7 +86,7 @@ export function createApp(
   registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
-  registerProxmoxRoutes(app, vault);
+  registerProxmoxRoutes(app, vault, db);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);

@@ -33,7 +33,8 @@ export function ConnectionForm({
   onCancel,
 }: Props) {
   const set = (patch: Partial<ConnectionFormState>) => onChange({ ...form, ...patch });
-  const hasSecret = form.type === 'home-assistant' || form.type === 'adguard-home';
+  const hasSecret =
+    form.type === 'home-assistant' || form.type === 'adguard-home' || form.type === 'proxmox';
   return (
     <form onSubmit={onSubmit}>
       <Card>
@@ -110,12 +111,27 @@ export function ConnectionForm({
                 />
               </Field>
             )}
+            {form.type === 'proxmox' && (
+              <Field>
+                <FieldLabel htmlFor="connection-token-id">{t('proxmox.tokenId')}</FieldLabel>
+                <Input
+                  id="connection-token-id"
+                  required={!editing}
+                  value={form.tokenId}
+                  placeholder={t('proxmox.tokenIdPlaceholder')}
+                  onChange={(event) => set({ tokenId: event.target.value })}
+                />
+                {editing && <FieldDescription>{t('connections.keepSecret')}</FieldDescription>}
+              </Field>
+            )}
             {hasSecret && (
               <Field>
                 <FieldLabel htmlFor="connection-secret">
-                  {form.type === 'home-assistant'
-                    ? t('connections.accessToken')
-                    : t('connections.password')}
+                  {form.type === 'proxmox'
+                    ? t('proxmox.secret')
+                    : form.type === 'home-assistant'
+                      ? t('connections.accessToken')
+                      : t('connections.password')}
                 </FieldLabel>
                 <PasswordInput
                   id="connection-secret"
