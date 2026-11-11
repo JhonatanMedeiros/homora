@@ -44,7 +44,10 @@ export function StatusLight({ state, blocked = false, label: custom, className }
         className,
       )}
     >
-      <span aria-hidden="true" className={cn('size-2 shrink-0 rounded-full', dot)} />
+      <span
+        aria-hidden="true"
+        className={cn('status-light-dot size-2 shrink-0 rounded-full', dot)}
+      />
       {custom ?? t(label)}
     </span>
   );

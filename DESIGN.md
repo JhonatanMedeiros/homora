@@ -154,3 +154,7 @@ shadcn/ui new-york, Radix, Lucide, Tailwind v4, tokens in `@theme inline`. Primi
 - **Don't** use drop shadows for elevation.
 - **Don't** communicate status by color alone.
 - **Don't** reintroduce uppercase wide-tracking labels outside tiny mono captions.
+
+## Motion
+
+Motion is brief and tied to use: management content and tabs enter when navigating, search results appear from the search field, and expanding a group reveals its contents. Buttons acknowledge a press; service surfaces, status lights, and organize-mode drop targets transition as their state changes. Reduced-motion preferences suppress these movements.

@@ -17,7 +17,7 @@ export function QuickResults({ query, services, statuses, blockedIds, onClose }:
     .slice(0, 8);
   if (!results.length) return null;
   return (
-    <div className="absolute top-full z-10 mt-2 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+    <div className="motion-popover absolute top-full z-10 mt-2 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
       <p className="px-3 py-2 text-xs text-muted-foreground">{t('quick.hint')}</p>
       <ul aria-label={t('quick.results')}>
         {results.map((service) => {
@@ -35,7 +35,7 @@ export function QuickResults({ query, services, statuses, blockedIds, onClose }:
                 href={service.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex min-h-11 items-center justify-between gap-3 rounded-sm px-3 py-2 text-sm outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex min-h-11 items-center justify-between gap-3 rounded-sm px-3 py-2 text-sm transition-colors outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                 onKeyDown={(event) => {
                   const links = Array.from(
                     document.querySelectorAll<HTMLAnchorElement>('[data-quick-result]'),

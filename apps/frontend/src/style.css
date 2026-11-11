@@ -158,3 +158,68 @@
     }
   }
 }
+
+/* Motion stays close to the action: a lit service responds to focus, while
+   navigation and search reveal their new context without delaying use. */
+@layer components {
+  .service-surface {
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .status-light-dot {
+    transition:
+      background-color 240ms ease,
+      box-shadow 240ms ease;
+  }
+
+  .organize-surface {
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      opacity 160ms ease;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-slot='button']:not(:disabled):not([aria-disabled='true']):active {
+      transform: scale(0.97);
+    }
+  }
+
+  .motion-group,
+  .motion-feedback,
+  [data-slot='tabs-content'][data-state='active'] {
+    animation: content-arrive 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .motion-panel {
+    animation: panel-arrive 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .motion-popover {
+    transform-origin: top center;
+    animation: popover-arrive 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes content-arrive {
+  from {
+    opacity: 0.65;
+  }
+}
+
+@keyframes panel-arrive {
+  from {
+    opacity: 0.7;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes popover-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
