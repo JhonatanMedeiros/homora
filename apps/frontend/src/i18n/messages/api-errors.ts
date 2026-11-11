@@ -43,6 +43,11 @@ export const en = {
   'apiError.account-exists': 'Account already configured.',
   'apiError.account-setup-failed':
     'Could not create the account. Check the name and email, and use a password with at least 8 characters.',
+  'apiError.invalid-current-password': 'The current password is incorrect.',
+  'apiError.invalid-new-password': 'Use a new password with at least 8 characters.',
+  'apiError.invalid-profile': 'Provide a name with up to 80 characters.',
+  'apiError.too-many-attempts': 'Too many attempts. Try again later.',
+  'apiError.session-not-found': 'Session not found.',
   'apiError.identity-invalid': 'Invalid identity or scopes.',
   'apiError.identity-not-found': 'Identity not found.',
   'apiError.proposal-unavailable': 'Proposal unavailable.',
@@ -121,6 +126,11 @@ export const ptBR = {
   'apiError.account-exists': 'Conta já configurada.',
   'apiError.account-setup-failed':
     'Não foi possível criar a conta. Verifique nome e e-mail, e use uma senha com pelo menos 8 caracteres.',
+  'apiError.invalid-current-password': 'A senha atual está incorreta.',
+  'apiError.invalid-new-password': 'Use uma nova senha com pelo menos 8 caracteres.',
+  'apiError.invalid-profile': 'Informe um nome com até 80 caracteres.',
+  'apiError.too-many-attempts': 'Muitas tentativas. Tente novamente mais tarde.',
+  'apiError.session-not-found': 'Sessão não encontrada.',
   'apiError.identity-invalid': 'Identidade ou escopos inválidos.',
   'apiError.identity-not-found': 'Identidade não encontrada.',
   'apiError.proposal-unavailable': 'Proposta indisponível.',

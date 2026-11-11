@@ -850,3 +850,23 @@ implementation because it changes a security default.
 - **Not validated:** behind the bundled nginx and a real HTTPS reverse proxy (per-client limit
   through `X-Forwarded-For`); Safari and Firefox (including Secure cookies on
   `http://localhost`); behavior under concurrent load. The open P2 session review item stays open.
+
+## Account and Activity Log (v2.1, 2026-11-11)
+
+- Added the **Account** page (profile name, change password with "sign out of other devices",
+  active sessions with two-step end and "end the others") and the **Activity** feed (who did
+  what: sign-ins, failures, password and session changes, proposal decisions, agent identity
+  events), plus a user menu in the top bar. The UI was approved from a design proposal first.
+- Schema: migration `0012` adds `detail`, `ip_address` and a time index to `audit_events`.
+  Existing rows keep working. Failed sign-ins keep only address and attempt count.
+- Decisions: the email stays read-only for now (no verification without email delivery); no new
+  Better Auth routes are exposed, Homora wraps them so session tokens never reach the browser;
+  proposal events do not show the card name yet.
+- Validated: `pnpm check` (lint, format, types, unit and integration tests), including new
+  backend tests for the account API, throttling and privacy of the feed, and frontend tests for
+  the feed and the two-step session revoke. Chromium (headless) against the Vite dev server and
+  the compiled backend on a temporary database: account creation, user menu, rename, wrong and
+  right current password, a second browser signed out after the change, feed contents and filter,
+  no typed email or password in the feed, and no horizontal scroll at 390 px wide.
+  **Not validated:** the migration on a database with existing data, Safari and Firefox, the
+  light/dark themes of the new pages, and behind a trusted HTTPS proxy.

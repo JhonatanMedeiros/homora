@@ -47,6 +47,11 @@ export const ERROR_MESSAGES = {
   'account-exists': 'Account already configured.',
   'account-setup-failed':
     'Could not create the account. Check the name and email, and use a password with at least 8 characters.',
+  'invalid-current-password': 'The current password is incorrect.',
+  'invalid-new-password': 'Use a new password with at least 8 characters.',
+  'invalid-profile': 'Provide a name with up to 80 characters.',
+  'too-many-attempts': 'Too many attempts. Try again later.',
+  'session-not-found': 'Session not found.',
   'identity-invalid': 'Invalid identity or scopes.',
   'identity-not-found': 'Identity not found.',
   'proposal-unavailable': 'Proposal unavailable.',

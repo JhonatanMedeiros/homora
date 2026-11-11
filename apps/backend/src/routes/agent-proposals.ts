@@ -4,6 +4,7 @@ import { createAgentSchema, opaqueIdSchema, proposalReviewSchema } from '../inpu
 import { errorBody } from '../api-error.js';
 import type { createServiceMonitor } from '../service-monitor.js';
 import type { createAuth } from '../auth.js';
+import type { AuditLog } from '../audit.js';
 
 type Proposals = ReturnType<typeof createProposalService>;
 
@@ -12,13 +13,33 @@ export function registerAgentProposalRoutes(
   proposals: Proposals,
   monitor: ReturnType<typeof createServiceMonitor>,
   auth: ReturnType<typeof createAuth>,
+  audit: AuditLog,
 ) {
+  const agentName = (id: string) =>
+    (proposals.listAgents() as { id: string; name: string }[]).find((row) => row.id === id)?.name;
+  const recordAgentEvent = async (
+    request: { headers: Parameters<typeof auth.session>[0]; ip: string },
+    action: string,
+    name: string | undefined,
+  ) => {
+    const session = await auth.session(request.headers);
+    if (session)
+      audit.record({
+        actor: `user:${session.userId}`,
+        action,
+        result: 'ok',
+        detail: name,
+        ipAddress: request.ip,
+      });
+  };
   app.get('/api/proposals', async () => proposals.list());
   app.post('/api/agents', async (request, reply) => {
     const parsed = createAgentSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('identity-invalid'));
     try {
-      return reply.code(201).send(proposals.issue(parsed.data.name, parsed.data.scopes));
+      const issued = proposals.issue(parsed.data.name, parsed.data.scopes);
+      await recordAgentEvent(request, 'agent-issue', issued.name);
+      return reply.code(201).send(issued);
     } catch {
       return reply.code(400).send(errorBody('identity-invalid'));
     }
@@ -27,14 +48,18 @@ export function registerAgentProposalRoutes(
   app.post<{ Params: { id: string } }>('/api/agents/:id/revoke', async (request, reply) => {
     if (!opaqueIdSchema.safeParse(request.params.id).success)
       return reply.code(404).send(errorBody('identity-not-found'));
+    const name = agentName(request.params.id);
     proposals.revoke(request.params.id);
+    await recordAgentEvent(request, 'agent-revoke', name);
     return { ok: true };
   });
   app.post<{ Params: { id: string } }>('/api/agents/:id/rotate', async (request, reply) => {
     if (!opaqueIdSchema.safeParse(request.params.id).success)
       return reply.code(404).send(errorBody('identity-not-found'));
     try {
-      return { token: proposals.rotate(request.params.id) };
+      const token = proposals.rotate(request.params.id);
+      await recordAgentEvent(request, 'agent-rotate', agentName(request.params.id));
+      return { token };
     } catch {
       return reply.code(404).send(errorBody('identity-not-found'));
     }

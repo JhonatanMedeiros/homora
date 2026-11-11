@@ -82,14 +82,21 @@ export const configVersion = sqliteTable('config_version', {
   id: integer('id').primaryKey(),
   version: integer('version').notNull(),
 });
-export const auditEvents = sqliteTable('audit_events', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  actor: text('actor').notNull(),
-  action: text('action').notNull(),
-  proposalId: text('proposal_id'),
-  result: text('result').notNull(),
-  createdAt: integer('created_at').notNull(),
-});
+export const auditEvents = sqliteTable(
+  'audit_events',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    actor: text('actor').notNull(),
+    action: text('action').notNull(),
+    proposalId: text('proposal_id'),
+    result: text('result').notNull(),
+    createdAt: integer('created_at').notNull(),
+    // Short, non-sensitive context (for example the browser or the agent name).
+    detail: text('detail'),
+    ipAddress: text('ip_address'),
+  },
+  (table) => [index('audit_events_created_idx').on(table.createdAt)],
+);
 
 // Better Auth tables. Names and columns must match what the library expects (camelCase, dates
 // as ISO-8601 text); a backend test compares this schema with the library's own requirements.

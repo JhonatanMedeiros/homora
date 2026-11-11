@@ -1,6 +1,16 @@
 import type { ReactNode } from 'react';
-import { ArrowLeft, LogOut, Settings } from 'lucide-react';
+import { Activity, ArrowLeft, ChevronDown, LogOut, Settings, UserRound } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { initials, type Profile } from '@/features/account/account-model';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
@@ -13,6 +23,7 @@ type Props = {
   onManageChange: (value: boolean) => void;
   onTabChange: (tab: Tab) => void;
   onLogout: () => void;
+  profile: Profile | null;
   toolbar: ReactNode;
   children: ReactNode;
 };
@@ -23,6 +34,7 @@ export function AppShell({
   onManageChange,
   onTabChange,
   onLogout,
+  profile,
   toolbar,
   children,
 }: Props) {
@@ -39,15 +51,43 @@ export function AppShell({
           <span className="mr-auto" />
           <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onLogout}
-            aria-label={t('app.logout')}
-            className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <LogOut />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                aria-label={t('userMenu.label', { name: profile?.name ?? '' })}
+                className="h-11 gap-1.5 rounded-full px-1.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-expanded:bg-sidebar-accent"
+              >
+                <Avatar className="size-8">
+                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                    {profile ? initials(profile.name) : <UserRound className="size-4" />}
+                  </AvatarFallback>
+                </Avatar>
+                <ChevronDown aria-hidden="true" className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-56">
+              {profile && (
+                <>
+                  <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">
+                    <span className="text-sm font-medium text-foreground">{profile.name}</span>
+                    <span className="text-xs text-muted-foreground">{profile.email}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onSelect={() => onTabChange('account')}>
+                <UserRound /> {t('nav.account')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onTabChange('activity')}>
+                <Activity /> {t('nav.activity')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onLogout}>
+                <LogOut /> {t('app.logout')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             onClick={() => onManageChange(!managing)}
