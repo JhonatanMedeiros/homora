@@ -52,8 +52,7 @@ COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 # The MIT license, third-party notices and the SIL OFL texts for the bundled fonts.
 COPY --from=build /app/LICENSE /app/THIRD_PARTY_NOTICES.md /usr/share/doc/homora/
 COPY --from=build /app/licenses /usr/share/doc/homora/licenses
-COPY --from=build /app/apps/frontend/node_modules/@fontsource/barlow-semi-condensed/LICENSE /usr/share/doc/homora/fonts/barlow-semi-condensed-OFL.txt
-COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/figtree/LICENSE /usr/share/doc/homora/fonts/figtree-OFL.txt
-COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/jetbrains-mono/LICENSE /usr/share/doc/homora/fonts/jetbrains-mono-OFL.txt
+COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/geist/LICENSE /usr/share/doc/homora/fonts/geist-OFL.txt
+COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/geist-mono/LICENSE /usr/share/doc/homora/fonts/geist-mono-OFL.txt
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]

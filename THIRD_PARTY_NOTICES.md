@@ -6,15 +6,15 @@ file summarizes licenses of production dependencies, according to
 dependencies; the full text of each license accompanies the corresponding
 package in `node_modules`.
 
-| License      | Packages                                                                       |
-| ------------ | ------------------------------------------------------------------------------ |
-| MIT and ISC  | The vast majority of dependencies, including `yaml` (ISC).                     |
-| Apache-2.0   | `class-variance-authority`, `detect-libc`, `drizzle-orm`                       |
-| BSD-3-Clause | `fast-uri`, `light-my-request`, `qs`, `secure-json-parse`, `source-map-js`     |
-| BSD-2-Clause | `json-schema-typed`                                                            |
-| 0BSD         | `tslib`                                                                        |
-| MPL-2.0      | `lightningcss` (CSS build tool; not executed at runtime in production)         |
-| OFL-1.1      | Figtree, JetBrains Mono, and Barlow Semi Condensed fonts (Fontsource packages) |
+| License      | Packages                                                                   |
+| ------------ | -------------------------------------------------------------------------- |
+| MIT and ISC  | The vast majority of dependencies, including `yaml` (ISC).                 |
+| Apache-2.0   | `class-variance-authority`, `detect-libc`, `drizzle-orm`                   |
+| BSD-3-Clause | `fast-uri`, `light-my-request`, `qs`, `secure-json-parse`, `source-map-js` |
+| BSD-2-Clause | `json-schema-typed`                                                        |
+| 0BSD         | `tslib`                                                                    |
+| MPL-2.0      | `lightningcss` (CSS build tool; not executed at runtime in production)     |
+| OFL-1.1      | Geist and Geist Mono fonts (Fontsource packages)                           |
 
 ## Icons
 
@@ -40,8 +40,6 @@ packages.
 
 ## Pending Items
 
-- The published Docker image must include this file and font licenses. This will
-  be addressed alongside the reproducible image build (R0).
 - This audit covered production dependencies, fonts, and brand logos from
   dashboard-icons (under the repository license only; individual trademark review
   was not performed). Future assets require their own review.
