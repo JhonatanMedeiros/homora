@@ -1,9 +1,19 @@
-import { useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
+import { useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { ArrowDown, ArrowUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { t } from '@/i18n';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { NativeSelect } from '@/components/native-select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type Props = {
   category: string;
@@ -23,18 +33,33 @@ type Props = {
   onRename: () => void;
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
+  /** While a service is dragged, an empty group becomes a drop zone. */
+  emptyDrop?: {
+    active: boolean;
+    over: boolean;
+    onOver: () => void;
+    onLeave: () => void;
+    onDrop: () => void;
+  };
   children: ReactNode;
 };
 
+/** Group column choices offered in the menu; larger saved values are shown and applied as 3. */
+const MAX_COLUMNS = 3;
 /** Complete utility classes (Tailwind must see exact tokens): small screens constrain to 1 or 2 columns. */
 const COLUMN_CLASSES: Record<number, string> = {
   1: 'grid grid-cols-1 gap-3',
   2: 'grid grid-cols-1 gap-3 sm:grid-cols-2',
   3: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3',
-  4: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4',
-  5: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5',
-  6: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6',
 };
+/** Rows are tighter than cards, so the same counts use a smaller gap. */
+const ROW_COLUMN_CLASSES: Record<number, string> = {
+  1: 'grid grid-cols-1 gap-1.5',
+  2: 'grid grid-cols-1 gap-1.5 sm:grid-cols-2',
+  3: 'grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3',
+};
+const effectiveColumns = (columns?: number | null) =>
+  columns ? Math.min(Math.max(Math.trunc(columns), 1), MAX_COLUMNS) : null;
 
 export function GroupSection({
   category,
@@ -51,9 +76,23 @@ export function GroupSection({
   onRename,
   onRemove,
   onMove,
+  emptyDrop,
   children,
 }: Props) {
   const titleId = `group:${category}`;
+  // After Rename the name field takes focus, so the menu must not give it back to its button.
+  const keepFocus = useRef(false);
+  // Organize mode shows rows even when the saved view is cards; management lists one row per line.
+  const rowLayout = list || organizing;
+  const cols = effectiveColumns(columns);
+  const gridClass =
+    rowLayout && managing
+      ? 'grid grid-cols-1 gap-1.5'
+      : cols
+        ? (rowLayout ? ROW_COLUMN_CLASSES : COLUMN_CLASSES)[cols]
+        : rowLayout
+          ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
+          : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('homora-collapsed-groups') ?? '[]').includes(category);
@@ -103,54 +142,12 @@ export function GroupSection({
           </Button>
         )}
         {organizing && (
-          <div className="flex flex-wrap items-center gap-1">
-            {canEdit && onColumns && (
-              <NativeSelect
-                aria-label={t('group.columnsAria', { name: category })}
-                className="h-8 w-auto text-sm"
-                value={columns ?? ''}
-                onChange={(event) =>
-                  onColumns(event.target.value ? Number(event.target.value) : null)
-                }
-              >
-                <option value="">{t('group.columnsAuto')}</option>
-                {[1, 2, 3, 4, 5, 6].map((count) => (
-                  <option key={count} value={count}>
-                    {t('group.columnsCount', { count })}
-                  </option>
-                ))}
-              </NativeSelect>
-            )}
-            {canEdit && (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  data-group-edit={groupId}
-                  aria-label={t('group.renameAria', { name: category })}
-                  onClick={onRename}
-                >
-                  {t('common.rename')}
-                </Button>
-                {canRemove && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    aria-label={t('group.removeAria', { name: category })}
-                    onClick={onRemove}
-                  >
-                    {t('common.remove')}
-                  </Button>
-                )}
-              </>
-            )}
+          <div className="flex items-center gap-0.5">
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
+              className="pointer-coarse:size-11"
               aria-label={t('group.moveUp', { name: category })}
               onClick={() => onMove(-1)}
             >
@@ -160,30 +157,104 @@ export function GroupSection({
               type="button"
               variant="ghost"
               size="icon-sm"
+              className="pointer-coarse:size-11"
               aria-label={t('group.moveDown', { name: category })}
               onClick={() => onMove(1)}
             >
               <ArrowDown />
             </Button>
+            {canEdit && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="pointer-coarse:size-11"
+                    data-group-edit={groupId}
+                    aria-label={t('group.menu', { name: category })}
+                  >
+                    <MoreHorizontal />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-52"
+                  onCloseAutoFocus={(event) => {
+                    if (keepFocus.current) {
+                      event.preventDefault();
+                      keepFocus.current = false;
+                      document.getElementById('rename-group')?.focus();
+                    }
+                  }}
+                >
+                  {onColumns && (
+                    <>
+                      <DropdownMenuLabel>{t('group.columnsOnHome')}</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup
+                        value={String(effectiveColumns(columns) ?? 'auto')}
+                        onValueChange={(value) =>
+                          onColumns(value === 'auto' ? null : Number(value))
+                        }
+                      >
+                        <DropdownMenuRadioItem value="auto">
+                          {t('group.columnsAuto')}
+                        </DropdownMenuRadioItem>
+                        {[1, 2, 3].map((count) => (
+                          <DropdownMenuRadioItem key={count} value={String(count)}>
+                            {t('group.columnsCount', { count })}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      keepFocus.current = true;
+                      onRename();
+                    }}
+                  >
+                    {t('common.rename')}
+                  </DropdownMenuItem>
+                  {canRemove && (
+                    <DropdownMenuItem variant="destructive" onSelect={onRemove}>
+                      {t('common.remove')}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         )}
       </div>
       {(!collapsed || organizing || searching) && (
         <div id={`${titleId}:content`} className="flex flex-col gap-3">
-          {count === 0 && <p className="text-sm text-muted-foreground">{t('group.empty')}</p>}
-          <ul
-            className={
-              columns && COLUMN_CLASSES[columns]
-                ? COLUMN_CLASSES[columns]
-                : list
-                  ? managing
-                    ? 'grid grid-cols-1 gap-1.5'
-                    : 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
-                  : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
-            }
-          >
-            {children}
-          </ul>
+          {count === 0 && (
+            <p
+              data-group-drop={emptyDrop?.active ? '' : undefined}
+              className={cn(
+                'text-sm text-muted-foreground',
+                emptyDrop?.active &&
+                  'rounded-lg border border-dashed px-3 py-4 text-center transition-colors',
+                emptyDrop?.over && 'border-primary bg-primary/10 text-foreground',
+              )}
+              onDragOver={(event: DragEvent) => {
+                if (!emptyDrop?.active) return;
+                event.preventDefault();
+                emptyDrop.onOver();
+              }}
+              onDragLeave={() => emptyDrop?.onLeave()}
+              onDrop={(event: DragEvent) => {
+                if (!emptyDrop?.active) return;
+                event.preventDefault();
+                emptyDrop.onDrop();
+              }}
+            >
+              {emptyDrop?.active ? t('group.dropHere') : t('group.empty')}
+            </p>
+          )}
+          <ul className={gridClass}>{children}</ul>
         </div>
       )}
     </section>

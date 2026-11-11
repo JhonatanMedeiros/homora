@@ -6,7 +6,7 @@ import {
   Routes,
   useLocation,
   useNavigate,
-  useParams,
+  matchPath,
   matchRoutes,
 } from 'react-router';
 import { AppShell } from '@/components/app-shell';
@@ -203,7 +203,7 @@ function Dashboard({
   );
 }
 
-function EditServiceRoute({
+function DashboardForRoute({
   onLogout,
   token,
   setToken,
@@ -212,27 +212,31 @@ function EditServiceRoute({
   token: string;
   setToken: (token: string) => void;
 }) {
-  const { id } = useParams();
+  const { pathname } = useLocation();
+  if (matchPath('/manage', pathname)) return <Navigate replace to="/manage/services" />;
+  const home = Boolean(matchPath('/', pathname));
+  const isList = Boolean(matchPath('/manage/services', pathname));
+  const isNew = Boolean(matchPath('/manage/services/new', pathname));
+  const id = matchPath('/manage/services/:id/edit', pathname)?.params.id;
   const number = Number(id);
-  if (!id || !/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(number))
-    return (
-      <Dashboard
-        token={token}
-        setToken={setToken}
-        onLogout={onLogout}
-        tab="services"
-        managing={false}
-        valid={false}
-      />
-    );
+  const isEdit = Boolean(id && /^[1-9]\d*$/.test(id) && Number.isSafeInteger(number));
+  const tab: Tab = matchPath('/manage/integrations', pathname)
+    ? 'integrations'
+    : matchPath('/manage/agents', pathname)
+      ? 'agents'
+      : matchPath('/manage/settings', pathname)
+        ? 'settings'
+        : 'services';
+  const valid = home || isList || isNew || isEdit || tab !== 'services';
   return (
     <Dashboard
       token={token}
       setToken={setToken}
       onLogout={onLogout}
-      tab="services"
-      managing
-      form={number}
+      tab={tab}
+      managing={valid && !home}
+      valid={valid}
+      form={isNew ? 'new' : isEdit ? number : null}
     />
   );
 }
@@ -274,95 +278,8 @@ function AppRoutes() {
     <Fragment key={locale}>
       <Routes>
         <Route
-          path="/"
-          element={
-            <Dashboard
-              token={token}
-              setToken={setToken}
-              onLogout={onLogout}
-              tab="services"
-              managing={false}
-            />
-          }
-        />
-        <Route path="/manage" element={<Navigate replace to="/manage/services" />} />
-        <Route
-          path="/manage/services"
-          element={
-            <Dashboard
-              token={token}
-              setToken={setToken}
-              onLogout={onLogout}
-              tab="services"
-              managing
-            />
-          }
-        />
-        <Route
-          path="/manage/services/new"
-          element={
-            <Dashboard
-              token={token}
-              setToken={setToken}
-              onLogout={onLogout}
-              tab="services"
-              managing
-              form="new"
-            />
-          }
-        />
-        <Route
-          path="/manage/services/:id/edit"
-          element={<EditServiceRoute onLogout={onLogout} token={token} setToken={setToken} />}
-        />
-        <Route
-          path="/manage/integrations"
-          element={
-            <Dashboard
-              token={token}
-              setToken={setToken}
-              onLogout={onLogout}
-              tab="integrations"
-              managing
-            />
-          }
-        />
-        <Route
-          path="/manage/agents"
-          element={
-            <Dashboard
-              token={token}
-              setToken={setToken}
-              onLogout={onLogout}
-              tab="agents"
-              managing
-            />
-          }
-        />
-        <Route
-          path="/manage/settings"
-          element={
-            <Dashboard
-              token={token}
-              setToken={setToken}
-              onLogout={onLogout}
-              tab="settings"
-              managing
-            />
-          }
-        />
-        <Route
           path="*"
-          element={
-            <Dashboard
-              token={token}
-              setToken={setToken}
-              onLogout={onLogout}
-              tab="services"
-              managing={false}
-              valid={false}
-            />
-          }
+          element={<DashboardForRoute onLogout={onLogout} token={token} setToken={setToken} />}
         />
       </Routes>
     </Fragment>

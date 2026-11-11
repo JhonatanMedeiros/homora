@@ -13,6 +13,7 @@ export function useServices() {
   const [statuses, setStatuses] = useState<Record<number, ServiceStatus>>({});
   const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [statusError, setStatusError] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -65,10 +66,14 @@ export function useServices() {
           return response.json() as Promise<Record<number, ServiceStatus>>;
         })
         .then((data) => {
-          if (active) setStatuses(data);
+          if (active) {
+            setStatuses(data);
+            setStatusError(false);
+          }
         })
         .catch(() => {
-          // Monitoring is auxiliary; a failure does not interfere with services.
+          // Monitoring is auxiliary and does not block services; the page only notes the lag.
+          if (active) setStatusError(true);
         });
     void refreshStatuses();
     const timer = window.setInterval(() => void refreshStatuses(), 60_000);
@@ -131,6 +136,32 @@ export function useServices() {
     }
   }
 
+  /** Moves a service to another group, appended at the end (same endpoint as editing it). */
+  async function moveServiceToGroup(service: Service, category: string): Promise<string | null> {
+    try {
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: 'PUT',
+        headers: json,
+        body: JSON.stringify({
+          name: service.name,
+          url: service.url,
+          category,
+          description: service.description,
+          icon: service.icon ?? '',
+          position: service.position ?? 0,
+          allowPrivate: service.allowPrivate === true,
+          checkType: service.checkType ?? 'http',
+          checkInterval: service.checkInterval ?? null,
+        }),
+      });
+      if (!response.ok) throw Error();
+      await refresh();
+      return null;
+    } catch {
+      return t('error.moveService');
+    }
+  }
+
   async function moveGroup(category: string, direction: -1 | 1): Promise<string | null> {
     const ordered = [...categories];
     const from = ordered.indexOf(category);
@@ -179,6 +210,7 @@ export function useServices() {
     loaded,
     groupRows,
     statuses,
+    statusError,
     loadError,
     setLoadError,
     categories,
@@ -186,6 +218,7 @@ export function useServices() {
     blockedIds,
     refresh,
     placeService,
+    moveServiceToGroup,
     moveGroup,
     setGroupColumns,
   };

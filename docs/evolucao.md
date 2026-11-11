@@ -640,6 +640,44 @@ initialized from the default; tests proving imports, Docker, and MCP do not inhe
 `SECURITY.md` and `docs/arquitetura.md`. Needs an explicit maintainer decision before
 implementation because it changes a security default.
 
+## Organize Mode Redesign (2026-11-11)
+
+- Organize mode shows one compact row per service instead of a card of about 180 px, so groups no
+  longer need a full screen of scrolling. Arrows are disabled at the ends and have 44 px targets on
+  touch; the drag handle is hidden on touch.
+- A service can move to another group from its row menu ("Move to group", appended at the end of
+  the target group) or by dragging it onto a row of that group. A "Move to top" action was added.
+- Group controls moved into a per-group menu: columns on the home (Auto, 1, 2, 3), Rename, and
+  Remove (empty groups only). Saved column values above 3 are applied and shown as 3 without
+  rewriting the stored value. After Rename, focus goes to the name field.
+- The help panel is one line with a "New group" button; on small screens a fixed bar holds Done.
+- Management lists services one per row regardless of the group column setting.
+- Validation: `pnpm check` (283 tests) and `pnpm build` pass. Screenshots (desktop and 390 px)
+  with mocked API data confirmed the rows, the group menu, the row menu with its submenu, and the
+  fixed Done bar. **Not verified in a browser:** dragging between groups (HTML5 drag and drop is not
+  exercised by the test environment) and real touch devices; the touch behavior relies on
+  `pointer: coarse` styles and was only checked through desktop emulation.
+- Not done: dragging with a finger (would need a new dependency such as dnd-kit); the maintainer
+  chose arrows and the group menu instead.
+
+### Organize Mode Follow-ups (2026-11-11)
+
+- Removing a group now asks for confirmation in an alert dialog before the request is sent.
+- While a service is dragged, an empty group shows a dashed drop zone; dropping there moves the
+  service to that group. Previously only the row menu could do this.
+- The hint icon is now vertically centered with its text.
+- `App.test.tsx` simulates the drag events (drag start, over, drop) for a row of another group and
+  for an empty group. This exercises our handlers but not the browser's native drag and drop, nor
+  real touch devices; both still need a manual check.
+- Accessibility review (code and tests only; no screen reader was run): the row arrows used
+  `disabled`, so pressing "down" until the row reached the end dropped keyboard focus to the page.
+  They now use `aria-disabled` and stay focused. Arrow moves announce the new position ("X: position
+  2 of 5") in a visually hidden live region.
+- When `/api/service-status` fails, the page keeps the last known statuses and shows a muted note
+  ("Could not refresh availability. Trying again in a minute.") instead of silently showing stale or
+  unknown lights. The loading and error states of the service list itself were reviewed and left as
+  they were.
+
 ## Core Homepage — Implemented Flows
 
 - Additive migration generates persistent groups from existing categories and initializes card

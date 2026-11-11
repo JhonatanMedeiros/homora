@@ -209,7 +209,7 @@ it('only removes a service after inline confirmation', async () => {
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Remover Immich' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Remover Immich' }));
   expect(deleted()).toHaveLength(0);
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção de Immich' }));
   await waitFor(() => expect(deleted()).toHaveLength(1));
@@ -246,8 +246,14 @@ it('edits an existing service in the page form', async () => {
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Editar Jellyfin' }));
+  const editButton = await screen.findByRole('button', { name: 'Editar Jellyfin' });
+  const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
+  fireEvent.click(editButton);
   expect(await screen.findByRole('dialog', { name: 'Editar serviço' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Editar Jellyfin', hidden: true })).toBe(editButton);
+  expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
+    serviceRequests,
+  );
   const form = screen.getByRole('form', { name: 'Editar serviço' });
   expect((within(form).getByLabelText('Nome') as HTMLInputElement).value).toBe('Jellyfin');
   fireEvent.change(within(form).getByLabelText('Nome'), { target: { value: 'Jellyfin 2' } });
@@ -303,23 +309,54 @@ it('creates, displays, and removes an empty group via UI', async () => {
   );
   expect(screen.queryByLabelText('Novo grupo')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  // The new group form stays closed until its button is used.
+  expect(screen.queryByLabelText('Novo grupo')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Novo grupo' }));
   fireEvent.change(screen.getByLabelText('Novo grupo'), { target: { value: 'Infra' } });
   fireEvent.click(screen.getByRole('button', { name: 'Criar grupo' }));
   expect(await screen.findByRole('heading', { name: /Infra/ })).toBeTruthy();
   expect(screen.getByText('Este grupo ainda não tem cards.')).toBeTruthy();
-  const rename = screen.getByRole('button', { name: 'Renomear grupo Infra' });
-  fireEvent.click(rename);
+  const menu = () =>
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Opções do grupo Infra' }), {
+      key: 'Enter',
+    });
+  menu();
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Renomear' }));
   expect(screen.queryByLabelText('Novo grupo')).toBeNull();
-  expect(document.activeElement).toBe(screen.getByLabelText('Novo nome do grupo'));
+  // The menu closes after a tick; the name field must end up focused, not the menu button.
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByLabelText('Novo nome do grupo')),
+  );
   fireEvent.keyDown(document, { key: 'Escape' });
-  await waitFor(() => expect(document.activeElement).toBe(rename));
-  fireEvent.click(rename);
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Opções do grupo Infra' }),
+    ),
+  );
+  menu();
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Renomear' }));
   fireEvent.change(screen.getByLabelText('Novo nome do grupo'), {
     target: { value: 'Infraestrutura' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Salvar nome' }));
   expect(await screen.findByRole('heading', { name: /Infraestrutura/ })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Remover grupo Infraestrutura' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções do grupo Infraestrutura' }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
+  // Removing asks first; cancelling keeps the group.
+  const dialog = await screen.findByRole('alertdialog');
+  expect(within(dialog).getByText(/Remover o grupo "Infraestrutura"/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+  expect(screen.getByRole('heading', { name: /Infraestrutura/ })).toBeTruthy();
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções do grupo Infraestrutura' }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
+  fireEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Remover' }),
+  );
   await waitFor(() => expect(screen.queryByRole('heading', { name: /Infraestrutura/ })).toBeNull());
 });
 
@@ -396,7 +433,7 @@ it('reorders cards and closes form with Escape restoring focus', async () => {
   );
   expect(screen.queryByRole('button', { name: 'Mover A para baixo' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Mover A para baixo' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Mover A para baixo' }));
   await waitFor(() =>
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/services/order',
@@ -606,16 +643,16 @@ it('provides quick search, cards view, and collapsible groups', async () => {
 });
 
 it('opens service management directly and returns to dashboard', async () => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      return { ok: true, json: async () => [] };
-    }),
-  );
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'teste' } });
+  const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
   expect(window.location.pathname).toBe('/manage/services');
   expect(screen.getByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
@@ -625,9 +662,15 @@ it('opens service management directly and returns to dashboard', async () => {
   ).toBe('page');
   expect(within(navigation).getByRole('button', { name: 'Integrações' })).toBeTruthy();
   expect(within(navigation).getByRole('button', { name: 'Agentes' })).toBeTruthy();
+  fireEvent.click(within(navigation).getByRole('button', { name: 'Agentes' }));
+  expect(window.location.pathname).toBe('/manage/agents');
   fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
   expect(screen.getByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
   expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
+  expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('teste');
+  expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
+    serviceRequests,
+  );
 });
 
 it('opens a management route directly and responds to browser history', async () => {
@@ -762,4 +805,162 @@ it('opens the new service form straight from the empty dashboard', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Adicionar primeiro serviço' }));
   expect(window.location.pathname).toBe('/manage/services/new');
   expect(await screen.findByRole('form', { name: 'Novo serviço' })).toBeTruthy();
+});
+
+it('moves a service to another group from the organize menu', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/manage/services');
+  const calls: { url: string; method?: string; body?: string }[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      calls.push({ url, method: init?.method, body: init?.body });
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => (init?.method ? {} : []) };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Wiki');
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções de Wiki' }), { key: 'Enter' });
+  fireEvent.keyDown(await screen.findByRole('menuitem', { name: 'Mover para o grupo' }), {
+    key: 'ArrowRight',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Infra' }));
+  await waitFor(() => {
+    const put = calls.find((call) => call.url === '/api/services/1' && call.method === 'PUT');
+    expect(put).toBeTruthy();
+    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ name: 'Wiki', category: 'Infra' });
+  });
+  window.history.replaceState(null, '', '/');
+});
+
+it('moves a service by dragging it onto another group row or an empty group', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/manage/services');
+  const calls: { url: string; method?: string; body?: string }[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      calls.push({ url, method: init?.method, body: init?.body });
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      if (url === '/api/groups' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Casa', position: 0, columns: null },
+            { id: 2, name: 'Infra', position: 1, columns: null },
+            { id: 3, name: 'Vazio', position: 2, columns: null },
+          ],
+        };
+      return { ok: true, json: async () => (init?.method ? {} : []) };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Wiki');
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  const rowOf = (name: string) => screen.getByText(name).closest('li') as HTMLElement;
+  const dataTransfer = { effectAllowed: '', dropEffect: '', setData: vi.fn() };
+  // Onto a row of another group.
+  fireEvent.dragStart(rowOf('Wiki'), { dataTransfer });
+  fireEvent.dragOver(rowOf('Proxmox'), { dataTransfer });
+  fireEvent.drop(rowOf('Proxmox'), { dataTransfer });
+  await waitFor(() => {
+    const put = calls.find((call) => call.url === '/api/services/1' && call.method === 'PUT');
+    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ category: 'Infra' });
+  });
+  calls.length = 0;
+  // Onto an empty group's drop zone, which only exists while dragging.
+  expect(document.querySelector('[data-group-drop]')).toBeNull();
+  fireEvent.dragStart(rowOf('Proxmox'), { dataTransfer });
+  const zone = await waitFor(() => {
+    const found = document.querySelector('[data-group-drop]');
+    expect(found).toBeTruthy();
+    return found as HTMLElement;
+  });
+  fireEvent.dragOver(zone, { dataTransfer });
+  fireEvent.drop(zone, { dataTransfer });
+  await waitFor(() => {
+    const put = calls.find((call) => call.url === '/api/services/2' && call.method === 'PUT');
+    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ category: 'Vazio' });
+  });
+  window.history.replaceState(null, '', '/');
+});
+
+it('keeps focus on an arrow when its row reaches the end and announces the position', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/manage/services');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Alfa', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Beta', url: 'http://notes.test/', category: 'Casa', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => (init?.method ? {} : []) };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Alfa');
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  const down = screen.getByRole('button', { name: 'Mover Alfa para baixo' });
+  down.focus();
+  fireEvent.click(down);
+  expect(await screen.findByText('Alfa: posição 2 de 2.')).toBeTruthy();
+  // At the end the arrow stays focusable instead of dropping focus to the page.
+  expect(
+    screen.getByRole('button', { name: 'Mover Alfa para baixo' }).getAttribute('aria-disabled'),
+  ).toBe('true');
+  expect(document.activeElement).toBe(
+    screen.getByRole('button', { name: 'Mover Alfa para baixo' }),
+  );
+  window.history.replaceState(null, '', '/');
+});
+
+it('notes when availability cannot be refreshed', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/service-status') return { ok: false, json: async () => ({}) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Wiki');
+  expect(await screen.findByText(/Não foi possível atualizar a disponibilidade/)).toBeTruthy();
 });
