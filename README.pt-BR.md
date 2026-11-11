@@ -52,7 +52,7 @@ pnpm dev
 
 A autenticação usa `/login` e retorna à rota local solicitada após a entrada. O painel fica em `/`; o gerenciamento usa `/manage/services`, `/manage/integrations`, `/manage/agents` e `/manage/settings`, com navegação pelo histórico do navegador. Os formulários de serviço usam `/manage/services/new` e `/manage/services/:id/edit`; rotas desconhecidas mostram uma página de erro. Em hospedagem própria da interface, configure o servidor para retornar `index.html` nessas rotas.
 
-Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. `pnpm dev` usa o banco isolado `data/homora-dev.sqlite`, criado com serviços fictícios na primeira execução. Alterações persistem entre reinícios e serviços removidos não são recriados. Os endereços são ilustrativos, sem autorização de monitoramento privado. O primeiro acesso exige criar uma senha. Fora do desenvolvimento, o banco padrão é `data/homora.sqlite` e pode ser configurado por `HOMORA_DATABASE_PATH`; essa variável não altera o banco isolado de `pnpm dev`. Para encerrar, use Ctrl+C.
+Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. `pnpm dev` usa o banco isolado `data/homora-dev.sqlite`, criado com serviços fictícios na primeira execução. Alterações persistem entre reinícios e serviços removidos não são recriados. Os endereços são ilustrativos, sem autorização de monitoramento privado. O primeiro acesso exige criar a conta de administrador. Fora do desenvolvimento, o banco padrão é `data/homora.sqlite` e pode ser configurado por `HOMORA_DATABASE_PATH`; essa variável não altera o banco isolado de `pnpm dev`. Para encerrar, use Ctrl+C.
 
 O monorepo usa pnpm e Turborepo, com React, Vite, Tailwind CSS e shadcn/ui no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
 
@@ -83,13 +83,13 @@ Crie uma cópia consistente do banco (não sobrescreve arquivos existentes):
 pnpm backup data/homora.sqlite backups/homora.sqlite
 ```
 
-Guarde o arquivo em um local protegido. Para restaurar, pare o Homora, preserve o banco atual e use o backup como origem de um novo arquivo; por exemplo: `pnpm backup backups/homora.sqlite data/restaurado.sqlite`. Aponte `HOMORA_DATABASE_PATH` para esse arquivo e reinicie o Homora. Verifique os dados antes de remover qualquer cópia anterior. Este backup contém apenas o banco. As conexões incluem credenciais cifradas no banco; a chave de cifragem e a conta de administrador ficam nos arquivos `.key` e `.auth` ao lado dele, e a integração Proxmox original usa também `.proxmox`. Copie esses arquivos existentes separadamente em um backup protegido e restaure-os com os mesmos nomes derivados do caminho do banco. A chave e o conteúdo cifrado juntos permitem recuperar credenciais. Sem a chave, as credenciais precisarão ser configuradas novamente; sem `.auth`, a conta não será recuperada.
+Guarde o arquivo em um local protegido. Para restaurar, pare o Homora, preserve o banco atual e use o backup como origem de um novo arquivo; por exemplo: `pnpm backup backups/homora.sqlite data/restaurado.sqlite`. Aponte `HOMORA_DATABASE_PATH` para esse arquivo e reinicie o Homora. Verifique os dados antes de remover qualquer cópia anterior. Este backup contém o banco, que inclui a conta de administrador e as sessões. As conexões incluem credenciais cifradas no banco; a chave de cifragem fica no arquivo `.key` ao lado dele, e a integração Proxmox original usa também `.proxmox`. Copie esses arquivos existentes separadamente em um backup protegido e restaure-os com os mesmos nomes derivados do caminho do banco. A chave e o conteúdo cifrado juntos permitem recuperar credenciais. Sem a chave, as credenciais precisarão ser configuradas novamente. Um arquivo `.auth` deixado por versões anteriores não é mais lido e pode ser apagado.
 
 ## Atualização e recuperação
 
 Atualize a cópia do projeto para a versão desejada e, antes de iniciar o código
-novo, faça backup do banco e dos arquivos auxiliares existentes (`.auth`,
-`.key` e `.proxmox`) conforme descrito acima. Com Compose, atualize o checkout e
+novo, faça backup do banco e dos arquivos auxiliares existentes (`.key` e
+`.proxmox`) conforme descrito acima. Com Compose, atualize o checkout e
 execute `docker compose up -d --build`; o volume nomeado `homora-data` é
 preservado e as migrações são aplicadas na inicialização. Faça primeiro esse
 processo com cópias dos dados se a instalação contiver informações importantes:
@@ -105,10 +105,10 @@ em uma cópia de trabalho antes de retomar o serviço.
 
 ## Sessões, redefinição de senha e rotação de segredos
 
-- **Sessões** ficam em memória por oito horas e terminam quando o backend reinicia. O cookie é `HttpOnly`, `SameSite=Strict` e, ao entrar por uma origem HTTPS, `Secure`. Requisições que alteram estado só são aceitas de uma origem permitida. Cinco senhas erradas de um mesmo endereço bloqueiam esse endereço por 15 minutos (o contador também fica em memória).
-- **Esqueceu a senha:** pare o backend, apague `<banco>.auth` (no Compose, `/app/data/homora.sqlite.auth` no volume), inicie de novo e abra o Homora para criar uma nova conta. Cards e conexões cifradas são mantidos. Até a primeira conta ser criada, qualquer pessoa que alcance a interface por uma origem permitida pode reivindicá-la; faça isso em rede privada. Reiniciar também encerra as sessões antigas.
+- **Sessões** ficam no banco por oito horas e sobrevivem a um reinício do backend. O cookie (`homora.session_token`) é `HttpOnly`, `SameSite=Strict` e, ao entrar por uma origem HTTPS, `Secure`. Ele é assinado com um segredo guardado em `<banco>.session-secret` (criado automaticamente, modo 0600) ou vindo de `HOMORA_SESSION_SECRET` (mínimo de 32 caracteres). Trocar ou perder esse segredo apenas encerra as sessões. Requisições que alteram estado só são aceitas de uma origem permitida. Dez tentativas de login de um mesmo endereço em 15 minutos bloqueiam esse endereço até o fim da janela (o contador fica em memória e zera ao reiniciar).
+- **Esqueceu a senha:** execute `pnpm auth:reset` para ver a conta e `pnpm auth:reset --yes` para remover a conta e todas as sessões (com Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`). Abra o Homora para criar uma nova conta; cards e conexões cifradas são mantidos. Até a primeira conta ser criada, qualquer pessoa que alcance a interface por uma origem permitida pode reivindicá-la; faça isso em rede privada.
 - **Rotação de segredos de conexões:** a rotação da própria chave de cifragem não é suportada, e remover `<banco>.key` com conexões cifradas as torna ilegíveis (o Homora não cria uma chave nova por cima delas). Na prática, crie um novo token na origem (Proxmox, Home Assistant etc.), informe-o de novo na conexão em Integrações e então revogue o token antigo. Tokens de agentes podem ser trocados na página Agentes ("Gerar novo token") ou revogados.
-- Trate o banco, `.key`, `.auth` e os backups como um único conjunto secreto: quem tem a chave e o banco lê as credenciais guardadas.
+- Trate o banco, `.key` e os backups como um único conjunto secreto: quem tem a chave e o banco lê as credenciais guardadas.
 
 ## Descoberta Docker
 
@@ -137,7 +137,7 @@ Isso sobe o `tecnativa/docker-socket-proxy` (socket somente leitura, só contêi
 
 ## Primeiro acesso e Proxmox
 
-No primeiro acesso, crie uma senha de administrador com pelo menos 8 caracteres. A sessão é mantida em memória e expira em oito horas ou ao reiniciar o backend. Configure o Proxmox no widget usando uma conta e token com acesso somente leitura. Não compartilhe o token nem use uma conta com privilégios administrativos desnecessários. Os dados da integração são cifrados em repouso, com uma chave armazenada separadamente no mesmo diretório; isso não protege contra quem tenha acesso aos dois arquivos.
+No primeiro acesso, crie a conta de administrador com nome, e-mail e uma senha de pelo menos 8 caracteres; o e-mail é só o seu nome de login, o Homora não envia e-mails. A sessão fica no banco e expira em oito horas. Configure o Proxmox no widget usando uma conta e token com acesso somente leitura. Não compartilhe o token nem use uma conta com privilégios administrativos desnecessários. Os dados da integração são cifrados em repouso, com uma chave armazenada separadamente no mesmo diretório; isso não protege contra quem tenha acesso aos dois arquivos.
 
 Para um Proxmox com CA privada, importe no formulário o certificado público da CA em formato PEM, obtido por um canal confiável. Na configuração padrão do Proxmox, ele fica em `/etc/pve/pve-root-ca.pem`; nunca importe a chave privada. A URL deve corresponder a um nome ou IP presente no certificado do servidor. Use **Testar conexão** antes de salvar; para uma integração já configurada, deixe URL e token em branco para mantê-los e selecione a CA. O certificado é armazenado junto à configuração cifrada e precisa dos mesmos arquivos de backup. A validação TLS permanece ativa. Como alternativa, uma CA pode ser disponibilizada ao processo Node por `NODE_EXTRA_CA_CERTS` antes da inicialização.
 
@@ -175,7 +175,7 @@ Com um proxy reverso que encerra o HTTPS na frente do Homora:
 1. Mantenha a porta do Homora em rede privada e publique só o proxy. Não publique o backend (porta 3000); no Compose ele não é publicado.
 2. Defina `HOMORA_ALLOWED_ORIGINS` com a origem pública, por exemplo `https://homora.example.home` (lista separada por vírgulas; só HTTPS, além de `localhost`).
 3. Faça o proxy encaminhar o `Host` e enviar o endereço real do cliente em `X-Forwarded-For` (no nginx: `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`).
-4. Defina `HOMORA_TRUSTED_PROXY` com o endereço ou a rede do proxy, por exemplo `172.18.0.0/16` para um proxy na rede do Compose. Assim o limite de login por cliente (5 senhas erradas por cliente em 15 minutos) distingue os clientes. Sem isso, todos os clientes atrás do proxy dividem um único contador, e as tentativas erradas de outra pessoa podem bloquear você.
+4. Defina `HOMORA_TRUSTED_PROXY` com o endereço ou a rede do proxy, por exemplo `172.18.0.0/16` para um proxy na rede do Compose. Assim o limite de login por cliente (10 tentativas de login por cliente em 15 minutos) distingue os clientes. Sem isso, todos os clientes atrás do proxy dividem um único contador, e as tentativas erradas de outra pessoa podem bloquear você.
 5. Não desative a validação de origem. O cookie de sessão é `HttpOnly`, `SameSite=Strict` e recebe `Secure` quando o login vem de uma origem HTTPS.
 
 `HOMORA_TRUST_PROXY=true` (já definido nos arquivos do Compose) faz o backend ler o endereço do cliente em `X-Forwarded-For`; use apenas se toda requisição chegar ao backend por um proxy que sobrescreve esse cabeçalho, como o nginx incluído.
@@ -190,19 +190,18 @@ docker compose exec backend node scripts/backup.mjs /app/data/homora.sqlite /app
 docker compose cp backend:/app/data/backup.sqlite backups/backup-2026-11-10/homora.sqlite
 ```
 
-A conta e a integração Proxmox original usam os arquivos `.auth`, `.key` e
-`.proxmox` ao lado do banco; as demais credenciais cifradas no banco também
+A integração Proxmox original usa os arquivos `.key` e `.proxmox` ao lado
+do banco; as demais credenciais cifradas no banco também
 precisam da `.key`. Exporte cada arquivo que existir, usando o mesmo diretório
 de backup e o nome de destino mostrado:
 
 ```bash
-docker compose cp backend:/app/data/homora.sqlite.auth backups/backup-2026-11-10/homora.sqlite.auth
 docker compose cp backend:/app/data/homora.sqlite.key backups/backup-2026-11-10/homora.sqlite.key
 docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11-10/homora.sqlite.proxmox
 ```
 
-O `.auth` e o `.proxmox` são opcionais em instalações que ainda não os criaram;
-se um arquivo não existir, pule sua cópia. Guarde o conjunto em local protegido
+O `.proxmox` é opcional em instalações que ainda não o criaram;
+se o arquivo não existir, pule sua cópia. Guarde o conjunto em local protegido
 e mantenha a chave `.key` tão protegida quanto o banco. O comando de backup não
 sobrescreve um arquivo existente. Faça uma restauração de teste antes de
 depender de um backup.

@@ -34,7 +34,7 @@ flowchart LR
 ## Components and Direction
 
 - Web interface: dashboard, settings, proposal review, and agent management.
-- HTTP API: web session authentication, Zod validation of request bodies, parameters,
+- HTTP API: web session authentication (Better Auth, single administrator account), Zod validation of request bodies, parameters,
   and query strings, composing routes by capability. Card and group business rules are
   delegated to the configuration module; connections employ a dedicated module for
   configuration, credentials, persistence, and observations.
@@ -62,9 +62,9 @@ Service (name, URL, icon, group), group (name and position), integration (type, 
 - SSRF mitigation: validate destinations and redirects server-side, constrain ports and hosts, block sensitive local ranges, and re-resolve/pin DNS on connection. Private network access must be explicitly authorized per service/connection, as it is foundational for homelab setups.
 - Supported production deployment binds to loopback by default. Additional origins must be explicitly listed in `HOMORA_ALLOWED_ORIGINS`; HTTP origins are accepted only on localhost. When using a reverse proxy, the proxy must terminate HTTPS and protect the API. The default UI bind remains loopback, and `HOMORA_BIND_IP` allows exposing it solely to a reverse proxy on the same private network without altering origin validation. The application does not trust `X-Forwarded-For`/`X-Forwarded-Proto` for authorization decisions; do not configure untrusted proxies or rely on forwarded headers to determine identity or security.
 - Integration destination and monitoring policy requires an exact origin (scheme and port included in configured URL), resolves DNS once, pins the authorized IP, rejects mixed DNS answers and redirects, enforces TLS validation, and sets strict timeouts and payload limits. RFC1918 and ULA are blocked by default; connection adapters require per-connection opt-in and service monitoring requires per-service opt-in. Special network ranges are blocked unconditionally even with this permission. The special ranges list does not guarantee coverage of all local network topologies or policies.
-- Local administrator passwords are hashed with scrypt and a cryptographically secure salt; session tokens are stored in memory with an 8-hour TTL, invalidated on server restart. Session cookies use HttpOnly and SameSite=Strict; HTTPS origins set Secure. State-changing operations require explicit allowed origins. Login rate limiting is in-memory based on the socket remote address seen by the backend; behind a proxy, this may aggregate users under the proxy's IP.
-- Health status, initial onboarding setup, and login are unauthenticated endpoints to allow initial setup. Onboarding is rejected once an admin account exists; logout is idempotent and clears the session cookie.
-- Integration credentials are encrypted with AES-256-GCM using an encryption key in a separate file. `.auth`, `.key`, and `.proxmox` are created with file mode 0600; backup and disaster recovery requires preserving and securing these files together. There is no automated key rotation or host-compromise protection. Protect the SQLite database file, backups, and persistent volumes using operating system permissions.
+- Web authentication uses Better Auth (email and password) on the application's SQLite database: `user`, `account`, `session` and `verification` tables are versioned Drizzle migrations, and a backend test checks them against what the library requires. Passwords are hashed by the library (scrypt); sessions are stored in the database with an 8-hour lifetime and survive restarts. Session cookies (`homora.session_token`) are signed with a secret from `HOMORA_SESSION_SECRET` or a 0600 file created next to the database, use HttpOnly and SameSite=Strict, and get Secure when the request origin is HTTPS. State-changing operations require explicit allowed origins (checked by the API and by Better Auth's `trustedOrigins`). Sign-in is limited to 10 attempts per client in 15 minutes, counted in memory per client address; the API overwrites an internal header with the address Fastify resolved (honoring `HOMORA_TRUST_PROXY`) so clients cannot choose their own bucket, and behind an untrusted proxy this may aggregate users under the proxy's IP. Telemetry is disabled.
+- Only `sign-in/email`, `sign-out` and `get-session` of Better Auth are reachable; public sign-up is closed and a database hook refuses any second account. Health status, first-run account setup and sign-in are unauthenticated to allow initial setup. Setup is rejected once an account exists and, until then, open to anyone who can reach the interface from an allowed origin (a known trade-off). Proposal reviews record the signed-in account as the reviewer. Account recovery is local: `pnpm auth:reset`.
+- Integration credentials are encrypted with AES-256-GCM using an encryption key in a separate file. `.key`, `.proxmox` and the session secret are created with file mode 0600; backup and disaster recovery requires preserving and securing these files together. There is no automated key rotation or host-compromise protection. Protect the SQLite database file, backups, and persistent volumes using operating system permissions.
 - Secrets are excluded from application logs, backups, and audit trails by default; logs have configurable retention. Backups must be encrypted if they contain credentials.
 - CSRF protection, secure sessions, request rate limiting, and input validation; never execute arbitrary shell commands or scripts received from AI agents.
 - Content fetched from external services is untrusted: never interpret external responses as prompt instructions for agents. Test prompt injection defenses and authorization boundaries regularly.
@@ -107,7 +107,8 @@ releases exist.
   reported as unknown. The backend clears old observations at startup and publishes completed
   cycles; an MCP status query does not start checks.
 - SQLite is the primary persistent store. Schema changes are versioned migrations; session
-  state and certain observation caches are maintained in memory.
+  sessions and the administrator account live in the database; sign-in rate-limit counters and
+  certain observation caches are maintained in memory.
 
 ## Assessment and Architectural Priorities
 

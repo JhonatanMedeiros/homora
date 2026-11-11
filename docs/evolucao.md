@@ -784,3 +784,34 @@ implementation because it changes a security default.
   reaching the UI from an allowed origin can register (by design; documented accordingly).
 - **Not validated:** authentication rate limits under load and behind a real HTTPS reverse proxy;
   for this reason, session and secret review items in P2 remain open.
+
+## Auth Log — Better Auth for Web Authentication (2026-11-11)
+
+- Replaced the file-based account (`<database>.auth`, in-memory sessions) with Better Auth
+  1.7.19 (email and password) on the application's SQLite database. Pinned to 1.7.19 because
+  1.7.20 was younger than the project's minimum package age; no exception was added.
+  Decisions: first-run onboarding stays open as before (name, email, password); 8-hour sessions;
+  sign-in limited to 10 attempts per client in 15 minutes; telemetry disabled; only
+  `sign-in/email`, `sign-out` and `get-session` are reachable; a database hook refuses a second
+  account; the signed-in account is recorded as the proposal reviewer instead of `local-admin`.
+- Schema: migration `0010` adds `user`, `account`, `session` and `verification`; a backend test
+  compares them with Better Auth's own requirements. Existing `.auth` files are ignored (data
+  loss was accepted for this early stage). `pnpm auth:reset` replaces "delete `.auth`".
+- New `HOMORA_SESSION_SECRET` (optional, replaces a stale `.env.example` entry) and a
+  `<database>.session-secret` file (0600) created on first start. Removed the unused
+  `HOMORA_ADMIN_PASSWORD` entry from `.env.example`.
+- `pnpm-workspace.yaml` sets `dedupePeers: true`: Better Auth's optional peers made pnpm install a
+  second `drizzle-orm` for the backend, which broke SQL types shared with `@homora/db`.
+- Better Auth's in-memory rate-limit store is shared by every instance in a process; the API
+  passes its own per-instance store. Secure cookies follow the request origin (the library
+  follows its base URL), so the API adds `Secure` for HTTPS origins itself.
+- Validated: `pnpm check` (lint, format, types, 291 unit and integration tests and 6 script
+  tests); real HTTP against the compiled backend (setup, sign-in, restart keeps the session,
+  sign-out, closed sign-up, 0600 secret); Docker image build and a production-mode container
+  (Secure cookie only for the HTTPS origin, unknown origin refused, `auth:reset` inside the
+  image, onboarding available again); Chromium (headless) against the Vite dev server and the
+  compiled backend: account creation with password confirmation, session kept after reload,
+  sign-out, wrong password message, sign-in (cookie `HttpOnly`, `SameSite=Strict`, 8 hours).
+- **Not validated:** behind the bundled nginx and a real HTTPS reverse proxy (per-client limit
+  through `X-Forwarded-For`); Safari and Firefox (including Secure cookies on
+  `http://localhost`); behavior under concurrent load. The open P2 session review item stays open.

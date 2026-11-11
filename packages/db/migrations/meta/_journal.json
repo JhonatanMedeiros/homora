@@ -71,6 +71,13 @@
       "when": 1794366655272,
       "tag": "0009_parallel_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1794417112850,
+      "tag": "0010_futuristic_loa",
+      "breakpoints": true
     }
   ]
 }
