@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ViewOptions } from '@/components/view-options';
+import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { HealthSummary } from '@/components/health-summary';
@@ -52,23 +53,8 @@ export function ServicesPage({
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
   const [topBar] = useTopBar();
-  const [density, setDensity] = useState<'list' | 'compact' | 'comfortable'>(() => {
-    try {
-      const saved = localStorage.getItem('homora-density');
-      return saved === 'compact' || saved === 'comfortable' ? saved : 'list';
-    } catch {
-      return 'list';
-    }
-  });
-  const compact = density === 'compact';
-  const list = density === 'list';
-  const [showDescriptions, setShowDescriptions] = useState(() => {
-    try {
-      return localStorage.getItem('homora-descriptions') !== 'hidden';
-    } catch {
-      return true;
-    }
-  });
+  const { view, setView, showDescriptions, setShowDescriptions } = useViewPreferences();
+  const list = view === 'list';
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [formOpen, setFormOpen] = useState(false);
@@ -367,50 +353,12 @@ export function ServicesPage({
           )}
           {services.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                size="sm"
-                value={density}
-                onValueChange={(value) => {
-                  if (value !== 'list' && value !== 'compact' && value !== 'comfortable') return;
-                  setDensity(value);
-                  try {
-                    localStorage.setItem('homora-density', value);
-                  } catch {
-                    /* preference only in this session */
-                  }
-                }}
-                aria-label={t('view.label')}
-              >
-                <ToggleGroupItem value="list" className="pointer-coarse:h-11">
-                  {t('view.list')}
-                </ToggleGroupItem>
-                <ToggleGroupItem value="comfortable" className="pointer-coarse:h-11">
-                  {t('view.comfortable')}
-                </ToggleGroupItem>
-                <ToggleGroupItem value="compact" className="pointer-coarse:h-11">
-                  {t('view.compact')}
-                </ToggleGroupItem>
-              </ToggleGroup>
-              {!list && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-pressed={showDescriptions}
-                  onClick={() => {
-                    const next = !showDescriptions;
-                    setShowDescriptions(next);
-                    try {
-                      localStorage.setItem('homora-descriptions', next ? 'visible' : 'hidden');
-                    } catch {
-                      /* preference only in this session */
-                    }
-                  }}
-                >
-                  {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
-                </Button>
-              )}
+              <ViewOptions
+                view={view}
+                onViewChange={setView}
+                showDescriptions={showDescriptions}
+                onShowDescriptionsChange={setShowDescriptions}
+              />
             </div>
           )}
         </div>
@@ -512,7 +460,7 @@ export function ServicesPage({
           {flash}
         </p>
       )}
-      {!organizing && services.length > 0 && categories.length > 1 && (
+      {!organizing && services.length > 0 && categories.length > 2 && (
         <CategoryFilter
           categories={categories}
           selected={selected}
@@ -532,7 +480,6 @@ export function ServicesPage({
             category={category}
             count={items.length}
             organizing={organizing}
-            compact={compact && !managing}
             list={list}
             searching={Boolean(needle)}
             canEdit={Boolean(row)}
@@ -559,7 +506,6 @@ export function ServicesPage({
                   blocked={blockedIds.has(s.id)}
                   organizing={organizing}
                   managing={managing}
-                  compact={compact && !managing}
                   list={list}
                   showDescription={showDescriptions || managing}
                   confirmingRemoval={confirming === s.id}

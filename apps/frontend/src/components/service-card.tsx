@@ -25,7 +25,6 @@ type Props = {
   blocked: boolean;
   organizing: boolean;
   managing: boolean;
-  compact: boolean;
   list?: boolean;
   showDescription: boolean;
   confirmingRemoval: boolean;
@@ -61,7 +60,6 @@ export function ServiceCard({
   blocked,
   organizing,
   managing,
-  compact,
   list = false,
   showDescription,
   confirmingRemoval,
@@ -189,7 +187,6 @@ export function ServiceCard({
             !isBlocked &&
             'border-destructive bg-destructive/10 ring-1 ring-destructive',
           organizing && 'cursor-grab border-dashed',
-          compact && 'gap-2 p-3',
           dragging && 'opacity-50',
         )}
       >
@@ -226,10 +223,10 @@ export function ServiceCard({
             </span>
           </ItemContent>
         </div>
-        {s.description && showDescription && !compact && (
+        {s.description && showDescription && (
           <ItemDescription className="line-clamp-2">{s.description}</ItemDescription>
         )}
-        {!compact && <CardWidgets widgets={widgets} />}
+        <CardWidgets widgets={widgets} />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <StatusLight
             state={state}

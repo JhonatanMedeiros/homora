@@ -23,7 +23,6 @@ function show(status?: ServiceStatus, blocked = false) {
         blocked={blocked}
         organizing={false}
         managing={false}
-        compact={false}
         showDescription
         confirmingRemoval={false}
         dragging={false}

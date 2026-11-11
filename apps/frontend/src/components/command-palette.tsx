@@ -1,5 +1,5 @@
 import type { Service } from '@homora/shared';
-import { House, Moon, Plus, Settings2 } from 'lucide-react';
+import { House, LayoutGrid, LayoutList, Moon, Plus, Settings2 } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -7,9 +7,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from '@/components/ui/command';
 import { StatusLight } from '@/components/status-light';
 import { t } from '@/i18n';
+import type { View } from '@/hooks/use-view-preferences';
 import { hostOf, type ServiceStatus } from '@/lib/services';
 
 type Props = {
@@ -22,6 +24,10 @@ type Props = {
   onManageChange: (managing: boolean) => void;
   onAddService: () => void;
   onToggleTheme: () => void;
+  view: View;
+  onViewChange: (view: View) => void;
+  showDescriptions: boolean;
+  onShowDescriptionsChange: (show: boolean) => void;
 };
 
 /** Ctrl or Cmd K: open any service or run a common action from the keyboard. */
@@ -35,6 +41,10 @@ export function CommandPalette({
   onManageChange,
   onAddService,
   onToggleTheme,
+  view,
+  onViewChange,
+  showDescriptions,
+  onShowDescriptionsChange,
 }: Props) {
   const run = (action: () => void) => {
     onOpenChange(false);
@@ -86,6 +96,22 @@ export function CommandPalette({
             {managing ? <House /> : <Settings2 />}
             {managing ? t('palette.home') : t('palette.manage')}
           </CommandItem>
+          <CommandItem onSelect={() => run(() => onViewChange('list'))}>
+            <LayoutList />
+            {t('palette.viewList')}
+            {view === 'list' && <CommandShortcut>{t('palette.current')}</CommandShortcut>}
+          </CommandItem>
+          <CommandItem onSelect={() => run(() => onViewChange('cards'))}>
+            <LayoutGrid />
+            {t('palette.viewCards')}
+            {view === 'cards' && <CommandShortcut>{t('palette.current')}</CommandShortcut>}
+          </CommandItem>
+          {view === 'cards' && (
+            <CommandItem onSelect={() => run(() => onShowDescriptionsChange(!showDescriptions))}>
+              <LayoutGrid />
+              {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
+            </CommandItem>
+          )}
           <CommandItem onSelect={() => run(onToggleTheme)}>
             <Moon />
             {t('palette.theme')}

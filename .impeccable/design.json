@@ -227,7 +227,7 @@
   ],
   "narrative": {
     "northStar": "Lamplight",
-    "overview": "A house at night. Surfaces are warm neutrals separated by 1px lines, never shadows. A single ember accent marks what you can act on: the primary button, the focus ring, the active item. Every service has a window light: lit green when it is up, red when it is down, an empty ring when unknown. The logo is a house with one lit window.\n\nDark is the intended default and light is a complete theme. Geist carries the interface and Geist Mono carries hosts, counts, and shortcuts. The home is a dense list with a Ctrl or Cmd K command palette; comfortable cards and a compact grid remain as options.",
+    "overview": "A house at night. Surfaces are warm neutrals separated by 1px lines, never shadows. A single ember accent marks what you can act on: the primary button, the focus ring, the active item. Every service has a window light: lit green when it is up, red when it is down, an empty ring when unknown. The logo is a house with one lit window.\n\nDark is the intended default and light is a complete theme. Geist carries the interface and Geist Mono carries hosts, counts, and shortcuts. The home is a dense list with a Ctrl or Cmd K command palette; Cards remain as an option, switched from a single View popover.",
     "keyCharacteristics": [
       "Warm dark neutrals (hue 60-80, very low chroma) layered by tone and 1px borders.",
       "Ember is the only brand hue; it may be text through the ember-text token.",

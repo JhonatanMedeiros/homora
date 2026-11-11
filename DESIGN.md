@@ -107,7 +107,7 @@ Geist Variable for interface and headings, Geist Mono Variable for hosts, counts
 
 Content up to 72rem, 16px side margins (32px from `md`). Homepage: search (`/` focuses it), availability summary, then groups. **Ctrl or Cmd K** opens the command palette (`CommandPalette`): open any service, toggle theme, or switch to management. Management lives behind a single entry.
 
-Services default to a **list** view: one dense row per service (icon, name, host in mono, status light), two columns from `lg`. Card widgets and the last-attempt time stay visible in the row. **Comfortable** (3-column cards with descriptions) and **Compact** remain as options; the choice is stored in `homora-density`.
+Services default to a **list** view: one dense row per service (icon, name, host in mono, status light), two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "View" button in the summary row (`ViewOptions`, a popover) switches between them; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`list` or `cards`; the older `comfortable` maps to cards, `compact` to list). Group filter tabs appear only with three or more groups.
 
 ## Elevation & Depth
 

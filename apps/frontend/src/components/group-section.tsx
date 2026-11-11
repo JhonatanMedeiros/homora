@@ -9,7 +9,6 @@ type Props = {
   category: string;
   count: number;
   organizing: boolean;
-  compact: boolean;
   list?: boolean;
   searching: boolean;
   /** Present only for registered groups (can be renamed and removed). */
@@ -39,7 +38,6 @@ export function GroupSection({
   category,
   count,
   organizing,
-  compact,
   list = false,
   searching,
   canEdit,
@@ -176,9 +174,7 @@ export function GroupSection({
                 ? COLUMN_CLASSES[columns]
                 : list
                   ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
-                  : compact
-                    ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                    : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
+                  : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
             }
           >
             {children}

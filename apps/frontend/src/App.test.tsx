@@ -530,7 +530,7 @@ it('shows before and after of an update proposal', async () => {
   expect(screen.getByText('2 campos continuam iguais.')).toBeTruthy();
 });
 
-it('provides quick search, compact view, and collapsible groups', async () => {
+it('provides quick search, cards view, and collapsible groups', async () => {
   localStorage.clear();
   vi.stubGlobal(
     'fetch',
@@ -557,8 +557,9 @@ it('provides quick search, compact view, and collapsible groups', async () => {
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.click(screen.getByText('Compacta'));
-  expect(localStorage.getItem('homora-density')).toBe('compact');
+  fireEvent.click(screen.getByRole('button', { name: 'Visualização' }));
+  fireEvent.click(await screen.findByRole('radio', { name: 'Cards' }));
+  expect(localStorage.getItem('homora-density')).toBe('cards');
   fireEvent.click(screen.getByRole('button', { name: 'Recolher grupo Mídia' }));
   expect(screen.queryByRole('link', { name: /Jellyfin/ })).toBeNull();
   fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Jelly' } });
@@ -697,7 +698,11 @@ it('shows the list view by default and opens the command palette with Ctrl K', a
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  expect(screen.getByRole('radio', { name: 'Lista' }).getAttribute('data-state')).toBe('on');
+  fireEvent.click(screen.getByRole('button', { name: 'Visualização' }));
+  expect((await screen.findByRole('radio', { name: 'Lista' })).getAttribute('data-state')).toBe(
+    'on',
+  );
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
   fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
   expect(await screen.findByPlaceholderText('Buscar serviços ou executar um comando')).toBeTruthy();
   expect(screen.getByText('Alternar tema')).toBeTruthy();

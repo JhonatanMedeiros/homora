@@ -14,6 +14,7 @@ import { SearchField } from '@/components/search-field';
 import { QuickResults } from '@/components/quick-results';
 import { CommandPalette } from '@/components/command-palette';
 import { useTheme } from '@/hooks/use-theme';
+import { useViewPreferences } from '@/hooks/use-view-preferences';
 import type { Tab } from '@/components/app-nav';
 import { lower, t, useI18n } from '@/i18n';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ function Dashboard({
   const openFirst = useRef<(() => void) | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { toggleTheme } = useTheme();
+  const viewPrefs = useViewPreferences();
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -156,6 +158,10 @@ function Dashboard({
           navigate('/manage/services/new');
         }}
         onToggleTheme={toggleTheme}
+        view={viewPrefs.view}
+        onViewChange={viewPrefs.setView}
+        showDescriptions={viewPrefs.showDescriptions}
+        onShowDescriptionsChange={viewPrefs.setShowDescriptions}
       />
       {!route.valid ? (
         <section>
