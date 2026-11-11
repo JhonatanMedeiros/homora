@@ -9,6 +9,8 @@ import { createProposalService } from './proposals.js';
 import { integrationRegistry } from './integration-registry.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerAccountRoutes } from './routes/account.js';
+import { createAuditLog } from './audit.js';
 import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
 import { registerProxmoxRoutes } from './routes/proxmox.js';
 import type { DockerSource } from './docker-discovery.js';
@@ -37,6 +39,7 @@ export function createApp(
   const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
+  const audit = createAuditLog(sqlite);
   const proposals = createProposalService(sqlite, configuration, vault);
   const observations = createObservationStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
@@ -79,11 +82,12 @@ export function createApp(
   });
 
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
-  registerAuthRoutes(app, auth, webPort);
+  registerAuthRoutes(app, auth, webPort, audit);
+  registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
   registerProxmoxRoutes(app, vault);
-  registerAgentProposalRoutes(app, proposals, serviceMonitor, auth);
+  registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);

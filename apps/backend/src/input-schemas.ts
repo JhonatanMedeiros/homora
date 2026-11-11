@@ -60,6 +60,25 @@ export const setupSchema = z
   })
   .strict();
 
+export const profileSchema = z.object({ name: z.string().trim().min(1).max(80) }).strict();
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: passwordValueSchema.min(1),
+    newPassword: passwordValueSchema.min(8),
+    revokeOthers: z.boolean().default(true),
+  })
+  .strict();
+
+export const auditQuerySchema = z
+  .object({
+    kind: z.enum(['access', 'account', 'proposal', 'agent']).optional(),
+    outcome: z.enum(['success', 'failure', 'refused']).optional(),
+    before: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+  })
+  .strict();
+
 export const createAgentSchema = z
   .object({
     name: z.string().trim().min(1).max(80),

@@ -53,6 +53,24 @@ export class AccountExistsError extends Error {
   }
 }
 
+export class RateLimitedError extends Error {
+  constructor() {
+    super('Too many attempts.');
+  }
+}
+
+export class InvalidPasswordError extends Error {
+  constructor() {
+    super('The current password is wrong.');
+  }
+}
+
+export class SessionNotFoundError extends Error {
+  constructor() {
+    super('Session not found.');
+  }
+}
+
 export type AccountInput = { name: string; email: string; password: string };
 
 /**
@@ -142,6 +160,10 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
     },
   });
 
+  // Guesses of the current password by someone holding a session are throttled per account.
+  const passwordLimiter = createRateLimitStorage();
+  const toIso = (value: Date | string) => new Date(value).toISOString();
+
   // First-run setups are serialized so two simultaneous requests cannot both pass the check.
   let setupQueue: Promise<unknown> = Promise.resolve();
 
@@ -154,6 +176,68 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
     async session(headers: IncomingHttpHeaders) {
       const found = await instance.api.getSession({ headers: fromNodeHeaders(headers) });
       return found ? { userId: found.user.id } : null;
+    },
+    /** Name and e-mail of the signed-in account. */
+    async profile(headers: IncomingHttpHeaders) {
+      const found = await instance.api.getSession({ headers: fromNodeHeaders(headers) });
+      return found ? { name: found.user.name, email: found.user.email } : null;
+    },
+    async updateName(headers: IncomingHttpHeaders, name: string) {
+      await instance.api.updateUser({ headers: fromNodeHeaders(headers), body: { name } });
+    },
+    /** Active sessions without their tokens, which never leave the backend. */
+    async listSessions(headers: IncomingHttpHeaders) {
+      const nodeHeaders = fromNodeHeaders(headers);
+      const current = await instance.api.getSession({ headers: nodeHeaders });
+      const sessions = await instance.api.listSessions({ headers: nodeHeaders });
+      return sessions
+        .map((row) => ({
+          id: row.id,
+          userAgent: row.userAgent ?? null,
+          ipAddress: row.ipAddress ?? null,
+          createdAt: toIso(row.createdAt),
+          expiresAt: toIso(row.expiresAt),
+          current: row.id === current?.session.id,
+        }))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    /** Ends another session of the signed-in account; the current one signs out instead. */
+    async revokeSession(headers: IncomingHttpHeaders, id: string) {
+      const nodeHeaders = fromNodeHeaders(headers);
+      const current = await instance.api.getSession({ headers: nodeHeaders });
+      const sessions = await instance.api.listSessions({ headers: nodeHeaders });
+      const target = sessions.find((row) => row.id === id);
+      if (!target || target.id === current?.session.id) throw new SessionNotFoundError();
+      await instance.api.revokeSession({ headers: nodeHeaders, body: { token: target.token } });
+    },
+    /** Ends every session of the account except the current one. */
+    async revokeOtherSessions(headers: IncomingHttpHeaders) {
+      await instance.api.revokeOtherSessions({ headers: fromNodeHeaders(headers) });
+    },
+    async changePassword(
+      headers: IncomingHttpHeaders,
+      input: { currentPassword: string; newPassword: string; revokeOthers: boolean },
+    ) {
+      const nodeHeaders = fromNodeHeaders(headers);
+      const found = await instance.api.getSession({ headers: nodeHeaders });
+      if (!found) throw new SessionNotFoundError();
+      const limit = await passwordLimiter.consume(`change-password:${found.user.id}`, {
+        window: SIGN_IN_WINDOW_SECONDS,
+        max: SIGN_IN_MAX_ATTEMPTS,
+      });
+      if (!limit.allowed) throw new RateLimitedError();
+      try {
+        // Not `revokeOtherSessions`: that option also ends the current session.
+        await instance.api.changePassword({
+          headers: nodeHeaders,
+          body: { currentPassword: input.currentPassword, newPassword: input.newPassword },
+        });
+      } catch (error) {
+        if (error instanceof APIError && error.body?.code === 'INVALID_PASSWORD')
+          throw new InvalidPasswordError();
+        throw error;
+      }
+      if (input.revokeOthers) await instance.api.revokeOtherSessions({ headers: nodeHeaders });
     },
     /** Creates the first administrator account; fails once any account exists. */
     setup(input: AccountInput): Promise<void> {

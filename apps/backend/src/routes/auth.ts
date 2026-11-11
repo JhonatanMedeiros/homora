@@ -3,6 +3,8 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { AccountExistsError, AUTH_BASE_PATH, CLIENT_IP_HEADER, type createAuth } from '../auth.js';
 import { setupSchema } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
+import { ANONYMOUS_ACTOR, type AuditLog } from '../audit.js';
+import { describeUserAgent } from '../client-info.js';
 
 type Auth = ReturnType<typeof createAuth>;
 
@@ -14,7 +16,17 @@ const FORWARDED_PATHS = new Set([
   `${AUTH_BASE_PATH}/get-session`,
 ]);
 
-export function registerAuthRoutes(app: FastifyInstance, auth: Auth, webPort: number) {
+const clientLabel = (userAgent: string | undefined) => {
+  const { browser, os } = describeUserAgent(userAgent);
+  return [browser, os].filter(Boolean).join(' · ') || null;
+};
+
+export function registerAuthRoutes(
+  app: FastifyInstance,
+  auth: Auth,
+  webPort: number,
+  audit: AuditLog,
+) {
   app.get('/api/auth/status', async (request) => ({
     configured: auth.configured(),
     authenticated: (await auth.session(request.headers)) !== null,
@@ -38,6 +50,8 @@ export function registerAuthRoutes(app: FastifyInstance, auth: Auth, webPort: nu
     async handler(request, reply) {
       const { pathname } = new URL(request.url, 'http://localhost');
       if (!FORWARDED_PATHS.has(pathname)) return reply.code(404).send(errorBody('not-found'));
+      const signingOut = pathname === `${AUTH_BASE_PATH}/sign-out`;
+      const signedOutUser = signingOut ? await auth.session(request.headers) : null;
       const headers = fromNodeHeaders(request.headers);
       headers.delete('content-length');
       headers.delete('transfer-encoding');
@@ -51,6 +65,38 @@ export function registerAuthRoutes(app: FastifyInstance, auth: Auth, webPort: nu
           body: hasBody ? JSON.stringify(request.body) : undefined,
         }),
       );
+      const text = response.body ? await response.text() : null;
+      if (pathname === `${AUTH_BASE_PATH}/sign-in/email`) {
+        const ipAddress = request.ip;
+        if (response.status === 200) {
+          const userId = (JSON.parse(text ?? '{}') as { user?: { id?: string } }).user?.id;
+          if (userId)
+            audit.record({
+              actor: `user:${userId}`,
+              action: 'login',
+              result: 'ok',
+              detail: clientLabel(request.headers['user-agent']),
+              ipAddress,
+            });
+        } else if (response.status !== 429) {
+          // Only the address and the attempt count: the typed e-mail or password is never kept.
+          audit.record({
+            actor: ANONYMOUS_ACTOR,
+            action: 'login',
+            result: 'failed',
+            detail: String(audit.recentFailedLogins(ipAddress) + 1),
+            ipAddress,
+          });
+        }
+      }
+      if (signedOutUser && response.status === 200)
+        audit.record({
+          actor: `user:${signedOutUser.userId}`,
+          action: 'logout',
+          result: 'ok',
+          detail: clientLabel(request.headers['user-agent']),
+          ipAddress: request.ip,
+        });
       reply.code(response.status);
       for (const name of ['content-type', 'x-retry-after']) {
         const value = response.headers.get(name);
@@ -59,7 +105,7 @@ export function registerAuthRoutes(app: FastifyInstance, auth: Auth, webPort: nu
       const secure = request.headers.origin?.startsWith('https://') ? '; Secure' : '';
       const cookies = response.headers.getSetCookie().map((cookie) => `${cookie}${secure}`);
       if (cookies.length > 0) reply.header('set-cookie', cookies);
-      return reply.send(response.body ? await response.text() : null);
+      return reply.send(text);
     },
   });
 }

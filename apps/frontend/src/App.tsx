@@ -13,6 +13,7 @@ import { AppShell } from '@/components/app-shell';
 import { SearchField } from '@/components/search-field';
 import { QuickResults } from '@/components/quick-results';
 import { CommandPalette } from '@/components/command-palette';
+import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import type { Tab } from '@/components/app-nav';
@@ -24,6 +25,8 @@ import { useServices } from '@/hooks/use-services';
 import { Agents } from '@/features/agents/agents';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthPage } from '@/pages/auth-page';
+import { AccountPage } from '@/pages/account-page';
+import { ActivityPage } from '@/pages/activity-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
 import { ServicesPage } from '@/pages/services-page';
 
@@ -36,6 +39,8 @@ const validPaths = [
   '/manage/services/:id/edit',
   '/manage/integrations',
   '/manage/agents',
+  '/manage/activity',
+  '/manage/account',
   '/manage/settings',
 ].map((path) => ({ path }));
 function validDestination(path: string) {
@@ -74,6 +79,7 @@ function Dashboard({
   const openFirst = useRef<(() => void) | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { toggleTheme } = useTheme();
+  const { profile, failed: profileFailed, setProfile } = useProfile();
   const viewPrefs = useViewPreferences();
 
   useEffect(() => {
@@ -105,6 +111,7 @@ function Dashboard({
         navigate(`/manage/${next}`);
       }}
       onLogout={onLogout}
+      profile={profile}
       toolbar={
         <div className="relative">
           <SearchField
@@ -188,6 +195,10 @@ function Dashboard({
         )
       )}
       {managing && tab === 'integrations' && <IntegrationsPage />}
+      {managing && tab === 'activity' && <ActivityPage />}
+      {managing && tab === 'account' && (
+        <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />
+      )}
       {managing && tab === 'settings' && <SettingsPage onImported={data.refresh} />}
       {managing && tab === 'agents' && (
         <Agents
@@ -227,9 +238,13 @@ function DashboardForRoute({
     ? 'integrations'
     : matchPath('/manage/agents', pathname)
       ? 'agents'
-      : matchPath('/manage/settings', pathname)
-        ? 'settings'
-        : 'services';
+      : matchPath('/manage/activity', pathname)
+        ? 'activity'
+        : matchPath('/manage/account', pathname)
+          ? 'account'
+          : matchPath('/manage/settings', pathname)
+            ? 'settings'
+            : 'services';
   const valid = home || isList || isNew || isEdit || tab !== 'services';
   return (
     <Dashboard
