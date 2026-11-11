@@ -13,6 +13,7 @@ export function useServices() {
   const [statuses, setStatuses] = useState<Record<number, ServiceStatus>>({});
   const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [statusError, setStatusError] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -65,10 +66,14 @@ export function useServices() {
           return response.json() as Promise<Record<number, ServiceStatus>>;
         })
         .then((data) => {
-          if (active) setStatuses(data);
+          if (active) {
+            setStatuses(data);
+            setStatusError(false);
+          }
         })
         .catch(() => {
-          // Monitoring is auxiliary; a failure does not interfere with services.
+          // Monitoring is auxiliary and does not block services; the page only notes the lag.
+          if (active) setStatusError(true);
         });
     void refreshStatuses();
     const timer = window.setInterval(() => void refreshStatuses(), 60_000);
@@ -205,6 +210,7 @@ export function useServices() {
     loaded,
     groupRows,
     statuses,
+    statusError,
     loadError,
     setLoadError,
     categories,

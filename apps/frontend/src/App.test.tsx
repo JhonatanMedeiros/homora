@@ -869,3 +869,63 @@ it('moves a service by dragging it onto another group row or an empty group', as
   });
   window.history.replaceState(null, '', '/');
 });
+
+it('keeps focus on an arrow when its row reaches the end and announces the position', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/manage/services');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Alfa', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Beta', url: 'http://notes.test/', category: 'Casa', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => (init?.method ? {} : []) };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Alfa');
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  const down = screen.getByRole('button', { name: 'Mover Alfa para baixo' });
+  down.focus();
+  fireEvent.click(down);
+  expect(await screen.findByText('Alfa: posição 2 de 2.')).toBeTruthy();
+  // At the end the arrow stays focusable instead of dropping focus to the page.
+  expect(
+    screen.getByRole('button', { name: 'Mover Alfa para baixo' }).getAttribute('aria-disabled'),
+  ).toBe('true');
+  expect(document.activeElement).toBe(
+    screen.getByRole('button', { name: 'Mover Alfa para baixo' }),
+  );
+  window.history.replaceState(null, '', '/');
+});
+
+it('notes when availability cannot be refreshed', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/service-status') return { ok: false, json: async () => ({}) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Wiki');
+  expect(await screen.findByText(/Não foi possível atualizar a disponibilidade/)).toBeTruthy();
+});

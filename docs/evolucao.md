@@ -669,6 +669,14 @@ implementation because it changes a security default.
 - `App.test.tsx` simulates the drag events (drag start, over, drop) for a row of another group and
   for an empty group. This exercises our handlers but not the browser's native drag and drop, nor
   real touch devices; both still need a manual check.
+- Accessibility review (code and tests only; no screen reader was run): the row arrows used
+  `disabled`, so pressing "down" until the row reached the end dropped keyboard focus to the page.
+  They now use `aria-disabled` and stay focused. Arrow moves announce the new position ("X: position
+  2 of 5") in a visually hidden live region.
+- When `/api/service-status` fails, the page keeps the last known statuses and shows a muted note
+  ("Could not refresh availability. Trying again in a minute.") instead of silently showing stale or
+  unknown lights. The loading and error states of the service list itself were reviewed and left as
+  they were.
 
 ## Core Homepage — Implemented Flows
 

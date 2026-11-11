@@ -88,6 +88,8 @@ export function ServicesPage({
   const [removingGroup, setRemovingGroup] = useState<{ id: number; name: string } | null>(null);
   const [message, setMessage] = useState('');
   const [flash, setFlash] = useState('');
+  // Quiet live-region text for screen readers (e.g. new position after an arrow press).
+  const [srNote, setSrNote] = useState('');
   const [editingGroup, setEditingGroup] = useState<number | null>(null);
   const [groupDraft, setGroupDraft] = useState('');
   const [groupError, setGroupError] = useState('');
@@ -318,9 +320,16 @@ export function ServicesPage({
     if (failure) setMessage(failure);
     else announce(t('page.moved', { name: service.name, group }));
   }
-  async function reorder(task: Promise<string | null>) {
+  async function reorder(
+    task: Promise<string | null>,
+    index?: number,
+    service?: Service,
+    total?: number,
+  ) {
     const failure = await task;
     if (failure) setMessage(failure);
+    else if (service && index !== undefined && total)
+      setSrNote(t('organize.position', { name: service.name, position: index + 1, total }));
   }
 
   const total = services.length;
@@ -392,6 +401,11 @@ export function ServicesPage({
             </div>
           )}
         </div>
+      )}
+      {!managing && data.statusError && (
+        <p role="status" className="text-xs text-muted-foreground">
+          {t('status.stale')}
+        </p>
       )}
       {organizing && (
         <OrganizePanel
@@ -481,6 +495,9 @@ export function ServicesPage({
           </Alert>
         )}
       </div>
+      <p role="status" className="sr-only">
+        {srNote}
+      </p>
       {flash && (
         <p
           role="status"
@@ -583,8 +600,15 @@ export function ServicesPage({
                     last={index === items.length - 1}
                     dragging={dragging === s.id}
                     dropTarget={dropOver === s.id}
-                    onMove={(direction) => void reorder(data.placeService(s, index + direction))}
-                    onMoveToTop={() => void reorder(data.placeService(s, 0))}
+                    onMove={(direction) =>
+                      void reorder(
+                        data.placeService(s, index + direction),
+                        index + direction,
+                        s,
+                        items.length,
+                      )
+                    }
+                    onMoveToTop={() => void reorder(data.placeService(s, 0), 0, s, items.length)}
                     onMoveToGroup={(group) => void moveToGroup(s, group)}
                     dragProps={dragProps}
                   />
