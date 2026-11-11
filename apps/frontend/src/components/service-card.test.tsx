@@ -21,16 +21,12 @@ function show(status?: ServiceStatus, blocked = false) {
         }}
         status={status}
         blocked={blocked}
-        organizing={false}
         managing={false}
         showDescription
         confirmingRemoval={false}
-        dragging={false}
         onEdit={noop}
         onRemove={noop}
         onCancelRemoval={noop}
-        onMove={noop}
-        dragProps={{ onDragStart: noop, onDragEnd: noop, onDragOver: noop, onDrop: noop }}
       />
     </ul>,
   );

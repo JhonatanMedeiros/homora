@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type FormEvent,
+  type MutableRefObject,
+} from 'react';
 import type { Service, ServiceInput } from '@homora/shared';
 import { Check, Plus, SlidersHorizontal } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +32,7 @@ import { PageHeader } from '@/components/page-header';
 import { ServiceCard } from '@/components/service-card';
 import { useCardWidgets } from '@/hooks/use-card-widgets';
 import { ServiceForm } from '@/components/service-form';
+import { OrganizeRow } from '@/components/organize-row';
 import { ServicesEmpty } from '@/components/services-empty';
 import type { useServices } from '@/hooks/use-services';
 import { apiError, lower, t } from '@/i18n';
@@ -64,6 +73,7 @@ export function ServicesPage({
   const [confirming, setConfirming] = useState<number | null>(null);
   const [organizing, setOrganizing] = useState(false);
   const [dragging, setDragging] = useState<number | null>(null);
+  const [dropOver, setDropOver] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const [flash, setFlash] = useState('');
   const [editingGroup, setEditingGroup] = useState<number | null>(null);
@@ -291,6 +301,11 @@ export function ServicesPage({
       setGroupError(error instanceof Error ? error.message : t('error.removeGroup'));
     }
   }
+  async function moveToGroup(service: Service, group: string) {
+    const failure = await data.moveServiceToGroup(service, group);
+    if (failure) setMessage(failure);
+    else announce(t('page.moved', { name: service.name, group }));
+  }
   async function reorder(task: Promise<string | null>) {
     const failure = await task;
     if (failure) setMessage(failure);
@@ -306,7 +321,10 @@ export function ServicesPage({
   ).length;
   const unknown = total - online - down - blocked;
   return (
-    <section aria-label={t('nav.services')} className="flex flex-col gap-6">
+    <section
+      aria-label={t('nav.services')}
+      className={cn('flex flex-col gap-6', organizing && 'pb-20 md:pb-0')}
+    >
       {managing && (
         <PageHeader
           title={t('manage.services')}
@@ -496,7 +514,57 @@ export function ServicesPage({
             onRemove={() => row && void deleteGroup(row.id)}
             onMove={(direction) => void reorder(data.moveGroup(category, direction))}
           >
-            {items.map((s) => {
+            {items.map((s, index) => {
+              if (organizing) {
+                const dragProps = {
+                  onDragStart: (event: DragEvent) => {
+                    setDragging(s.id);
+                    event.dataTransfer.effectAllowed = 'move';
+                  },
+                  onDragEnd: () => {
+                    setDragging(null);
+                    setDropOver(null);
+                  },
+                  onDragOver: (event: DragEvent) => {
+                    if (dragging !== null && dragging !== s.id) {
+                      event.preventDefault();
+                      setDropOver(s.id);
+                    }
+                  },
+                  onDrop: (event: DragEvent) => {
+                    event.preventDefault();
+                    const dragged = services.find((item) => item.id === dragging);
+                    setDragging(null);
+                    setDropOver(null);
+                    if (!dragged) return;
+                    if (dragged.category !== s.category) {
+                      void moveToGroup(dragged, s.category);
+                      return;
+                    }
+                    void reorder(
+                      data.placeService(
+                        dragged,
+                        sortedIn(s.category).findIndex((item) => item.id === s.id),
+                      ),
+                    );
+                  },
+                };
+                return (
+                  <OrganizeRow
+                    key={s.id}
+                    service={s}
+                    otherGroups={categories.filter((name) => name !== s.category)}
+                    first={index === 0}
+                    last={index === items.length - 1}
+                    dragging={dragging === s.id}
+                    dropTarget={dropOver === s.id}
+                    onMove={(direction) => void reorder(data.placeService(s, index + direction))}
+                    onMoveToTop={() => void reorder(data.placeService(s, 0))}
+                    onMoveToGroup={(group) => void moveToGroup(s, group)}
+                    dragProps={dragProps}
+                  />
+                );
+              }
               const info = statuses[s.id];
               return (
                 <ServiceCard
@@ -505,51 +573,34 @@ export function ServicesPage({
                   status={info}
                   widgets={cardWidgets[s.id]}
                   blocked={blockedIds.has(s.id)}
-                  organizing={organizing}
                   managing={managing}
                   list={list}
                   showDescription={showDescriptions || managing}
                   confirmingRemoval={confirming === s.id}
-                  dragging={dragging === s.id}
                   onEdit={() => openForm(s)}
                   onRemove={() => void remove(s)}
                   onCancelRemoval={() => setConfirming((c) => (c === s.id ? null : c))}
-                  onMove={(direction) =>
-                    void reorder(
-                      data.placeService(
-                        s,
-                        sortedIn(s.category).findIndex((item) => item.id === s.id) + direction,
-                      ),
-                    )
-                  }
-                  dragProps={{
-                    onDragStart: (event) => {
-                      setDragging(s.id);
-                      event.dataTransfer.effectAllowed = 'move';
-                    },
-                    onDragEnd: () => setDragging(null),
-                    onDragOver: (event) => {
-                      if (dragging !== null && dragging !== s.id) event.preventDefault();
-                    },
-                    onDrop: (event) => {
-                      event.preventDefault();
-                      const dragged = services.find((item) => item.id === dragging);
-                      setDragging(null);
-                      if (!dragged || dragged.category !== s.category) return;
-                      void reorder(
-                        data.placeService(
-                          dragged,
-                          sortedIn(s.category).findIndex((item) => item.id === s.id),
-                        ),
-                      );
-                    },
-                  }}
                 />
               );
             })}
           </GroupSection>
         );
       })}
+      {organizing && (
+        <div className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
+          <span className="font-mono text-xs text-muted-foreground">{t('organize.bar')}</span>
+          <Button
+            type="button"
+            aria-label={t('organize.finish')}
+            onClick={() => {
+              setOrganizing(false);
+              setConfirming(null);
+            }}
+          >
+            {t('page.done')}
+          </Button>
+        </div>
+      )}
       {!data.loaded && !data.loadError && (
         <p role="status" className="flex items-center gap-2 text-muted-foreground">
           <Spinner />

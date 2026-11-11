@@ -131,6 +131,32 @@ export function useServices() {
     }
   }
 
+  /** Moves a service to another group, appended at the end (same endpoint as editing it). */
+  async function moveServiceToGroup(service: Service, category: string): Promise<string | null> {
+    try {
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: 'PUT',
+        headers: json,
+        body: JSON.stringify({
+          name: service.name,
+          url: service.url,
+          category,
+          description: service.description,
+          icon: service.icon ?? '',
+          position: service.position ?? 0,
+          allowPrivate: service.allowPrivate === true,
+          checkType: service.checkType ?? 'http',
+          checkInterval: service.checkInterval ?? null,
+        }),
+      });
+      if (!response.ok) throw Error();
+      await refresh();
+      return null;
+    } catch {
+      return t('error.moveService');
+    }
+  }
+
   async function moveGroup(category: string, direction: -1 | 1): Promise<string | null> {
     const ordered = [...categories];
     const from = ordered.indexOf(category);
@@ -186,6 +212,7 @@ export function useServices() {
     blockedIds,
     refresh,
     placeService,
+    moveServiceToGroup,
     moveGroup,
     setGroupColumns,
   };
