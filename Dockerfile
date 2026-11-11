@@ -1,9 +1,25 @@
 # Base images are pinned by digest so builds are repeatable. Dependabot proposes updates.
-FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS build
+FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS base
 WORKDIR /app
 RUN corepack enable
+
+# Dependencies are installed in their own stage so the layer survives source edits.
+# Only the lockfile and the workspace manifests are copied here: changing application
+# code does not invalidate the install, which is the most expensive step of the build.
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY apps/frontend/package.json ./apps/frontend/package.json
+COPY packages/db/package.json ./packages/db/package.json
+COPY packages/shared/package.json ./packages/shared/package.json
+# The pnpm store is a cache mount: it persists between builds of this host without
+# being copied into an image layer. `node_modules` still lives in the layer.
+RUN --mount=type=cache,id=homora-pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --store-dir=/pnpm/store
+
+FROM deps AS build
 COPY . .
-RUN pnpm install --frozen-lockfile && pnpm build
+RUN pnpm build
 
 FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS backend
 LABEL org.opencontainers.image.title="Homora backend" \
