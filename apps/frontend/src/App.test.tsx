@@ -269,23 +269,41 @@ it('creates, displays, and removes an empty group via UI', async () => {
   );
   expect(screen.queryByLabelText('Novo grupo')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  // The new group form stays closed until its button is used.
+  expect(screen.queryByLabelText('Novo grupo')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Novo grupo' }));
   fireEvent.change(screen.getByLabelText('Novo grupo'), { target: { value: 'Infra' } });
   fireEvent.click(screen.getByRole('button', { name: 'Criar grupo' }));
   expect(await screen.findByRole('heading', { name: /Infra/ })).toBeTruthy();
   expect(screen.getByText('Este grupo ainda não tem cards.')).toBeTruthy();
-  const rename = screen.getByRole('button', { name: 'Renomear grupo Infra' });
-  fireEvent.click(rename);
+  const menu = () =>
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Opções do grupo Infra' }), {
+      key: 'Enter',
+    });
+  menu();
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Renomear' }));
   expect(screen.queryByLabelText('Novo grupo')).toBeNull();
-  expect(document.activeElement).toBe(screen.getByLabelText('Novo nome do grupo'));
+  // The menu closes after a tick; the name field must end up focused, not the menu button.
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByLabelText('Novo nome do grupo')),
+  );
   fireEvent.keyDown(document, { key: 'Escape' });
-  await waitFor(() => expect(document.activeElement).toBe(rename));
-  fireEvent.click(rename);
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Opções do grupo Infra' }),
+    ),
+  );
+  menu();
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Renomear' }));
   fireEvent.change(screen.getByLabelText('Novo nome do grupo'), {
     target: { value: 'Infraestrutura' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Salvar nome' }));
   expect(await screen.findByRole('heading', { name: /Infraestrutura/ })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Remover grupo Infraestrutura' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções do grupo Infraestrutura' }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
   await waitFor(() => expect(screen.queryByRole('heading', { name: /Infraestrutura/ })).toBeNull());
 });
 
@@ -727,4 +745,41 @@ it('opens the new service form straight from the empty dashboard', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Adicionar primeiro serviço' }));
   expect(window.location.pathname).toBe('/manage/services/new');
   expect(await screen.findByRole('form', { name: 'Novo serviço' })).toBeTruthy();
+});
+
+it('moves a service to another group from the organize menu', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/manage/services');
+  const calls: { url: string; method?: string; body?: string }[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      calls.push({ url, method: init?.method, body: init?.body });
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services' && !init?.method)
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => (init?.method ? {} : []) };
+    }),
+  );
+  render(<App />);
+  await screen.findByText('Wiki');
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções de Wiki' }), { key: 'Enter' });
+  fireEvent.keyDown(await screen.findByRole('menuitem', { name: 'Mover para o grupo' }), {
+    key: 'ArrowRight',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Infra' }));
+  await waitFor(() => {
+    const put = calls.find((call) => call.url === '/api/services/1' && call.method === 'PUT');
+    expect(put).toBeTruthy();
+    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ name: 'Wiki', category: 'Infra' });
+  });
+  window.history.replaceState(null, '', '/');
 });

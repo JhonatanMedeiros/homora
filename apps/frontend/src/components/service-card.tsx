@@ -1,6 +1,5 @@
-import type { DragEvent } from 'react';
 import type { Service } from '@homora/shared';
-import { ArrowDown, ArrowUp, GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Item,
@@ -23,22 +22,13 @@ type Props = {
   status?: ServiceStatus;
   widgets?: CardWidgetState[];
   blocked: boolean;
-  organizing: boolean;
   managing: boolean;
   list?: boolean;
   showDescription: boolean;
   confirmingRemoval: boolean;
-  dragging: boolean;
   onEdit: () => void;
   onRemove: () => void;
   onCancelRemoval: () => void;
-  onMove: (direction: -1 | 1) => void;
-  dragProps: {
-    onDragStart: (event: DragEvent) => void;
-    onDragEnd: () => void;
-    onDragOver: (event: DragEvent) => void;
-    onDrop: (event: DragEvent) => void;
-  };
 };
 
 const REASON_LABEL = {
@@ -58,17 +48,13 @@ export function ServiceCard({
   status,
   widgets = [],
   blocked,
-  organizing,
   managing,
   list = false,
   showDescription,
   confirmingRemoval,
-  dragging,
   onEdit,
   onRemove,
   onCancelRemoval,
-  onMove,
-  dragProps,
 }: Props) {
   const state = status?.status ?? 'unknown';
   const reason = status?.reason;
@@ -84,8 +70,8 @@ export function ServiceCard({
             .join(' · ')
         : null;
   const isBlocked = blocked && state !== 'available';
-  const inline = organizing || confirmingRemoval;
-  if (list && !organizing) {
+  const inline = confirmingRemoval;
+  if (list) {
     return (
       <li className="group/service flex min-w-0">
         <Item
@@ -175,7 +161,7 @@ export function ServiceCard({
     );
   }
   return (
-    <li draggable={organizing} className="group/service flex min-w-0" {...dragProps}>
+    <li className="group/service flex min-w-0">
       <Item
         variant="outline"
         className={cn(
@@ -186,8 +172,6 @@ export function ServiceCard({
           state === 'unavailable' &&
             !isBlocked &&
             'border-destructive bg-destructive/10 ring-1 ring-destructive',
-          organizing && 'cursor-grab border-dashed',
-          dragging && 'opacity-50',
         )}
       >
         <div
@@ -253,56 +237,32 @@ export function ServiceCard({
                 : 'absolute top-2 right-2 pointer-fine:opacity-50 pointer-fine:transition-opacity pointer-fine:group-hover/service:opacity-100 pointer-fine:group-focus-within/service:opacity-100',
             )}
           >
-            {organizing ? (
-              <>
-                <GripVertical aria-hidden="true" className="mr-auto size-4 text-muted-foreground" />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('card.moveUp', { name: s.name })}
-                  onClick={() => onMove(-1)}
-                >
-                  <ArrowUp />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('card.moveDown', { name: s.name })}
-                  onClick={() => onMove(1)}
-                >
-                  <ArrowDown />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size={inline ? 'sm' : 'icon-sm'}
-                  data-service-edit={s.id}
-                  aria-label={t('card.edit', { name: s.name })}
-                  onClick={onEdit}
-                >
-                  <Pencil />
-                  {inline && t('common.edit')}
-                </Button>
-                <Button
-                  type="button"
-                  variant={confirmingRemoval ? 'destructive' : 'ghost'}
-                  size={inline ? 'sm' : 'icon-sm'}
-                  aria-label={t(confirmingRemoval ? 'card.confirmRemove' : 'card.remove', {
-                    name: s.name,
-                  })}
-                  onClick={onRemove}
-                  onBlur={onCancelRemoval}
-                >
-                  <Trash2 />
-                  {inline && t(confirmingRemoval ? 'card.confirmRemoveShort' : 'common.remove')}
-                </Button>
-              </>
-            )}
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size={inline ? 'sm' : 'icon-sm'}
+                data-service-edit={s.id}
+                aria-label={t('card.edit', { name: s.name })}
+                onClick={onEdit}
+              >
+                <Pencil />
+                {inline && t('common.edit')}
+              </Button>
+              <Button
+                type="button"
+                variant={confirmingRemoval ? 'destructive' : 'ghost'}
+                size={inline ? 'sm' : 'icon-sm'}
+                aria-label={t(confirmingRemoval ? 'card.confirmRemove' : 'card.remove', {
+                  name: s.name,
+                })}
+                onClick={onRemove}
+                onBlur={onCancelRemoval}
+              >
+                <Trash2 />
+                {inline && t(confirmingRemoval ? 'card.confirmRemoveShort' : 'common.remove')}
+              </Button>
+            </>
           </ItemActions>
         )}
       </Item>

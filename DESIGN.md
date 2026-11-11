@@ -109,6 +109,10 @@ Content up to 72rem, 16px side margins (32px from `md`). Homepage: search (`/` f
 
 Services default to a **list** view: one dense row per service (icon, name, host in mono, status light), two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "View" button in the summary row (`ViewOptions`, a popover) switches between them; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`list` or `cards`; the older `comfortable` maps to cards, `compact` to list). Group filter tabs appear only with three or more groups.
 
+### Organize mode
+
+Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top" and "Move to group". Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only). A one-line hint and a "New group" button replace the old form; on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group.
+
 ## Elevation & Depth
 
 Flat. Depth comes from surface tone and 1px borders. The one exception is a 1px inner top highlight in ember at 16% on service cards that are up, which reads as lamplight. No drop shadows on cards, buttons, popovers, or fields; focus uses a 3px ring.

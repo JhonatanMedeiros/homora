@@ -1,5 +1,5 @@
-import type { FormEvent } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -15,34 +15,57 @@ type Props = {
   onCancelRename: () => void;
 };
 
-/** Organize mode panel: instructions, group creation, and group renaming. */
+/** Organize mode panel: a one-line hint, a button that opens the new group form, and group renaming. */
 export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCancelRename }: Props) {
+  const [adding, setAdding] = useState(false);
   return (
     <>
       <Alert role="group" aria-label={t('organize.region')}>
         <SlidersHorizontal aria-hidden="true" />
-        <AlertDescription className="flex flex-col gap-3 text-foreground">
+        <AlertDescription className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-foreground">
           <span>{t('organize.help')}</span>
-          {!renaming && (
-            <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
-              <Field className="w-auto min-w-48 flex-1">
-                <FieldLabel htmlFor="new-group">{t('organize.newGroup')}</FieldLabel>
-                <Input
-                  id="new-group"
-                  data-group-input
-                  value={draft}
-                  onChange={(event) => onDraftChange(event.target.value)}
-                  maxLength={40}
-                  placeholder={t('organize.placeholder')}
-                />
-              </Field>
-              <Button data-group-add type="submit" variant="secondary" disabled={!draft.trim()}>
-                {t('organize.create')}
-              </Button>
-            </form>
+          {!renaming && !adding && (
+            <Button
+              data-group-add
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setAdding(true)}
+            >
+              <Plus />
+              {t('organize.newGroup')}
+            </Button>
           )}
         </AlertDescription>
       </Alert>
+      {!renaming && adding && (
+        <form
+          onSubmit={(event) => {
+            onSubmit(event);
+            setAdding(false);
+          }}
+          className="flex flex-wrap items-end gap-2"
+        >
+          <Field className="w-auto min-w-48 flex-1">
+            <FieldLabel htmlFor="new-group">{t('organize.newGroup')}</FieldLabel>
+            <Input
+              id="new-group"
+              data-group-input
+              autoFocus
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              maxLength={40}
+              placeholder={t('organize.placeholder')}
+            />
+          </Field>
+          <Button data-group-add type="submit" variant="secondary" disabled={!draft.trim()}>
+            {t('organize.create')}
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => setAdding(false)}>
+            {t('organize.cancelNew')}
+          </Button>
+        </form>
+      )}
       {renaming && (
         <form
           aria-label={t('organize.renameForm')}
