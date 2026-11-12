@@ -1,3 +1,4 @@
+import { integrationDefinitions } from '@homora/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
@@ -240,16 +241,17 @@ groups:
       fields: { key: string }[];
     }[];
     expect(catalog.map(({ type, label, capabilities }) => ({ type, label, capabilities }))).toEqual(
-      [
-        { type: 'jellyfin', label: 'Jellyfin', capabilities: ['server-info'] },
-        { type: 'home-assistant', label: 'Home Assistant', capabilities: ['entity-state'] },
-        { type: 'uptime-kuma', label: 'Uptime Kuma', capabilities: ['status-page'] },
-        { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
-        { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] },
-      ],
+      integrationDefinitions.map(({ type, label, capabilities }) => ({
+        type,
+        label,
+        capabilities: [...capabilities],
+      })),
     );
+    expect(catalog.at(-1)?.type).toBe('proxmox');
     // Field descriptions only: no stored values, requests or extraction rules.
-    expect(catalog[1]!.fields.map((field) => field.key)).toEqual(['url', 'entityId', 'secret']);
+    expect(
+      catalog.find(({ type }) => type === 'home-assistant')!.fields.map((field) => field.key),
+    ).toEqual(['url', 'entityId', 'secret']);
     expect(JSON.stringify(catalog)).not.toContain('/api/states');
   });
   it('does not expose services without an active session', async () => {

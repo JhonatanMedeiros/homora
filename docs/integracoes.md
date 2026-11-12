@@ -216,3 +216,25 @@ are currently used by Homora; consult the guide above for active functionality.
   read queries. Verify server versions, payload schemas, retention limits, rate limits, and
   behavior when statistics are disabled. Endpoints and fields must be verified in tests and
   against real installations before declaring compatibility.
+
+## Reference integrations (issue #98)
+
+Every integration below is **implemented, unvalidated**: it passes the adapter contract harness
+(`apps/backend/src/adapter-contract.test.ts`) against fixtures that follow the vendor's published API
+documentation or source, and none has been tried against a live service. The fixtures say which. Fill
+in the [live validation template](adapters.md#live-validation-template) before calling one validated.
+All use the shared transport: GET only, destination policy, TLS validation, a 2 MB response cap, and
+credentials sent only over HTTPS (a plain-HTTP address cannot be used with a token).
+
+### Speedtest Tracker
+
+- **Reads:** `GET /api/v1/results/latest` with `Authorization: Bearer <token>`; shows the last
+  download, upload and ping. Source: [API docs](https://docs.speedtest-tracker.dev/api/responses/results),
+  read 2026-11-12.
+- **Least privilege:** create the token at `/admin/api-tokens` with only the **Read Results** ability
+  (`results:read`).
+- **Network:** your own instance; an HTTPS address is required. Use "allow private network" for a LAN
+  address.
+- **Live validation checklist:** the response is the Result object itself (not wrapped in `data`); a
+  fresh install with no result yields the "no result yet" message; a token without the ability is
+  refused with the generic access message.
