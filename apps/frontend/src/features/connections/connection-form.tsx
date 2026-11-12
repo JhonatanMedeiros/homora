@@ -23,10 +23,12 @@ type Props = {
   connectionId?: number | null;
   hasCa: boolean;
   busy: boolean;
+  saveTesting: boolean;
   onChange: (form: ConnectionFormState) => void;
   onUpdate: (update: (current: ConnectionFormState) => ConnectionFormState) => void;
   onCaError: (message: string) => void;
   onSubmit: (event: FormEvent) => void;
+  onSaveAndTest: () => void;
   onCancel: () => void;
 };
 
@@ -36,10 +38,12 @@ export function ConnectionForm({
   connectionId,
   hasCa,
   busy,
+  saveTesting,
   onChange,
   onUpdate,
   onCaError,
   onSubmit,
+  onSaveAndTest,
   onCancel,
 }: Props) {
   const set = (patch: Partial<ConnectionFormState>) => onChange({ ...form, ...patch });
@@ -83,6 +87,14 @@ export function ConnectionForm({
               />
               {urlHelp && <FieldDescription>{urlHelp}</FieldDescription>}
             </Field>
+            {extraFields(form.type).length > 0 && (
+              <div className="flex flex-col gap-1 border-t pt-4">
+                <h3 className="text-sm font-semibold">{t('connections.serviceSettings')}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {t('connections.serviceSettingsHint', { name: labels[form.type] })}
+                </p>
+              </div>
+            )}
             {extraFields(form.type).map((field) =>
               field.picker && connectionId == null ? null : (
                 <Field key={field.key}>
@@ -116,7 +128,7 @@ export function ConnectionForm({
                   {editing && field.kind === 'token-id' && (
                     <FieldDescription>{t('connections.keepSecret')}</FieldDescription>
                   )}
-                  {field.help && <FieldDescription>{field.help}</FieldDescription>}
+                  {help(field) && <FieldDescription>{help(field)}</FieldDescription>}
                 </Field>
               ),
             )}
@@ -184,13 +196,17 @@ export function ConnectionForm({
             </Field>
           </FieldGroup>
         </CardContent>
-        <CardFooter className="justify-end gap-2">
+        <CardFooter className="flex-wrap justify-end gap-2">
           <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>
-            {busy && <Spinner data-icon="inline-start" />}
+            {busy && !saveTesting && <Spinner data-icon="inline-start" />}
             {t('connections.save')}
+          </Button>
+          <Button type="button" variant="outline" disabled={busy} onClick={onSaveAndTest}>
+            {saveTesting && <Spinner data-icon="inline-start" />}
+            {t('connections.saveAndTest')}
           </Button>
         </CardFooter>
       </Card>

@@ -18,10 +18,10 @@ export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
         <section
           key={entry.widget.id}
           aria-label={t('cardWidget.region', { name: entry.widget.name })}
-          className="rounded-md bg-muted/60 px-3 py-2"
+          className="w-full max-w-2xl rounded-md bg-muted/60 px-3 py-2"
         >
           {entry.status === 'ready' ? (
-            <dl className="grid grid-cols-3 gap-x-3 gap-y-2">
+            <dl className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-x-4 gap-y-2">
               {entry.stats.map((stat) => (
                 <div key={stat.label} className="flex min-w-0 flex-col gap-0.5">
                   <dt className="truncate text-xs text-muted-foreground">{stat.label}</dt>

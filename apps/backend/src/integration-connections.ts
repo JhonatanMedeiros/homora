@@ -378,12 +378,13 @@ export function createIntegrationConnections(
         .returning();
       return widgetSchema.parse(widget);
     },
-    async setWidgetService(id: number, serviceId: number | null) {
-      if (serviceId !== null && !(await serviceExists(serviceId)))
+    async updateWidget(id: number, patch: { serviceId?: number | null; name?: string }) {
+      const serviceId = patch.serviceId;
+      if (serviceId !== undefined && serviceId !== null && !(await serviceExists(serviceId)))
         return 'service-missing' as const;
       const [widget] = await db
         .update(integrationWidgets)
-        .set({ serviceId })
+        .set(patch)
         .where(eq(integrationWidgets.id, id))
         .returning();
       return widget ? widgetSchema.parse(widget) : null;

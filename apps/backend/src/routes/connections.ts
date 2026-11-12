@@ -56,7 +56,7 @@ export function registerConnectionRoutes(
     if (id === null) return reply.code(404).send(errorBody('widget-not-found'));
     const parsed = updateWidgetSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
-    const widget = await connections.setWidgetService(id, parsed.data.serviceId);
+    const widget = await connections.updateWidget(id, parsed.data);
     if (widget === 'service-missing') return reply.code(404).send(errorBody('service-not-found'));
     return widget ?? reply.code(404).send(errorBody('widget-not-found'));
   });
