@@ -80,7 +80,7 @@ secrets are never exposed to the frontend, MCP tools, or application logs. Exter
   private network monitoring requires explicit per-service opt-in (disabled by default).
   This setup has been verified with integration test mocks and awaits real-world LAN testing.
 
-These steps reflect the planned roadmap. Consult the [evolution plan](evolucao.md)
+Consult the [evolution plan](evolucao.md)
 and codebase for live status. Private network access is essential for homelabs and must
 be explicitly authorized; discovery never grants permission to execute arbitrary commands,
 probe arbitrary network addresses, or mutate infrastructure.

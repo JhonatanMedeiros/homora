@@ -4,6 +4,10 @@
 **Scope:** features present in branch `feat/roadmap-completion` at commit
 `d98e52c`, Homora documentation, and official documentation of comparable products.
 
+> **Historical snapshot (2026-11-10).** Several gaps described here, such as the 25-service
+> check limit and non-semantic status, were addressed in phase R1; see
+> [evolucao.md](evolucao.md) for current state.
+
 This is a comparison of published capabilities, not a benchmark of performance,
 security, market adoption, or user satisfaction. Visual review was conducted via
 inspection of JSX and CSS files, without browser rendering. The positioning

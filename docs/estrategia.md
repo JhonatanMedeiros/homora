@@ -1,8 +1,8 @@
 # Strategy: Homora as an Open Source Alternative
 
 **Date:** 2026-11-10  
-**Status:** direction decision confirmed by maintainer; items below are
-planned, not yet implemented. The actual progress of each item is tracked in
+**Status:** direction decision confirmed by maintainer. Checked items are implemented;
+unchecked items are planned or still need real-world validation. The actual progress of each item is tracked in
 [evolucao.md](evolucao.md).
 
 This document positions Homora relative to [Homepage](https://github.com/gethomepage/homepage)
@@ -53,12 +53,14 @@ real-world validation, not merely passing automated tests.
 Goal: a new user discovers the project, installs in minutes, and migrates existing dashboards.
 
 - [ ] Publish reproducible multi-arch Docker image (amd64 and arm64) and document upgrades.
-- [ ] Export and import services, groups, and ordering in YAML/JSON, with schema validation
+      Workflow and local build exist; no release tag has been published yet.
+- [x] Export and import services, groups, and ordering in YAML/JSON, with schema validation
       and skipped items reports. Secrets are never exported.
 - [ ] Import Homepage `services.yaml`/`bookmarks.yaml` and Dashy configurations, displaying
-      a reviewable preview before writing.
-- [ ] Icon library by name (permissively licensed open source icon set), retaining emoji and image URLs.
-- [ ] README, setup guides, and screenshots in English; runtime i18n with English default and
+      a reviewable preview before writing. Implemented and tested with documentation samples;
+      still needs validation against real configurations.
+- [x] Icon library by name (permissively licensed open source icon set), retaining emoji and image URLs.
+- [x] README, setup guides, and screenshots in English; runtime i18n with English default and
       complete pt-BR localization.
 
 **Done Definition:** clean install and seamless import of real Homepage and Dashy configuration
@@ -66,17 +68,18 @@ files, without manual editing, verified in a test environment.
 
 ### R1 — Living Homepage and Honest Status
 
-- [ ] Semantic monitoring states: reachable, requires login, not found, unreachable, unverified;
+- [x] Semantic monitoring states: reachable, requires login, not found, unreachable, unverified;
       with HTTP status code and latency, without following redirects (preserving P2 destination policy).
 - [x] Remove silent 25-service limit or expose queue progress and coverage.
-- [ ] In-card widgets with configuration, empty states, and error handling; only call an element
+- [ ] In-card widgets (implemented for Proxmox, Jellyfin, Home Assistant, Uptime Kuma and AdGuard;
+      pending live validation) with configuration, empty states, and error handling; only call an element
       a widget if it renders real data on the homepage.
 - [x] Docker label discovery with reviewable suggestions and read-only socket access.
 - [x] Optional ICMP ping and per-service check intervals with safety bounds.
-- [ ] Brand icons by name (e.g. dashboard-icons with compatible open source license), alongside
+- [x] Brand icons by name (e.g. dashboard-icons with compatible open source license), alongside
       generic `lucide:` icons.
-- [ ] Columnar layouts with per-group customizable widths, beyond fixed grids.
-- [ ] Optional top banner with date, time, and system metrics (CPU, memory, storage) polled via
+- [x] Columnar layouts with per-group customizable widths, beyond fixed grids.
+- [x] Optional top banner with date, time, and system metrics (CPU, memory, storage) polled via
       integrations, without requiring an agent installed on the host.
 
 **Done Definition:** the homepage answers "what went down?" without clicking through tabs,
@@ -90,7 +93,10 @@ and no card appears monitored without being checked.
       Maintainer list is a hypothesis and should be refined with user demand.
 - [ ] Reference case integrations: Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel,
       and Speedtest Tracker. Each is marked complete only with live validation.
-- [ ] Extract Proxmox from legacy vault into unified connection architecture.
+- [x] Extract Proxmox from legacy vault into unified connection architecture (see
+      [ADR 0001](decisoes/0001-proxmox-connections.md)). Compatibility code for the legacy
+      `.proxmox` file remains until installations have migrated.
+- [ ] Proxmox node selection within a connection (widgets and top bar currently show cluster aggregates).
 - [ ] Contribution guide for new adapters with automated contract testing harnesses.
 
 **Done Definition:** an external developer can contribute an adapter following documentation,
@@ -127,19 +133,19 @@ DNS, VPN, media, and security). Serves as a practical benchmark: "can I migrate 
 The screenshot displays final visual results; underlying YAML was not inspected, so the scope
 below is inferred and must be cross-checked against actual `services.yaml` and `widgets.yaml`.
 
-| Element on Target Dashboard                                           | Homora Current State                                                     | Phase |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----- |
-| Card groups with descriptions and search                              | Implemented                                                              | —     |
-| Service availability status                                           | Implemented; semantic states pending                                     | R1    |
-| In-card telemetry (VMs, LXC, CPU, MEM, DNS queries, sites up)         | No: widgets were isolated in Connections tab                             | R1    |
-| Brand logos by name (Proxmox, Portainer, Vaultwarden…)                | No: emoji, generic `lucide:`, or image URL                               | R1    |
-| Columns with variable widths                                          | Partial: column count per group; arbitrary per-card widths not supported | R1    |
-| Top status bar with CPU, memory, storage, date, and clock             | No                                                                       | R1    |
-| Integrations: Proxmox, Uptime Kuma, AdGuard, Home Assistant           | Implemented (read-only, verified with mocks)                             | R2    |
-| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest | Not implemented                                                          | R2    |
-| Background image, translucent glass cards, custom accents             | No                                                                       | R3    |
-| Search bar triggering external web search ("G" button)                | No: search strictly filters local cards                                  | R3    |
-| Import `services.yaml`                                                | Implemented, but without widgets                                         | R0    |
+| Element on Target Dashboard                                           | Homora Current State                                               | Phase |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------ | ----- |
+| Card groups with descriptions and search                              | Implemented                                                        | —     |
+| Service availability status                                           | Implemented, including semantic states, latency and uptime history | R1    |
+| In-card telemetry (VMs, LXC, CPU, MEM, DNS queries, sites up)         | Implemented as in-card widgets; pending live validation            | R1    |
+| Brand logos by name (Proxmox, Portainer, Vaultwarden…)                | Implemented: 163 bundled brand icons plus `lucide:`, emoji and URL | R1    |
+| Columns with variable widths                                          | Partial: 1 to 6 columns per group; arbitrary widths not supported  | R1    |
+| Top status bar with CPU, memory, storage, date, and clock             | Implemented, fed by a Proxmox connection                           | R1    |
+| Integrations: Proxmox, Uptime Kuma, AdGuard, Home Assistant           | Implemented (read-only, verified with mocks)                       | R2    |
+| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest | Not implemented                                                    | R2    |
+| Background image, translucent glass cards, custom accents             | No                                                                 | R3    |
+| Search bar triggering external web search ("G" button)                | No: search strictly filters local cards                            | R3    |
+| Import `services.yaml`                                                | Implemented (preview before writing); widgets are not imported     | R0    |
 
 Suggested sequence, ordered from highest visual impact to highest implementation cost:
 

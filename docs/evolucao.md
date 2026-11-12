@@ -236,7 +236,7 @@ image builds, and English documentation ready for external community contributio
   and dashboard icons.
 - Workflows: GitHub Actions CI configured for linting, formatting, type checking, unit tests,
   and build validation across packages. Multi-arch release build workflow exists in
-  `.github/workflows/docker-release.yml`.
+  `.github/workflows/release.yml`.
 - Internationalization: Web UI supports runtime locale switching between English and Brazilian
   Portuguese. Documentation and codebase comments are maintained in English.
 
@@ -268,7 +268,7 @@ and verification evidence.
 
 - Node `24-alpine` and nginx `1.27-alpine` base images pinned by SHA256 digest in Dockerfile.
   Compose config uses volume `homora-data` and binds to `127.0.0.1:8080`.
-- Release workflow `.github/workflows/docker-release.yml` configured with `docker/build-push-action`,
+- Release workflow `.github/workflows/release.yml` configured with `docker/build-push-action`,
   `docker/metadata-action`, and multi-arch `linux/amd64,linux/arm64`.
 - Setup instructions and architectural overviews provided in English with Portuguese mirrors.
 - Verification: clean Docker build completed without cache; container started, passed healthcheck,
@@ -903,6 +903,15 @@ implementation because it changes a security default.
   reaching the UI from an allowed origin can register (by design; documented accordingly).
 - **Not validated:** authentication rate limits under load and behind a real HTTPS reverse proxy;
   for this reason, session and secret review items in P2 remain open.
+
+### Legacy Proxmox cleanup (2026-11-12)
+
+- Removed the unused legacy Proxmox screen from the frontend (`features/proxmox/`); nothing rendered it
+  and it called the legacy `/api/proxmox/*` routes.
+- Still pending, to be done once installations have migrated: `routes/proxmox.ts`, the `.proxmox`
+  `load`/`save` in `vault.ts` (keep `seal`/`unseal`, which every connection uses), and the legacy
+  lookups in `integration-connections.ts`, `mcp.ts`, `proposals.ts` and `managed-proposals.ts`.
+- Next step for the connection model: node selection within a Proxmox connection (ADR 0001).
 
 ### Named Proxmox connections
 
