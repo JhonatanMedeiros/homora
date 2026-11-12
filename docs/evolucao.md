@@ -1223,3 +1223,10 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Validation: `pnpm --filter @homora/frontend build` passes (TypeScript and Vite). Static source scan confirms no direct product `<button>`, `<input>`, `<select>`, `<textarea>` or `<label>` outside `src/components/ui`; the native category `<option>` remains inside its semantic `<datalist>`. Tests and browser/screen-reader behavior were not run.
 - Follow-up: integration data in service cards now uses a shared three-column grid with labels above tabular values. Widget loading placeholders use the same grid and reserve the expected row count for each integration type.
 - CI follow-up: validation tests now interact with shadcn Select and ToggleGroup controls through their combobox/radio roles and keyboard behavior instead of native select/label assumptions.
+
+## Appearance, custom CSS and pages (2026-11-12)
+
+- Issue #97 in four phases ([ADR 0009](decisoes/0009-appearance-and-pages.md)): accent color, gradients and card translucency with a contrast check in both themes; an optional background image processed with `sharp`; custom CSS served same-origin with a safe mode (`?safe=1`, `pnpm css:reset`); and pages as tabs on the Home (migration `0023`).
+- Export now writes version 2 (pages and a page per group) and still reads version 1. It also includes appearance and custom CSS, which import deliberately does not read.
+- Validation: `pnpm check` and `pnpm build` on every phase. Tests cover the contrast function, image processing, CSS validation, the routes (auth, audit, limits), the migration, import and export with pages, the settings screens, the tab strip and the digit shortcuts.
+- Not verified: any behaviour in a real browser (rendering of gradients, blur and the background image, the look of the tab strip on phones, drag and drop, keyboard focus order), screen readers, real HTTP proxies in front of the 2 MB upload, and a CSP (none is shipped).

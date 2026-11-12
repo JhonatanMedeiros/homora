@@ -34,6 +34,9 @@ are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not 
 - [x] Provide reviewable card suggestions from Proxmox (service-to-host map, R4). Delivered in
       five phases (issue #96, [ADR 0008](decisoes/0008-service-to-host-map.md)); validated only
       against simulated Proxmox responses, so the real-environment item below stays open.
+- [x] Personalization (R3): accent, gradients, translucent cards, background image, custom CSS
+      with safe mode, and pages on the Home (issue #97,
+      [ADR 0009](decisoes/0009-appearance-and-pages.md)).
 - [x] Test destination protection (network policy).
 - [ ] Test unavailability, invalid credentials, and reduced permissions against a real Proxmox.
 

@@ -22,6 +22,11 @@ data or real credentials. There is no established response SLA or bug bounty pol
 - The database may contain encrypted credentials; the `.key` file is required to
   decrypt them. Protect and store backups separately. Without this key,
   credentials will need to be re-entered.
+- Appearance and custom CSS are administrator-controlled. Custom CSS is validated and served from
+  the same origin, but Homora does not send a Content-Security-Policy header today, so treat the
+  stylesheet as trusted administrator content. If it breaks the interface, open the page with
+  `?safe=1` or run `pnpm css:reset`. The background image is re-encoded (metadata removed) and is
+  only served to signed-in sessions; it is included in backups.
 - MCP is a local read process that accesses the database and key file directly.
   Web sessions do not protect it; use only with trusted system users and MCP clients.
 - Use integration credentials with least privilege and validate TLS certificates.
