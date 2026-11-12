@@ -21,7 +21,7 @@ package in `node_modules`.
 Icons `lucide:name` come from the `lucide-react` package (ISC license), listed above.
 Icons provided by URL are the responsibility of the user configuring them.
 
-`brand:name` logos (163 SVG files in `apps/frontend/public/brand-icons`)
+`brand:name` logos (164 SVG files in `apps/frontend/public/brand-icons`)
 come from the [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) project
 (Apache-2.0 license, text in `licenses/dashboard-icons-Apache-2.0.txt`),
 copied from commit `d767d73`. Only clean vector SVGs were selected, without

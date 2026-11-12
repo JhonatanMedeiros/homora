@@ -23,6 +23,7 @@ export const BRAND_ICON_NAMES = [
   'cloudflare',
   'cloudflared',
   'cockpit',
+  'coolify',
   'crowdsec',
   'deluge',
   'discourse',

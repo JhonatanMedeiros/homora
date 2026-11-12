@@ -726,6 +726,15 @@ implementation because it changes a security default.
   1100 px (cards, light): no horizontal overflow, panel open and closed. **Not verified:** real
   monitor data, a physical phone, the details panel in the list layout (it has none by design).
 
+### Coolify Brand Icon (2026-11-12)
+
+- Added `brand:coolify` (164 bundled logos). The SVG comes from the same dashboard-icons commit
+  as the rest (`d767d73`, Apache-2.0), 574 bytes, vector paths only; it passes the existing
+  "no scripts, bitmaps or external references" test. The service form's "Use logo of X"
+  suggestion now matches the name "Coolify". Existing cards keep their icon: set it on the card
+  (or accept the suggestion) to switch from the letter fallback.
+- Validation: `pnpm check` and `pnpm build`. **Not verified:** appearance on a real dashboard.
+
 ### Agents Tab Redesign (2026-11-11)
 
 - Creating an agent is now a dialog in two steps. Step 1 asks for a name and a profile (Read only,
