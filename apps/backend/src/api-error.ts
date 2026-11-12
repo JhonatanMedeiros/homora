@@ -10,6 +10,7 @@ export const ERROR_MESSAGES = {
   'internal-error': 'An unexpected server error occurred.',
   'invalid-data': 'Invalid data.',
   'invalid-query': 'Invalid query.',
+  'appearance-contrast': 'This appearance would make text or controls hard to read.',
   'invalid-decision': 'Invalid decision.',
   'invalid-card-order': 'Invalid card order.',
   'invalid-group-order': 'Invalid group order.',

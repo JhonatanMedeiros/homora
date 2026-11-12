@@ -14,6 +14,7 @@ import { CommandPalette } from '@/components/command-palette';
 import { ShortcutsDialog } from '@/components/shortcuts-dialog';
 import { useShortcuts } from '@/hooks/use-shortcuts';
 import { useShortcutsPreference } from '@/hooks/use-shortcuts-preference';
+import { useAppearance } from '@/hooks/use-appearance';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
@@ -84,6 +85,8 @@ function Dashboard({
   const { toggleTheme } = useTheme();
   const { profile, failed: profileFailed, setProfile } = useProfile();
   const viewPrefs = useViewPreferences();
+  // Fetches the instance appearance and applies it to the page.
+  useAppearance();
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutsEnabled] = useShortcutsPreference();

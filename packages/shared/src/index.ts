@@ -1,5 +1,6 @@
 import { BRAND_ICON_NAMES } from './brand-icons.js';
 
+export * from './appearance.js';
 export { BRAND_ICON_NAMES };
 /** Service monitor probe method: HTTP GET (default) or ICMP ping. */
 export type CheckType = 'http' | 'ping';

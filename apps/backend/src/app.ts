@@ -26,6 +26,8 @@ import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-
 import { createNotifications } from './notifications.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
 import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
+import { createAppearance } from './appearance.js';
+import { registerAppearanceRoutes } from './routes/appearance.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -116,6 +118,7 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   const connections = registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
+  registerAppearanceRoutes(app, createAppearance(sqlite), auth, audit);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceConfigurationRoutes(

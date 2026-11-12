@@ -17,6 +17,8 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'service-host-unlink',
     'service-dependency-add',
     'service-dependency-remove',
+    'appearance-update',
+    'appearance-reset',
   ],
   proposal: [
     'proposal',

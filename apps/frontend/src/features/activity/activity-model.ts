@@ -28,6 +28,8 @@ const TITLES = new Set<string>([
   'profile-update',
   'public-status-update',
   'service-public',
+  'appearance-update',
+  'appearance-reset',
   'proposal',
   'review.success',
   'review.refused',
