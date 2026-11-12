@@ -238,3 +238,15 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
 - **Live validation checklist:** the response is the Result object itself (not wrapped in `data`); a
   fresh install with no result yields the "no result yet" message; a token without the ability is
   refused with the generic access message.
+
+### Portainer
+
+- **Reads:** `GET /api/endpoints?excludeSnapshots=true` with the `X-API-Key` header; shows how many
+  environments exist and how many are up (`Status` 1) or down (`Status` 2). Sources: [access tokens](https://docs.portainer.io/api/access)
+  and the Portainer source annotations (`api/portainer.go`, `endpoint_list.go`), read 2026-11-12.
+- **Least privilege:** the list is filtered by what the token's user may see. Create the token for a
+  standard (non-administrator) user with access to only the environments to show.
+- **Network:** your own instance; HTTPS is required for the token. The response is limited to 1 MB.
+- **Live validation checklist:** the header name is accepted (`X-API-Key`); `Status` values on a stopped
+  environment; behaviour with a very large number of environments (the count stops at 10,000 and is
+  then reported as an invalid response).

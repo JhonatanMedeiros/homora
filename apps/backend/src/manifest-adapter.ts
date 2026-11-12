@@ -87,12 +87,6 @@ function walk(value: unknown, path: JsonPath): unknown {
   }
   return current;
 }
-const collection = (value: unknown): unknown[] | null =>
-  Array.isArray(value)
-    ? value
-    : value && typeof value === 'object'
-      ? Object.values(value as Record<string, unknown>)
-      : null;
 const MAX_ENTRIES = 10_000;
 
 function typed(
@@ -147,8 +141,8 @@ function extractStep(
       return;
     }
     case 'count': {
-      const items = collection(source);
-      if (!items || items.length > MAX_ENTRIES) return fail();
+      const items = source;
+      if (!Array.isArray(items) || items.length > MAX_ENTRIES) return fail();
       const total = step.where
         ? items.filter((item) => sameLiteral(walk(item, step.where!.path), step.where!.equals))
             .length
@@ -158,8 +152,8 @@ function extractStep(
       return;
     }
     case 'sum': {
-      const items = collection(source);
-      if (!items || items.length > MAX_ENTRIES) return fail();
+      const items = source;
+      if (!Array.isArray(items) || items.length > MAX_ENTRIES) return fail();
       let total = 0;
       for (const item of items) {
         const value = walk(item, step.field);

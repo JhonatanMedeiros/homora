@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample following the Portainer source annotations for GET /api/endpoints (a JSON array of environments)",
+    "docs": "https://api-docs.portainer.io/ (field names and status values from api/portainer.go and api/http/handler/endpoints/endpoint_list.go on the develop branch)",
+    "note": "Read on 2026-11-12: authentication is the X-API-Key header; Status 1 is up and 2 is down; excludeSnapshots is a documented query parameter. Not recorded from a live instance."
+  },
+  "body": [
+    { "Id": 1, "Name": "local", "Type": 1, "Status": 1, "URL": "unix:///var/run/docker.sock" },
+    { "Id": 2, "Name": "edge-a", "Type": 4, "Status": 1, "URL": "tcp://10.0.0.5:9001" },
+    { "Id": 3, "Name": "edge-b", "Type": 2, "Status": 2, "URL": "tcp://10.0.0.6:9001" }
+  ]
+}
