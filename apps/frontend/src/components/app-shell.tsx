@@ -55,8 +55,8 @@ export function AppShell({
   return (
     <div className="min-h-svh bg-background">
       <header className="bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-3 px-4 py-2 md:px-8">
-          <BrandMark className="text-sidebar-foreground" />
+        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8">
+          <BrandMark compact className="text-sidebar-foreground" />
           {!managing && !standalone && (
             <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-md sm:flex-1">
               {toolbar}
@@ -117,10 +117,12 @@ export function AppShell({
           <Button
             variant="outline"
             onClick={() => onManageChange(!(managing || standalone))}
-            className="border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground max-sm:size-11 max-sm:px-0"
           >
             {managing || standalone ? <ArrowLeft /> : <Settings />}{' '}
-            {managing || standalone ? t('manage.back') : t('manage.open')}
+            <span className="max-sm:sr-only">
+              {managing || standalone ? t('manage.back') : t('manage.open')}
+            </span>
           </Button>
         </div>
       </header>

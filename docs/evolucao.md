@@ -1026,3 +1026,8 @@ Services can optionally check a same-origin path independently of their card URL
 - `MobileTabs` was dead code and is now mounted in the management area on phones: Services, Integrations, Agents and "More", which opens a bottom sheet with Activity and Settings. The sidebar buttons are desktop-only. The organize bar and the toaster were moved above the bottom bar.
 - Validated with `pnpm check` and `pnpm build` (the one failure on the first `pnpm check`, the 200-service uptime benchmark, passed on its own: it is load-sensitive). Tests cover the hub, direct links, the unknown subpage, the "More" sheet and the Agents tabs. Not checked in a browser or on a physical phone.
 - Agents now splits Proposals (with the pending count) and Agents into two tabs; Connect and New agent stay in the header. The tab is local state, not a route.
+
+## Mobile header fits one row
+
+- On phones the header wrapped: the brand, search, language, theme, user menu and the Manage / Back button did not fit in 390 px, so the user menu and the button dropped to a second row. Below `sm` the wordmark is now visually hidden (the logo still links home), the Manage / Back button shows only its icon (the label stays for screen readers) and the gaps are tighter. From `sm` up nothing changes.
+- Checked in a headless browser at 360 px, 390 px and 1100 px: one row in management mode, and on the home page the search field still takes its own second row. Not checked on a physical phone, and below about 340 px the header can wrap again.
