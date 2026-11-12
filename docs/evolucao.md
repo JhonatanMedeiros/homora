@@ -1101,3 +1101,10 @@ Services can optionally check a same-origin path independently of their card URL
   suites but passed alone and met its measured performance thresholds. Increased
   only its total timeout to 15 seconds; the benchmark thresholds are unchanged.
 - Validated `pnpm check` (435 application tests and 9 script tests) and `pnpm build`.
+
+## Settings polish: Interface, Public status and Docker discovery
+
+- Interface is grouped into Appearance (theme, language), Home page (layout, descriptions, uptime period) and Top bar. The top bar gained a switch instead of a checkbox, a live preview and clock options (date, seconds, 12/24 h, time zone), kept in `localStorage` (`homora-clock-*`) and omitted from exports.
+- Public status shows its address with copy and open buttons, a Live/Off badge, the public service count and an optional description (`public_status_description` in `app_settings`, 160 characters, audited as `public-status-update:description`, no migration needed). The anonymous payload gains only `description`.
+- Docker discovery is split into "This host" and "Remote agents" tabs. Remote sources are rows with a status badge and an actions menu; creation, the one-time token and suggestion review are dialogs, and the agent `docker run` command is available in the tab. Suggestion lists share one component.
+- Validated: lint, prettier, type-check and 455 application tests (new tests for the clock, Interface, Public status and the backend description). Not reviewed in a browser, so spacing and the 12 h format in other locales are unchecked.

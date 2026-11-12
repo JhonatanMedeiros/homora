@@ -46,7 +46,8 @@ it('creates a source, shows its token once and imports only reviewed suggestions
   );
   const onImported = vi.fn();
   render(<PushSources onImported={onImported} />);
-  fireEvent.change(screen.getByLabelText('Nome da fonte'), { target: { value: 'LXC' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar fonte remota' }));
+  fireEvent.change(await screen.findByLabelText('Nome da fonte'), { target: { value: 'LXC' } });
   fireEvent.click(screen.getByRole('button', { name: 'Adicionar fonte' }));
   expect(await screen.findByText('synthetic-token')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Já salvei o token' }));
@@ -84,19 +85,31 @@ it('requires an explicit dialog before rotating and cannot rotate a revoked sour
   const active = screen.getByText('Ativa').closest('li');
   const revoked = screen.getByText('Fonte antiga').closest('li');
   if (!active || !revoked) throw new Error('missing source');
+  const openMenu = (row: HTMLElement) =>
+    fireEvent.keyDown(within(row).getByRole('button', { name: /^Ações de/ }), { key: 'Enter' });
+
+  openMenu(revoked);
   expect(
-    within(revoked).getByRole('button', { name: 'Gerar novo token' }).hasAttribute('disabled'),
-  ).toBe(true);
-  fireEvent.click(within(active).getByRole('button', { name: 'Gerar novo token' }));
-  expect(screen.getByRole('alertdialog')).toBeTruthy();
+    (await screen.findByRole('menuitem', { name: 'Gerar novo token' })).getAttribute(
+      'aria-disabled',
+    ),
+  ).toBe('true');
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+
+  openMenu(active);
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerar novo token' }));
+  expect(await screen.findByRole('alertdialog')).toBeTruthy();
   expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/rotate'))).toBe(false);
   fireEvent.click(
     within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' }),
   );
   expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/rotate'))).toBe(false);
-  fireEvent.click(within(active).getByRole('button', { name: 'Gerar novo token' }));
+  openMenu(active);
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerar novo token' }));
   fireEvent.click(
-    within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar novo token' }),
+    within(await screen.findByRole('alertdialog')).getByRole('button', {
+      name: 'Confirmar novo token',
+    }),
   );
   expect(await screen.findByText('new-synthetic-token')).toBeTruthy();
 });

@@ -126,6 +126,25 @@ describe('public status', () => {
     await app.close();
   });
 
+  it('shows an optional trimmed description, limits its length and audits the change', async () => {
+    const { app, create, configure, share, headers } = await setup();
+    await share(await create('Jellyfin'), true);
+    expect((await configure({ enabled: true, description: `  Home services  ` })).statusCode).toBe(
+      200,
+    );
+    expect((await get(app)).json<{ description: string }>().description).toBe('Home services');
+    expect((await configure({ description: 'x'.repeat(161) })).statusCode).toBe(400);
+    expect((await configure({ description: '' })).statusCode).toBe(200);
+    expect((await get(app)).json<{ description: string }>().description).toBe('');
+    const activity = await app.inject({ method: 'GET', url: '/api/activity', headers });
+    const details = activity
+      .json<{ events: { action: string; detail: string | null }[] }>()
+      .events.filter((event) => event.action === 'public-status-update')
+      .map((event) => event.detail);
+    expect(details.filter((detail) => detail === 'description')).toHaveLength(2);
+    await app.close();
+  });
+
   it('reports coarse states and stale data as unknown', async () => {
     const { app, create, observe, configure, share } = await setup();
     const down = await create('Down');
