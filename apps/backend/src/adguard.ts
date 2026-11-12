@@ -15,6 +15,8 @@ const hasControl = (value: string) =>
   });
 
 function validate(config: AdGuardConfig): AdGuardConfig {
+  if (typeof config.url !== 'string' || config.url.length > 2048)
+    throw new InputError('https-url-required');
   let url: URL;
   try {
     url = new URL(config.url);

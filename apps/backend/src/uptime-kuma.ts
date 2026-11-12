@@ -15,6 +15,8 @@ type Transport = (request: {
 }) => Promise<{ status: number; body: unknown }>;
 
 function validate(config: UptimeKumaConfig): UptimeKumaConfig {
+  if (typeof config.url !== 'string' || config.url.length > 2048)
+    throw new InputError('invalid-url');
   let url: URL;
   try {
     url = new URL(config.url);

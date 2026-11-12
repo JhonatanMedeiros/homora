@@ -6,7 +6,7 @@ the project. See also [security](SECURITY.md) before reporting a vulnerability.
 
 ## Setup and Validation
 
-Follow the [engineering standards](docs/padroes.md) and review current
+Adding an integration? Read [docs/adapters.md](docs/adapters.md). Follow the [engineering standards](docs/padroes.md) and review current
 [architecture](docs/arquitetura.md) before making changes across modules,
 persistence, or integrations.
 

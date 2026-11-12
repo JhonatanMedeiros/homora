@@ -275,7 +275,7 @@ The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on
 ## Documentation
 
 - [Glossary](GLOSSARY.md) · [Product](docs/produto.md) · [Architecture and security](docs/arquitetura.md) · [Engineering standards](docs/padroes.md)
-- [Integrations](docs/integracoes.md) · [Strategy versus Homepage and Dashy](docs/estrategia.md)
+- [Integrations](docs/integracoes.md) · [Strategy versus Homepage and Dashy](docs/estrategia.md) · [Writing an integration adapter](docs/adapters.md)
 - [Delivery plan](docs/plano.md) · [Evolution plan and progress](docs/evolucao.md)
 - [Guidance for AI agents](AGENTS.md) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 

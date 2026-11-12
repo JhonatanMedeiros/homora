@@ -12,6 +12,8 @@ type TrustedTransport = (request: {
 }) => Promise<{ status: number; body: unknown }>;
 
 function validate(input: HomeAssistantConfig): HomeAssistantConfig {
+  if (typeof input.url !== 'string' || input.url.length > 2048)
+    throw new InputError('https-url-required');
   let url: URL;
   try {
     url = new URL(input.url);
