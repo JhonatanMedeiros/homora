@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { useLocation } from 'react-router';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { UPTIME_RANGES } from '@homora/shared';
 import { Clock } from '@/components/top-bar';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
@@ -29,15 +33,52 @@ const PROBLEM_MESSAGE: Record<TemplateProblem, MessageKey> = {
   protocol: 'settings.ui.webSearchErrorProtocol',
   invalid: 'settings.ui.webSearchErrorInvalid',
 };
+/** Rarely changed settings, folded away. Opens by itself when sent here to fix broken custom CSS. */
+function AdvancedSettings() {
+  const state: unknown = useLocation().state;
+  const [open, setOpen] = useState(
+    Boolean(state && typeof state === 'object' && 'advanced' in state && state.advanced),
+  );
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-3">
+      <CollapsibleTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-auto justify-between px-4 py-3 text-left"
+        >
+          <span className="flex flex-col items-start gap-0.5">
+            <span className="font-medium">{t('css.title')}</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {t('settings.ui.advancedHint')}
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={
+              open ? 'size-4 rotate-180 transition-transform' : 'size-4 transition-transform'
+            }
+          />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <CustomCssSettings />
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 /** Theme, language, accent, background and custom CSS. */
 export function InterfaceSettings() {
   const { theme, setTheme } = useTheme();
   const { locale, setLocale } = useI18n();
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
-
-      <SettingsGroup id="ui-appearance" title={t('settings.ui.appearance')}>
+      <SettingsGroup
+        id="ui-appearance"
+        title={t('settings.ui.appearance')}
+        hint={t('settings.ui.browserShort')}
+      >
         <SettingRow label={t('settings.ui.theme')} description={t('settings.ui.themeHint')}>
           <Segmented
             label={t('settings.ui.theme')}
@@ -75,7 +116,7 @@ export function InterfaceSettings() {
 
       <AppearanceSettings />
 
-      <CustomCssSettings />
+      <AdvancedSettings />
     </div>
   );
 }
@@ -86,9 +127,11 @@ export function HomeSettings({ onChanged }: { onChanged?: () => void | Promise<v
     useViewPreferences();
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
-
-      <SettingsGroup id="ui-home" title={t('settings.ui.home')}>
+      <SettingsGroup
+        id="ui-home"
+        title={t('settings.ui.home')}
+        hint={t('settings.ui.browserShort')}
+      >
         <SettingRow label={t('settings.ui.layout')} description={t('settings.ui.layoutHint')}>
           <Segmented
             label={t('settings.ui.layout')}
@@ -167,8 +210,6 @@ export function TopBarSettings() {
   }, []);
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
-
       <SettingsGroup id="ui-keyboard" title={t('settings.ui.keyboardSection')}>
         <SettingRow
           htmlFor="ui-shortcuts"
@@ -253,7 +294,11 @@ export function TopBarSettings() {
         )}
       </SettingsGroup>
 
-      <SettingsGroup id="ui-top-bar" title={t('settings.ui.topBarSection')}>
+      <SettingsGroup
+        id="ui-top-bar"
+        title={t('settings.ui.topBarSection')}
+        hint={t('settings.ui.browserShort')}
+      >
         <SettingRow
           htmlFor="top-bar"
           label={t('settings.topBar')}

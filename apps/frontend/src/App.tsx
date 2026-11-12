@@ -128,7 +128,7 @@ function Dashboard({
     >
       <SafeModeBanner
         onEdit={() => {
-          navigate(settingsPath('appearance'));
+          routerNavigate(settingsPath('appearance'), { state: { advanced: true } });
           window.setTimeout(
             () => document.getElementById('ui-css')?.scrollIntoView({ behavior: 'smooth' }),
             150,
@@ -195,7 +195,7 @@ function Dashboard({
           />
         )
       )}
-      {managing && tab === 'integrations' && <IntegrationsPage />}
+      {managing && tab === 'integrations' && <IntegrationsPage onImported={data.refresh} />}
       {managing && tab === 'activity' && <ActivityPage />}
       {tab === 'account' && (
         <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />
@@ -231,6 +231,13 @@ function DashboardForRoute({
   if (matchPath('/manage', pathname)) return <Navigate replace to="/manage/services" />;
   // The account used to be a management tab; keep old links working.
   if (matchPath('/manage/account', pathname)) return <Navigate replace to="/account" />;
+  // Settings pages that moved: Docker discovery now lives under Integrations; alerts are one page.
+  if (matchPath('/manage/settings/discovery', pathname))
+    return <Navigate replace to="/manage/integrations" />;
+  if (
+    matchPath('/manage/settings/:old', pathname)?.params.old?.match(/^(notifications|monitoring)$/)
+  )
+    return <Navigate replace to={settingsPath('alerts')} />;
   const home = Boolean(matchPath('/', pathname));
   const isList = Boolean(matchPath('/manage/services', pathname));
   const isNew = Boolean(matchPath('/manage/services/new', pathname));

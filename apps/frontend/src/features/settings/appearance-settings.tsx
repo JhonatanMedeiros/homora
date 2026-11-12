@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { ChevronDown, TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   ACCENT_IDS,
@@ -26,6 +26,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { FormError } from '@/components/form-error';
 import { Input } from '@/components/ui/input';
@@ -83,6 +84,7 @@ export function AppearanceSettings() {
   const [hexText, setHexText] = useState(saved.customAccent ?? CUSTOM_FALLBACK);
   const [busy, setBusy] = useState<'save' | 'reset' | 'image' | null>(null);
   const [error, setError] = useState('');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   // The saved value arrived (or changed): start the draft from it.
   if (saved !== lastSaved) {
     setLastSaved(saved);
@@ -140,6 +142,11 @@ export function AppearanceSettings() {
     if (result.ok) toast.success(t('appearance.imageRemoved'));
     else setError(result.message || t('appearance.error'));
   };
+  const discard = () => {
+    setError('');
+    setDraft(saved);
+    setHexText(saved.customAccent ?? CUSTOM_FALLBACK);
+  };
   const restore = async () => {
     setBusy('reset');
     setError('');
@@ -150,318 +157,383 @@ export function AppearanceSettings() {
   };
 
   return (
-    <SettingsGroup id="ui-appearance-server" title={t('appearance.title')}>
-      <p className="p-4 text-sm text-muted-foreground">{t('appearance.intro')}</p>
-      {failed && (
-        <div className="p-4">
-          <Alert variant="destructive">
-            <TriangleAlert aria-hidden="true" />
-            <AlertDescription>{t('appearance.loadFailed')}</AlertDescription>
-          </Alert>
-        </div>
-      )}
+    <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <SettingsGroup
+          id="ui-appearance-server"
+          title={t('appearance.title')}
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="pointer-coarse:h-11"
+              disabled={busy !== null || (sameAppearance(saved, DEFAULT_APPEARANCE) && !dirty)}
+              onClick={() => void restore()}
+            >
+              {busy === 'reset' && <Spinner data-icon="inline-start" />}
+              {t('appearance.reset')}
+            </Button>
+          }
+        >
+          <p className="p-4 text-sm text-muted-foreground">{t('appearance.intro')}</p>
+          {failed && (
+            <div className="p-4">
+              <Alert variant="destructive">
+                <TriangleAlert aria-hidden="true" />
+                <AlertDescription>{t('appearance.loadFailed')}</AlertDescription>
+              </Alert>
+            </div>
+          )}
 
-      <SettingRow label={t('appearance.accent')} description={t('appearance.accentHint')}>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          size="sm"
-          spacing={1}
-          className="flex-wrap sm:justify-end"
-          aria-label={t('appearance.accent')}
-          value={draft.accent}
-          onValueChange={(next) => {
-            if (next === 'custom' || (ACCENT_IDS as readonly string[]).includes(next))
-              patch({ accent: next as AccentId | 'custom' });
-          }}
-        >
-          {ACCENT_IDS.map((id) => (
-            <ToggleGroupItem key={id} value={id} className="gap-2 px-3 pointer-coarse:h-11">
-              <span
-                aria-hidden="true"
-                className="size-3 rounded-full border"
-                style={{ backgroundColor: ACCENT_PRESETS[id][theme] }}
-              />
-              {t(`appearance.accent.${id}` as MessageKey)}
-            </ToggleGroupItem>
-          ))}
-          <ToggleGroupItem value="custom" className="px-3 pointer-coarse:h-11">
-            {t('appearance.accent.custom')}
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </SettingRow>
-      {draft.accent === 'custom' && (
-        <SettingRow
-          htmlFor="appearance-hex"
-          label={t('appearance.customHex')}
-          description={t('appearance.customHexHint')}
-        >
-          <div className="flex w-full flex-col gap-1 sm:w-48">
-            <Input
-              id="appearance-hex"
-              autoComplete="off"
-              spellCheck={false}
-              maxLength={7}
-              value={hexText}
-              aria-invalid={hexValid ? undefined : true}
-              aria-describedby="appearance-hex-error"
-              onChange={(event) => {
-                setError('');
-                setHexText(event.target.value.trim());
+          <SettingRow label={t('appearance.accent')} description={t('appearance.accentHint')}>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              spacing={1}
+              className="flex-wrap sm:justify-end"
+              aria-label={t('appearance.accent')}
+              value={draft.accent}
+              onValueChange={(next) => {
+                if (next === 'custom' || (ACCENT_IDS as readonly string[]).includes(next))
+                  patch({ accent: next as AccentId | 'custom' });
               }}
-            />
-            <FormError id="appearance-hex-error">
-              {hexValid ? '' : t('appearance.customHexInvalid')}
-            </FormError>
-          </div>
-        </SettingRow>
-      )}
+            >
+              {ACCENT_IDS.map((id) => (
+                <ToggleGroupItem
+                  key={id}
+                  value={id}
+                  title={t(`appearance.accent.${id}` as MessageKey)}
+                  className="size-9 min-w-9 rounded-full p-0 data-[state=on]:ring-2 data-[state=on]:ring-foreground pointer-coarse:size-11"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="size-6 rounded-full border"
+                    style={{ backgroundColor: ACCENT_PRESETS[id][theme] }}
+                  />
+                  <span className="sr-only">{t(`appearance.accent.${id}` as MessageKey)}</span>
+                </ToggleGroupItem>
+              ))}
+              <ToggleGroupItem value="custom" className="px-3 pointer-coarse:h-11">
+                {t('appearance.accent.custom')}
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </SettingRow>
+          {draft.accent === 'custom' && (
+            <SettingRow
+              htmlFor="appearance-hex"
+              label={t('appearance.customHex')}
+              description={t('appearance.customHexHint')}
+            >
+              <div className="flex w-full flex-col gap-1 sm:w-48">
+                <Input
+                  id="appearance-hex"
+                  autoComplete="off"
+                  spellCheck={false}
+                  maxLength={7}
+                  value={hexText}
+                  aria-invalid={hexValid ? undefined : true}
+                  aria-describedby="appearance-hex-error"
+                  onChange={(event) => {
+                    setError('');
+                    setHexText(event.target.value.trim());
+                  }}
+                />
+                <FormError id="appearance-hex-error">
+                  {hexValid ? '' : t('appearance.customHexInvalid')}
+                </FormError>
+              </div>
+            </SettingRow>
+          )}
 
-      <SettingRow label={t('appearance.background')} description={t('appearance.backgroundHint')}>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          size="sm"
-          spacing={1}
-          className="flex-wrap sm:justify-end"
-          aria-label={t('appearance.background')}
-          value={draft.background}
-          onValueChange={(next) => {
-            if ((BACKGROUND_IDS as readonly string[]).includes(next))
-              patch({ background: next as BackgroundId });
-          }}
-        >
-          {BACKGROUND_IDS.map((id) => (
-            <ToggleGroupItem key={id} value={id} className="gap-2 px-3 pointer-coarse:h-11">
-              <span
-                aria-hidden="true"
-                className="size-3 rounded-full border bg-background"
-                style={{ backgroundImage: swatchBackground(id, theme) }}
-              />
-              {t(`appearance.background.${id}` as MessageKey)}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </SettingRow>
-
-      <SettingRow label={t('appearance.image')} description={t('appearance.imageHint')}>
-        {phone ? (
-          <p className="max-w-[40ch] text-sm text-muted-foreground">{t('appearance.imagePhone')}</p>
-        ) : (
-          <div
-            data-testid="image-dropzone"
-            data-dragging={dragging || undefined}
-            className="flex w-full flex-col items-start gap-2 rounded-lg border border-dashed p-3 data-[dragging=true]:border-primary sm:w-80"
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragging(false);
-              const file = event.dataTransfer.files[0];
-              if (file && busy === null) void send(file);
-            }}
+          <SettingRow
+            label={t('appearance.background')}
+            description={t('appearance.backgroundHint')}
           >
-            <p className="text-sm text-muted-foreground">{t('appearance.imageDrop')}</p>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              tabIndex={-1}
-              aria-label={t('appearance.imageChoose')}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = '';
-                if (file) void send(file);
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              spacing={1}
+              className="flex-wrap sm:justify-end"
+              aria-label={t('appearance.background')}
+              value={draft.background}
+              onValueChange={(next) => {
+                if ((BACKGROUND_IDS as readonly string[]).includes(next))
+                  patch({ background: next as BackgroundId });
               }}
-            />
-            <div className="flex flex-wrap gap-2">
+            >
+              {BACKGROUND_IDS.map((id) => (
+                <ToggleGroupItem
+                  key={id}
+                  value={id}
+                  title={t(`appearance.background.${id}` as MessageKey)}
+                  className="h-11 w-16 min-w-16 p-1 data-[state=on]:ring-2 data-[state=on]:ring-foreground"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="block size-full rounded-sm border bg-background"
+                    style={{ backgroundImage: swatchBackground(id, theme) }}
+                  />
+                  <span className="sr-only">{t(`appearance.background.${id}` as MessageKey)}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </SettingRow>
+
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 p-4 text-left"
+              >
+                <span className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">{t('settings.ui.advanced')}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t('appearance.advancedHint')}
+                  </span>
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={
+                    advancedOpen
+                      ? 'size-4 rotate-180 transition-transform'
+                      : 'size-4 transition-transform'
+                  }
+                />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="divide-y divide-border border-t">
+              <SettingRow label={t('appearance.image')} description={t('appearance.imageHint')}>
+                {phone ? (
+                  <p className="max-w-[40ch] text-sm text-muted-foreground">
+                    {t('appearance.imagePhone')}
+                  </p>
+                ) : (
+                  <div
+                    data-testid="image-dropzone"
+                    data-dragging={dragging || undefined}
+                    className="flex w-full flex-col items-start gap-2 rounded-lg border border-dashed p-3 data-[dragging=true]:border-primary sm:w-80"
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDragging(true);
+                    }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      setDragging(false);
+                      const file = event.dataTransfer.files[0];
+                      if (file && busy === null) void send(file);
+                    }}
+                  >
+                    <p className="text-sm text-muted-foreground">{t('appearance.imageDrop')}</p>
+                    <input
+                      ref={fileInput}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-label={t('appearance.imageChoose')}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        if (file) void send(file);
+                      }}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="pointer-coarse:h-11"
+                        disabled={busy !== null}
+                        onClick={() => fileInput.current?.click()}
+                      >
+                        {busy === 'image' && <Spinner data-icon="inline-start" />}
+                        {saved.image ? t('appearance.imageReplace') : t('appearance.imageChoose')}
+                      </Button>
+                      {saved.image && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="pointer-coarse:h-11"
+                          disabled={busy !== null}
+                          onClick={() => void dropImage()}
+                        >
+                          {t('appearance.imageRemove')}
+                        </Button>
+                      )}
+                    </div>
+                    <p aria-live="polite" className="text-sm">
+                      {busy === 'image'
+                        ? t('appearance.imageWorking')
+                        : saved.image
+                          ? t('appearance.imageSizes', {
+                              before: formatBytes(saved.image.originalBytes),
+                              after: formatBytes(saved.image.bytes),
+                              width: saved.image.width,
+                              height: saved.image.height,
+                            })
+                          : t('appearance.imageNone')}
+                    </p>
+                  </div>
+                )}
+              </SettingRow>
+              {draft.image && (
+                <>
+                  <SettingRow
+                    label={t('appearance.imageDim')}
+                    description={t('appearance.imageDimHint')}
+                  >
+                    <div className="flex w-full items-center gap-3 sm:w-64">
+                      <Slider
+                        aria-label={t('appearance.imageDim')}
+                        min={0}
+                        max={IMAGE_DIM_MAX}
+                        step={IMAGE_DIM_STEP}
+                        disabled={phone}
+                        value={[draft.image.dim]}
+                        onValueChange={([dim]) =>
+                          setDraft((current) =>
+                            current.image && dim !== undefined
+                              ? { ...current, image: { ...current.image, dim } }
+                              : current,
+                          )
+                        }
+                      />
+                      <span className="w-12 text-right font-mono text-sm">
+                        {t('appearance.imageDimValue', { value: draft.image.dim })}
+                      </span>
+                    </div>
+                  </SettingRow>
+                  <SettingRow label={t('appearance.imagePosition')}>
+                    <Segmented<ImagePosition>
+                      label={t('appearance.imagePosition')}
+                      value={draft.image.position}
+                      onChange={(position) =>
+                        setDraft((current) =>
+                          current.image
+                            ? { ...current, image: { ...current.image, position } }
+                            : current,
+                        )
+                      }
+                      options={IMAGE_POSITIONS.map((position) => ({
+                        value: position,
+                        label: t(`appearance.imagePosition.${position}` as MessageKey),
+                      }))}
+                    />
+                  </SettingRow>
+                </>
+              )}
+
+              <SettingRow
+                htmlFor="appearance-opacity"
+                label={t('appearance.cardOpacity')}
+                description={t('appearance.cardOpacityHint')}
+              >
+                <FormSelect
+                  id="appearance-opacity"
+                  aria-label={t('appearance.cardOpacity')}
+                  className="sm:w-32"
+                  value={draft.cardOpacity}
+                  onChange={(event) => patch({ cardOpacity: Number(event.target.value) })}
+                >
+                  {OPACITIES.map((value) => (
+                    <FormSelectOption key={value} value={value}>
+                      {t('appearance.cardOpacityOption', { value })}
+                    </FormSelectOption>
+                  ))}
+                </FormSelect>
+              </SettingRow>
+              <SettingRow
+                htmlFor="appearance-blur"
+                label={t('appearance.blur')}
+                description={t('appearance.blurHint')}
+              >
+                <Switch
+                  id="appearance-blur"
+                  checked={draft.blur}
+                  onCheckedChange={(blur) => patch({ blur })}
+                />
+              </SettingRow>
+            </CollapsibleContent>
+          </Collapsible>
+          {problems.length > 0 && (
+            <div className="p-4">
+              <Alert variant="destructive">
+                <TriangleAlert aria-hidden="true" />
+                <AlertTitle>{t('appearance.contrastTitle')}</AlertTitle>
+                <AlertDescription>
+                  <ul className="flex list-disc flex-col gap-1 pl-4">
+                    {problems.map((problem) => (
+                      <li key={`${problem.code}-${problem.theme}-${problem.on}`}>
+                        {problemText(problem)}
+                      </li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          <FormError className="px-4 pt-4 empty:hidden">{error}</FormError>
+        </SettingsGroup>
+        {(dirty || busy !== null) && (
+          <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between md:bottom-4">
+            <p role="status" className="flex items-center gap-2 text-sm">
+              {dirty && !busy && !blocked && (
+                <Badge variant="secondary">{t('appearance.status.unsaved')}</Badge>
+              )}
+              {status}
+            </p>
+            <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 className="pointer-coarse:h-11"
                 disabled={busy !== null}
-                onClick={() => fileInput.current?.click()}
+                onClick={discard}
               >
-                {busy === 'image' && <Spinner data-icon="inline-start" />}
-                {saved.image ? t('appearance.imageReplace') : t('appearance.imageChoose')}
+                {t('appearance.discard')}
               </Button>
-              {saved.image && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="pointer-coarse:h-11"
-                  disabled={busy !== null}
-                  onClick={() => void dropImage()}
-                >
-                  {t('appearance.imageRemove')}
-                </Button>
-              )}
+              <Button
+                type="button"
+                className="pointer-coarse:h-11"
+                disabled={busy !== null || blocked || !dirty}
+                onClick={() => void submit()}
+              >
+                {busy === 'save' && <Spinner data-icon="inline-start" />}
+                {t('appearance.save')}
+              </Button>
             </div>
-            <p aria-live="polite" className="text-sm">
-              {busy === 'image'
-                ? t('appearance.imageWorking')
-                : saved.image
-                  ? t('appearance.imageSizes', {
-                      before: formatBytes(saved.image.originalBytes),
-                      after: formatBytes(saved.image.bytes),
-                      width: saved.image.width,
-                      height: saved.image.height,
-                    })
-                  : t('appearance.imageNone')}
-            </p>
           </div>
         )}
-      </SettingRow>
-      {draft.image && (
-        <>
-          <SettingRow label={t('appearance.imageDim')} description={t('appearance.imageDimHint')}>
-            <div className="flex w-full items-center gap-3 sm:w-64">
-              <Slider
-                aria-label={t('appearance.imageDim')}
-                min={0}
-                max={IMAGE_DIM_MAX}
-                step={IMAGE_DIM_STEP}
-                disabled={phone}
-                value={[draft.image.dim]}
-                onValueChange={([dim]) =>
-                  setDraft((current) =>
-                    current.image && dim !== undefined
-                      ? { ...current, image: { ...current.image, dim } }
-                      : current,
-                  )
-                }
-              />
-              <span className="w-12 text-right font-mono text-sm">
-                {t('appearance.imageDimValue', { value: draft.image.dim })}
-              </span>
+      </div>
+      <aside className="order-first xl:sticky xl:top-6 xl:order-none xl:w-72 xl:shrink-0">
+        <div className="flex flex-col gap-2 rounded-lg border bg-card p-4">
+          <span className="font-mono text-xs text-muted-foreground">{t('appearance.preview')}</span>
+          <div
+            data-testid="appearance-preview"
+            className="rounded-lg border bg-background p-4 text-foreground"
+            style={previewStyle(candidate ?? saved, theme)}
+          >
+            <div className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-card-foreground">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-sm font-medium">{t('appearance.previewCard')}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t('appearance.previewCardText')}
+                </span>
+              </div>
+              <Button size="sm" className="pointer-coarse:h-11">
+                {t('appearance.previewAction')}
+              </Button>
             </div>
-          </SettingRow>
-          <SettingRow label={t('appearance.imagePosition')}>
-            <Segmented<ImagePosition>
-              label={t('appearance.imagePosition')}
-              value={draft.image.position}
-              onChange={(position) =>
-                setDraft((current) =>
-                  current.image ? { ...current, image: { ...current.image, position } } : current,
-                )
-              }
-              options={IMAGE_POSITIONS.map((position) => ({
-                value: position,
-                label: t(`appearance.imagePosition.${position}` as MessageKey),
-              }))}
-            />
-          </SettingRow>
-        </>
-      )}
-
-      <SettingRow
-        htmlFor="appearance-opacity"
-        label={t('appearance.cardOpacity')}
-        description={t('appearance.cardOpacityHint')}
-      >
-        <FormSelect
-          id="appearance-opacity"
-          aria-label={t('appearance.cardOpacity')}
-          className="sm:w-32"
-          value={draft.cardOpacity}
-          onChange={(event) => patch({ cardOpacity: Number(event.target.value) })}
-        >
-          {OPACITIES.map((value) => (
-            <FormSelectOption key={value} value={value}>
-              {t('appearance.cardOpacityOption', { value })}
-            </FormSelectOption>
-          ))}
-        </FormSelect>
-      </SettingRow>
-      <SettingRow
-        htmlFor="appearance-blur"
-        label={t('appearance.blur')}
-        description={t('appearance.blurHint')}
-      >
-        <Switch
-          id="appearance-blur"
-          checked={draft.blur}
-          onCheckedChange={(blur) => patch({ blur })}
-        />
-      </SettingRow>
-
-      <div className="flex flex-col gap-2 p-4">
-        <span className="font-mono text-xs text-muted-foreground">{t('appearance.preview')}</span>
-        <div
-          data-testid="appearance-preview"
-          className="rounded-lg border bg-background p-4 text-foreground"
-          style={previewStyle(candidate ?? saved, theme)}
-        >
-          <div className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-card-foreground">
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="truncate text-sm font-medium">{t('appearance.previewCard')}</span>
-              <span className="text-sm text-muted-foreground">
-                {t('appearance.previewCardText')}
-              </span>
-            </div>
-            <Button size="sm" className="pointer-coarse:h-11">
-              {t('appearance.previewAction')}
-            </Button>
+            <p className="mt-3 text-sm text-accent-text">{t('appearance.accent')}</p>
+            <p className="text-sm text-muted-foreground">{t('appearance.previewMuted')}</p>
           </div>
-          <p className="mt-3 text-sm text-accent-text">{t('appearance.accent')}</p>
-          <p className="text-sm text-muted-foreground">{t('appearance.previewMuted')}</p>
         </div>
-      </div>
-
-      {problems.length > 0 && (
-        <div className="p-4">
-          <Alert variant="destructive">
-            <TriangleAlert aria-hidden="true" />
-            <AlertTitle>{t('appearance.contrastTitle')}</AlertTitle>
-            <AlertDescription>
-              <ul className="flex list-disc flex-col gap-1 pl-4">
-                {problems.map((problem) => (
-                  <li key={`${problem.code}-${problem.theme}-${problem.on}`}>
-                    {problemText(problem)}
-                  </li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-      <FormError className="px-4 pt-4 empty:hidden">{error}</FormError>
-
-      <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 flex flex-col gap-3 rounded-b-lg border-t bg-background p-4 sm:flex-row sm:items-center sm:justify-between md:static md:bottom-auto">
-        <p role="status" className="flex items-center gap-2 text-sm">
-          {dirty && !busy && !blocked && (
-            <Badge variant="secondary">{t('appearance.status.unsaved')}</Badge>
-          )}
-          {status}
-        </p>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="pointer-coarse:h-11"
-            disabled={busy !== null || (sameAppearance(saved, DEFAULT_APPEARANCE) && !dirty)}
-            onClick={() => void restore()}
-          >
-            {busy === 'reset' && <Spinner data-icon="inline-start" />}
-            {t('appearance.reset')}
-          </Button>
-          <Button
-            type="button"
-            className="pointer-coarse:h-11"
-            disabled={busy !== null || blocked || !dirty}
-            onClick={() => void submit()}
-          >
-            {busy === 'save' && <Spinner data-icon="inline-start" />}
-            {t('appearance.save')}
-          </Button>
-        </div>
-      </div>
-    </SettingsGroup>
+      </aside>
+    </div>
   );
 }

@@ -17,3 +17,14 @@ export const primaryNavIds: Tab[] = ['services', 'integrations', 'agents'];
 
 /** Router path of a section; the account lives outside the management area. */
 export const tabPath = (tab: Tab) => (tab === 'account' ? '/account' : `/manage/${tab}`);
+
+/** Sidebar groups: what is shown, what runs on its own, and system configuration. */
+export const navGroups: {
+  id: 'manage' | 'automation' | 'system';
+  label: MessageKey;
+  items: Exclude<Tab, 'account'>[];
+}[] = [
+  { id: 'manage', label: 'nav.group.manage', items: ['services', 'integrations'] },
+  { id: 'automation', label: 'nav.group.automation', items: ['agents', 'activity'] },
+  { id: 'system', label: 'nav.group.system', items: ['settings'] },
+];

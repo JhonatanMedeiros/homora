@@ -60,6 +60,7 @@ afterEach(() => {
   document.documentElement.removeAttribute('style');
 });
 
+const openAdvanced = () => fireEvent.click(screen.getByRole('button', { name: /Advanced/ }));
 const save = () => screen.getByRole('button', { name: 'Save' });
 
 it('offers every preset as a radio and starts on Ember with Save disabled', async () => {
@@ -69,8 +70,7 @@ it('offers every preset as a radio and starts on Ember with Save disabled', asyn
   for (const name of ['Ember', 'Moss', 'Sky', 'Rose', 'Violet', 'Slate', 'Custom'])
     expect(screen.getByRole('radio', { name })).toBeTruthy();
   expect(screen.getByRole('radio', { name: 'Ember' }).getAttribute('aria-checked')).toBe('true');
-  expect(save().hasAttribute('disabled')).toBe(true);
-  expect(screen.getByRole('status').textContent).toContain('Saved');
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
   for (const name of ['Flat', 'Dusk', 'Ember glow', 'Forest', 'Ocean', 'Sand light'])
     expect(screen.getByRole('radio', { name })).toBeTruthy();
 });
@@ -121,6 +121,7 @@ it('rejects a malformed custom color in text', () => {
 
 it('offers card opacity from 60 to 100 and the blur switch', async () => {
   render(<AppearanceSettings />);
+  openAdvanced();
   await chooseSelectOption('Card opacity', '70%');
   fireEvent.click(screen.getByRole('switch', { name: 'Blur behind cards' }));
   fireEvent.click(save());
@@ -165,6 +166,7 @@ const choose = (file: File) =>
 
 it('uploads a picture, shows its size before and after, and applies it', async () => {
   render(<AppearanceSettings />);
+  openAdvanced();
   expect(screen.getByText('No background image.')).toBeTruthy();
   choose(new File(['x'], 'bg.png', { type: 'image/png' }));
   expect(
@@ -182,6 +184,7 @@ it('uploads a picture, shows its size before and after, and applies it', async (
 
 it('does not send a file above 2 MB', async () => {
   render(<AppearanceSettings />);
+  openAdvanced();
   choose(new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'big.png', { type: 'image/png' }));
   expect(await screen.findByText('The image is larger than 2 MB.')).toBeTruthy();
   expect(calls.some((c) => c.method === 'PUT image')).toBe(false);
@@ -190,6 +193,7 @@ it('does not send a file above 2 MB', async () => {
 it('shows the server reason when a file is refused', async () => {
   rejectUpload = true;
   render(<AppearanceSettings />);
+  openAdvanced();
   choose(new File(['<svg/>'], 'x.svg', { type: 'image/svg+xml' }));
   expect(await screen.findByText('Use a JPG, PNG or WebP image.')).toBeTruthy();
 });
@@ -197,6 +201,7 @@ it('shows the server reason when a file is refused', async () => {
 it('removes the picture', async () => {
   mockServer({ ...DEFAULT_APPEARANCE, image: PICTURE });
   render(<AppearanceSettings />);
+  openAdvanced();
   fireEvent.click(await screen.findByRole('button', { name: 'Remove image' }));
   await waitFor(() => expect(calls.some((c) => c.method === 'DELETE image')).toBe(true));
   expect(await screen.findByText('No background image.')).toBeTruthy();
@@ -206,6 +211,7 @@ it('removes the picture', async () => {
 it('blocks Save when the dimming leaves the text hard to read', async () => {
   mockServer({ ...DEFAULT_APPEARANCE, image: { ...PICTURE, dim: 80 } });
   render(<AppearanceSettings />);
+  openAdvanced();
   const slider = await screen.findByRole('slider', { name: 'Dimming' });
   fireEvent.keyDown(slider, { key: 'Home' });
   await waitFor(() => expect(screen.getByText('Contrast too low')).toBeTruthy());
@@ -216,6 +222,7 @@ it('does not offer uploading on a phone', async () => {
   window.innerWidth = 390;
   mockServer({ ...DEFAULT_APPEARANCE, image: PICTURE });
   render(<AppearanceSettings />);
+  openAdvanced();
   expect(await screen.findByText(/not offered on phones/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: /Choose image|Replace image/ })).toBeNull();
   expect(screen.queryByTestId('image-dropzone')).toBeNull();

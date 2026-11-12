@@ -1,8 +1,8 @@
 /** Text for settings, export, and import. */
 export const en = {
   'nav.settings': 'Settings',
-  'settings.section.notifications': 'Notifications',
-  'settings.section.notificationsHint': 'Send alerts when services go down or recover.',
+  'settings.section.alerts': 'Alerts',
+  'settings.section.alertsHint': 'Channels and monitoring defaults.',
   'notifications.title': 'Notifications',
   'notifications.webhooks': 'Webhooks',
   'notifications.webhooksHint': 'Send a JSON request to a service or automation.',
@@ -101,8 +101,6 @@ export const en = {
   'settings.section.publicHint': 'Read-only page you can share outside your network.',
   'settings.section.backup': 'Export and import',
   'settings.section.backupHint': 'Back up your dashboard or bring in an existing one.',
-  'settings.section.discovery': 'Docker discovery',
-  'settings.section.discoveryHint': 'Suggest cards from your containers’ labels.',
   'settings.topBar': 'Show the top bar on the home page',
   'settings.topBarSource': 'Proxmox connection for system resources',
   'settings.topBarAutomatic': 'Automatic (first Proxmox widget)',
@@ -184,8 +182,8 @@ export const en = {
 
 export const ptBR: Record<keyof typeof en, string> = {
   'nav.settings': 'Configurações',
-  'settings.section.notifications': 'Notificações',
-  'settings.section.notificationsHint': 'Avise quando serviços caírem ou voltarem.',
+  'settings.section.alerts': 'Alertas',
+  'settings.section.alertsHint': 'Canais e padrões de monitoramento.',
   'notifications.title': 'Notificações',
   'notifications.webhooks': 'Webhooks',
   'notifications.webhooksHint': 'Envie uma requisição JSON para um serviço ou automação.',
@@ -267,8 +265,6 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.section.publicHint': 'Página somente leitura para compartilhar fora da sua rede.',
   'settings.section.backup': 'Exportar e importar',
   'settings.section.backupHint': 'Faça backup do painel ou traga um já existente.',
-  'settings.section.discovery': 'Descoberta Docker',
-  'settings.section.discoveryHint': 'Sugere cards a partir dos labels dos contêineres.',
   'discovery.title': 'Descoberta Docker',
   'discovery.hint':
     'Sugere cards a partir dos labels dos contêineres (homora.url, homora.name, homora.group, homora.description, homora.icon ou os equivalentes do Homepage). Nada é adicionado antes de você escolher os contêineres e confirmar.',

@@ -1269,6 +1269,14 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 - The Group | Host | Map switch, "Suggested hosts" and "View" now share the same 36 px height (the switch was 32 px). The switch items have icons and the selected one is tinted with the primary colour and bold instead of a barely different dark background; "Suggested hosts" has an icon. Not verified in a real browser.
 
+## Manage redesign
+
+- The sidebar groups the sections as Manage (Services, Integrations), Automation (Agents, Activity) and System (Settings).
+- Settings is a row of short tabs (Appearance, Home and pages, Top bar and shortcuts, Alerts, Public status, Backup); phones keep the list-then-page flow. Notifications and the monitoring defaults share the Alerts tab. Custom CSS is folded under Advanced in Appearance, which opens by itself when safe mode sends you there.
+- Docker discovery moved from Settings to Integrations. `/manage/settings/notifications` and `/monitoring` redirect to Alerts, and `/manage/settings/discovery` to Integrations.
+- Settings has a search field that jumps to the tab holding a setting. Appearance shows its preview in a sticky side column, accents and backgrounds as swatches, background image and card translucency under Advanced, and a floating bar to save or discard that appears only when something changed. Custom CSS stays in its own collapsible.
+- The sidebar is full height with a badge for agent proposals waiting for review. Manage > Services always uses the list layout and has a name/address filter. Activity, Agents and Integrations already had the day grouping, review tab and connection list from the mockup.
+
 ## Coolify read-only integration (issue #102)
 
 - Implemented all four phases in one change, **implemented, unvalidated**: [ADR 0010](decisoes/0010-coolify-read-only-integration.md). Code adapter with a `read`-only Bearer token; summary widget; searchable inventory (`GET /api/connections/:id/resources`); card links by connection and resource UUID (table `integration_resource_links`, migration 0024); discovery with review; a separate Coolify state on the card with "needs review" for changed or missing resources; `Retry-After` exposed by the transport and a Coolify-only pause after 401, 403 and 429.
