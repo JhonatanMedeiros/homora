@@ -130,7 +130,7 @@ The Homepage labels `homepage.href`, `homepage.name`, `homepage.group`, `homepag
 
 ### Enable discovery
 
-The Docker socket grants privileged access to the daemon; even a read-only socket mount does not make the Docker API read-only. Use these options only on a trusted host. Keep the proxy on a trusted private network, with no published port: anyone who can reach it can read container metadata and labels.
+The Docker socket grants privileged access to the daemon; even a read-only socket mount does not make the Docker API read-only. Use these options only on a trusted host. Keep the proxy on a trusted private network, with no published port: anyone who can reach it can read container metadata and labels and export container filesystems (`GET /containers/{id}/export`), potentially exposing application data. Treat access to it as privileged.
 
 **Docker Compose:** start the restricted proxy with the override:
 

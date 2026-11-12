@@ -129,7 +129,7 @@ Os labels do Homepage (`homepage.href`, `homepage.name`, `homepage.group`, `home
 
 ### Ativar a descoberta
 
-O socket concede acesso privilegiado ao daemon; montá-lo como somente leitura não torna a API Docker somente leitura. Use estas opções apenas em um host confiável. Mantenha o proxy em rede privada confiável, sem porta publicada: quem o alcança pode ler metadados e labels dos contêineres.
+O socket concede acesso privilegiado ao daemon; montá-lo como somente leitura não torna a API Docker somente leitura. Use estas opções apenas em um host confiável. Mantenha o proxy em rede privada confiável, sem porta publicada: quem o alcança pode ler metadados e labels dos contêineres e exportar seus sistemas de arquivos (`GET /containers/{id}/export`), o que pode expor dados da aplicação. Trate o acesso a ele como privilegiado.
 
 **Docker Compose:** inicie o proxy restrito com o override:
 

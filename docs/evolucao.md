@@ -892,5 +892,7 @@ implementation because it changes a security default.
 - Documented Compose, manual Coolify/PaaS proxy and direct socket options, verification,
   limits, proxy contract and troubleshooting in both READMEs. The manual proxy remains
   outside the app stack and requires separate maintenance.
-- Validated against the current implementation and Compose configuration; a live Coolify
-  deployment and proxy connectivity were not tested in this documentation change.
+- Validated against the current implementation and Compose configuration. The PR review
+  reports a live Coolify deployment using a manual proxy and runtime environment variable,
+  with `list_discovery_suggestions` returning `scanned: 4`; the guide was not re-executed
+  from scratch for this documentation change.
