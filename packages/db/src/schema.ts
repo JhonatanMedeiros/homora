@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const serviceGroups = sqliteTable('service_groups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull().unique(),
@@ -29,6 +29,26 @@ export const serviceObservations = sqliteTable('service_observations', {
   signature: text('signature').notNull(),
   observation: text('observation').notNull(),
 });
+export const serviceObservationHistory = sqliteTable(
+  'service_observation_history',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    signature: text('signature').notNull(),
+    observedAt: integer('observed_at').notNull(),
+    observation: text('observation').notNull(),
+  },
+  (table) => [
+    uniqueIndex('observation_history_service_time_idx').on(
+      table.serviceId,
+      table.observedAt,
+      table.signature,
+    ),
+    index('observation_history_time_idx').on(table.observedAt),
+  ],
+);
 
 // Configuration stored here must never contain credentials; secretRef points to a
 // future credential store. Existing Proxmox credentials remain in their vault.
@@ -77,6 +97,7 @@ export const serviceProposals = sqliteTable('service_proposals', {
   createdAt: integer('created_at').notNull(),
   reviewedAt: integer('reviewed_at'),
   reviewer: text('reviewer'),
+  batchId: text('batch_id'),
 });
 export const configVersion = sqliteTable('config_version', {
   id: integer('id').primaryKey(),

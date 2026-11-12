@@ -15,6 +15,7 @@ export type Proposal = {
   expiresAt: number;
   state: string;
   author: string;
+  batchId?: string | null;
 };
 export type ServiceFields = {
   name?: string;
@@ -38,6 +39,9 @@ export type Diff = {
 
 export const SCOPES = [
   { id: 'services:read', label: 'scope.services:read', hint: 'scope.services:read.hint' },
+  { id: 'agents:read', label: 'scope.agents:read', hint: 'scope.agents:read.hint' },
+  { id: 'agents:propose', label: 'scope.agents:propose', hint: 'scope.agents:propose.hint' },
+  { id: 'audit:read', label: 'scope.audit:read', hint: 'scope.audit:read.hint' },
   { id: 'proxmox:read', label: 'scope.proxmox:read', hint: 'scope.proxmox:read.hint' },
   {
     id: 'proposals:create',
@@ -64,7 +68,9 @@ export const isWriteScope = (id: string) => id === 'proposals:create' || id.ends
 
 /** Ready-made permission sets offered when creating an agent; "custom" lets the user choose. */
 export const PROFILES = {
-  read: SCOPES.filter((scope) => !isWriteScope(scope.id)).map((scope) => scope.id),
+  read: SCOPES.filter(
+    (scope) => !isWriteScope(scope.id) && scope.id !== 'agents:read' && scope.id !== 'audit:read',
+  ).map((scope) => scope.id),
   suggest: ['services:read', 'proposals:create', 'groups:propose'],
 } as const;
 export type Profile = keyof typeof PROFILES | 'custom';
@@ -79,6 +85,7 @@ export const STATES: Record<string, MessageKey> = {
   approved: 'proposal.state.approved',
   rejected: 'proposal.state.rejected',
   expired: 'proposal.state.expired',
+  withdrawn: 'proposal.state.withdrawn',
 };
 
 export function parseScopes(raw: string): string[] {

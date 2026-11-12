@@ -168,3 +168,38 @@ it('opens the setup guide any time, with a token placeholder and a remembered fo
   fireEvent.mouseDown(within(dialog).getByRole('tab', { name: 'Codex' }), { button: 0 });
   await waitFor(() => expect(dialog.textContent).toContain('[mcp_servers.homora]'));
 });
+
+it('shows a token returned by an identity proposal review', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/agents') return { ok: true, json: async () => [active] };
+      if (url === '/api/proposals')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 'p1',
+              author: 'a1',
+              state: 'pending',
+              expiresAt: Date.now() + 60000,
+              diff: JSON.stringify({
+                kind: 'agent',
+                change: { op: 'create', name: 'Child', scopes: ['services:read'] },
+                before: null,
+              }),
+            },
+          ],
+        };
+      return {
+        ok: true,
+        json: async () => ({ state: 'approved', agentId: 'child', token: 'one-time-example' }),
+      };
+    }),
+  );
+  render(<Harness />);
+  expect(await screen.findByText(/Alteração de identidade de agente/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Aprovar e aplicar' }));
+  const dialog = await screen.findByRole('dialog', { name: /Token de/ });
+  expect(within(dialog).getByText('one-time-example')).toBeTruthy();
+});

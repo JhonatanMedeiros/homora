@@ -59,6 +59,7 @@ export function registerAgentProposalRoutes(
     try {
       const token = proposals.rotate(request.params.id);
       await recordAgentEvent(request, 'agent-rotate', agentName(request.params.id));
+      reply.header('Cache-Control', 'no-store');
       return { token };
     } catch {
       return reply.code(404).send(errorBody('identity-not-found'));
@@ -79,7 +80,8 @@ export function registerAgentProposalRoutes(
         `user:${session.userId}`,
       );
       if (state === 'approved') void monitor.invalidate();
-      return { state };
+      reply.header('Cache-Control', 'no-store');
+      return typeof state === 'string' ? { state } : state;
     } catch (error) {
       return reply
         .code(409)

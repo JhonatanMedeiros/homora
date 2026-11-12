@@ -118,6 +118,42 @@ it('reviews MCP group and widget proposals through authenticated HTTP across SQL
     expect((await app.inject({ method: 'GET', url: '/api/groups', headers })).json()).toMatchObject(
       [{ name: 'Media', columns: 2 }],
     );
+    const batchResponse = await client.callTool({
+      name: 'propose_batch',
+      arguments: {
+        items: [
+          { kind: 'group', change: { op: 'create', name: 'Batch A' } },
+          { kind: 'group', change: { op: 'create', name: 'Batch B' } },
+        ],
+      },
+    });
+    expect(batchResponse.isError).not.toBe(true);
+    const batch = JSON.parse((batchResponse.content as { text: string }[])[0].text) as {
+      batchId: string;
+      proposals: { id: string; batchId: string }[];
+    };
+    expect(batch.proposals).toHaveLength(2);
+    expect(batch.proposals.every((item) => item.batchId === batch.batchId)).toBe(true);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/proposals/${batch.proposals[0].id}/review`,
+          headers,
+          payload: { approve: true },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/proposals/${batch.proposals[1].id}/review`,
+          headers,
+          payload: { approve: true },
+        })
+      ).statusCode,
+    ).toBe(409);
   } finally {
     await client.close();
     await server.close();
@@ -125,6 +161,105 @@ it('reviews MCP group and widget proposals through authenticated HTTP across SQL
     delete process.env.HOMORA_AGENT_TOKEN;
     mcpDb.close();
     webDb.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('reveals delegated tokens only to the authenticated reviewer and allows recovery', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-delegation-'));
+  const path = join(dir, 'data.sqlite');
+  const db = createDatabase(path);
+  const vault = createVault(path);
+  const { auth, cookie } = await createTestAuth(db.db);
+  const headers = { cookie, origin: 'http://localhost:5173' };
+  const app = createApp(db.db, 5173, auth, vault);
+  const client = new Client({ name: 'test', version: '1' });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  const server = createMcp(getSqliteHandle(db.db), vault);
+  try {
+    const parent = await app.inject({
+      method: 'POST',
+      url: '/api/agents',
+      headers,
+      payload: { name: 'parent', scopes: ['agents:propose', 'services:read'] },
+    });
+    process.env.HOMORA_AGENT_TOKEN = parent.json().token;
+    await Promise.all([client.connect(a), server.connect(b)]);
+    const denied = await client.callTool({
+      name: 'propose_agent_create',
+      arguments: { name: 'child', scopes: ['audit:read'] },
+    });
+    expect(denied.isError).toBe(true);
+    const deniedBatch = await client.callTool({
+      name: 'propose_batch',
+      arguments: {
+        items: [
+          {
+            kind: 'service',
+            change: {
+              op: 'create',
+              service: { name: 'No', url: 'https://example.test', category: 'Home' },
+            },
+          },
+        ],
+      },
+    });
+    expect(deniedBatch.isError).toBe(true);
+    const proposed = await client.callTool({
+      name: 'propose_agent_create',
+      arguments: { name: 'child', scopes: ['services:read'] },
+    });
+    expect(proposed.isError).not.toBe(true);
+    const { id } = JSON.parse((proposed.content as { text: string }[])[0].text) as { id: string };
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/proposals/${id}/review`,
+          headers: { origin: 'http://localhost:5173' },
+          payload: { approve: true },
+        })
+      ).statusCode,
+    ).toBe(401);
+    const review = await app.inject({
+      method: 'POST',
+      url: `/api/proposals/${id}/review`,
+      headers,
+      payload: { approve: true },
+    });
+    expect(review.statusCode).toBe(200);
+    expect(review.headers['cache-control']).toBe('no-store');
+    const { token, agentId } = review.json() as { token: string; agentId: string };
+    expect(token).toBeTruthy();
+    expect(
+      JSON.stringify(await client.callTool({ name: 'get_proposal', arguments: { id } })),
+    ).not.toContain(token);
+    expect(
+      JSON.stringify(await client.callTool({ name: 'list_proposals', arguments: {} })),
+    ).not.toContain(token);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/proposals/${id}/review`,
+          headers,
+          payload: { approve: true },
+        })
+      ).statusCode,
+    ).toBe(409);
+    const replacement = await app.inject({
+      method: 'POST',
+      url: `/api/agents/${agentId}/rotate`,
+      headers,
+    });
+    expect(replacement.statusCode).toBe(200);
+    expect(replacement.json().token).not.toBe(token);
+  } finally {
+    await client.close();
+    await server.close();
+    await app.close();
+    delete process.env.HOMORA_AGENT_TOKEN;
+    db.close();
     rmSync(dir, { recursive: true, force: true });
   }
 });

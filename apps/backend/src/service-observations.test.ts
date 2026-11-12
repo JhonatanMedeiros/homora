@@ -6,6 +6,7 @@ it('shares only current observations and treats stale, changed or malformed data
   const db = new DatabaseSync(':memory:');
   db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER);
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
+    CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
     INSERT INTO services VALUES(1,'https://example.test',0,'http',30);`);
   try {
     const store = createObservationStore(db);
@@ -49,6 +50,51 @@ it('shares only current observations and treats stale, changed or malformed data
     expect(store.list(now)[0]).toMatchObject({ status: 'unknown', reason: 'unchecked' });
     store.clear();
     expect(db.prepare('SELECT * FROM service_observations').all()).toEqual([]);
+  } finally {
+    db.close();
+  }
+});
+
+it('retains unique observations for thirty days and filters the requested window', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER);
+    CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
+    CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
+    INSERT INTO services VALUES(1,'https://example.test',0,'http',30);`);
+  try {
+    const store = createObservationStore(db);
+    const service = {
+      id: 1,
+      name: 'Example',
+      url: 'https://example.test',
+      category: 'Home',
+      description: '',
+      icon: '',
+      position: 0,
+      allowPrivate: false,
+      checkType: 'http' as const,
+      checkInterval: 30,
+    };
+    const now = Date.now();
+    const state = {
+      status: 'available' as const,
+      lastAttempt: new Date(now - 2000).toISOString(),
+      reason: 'responding' as const,
+      httpStatus: 200,
+      latencyMs: 12,
+    };
+    db.prepare(
+      'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
+    ).run(1, 'old', now - 31 * 86400000, JSON.stringify(state));
+    store.publish([service], { 1: state });
+    store.publish([service], { 1: state });
+    expect(store.history(1, now - 3000, now).events).toHaveLength(1);
+    expect(store.history(1, now - 1000, now).events).toHaveLength(0);
+    expect(db.prepare('SELECT COUNT(*) AS count FROM service_observation_history').get()).toEqual({
+      count: 1,
+    });
+    store.clear();
+    expect(store.history(1, 0, now).events).toHaveLength(1);
   } finally {
     db.close();
   }

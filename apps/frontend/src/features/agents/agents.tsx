@@ -136,6 +136,13 @@ export function Agents({
       body: JSON.stringify({ approve }),
     }).catch(() => null);
     if (response?.ok) {
+      const result = (await response.json()) as { token?: string; agentId?: string };
+      if (result.token) {
+        setTokenFor(
+          agents?.find((agent) => agent.id === result.agentId)?.name ?? t('agents.fallbackName'),
+        );
+        setToken(result.token);
+      }
       const approved = proposals?.find((proposal) => proposal.id === id);
       const diff = approved ? parseDiff(approved.diff) : null;
       setMessage(

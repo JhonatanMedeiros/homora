@@ -113,7 +113,7 @@ it('upgrades database with first migration already registered and preserves data
   }
 });
 
-it('adiciona observações a uma base da versão anterior preservando serviços e conexões', () => {
+it('adiciona histórico e lotes preservando dados da versão anterior', () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-observation-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
@@ -131,7 +131,7 @@ it('adiciona observações a uma base da versão anterior preservando serviços 
         .run(migration.hash, migration.folderMillis);
     }
     old.exec(
-      "INSERT INTO services(id,name,url,category,description) VALUES(5,'Existing','https://example.test','Home',''); INSERT INTO integration_instances(id,type,name,public_config,secret_ref) VALUES(7,'jellyfin','Media','{}','encrypted');",
+      "INSERT INTO services(id,name,url,category,description) VALUES(5,'Existing','https://example.test','Home',''); INSERT INTO integration_instances(id,type,name,public_config,secret_ref) VALUES(7,'jellyfin','Media','{}','encrypted'); INSERT INTO service_observations VALUES(5,'signature','{}'); INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at) VALUES('old','author','{}','hash',1,123,'pending',1);",
     );
     old.close();
     const database = createDatabase(path);
@@ -143,7 +143,14 @@ it('adiciona observações a uma base da versão anterior preservando serviços 
     expect(check.prepare('SELECT secret_ref FROM integration_instances WHERE id=7').get()).toEqual({
       secret_ref: 'encrypted',
     });
-    expect(check.prepare('SELECT * FROM service_observations').all()).toEqual([]);
+    expect(check.prepare('SELECT * FROM service_observations').all()).toHaveLength(1);
+    expect(check.prepare('SELECT batch_id FROM service_proposals WHERE id=?').get('old')).toEqual({
+      batch_id: null,
+    });
+    expect(check.prepare('SELECT * FROM service_observation_history').all()).toEqual([]);
+    expect(() =>
+      check.prepare('UPDATE service_proposals SET batch_id=? WHERE id=?').run('changed', 'old'),
+    ).toThrow();
     check.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });

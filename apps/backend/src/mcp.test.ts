@@ -15,7 +15,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-'));
   const db = new DatabaseSync(':memory:');
   db.exec(
-    "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT, url TEXT, category TEXT, description TEXT, icon TEXT DEFAULT '', position INTEGER DEFAULT 0, allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER); INSERT INTO services(id,name,url,category,description) VALUES (1,'Jellyfin','http://localhost/','Media',''); CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT); CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);",
+    "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT, url TEXT, category TEXT, description TEXT, icon TEXT DEFAULT '', position INTEGER DEFAULT 0, allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER); INSERT INTO services(id,name,url,category,description) VALUES (1,'Jellyfin','http://localhost/','Media',''); CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT); CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);",
   );
   db.prepare(
     "UPDATE services SET url='http://localhost/?api_key=synthetic-secret' WHERE id=1",
@@ -51,8 +51,21 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'list_service_status',
       'get_service',
       'list_groups',
+      'get_group',
+      'list_group_services',
+      'get_service_status',
+      'list_status_history',
+      'list_agents',
+      'get_agent',
+      'list_audit_history',
+      'withdraw_proposal',
       'list_proposals',
       'get_proposal',
+      'propose_batch',
+      'propose_agent_create',
+      'propose_agent_update_scopes',
+      'propose_agent_revoke',
+      'propose_agent_rotate',
       'propose_service_card',
       'propose_group_change',
       'propose_card_order',
@@ -113,6 +126,28 @@ it('validates proposal inputs and lists services without secrets', async () => {
     );
     expect(JSON.stringify(await client.callTool({ name: 'list_groups', arguments: {} }))).toContain(
       'Mídia',
+    );
+    expect(
+      JSON.stringify(await client.callTool({ name: 'get_group', arguments: { id: 1 } })),
+    ).toContain('Mídia');
+    expect(
+      JSON.stringify(await client.callTool({ name: 'get_service_status', arguments: { id: 1 } })),
+    ).toContain('unchecked');
+    for (const name of ['list_agents', 'get_agent', 'list_audit_history']) {
+      const args = name === 'get_agent' ? { id: identity.id } : {};
+      expect((await client.callTool({ name, arguments: args })).isError).toBe(true);
+    }
+    const reader = createProposalService(db).issue('reader', ['agents:read', 'audit:read']);
+    process.env.HOMORA_AGENT_TOKEN = reader.token;
+    const agents = JSON.stringify(await client.callTool({ name: 'list_agents', arguments: {} }));
+    expect(agents).toContain('reader');
+    expect(agents).not.toContain(reader.token);
+    expect(agents).not.toContain('token_hash');
+    expect(
+      JSON.stringify(await client.callTool({ name: 'get_agent', arguments: { id: identity.id } })),
+    ).toContain('test');
+    expect((await client.callTool({ name: 'list_audit_history', arguments: {} })).isError).not.toBe(
+      true,
     );
     process.env.HOMORA_AGENT_TOKEN = 'invalid';
     expect((await client.callTool({ name: 'get_service', arguments: { id: 1 } })).isError).toBe(
@@ -216,12 +251,29 @@ it('validates proposal inputs and lists services without secrets', async () => {
     const other = createProposalService(db).issue('other', ['proposals:create']);
     process.env.HOMORA_AGENT_TOKEN = other.token;
     expect(
+      (await client.callTool({ name: 'withdraw_proposal', arguments: { id: proposalData.id } }))
+        .isError,
+    ).toBe(true);
+    expect(
       (await client.callTool({ name: 'get_proposal', arguments: { id: proposalData.id } })).isError,
     ).toBe(true);
     expect(
       JSON.stringify(await client.callTool({ name: 'list_proposals', arguments: {} })),
     ).not.toContain(proposalData.id);
     process.env.HOMORA_AGENT_TOKEN = identity.token;
+    expect(
+      (await client.callTool({ name: 'withdraw_proposal', arguments: { id: proposalData.id } }))
+        .isError,
+    ).not.toBe(true);
+    expect(
+      (await client.callTool({ name: 'withdraw_proposal', arguments: { id: proposalData.id } }))
+        .isError,
+    ).toBe(true);
+    expect(
+      db
+        .prepare("SELECT action FROM audit_events WHERE proposal_id=? AND action='withdraw'")
+        .get(proposalData.id),
+    ).toBeTruthy();
     const absent = await client.callTool({ name: 'list_proxmox_resources', arguments: {} });
     expect(absent.isError).toBe(true);
   } finally {

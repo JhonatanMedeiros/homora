@@ -150,7 +150,9 @@ For stdio, after `pnpm build`, configure a trusted MCP client to run `node /abso
 
 | Scope                                      | Tools                                                                                    |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `services:read`                            | `list_services`, `get_service`, `list_groups`, `list_service_status`                     |
+| `services:read`                            | Services, groups, current status and `list_status_history`                               |
+| `agents:read`, `audit:read`                | Agent identities and paginated audit events, respectively                                |
+| `agents:propose`                           | Propose agent creation, scope changes, revocation or token rotation                      |
 | `proxmox:read`                             | `list_proxmox_resources`                                                                 |
 | `proposals:create`                         | `propose_service_card`, `propose_card_order`                                             |
 | `groups:propose`                           | `propose_group_change`                                                                   |
@@ -161,6 +163,12 @@ For stdio, after `pnpm build`, configure a trusted MCP client to run `node /abso
 `list_proxmox_resources` returns aggregate data when exactly one Proxmox connection exists. With multiple connections, use `list_integrations` and `get_integration_status` with `integrations:read` to select one. `get_homora_capabilities` reports the token's scopes and available tools. Any proposal scope permits `list_proposals` and `get_proposal` for that identity's own proposals. Card, group, order and widget proposals expire after 15 minutes and need authenticated human approval; they are rejected if the relevant configuration has changed. Approving a connection setup suggestion **does not create a connection**: open its form from the approved proposal and enter credentials, private-network permission and any CA yourself. The agent never supplies credentials. Integration status queries perform read-only network requests using the configured destination policy. For Docker discovery, set `HOMORA_DOCKER_HOST` on the backend for HTTP and on the MCP process for stdio, preferably to the same restricted read-only proxy; it is disabled by default.
 
 The web monitor shares its last observations with MCP through SQLite. Changed service settings invalidate old results, and old observations are reported as unknown with `stale: true`. Starting the backend clears old observations. URL queries and fragments are omitted from service, integration and discovery results and from discovered card suggestions. Returned names, labels and external data are untrusted, not instructions.
+
+`get_group`, `list_group_services` and `get_service_status` require `services:read`. The separately granted `agents:read` scope allows listing agent identities without tokens or hashes; `audit:read` allows paginated audit history filtered by time or proposal, without IP addresses or event details. Existing tokens do not gain these scopes automatically. An agent with a proposal scope may withdraw its own unexpired pending proposals with `withdraw_proposal`; withdrawal is recorded in the audit log.
+
+`list_status_history` queries persisted observations for a service within a requested Unix-millisecond window; records are retained for 30 days, deduplicated by service, settings and observation time, and cleaned during monitor publication. Deleting a service removes its history. `propose_batch` creates 1–20 proposals atomically, with a shared batch ID; each still needs individual review. Approval can make other proposals stale, requiring a new proposal. Each identity is limited to 100 unexpired pending proposals.
+
+With `agents:propose`, an agent may suggest creating an identity or changing another agent's scopes, revocation or rotation. Proposed scopes must be a subset of the proposer's scopes. A human reviews each change; a new or rotated token is returned only in the authenticated approval response and shown once. If lost, use **Generate new token** on the Agents page. Revocation and rotation do not cancel other agents' pending proposals, which expire normally.
 
 The stdio MCP process reads the local database and vault directly. Neither transport is protected by the web session; run it only with a trusted client and system user, protect the token, and grant minimum scopes. It does not offer infrastructure actions or integration writes.
 
