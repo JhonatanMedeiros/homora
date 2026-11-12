@@ -74,9 +74,11 @@ export function InterfaceSettings() {
   const { locale, setLocale } = useI18n();
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
-
-      <SettingsGroup id="ui-appearance" title={t('settings.ui.appearance')}>
+      <SettingsGroup
+        id="ui-appearance"
+        title={t('settings.ui.appearance')}
+        hint={t('settings.ui.browserShort')}
+      >
         <SettingRow label={t('settings.ui.theme')} description={t('settings.ui.themeHint')}>
           <Segmented
             label={t('settings.ui.theme')}
@@ -125,9 +127,11 @@ export function HomeSettings({ onChanged }: { onChanged?: () => void | Promise<v
     useViewPreferences();
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
-
-      <SettingsGroup id="ui-home" title={t('settings.ui.home')}>
+      <SettingsGroup
+        id="ui-home"
+        title={t('settings.ui.home')}
+        hint={t('settings.ui.browserShort')}
+      >
         <SettingRow label={t('settings.ui.layout')} description={t('settings.ui.layoutHint')}>
           <Segmented
             label={t('settings.ui.layout')}
@@ -206,8 +210,6 @@ export function TopBarSettings() {
   }, []);
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
-
       <SettingsGroup id="ui-keyboard" title={t('settings.ui.keyboardSection')}>
         <SettingRow
           htmlFor="ui-shortcuts"
@@ -292,7 +294,11 @@ export function TopBarSettings() {
         )}
       </SettingsGroup>
 
-      <SettingsGroup id="ui-top-bar" title={t('settings.ui.topBarSection')}>
+      <SettingsGroup
+        id="ui-top-bar"
+        title={t('settings.ui.topBarSection')}
+        hint={t('settings.ui.browserShort')}
+      >
         <SettingRow
           htmlFor="top-bar"
           label={t('settings.topBar')}

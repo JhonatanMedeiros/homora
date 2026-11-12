@@ -24,7 +24,7 @@ import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { navItems, type Tab } from '@/components/app-nav';
+import { navGroups, navItems, type Tab } from '@/components/app-nav';
 import { MobileTabs } from '@/components/mobile-tabs';
 
 type Props = {
@@ -131,22 +131,28 @@ export function AppShell({
         {managing ? (
           <div className="flex flex-col gap-8 md:flex-row md:items-start">
             <aside className="hidden shrink-0 md:sticky md:top-8 md:block md:w-52">
-              <div className="mb-3 px-3">
-                <p className="font-label text-xl font-semibold">{t('manage.title')}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{t('manage.description')}</p>
-              </div>
-              <nav aria-label={t('manage.title')} className="flex flex-wrap gap-1 md:flex-col">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.id}
-                    variant={tab === item.id ? 'secondary' : 'ghost'}
-                    aria-current={tab === item.id ? 'page' : undefined}
-                    onClick={() => onTabChange(item.id)}
-                    className="justify-start"
-                  >
-                    <item.icon />
-                    {t(item.label)}
-                  </Button>
+              <nav aria-label={t('manage.title')} className="flex flex-col gap-5">
+                {navGroups.map((group) => (
+                  <div key={group.id} className="flex flex-col gap-1">
+                    <p className="px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {t(group.label)}
+                    </p>
+                    {group.items.map((id) => {
+                      const item = navItems.find((entry) => entry.id === id)!;
+                      return (
+                        <Button
+                          key={item.id}
+                          variant={tab === item.id ? 'secondary' : 'ghost'}
+                          aria-current={tab === item.id ? 'page' : undefined}
+                          onClick={() => onTabChange(item.id)}
+                          className="justify-start"
+                        >
+                          <item.icon />
+                          {t(item.label)}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 ))}
               </nav>
             </aside>

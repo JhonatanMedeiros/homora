@@ -5,7 +5,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -15,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { navGroups, navItems, type Tab } from '@/components/app-nav';
+import { navItems, type Tab } from '@/components/app-nav';
 import { t } from '@/i18n';
 
 type Props = { tab: Tab; onTabChange: (tab: Tab) => void; onLogout: () => void };
@@ -29,34 +28,28 @@ export function AppSidebar({ tab, onTabChange, onLogout }: Props) {
           <BrandMark className="text-sidebar-foreground" />
         </SidebarHeader>
         <SidebarContent>
-          <nav aria-label={t('nav.main')}>
-            {navGroups.map((group) => (
-              <SidebarGroup key={group.id}>
-                <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {group.items.map((id) => {
-                      const item = navItems.find((entry) => entry.id === id)!;
-                      return (
-                        <SidebarMenuItem key={item.id}>
-                          <SidebarMenuButton
-                            size="lg"
-                            isActive={tab === item.id}
-                            aria-current={tab === item.id ? 'page' : undefined}
-                            onClick={() => onTabChange(item.id)}
-                            className="text-sm font-medium data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
-                          >
-                            <item.icon />
-                            <span>{t(item.label)}</span>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            ))}
-          </nav>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <nav aria-label={t('nav.main')}>
+                <SidebarMenu>
+                  {navItems.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        size="lg"
+                        isActive={tab === item.id}
+                        aria-current={tab === item.id ? 'page' : undefined}
+                        onClick={() => onTabChange(item.id)}
+                        className="text-sm font-medium data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
+                      >
+                        <item.icon />
+                        <span>{t(item.label)}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </nav>
+            </SidebarGroupContent>
+          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter className="gap-3 p-4">
           <div className="flex items-center gap-1">

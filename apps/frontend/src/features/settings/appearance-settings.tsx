@@ -161,6 +161,29 @@ export function AppearanceSettings() {
         </div>
       )}
 
+      <div className="flex flex-col gap-2 p-4">
+        <span className="font-mono text-xs text-muted-foreground">{t('appearance.preview')}</span>
+        <div
+          data-testid="appearance-preview"
+          className="rounded-lg border bg-background p-4 text-foreground"
+          style={previewStyle(candidate ?? saved, theme)}
+        >
+          <div className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-card-foreground">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate text-sm font-medium">{t('appearance.previewCard')}</span>
+              <span className="text-sm text-muted-foreground">
+                {t('appearance.previewCardText')}
+              </span>
+            </div>
+            <Button size="sm" className="pointer-coarse:h-11">
+              {t('appearance.previewAction')}
+            </Button>
+          </div>
+          <p className="mt-3 text-sm text-accent-text">{t('appearance.accent')}</p>
+          <p className="text-sm text-muted-foreground">{t('appearance.previewMuted')}</p>
+        </div>
+      </div>
+
       <SettingRow label={t('appearance.accent')} description={t('appearance.accentHint')}>
         <ToggleGroup
           type="single"
@@ -390,29 +413,6 @@ export function AppearanceSettings() {
           onCheckedChange={(blur) => patch({ blur })}
         />
       </SettingRow>
-
-      <div className="flex flex-col gap-2 p-4">
-        <span className="font-mono text-xs text-muted-foreground">{t('appearance.preview')}</span>
-        <div
-          data-testid="appearance-preview"
-          className="rounded-lg border bg-background p-4 text-foreground"
-          style={previewStyle(candidate ?? saved, theme)}
-        >
-          <div className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-card-foreground">
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="truncate text-sm font-medium">{t('appearance.previewCard')}</span>
-              <span className="text-sm text-muted-foreground">
-                {t('appearance.previewCardText')}
-              </span>
-            </div>
-            <Button size="sm" className="pointer-coarse:h-11">
-              {t('appearance.previewAction')}
-            </Button>
-          </div>
-          <p className="mt-3 text-sm text-accent-text">{t('appearance.accent')}</p>
-          <p className="text-sm text-muted-foreground">{t('appearance.previewMuted')}</p>
-        </div>
-      </div>
 
       {problems.length > 0 && (
         <div className="p-4">

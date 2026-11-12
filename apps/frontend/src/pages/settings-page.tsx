@@ -59,7 +59,7 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
             </Item>
           ))}
         </ItemGroup>
-        <ul className="-mt-2 hidden gap-1 overflow-x-auto border-b md:flex">
+        <ul className="-mt-2 hidden gap-1 overflow-x-auto border-b [scrollbar-width:none] md:flex [&::-webkit-scrollbar]:hidden">
           {settingsSections.map((section) => (
             <li key={section.id}>
               <Link
@@ -70,7 +70,6 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
                   current === section.id && 'border-primary text-foreground',
                 )}
               >
-                <section.icon aria-hidden="true" className="size-4" />
                 {t(section.title)}
               </Link>
             </li>
