@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   CHECK_INTERVAL_DEFAULT,
@@ -8,6 +7,7 @@ import {
 } from '@homora/shared';
 import { z } from 'zod';
 import type { ServiceStatus } from './service-monitor.js';
+import { serviceSignature } from './service-signature.js';
 
 const observationSchema = z
   .object({
@@ -55,25 +55,7 @@ type SignedService = Pick<
   Service,
   'url' | 'allowPrivate' | 'checkType' | 'checkInterval' | 'expectedStatus' | 'checkPath'
 >;
-function signature(
-  service: Pick<
-    Service,
-    'url' | 'allowPrivate' | 'checkType' | 'checkInterval' | 'expectedStatus' | 'checkPath'
-  >,
-) {
-  return createHash('sha256')
-    .update(
-      JSON.stringify([
-        service.url,
-        Boolean(service.allowPrivate),
-        service.checkType ?? 'http',
-        service.checkInterval ?? null,
-        service.expectedStatus ?? null,
-        service.checkPath ?? null,
-      ]),
-    )
-    .digest('hex');
-}
+const signature = serviceSignature;
 /** Writer is called by the web monitor only; failures must not affect service availability. */
 export function createObservationStore(db: DatabaseSync) {
   return {

@@ -163,8 +163,10 @@ it('gives the same numbers for one service and for the batch', () => {
   }
 });
 
-it('answers 200 services with 30 days of history within the budget', () => {
+it('answers 25 services with 30 days of history at the default 60 s interval within the budget', () => {
   const { db, store } = setup();
+  const SERVICES = 25,
+    PER_SERVICE = 43_200; // one check per minute for 30 days
   try {
     db.exec('BEGIN');
     const sig = (
@@ -172,19 +174,20 @@ it('answers 200 services with 30 days of history within the budget', () => {
         signature: string;
       }
     ).signature;
+    expect(sig).toHaveLength(16);
     const insertService = db.prepare(
       "INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(?,'https://one.test',0,'http',30)",
     );
     const insert = db.prepare(
       'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
     );
-    for (let id = 3; id <= 200; id++) insertService.run(id);
-    for (let id = 1; id <= 200; id++)
-      for (let i = 0; i < 2880; i++)
+    for (let id = 3; id <= SERVICES; id++) insertService.run(id);
+    for (let id = 1; id <= SERVICES; id++)
+      for (let i = 0; i < PER_SERVICE; i++)
         insert.run(
           id,
           sig,
-          now - i * 15 * 60_000,
+          now - i * 60_000,
           JSON.stringify({ status: i % 50 ? 'available' : 'unavailable', latencyMs: i % 300 }),
         );
     db.exec('COMMIT');
@@ -193,15 +196,15 @@ it('answers 200 services with 30 days of history within the budget', () => {
       const started = performance.now();
       const all = store.uptime(range, now);
       timings[range] = Math.round(performance.now() - started);
-      expect(Object.keys(all)).toHaveLength(200);
-      expect(all[1]?.checks).toBe({ '24h': 97, '7d': 673, '30d': 2880 }[range]);
+      expect(Object.keys(all)).toHaveLength(SERVICES);
+      expect(all[1]?.checks).toBe({ '24h': 1441, '7d': 10_081, '30d': 43_200 }[range]);
     }
-    console.info(`uptime for 200 services x 30d of history (ms): ${JSON.stringify(timings)}`);
+    console.info(`uptime for ${SERVICES} services x 30d at 60 s (ms): ${JSON.stringify(timings)}`);
     // The default period meets the 300 ms goal with margin; the longer ones scan more rows.
     expect(timings['24h']).toBeLessThan(300);
     expect(timings['7d']).toBeLessThan(300);
-    expect(timings['30d']).toBeLessThan(1500);
+    expect(timings['30d']).toBeLessThan(1000);
   } finally {
     db.close();
   }
-}, 15000);
+}, 30000);

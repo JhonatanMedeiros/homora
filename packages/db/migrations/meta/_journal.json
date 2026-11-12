@@ -134,6 +134,13 @@
       "when": 1794490790737,
       "tag": "0018_solid_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1794494390737,
+      "tag": "0019_short_signature",
+      "breakpoints": true
     }
   ]
 }
