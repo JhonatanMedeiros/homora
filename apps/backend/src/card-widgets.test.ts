@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 
@@ -11,7 +11,7 @@ it('attaches a widget to a card, switches it, detaches it, and preserves the wid
   const dir = mkdtempSync(join(tmpdir(), 'homora-card-widgets-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, createVault(path));
   const send = (method: 'POST' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>

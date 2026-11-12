@@ -4,14 +4,14 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createApp } from './app.js';
 
 it('sets, changes, and clears group columns, persisting values in export and import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-group-columns-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth);
   const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>

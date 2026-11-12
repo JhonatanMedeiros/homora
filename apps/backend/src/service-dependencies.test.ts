@@ -5,7 +5,7 @@ import { expect, it } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createDatabase, getSqliteHandle } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { createMcp } from './mcp.js';
@@ -16,7 +16,7 @@ it('records, validates and removes manual dependencies, with authorization and a
   const dir = mkdtempSync(join(tmpdir(), 'homora-deps-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, createVault(path));
   const send = (

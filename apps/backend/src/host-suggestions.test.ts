@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createDatabase, getSqliteHandle } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { createMcp } from './mcp.js';
@@ -167,7 +167,7 @@ it('suggests, dismisses, undoes and accepts through the API with a session only'
   const dir = mkdtempSync(join(tmpdir(), 'homora-suggest-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, createVault(path));
   const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>

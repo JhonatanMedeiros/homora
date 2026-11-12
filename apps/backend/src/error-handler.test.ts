@@ -1,11 +1,11 @@
 import { expect, it } from 'vitest';
 import { createDatabase } from '@homora/db';
 import { createApp } from './app.js';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 
 it('returns a safe response for unexpected failures and preserves client errors', async () => {
   const database = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(database.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(database.db, 5173, auth);
   app.get('/api/test-failure', async () => {
     throw new Error('private detail');

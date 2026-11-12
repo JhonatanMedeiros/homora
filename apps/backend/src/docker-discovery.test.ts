@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createApp } from './app.js';
 import {
   createDockerSource,
@@ -171,7 +171,7 @@ async function setup(source?: DockerSource) {
   const dir = mkdtempSync(join(tmpdir(), 'homora-discovery-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, undefined, [], source);
   const send = (method: 'GET' | 'POST', url: string, payload?: object) =>

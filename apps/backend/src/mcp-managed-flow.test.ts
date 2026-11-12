@@ -5,7 +5,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { expect, it } from 'vitest';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { createMcp } from './mcp.js';
@@ -16,7 +16,7 @@ it('reviews MCP group and widget proposals through authenticated HTTP across SQL
   const webDb = createDatabase(path);
   const mcpDb = createDatabase(path);
   const vault = createVault(path);
-  const { auth, cookie } = await createTestAuth(webDb.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { cookie, origin: 'http://localhost:5173' };
   const app = createApp(webDb.db, 5173, auth, vault);
   const client = new Client({ name: 'test', version: '1' });
@@ -180,7 +180,7 @@ it('reveals delegated tokens only to the authenticated reviewer and allows recov
   const path = join(dir, 'data.sqlite');
   const db = createDatabase(path);
   const vault = createVault(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { cookie, origin: 'http://localhost:5173' };
   const app = createApp(db.db, 5173, auth, vault);
   const client = new Client({ name: 'test', version: '1' });

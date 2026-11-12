@@ -38,10 +38,10 @@ describe('Docker push sources', () => {
 });
 
 it('isolates sources and enforces snapshot review, authorization and revocation through HTTP', async () => {
-  const { createTestAuth } = await import('./test-auth.js');
+  const { createTestSession } = await import('./test-auth.js');
   const { createApp } = await import('./app.js');
   const db = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(db.db, 5173, auth);
   const headers = { origin: 'http://localhost:5173', cookie };
   const send = (method: 'GET' | 'POST' | 'DELETE', url: string, payload?: object) =>
@@ -384,10 +384,10 @@ it('rolls back lifecycle changes if their audit record cannot be stored', () => 
 });
 
 it('returns a distinct source limit error and audits only successful operations', async () => {
-  const { createTestAuth } = await import('./test-auth.js');
+  const { createTestSession } = await import('./test-auth.js');
   const { createApp } = await import('./app.js');
   const db = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(db.db, 5173, auth);
   const push = createDockerPush(getSqliteHandle(db.db));
   try {

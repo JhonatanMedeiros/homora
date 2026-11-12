@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { createIntegrationConnections } from './integration-connections.js';
@@ -48,7 +48,7 @@ const respond = (status: number, body: unknown, retryAfterSeconds?: number) => (
 
 it('serves resources, links cards to them and cascades on card and connection deletion', async () => {
   const f = setup();
-  const { auth, cookie } = await createTestAuth(f.database.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(f.database.db, 5173, auth, f.vault);
   const spy = vi

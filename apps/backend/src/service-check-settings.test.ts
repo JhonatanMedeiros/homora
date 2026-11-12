@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createApp } from './app.js';
 import { parseTransfer } from './config-transfer.js';
 
@@ -12,7 +12,7 @@ it('stores check method and interval, validates bounds, and carries values in ex
   const dir = mkdtempSync(join(tmpdir(), 'homora-check-settings-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth);
   const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>
@@ -121,7 +121,7 @@ it('stores check method and interval, validates bounds, and carries values in ex
 it('validates HTTP expectations and paths and preserves them through export and import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-http-check-'));
   const db = createDatabase(join(dir, 'db.sqlite'));
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth);
   const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>

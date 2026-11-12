@@ -7,7 +7,7 @@ import { createDatabase } from '@homora/db';
 import { DEFAULT_APPEARANCE, IMAGE_MAX_BYTES, type Appearance } from '@homora/shared';
 import { createApp } from './app.js';
 import { ImageRejected, processBackgroundImage } from './background-image.js';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 
 const dirs: string[] = [];
 afterEach(async () => {
@@ -22,7 +22,7 @@ async function setup() {
   dirs.push(dir);
   const path = join(dir, 'homora.sqlite.background');
   const database = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(database.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(database.db, 5173, auth, undefined, [], undefined, {
     backgroundPath: path,
   });
@@ -300,7 +300,7 @@ describe('background API', () => {
 
   it('cannot add a picture without storage configured', async () => {
     const database = createDatabase(':memory:');
-    const { auth, cookie } = await createTestAuth(database.db);
+    const { auth, cookie } = await createTestSession();
     const app = createApp(database.db, 5173, auth);
     const response = await app.inject({
       method: 'PUT',

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { expect, it } from 'vitest';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { createProposalService } from './proposals.js';
@@ -13,7 +13,7 @@ it('requires a session for settings and recreation and uses the persisted TTL', 
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
   const sqlite = getSqliteHandle(db.db);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(db.db, 5173, auth, createVault(path));
   const headers = { cookie, origin: 'http://localhost:5173' };
   try {
