@@ -1,7 +1,5 @@
 /** Text for the Interface, Public status and Docker discovery settings. */
 export const en = {
-  'settings.section.monitoring': 'Monitoring',
-  'settings.section.monitoringHint': 'Defaults for how new services are checked.',
   'settings.monitoring.defaults': 'New services',
   'settings.monitoring.allowPrivate': 'New services allow private network',
   'settings.monitoring.allowPrivateHint':
@@ -10,6 +8,8 @@ export const en = {
   'settings.monitoring.saveError': 'Could not save this setting.',
   'settings.copy': 'Copy',
   'settings.copied': 'Copied',
+  'settings.ui.advanced': 'Advanced',
+  'settings.ui.advancedHint': 'Custom CSS.',
   'settings.ui.browserOnly': 'Saved in this browser only. Other devices keep their own choices.',
   'settings.ui.appearance': 'This browser',
   'settings.ui.theme': 'Theme',
@@ -133,8 +133,6 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
-  'settings.section.monitoring': 'Monitoramento',
-  'settings.section.monitoringHint': 'Padrões de como novos serviços são verificados.',
   'settings.monitoring.defaults': 'Novos serviços',
   'settings.monitoring.allowPrivate': 'Novos serviços permitem rede privada',
   'settings.monitoring.allowPrivateHint':
@@ -143,6 +141,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.monitoring.saveError': 'Não foi possível salvar esta configuração.',
   'settings.copy': 'Copiar',
   'settings.copied': 'Copiado',
+  'settings.ui.advanced': 'Avançado',
+  'settings.ui.advancedHint': 'CSS personalizado.',
   'settings.ui.browserOnly':
     'Salvo apenas neste navegador. Cada dispositivo mantém as próprias escolhas.',
   'settings.ui.appearance': 'Neste navegador',

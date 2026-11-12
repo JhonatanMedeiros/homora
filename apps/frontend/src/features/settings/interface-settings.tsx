@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { useLocation } from 'react-router';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { UPTIME_RANGES } from '@homora/shared';
 import { Clock } from '@/components/top-bar';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
@@ -29,6 +33,41 @@ const PROBLEM_MESSAGE: Record<TemplateProblem, MessageKey> = {
   protocol: 'settings.ui.webSearchErrorProtocol',
   invalid: 'settings.ui.webSearchErrorInvalid',
 };
+/** Rarely changed settings, folded away. Opens by itself when sent here to fix broken custom CSS. */
+function AdvancedSettings() {
+  const state: unknown = useLocation().state;
+  const [open, setOpen] = useState(
+    Boolean(state && typeof state === 'object' && 'advanced' in state && state.advanced),
+  );
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-3">
+      <CollapsibleTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-auto justify-between px-4 py-3 text-left"
+        >
+          <span className="flex flex-col items-start gap-0.5">
+            <span className="font-medium">{t('settings.ui.advanced')}</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {t('settings.ui.advancedHint')}
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={
+              open ? 'size-4 rotate-180 transition-transform' : 'size-4 transition-transform'
+            }
+          />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <CustomCssSettings />
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 /** Theme, language, accent, background and custom CSS. */
 export function InterfaceSettings() {
   const { theme, setTheme } = useTheme();
@@ -75,7 +114,7 @@ export function InterfaceSettings() {
 
       <AppearanceSettings />
 
-      <CustomCssSettings />
+      <AdvancedSettings />
     </div>
   );
 }

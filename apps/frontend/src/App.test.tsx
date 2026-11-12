@@ -1100,19 +1100,31 @@ it('lists the settings subpages and opens one from its own URL', async () => {
     /Aparência/,
     /Início e páginas/,
     /Barra superior e atalhos/,
+    /Alertas/,
     /Status público/,
     /Exportar e importar/,
-    /Descoberta Docker/,
   ])
-    expect(within(nav).getByRole('link', { name })).toBeTruthy();
-  fireEvent.click(within(nav).getByRole('link', { name: /Exportar e importar/ }));
+    expect(within(nav).getAllByRole('link', { name }).length).toBeGreaterThan(0);
+  expect(within(nav).queryByRole('link', { name: /Descoberta Docker/ })).toBeNull();
+  fireEvent.click(within(nav).getAllByRole('link', { name: /Exportar e importar/ })[0]);
   expect(window.location.pathname).toBe('/manage/settings/backup');
   expect(await screen.findByRole('heading', { name: 'Exportar' })).toBeTruthy();
   expect(
     within(screen.getByRole('navigation', { name: 'Configurações' }))
-      .getByRole('link', { name: /Exportar e importar/ })
-      .getAttribute('aria-current'),
-  ).toBe('page');
+      .getAllByRole('link', { name: /Exportar e importar/ })
+      .some((link) => link.getAttribute('aria-current') === 'page'),
+  ).toBe(true);
+});
+
+it('keeps old settings links working', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/settings/notifications');
+  render(<App />);
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/settings/alerts'));
+  cleanup();
+  window.history.replaceState(null, '', '/manage/settings/discovery');
+  render(<App />);
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/integrations'));
 });
 
 it('shows not found for an unknown settings subpage', async () => {

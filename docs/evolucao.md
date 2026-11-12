@@ -1268,3 +1268,10 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 ## Home toolbar buttons (2026-11-12)
 
 - The Group | Host | Map switch, "Suggested hosts" and "View" now share the same 36 px height (the switch was 32 px). The switch items have icons and the selected one is tinted with the primary colour and bold instead of a barely different dark background; "Suggested hosts" has an icon. Not verified in a real browser.
+
+## Manage redesign
+
+- The sidebar groups the sections as Manage (Services, Integrations), Automation (Agents, Activity) and System (Settings).
+- Settings is a row of short tabs (Appearance, Home and pages, Top bar and shortcuts, Alerts, Public status, Backup); phones keep the list-then-page flow. Notifications and the monitoring defaults share the Alerts tab. Custom CSS is folded under Advanced in Appearance, which opens by itself when safe mode sends you there.
+- Docker discovery moved from Settings to Integrations. `/manage/settings/notifications` and `/monitoring` redirect to Alerts, and `/manage/settings/discovery` to Integrations.
+- Not done from the mockup: settings search, a pending-proposals badge on Agents, and a single save bar for Appearance. Pages for Services, Agents and Activity keep their current layout.

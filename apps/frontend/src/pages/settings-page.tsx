@@ -9,19 +9,16 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/components/ui/item';
-import { Discovery } from '@/features/discovery/discovery';
 import { PublicStatusSettings } from '@/features/public-status/public-status-settings';
+import { AlertsSettings } from '@/features/settings/alerts-settings';
 import {
   HomeSettings,
   InterfaceSettings,
   TopBarSettings,
 } from '@/features/settings/interface-settings';
-import { MonitoringSettings } from '@/features/settings/monitoring-settings';
-import { NotificationSettings } from '@/features/settings/notification-settings';
 import {
   isSettingsSection,
   settingsPath,
-  settingsGroups,
   settingsSections,
   type SettingsSection,
 } from '@/features/settings/sections';
@@ -30,8 +27,9 @@ import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
 /**
- * Settings is a hub. On phones the list and each subpage take turns on screen; from `md` up they
- * sit side by side. The subpage is always in the URL, so it can be linked and reached from the palette.
+ * Settings has a few short tabs. On phones the list and each subpage take turns on screen; from `md`
+ * up the tabs sit above the page. The subpage is always in the URL, so it can be linked and reached
+ * from the palette.
  */
 export function SettingsPage({ onImported }: { onImported: () => void | Promise<void> }) {
   const { pathname } = useLocation();
@@ -44,71 +42,55 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
       <div className={cn(open && 'hidden md:block')}>
         <PageHeader title={t('settings.title')} description={t('settings.description')} />
       </div>
-      <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start">
-        <nav
-          aria-label={t('settings.title')}
-          className={cn('md:sticky md:top-8', open && 'hidden md:block')}
+      <nav aria-label={t('settings.title')} className="flex flex-col gap-6">
+        <ItemGroup className={cn('gap-2 md:hidden', open && 'hidden')}>
+          {settingsSections.map((section) => (
+            <Item key={section.id} asChild variant="outline" size="sm">
+              <Link to={settingsPath(section.id)}>
+                <ItemMedia variant="icon">
+                  <section.icon aria-hidden="true" />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>{t(section.title)}</ItemTitle>
+                  <ItemDescription>{t(section.description)}</ItemDescription>
+                </ItemContent>
+                <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+              </Link>
+            </Item>
+          ))}
+        </ItemGroup>
+        <ul className="-mt-2 hidden gap-1 overflow-x-auto border-b md:flex">
+          {settingsSections.map((section) => (
+            <li key={section.id}>
+              <Link
+                to={settingsPath(section.id)}
+                aria-current={open === section.id ? 'page' : undefined}
+                className={cn(
+                  '-mb-px inline-flex min-h-11 items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
+                  current === section.id && 'border-primary text-foreground',
+                )}
+              >
+                <section.icon aria-hidden="true" className="size-4" />
+                {t(section.title)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className={cn('flex min-w-0 flex-col gap-6', !open && 'hidden md:flex')}>
+        <Link
+          to={settingsPath()}
+          className="-ml-1 inline-flex min-h-11 w-fit items-center gap-1 text-sm font-medium md:hidden"
         >
-          <div className="flex flex-col gap-5">
-            {settingsGroups.map((group) => (
-              <div key={group.title} className="flex flex-col gap-2">
-                <h2 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t(group.title)}
-                </h2>
-                <ItemGroup className="gap-1.5 md:gap-0.5">
-                  {group.sections.map((id) => {
-                    const section = settingsSections.find((item) => item.id === id)!;
-                    return (
-                      <Item
-                        key={id}
-                        asChild
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          'md:border-transparent md:py-2',
-                          current === id && 'md:border-border md:bg-muted',
-                        )}
-                      >
-                        <Link to={settingsPath(id)} aria-current={open === id ? 'page' : undefined}>
-                          <ItemMedia variant="icon">
-                            <section.icon aria-hidden="true" />
-                          </ItemMedia>
-                          <ItemContent>
-                            <ItemTitle>{t(section.title)}</ItemTitle>
-                            <ItemDescription className="md:hidden">
-                              {t(section.description)}
-                            </ItemDescription>
-                          </ItemContent>
-                          <ChevronRight
-                            aria-hidden="true"
-                            className="size-4 text-muted-foreground md:hidden"
-                          />
-                        </Link>
-                      </Item>
-                    );
-                  })}
-                </ItemGroup>
-              </div>
-            ))}
-          </div>
-        </nav>
-        <div className={cn('flex min-w-0 flex-col gap-6', !open && 'hidden md:flex')}>
-          <Link
-            to={settingsPath()}
-            className="-ml-1 inline-flex min-h-11 w-fit items-center gap-1 text-sm font-medium md:hidden"
-          >
-            <ChevronLeft aria-hidden="true" className="size-4" />
-            {t('settings.title')}
-          </Link>
-          {current === 'appearance' && <InterfaceSettings />}
-          {current === 'home' && <HomeSettings onChanged={onImported} />}
-          {current === 'topbar' && <TopBarSettings />}
-          {current === 'monitoring' && <MonitoringSettings />}
-          {current === 'public' && <PublicStatusSettings />}
-          {current === 'notifications' && <NotificationSettings />}
-          {current === 'backup' && <ConfigTransfer onImported={onImported} />}
-          {current === 'discovery' && <Discovery onImported={onImported} />}
-        </div>
+          <ChevronLeft aria-hidden="true" className="size-4" />
+          {t('settings.title')}
+        </Link>
+        {current === 'appearance' && <InterfaceSettings />}
+        {current === 'home' && <HomeSettings onChanged={onImported} />}
+        {current === 'topbar' && <TopBarSettings />}
+        {current === 'alerts' && <AlertsSettings />}
+        {current === 'public' && <PublicStatusSettings />}
+        {current === 'backup' && <ConfigTransfer onImported={onImported} />}
       </div>
     </section>
   );
