@@ -38,12 +38,14 @@ export function AppShell({
   toolbar,
   children,
 }: Props) {
+  // The account is a page of its own: no sidebar and no search, just a way back.
+  const standalone = tab === 'account' && !managing;
   return (
     <div className="min-h-svh bg-background">
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-3 px-4 py-2 md:px-8">
           <BrandMark className="text-sidebar-foreground" />
-          {!managing && (
+          {!managing && !standalone && (
             <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-md sm:flex-1">
               {toolbar}
             </div>
@@ -90,16 +92,16 @@ export function AppShell({
           </DropdownMenu>
           <Button
             variant="outline"
-            onClick={() => onManageChange(!managing)}
+            onClick={() => onManageChange(!(managing || standalone))}
             className="border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            {managing ? <ArrowLeft /> : <Settings />}{' '}
-            {managing ? t('manage.back') : t('manage.open')}
+            {managing || standalone ? <ArrowLeft /> : <Settings />}{' '}
+            {managing || standalone ? t('manage.back') : t('manage.open')}
           </Button>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8">
-        {!managing && (
+        {!managing && !standalone && (
           <>
             <h1 className="sr-only">{t('home.title')}</h1>
             <p className="sr-only">{t('home.description')}</p>
@@ -131,6 +133,8 @@ export function AppShell({
               {children}
             </div>
           </div>
+        ) : standalone ? (
+          <div className="motion-panel mx-auto w-full max-w-3xl">{children}</div>
         ) : (
           children
         )}
