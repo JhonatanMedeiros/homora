@@ -53,7 +53,9 @@ export function AppShell({
   return (
     <div className="min-h-svh">
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8">
+        <div
+          className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8 ${managing ? 'max-w-none md:px-6' : 'max-w-6xl'}`}
+        >
           <BrandMark compact className="text-sidebar-foreground" />
           <span className="mr-auto" />
           <Button
@@ -120,7 +122,11 @@ export function AppShell({
         </div>
       </header>
       <main
-        className={`mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${managing ? 'pb-24 md:pb-8' : ''}`}
+        className={
+          managing
+            ? 'flex w-full flex-col pb-24 md:pb-0'
+            : 'mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8'
+        }
       >
         {!managing && !standalone && (
           <>
@@ -129,8 +135,8 @@ export function AppShell({
           </>
         )}
         {managing ? (
-          <div className="flex flex-col gap-8 md:flex-row md:items-start">
-            <aside className="hidden shrink-0 md:sticky md:top-8 md:block md:w-52">
+          <div className="flex md:min-h-[calc(100svh-4rem)] md:flex-row">
+            <aside className="hidden shrink-0 border-r bg-sidebar/40 p-3 md:sticky md:top-0 md:block md:h-[calc(100svh-4rem)] md:w-60 md:self-start md:overflow-y-auto">
               <nav aria-label={t('manage.title')} className="flex flex-col gap-5">
                 {navGroups.map((group) => (
                   <div key={group.id} className="flex flex-col gap-1">
@@ -156,8 +162,8 @@ export function AppShell({
                 ))}
               </nav>
             </aside>
-            <div key={tab} className="motion-panel min-w-0 flex-1">
-              {children}
+            <div key={tab} className="motion-panel min-w-0 flex-1 px-4 py-8 md:px-10">
+              <div className="mx-auto w-full max-w-5xl">{children}</div>
             </div>
           </div>
         ) : standalone ? (
