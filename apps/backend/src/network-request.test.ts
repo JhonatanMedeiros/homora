@@ -166,3 +166,50 @@ it('sends JSON with the pinned address and does not follow redirects', async () 
   options.lookup('service.test', { all: false }, callback);
   expect(callback).toHaveBeenCalledWith(null, '10.0.0.4', 4);
 });
+
+function respondWith(statusCode: number, headers: Record<string, string>) {
+  vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
+    url: new URL('http://service.test/data'),
+    address: { address: '10.0.0.4', family: 4 },
+  });
+  const req = Object.assign(new EventEmitter(), { destroy: vi.fn() });
+  const res = Object.assign(new EventEmitter(), { statusCode, headers, destroy: vi.fn() });
+  vi.spyOn(http, 'get').mockImplementation((...args: unknown[]) => {
+    queueMicrotask(() => {
+      (args[2] as (response: typeof res) => void)(res);
+      req.emit('close');
+    });
+    return req as unknown as ReturnType<typeof http.get>;
+  });
+}
+const policy = { origins: ['http://service.test'], allowPrivate: true };
+
+it('exposes Retry-After seconds of a 429, clamped, and ignores invalid values', async () => {
+  for (const [header, expected] of [
+    ['30', 30],
+    ['0', 1],
+    ['99999', 3600],
+    [' 5 ', 5],
+    ['Wed, 21 Oct 2026 07:28:00 GMT', undefined],
+    ['1.5', undefined],
+    ['-3', undefined],
+    ['', undefined],
+  ] as const) {
+    vi.restoreAllMocks();
+    respondWith(429, { 'retry-after': header });
+    const response = await getAuthorizedResponse('http://service.test/data', policy);
+    expect(response.status).toBe(429);
+    expect(response.retryAfterSeconds).toBe(expected);
+  }
+});
+
+it('does not expose Retry-After for other statuses and still rejects extra request headers', async () => {
+  respondWith(503, { 'retry-after': '30' });
+  const response = await getAuthorizedResponse('http://service.test/data', policy);
+  expect(response).toEqual({ status: 503, body: '' });
+  await expect(
+    getAuthorizedResponse('http://service.test/data', policy, {
+      headers: { 'retry-after': '1' },
+    }),
+  ).rejects.toThrow('headers');
+});

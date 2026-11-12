@@ -18,10 +18,19 @@ type Props = {
   result: { id: number; data: unknown; checkedAt?: string } | null;
   onEdit: (item: Connection) => void;
   onAction: (item: Connection, operation: 'test' | 'data') => void;
+  onResources?: (item: Connection) => void;
   onRemove: (item: Connection) => void;
 };
 
-export function ConnectionList({ items, busy, result, onEdit, onAction, onRemove }: Props) {
+export function ConnectionList({
+  items,
+  busy,
+  result,
+  onEdit,
+  onAction,
+  onResources,
+  onRemove,
+}: Props) {
   return (
     <ul className="flex flex-col gap-2">
       {items.map((item) => (
@@ -46,6 +55,11 @@ export function ConnectionList({ items, busy, result, onEdit, onAction, onRemove
                 <DropdownMenuItem onSelect={() => onAction(item, 'data')}>
                   {t('connections.refreshData')}
                 </DropdownMenuItem>
+                {item.type === 'coolify' && onResources && (
+                  <DropdownMenuItem onSelect={() => onResources(item)}>
+                    {t('coolify.resourcesAction')}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onSelect={() => onEdit(item)}>
                   {t('common.edit')}
                 </DropdownMenuItem>

@@ -13,6 +13,7 @@ import { getAuthorizedResponse } from './network-request.js';
 import { createObservationCache, type IntegrationTransport } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
 import { InputError } from './api-error.js';
+import { CoolifyBackoffError } from './coolify-connection.js';
 import { hasField, publicFieldShape, publicFieldsOf } from './integration-fields.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
@@ -77,7 +78,42 @@ function validateCa(ca: string) {
   }
 }
 
-export function createIntegrationConnections(db: Db, vault?: Vault) {
+const BACKOFF_MIN_MS = 60_000;
+const BACKOFF_MAX_MS = 900_000;
+
+export function createIntegrationConnections(
+  db: Db,
+  vault?: Vault,
+  clock: () => number = Date.now,
+) {
+  /**
+   * Coolify blocks a client after 30 failed requests a minute (and notifies the team), so after a
+   * 401, 403 or 429 the automatic reads of that connection stop for 60 s, or for `Retry-After`
+   * when longer (at most 15 min), and fail without touching the network. In memory, per
+   * connection, cleared when the connection is edited or a read succeeds. It never stores a
+   * success: this is the one deliberate exception to "retry on every request".
+   */
+  const backoffs = new Map<number, number>();
+  async function guarded<T>(row: Row, run: () => Promise<T>, bypass = false): Promise<T> {
+    if (row.type !== 'coolify') return run();
+    const until = backoffs.get(row.id);
+    if (!bypass && until !== undefined && until > clock())
+      throw new Error('Integration temporarily unavailable.');
+    try {
+      const result = await run();
+      backoffs.delete(row.id);
+      return result;
+    } catch (error) {
+      if (error instanceof CoolifyBackoffError) {
+        const wait = Math.min(
+          BACKOFF_MAX_MS,
+          Math.max(BACKOFF_MIN_MS, (error.retryAfterSeconds ?? 0) * 1000),
+        );
+        backoffs.set(row.id, clock() + wait);
+      }
+      throw error;
+    }
+  }
   // The encrypted legacy file remains untouched as a backup. The marker prevents
   // re-importing a deliberately deleted connection on subsequent starts.
   function migrateLegacy(): number | null {
@@ -248,7 +284,11 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
           throw new Error('Resposta JSON inválida.');
         }
       }
-      return { status: response.status, body };
+      return {
+        status: response.status,
+        body,
+        ...(response.retryAfterSeconds ? { retryAfterSeconds: response.retryAfterSeconds } : {}),
+      };
     };
     const context = { publicConfig: data, credentials: keys, transport };
     return detail
@@ -285,15 +325,16 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       cacheFor(current.id).invalidate();
       inventoryCaches.get(current.id)?.invalidate();
       addressCaches.get(current.id)?.invalidate();
+      backoffs.delete(current.id);
     }
     return publicRow(result);
   }
-  async function collect(id: number) {
+  async function collect(id: number, bypass = false) {
     const row = await find(id);
     if (!row) return null;
     const data = parseData(row);
     const keys = credentials(row);
-    return await prepareAdapter(row.type, data, keys)();
+    return guarded(row, () => prepareAdapter(row.type, data, keys)(), bypass);
   }
 
   async function serviceExists(id: number) {
@@ -386,6 +427,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
         sqlite.prepare('DELETE FROM integration_instances WHERE id=?').run(id);
         sqlite.exec('COMMIT');
         caches.delete(id);
+        backoffs.delete(id);
         inventoryCaches.delete(id);
         addressCaches.delete(id);
         return 'deleted' as const;
@@ -420,6 +462,27 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       }
       return cache.collect(
         () => prepareAdapter(row.type, parseData(row), credentials(row), true)(),
+        refresh,
+      );
+    },
+    /**
+     * Applications and services of a Coolify connection with names, UUIDs and addresses, cached for
+     * 30 s like the summary. Returns null when the connection is missing and 'not-coolify' for
+     * other types. Authenticated callers only; never part of MCP or the public status page.
+     */
+    async resourcesData(id: number, refresh = false) {
+      migrateLegacy();
+      const row = await find(id);
+      if (!row) return null;
+      if (row.type !== 'coolify') return 'not-coolify' as const;
+      let cache = inventoryCaches.get(id);
+      if (!cache) {
+        cache = createObservationCache<unknown>(30_000);
+        inventoryCaches.set(id, cache);
+      }
+      return cache.collect(
+        () =>
+          guarded(row, () => prepareAdapter(row.type, parseData(row), credentials(row), true)()),
         refresh,
       );
     },
@@ -474,7 +537,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       migrateLegacy();
       const row = await find(id);
       if (!row) return false;
-      await collect(id);
+      await collect(id, true); // the explicit test ignores a backoff but still records a new one
       return true;
     },
   };

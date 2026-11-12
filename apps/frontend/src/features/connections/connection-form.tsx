@@ -6,7 +6,13 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { extraFields, labels, secretField, type ConnectionFormState } from './connection-model';
+import {
+  extraFields,
+  labels,
+  secretField,
+  urlField,
+  type ConnectionFormState,
+} from './connection-model';
 import { t, tOr } from '@/i18n';
 import { NodePicker } from './node-picker';
 
@@ -38,6 +44,11 @@ export function ConnectionForm({
 }: Props) {
   const set = (patch: Partial<ConnectionFormState>) => onChange({ ...form, ...patch });
   const secret = secretField(form.type);
+  // Help text from the definition; a message `integration.<type>.<field>.help` translates it.
+  const help = (field: { key: string; help?: string } | undefined) =>
+    field?.help ? tOr(`integration.${form.type}.${field.key}.help`, field.help) : undefined;
+  const urlHelp = help(urlField(form.type));
+  const secretHelp = help(secret);
   return (
     <form onSubmit={onSubmit}>
       <Card>
@@ -70,6 +81,7 @@ export function ConnectionForm({
                 placeholder={t('connections.urlPlaceholder')}
                 onChange={(event) => set({ url: event.target.value })}
               />
+              {urlHelp && <FieldDescription>{urlHelp}</FieldDescription>}
             </Field>
             {extraFields(form.type).map((field) =>
               field.picker && connectionId == null ? null : (
@@ -121,6 +133,7 @@ export function ConnectionForm({
                   value={form.secret}
                   onChange={(event) => set({ secret: event.target.value })}
                 />
+                {secretHelp && <FieldDescription>{secretHelp}</FieldDescription>}
                 {editing && <FieldDescription>{t('connections.keepSecret')}</FieldDescription>}
               </Field>
             )}

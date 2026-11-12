@@ -28,6 +28,7 @@ import {
   type Kind,
 } from './connection-model';
 import { WidgetsSection } from './widgets-section';
+import { CoolifyResources } from './coolify-resources';
 import { t } from '@/i18n';
 
 export function Connections({ initialDraft }: { initialDraft?: ConnectionFormState | null } = {}) {
@@ -44,6 +45,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
   const [message, setMessage] = useState('');
   const [tab, setTab] = useState<'connections' | 'widgets'>('connections');
   const [picking, setPicking] = useState(false);
+  const [resourcesOf, setResourcesOf] = useState<Connection | null>(null);
   const [removing, setRemoving] = useState<
     { kind: 'connection'; item: Connection } | { kind: 'widget'; item: IntegrationWidget } | null
   >(null);
@@ -345,6 +347,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
               result={result}
               onEdit={edit}
               onAction={(item, operation) => void action(item, operation)}
+              onResources={setResourcesOf}
               onRemove={(item) => setRemoving({ kind: 'connection', item })}
             />
           )}
@@ -374,6 +377,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
           {message}
         </p>
       )}
+      <CoolifyResources connection={resourcesOf} onClose={() => setResourcesOf(null)} />
       <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -383,7 +387,11 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
                 : t('connections.removeTitle', { name: removing?.item.name ?? '' })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {removing?.kind === 'widget' ? t('widgets.removeBody') : t('connections.removeBody')}
+              {removing?.kind === 'widget'
+                ? t('widgets.removeBody')
+                : removing?.item.type === 'coolify'
+                  ? t('coolify.removeBody')
+                  : t('connections.removeBody')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

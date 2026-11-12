@@ -264,3 +264,4 @@ export function parseHostLink(value: unknown): HostLink | null {
   return { connectionId: Number(connectionId), node, vmid, type };
 }
 export * from './integration-manifest.js';
+export * from './coolify.js';

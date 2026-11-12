@@ -137,6 +137,26 @@ export function registerConnectionRoutes(
     },
   );
 
+  // Applications and services of a Coolify connection: names, UUIDs and addresses. Authenticated
+  // sessions only (the /api/ hook), never part of the public status page or MCP.
+  app.get<{ Params: { id: string }; Querystring: { refresh?: string } }>(
+    '/api/connections/:id/resources',
+    async (request, reply) => {
+      const id = parseId(request.params.id);
+      if (id === null) return reply.code(404).send(errorBody('integration-not-found'));
+      const query = refreshQuerySchema.safeParse(request.query);
+      if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
+      try {
+        const result = await connections.resourcesData(id, query.data.refresh === 'true');
+        if (result === null) return reply.code(404).send(errorBody('integration-not-found'));
+        if (result === 'not-coolify') return reply.code(400).send(errorBody('invalid-data'));
+        return result;
+      } catch {
+        return reply.code(502).send(errorBody('integration-query-failed'));
+      }
+    },
+  );
+
   app.post<{ Params: { id: string } }>('/api/connections/:id/test', async (request, reply) => {
     const id = parseId(request.params.id);
     if (id === null) return reply.code(404).send(errorBody('integration-not-found'));

@@ -294,6 +294,88 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
 - **Live validation checklist:** both queries return `success: true`; the counts match the dashboard; a
   token without Zone Read is refused with the generic access message.
 
+### Coolify
+
+Read-only, with resource inventory, card links and reviewed discovery (issue #102). **Partly
+validated** against a live instance (see the record at the end of this section); the items not
+covered there remain unvalidated.
+
+- **Reads:** `GET /api/v1/resources` (applications and services; databases and other types are
+  ignored) and `GET /api/v1/applications` (only the `fqdn` field, for addresses), with
+  `Authorization: Bearer <token>`. If `/applications` is refused the inventory still loads, only
+  without addresses. Services have no documented domain field, so a service card needs a URL typed
+  by hand. `GET /services/{uuid}` is **never** called: it returns Compose content. Sources:
+  [overview](https://coolify.io/docs/api/overview), [authorization](https://coolify.io/docs/api/authorization),
+  [permissions](https://coolify.io/docs/api/permissions), [rate limits](https://coolify.io/docs/api/rate-limits),
+  [list resources](https://coolify.io/docs/api/endpoints/resources/list-resources) and
+  [list applications](https://coolify.io/docs/api/endpoints/applications/list-applications), read 2026-11-12.
+  Fixtures are hand-written from those pages, not recorded from a live instance.
+- **Set-up in Coolify:** on a self-hosted instance an administrator enables **API Access** in
+  Settings, Advanced (Coolify Cloud already has it). Set **Allowed IPs** if you use that list (it must
+  include the address Homora connects from). Select the team, then create a token in **Keys & Tokens,
+  API Tokens** with **only `read`**, limited to the resources you want to show. Copy the full token
+  (it contains a `|`) into the connection in Homora, with the address of the instance
+  (`https://coolify.example`, or `https://app.coolify.io` for Cloud), then **Test connection**.
+  The Coolify screens vary by version. Use one token per team and connection.
+- **Least privilege:** only `read`. Never use `read:sensitive`, `write`, `deploy`, `delete` or `root`;
+  Homora does not need them and does not collect secrets, environment variables, Compose or logs.
+  A limited token works: the connection test and the summary use `/resources`, never the team
+  endpoint (which answers 403 to a limited token). What you see depends on the token's scope.
+- **What the widget shows:** counts of applications and services by state (running, degraded,
+  stopped, unknown) and the time of the last update. Coolify's composite status (`running:healthy`)
+  is normalized; anything unrecognized is **unknown**. A missing or unreadable answer is shown as
+  unavailable, never as offline.
+- **Inventory and links:** on the connection's **Resources** action you can search and filter the
+  inventory, link a resource to an existing card (by connection and resource UUID, never by name) and
+  see Coolify's state next to, and separate from, Homora's HTTP check. The inventory (names, UUIDs,
+  addresses) is for authenticated sessions only: it is not on the public status page and not exposed
+  through MCP. Coolify's list endpoints expose only a numeric environment id, so project and
+  environment names are not shown.
+- **Discovery with review:** select resources and review each proposed card (name, address among
+  several domains or typed by hand, group, description, icon). Nothing is created until you confirm;
+  a resource without an address needs a typed URL or is skipped; likely duplicates are flagged and can
+  be linked to the existing card. Cards created this way never get private-network monitoring unless
+  you tick it on that card. Later changes in Coolify (a renamed resource, a new domain, a removed
+  resource) only mark the card **Needs review**: you can keep it, update the card yourself or remove the
+  link. Cards are never changed or deleted automatically.
+- **Network and TLS:** HTTPS is required for the token. Use "allow private network" for a LAN
+  address. For a private CA paste its public PEM; validation stays on and redirects are not followed.
+- **Limits and failures:** responses are capped (2 MB, 1000 resources), results are cached 30 seconds
+  per connection and one connection failing never affects another. Coolify allows 200 requests per
+  minute and blocks a client that causes 30 failed requests per minute (1, then 5, then 15 minutes,
+  and it notifies the team). After a 401, 403 or 429 Homora therefore pauses automatic queries for that
+  connection for the `Retry-After` time (at least 60 seconds, at most 15 minutes) and shows the same
+  generic error; editing the connection clears the pause and **Test connection** always tries.
+- **Troubleshooting:** "access denied" is 401 (token wrong, expired, paused or revoked, or its owner
+  left the team) or 403 (API Access disabled, the address is not in Allowed IPs, or the token lacks
+  `read` or access to the resource). "Try again later" is 429: wait, and fix the token first. An empty
+  list with a limited token usually means the token's scope excludes the resources. "Connection
+  failed": check the address, HTTPS and the private-network option from the Homora backend (inside a
+  container `localhost` is the container itself).
+- **Live validation record (2026-11-12, maintainer, Coolify v4.7.5, Homora branch of PR #115):**
+
+  ```text
+  Integration: Coolify     Service version: v4.7.5     Date: 2026-11-12
+  Validated by: maintainer (manual run in a local development instance)
+  - [x] Connection saved with a read-only credential (a `read`-only team token)
+  - [x] Widget shows the expected values (6 resources, 6 running)
+  - [x] Wrong credential gives a generic error (invalid token tried; pause behaved as designed)
+  - [ ] Unreachable host gives a generic error (not tried)
+  - [ ] Private or public destination policy behaved as documented (a LAN address was used; not
+        otherwise exercised)
+  - [x] No credential visible in the UI (not inspected in logs or API responses)
+  Also seen working: inventory with addresses, applications without an address, several domains on
+  one application (it appeared to work; the exact `fqdn` separator was not inspected), link and
+  discovery review dialogs.
+  Not covered: a token limited to selected resources (the token was the team token, believed to be
+  unrestricted), a service without an address in detail, `/applications` with a token that lacks it,
+  environments with several teams, and the 429 path against the real server.
+  Notes / deviations: the review dialog's list did not scroll (fixed in 7a9d1a9).
+  ```
+
+  Still to confirm: the behavior of a **limited** token (the issue requires it to work without
+  team-level permissions), and the `status` strings other than the running state.
+
 ### Skipped (follow-up issues)
 
 Both were evaluated against the declarative format and the shared transport; neither fits without
@@ -309,19 +391,20 @@ widening the transport, so they were not implemented (decision recorded in
 
 ## Integration status
 
-| Integration       | Kind     | Status                                                | Needs                                |
-| ----------------- | -------- | ----------------------------------------------------- | ------------------------------------ |
-| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope | Read-only API token, HTTPS           |
-| Jellyfin          | manifest | Implemented, unvalidated                              | Public info endpoint, no credentials |
-| Home Assistant    | manifest | Implemented, unvalidated                              | Long-lived token, HTTPS              |
-| Uptime Kuma       | manifest | Implemented, unvalidated                              | A published status page              |
-| AdGuard Home      | manifest | Implemented, unvalidated                              | Basic auth user, HTTPS               |
-| Speedtest Tracker | manifest | Implemented, unvalidated                              | Token with Read Results, HTTPS       |
-| Portainer         | manifest | Implemented, unvalidated                              | Access token, HTTPS                  |
-| NetBird           | manifest | Implemented, unvalidated                              | Personal access token, HTTPS         |
-| Tailscale         | manifest | Implemented, unvalidated                              | API access token, HTTPS              |
-| Cloudflare        | manifest | Implemented, unvalidated                              | Token with Zone Read, HTTPS          |
-| Beszel, TrueNAS   | —        | Skipped (see above)                                   | —                                    |
+| Integration       | Kind     | Status                                                   | Needs                                |
+| ----------------- | -------- | -------------------------------------------------------- | ------------------------------------ |
+| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope    | Read-only API token, HTTPS           |
+| Jellyfin          | manifest | Implemented, unvalidated                                 | Public info endpoint, no credentials |
+| Home Assistant    | manifest | Implemented, unvalidated                                 | Long-lived token, HTTPS              |
+| Uptime Kuma       | manifest | Implemented, unvalidated                                 | A published status page              |
+| AdGuard Home      | manifest | Implemented, unvalidated                                 | Basic auth user, HTTPS               |
+| Speedtest Tracker | manifest | Implemented, unvalidated                                 | Token with Read Results, HTTPS       |
+| Portainer         | manifest | Implemented, unvalidated                                 | Access token, HTTPS                  |
+| NetBird           | manifest | Implemented, unvalidated                                 | Personal access token, HTTPS         |
+| Tailscale         | manifest | Implemented, unvalidated                                 | API access token, HTTPS              |
+| Cloudflare        | manifest | Implemented, unvalidated                                 | Token with Zone Read, HTTPS          |
+| Coolify           | code     | Partly validated on v4.7.5 (inventory, links, discovery) | Token with `read` only, HTTPS        |
+| Beszel, TrueNAS   | —        | Skipped (see above)                                      | —                                    |
 
 "Unvalidated" means no one has tried it against a live service yet. Adding one is documented in
 [adapters](adapters.md); the manifest vocabulary and its limits are in
