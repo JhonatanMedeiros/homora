@@ -988,6 +988,30 @@ implementation because it changes a security default.
 - Batch approval validates the original configuration and applies all items in one transaction, with a single revision increment. Conflicting operations roll back; pending remnants of partially decided older batches can be discarded.
 - The review interface groups batch items, distinguishes changed configuration from unavailable proposals and conflicting changes, and shows stale and expired states.
 
+## Docker push discovery (issue #56)
+
+- Added a separately authenticated remote Docker inventory agent, source lifecycle,
+  five-minute freshness, and review/import tied to a transactional source-version
+  check. Existing local Docker discovery remains available. The stored inventory
+  contains only supported discovery labels; the agent token is stored as a hash.
+  Source lifecycle changes are audited atomically; revocation is terminal and
+  interval is capped at 240 seconds.
+- Added UI in English and Portuguese, scoped MCP tools for both transports, a
+  Docker image target and release matrix entry. Setup, socket privilege, TLS,
+  token handling and limits are documented in both READMEs. The protocol accepts
+  the last valid arrival; it does not enforce message ordering or replay counters.
+- Validated locally with two fake Unix-socket Docker daemons, real agent code,
+  HTTPS with a temporary CA, the real backend, card review/import, rejection of an
+  untrusted certificate, revoked token and expired inventory. Tested a concurrent
+  source update through a second SQLite connection, migration with existing data,
+  MCP HTTP and a real stdio process, and frontend interactions. Chromium at 390 px
+  showed source creation and one-time token; at 1280 px it exercised source creation,
+  upload, review and import. Neither viewport showed horizontal overflow or page errors. The agent
+  image built locally. No real Docker socket or production database was used.
+- Not validated: actual communication between separate LXC hosts (none available),
+  physical mobile devices, screen readers, and agent image on arm64. The local
+  tests do not establish safety for public exposure.
+
 ### Monitor HTTP: expected status and check path
 
 Services can optionally check a same-origin path independently of their card URL and match an exact HTTP status or the 2xx/3xx classes. Existing services retain their previous behavior; ping retains but ignores these HTTP settings. Anonymous responses do not prove an authenticated origin is healthy. Observation history records the expectation in effect for unexpected responses, and changing either setting invalidates the current shared observation.
@@ -1027,6 +1051,32 @@ Services can optionally check a same-origin path independently of their card URL
 - Validated with `pnpm check` and `pnpm build` (the one failure on the first `pnpm check`, the 200-service uptime benchmark, passed on its own: it is load-sensitive). Tests cover the hub, direct links, the unknown subpage, the "More" sheet and the Agents tabs. Not checked in a browser or on a physical phone.
 - Agents now splits Proposals (with the pending count) and Agents into two tabs; Connect and New agent stay in the header. The tab is local state, not a route.
 
+### Docker push discovery — PR review and main integration
+
+- Merged current `main` and regenerated the source migration as `0017`, after the
+  existing monitor, public-status and uptime migrations. An isolated upgrade test
+  preserves a public service, monitor settings and public-status configuration.
+- Revocation is terminal; token rotation cannot reactivate a source. Source creation,
+  rotation, revocation and removal record administrator, source ID and client IP in
+  the same database transaction as the change. Names and tokens are not recorded.
+- Agent interval is capped at 240 seconds against a five-minute freshness window.
+  Inventory order is canonicalized by container ID, avoiding version changes from
+  reordered Docker results. API endpoints now distinguish revocation from removal,
+  expose the source limit and oversized-body errors, and require JSON ingestion.
+- Direct import checks source validity in its transaction. MCP checks the source at
+  proposal creation; an already-created proposal remains independently reviewable
+  after source revocation. Both cases have tests. Source limit counts revoked rows,
+  as documented, until removed.
+- Validated `pnpm check` (425 application tests and 9 script tests), `pnpm build`,
+  isolated migration and concurrent-connection tests, audit rollback and lifecycle
+  tests, and Chromium at 390 px for dialog cancellation and terminal revocation.
+  CI and cross-host LXC validation remain separate from this local evidence.
+
+- After integrating the subsequent mobile-header change, the load-sensitive uptime
+  benchmark timed out in the first full run. It passed in isolation; a second full
+  `pnpm check` passed (425 application tests and 9 script tests), followed by
+  `pnpm build`.
+
 ## Mobile header fits one row
 
 - On phones the header wrapped: the brand, search, language, theme, user menu and the Manage / Back button did not fit in 390 px, so the user menu and the button dropped to a second row. Below `sm` the wordmark is now visually hidden (the logo still links home), the Manage / Back button shows only its icon (the label stays for screen readers) and the gaps are tighter. From `sm` up nothing changes.
@@ -1043,3 +1093,11 @@ Services can optionally check a same-origin path independently of their card URL
 
 - The header search field ("Search services") and its quick-results dropdown are gone: the command palette (Ctrl/Cmd+K, or the magnifier button) is the only search. The `/` shortcut, Enter-to-open-first and the text filter on the services page went with it; the category filter stays. The earlier note about the home page search taking its own second row no longer applies.
 - Validated: type-check, lint, prettier and the frontend tests. 18 backend test files fail to import in this worktree; the backend was not touched.
+
+### Docker push discovery — subsequent main integration
+
+- Preserved the activity, status and header changes from `main`. The pre-existing
+  uptime benchmark exceeded its five-second total test timeout twice during full
+  suites but passed alone and met its measured performance thresholds. Increased
+  only its total timeout to 15 seconds; the benchmark thresholds are unchanged.
+- Validated `pnpm check` (435 application tests and 9 script tests) and `pnpm build`.

@@ -137,7 +137,7 @@ export function createProposalService(
     if (!result.changes) throw new Error('Identity unavailable');
     return token;
   }
-  function propose(authorId: string, input: unknown) {
+  function propose(authorId: string, input: unknown, guard?: () => boolean) {
     const parsed = serviceProposalSchema.safeParse(input);
     if (!parsed.success) throw new Error('Invalid proposal');
     const d = parsed.data;
@@ -171,6 +171,7 @@ export function createProposalService(
       now = Date.now();
     const baseVersion = configuration.version();
     return transaction(() => {
+      if (guard && !guard()) throw new Error('Source unavailable');
       checkPending(authorId);
       const expiresAt = now + proposalTtlMinutes() * 60_000;
       sqlite

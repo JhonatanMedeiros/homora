@@ -10,6 +10,9 @@ export const en = {
   'apiError.invalid-card-order': 'Invalid card order.',
   'apiError.invalid-group-order': 'Invalid group order.',
   'apiError.invalid-group-name': 'Provide a group name with up to 40 characters.',
+  'apiError.inventory-too-large': 'The inventory exceeds the 1 MiB limit.',
+  'apiError.source-limit': 'Remove a source before adding another (maximum 10).',
+  'apiError.discovery-stale': 'The inventory is unavailable or changed. Review it again.',
   'apiError.discovery-disabled': 'Docker discovery is not enabled.',
   'apiError.docker-unavailable':
     'Could not read the Docker containers. Check HOMORA_DOCKER_HOST and the proxy.',
@@ -95,6 +98,9 @@ export const ptBR = {
   'apiError.invalid-card-order': 'Ordem de cards inválida.',
   'apiError.invalid-group-order': 'Ordem de grupos inválida.',
   'apiError.invalid-group-name': 'Informe um nome de grupo com até 40 caracteres.',
+  'apiError.inventory-too-large': 'O inventário excede o limite de 1 MiB.',
+  'apiError.source-limit': 'Remova uma fonte antes de adicionar outra (máximo de 10).',
+  'apiError.discovery-stale': 'O inventário está indisponível ou mudou. Revise novamente.',
   'apiError.discovery-disabled': 'A descoberta Docker não está ativada.',
   'apiError.docker-unavailable':
     'Não foi possível ler os contêineres do Docker. Confira HOMORA_DOCKER_HOST e o proxy.',

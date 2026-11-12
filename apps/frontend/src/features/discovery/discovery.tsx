@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, t } from '@/i18n';
+import { PushSources } from './push-sources';
 import { ImportPreview } from '@/features/transfer/import-preview';
 import type { Plan } from '@/features/transfer/transfer-model';
 
@@ -113,124 +114,127 @@ export function Discovery({ onImported }: { onImported: () => void | Promise<voi
       : [];
 
   return (
-    <section aria-labelledby="discovery-title">
-      <Card>
-        <CardHeader>
-          <SectionTitle id="discovery-title">{t('discovery.title')}</SectionTitle>
-          <CardDescription>{t('discovery.hint')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {state.status === 'loading' && (
-            <p role="status" className="text-sm text-muted-foreground">
-              {t('discovery.loading')}
-            </p>
-          )}
-          {state.status === 'disabled' && (
-            <p className="text-sm text-muted-foreground">{t('discovery.disabled')}</p>
-          )}
-          {state.status === 'error' && (
-            <Alert variant="destructive">
-              <AlertDescription>{state.message}</AlertDescription>
-            </Alert>
-          )}
-          {state.status === 'ready' && (
-            <>
-              <p className="text-sm text-muted-foreground">
-                {t('discovery.scanned', { count: state.found.scanned })}
+    <>
+      <section aria-labelledby="discovery-title">
+        <Card>
+          <CardHeader>
+            <SectionTitle id="discovery-title">{t('discovery.title')}</SectionTitle>
+            <CardDescription>{t('discovery.hint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {state.status === 'loading' && (
+              <p role="status" className="text-sm text-muted-foreground">
+                {t('discovery.loading')}
               </p>
-              {rows.length === 0 ? (
-                <p className="text-sm">{t('discovery.none')}</p>
-              ) : (
-                <ul
-                  aria-label={t('discovery.list')}
-                  className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-md border p-2 text-sm"
-                >
-                  {rows.map(({ service, entry }) => {
-                    const isNew = service.status === 'new' && Boolean(entry);
-                    const id = `discovery-${entry?.id ?? service.url}`;
-                    return (
-                      <li key={id} className="flex items-start gap-3 px-1 py-1">
-                        <Checkbox
-                          id={id}
-                          disabled={!isNew || busy}
-                          checked={isNew && selected.has(entry.id)}
-                          onCheckedChange={(checked) =>
-                            setSelected((current) => {
-                              const next = new Set(current);
-                              if (checked === true) next.add(entry.id);
-                              else next.delete(entry.id);
-                              return next;
-                            })
-                          }
-                        />
-                        <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-0.5">
-                          <span className="break-words">
-                            <b className="font-semibold">{service.name}</b>{' '}
-                            <span className="text-muted-foreground">· {service.group}</span>
-                          </span>
-                          <span className="font-mono text-xs break-all text-muted-foreground">
-                            {service.url}
-                          </span>
-                          {entry && (
-                            <small className="text-muted-foreground">
-                              {t('discovery.container', { name: entry.container })}
-                            </small>
-                          )}
-                        </label>
-                        <Badge variant={isNew ? 'success' : 'secondary'}>
-                          {isNew ? t('transfer.statusNew') : t('transfer.statusDuplicate')}
-                        </Badge>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              {state.found.plan.issues.length > 0 && (
-                <ImportPreview plan={{ ...state.found.plan, services: [] }} />
-              )}
-              {rows.some(({ service }) => service.status === 'new') && (
-                <Field orientation="horizontal" className="items-start">
-                  <Checkbox
-                    id="discovery-private"
-                    checked={allowPrivate}
-                    onCheckedChange={(checked) => setAllowPrivate(checked === true)}
-                  />
-                  <div className="flex flex-col gap-1">
-                    <FieldLabel htmlFor="discovery-private">{t('discovery.private')}</FieldLabel>
-                    <FieldDescription>{t('discovery.privateHint')}</FieldDescription>
-                  </div>
-                </Field>
-              )}
-            </>
-          )}
-          <div role="status" className="empty:hidden">
-            {message && (
-              <Alert>
-                <AlertDescription className="text-foreground">{message}</AlertDescription>
+            )}
+            {state.status === 'disabled' && (
+              <p className="text-sm text-muted-foreground">{t('discovery.disabled')}</p>
+            )}
+            {state.status === 'error' && (
+              <Alert variant="destructive">
+                <AlertDescription>{state.message}</AlertDescription>
               </Alert>
             )}
-          </div>
-        </CardContent>
-        {state.status !== 'disabled' && (
-          <CardFooter className="flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="ghost" disabled={busy} onClick={rescan}>
-              <RefreshCw data-icon="inline-start" />
-              {t('discovery.rescan')}
-            </Button>
             {state.status === 'ready' && (
-              <Button
-                type="button"
-                disabled={busy || selected.size === 0}
-                onClick={() => void add()}
-              >
-                {selected.size > 0
-                  ? `${t('discovery.add')} (${selected.size})`
-                  : t('discovery.add')}
-              </Button>
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {t('discovery.scanned', { count: state.found.scanned })}
+                </p>
+                {rows.length === 0 ? (
+                  <p className="text-sm">{t('discovery.none')}</p>
+                ) : (
+                  <ul
+                    aria-label={t('discovery.list')}
+                    className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-md border p-2 text-sm"
+                  >
+                    {rows.map(({ service, entry }) => {
+                      const isNew = service.status === 'new' && Boolean(entry);
+                      const id = `discovery-${entry?.id ?? service.url}`;
+                      return (
+                        <li key={id} className="flex items-start gap-3 px-1 py-1">
+                          <Checkbox
+                            id={id}
+                            disabled={!isNew || busy}
+                            checked={isNew && selected.has(entry.id)}
+                            onCheckedChange={(checked) =>
+                              setSelected((current) => {
+                                const next = new Set(current);
+                                if (checked === true) next.add(entry.id);
+                                else next.delete(entry.id);
+                                return next;
+                              })
+                            }
+                          />
+                          <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="break-words">
+                              <b className="font-semibold">{service.name}</b>{' '}
+                              <span className="text-muted-foreground">· {service.group}</span>
+                            </span>
+                            <span className="font-mono text-xs break-all text-muted-foreground">
+                              {service.url}
+                            </span>
+                            {entry && (
+                              <small className="text-muted-foreground">
+                                {t('discovery.container', { name: entry.container })}
+                              </small>
+                            )}
+                          </label>
+                          <Badge variant={isNew ? 'success' : 'secondary'}>
+                            {isNew ? t('transfer.statusNew') : t('transfer.statusDuplicate')}
+                          </Badge>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {state.found.plan.issues.length > 0 && (
+                  <ImportPreview plan={{ ...state.found.plan, services: [] }} />
+                )}
+                {rows.some(({ service }) => service.status === 'new') && (
+                  <Field orientation="horizontal" className="items-start">
+                    <Checkbox
+                      id="discovery-private"
+                      checked={allowPrivate}
+                      onCheckedChange={(checked) => setAllowPrivate(checked === true)}
+                    />
+                    <div className="flex flex-col gap-1">
+                      <FieldLabel htmlFor="discovery-private">{t('discovery.private')}</FieldLabel>
+                      <FieldDescription>{t('discovery.privateHint')}</FieldDescription>
+                    </div>
+                  </Field>
+                )}
+              </>
             )}
-          </CardFooter>
-        )}
-      </Card>
-    </section>
+            <div role="status" className="empty:hidden">
+              {message && (
+                <Alert>
+                  <AlertDescription className="text-foreground">{message}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </CardContent>
+          {state.status !== 'disabled' && (
+            <CardFooter className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="ghost" disabled={busy} onClick={rescan}>
+                <RefreshCw data-icon="inline-start" />
+                {t('discovery.rescan')}
+              </Button>
+              {state.status === 'ready' && (
+                <Button
+                  type="button"
+                  disabled={busy || selected.size === 0}
+                  onClick={() => void add()}
+                >
+                  {selected.size > 0
+                    ? `${t('discovery.add')} (${selected.size})`
+                    : t('discovery.add')}
+                </Button>
+              )}
+            </CardFooter>
+          )}
+        </Card>
+      </section>
+      <PushSources onImported={onImported} />
+    </>
   );
 }

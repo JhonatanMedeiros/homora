@@ -229,3 +229,16 @@ export const verification = sqliteTable(
   },
   (table) => [index('verification_identifier_idx').on(table.identifier)],
 );
+
+// Remote Docker discovery identities and their last accepted inventory. Tokens are
+// stored only as hashes; the inventory contains the restricted discovery fields.
+export const dockerPushSources = sqliteTable('docker_push_sources', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  tokenHash: text('token_hash').notNull().unique(),
+  revoked: integer('revoked', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at').notNull(),
+  receivedAt: integer('received_at'),
+  inventoryVersion: integer('inventory_version').notNull().default(0),
+  inventory: text('inventory'),
+});

@@ -40,6 +40,13 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:3000/api/auth/status').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 CMD ["node", "apps/backend/dist/server.js"]
 
+# Optional Docker inventory agent. Supply a socket, token file and HTTPS origin at runtime.
+FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS discovery-agent
+WORKDIR /app
+COPY --chown=node:node scripts/docker-push-agent.mjs ./docker-push-agent.mjs
+USER node
+CMD ["node", "docker-push-agent.mjs"]
+
 FROM nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 AS frontend
 LABEL org.opencontainers.image.title="Homora frontend" \
       org.opencontainers.image.description="Web interface for the Homora self-hosted dashboard" \
