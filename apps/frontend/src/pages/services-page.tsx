@@ -14,6 +14,8 @@ import {
 import { ViewOptions } from '@/components/view-options';
 import { HostView } from '@/components/host-view';
 import { HostMap } from '@/components/host-map';
+import { useDependencies } from '@/hooks/use-dependencies';
+import { dependsOn, dependentsOf, impairedUpstream, isImpaired } from '@/lib/dependencies';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useHostInventory } from '@/hooks/use-host-inventory';
 import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
@@ -97,6 +99,10 @@ export function ServicesPage({
   const [shared, setShared] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [host, setHost] = useState<HostLink | null>(null);
+  const deps = useDependencies();
+  // Edits to "Depends on" in the open form, applied with the card on save.
+  const [depAdded, setDepAdded] = useState<number[]>([]);
+  const [depRemoved, setDepRemoved] = useState<number[]>([]);
   // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
   const [localFocus, setLocalFocus] = useState<FocusRequest | null>(null);
   const focusRequest = localFocus ?? requestedFocus;
@@ -114,6 +120,38 @@ export function ServicesPage({
   );
   const hostData = useHostInventory(hostView || formOpen, linkedConnections);
   const [nodeFilter, setNodeFilter] = useState<{ connectionId: number; node: string } | null>(null);
+  const impacts = useMemo(
+    () =>
+      new Map(
+        services.map((s) => [
+          s.id,
+          serviceImpact(
+            s,
+            statuses[s.id]?.status,
+            blockedIds.has(s.id),
+            hostData.connections,
+            hostData.inventories,
+          ),
+        ]),
+      ),
+    [services, statuses, blockedIds, hostData.connections, hostData.inventories],
+  );
+  const upstream = useMemo(
+    () => impairedUpstream(services, deps.dependencies, impacts),
+    [services, deps.dependencies, impacts],
+  );
+  const dependencyNotes = useMemo(() => {
+    const notes: Record<number, string> = {};
+    for (const [id, causes] of upstream) {
+      if (isImpaired(impacts.get(id))) continue;
+      const names = causes
+        .map((cause) => services.find((s) => s.id === cause)?.name)
+        .filter(Boolean)
+        .join(', ');
+      if (names) notes[id] = t('dependencies.mayBeAffected', { names });
+    }
+    return notes;
+  }, [upstream, impacts, services]);
   const offline = useMemo(
     () => offlineNodes(services, hostData.connections, hostData.inventories),
     [services, hostData.connections, hostData.inventories],
@@ -220,6 +258,8 @@ export function ServicesPage({
     setConfirming(null);
     setEditing(service?.id ?? null);
     setHost(service?.host ?? null);
+    setDepAdded([]);
+    setDepRemoved([]);
     setShared(service?.isPublic === true);
     setForm(
       service
@@ -287,6 +327,8 @@ export function ServicesPage({
     // Initialize the draft once per route after service data arrives.
     setEditing(service?.id ?? null);
     setHost(service?.host ?? null);
+    setDepAdded([]);
+    setDepRemoved([]);
     setShared(service?.isPublic === true);
     setForm(
       service
@@ -348,6 +390,16 @@ export function ServicesPage({
           body: JSON.stringify({ isPublic: shared }),
         });
         if (!visibility.ok) throw new Error(t('error.savePublic'));
+      }
+      if (savedId !== undefined) {
+        for (const id of depAdded) {
+          const failure = await deps.add(savedId, id);
+          if (failure) throw new Error(failure);
+        }
+        for (const id of depRemoved) {
+          const failure = await deps.remove(savedId, id);
+          if (failure) throw new Error(failure);
+        }
       }
       const wasNew = editing === null;
       closeForm();
@@ -546,6 +598,11 @@ export function ServicesPage({
       {!managing && (
         <HostImpactBanner
           nodes={offline}
+          indirect={(node) => {
+            const direct = new Set(node.affected.map((s) => s.id));
+            return dependentsOf([...direct], deps.dependencies).filter((id) => !direct.has(id))
+              .length;
+          }}
           onSeeImpact={(node) => {
             setNodeFilter({ connectionId: node.connectionId, node: node.node });
             setArrange('host');
@@ -633,6 +690,21 @@ export function ServicesPage({
               inventories: hostData.inventories,
               onReload: (id, refresh) => void hostData.reload(id, refresh),
             }}
+            dependencies={{
+              selfId: editing,
+              services,
+              value: [
+                ...(editing === null
+                  ? []
+                  : dependsOn(editing, deps.dependencies).filter((id) => !depRemoved.includes(id))),
+                ...depAdded,
+              ],
+              onChange: (next) => {
+                const base = editing === null ? [] : dependsOn(editing, deps.dependencies);
+                setDepAdded(next.filter((id) => !base.includes(id)));
+                setDepRemoved(base.filter((id) => !next.includes(id)));
+              },
+            }}
             isPublic={shared}
             onPublicChange={setShared}
             onChange={setForm}
@@ -693,6 +765,30 @@ export function ServicesPage({
             setLocalFocus({ id: service.id, nonce: Date.now() });
           }}
           onChangeHost={(service) => navigate(`/manage/services/${service.id}/edit`)}
+          dependencies={deps.dependencies}
+          notes={dependencyNotes}
+          edit={{
+            // The same endpoint the form and the suggestions use, so a link made on the map is
+            // identical to one made anywhere else.
+            onLinkHost: async (service, next) => {
+              try {
+                const response = await fetch(`/api/services/${service.id}/host`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ host: next }),
+                });
+                if (!response.ok) return false;
+                await refresh();
+                return true;
+              } catch {
+                return false;
+              }
+            },
+            onAddDependency: deps.add,
+            onRemoveDependency: deps.remove,
+            connectionsLoaded: hostData.connectionsLoaded,
+            onReload: (id, force) => void hostData.reload(id, force),
+          }}
         />
       )}
       {hostList && services.length > 0 && (
@@ -703,6 +799,7 @@ export function ServicesPage({
           statuses={statuses}
           blockedIds={blockedIds}
           onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
+          notes={dependencyNotes}
           nodeFilter={nodeFilter}
           onClearFilter={() => setNodeFilter(null)}
         />
@@ -813,13 +910,8 @@ export function ServicesPage({
                   uptimeRange={uptimeRange}
                   onUptimeRangeChange={setUptimeRange}
                   host={hostLabel(s, hostData.connections, hostData.inventories)}
-                  impact={serviceImpact(
-                    s,
-                    info?.status,
-                    blockedIds.has(s.id),
-                    hostData.connections,
-                    hostData.inventories,
-                  )}
+                  impact={impacts.get(s.id)}
+                  dependencyNote={dependencyNotes[s.id]}
                   blocked={blockedIds.has(s.id)}
                   managing={managing}
                   list={list}

@@ -232,7 +232,7 @@ For stdio, after `pnpm build`, configure a trusted MCP client to run `node /abso
 
 | Scope                                      | Tools                                                                                    |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `services:read`                            | Services, groups, current status and `list_status_history`                               |
+| `services:read`                            | Services, groups, current status, `list_status_history`, `list_service_dependencies`     |
 | `agents:read`, `audit:read`                | Agent identities and paginated audit events, respectively                                |
 | `agents:propose`                           | Propose agent creation, scope changes, revocation or token rotation                      |
 | `proxmox:read`                             | `list_proxmox_resources`                                                                 |

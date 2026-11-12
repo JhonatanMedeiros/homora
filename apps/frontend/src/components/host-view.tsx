@@ -30,6 +30,8 @@ type Props = {
   blockedIds: Set<number>;
   onEdit?: (service: Service) => void;
   /** Show only this node (from the "See impact" banner link). */
+  /** Manual-dependency hints by service id ("may be affected through ..."). */
+  notes?: Record<number, string>;
   nodeFilter?: { connectionId: number; node: string } | null;
   onClearFilter?: () => void;
 };
@@ -46,12 +48,14 @@ function ServiceRow({
   status,
   blocked,
   impact,
+  note,
   onEdit,
 }: {
   service: Service;
   status?: ServiceStatus;
   blocked: boolean;
   impact: Impact;
+  note?: string;
   onEdit?: (service: Service) => void;
 }) {
   const view = describeStatus(status, blocked);
@@ -76,6 +80,7 @@ function ServiceRow({
         <span className="truncate font-mono text-xs text-muted-foreground">
           {hostOf(service.url)}
         </span>
+        {note && <span className="text-xs text-muted-foreground">{note}</span>}
         {impact in IMPACT_TEXT && (
           <span className="text-xs font-semibold text-destructive">
             {t(IMPACT_TEXT[impact as keyof typeof IMPACT_TEXT])}
@@ -109,6 +114,7 @@ export function HostView({
   statuses,
   blockedIds,
   onEdit,
+  notes = {},
   nodeFilter = null,
   onClearFilter,
 }: Props) {
@@ -141,6 +147,7 @@ export function HostView({
             connections,
             inventories,
           )}
+          note={notes[service.id]}
           onEdit={onEdit}
         />
       ))}

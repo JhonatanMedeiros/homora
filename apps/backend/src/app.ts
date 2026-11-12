@@ -25,6 +25,7 @@ import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
 import { createNotifications } from './notifications.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
+import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -127,6 +128,7 @@ export function createApp(
     audit,
   );
   registerHostSuggestionRoutes(app, sqlite, connections, configuration);
+  registerServiceDependencyRoutes(app, sqlite, auth, audit);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);

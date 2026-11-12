@@ -1,6 +1,6 @@
 # 0008 — Service-to-host map
 
-**Status:** Accepted (phases 1 to 4 implemented; phase 5 planned in issue #96)
+**Status:** Accepted (all five phases of issue #96 implemented)
 
 ## Context
 
@@ -45,6 +45,15 @@ dependencies). The map manages only Homora's own data and never writes to Proxmo
 - **Library choice: no map library.** `@xyflow/react` was evaluated against a small custom layout and not adopted. Its strengths are free-form graphs, edges and dragging nodes, none of which the read-only, automatically laid-out map needs, and it would add a runtime dependency (plus its own stylesheet and ARIA model) for what is a set of nested boxes. The custom layout is `lib/map-layout.ts`, a pure deterministic function (nodes as containers, guests inside, services as labels, "host not found", "host unavailable" and "not linked" as their own containers, wrapped in rows). Phase 5 drag-to-link needs only drop targets on guests, which plain DOM provides; revisit the choice if edges between services (dependencies) turn out to need routing.
 - The map renders absolutely positioned HTML (not canvas or SVG) inside a native scrolling viewport, scaled with a CSS transform (zoom 0.6 to 1.2). Native scrolling gives touch, wheel, scrollbar and keyboard-focus panning; mouse drag is added on top. Nothing animates, and recentering uses `behavior: 'auto'` under `prefers-reduced-motion`.
 - The DOM order, hence keyboard focus order, is the Host view order (tested against `buildHostView`). Every control on the map (select, "Open card on Home", "Change host", zoom, fit, reset, refresh, "List view") is a real button, and state is written as text (Offline, Host offline...), never only color. Under 768 px the map shows the notice with "Use the host list" as the primary action; "Open the map anyway" shows the same read-only, pannable map.
+
+### Map editing and dependencies (phase 5)
+
+- **Edits are Homora data only.** Dragging an unlinked service onto a guest calls the same `PUT /api/services/:id/host` as the form and the suggestions, so a link made on the map is identical to one made anywhere else. The non-drag alternative is the side panel: select the service, then the same "Runs on" chooser (connection, node, search, guest) used by the form; "Unlink host" likewise. Only unlinked services are draggable; a linked one is changed through that chooser. Nothing animates, so `prefers-reduced-motion` needs no special case beyond the phase 4 recentering. Under 768 px the map stays read-only even when opened anyway, and "Change host" opens the form.
+- **Dependencies** live in `service_dependencies` (migration `0022`: `service_id` depends on `depends_on_id`, composite primary key, cascade on card delete, a database `CHECK` against self links). The application rejects a new edge that would close a cycle (`409 dependency-cycle`), caps a card at 50 dependencies, and every traversal also keeps a visited set. Endpoints: `GET /api/service-dependencies`, `POST /api/services/:id/dependencies`, `DELETE /api/services/:id/dependencies/:other`; session required, origin check on writes, audit entries `service-dependency-add` and `service-dependency-remove`.
+- **Alternatives to dragging and picking:** the service form has a "Depends on" list (native select plus removable chips) saved with the card; the Host view shows the same "may be affected" text. Everything the Map can do is therefore possible from the list and forms (WCAG 2.2 SC 2.5.7).
+- **Impact:** a service that depends, directly or through others, on one that is impaired (host offline, guest stopped or service down) shows "May be affected: depends on X (manual dependency)", and the offline banner adds "N more may be affected through dependencies you recorded". It is always worded as manual and as "may", never as a measured fact, and it never produces "offline".
+- **MCP:** read access through `list_service_dependencies` under the existing `services:read` scope (ids and card names only, no inventory data). There is no agent write: dependencies are a human decision in this release.
+- **Not carried by export/import,** like the host link.
 
 ### Open decisions (defaults taken)
 

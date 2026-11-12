@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
 import { ServiceIcon } from '@/components/service-icon';
 import { HostPicker } from '@/components/host-picker';
+import { DependencyPicker } from '@/components/dependency-picker';
 import type { HostConnection, HostInventories } from '@/lib/hosts';
 import { t } from '@/i18n';
 
@@ -34,8 +35,12 @@ export type FormHosts = {
   onReload: (connectionId: number, refresh?: boolean) => void;
 };
 
+/** Manual dependencies for the form; omitted when the form is used without them. */
+export type FormDependencies = React.ComponentProps<typeof DependencyPicker>;
+
 type Props = {
   hosts?: FormHosts;
+  dependencies?: FormDependencies;
   editing: boolean;
   value: ServiceInput;
   categories: string[];
@@ -51,6 +56,7 @@ type Props = {
 
 export function ServiceForm({
   hosts,
+  dependencies,
   editing,
   value,
   categories,
@@ -128,6 +134,7 @@ export function ServiceForm({
           </datalist>
         </Field>
         {hosts && <HostPicker {...hosts} />}
+        {dependencies && <DependencyPicker {...dependencies} />}
         <Field orientation="horizontal" className="items-start sm:col-span-2">
           <Checkbox
             id="service-private"

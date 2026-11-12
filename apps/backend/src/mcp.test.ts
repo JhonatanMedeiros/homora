@@ -72,6 +72,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'propose_widget_change',
       'list_integrations',
       'get_integration_status',
+      'list_service_dependencies',
       'list_host_suggestions',
       'propose_host_link',
       'propose_connection_setup',

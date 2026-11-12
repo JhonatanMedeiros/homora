@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
-import type { Service } from '@homora/shared';
+import type { HostLink, Service } from '@homora/shared';
 import { Minus, Plus, RefreshCw, X } from 'lucide-react';
+import { HostPicker } from '@/components/host-picker';
+import { dependsOn, usedBy, type Dependency } from '@/lib/dependencies';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { EmptyNote } from '@/components/empty-note';
@@ -28,7 +30,21 @@ import { describeStatus } from '@/lib/status-text';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
+/** Write access. Absent means read-only (also forced on phones, where the map is read-only). */
+export type MapEdit = {
+  onLinkHost: (service: Service, host: HostLink | null) => Promise<boolean>;
+  onAddDependency: (serviceId: number, dependsOnId: number) => Promise<string | null>;
+  onRemoveDependency: (serviceId: number, dependsOnId: number) => Promise<string | null>;
+  connectionsLoaded: boolean;
+  onReload: (connectionId: number, refresh?: boolean) => void;
+};
+
 type Props = {
+  edit?: MapEdit;
+  /** Manual dependencies, shown as "Depends on" and "Used by". */
+  dependencies?: Dependency[];
+  /** "May be affected through ..." hints by service id, from manual dependencies. */
+  notes?: Record<number, string>;
   services: Service[];
   connections: HostConnection[];
   inventories: HostInventories;
@@ -68,6 +84,9 @@ const reducedMotion = () =>
  * the viewport (touch, wheel, scrollbars and keyboard focus), plus mouse drag; nothing animates.
  */
 export function HostMap({
+  edit,
+  dependencies = [],
+  notes = {},
   services,
   connections,
   inventories,
@@ -82,6 +101,10 @@ export function HostMap({
   const [openAnyway, setOpenAnyway] = useState(false);
   const [zoom, setZoom] = useState<number>(ZOOM.default);
   const [selection, setSelection] = useState<Selection>(null);
+  const [dragging, setDragging] = useState<number | null>(null);
+  const [dropOver, setDropOver] = useState<string | null>(null);
+  const [picking, setPicking] = useState<number | null>(null);
+  const [message, setMessage] = useState('');
   const viewport = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const model = useMemo(
@@ -98,6 +121,9 @@ export function HostMap({
       inventories,
     );
 
+  // On phones the map is read-only even when opened anyway.
+  const canEdit = Boolean(edit) && !mobile;
+  const nameOf = (id: number) => services.find((item) => item.id === id)?.name ?? `#${id}`;
   if (mobile && !openAnyway)
     return (
       <Alert>
@@ -157,6 +183,32 @@ export function HostMap({
       ? layout.containers.flatMap((c) => c.guests).find((g) => g.group.key === selection.key)
       : undefined;
 
+  async function link(service: Service, host: HostLink | null, guestName = '') {
+    if (!edit) return;
+    const ok = await edit.onLinkHost(service, host);
+    setMessage(
+      !ok
+        ? t('map.linkFailed')
+        : host
+          ? t('map.linked', { name: service.name, guest: guestName || String(host.vmid) })
+          : t('map.unlinked', { name: service.name }),
+    );
+  }
+  async function pick(service: Service, dependsOnId: number) {
+    if (!edit) return;
+    setPicking(null);
+    const failure = await edit.onAddDependency(service.id, dependsOnId);
+    setMessage(
+      failure ?? t('dependencies.added', { name: service.name, other: nameOf(dependsOnId) }),
+    );
+  }
+  async function unpick(serviceId: number, dependsOnId: number) {
+    if (!edit) return;
+    const failure = await edit.onRemoveDependency(serviceId, dependsOnId);
+    setMessage(
+      failure ?? t('dependencies.removed', { name: nameOf(serviceId), other: nameOf(dependsOnId) }),
+    );
+  }
   const renderService = (item: MapService) => {
     const status = describeStatus(statuses[item.service.id], blockedIds.has(item.service.id));
     const selected = selection?.kind === 'service' && selection.id === item.service.id;
@@ -170,7 +222,21 @@ export function HostMap({
           name: item.service.name,
           status: [status.label, impact].filter(Boolean).join(', '),
         })}
-        onClick={() => setSelection({ kind: 'service', id: item.service.id })}
+        draggable={canEdit && !item.service.host}
+        onDragStart={(event) => {
+          event.dataTransfer.effectAllowed = 'link';
+          event.dataTransfer.setData('text/plain', String(item.service.id));
+          setDragging(item.service.id);
+        }}
+        onDragEnd={() => {
+          setDragging(null);
+          setDropOver(null);
+        }}
+        onClick={() => {
+          const target = picking !== null ? services.find((s) => s.id === picking) : undefined;
+          if (target && target.id !== item.service.id) void pick(target, item.service.id);
+          else setSelection({ kind: 'service', id: item.service.id });
+        }}
         style={{ left: item.x, top: item.y, width: item.w, height: item.h }}
         className={cn(
           'absolute flex items-center justify-between gap-2 rounded-md border bg-card px-2 text-left text-xs outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
@@ -195,7 +261,35 @@ export function HostMap({
         role="group"
         aria-label={guest.group.guest.name || String(guest.group.guest.vmid)}
         style={{ left: guest.x, top: guest.y, width: guest.w, height: guest.h }}
-        className={cn('absolute rounded-md border bg-muted/40', selected && 'ring-2 ring-primary')}
+        onDragOver={(event) => {
+          if (dragging === null || !canEdit) return;
+          event.preventDefault();
+          setDropOver(guest.group.key);
+        }}
+        onDragLeave={() => setDropOver((current) => (current === guest.group.key ? null : current))}
+        onDrop={(event) => {
+          event.preventDefault();
+          const service = services.find((item) => item.id === dragging);
+          const node = layout.containers.find((c) => c.guests.includes(guest))?.node;
+          setDragging(null);
+          setDropOver(null);
+          if (!service || !node) return;
+          void link(
+            service,
+            {
+              connectionId: node.connectionId,
+              node: guest.group.guest.node,
+              vmid: guest.group.guest.vmid,
+              type: guest.group.guest.type,
+            },
+            guest.group.guest.name,
+          );
+        }}
+        className={cn(
+          'absolute rounded-md border bg-muted/40',
+          selected && 'ring-2 ring-primary',
+          dropOver === guest.group.key && 'border-2 border-dashed border-primary bg-accent',
+        )}
       >
         <button
           type="button"
@@ -264,7 +358,13 @@ export function HostMap({
   };
 
   return (
-    <section aria-label={t('map.title')} className="flex flex-col gap-3">
+    <section
+      aria-label={t('map.title')}
+      className="flex flex-col gap-3"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') setPicking(null);
+      }}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -329,6 +429,26 @@ export function HostMap({
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">{t('map.hint')}</p>
+      {canEdit && <p className="text-xs text-muted-foreground">{t('map.dragHint')}</p>}
+      {picking !== null && (
+        <Alert>
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            {t('dependencies.picking', { name: nameOf(picking) })}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="pointer-coarse:h-11"
+              onClick={() => setPicking(null)}
+            >
+              {t('dependencies.cancel')}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      <p role="status" className="min-h-4 text-xs empty:hidden">
+        {message}
+      </p>
       {!linked ? (
         <EmptyNote>{t('map.empty')}</EmptyNote>
       ) : (
@@ -385,9 +505,45 @@ export function HostMap({
                 status={statuses[selectedService.id]}
                 blocked={blockedIds.has(selectedService.id)}
                 runsOn={panelRunsOn(selectedService)}
-                impact={impactText(impactOf(selectedService))}
+                impact={[impactText(impactOf(selectedService)), notes[selectedService.id]]
+                  .filter(Boolean)
+                  .join(' · ')}
+                dependsOnList={dependsOn(selectedService.id, dependencies).map((id) => ({
+                  id,
+                  name: nameOf(id),
+                }))}
+                usedByList={usedBy(selectedService.id, dependencies).map((id) => ({
+                  id,
+                  name: nameOf(id),
+                }))}
+                canEdit={canEdit}
+                onSelect={(id) => setSelection({ kind: 'service', id })}
+                onAddDependency={() => setPicking(selectedService.id)}
+                onRemoveDependency={(id) => void unpick(selectedService.id, id)}
                 onOpenCard={() => onOpenCard(selectedService)}
                 onChangeHost={() => onChangeHost(selectedService)}
+                hostEditor={
+                  canEdit && edit ? (
+                    <HostPicker
+                      value={selectedService.host ?? null}
+                      onChange={(host) => {
+                        const guest = host
+                          ? model.nodes
+                              .flatMap((node) => node.guests)
+                              .find(
+                                (group) =>
+                                  group.guest.vmid === host.vmid && group.guest.type === host.type,
+                              )?.guest.name
+                          : '';
+                        void link(selectedService, host, guest);
+                      }}
+                      connections={connections}
+                      connectionsLoaded={edit.connectionsLoaded}
+                      inventories={inventories}
+                      onReload={edit.onReload}
+                    />
+                  ) : null
+                }
               />
             )}
             {selectedGuest && (
@@ -440,16 +596,30 @@ function ServicePanel({
   blocked,
   runsOn,
   impact,
+  dependsOnList,
+  usedByList,
+  canEdit,
+  onSelect,
+  onAddDependency,
+  onRemoveDependency,
   onOpenCard,
   onChangeHost,
+  hostEditor,
 }: {
   service: Service;
   status?: ServiceStatus;
   blocked: boolean;
   runsOn: string;
-  impact: string | null;
+  impact: string;
+  dependsOnList: { id: number; name: string }[];
+  usedByList: { id: number; name: string }[];
+  canEdit: boolean;
+  onSelect: (id: number) => void;
+  onAddDependency: () => void;
+  onRemoveDependency: (id: number) => void;
   onOpenCard: () => void;
   onChangeHost: () => void;
+  hostEditor: React.ReactNode;
 }) {
   const view = describeStatus(status, blocked);
   return (
@@ -471,7 +641,59 @@ function ServicePanel({
           <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
         </Row>
         <Row label={t('map.panel.runsOn')}>{runsOn}</Row>
-        <Row label={t('map.panel.affectedBy')}>{impact ?? t('map.panel.nothingAffects')}</Row>
+        <Row label={t('map.panel.affectedBy')}>{impact || t('map.panel.nothingAffects')}</Row>
+        <Row label={`${t('dependencies.title')} (${t('dependencies.manual')})`}>
+          {dependsOnList.length === 0 ? (
+            t('dependencies.none')
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {dependsOnList.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 pointer-coarse:min-h-11"
+                    onClick={() => onSelect(item.id)}
+                  >
+                    {item.name}
+                  </Button>
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="pointer-coarse:size-11"
+                      aria-label={t('dependencies.remove', { name: item.name })}
+                      onClick={() => onRemoveDependency(item.id)}
+                    >
+                      <X />
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Row>
+        <Row label={t('dependencies.usedBy')}>
+          {usedByList.length === 0 ? (
+            t('dependencies.usedByNone')
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {usedByList.map((item) => (
+                <li key={item.id}>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 pointer-coarse:min-h-11"
+                    onClick={() => onSelect(item.id)}
+                  >
+                    {item.name}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Row>
       </dl>
       <div className="flex flex-col gap-2">
         <Button
@@ -482,14 +704,26 @@ function ServicePanel({
         >
           {t('map.panel.openCard')}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="pointer-coarse:h-11"
-          onClick={onChangeHost}
-        >
-          {t('map.panel.changeHost')}
-        </Button>
+        {canEdit && (
+          <Button
+            type="button"
+            variant="outline"
+            className="pointer-coarse:h-11"
+            onClick={onAddDependency}
+          >
+            {t('dependencies.add')}
+          </Button>
+        )}
+        {hostEditor ?? (
+          <Button
+            type="button"
+            variant="outline"
+            className="pointer-coarse:h-11"
+            onClick={onChangeHost}
+          >
+            {t('map.panel.changeHost')}
+          </Button>
+        )}
       </div>
     </>
   );

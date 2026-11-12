@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  check,
   index,
   integer,
   primaryKey,
@@ -276,5 +277,28 @@ export const hostSuggestionDismissals = sqliteTable(
   },
   (table) => [
     primaryKey({ columns: [table.serviceId, table.connectionId, table.vmid, table.type] }),
+  ],
+);
+
+/**
+ * Manual service-to-service dependencies: `service_id` depends on `depends_on_id`. Homora's own
+ * data (never written to Proxmox). Self links are rejected by the database; cycles are rejected
+ * by the application, and every traversal also guards against them.
+ */
+export const serviceDependencies = sqliteTable(
+  'service_dependencies',
+  {
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    dependsOnId: integer('depends_on_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.serviceId, table.dependsOnId] }),
+    index('service_dependencies_target_idx').on(table.dependsOnId),
+    check('service_dependencies_no_self', sql`${table.serviceId} <> ${table.dependsOnId}`),
   ],
 );

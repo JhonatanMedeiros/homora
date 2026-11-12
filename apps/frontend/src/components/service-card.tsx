@@ -33,6 +33,8 @@ type Props = {
   host?: HostLabel | null;
   /** Why the card may be affected; text is always shown, never only color. */
   impact?: Impact;
+  /** "May be affected" through manual dependencies; always labelled as manual. */
+  dependencyNote?: string;
   blocked: boolean;
   managing: boolean;
   list?: boolean;
@@ -122,6 +124,7 @@ export function ServiceCard({
   onUptimeRangeChange = () => {},
   host = null,
   impact = 'none',
+  dependencyNote,
   blocked,
   managing,
   list = false,
@@ -177,6 +180,9 @@ export function ServiceCard({
               {hostOf(s.url)}
             </span>
             {host && <HostLine host={host} impact={impact} />}
+            {dependencyNote && (
+              <span className="truncate text-xs text-muted-foreground">{dependencyNote}</span>
+            )}
           </ItemContent>
           <StatusLight
             state={view.state}
@@ -278,6 +284,9 @@ export function ServiceCard({
               {hostOf(s.url)}
             </span>
             {host && <HostLine host={host} impact={impact} />}
+            {dependencyNote && (
+              <span className="truncate text-xs text-muted-foreground">{dependencyNote}</span>
+            )}
           </ItemContent>
         </div>
         {s.description && showDescription && !repeatsName(s.name, s.description) && (
