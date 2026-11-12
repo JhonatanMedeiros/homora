@@ -21,6 +21,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { ViewOptions } from '@/components/view-options';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
+import { useUptime } from '@/hooks/use-uptime';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { HealthSummary } from '@/components/health-summary';
@@ -84,7 +85,9 @@ export function ServicesPage({
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
   const [topBar] = useTopBar();
-  const { view, setView, showDescriptions, setShowDescriptions } = useViewPreferences();
+  const { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange } =
+    useViewPreferences();
+  const uptime = useUptime(uptimeRange);
   const list = view === 'list';
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
@@ -699,6 +702,9 @@ export function ServicesPage({
                   service={s}
                   status={info}
                   widgets={cardWidgets[s.id]}
+                  uptime={uptime[s.id]}
+                  uptimeRange={uptimeRange}
+                  onUptimeRangeChange={setUptimeRange}
                   blocked={blockedIds.has(s.id)}
                   managing={managing}
                   list={list}

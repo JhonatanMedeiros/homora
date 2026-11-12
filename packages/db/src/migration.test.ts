@@ -7,6 +7,7 @@ import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { expect, it } from 'vitest';
 import {
   createDatabase,
+  getSqliteHandle,
   services,
   serviceGroups,
   integrationInstances,
@@ -156,6 +157,29 @@ it('adiciona histórico e lotes preservando dados da versão anterior', () => {
       check.prepare('UPDATE service_proposals SET batch_id=? WHERE id=?').run('changed', 'old'),
     ).toThrow();
     check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('exposes status and latency of existing history rows through virtual columns', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-uptime-')),
+    path = join(dir, 'data.sqlite');
+  try {
+    const database = createDatabase(path);
+    const sqlite = getSqliteHandle(database.db);
+    sqlite.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(1,'S','http://x/','C','');",
+    );
+    sqlite
+      .prepare(
+        'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(1,?,?,?)',
+      )
+      .run('sig', 1, JSON.stringify({ status: 'available', latencyMs: 12.5 }));
+    expect(
+      sqlite.prepare('SELECT status,latency_ms AS latency FROM service_observation_history').all(),
+    ).toEqual([{ status: 'available', latency: 12.5 }]);
+    database.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

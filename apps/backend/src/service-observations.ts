@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import { CHECK_INTERVAL_DEFAULT, type Service } from '@homora/shared';
+import {
+  CHECK_INTERVAL_DEFAULT,
+  type Service,
+  type UptimeRange,
+  type UptimeSummary,
+} from '@homora/shared';
 import { z } from 'zod';
 import type { ServiceStatus } from './service-monitor.js';
 
@@ -35,6 +40,21 @@ const HISTORY_RETENTION = 30 * 24 * 60 * 60_000;
 const FAILURE_DETAIL_BARS = 24;
 /** Checks read to find where the current outage began (about 8 h at the default interval). */
 const FAILURE_DETAIL_LOOKBACK = 500;
+/** Bucket sizes keep every range at 120 points or fewer. */
+const UPTIME_WINDOWS: Record<UptimeRange, { span: number; bucket: number }> = {
+  '24h': { span: 24 * 3_600_000, bucket: 30 * 60_000 },
+  '7d': { span: 7 * 24 * 3_600_000, bucket: 2 * 3_600_000 },
+  '30d': { span: 30 * 24 * 3_600_000, bucket: 6 * 3_600_000 },
+};
+/** Below this many up/down checks a percentage would mislead, so none is reported. */
+const UPTIME_MIN_CHECKS = 5;
+// Virtual columns generated from the observation JSON (migration 0015) and covered by an index.
+const STATUS_SQL = 'status';
+const LATENCY_SQL = 'latency_ms';
+type SignedService = Pick<
+  Service,
+  'url' | 'allowPrivate' | 'checkType' | 'checkInterval' | 'expectedStatus' | 'checkPath'
+>;
 function signature(
   service: Pick<
     Service,
@@ -142,6 +162,95 @@ export function createObservationStore(db: DatabaseSync) {
           ? { observedAt: lastSuccess.observedAt, latencyMs: lastSuccess.latencyMs }
           : null,
       };
+    },
+    /**
+     * Availability for one or all services (same code path, so both agree). Only checks made under
+     * the service's current configuration count, `unknown` checks are outside the denominator and
+     * buckets without checks read `unknown`. Aggregation happens in SQL on a covering index. The
+     * 95th percentile (nearest rank) is only computed for a single service.
+     */
+    uptime(range: UptimeRange, now = Date.now(), serviceId?: number) {
+      const { span, bucket } = UPTIME_WINDOWS[range];
+      const count = span / bucket;
+      const since = Math.max(now - span, now - HISTORY_RETENTION);
+      const start = now - span;
+      const rows = db
+        .prepare(
+          `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
+        )
+        .all(serviceId ?? null, serviceId ?? null) as unknown as (SignedService & { id: number })[];
+      const grouped = db.prepare(
+        `SELECT CAST((observed_at-?)/? AS INTEGER) AS slot,${STATUS_SQL} AS status,COUNT(*) AS n
+         FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=?
+         GROUP BY slot,status`,
+      );
+      const other = db.prepare(
+        'SELECT 1 FROM service_observation_history WHERE service_id=? AND signature<>? AND observed_at>=? AND observed_at<=? LIMIT 1',
+      );
+      const last = db.prepare(
+        `SELECT ${LATENCY_SQL} AS latency FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? ORDER BY observed_at DESC LIMIT 1`,
+      );
+      const timed = db.prepare(
+        `SELECT COUNT(*) AS n FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL`,
+      );
+      const percentile = db.prepare(
+        `SELECT ${LATENCY_SQL} AS latency FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL ORDER BY latency LIMIT 1 OFFSET ?`,
+      );
+      const result: Record<number, UptimeSummary> = {};
+      for (const row of rows) {
+        const sig = signature(row);
+        const args = [row.id, sig, since, now] as const;
+        const slots = Array.from({ length: count }, () => ({ up: 0, down: 0, unknown: 0 }));
+        let up = 0;
+        let down = 0;
+        let unknown = 0;
+        for (const group of grouped.all(start, bucket, row.id, sig, since, now) as {
+          slot: number;
+          status: string;
+          n: number;
+        }[]) {
+          const slot = slots[Math.min(Math.max(group.slot, 0), count - 1)];
+          if (!slot) continue;
+          if (group.status === 'available') {
+            slot.up += group.n;
+            up += group.n;
+          } else if (group.status === 'unavailable') {
+            slot.down += group.n;
+            down += group.n;
+          } else {
+            slot.unknown += group.n;
+            unknown += group.n;
+          }
+        }
+        const counted = up + down;
+        // The percentile needs a sort of every latency, so only the single-service call pays for it.
+        let p95: number | null | undefined;
+        if (serviceId !== undefined) {
+          const timedCount = (timed.get(...args) as { n: number }).n;
+          p95 = timedCount
+            ? (percentile.get(...args, Math.ceil(timedCount * 0.95) - 1) as { latency: number })
+                .latency
+            : null;
+        }
+        const latest = last.get(...args) as { latency: number | null } | undefined;
+        result[row.id] = {
+          range,
+          uptimePct:
+            counted >= UPTIME_MIN_CHECKS ? Math.round((up / counted) * 10_000) / 100 : null,
+          checks: counted + unknown,
+          downChecks: down,
+          unknownChecks: unknown,
+          lastLatencyMs: latest?.latency ?? null,
+          ...(p95 === undefined ? {} : { p95LatencyMs: p95 }),
+          reconfigured: other.get(row.id, sig, since, now) !== undefined,
+          buckets: slots.map((slot, index) => ({
+            start: new Date(start + index * bucket).toISOString(),
+            status:
+              slot.up && slot.down ? 'partial' : slot.down ? 'down' : slot.up ? 'up' : 'unknown',
+          })),
+        };
+      }
+      return result;
     },
     list(now = Date.now()) {
       const rows = db

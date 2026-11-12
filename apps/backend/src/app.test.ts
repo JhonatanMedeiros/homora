@@ -212,6 +212,38 @@ groups:
     expect(
       (await app.inject({ method: 'GET', url: '/api/services/1/status-detail' })).statusCode,
     ).toBe(401);
+    for (const url of ['/api/services/uptime', '/api/services/1/uptime'])
+      expect((await app.inject({ method: 'GET', url })).statusCode).toBe(401);
+  });
+  it('serves uptime in batch and per service, and rejects unknown ranges and services', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const id = (
+      await app.inject({
+        method: 'POST',
+        url: '/api/services',
+        headers,
+        payload: { name: 'Uptime', url: 'http://localhost:8098', category: 'Teste' },
+      })
+    ).json().id;
+    const batch = await app.inject({
+      method: 'GET',
+      url: '/api/services/uptime',
+      headers: { cookie },
+    });
+    expect(batch.statusCode).toBe(200);
+    expect(batch.json()[id]).toMatchObject({ range: '24h', uptimePct: null, checks: 0 });
+    expect(batch.json()[id].buckets).toHaveLength(48);
+    const single = await app.inject({
+      method: 'GET',
+      url: `/api/services/${id}/uptime?range=7d`,
+      headers: { cookie },
+    });
+    expect(single.json()).toMatchObject({ range: '7d', p95LatencyMs: null });
+    for (const url of ['/api/services/uptime?range=1y', `/api/services/${id}/uptime?range=x`])
+      expect((await app.inject({ method: 'GET', url, headers: { cookie } })).statusCode).toBe(400);
+    for (const url of ['/api/services/999999/uptime', '/api/services/abc/uptime'])
+      expect((await app.inject({ method: 'GET', url, headers: { cookie } })).statusCode).toBe(404);
+    await app.inject({ method: 'DELETE', url: `/api/services/${id}`, headers });
   });
   it('serves failure details only for existing services', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
