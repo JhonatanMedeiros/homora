@@ -21,7 +21,17 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'proposal-recreate',
     'proposal-ttl-update',
   ],
-  agent: ['agent-issue', 'agent-create', 'agent-update-scopes', 'agent-revoke', 'agent-rotate'],
+  agent: [
+    'agent-issue',
+    'agent-create',
+    'agent-update-scopes',
+    'agent-revoke',
+    'agent-rotate',
+    'docker-source-create',
+    'docker-source-rotate',
+    'docker-source-revoke',
+    'docker-source-remove',
+  ],
 };
 const RESULTS_BY_OUTCOME: Record<AuditOutcome, readonly string[]> = {
   success: ['ok', 'created', 'approved'],

@@ -120,6 +120,13 @@
       "when": 1794464023297,
       "tag": "0016_uptime_index",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1794488434273,
+      "tag": "0017_solid_magneto",
+      "breakpoints": true
     }
   ]
 }

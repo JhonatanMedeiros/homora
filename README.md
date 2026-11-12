@@ -15,7 +15,7 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - English and Portuguese (Brazil) interface. The language follows your browser and can be switched with the language button.
 - Export your groups and cards to YAML or JSON, and import from Homora, [Homepage](https://github.com/gethomepage/homepage) (`services.yaml`, `bookmarks.yaml`) or [Dashy](https://github.com/Lissy93/dashy) (`conf.yml`), always with a preview. See [Import and export](#import-and-export).
 - A check method per service (HTTP request or ping) and a check interval per service (30 to 3600 seconds), also kept in exports.
-- Optional Docker discovery: suggests cards from container labels (`homora.url`, or Homepage's `homepage.href`), with a review step. See [Docker discovery](#docker-discovery).
+- Optional Docker discovery: suggests cards from local or remote agent inventories using container labels (`homora.url`, or Homepage's `homepage.href`), with a review step. See [Docker discovery](#docker-discovery).
 - Local administrator account, SQLite storage with migrations, backup and restore scripts.
 - Widgets inside cards: attach a widget (Proxmox, Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home data) to a card on the Integrations page. Each widget shows its own loading or error state, and a failing connection does not affect the other cards.
 - An optional top bar (turn it on in Settings) with the date, the time and CPU, memory and disk usage from a selected Proxmox connection.
@@ -138,6 +138,34 @@ services:
 ```
 
 The Homepage labels `homepage.href`, `homepage.name`, `homepage.group`, `homepage.description` and `homepage.icon` also work, and `homora.*` wins when both are set. Labels never turn on monitoring of private addresses; you choose that for the cards you add.
+
+### Remote Docker agents
+
+Remote agents complement the existing local source; neither mode creates cards without review. In **Settings → Docker discovery → Remote Docker agents**, create a named source and copy its token immediately. It is shown only once; generate a replacement if lost. Homora stores a hash, and revocation permanently invalidates the source. To use that host again, remove the revoked source and create a new one. There is a maximum of ten remote sources, including revoked sources until removed. Rotating a token discards that source's last inventory. Removing a source deletes its inventory, not cards already imported.
+
+On each trusted Docker host, build the agent from this checkout:
+
+```bash
+docker build --target discovery-agent -t homora-discovery-agent:local .
+```
+
+Place the token in a protected file on that host. Run the agent as an account that can read that file and the Docker socket; for example, on Linux, substitute your own paths and the HTTPS origin of Homora:
+
+```bash
+docker run -d --name homora-discovery-agent --restart unless-stopped \
+  --user "$(id -u):$(id -g)" --group-add "$(stat -c '%g' /var/run/docker.sock)" \
+  -e HOMORA_AGENT_ORIGIN=https://homora.example.home \
+  -e HOMORA_AGENT_TOKEN_FILE=/run/secrets/homora-token \
+  -v /path/to/protected-token:/run/secrets/homora-token:ro \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  homora-discovery-agent:local
+```
+
+Keep the token file private and readable by the selected user. For a private CA, mount its public certificate and set `HOMORA_AGENT_CA_FILE` to its path in the container. HTTPS certificate and hostname validation remain enabled. Configure a private HTTPS reverse proxy as described in [Deployment scenarios](#deployment-scenarios); this does not make public exposure supported. The agent sends to `/docker-push/inventory`, so the proxy must forward this path. The bundled nginx forwards it. `HOMORA_AGENT_INTERVAL` is 30–240 seconds (default 60), leaving a nominal one-minute margin before the five-minute freshness deadline (network delays reduce it); `HOMORA_AGENT_DOCKER_SOCKET` optionally changes the in-container Unix socket path.
+
+**Socket access is privileged:** a read-only mount does not make Docker's API read-only. The agent only calls `GET /containers/json`, but a compromised agent with socket access could control the daemon. Run only trusted images on trusted hosts. Do not publish the Docker socket or proxy port. The agent sends only container IDs, first name and supported discovery labels; labels can contain sensitive information, so do not put secrets in them. It sends at most 1,000 containers, reads at most 4 MiB from Docker and publishes at most 1 MiB. Oversized or invalid inventories fail as a whole and retain the previous one.
+
+Settings shows the last receipt time. An inventory older than five minutes cannot be reviewed or imported. Preview selects one source at a time; if its data, authorization, or the dashboard configuration changes before confirmation, review again. A card remains after the source is revoked. Monitoring private destinations still requires your explicit choice. For MCP, `list_docker_push_sources` and `list_docker_push_suggestions` require `discovery:read`; `propose_docker_push_card` also requires `proposals:create` and still creates a human-reviewable proposal. Both MCP transports read the same stored inventories. A proposal already created by MCP is independent of the source: revoking the source does not cancel it, and a human can still review and approve the exact saved proposal.
 
 ### Enable discovery
 
