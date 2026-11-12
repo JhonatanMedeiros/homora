@@ -173,7 +173,9 @@ export function ServiceCard({
           >
             <ServiceIcon icon={s.icon} name={s.name} />
           </ItemMedia>
-          <ItemContent className="min-w-0 gap-0">
+          <ItemContent
+            className={cn('min-w-0 gap-0', managing && 'max-sm:basis-[calc(100%_-_2.75rem)]')}
+          >
             <ItemTitle className="w-full text-sm">
               <a
                 href={s.url}
