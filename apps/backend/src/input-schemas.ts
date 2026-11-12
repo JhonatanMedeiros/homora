@@ -145,16 +145,6 @@ export const updateWidgetSchema = z
   .object({ serviceId: z.number().int().safe().positive().nullable() })
   .strict();
 
-export const proxmoxInputSchema = z
-  .object({
-    url: boundedText(2048).optional(),
-    tokenId: boundedText(256).optional(),
-    secret: boundedText(512).optional(),
-    ca: boundedText(65536).optional(),
-    removeCa: z.boolean().optional(),
-  })
-  .strict();
-
 export const refreshQuerySchema = z
   .object({ refresh: z.enum(['true', 'false']).optional() })
   .strict();

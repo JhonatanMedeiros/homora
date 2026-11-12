@@ -1,5 +1,3 @@
-import { readProxmox } from './proxmox.js';
-import { validateProxmoxConfig, type ProxmoxConfig } from './vault.js';
 import { InputError } from './api-error.js';
 
 /** An adapter never exposes credentials through its public metadata. */
@@ -11,14 +9,6 @@ export interface IntegrationAdapter<Config, Data> {
   collect(config: Config): Promise<Data>;
 }
 
-export const proxmoxAdapter: IntegrationAdapter<ProxmoxConfig, unknown> = {
-  type: 'proxmox',
-  label: 'Proxmox VE',
-  capabilities: ['inventory'],
-  validate: validateProxmoxConfig,
-  collect: readProxmox,
-};
-
 export type IntegrationMetadata = { type: string; label: string; capabilities: readonly string[] };
 export type IntegrationTransport = (request: {
   origin: string;
@@ -29,7 +19,6 @@ export type IntegrationContext = {
   publicConfig: Record<string, unknown>;
   credentials: { secret?: string; ca?: string; tokenId?: string };
   transport?: IntegrationTransport;
-  legacyConfig?: unknown;
 };
 export type IntegrationRegistration = IntegrationMetadata & {
   prepare?: (context: IntegrationContext) => () => Promise<unknown>;

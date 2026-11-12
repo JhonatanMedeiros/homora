@@ -8,6 +8,7 @@ import {
   LayoutList,
   Moon,
   Plus,
+  Search,
   Settings2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,9 @@ import { Kbd } from '@/components/ui/kbd';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StatusLight } from '@/components/status-light';
 import { navItems, tabPath } from '@/components/app-nav';
+import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
+import { chordFor } from '@/lib/shortcuts';
+import { buildSearchUrl } from '@/lib/web-search';
 import { settingsPath } from '@/features/settings/sections';
 import { t } from '@/i18n';
 import { useRecentServices } from '@/hooks/use-recent-services';
@@ -57,6 +61,8 @@ type Props = {
   onViewChange: (view: View) => void;
   showDescriptions: boolean;
   onShowDescriptionsChange: (show: boolean) => void;
+  /** Shows the `g` + letter hints on the navigation rows. */
+  shortcutsEnabled?: boolean;
 };
 
 const SORTS: {
@@ -67,6 +73,17 @@ const SORTS: {
   { id: 'name', label: 'palette.sortName' },
   { id: 'status', label: 'palette.sortStatus' },
 ];
+
+function ShortcutHint({ keys }: { keys?: string[] }) {
+  if (!keys) return null;
+  return (
+    <span className="ml-auto hidden items-center gap-1 md:flex" aria-hidden="true">
+      {keys.map((key) => (
+        <Kbd key={key}>{key}</Kbd>
+      ))}
+    </span>
+  );
+}
 
 const itemService = (value: string) => /^(?:service|recent)-(\d+)$/.exec(value)?.[1];
 
@@ -87,11 +104,13 @@ export function CommandPalette({
   onViewChange,
   showDescriptions,
   onShowDescriptionsChange,
+  shortcutsEnabled = false,
 }: Props) {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<PaletteSort>('relevance');
   const [highlighted, setHighlighted] = useState('');
   const { recent, remember } = useRecentServices();
+  const webSearch = useWebSearchPreferences();
 
   const parsed = useMemo(() => parseQuery(search), [search]);
   const visible = useMemo(
@@ -109,6 +128,9 @@ export function CommandPalette({
   const showRecent = !search.trim() && recentServices.length > 0;
   // With a status or group prefix the person is listing services, not looking for commands.
   const showCommands = !parsed.filtered;
+
+  // Only the free text the person typed: prefixes (status:, group:) never leave the browser.
+  const searchUrl = webSearch.template ? buildSearchUrl(webSearch.template, parsed.text) : null;
 
   const changeOpen = (next: boolean) => {
     if (!next) {
@@ -244,6 +266,7 @@ export function CommandPalette({
                   >
                     <item.icon />
                     {t(item.label)}
+                    {shortcutsEnabled && <ShortcutHint keys={chordFor(item.id)} />}
                   </CommandItem>
                 ))}
               <CommandItem
@@ -294,6 +317,21 @@ export function CommandPalette({
               </CommandItem>
             </CommandGroup>
           </>
+        )}
+        {searchUrl && (
+          <CommandGroup>
+            {/* Always listed: it is not a match for the text, it is what to do when nothing is. */}
+            <CommandItem
+              forceMount
+              value="web-search"
+              onSelect={() => run(() => window.open(searchUrl, '_blank', 'noopener,noreferrer'))}
+            >
+              <Search />
+              <span className="min-w-0 flex-1 truncate">
+                {t('palette.webSearch', { text: parsed.text })}
+              </span>
+            </CommandItem>
+          </CommandGroup>
         )}
       </CommandList>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t px-3 py-2 text-xs text-muted-foreground">

@@ -925,9 +925,16 @@ implementation because it changes a security default.
 
 - Removed the unused legacy Proxmox screen from the frontend (`features/proxmox/`); nothing rendered it
   and it called the legacy `/api/proxmox/*` routes.
-- Still pending, to be done once installations have migrated: `routes/proxmox.ts`, the `.proxmox`
-  `load`/`save` in `vault.ts` (keep `seal`/`unseal`, which every connection uses), and the legacy
-  lookups in `integration-connections.ts`, `mcp.ts`, `proposals.ts` and `managed-proposals.ts`.
+- Step 1 done: the idempotent migration runs at backend startup and never stops it (missing key or
+  unreadable file is logged without secrets, the file stays untouched).
+- Step 2 done: removed `routes/proxmox.ts`, the legacy transport (`proxmox.ts`, `proxmoxAdapter`),
+  `legacyConfig`, and the `.proxmox` fallbacks in `mcp.ts`, `proposals.ts` and
+  `managed-proposals.ts` (no hidden bridge row any more). Validated with automated tests only; no
+  live Proxmox validation. Pending proposals for a Proxmox widget created before this change are
+  rejected as stale.
+- Step 3 pending (separate issue, once the maintainer confirms no unmigrated installation remains):
+  delete the migrator, `vault.load`/`save`, the `.proxmox` file handling and the related
+  README/SECURITY text. Keep `seal`/`unseal`, which every connection uses.
 - Next step for the connection model: node selection within a Proxmox connection (ADR 0001).
 
 ### Named Proxmox connections
@@ -935,13 +942,15 @@ implementation because it changes a security default.
 - Proxmox uses named connections, with one API endpoint per connection, shared destination
   controls, encrypted credentials, reusable widgets and selectable top-bar source. Cluster
   data remains aggregated; node-specific widgets are not implemented.
-- Legacy credentials are migrated transactionally on first connection access, preserving the
+- Legacy credentials are migrated transactionally at backend startup, preserving the
   bridge ID and widgets. The legacy file is retained; a migration marker prevents resurrection
-  after deletion. Old HTTP endpoints return 410 after migration.
+  after deletion. The old HTTP endpoints were removed.
 - Automated tests exercise migration with and without widgets, missing keys, multiple independent
   configurations and mocked network requests. Live cluster compatibility remains unverified.
 
 ## Auth Log — Better Auth for Web Authentication (2026-11-11)
+
+See [ADR 0004](decisoes/0004-better-auth-web-authentication.md).
 
 - Replaced the file-based account (`<database>.auth`, in-memory sessions) with Better Auth
   1.7.19 (email and password) on the application's SQLite database. Pinned to 1.7.19 because
@@ -1044,6 +1053,8 @@ Services can optionally check a same-origin path independently of their card URL
 
 ## Public read-only status page (issue #63)
 
+See [ADR 0006](decisoes/0006-public-read-only-status-page.md).
+
 - `services.is_public` (default 0) and an `app_settings` table (`public_status_enabled`, `public_status_title`) in migration 0015; existing rows keep `is_public=0`.
 - `GET /api/public/status` is the only anonymous API path (exact-path allowlist in the auth hook, GET only), limited by `@fastify/rate-limit` to 60 requests per minute per client IP, cached 15 s, `404 not-found` when disabled or empty. Payload: name, category, `up|down|unknown`, `checkedAt`, `uptime` (24 h) and 24 hourly `bars`; stale observations read as `unknown`.
 - Visibility is changed only through authenticated, audited endpoints (`PUT /api/public-status/admin`, `PUT /api/services/:id/public`). It is deliberately outside `ServiceInput`, so imports, exports, agent proposals and MCP cannot change it; MCP exposes `publicStatusEnabled` read-only.
@@ -1051,6 +1062,8 @@ Services can optionally check a same-origin path independently of their card URL
 - Validated with `pnpm check`. Backend tests cover the closed default, 404s, opt-in only, no sensitive field or private service in the body, 429, exact-path allowlist, session requirement and audit. The rate limit runs in memory per backend process and the UI was not exercised manually in a browser. Not validated: behavior behind a real Cloudflare Access hostname.
 
 ### Monitor: uptime and latency per service (issue #62)
+
+See [ADR 0007](decisoes/0007-service-observation-history-and-uptime.md).
 
 - `GET /api/services/uptime?range=24h|7d|30d` (all services) and `GET /api/services/:id/uptime` return uptime %, check counts, last latency and a bar of buckets (30 min for 24 h, 2 h for 7 d, 6 h for 30 d; at most 120). Both use the same function, so the numbers match; only the single-service call adds `p95LatencyMs` (nearest rank), because the percentile needs a sort of every latency.
 - Only checks made under the service's current configuration (`signature`) count; the response flags `reconfigured` and the card says so. `unknown` checks stay out of the denominator and empty buckets read `unknown`. With fewer than 5 up/down checks the percentage is `null` and the card shows a dash.
@@ -1110,6 +1123,8 @@ Services can optionally check a same-origin path independently of their card URL
 
 ### Notification channels (issue #61)
 
+See [ADR 0005](decisoes/0005-status-transition-notifications.md).
+
 - Webhook and Telegram channels, encrypted destinations, per-channel private-network opt-in, bounded asynchronous delivery and persisted service transition state. The five-minute cooldown suppresses a repeated outage and its recovery; unknown checks retain the last known state. Retries can duplicate deliveries and queued messages do not survive a restart.
 - Validation: `pnpm build`, lint, formatting and type checks passed; 422 application tests passed with `vitest run --maxWorkers=4`, and 6 script tests passed. Two unrestricted `pnpm check` runs timed out in the existing load-sensitive uptime benchmark, which passed in isolation. Telegram and webhook delivery were mocked; the UI was not visually reviewed in a browser.
 
@@ -1134,6 +1149,14 @@ Services can optionally check a same-origin path independently of their card URL
 - Public status shows its address with copy and open buttons, a Live/Off badge, the public service count and an optional description (`public_status_description` in `app_settings`, 160 characters, audited as `public-status-update:description`, no migration needed). The anonymous payload gains only `description`.
 - Docker discovery is split into "This host" and "Remote agents" tabs. Remote sources are rows with a status badge and an actions menu; creation, the one-time token and suggestion review are dialogs, and the agent `docker run` command is available in the tab. Suggestion lists share one component.
 - Validated: lint, prettier, type-check and 455 application tests (new tests for the clock, Interface, Public status and the backend description). Not reviewed in a browser, so spacing and the 12 h format in other locales are unchecked.
+
+## Keyboard shortcuts and optional web search (2026-11-12, issue #86)
+
+- One global listener (`hooks/use-shortcuts.ts`, table in `lib/shortcuts.ts`) inside the authenticated shell replaces the `Ctrl/Cmd+K` listener in `App.tsx`. Single keys: `/` palette, `?` shortcuts dialog, `g` then `h`/`i`/`a`/`t`/`s` to go to Home, Integrations, Agents, Activity, Settings, `n` new service (services pages only). They are inert in fields, `[contenteditable]`, while any `dialog`/`menu`/`aria-modal` is open (the palette included), while composing, on repeat, when already handled, and with Ctrl/Cmd/Alt. A chord expires after 1 s and any other key cancels it. The public `/status` page and the auth screens never mount the listener.
+- WCAG 2.1.4: Settings > Interface > Keyboard has a switch (`homora-shortcuts`, default on). Off leaves only `Ctrl/Cmd+K` and `Ctrl/Cmd+B`. Discoverability: the `?` dialog, `Kbd` hints on the palette's navigation rows (md and up, only when on) and the switch description.
+- Web search from the palette is off by default and browser-local (`homora-web-search`, `-engine`, `-url`; nothing reaches the backend, exports, MCP or the public status page). Built-in engines are data in `lib/web-search.ts` (DuckDuckGo default, Google, Brave, Bing) plus a custom `https:` URL with `%s`. Validation on save and again at use time; the placeholder may not decide the host and credentials are refused. The last palette item "Search the web for “…”" appears only with non-empty free text (prefixes removed), runs only on selection, and calls `window.open(url, '_blank', 'noopener,noreferrer')` with just the encoded typed text.
+- Validated: `pnpm check` (lint, prettier, types, tests) and `pnpm build`; new tests for the hook, the dialog, the URL builder, the palette item and hints, the Settings controls, and the shell (chords, `n` route, switch off, inert on login and `/status`).
+- Not verified: no browser session with a physical keyboard, no check against browser/OS shortcut conflicts, and no screen-reader pass over the dialog. Focus return after closing the dialog is Radix's default and was not asserted (happy-dom does not restore it).
 
 ### Monitor: shrink history rows instead of a rollup table (issue #88)
 

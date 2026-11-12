@@ -40,7 +40,7 @@ export function registerMcpHttp(
     if (!token || !AGENT_SCOPES.some((scope) => proposals.authenticate(token, scope)))
       return reply.code(401).send({ error: 'Authentication required' });
     if (!vault) return reply.code(503).send({ error: 'MCP unavailable' });
-    const server = createMcp(sqlite, vault, {
+    const server = createMcp(sqlite, {
       token,
       connections: createIntegrationConnections(db, vault),
       docker,

@@ -131,3 +131,81 @@ it('sorts with unavailable services first', () => {
     .filter((text) => /Wiki|Proxmox|Grafana/.test(text));
   expect(names[0]).toContain('Proxmox');
 });
+
+const searchBox = () => screen.getByPlaceholderText('Buscar serviços ou executar um comando');
+const webSearchOn = () => {
+  localStorage.setItem('homora-web-search', 'on');
+};
+
+it('has no web search item by default, whatever is typed', () => {
+  setup();
+  type('something else');
+  expect(screen.queryByText(/Buscar na web/)).toBeNull();
+});
+
+it('offers web search only when enabled and free text is typed', () => {
+  webSearchOn();
+  setup();
+  expect(screen.queryByText(/Buscar na web/)).toBeNull();
+  type('status:down group:Infra');
+  expect(screen.queryByText(/Buscar na web/)).toBeNull();
+  type('quantum cats');
+  expect(screen.getByText('Buscar na web por “quantum cats”')).toBeTruthy();
+});
+
+it('opens the engine in a new tab with noopener,noreferrer and sends only the typed text', () => {
+  webSearchOn();
+  const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  const props = setup();
+  type('status:down Proxmox lxc');
+  fireEvent.click(screen.getByText('Buscar na web por “Proxmox lxc”'));
+  expect(open).toHaveBeenCalledExactlyOnceWith(
+    'https://duckduckgo.com/?q=Proxmox%20lxc',
+    '_blank',
+    'noopener,noreferrer',
+  );
+  const sent = decodeURIComponent(String(open.mock.calls[0][0]));
+  for (const leaked of ['status', 'down', 'wiki', 'Infra', 'Casa', 'lan', 'localhost'])
+    expect(sent.toLowerCase()).not.toContain(leaked.toLowerCase());
+  expect(props.onOpenChange).toHaveBeenCalledWith(false);
+});
+
+it('never searches while typing', () => {
+  webSearchOn();
+  const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  const fetchSpy = vi.fn();
+  vi.stubGlobal('fetch', fetchSpy);
+  setup();
+  type('typing');
+  expect(searchBox()).toBeTruthy();
+  expect(open).not.toHaveBeenCalled();
+  expect(fetchSpy).not.toHaveBeenCalled();
+  vi.unstubAllGlobals();
+});
+
+it('uses a valid custom URL and refuses an invalid one at use time', () => {
+  webSearchOn();
+  localStorage.setItem('homora-web-search-engine', 'custom');
+  localStorage.setItem('homora-web-search-url', 'javascript:alert(%s)');
+  setup();
+  type('hello');
+  expect(screen.queryByText(/Buscar na web/)).toBeNull();
+  cleanup();
+  localStorage.setItem('homora-web-search-url', 'https://search.example/?q=%s');
+  const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  setup();
+  type('hello');
+  fireEvent.click(screen.getByText(/Buscar na web/));
+  expect(open.mock.calls[0][0]).toBe('https://search.example/?q=hello');
+});
+
+it('shows the g hints on the navigation rows only when shortcuts are on', () => {
+  setup({ shortcutsEnabled: true });
+  const row = screen.getByText('Integrações').closest('[cmdk-item]') as HTMLElement;
+  expect(within(row).getByText('g')).toBeTruthy();
+  expect(within(row).getByText('i')).toBeTruthy();
+  cleanup();
+  setup();
+  const plain = screen.getByText('Integrações').closest('[cmdk-item]') as HTMLElement;
+  expect(within(plain).queryByText('g')).toBeNull();
+});

@@ -46,3 +46,41 @@ it('saves the home layout and only allows descriptions in cards', () => {
   expect(localStorage.getItem('homora-density')).toBe('cards');
   expect(descriptions.hasAttribute('disabled')).toBe(false);
 });
+
+it('turns the single-key shortcuts off and on, on by default', () => {
+  render(<InterfaceSettings />);
+  const toggle = screen.getByRole('switch', { name: 'Keyboard shortcuts' });
+  expect(toggle.getAttribute('aria-checked')).toBe('true');
+  fireEvent.click(toggle);
+  expect(localStorage.getItem('homora-shortcuts')).toBe('off');
+  expect(screen.getByText(/Ctrl\/Cmd\+K and Ctrl\/Cmd\+B always work/)).toBeTruthy();
+});
+
+it('keeps web search off by default and warns that the text goes to a third party', () => {
+  render(<InterfaceSettings />);
+  const toggle = screen.getByRole('switch', { name: 'Web search' });
+  expect(toggle.getAttribute('aria-checked')).toBe('false');
+  expect(
+    screen.getByText(/only the text you typed goes to the search engine, a third party/),
+  ).toBeTruthy();
+  expect(screen.queryByLabelText('Search engine')).toBeNull();
+  fireEvent.click(toggle);
+  expect(localStorage.getItem('homora-web-search')).toBe('on');
+  fireEvent.change(screen.getByLabelText('Search engine'), { target: { value: 'brave' } });
+  expect(localStorage.getItem('homora-web-search-engine')).toBe('brave');
+});
+
+it('validates the custom search URL before saving it', () => {
+  localStorage.setItem('homora-web-search', 'on');
+  localStorage.setItem('homora-web-search-engine', 'custom');
+  render(<InterfaceSettings />);
+  const field = screen.getByLabelText('Custom search URL');
+  fireEvent.change(field, { target: { value: 'https://example.com/?q=' } });
+  expect(screen.getByText('The URL must contain %s where the search text goes.')).toBeTruthy();
+  fireEvent.change(field, { target: { value: 'javascript:alert(%s)' } });
+  expect(screen.getByText('Only https: URLs are allowed.')).toBeTruthy();
+  expect(localStorage.getItem('homora-web-search-url')).toBeNull();
+  fireEvent.change(field, { target: { value: 'https://example.com/?q=%s' } });
+  expect(localStorage.getItem('homora-web-search-url')).toBe('https://example.com/?q=%s');
+  expect(screen.queryByText('Only https: URLs are allowed.')).toBeNull();
+});

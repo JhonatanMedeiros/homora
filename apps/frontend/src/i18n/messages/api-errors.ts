@@ -58,33 +58,6 @@ export const en = {
   'apiError.batch-conflict': 'The batch changes conflict. Nothing was applied.',
   'apiError.config-changed': 'The configuration changed. Review it again.',
   'apiError.proxmox-not-configured': 'Proxmox is not configured.',
-  'apiError.proxmox-config-failed': 'Could not load the existing configuration.',
-  'apiError.proxmox-save-failed': 'Could not save the configuration.',
-  'apiError.proxmox-test-failed': 'Could not test the connection.',
-  'apiError.proxmox-load-failed':
-    'Could not load the Proxmox configuration. Check the integration files and the key.',
-  'apiError.proxmox-failed': 'Proxmox request failed.',
-  'apiError.proxmox-tls':
-    'The Proxmox TLS certificate is not trusted or does not match the address. Configure a trusted CA for the backend.',
-  'apiError.proxmox-dns':
-    'Could not resolve the Proxmox address. Check DNS and the configured URL.',
-  'apiError.proxmox-refused':
-    'Connection refused by Proxmox. Check the address, the port and that the service is running.',
-  'apiError.proxmox-unreachable':
-    'Could not reach Proxmox. Check the network, the firewall and the configured address.',
-  'apiError.proxmox-connection-failed':
-    'Connection to Proxmox failed. Check the network and the configured address.',
-  'apiError.proxmox-unauthorized':
-    'Proxmox rejected the authentication (HTTP 401). Check the token ID and secret.',
-  'apiError.proxmox-forbidden':
-    'Proxmox denied access (HTTP 403). Check the user and token permissions.',
-  'apiError.proxmox-http-error':
-    'Proxmox returned an unexpected HTTP status. Check the service and the configured address.',
-  'apiError.proxmox-invalid-response':
-    'Invalid response from Proxmox. Check that the URL points to a Proxmox server.',
-  'apiError.proxmox-incomplete-response': 'Incomplete response from Proxmox.',
-  'apiError.proxmox-response-too-large': 'The Proxmox response exceeded the allowed size.',
-  'apiError.proxmox-timeout': 'Timed out connecting to Proxmox. Check the network and firewall.',
 } as const;
 
 export const ptBR = {
@@ -146,32 +119,4 @@ export const ptBR = {
   'apiError.batch-conflict': 'As alterações do lote entram em conflito. Nada foi aplicado.',
   'apiError.config-changed': 'A configuração mudou. Revise novamente.',
   'apiError.proxmox-not-configured': 'Proxmox não configurado.',
-  'apiError.proxmox-config-failed': 'Não foi possível carregar a configuração existente.',
-  'apiError.proxmox-save-failed': 'Não foi possível salvar a configuração.',
-  'apiError.proxmox-test-failed': 'Não foi possível testar a conexão.',
-  'apiError.proxmox-load-failed':
-    'Não foi possível carregar a configuração do Proxmox. Verifique os arquivos de integração e a chave.',
-  'apiError.proxmox-failed': 'A consulta ao Proxmox falhou.',
-  'apiError.proxmox-tls':
-    'O certificado TLS do Proxmox não é confiável ou não corresponde ao endereço. Configure uma CA confiável para o backend.',
-  'apiError.proxmox-dns':
-    'Não foi possível resolver o endereço do Proxmox. Verifique o DNS e a URL configurada.',
-  'apiError.proxmox-refused':
-    'Conexão recusada pelo Proxmox. Verifique o endereço, a porta e se o serviço está em execução.',
-  'apiError.proxmox-unreachable':
-    'Não foi possível alcançar o Proxmox. Verifique a rede, o firewall e o endereço configurado.',
-  'apiError.proxmox-connection-failed':
-    'Falha de conexão com o Proxmox. Verifique a rede e o endereço configurado.',
-  'apiError.proxmox-unauthorized':
-    'O Proxmox rejeitou a autenticação (HTTP 401). Verifique o ID e o segredo do token.',
-  'apiError.proxmox-forbidden':
-    'O Proxmox negou o acesso (HTTP 403). Verifique as permissões do usuário e do token.',
-  'apiError.proxmox-http-error':
-    'O Proxmox respondeu com um status HTTP inesperado. Verifique o serviço e o endereço configurado.',
-  'apiError.proxmox-invalid-response':
-    'Resposta inválida do Proxmox. Verifique se a URL aponta para um servidor Proxmox.',
-  'apiError.proxmox-incomplete-response': 'Resposta incompleta do Proxmox.',
-  'apiError.proxmox-response-too-large': 'A resposta do Proxmox excedeu o tamanho permitido.',
-  'apiError.proxmox-timeout':
-    'Tempo esgotado ao conectar ao Proxmox. Verifique a rede e o firewall.',
 } as const;

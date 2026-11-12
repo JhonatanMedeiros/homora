@@ -65,8 +65,6 @@ it('shows unknown status and timestamp of last attempt without depending on stat
       if (url === '/api/auth/status')
         return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
       if (url === '/api/connections') return { ok: true, json: async () => [] };
-      if (url === '/api/proxmox/status')
-        return { ok: true, json: async () => ({ configured: false }) };
       if (url === '/api/service-status')
         return {
           ok: true,
@@ -101,8 +99,6 @@ it('allows sign-in after account creation even if first login fails', async () =
     if (url === '/api/auth/setup') return { ok: true };
     if (url === '/api/auth/sign-in/email') return { ok: ++attempts > 1 };
     if (url === '/api/connections') return { ok: true, json: async () => [] };
-    if (url === '/api/proxmox/status')
-      return { ok: true, json: async () => ({ configured: false }) };
     return { ok: true, json: async () => [] };
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -159,8 +155,6 @@ it('keeps global filter separate from a category named All', async () => {
       if (url === '/api/auth/status')
         return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
       if (url === '/api/connections') return { ok: true, json: async () => [] };
-      if (url === '/api/proxmox/status')
-        return { ok: true, json: async () => ({ configured: false }) };
       return {
         ok: true,
         json: async () => [
@@ -182,8 +176,6 @@ it('only removes a service after inline confirmation', async () => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
     if (url === '/api/connections') return { ok: true, json: async () => [] };
-    if (url === '/api/proxmox/status')
-      return { ok: true, json: async () => ({ configured: false }) };
     if (init?.method === 'DELETE') return { ok: true, json: async () => ({}) };
     return {
       ok: true,
@@ -221,8 +213,6 @@ it('edits an existing service in the page form', async () => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
     if (url === '/api/connections') return { ok: true, json: async () => [] };
-    if (url === '/api/proxmox/status')
-      return { ok: true, json: async () => ({ configured: false }) };
     if (init?.method === 'PUT') return { ok: true, json: async () => ({}) };
     return {
       ok: true,
@@ -294,8 +284,6 @@ it('creates, displays, and removes an empty group via UI', async () => {
       return { ok: true, json: async () => groups.find((group) => group.id === id) };
     }
     if (url === '/api/groups') return { ok: true, json: async () => [...groups] };
-    if (url === '/api/proxmox/status')
-      return { ok: true, json: async () => ({ configured: false }) };
     return { ok: true, json: async () => [] };
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -382,8 +370,7 @@ it('keeps services dashboard usable when optional integrations fail', async () =
       if (url === '/api/groups')
         return { ok: true, json: async () => [{ id: 2, name: 'Casa', position: 0 }] };
       if (url === '/api/connections') throw new Error('offline');
-      if (url === '/api/proxmox/status' || url === '/api/integrations/catalog')
-        return { ok: false, json: async () => ({}) };
+      if (url === '/api/integrations/catalog') return { ok: false, json: async () => ({}) };
       return { ok: false, json: async () => ({}) };
     }),
   );
@@ -415,8 +402,6 @@ it('reorders cards and closes form with Escape restoring focus', async () => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
     if (url === '/api/connections') return { ok: true, json: async () => [] };
-    if (url === '/api/proxmox/status')
-      return { ok: true, json: async () => ({ configured: false }) };
     if (url === '/api/groups')
       return { ok: true, json: async () => [{ id: 1, name: 'Casa', position: 0 }] };
     if (url === '/api/services/order') return { ok: true, json: async () => ({ ok: true }) };
@@ -479,8 +464,6 @@ it('shows pending proposals in clear language and approves with a single click',
     if (url === '/api/proposals/p1/review' && init?.method === 'POST')
       return { ok: true, json: async () => ({}) };
     if (url === '/api/connections') return { ok: true, json: async () => [] };
-    if (url === '/api/proxmox/status')
-      return { ok: true, json: async () => ({ configured: false }) };
     return { ok: true, json: async () => [] };
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -518,8 +501,6 @@ it('does not treat unauthorized private network as service down', async () => {
       if (url === '/api/auth/status')
         return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
       if (url === '/api/connections') return { ok: true, json: async () => [] };
-      if (url === '/api/proxmox/status')
-        return { ok: true, json: async () => ({ configured: false }) };
       if (url === '/api/service-status')
         return {
           ok: true,
@@ -575,8 +556,6 @@ it('shows before and after of an update proposal', async () => {
           ],
         };
       if (url === '/api/connections') return { ok: true, json: async () => [] };
-      if (url === '/api/proxmox/status')
-        return { ok: true, json: async () => ({ configured: false }) };
       if (url === '/api/services')
         return {
           ok: true,
@@ -683,8 +662,6 @@ it('opens a management route directly and responds to browser history', async ()
     vi.fn(async (url: string) => {
       if (url === '/api/auth/status')
         return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/proxmox/status')
-        return { ok: true, json: async () => ({ configured: false }) };
       return { ok: true, json: async () => [] };
     }),
   );
@@ -1074,8 +1051,6 @@ function stubSignedIn() {
       if (url === '/api/account')
         return { ok: true, json: async () => ({ name: 'Maria', email: 'maria@example.com' }) };
       if (url === '/api/account/sessions') return { ok: true, json: async () => [] };
-      if (url === '/api/proxmox/status')
-        return { ok: true, json: async () => ({ configured: false }) };
       return { ok: true, json: async () => [] };
     }),
   );
@@ -1156,4 +1131,87 @@ it('reaches Activity and Settings from "More" in the phone bottom bar', async ()
   expect(within(bar).getByRole('button', { name: 'Mais' }).getAttribute('aria-current')).toBe(
     'page',
   );
+});
+
+function stubSession(authenticated = true) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated }) };
+      if (url === '/api/services') return { ok: true, json: async () => [] };
+      if (url === '/api/status') return { ok: false, status: 500, json: async () => ({}) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+}
+const SEARCH_BOX = 'Buscar serviços ou executar um comando';
+
+it('runs the single-key shortcuts in the authenticated shell', async () => {
+  localStorage.clear();
+  stubSession();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.keyDown(document.body, { key: 'g' });
+  fireEvent.keyDown(document.body, { key: 'i' });
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/integrations'));
+  fireEvent.keyDown(document.body, { key: 'g' });
+  fireEvent.keyDown(document.body, { key: 'h' });
+  await waitFor(() => expect(window.location.pathname).toBe('/'));
+  fireEvent.keyDown(document.body, { key: 'n' });
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/services/new'));
+  window.history.replaceState(null, '', '/');
+  fireEvent.popState(window);
+  fireEvent.keyDown(document.body, { key: '?', shiftKey: true });
+  expect(await screen.findByRole('dialog', { name: 'Atalhos de teclado' })).toBeTruthy();
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  fireEvent.keyDown(document.body, { key: '/' });
+  expect(await screen.findByPlaceholderText(SEARCH_BOX)).toBeTruthy();
+});
+
+it('does not run navigation shortcuts outside the services pages for n', async () => {
+  localStorage.clear();
+  stubSession();
+  window.history.replaceState(null, '', '/manage/agents');
+  render(<App />);
+  await screen.findByRole('heading', { name: /Agentes/ });
+  fireEvent.keyDown(document.body, { key: 'n' });
+  expect(window.location.pathname).toBe('/manage/agents');
+});
+
+it('turns the single keys off from Settings but keeps Ctrl K', async () => {
+  localStorage.setItem('homora-shortcuts', 'off');
+  stubSession();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.keyDown(document.body, { key: '/' });
+  fireEvent.keyDown(document.body, { key: 'n' });
+  expect(screen.queryByPlaceholderText(SEARCH_BOX)).toBeNull();
+  expect(window.location.pathname).toBe('/');
+  fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true });
+  expect(await screen.findByPlaceholderText(SEARCH_BOX)).toBeTruthy();
+  localStorage.clear();
+});
+
+it('keeps the shortcuts inert on the login screen and the public status page', async () => {
+  localStorage.clear();
+  stubSession(false);
+  render(<App />);
+  await screen.findByRole('button', { name: 'Entrar' });
+  fireEvent.keyDown(document.body, { key: 'g' });
+  fireEvent.keyDown(document.body, { key: 'i' });
+  fireEvent.keyDown(document.body, { key: '?', shiftKey: true });
+  expect(window.location.pathname).toBe('/login');
+  expect(screen.queryByRole('dialog')).toBeNull();
+  cleanup();
+  window.history.replaceState(null, '', '/status');
+  stubSession(true);
+  render(<App />);
+  await waitFor(() => expect(window.location.pathname).toBe('/status'));
+  fireEvent.keyDown(document.body, { key: '/' });
+  fireEvent.keyDown(document.body, { key: '?', shiftKey: true });
+  fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true });
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.queryByPlaceholderText(SEARCH_BOX)).toBeNull();
 });

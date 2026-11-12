@@ -171,7 +171,6 @@ it('supports scoped MCP reads and proposals without leaking URL query secrets', 
   const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
   const { InMemoryTransport } = await import('@modelcontextprotocol/sdk/inMemory.js');
   const { createMcp } = await import('./mcp.js');
-  const { createVault } = await import('./vault.js');
   const { createProposalService } = await import('./proposals.js');
   const dir = mkdtempSync(join(tmpdir(), 'homora-push-mcp-'));
   const db = createDatabase(':memory:');
@@ -192,7 +191,7 @@ it('supports scoped MCP reads and proposals without leaking URL query secrets', 
     'discovery:read',
     'proposals:create',
   ]);
-  const server = createMcp(sqlite, createVault(join(dir, 'db')), { token: identity.token });
+  const server = createMcp(sqlite, { token: identity.token });
   const client = new Client({ name: 'test', version: '1' });
   const [ct, st] = InMemoryTransport.createLinkedPair();
   try {

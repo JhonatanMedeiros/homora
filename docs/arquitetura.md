@@ -41,7 +41,7 @@ flowchart LR
 - HTTP API: web session authentication (Better Auth, single administrator account), Zod validation of request bodies, parameters,
   and query strings, composing routes by capability. Card and group business rules are
   delegated to the configuration module; connections employ a dedicated module for
-  configuration, credentials, persistence, and observations.
+  configuration, credentials, persistence, and observations. See [ADR 0004](decisoes/0004-better-auth-web-authentication.md) for web authentication.
 - Adapters: validate configuration and query external systems. The central registry
   exposes metadata and execution; each integration encapsulates credential structures
   and specific rate/size limits.
@@ -113,17 +113,20 @@ releases exist.
   translate results into HTTP status and JSON responses.
 - `integration-registry.ts` registers metadata and execution handlers for Jellyfin, Home
   Assistant, Uptime Kuma, AdGuard Home, and Proxmox. All connection adapters use the shared
-  network transport with destination policy. Legacy Proxmox credentials are copied once into
-  encrypted connection storage; the bridge row and widget references are preserved.
+  network transport with destination policy. Legacy Proxmox credentials are copied once, at
+  backend startup, into encrypted connection storage; the bridge row and widget references are
+  preserved. Nothing outside the migrator reads the legacy file.
 - The stdio MCP runs in a separate process and accesses SQLite/vault directly. The stateless HTTP MCP runs in the backend at `/mcp`, authenticates a Bearer token on every request, validates host and origin, and applies a per-client request limit. Both use the same tools and proposal rules. It authenticates agent tokens
   with granular scopes, offering queries and proposal creation. It intentionally bypasses the HTTP
   stack and web cookies.
 - Group, card-order, and widget proposals capture a fingerprint of groups, cards, widgets,
   and connections, including encrypted references without displaying them. They validate the
-  operation in a savepoint and repeat validation inside the approval transaction. The legacy
-  vault is included when proposing a Proxmox widget. MCP returns proposals only to their author.
+  operation in a savepoint and repeat validation inside the approval transaction. A Proxmox
+  widget proposal requires an existing Proxmox connection. MCP returns proposals only to their author.
+- The opt-in anonymous status page is described in [ADR 0006](decisoes/0006-public-read-only-status-page.md).
 - The observations migration shares the web monitor's latest results with the MCP process.
 - MCP agent identity and audit queries require separate `agents:read` and `audit:read` grants. Audit queries omit IP addresses and details and are bounded by the 365-day retention window. An agent may withdraw only its own unexpired pending proposal, atomically recording the withdrawal; this does not apply configuration changes.
+- See [ADR 0007](decisoes/0007-service-observation-history-and-uptime.md) for observation history and uptime.
 - Observations are appended with a settings signature and observation time, deduplicated and retained for 30 days (the signature is a 16-character hash prefix; at the default 60 s interval a service accumulates roughly 12 MB of history per month); monitor publication cleans old rows. A batch creates at most 20 proposals in one transaction, subject to 100 unexpired pending proposals per identity. A human reviews and decides the complete batch together. Approval checks every original fingerprint before applying all changes in one transaction and increments the configuration version once; conflicts roll back the entire batch. Partially decided legacy batches cannot be approved and their remaining proposals can be discarded.
 - `agents:propose` enables identity proposals. Requested scopes must be a subset of the proposer's current scopes at creation. The reviewed diff never contains credentials; approval creates or rotates the token in the review transaction and returns it once with `no-store`. Changes to identities are audited under the human reviewer. See [ADR 0002](decisoes/0002-governed-agent-proposals.md).
   Each result is tied to the service check settings; changed settings or stale results are
@@ -155,7 +158,7 @@ Key areas of attention focus on consistency and safe evolution:
 4. Extract large pages or hooks into smaller units when doing so reduces cognitive load and
    simplifies test boundaries.
 5. Legacy Proxmox files remain sensitive after migration. The migration marker prevents deleted
-   connections from being re-imported, and legacy HTTP routes are disabled after migration.
+   connections from being re-imported, and the legacy HTTP routes were removed.
 6. Integration kinds are currently declared across execution catalogs, backend schemas, and UI.
    Keep these types explicit; centralize this contract when future adapters make duplication
    tangible, rather than introducing complex generic code generators now.
@@ -166,4 +169,4 @@ in an Architecture Decision Record (ADR) alongside documentation updates.
 
 Proposal review deadlines default to 15 minutes and are configurable from 1 to 120 minutes in SQLite. Changes affect new proposals only and are shared by the web API and both MCP transports. An authenticated administrator can recreate an expired proposal or its complete expired batch; the original diff is revalidated, no change is applied, and recreation and TTL changes are audited. Recreated proposals retain the original agent attribution; the audit records the human requester and source proposal.
 
-Notification delivery is a separate outbound POST capability. Channel credentials and webhook URLs are encrypted with the integration vault key; saved credentials are not returned by the API. The shared destination policy resolves and pins an authorized address for each request, forbids redirects and validates TLS. Webhook private-network access is an explicit per-channel opt-in. A bounded, in-memory queue isolates delivery from the monitor; transition state is stored separately from the startup-cleared observation cache. Delivery is best effort: shutdown can discard queued messages and retries can duplicate them.
+Notification delivery is a separate outbound POST capability. Channel credentials and webhook URLs are encrypted with the integration vault key; saved credentials are not returned by the API. The shared destination policy resolves and pins an authorized address for each request, forbids redirects and validates TLS. Webhook private-network access is an explicit per-channel opt-in. A bounded, in-memory queue isolates delivery from the monitor; transition state is stored separately from the startup-cleared observation cache. Delivery is best effort: shutdown can discard queued messages and retries can duplicate them. See [ADR 0005](decisoes/0005-status-transition-notifications.md).

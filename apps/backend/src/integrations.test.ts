@@ -1,9 +1,7 @@
 import { expect, it, vi } from 'vitest';
-import {
-  createIntegrationRegistry,
-  createObservationCache,
-  proxmoxAdapter,
-} from './integrations.js';
+import { createIntegrationRegistry, createObservationCache } from './integrations.js';
+
+const proxmoxAdapter = { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] };
 
 it('exposes metadata without disclosing implementation or configs and rejects duplicates', () => {
   const registry = createIntegrationRegistry([proxmoxAdapter]);

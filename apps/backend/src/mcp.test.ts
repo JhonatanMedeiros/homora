@@ -7,7 +7,6 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { expect, it } from 'vitest';
 import type { z } from 'zod';
 import { createMcp } from './mcp.js';
-import { createVault } from './vault.js';
 import { serviceProposalSchema } from './input-schemas.js';
 import { cardOrderSchema, groupChangeSchema, widgetChangeSchema } from './managed-proposals.js';
 import { createProposalService } from './proposals.js';
@@ -29,7 +28,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
     INSERT INTO integration_instances VALUES(1,'jellyfin','Media','{"url":"https://media.example"}','sensitive-secret',NULL)`);
   const identity = createProposalService(db).issue('test', ['services:read', 'proposals:create']);
   process.env.HOMORA_AGENT_TOKEN = identity.token;
-  const server = createMcp(db, createVault(join(dir, 'db')), {
+  const server = createMcp(db, {
     docker: {
       list: async () => [
         {

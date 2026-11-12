@@ -193,27 +193,11 @@ export function applyManagedChange(
       let connectionId = change.integrationId;
       if (change.source === 'proxmox') {
         if (!proxmoxConfigured()) throw new Error('Proxmox not configured');
+        // The legacy file is migrated at startup; the migration marker names the connection.
         const marker = db
           .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
           .get() as { name: string } | undefined;
-        if (marker) {
-          connectionId = Number(marker.name.slice('legacy-proxmox:'.length));
-        } else {
-          const existing = db
-            .prepare(
-              "SELECT id FROM integration_instances WHERE type='proxmox' AND public_config='{}' LIMIT 1",
-            )
-            .get() as { id: number } | undefined;
-          connectionId = existing?.id;
-          if (connectionId === undefined)
-            connectionId = Number(
-              db
-                .prepare(
-                  "INSERT INTO integration_instances(type,name,public_config) VALUES('proxmox','Proxmox VE','{}')",
-                )
-                .run().lastInsertRowid,
-            );
-        }
+        connectionId = Number(marker?.name.slice('legacy-proxmox:'.length));
       }
       const connection = db
         .prepare('SELECT type FROM integration_instances WHERE id=?')

@@ -108,7 +108,7 @@ and prioritized adapters are verified against live production services.
 - [ ] Finalize and document supported network topology scenarios (P2) before advertising access
       outside localhost.
 - [ ] Theming, custom CSS, background images, translucent cards, and multi-page/tab views.
-- [ ] Keyboard shortcuts and optional web search redirection (configurable engine, without leaking
+- [x] Keyboard shortcuts and optional web search redirection (configurable engine, without leaking
       Homora internal data).
 
 **Done Definition:** validated and documented security model; multiple users can navigate an instance

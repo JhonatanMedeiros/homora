@@ -6,10 +6,13 @@ import { loadConfig } from './config.js';
 import { createDockerSource } from './docker-discovery.js';
 import { createAuth, loadSessionSecret } from './auth.js';
 import { createVault } from './vault.js';
+import { migrateLegacyProxmoxAtStartup } from './integration-connections.js';
 import { createShutdownHandler } from './shutdown.js';
 const config = loadConfig();
 await mkdir(dirname(config.databasePath), { recursive: true });
 const database = createDatabase(config.databasePath);
+const vault = createVault(config.databasePath);
+migrateLegacyProxmoxAtStartup(database.db, vault);
 const app = createApp(
   database.db,
   config.webPort,
@@ -19,7 +22,7 @@ const app = createApp(
     webPort: config.webPort,
     allowedOrigins: config.allowedOrigins,
   }),
-  createVault(config.databasePath),
+  vault,
   config.allowedOrigins,
   config.dockerHost ? createDockerSource(config.dockerHost) : undefined,
   { trustProxy: config.trustProxy, apiPort: config.apiPort },
