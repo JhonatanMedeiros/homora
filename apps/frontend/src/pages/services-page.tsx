@@ -767,6 +767,7 @@ export function ServicesPage({
           blockedIds={blockedIds}
           onRefresh={() => hostData.connections.forEach((c) => void hostData.reload(c.id, true))}
           onListView={() => setArrange('host')}
+          onHome={() => setArrange('group')}
           onOpenCard={(service) => {
             setArrange('group');
             setLocalFocus({ id: service.id, nonce: Date.now() });

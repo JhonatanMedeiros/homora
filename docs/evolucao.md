@@ -1232,3 +1232,11 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Manual dependencies are drawn as dashed arrows between service tiles (decorative, `aria-hidden`; the side panel and Host view remain the accessible equivalent). The canvas gets a dotted background and no longer stretches to 70% of the viewport height when the map is small.
 - Not verified: rendering in a real browser (changes were checked only through tests, `pnpm check` and `pnpm build`).
 - Follow-up: the map now takes the whole window like the mockup (fixed layer above the page, top bar with "Host list" and refresh, full-bleed canvas, zoom toolbar floating at the bottom centre, details panel floating at the right and shown only while something is selected; a bottom sheet on narrow windows). The page behind does not scroll while the map is open. Not verified in a real browser.
+
+## Map polish: centred canvas, lighter details, breadcrumb header (2026-11-12)
+
+- The map content is centred in the canvas (both axes) and keeps room for the toolbar and, on wide windows, the details panel.
+- Clicking the empty canvas closes the details (not after a pan, not on a tile); Escape closes them when no dependency is being picked.
+- The service details panel was reduced to what is needed: name and status, address, "Runs on" with a Change host toggle (the host picker opens only then), the impact line only when there is one, dependencies with a dashed "Add dependency" button, "Used by" only when something depends on it, and one "Open card" button. Empty rows ("nothing known", "no dependencies") no longer take space.
+- The top bar follows the mockup: brand, Home › Service map breadcrumb, cluster name, refresh and host list. The mockup's "Beta" badge and "updated 40 s ago" were not added (the app has no beta flag and does not record the inventory time).
+- Not verified in a real browser.
