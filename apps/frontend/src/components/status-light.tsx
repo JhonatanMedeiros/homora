@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { Availability } from '@/lib/services';
 import { t } from '@/i18n';
+import { useEffect, useRef, useState } from 'react';
 
 type Props = { state: Availability; blocked?: boolean; label?: string; className?: string };
 
@@ -34,10 +35,22 @@ const view = {
 export function StatusLight({ state, blocked = false, label: custom, className }: Props) {
   const key = blocked ? 'blocked' : state;
   const { label, text, dot } = view[key];
+  const previousState = useRef(key);
+  const [changed, setChanged] = useState(false);
+
+  useEffect(() => {
+    if (previousState.current === key) return;
+    previousState.current = key;
+    setChanged(true);
+    const timeout = window.setTimeout(() => setChanged(false), 520);
+    return () => window.clearTimeout(timeout);
+  }, [key]);
+
   return (
     <span
       data-slot="status-light"
       data-state={key}
+      data-status-changed={changed || undefined}
       className={cn(
         'inline-flex w-fit items-center gap-2 text-sm leading-none font-medium whitespace-nowrap',
         text,

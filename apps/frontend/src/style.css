@@ -175,6 +175,10 @@
       box-shadow 240ms ease;
   }
 
+  [data-slot='status-light'][data-status-changed='true'] .status-light-dot {
+    animation: status-change 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
   .organize-surface {
     transition:
       background-color 160ms ease,
@@ -221,5 +225,20 @@
   from {
     opacity: 0;
     transform: translateY(-4px);
+  }
+}
+
+@keyframes status-change {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.72);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
