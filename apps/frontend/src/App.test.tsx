@@ -1021,3 +1021,55 @@ it('undoes a move to another group, restoring group and order', async () => {
   expect(puts.map((call) => JSON.parse(call.body ?? '{}').category)).toEqual(['Infra', 'Casa']);
   window.history.replaceState(null, '', '/');
 });
+
+function stubSignedIn() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/account')
+        return { ok: true, json: async () => ({ name: 'Maria', email: 'maria@example.com' }) };
+      if (url === '/api/account/sessions') return { ok: true, json: async () => [] };
+      if (url === '/api/proxmox/status')
+        return { ok: true, json: async () => ({ configured: false }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+}
+
+it('opens the account from the user menu as its own page, outside the management area', async () => {
+  stubSignedIn();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.keyDown(await screen.findByRole('button', { name: /Menu da conta de/ }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Conta' }));
+  expect(await screen.findByRole('heading', { name: 'Conta' })).toBeTruthy();
+  expect(window.location.pathname).toBe('/account');
+  // No management sidebar and no search: only a way back.
+  expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
+  expect(screen.queryByRole('searchbox')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
+  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  expect(window.location.pathname).toBe('/');
+});
+
+it('keeps old /manage/account links working by redirecting to /account', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/account');
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Conta' })).toBeTruthy();
+  await waitFor(() => expect(window.location.pathname).toBe('/account'));
+});
+
+it('does not list the account among the management sections', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/services');
+  render(<App />);
+  const nav = await screen.findByRole('navigation', { name: 'Gerenciamento' });
+  expect(within(nav).queryByRole('button', { name: 'Conta' })).toBeNull();
+  for (const name of ['Serviços', 'Integrações', 'Agentes', 'Atividade', 'Configurações'])
+    expect(within(nav).getByRole('button', { name })).toBeTruthy();
+});

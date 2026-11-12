@@ -753,6 +753,20 @@ implementation because it changes a security default.
   390 px (list, open menu, picker, widgets tab): no horizontal overflow or console errors.
   **Not verified:** real connections and the removal flow in a browser.
 
+### Account Outside the Management Area (2026-11-12)
+
+- The account used to be a tab of the management sidebar (`/manage/account`), next to services,
+  integrations, agents, activity and settings, although it is about the signed-in user.
+- It is now its own page at `/account`, opened from the avatar menu. The page has the top bar and
+  a "Back to dashboard" button, with no management sidebar and no search, in a narrower column.
+  `/manage/account` redirects to `/account` so old links keep working. The management sidebar no
+  longer lists the account (`navItems` excludes it).
+- Activity stays where it is (management sidebar and avatar menu); it was not part of this change.
+- Validation: `pnpm check` and `pnpm build`; App tests for the avatar menu route, the redirect and
+  the sidebar list. Chromium with a mocked API at 1100 px and 390 px: menu, page, no horizontal
+  overflow. **Not verified:** the sign-in redirect that returns to `/account` after a session
+  expires (the path is accepted as a valid destination, but I did not run that flow).
+
 ### Agents Tab Redesign (2026-11-11)
 
 - Creating an agent is now a dialog in two steps. Step 1 asks for a name and a profile (Read only,

@@ -40,6 +40,7 @@ const validPaths = [
   '/manage/integrations',
   '/manage/agents',
   '/manage/activity',
+  '/account',
   '/manage/account',
   '/manage/settings',
 ].map((path) => ({ path }));
@@ -108,7 +109,7 @@ function Dashboard({
         navigate(value ? '/manage/services' : '/');
       }}
       onTabChange={(next) => {
-        navigate(`/manage/${next}`);
+        navigate(next === 'account' ? '/account' : `/manage/${next}`);
       }}
       onLogout={onLogout}
       profile={profile}
@@ -196,7 +197,7 @@ function Dashboard({
       )}
       {managing && tab === 'integrations' && <IntegrationsPage />}
       {managing && tab === 'activity' && <ActivityPage />}
-      {managing && tab === 'account' && (
+      {tab === 'account' && (
         <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />
       )}
       {managing && tab === 'settings' && <SettingsPage onImported={data.refresh} />}
@@ -228,6 +229,8 @@ function DashboardForRoute({
 }) {
   const { pathname } = useLocation();
   if (matchPath('/manage', pathname)) return <Navigate replace to="/manage/services" />;
+  // The account used to be a management tab; keep old links working.
+  if (matchPath('/manage/account', pathname)) return <Navigate replace to="/account" />;
   const home = Boolean(matchPath('/', pathname));
   const isList = Boolean(matchPath('/manage/services', pathname));
   const isNew = Boolean(matchPath('/manage/services/new', pathname));
@@ -240,19 +243,20 @@ function DashboardForRoute({
       ? 'agents'
       : matchPath('/manage/activity', pathname)
         ? 'activity'
-        : matchPath('/manage/account', pathname)
+        : matchPath('/account', pathname)
           ? 'account'
           : matchPath('/manage/settings', pathname)
             ? 'settings'
             : 'services';
   const valid = home || isList || isNew || isEdit || tab !== 'services';
+  const account = tab === 'account';
   return (
     <Dashboard
       token={token}
       setToken={setToken}
       onLogout={onLogout}
       tab={tab}
-      managing={valid && !home}
+      managing={valid && !home && !account}
       valid={valid}
       form={isNew ? 'new' : isEdit ? number : null}
     />
