@@ -1231,3 +1231,4 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Only one hint is shown: the drag hint when editing is allowed, the read-only hint otherwise.
 - Manual dependencies are drawn as dashed arrows between service tiles (decorative, `aria-hidden`; the side panel and Host view remain the accessible equivalent). The canvas gets a dotted background and no longer stretches to 70% of the viewport height when the map is small.
 - Not verified: rendering in a real browser (changes were checked only through tests, `pnpm check` and `pnpm build`).
+- Follow-up: the map now takes the whole window like the mockup (fixed layer above the page, top bar with "Host list" and refresh, full-bleed canvas, zoom toolbar floating at the bottom centre, details panel floating at the right and shown only while something is selected; a bottom sheet on narrow windows). The page behind does not scroll while the map is open. Not verified in a real browser.
