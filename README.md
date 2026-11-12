@@ -74,6 +74,8 @@ With a reverse proxy that terminates HTTPS in front of Homora:
 
 The `homora-data` volume is preserved and database migrations run on startup inside a transaction. There is no automated downgrade: if a migration fails, keep the original volume and restore a backup into a working copy before resuming. Try the upgrade on a copy of your data if the installation holds anything important.
 
+The upgrade that shortened the monitoring signature (migration `0019`) rewrites existing history rows but does not shrink the database file by itself; space is reused as the 30-day retention deletes old rows. To reclaim it immediately, stop Homora and run `VACUUM` on a copy or after a backup (`sqlite3 data/homora.sqlite 'VACUUM'`); it needs free disk space about equal to the database size. Homora never runs it automatically.
+
 ## Public status page (optional, read-only)
 
 Homora can publish a minimal, read-only page at `/status` so others can see what is up without signing in. It is **closed by default**: nothing is public until an administrator enables it in **Settings** and marks each service with "Show on the public status page" in its form.

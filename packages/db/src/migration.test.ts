@@ -259,3 +259,68 @@ it('upgrades the Docker push schema to notifications without changing existing d
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('shortens stored signatures to 16 characters and keeps rows matching', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-signature-migration-'));
+  const path = join(dir, 'data.sqlite');
+  const long = 'a1b2c3d4e5f60718'.repeat(4);
+  const short = long.slice(0, 16);
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of migrations.slice(0, 19)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(1,'S','http://x/','C','');",
+    );
+    const state = (signature: string) =>
+      JSON.stringify({
+        signature,
+        attempt: 'a',
+        status: 'unknown',
+        lastDown: null,
+        notifiedDown: false,
+      });
+    const history = old.prepare(
+      'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(1,?,?,?)',
+    );
+    history.run(long, 1, JSON.stringify({ status: 'available', latencyMs: 5 }));
+    history.run(short, 2, JSON.stringify({ status: 'unavailable' })); // already short: idempotent
+    old
+      .prepare('INSERT INTO service_observations(service_id,signature,observation) VALUES(1,?,?)')
+      .run(long, '{}');
+    old.prepare('INSERT INTO notification_states(service_id,state) VALUES(1,?)').run(state(long));
+    old.close();
+    const database = createDatabase(path);
+    database.close();
+    const check = new DatabaseSync(path);
+    expect(
+      check
+        .prepare('SELECT signature,status FROM service_observation_history ORDER BY observed_at')
+        .all(),
+    ).toEqual([
+      { signature: short, status: 'available' },
+      { signature: short, status: 'unavailable' },
+    ]);
+    expect(check.prepare('SELECT signature FROM service_observations').get()).toEqual({
+      signature: short,
+    });
+    expect(
+      JSON.parse(
+        (check.prepare('SELECT state FROM notification_states').get() as { state: string }).state,
+      ),
+    ).toMatchObject({ signature: short, status: 'unknown' });
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

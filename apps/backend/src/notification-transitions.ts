@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
 import type { Service } from '@homora/shared';
 import type { ServiceStatus } from './service-monitor.js';
+import { serviceSignature } from './service-signature.js';
 
 export type NotificationEvent = {
   event: 'down' | 'up';
@@ -39,18 +39,7 @@ export function createNotificationTransitions(
       for (const service of services) {
         const current = states[service.id];
         if (!current?.lastAttempt) continue;
-        const signature = createHash('sha256')
-          .update(
-            JSON.stringify([
-              service.url,
-              service.allowPrivate,
-              service.checkType,
-              service.checkInterval,
-              service.expectedStatus,
-              service.checkPath,
-            ]),
-          )
-          .digest('hex');
+        const signature = serviceSignature(service);
         let old = previous.get(service.id);
         if (old?.signature !== signature) old = undefined;
         if (old && current.lastAttempt <= old.attempt) continue;
