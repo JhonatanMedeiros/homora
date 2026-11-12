@@ -6,6 +6,7 @@ import { createServiceConfiguration } from './service-configuration.js';
 import { integrationRegistry } from './integration-registry.js';
 import { serviceProposalSchema } from './input-schemas.js';
 import { z } from 'zod';
+import { discoverySchema } from './mcp-discovery-schema.js';
 import { AGENT_SCOPES } from './agent-scopes.js';
 import {
   cardOrderSchema,
@@ -21,21 +22,13 @@ import { createObservationStore } from './service-observations.js';
 // advertise these flat object schemas for discovery. The strict discriminated
 // unions in proposals.ts / managed-proposals.ts remain the source of truth and
 // re-validate every call.
-type OpObject = z.ZodObject<{ op: z.ZodLiteral<string> } & z.ZodRawShape>;
-function discoverySchema(union: { options: readonly unknown[] }) {
-  const options = union.options as OpObject[];
-  const shape: Record<string, z.ZodType> = {
-    op: z.enum(options.map((option) => option.shape.op.value) as [string, ...string[]]),
-  };
-  for (const option of options)
-    for (const [key, field] of Object.entries(option.shape))
-      if (key !== 'op') shape[key] ??= (field as z.ZodType).optional();
-  return z.object(shape).strict();
-}
-const serviceProposalDiscoverySchema = discoverySchema(serviceProposalSchema);
-const groupChangeDiscoverySchema = discoverySchema(groupChangeSchema);
-const cardOrderDiscoverySchema = discoverySchema(cardOrderSchema);
-const widgetChangeDiscoverySchema = discoverySchema(widgetChangeSchema);
+const serviceProposalDiscoverySchema = discoverySchema(
+  'propose_service_card',
+  serviceProposalSchema,
+);
+const groupChangeDiscoverySchema = discoverySchema('propose_group_change', groupChangeSchema);
+const cardOrderDiscoverySchema = discoverySchema('propose_card_order', cardOrderSchema);
+const widgetChangeDiscoverySchema = discoverySchema('propose_widget_change', widgetChangeSchema);
 
 type McpOptions = {
   connections?: ReturnType<typeof createIntegrationConnections>;
