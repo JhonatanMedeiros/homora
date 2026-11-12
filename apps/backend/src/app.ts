@@ -124,6 +124,8 @@ export function createApp(
     serviceMonitor,
     observations,
     publicStatus,
+    auth,
+    audit,
   );
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);

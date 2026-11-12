@@ -43,6 +43,7 @@ export const en = {
   'apiError.too-many-requests': 'Too many requests. Try again later.',
   'activity.event.public-status-update': 'Public status page changed',
   'activity.event.service-public': 'Service public visibility changed',
+  'activity.event.service-defaults-update': 'New service defaults changed',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -90,4 +91,5 @@ export const ptBR: Record<keyof typeof en, string> = {
   'apiError.too-many-requests': 'Muitas requisições. Tente novamente mais tarde.',
   'activity.event.public-status-update': 'Página pública de status alterada',
   'activity.event.service-public': 'Visibilidade pública de serviço alterada',
+  'activity.event.service-defaults-update': 'Padrões de novos serviços alterados',
 };

@@ -101,7 +101,8 @@ export const en = {
   'health.allUp': 'All up here',
   'health.up': '{count} up',
   'health.blocked': '{count} not monitored (private network not authorized)',
-  'health.hint': 'Authorize the private network in Edit.',
+  'health.hint':
+    'Authorize the private network in Edit, or turn on “New services allow private network” in Settings.',
   'organize.region': 'Organize mode',
   'organize.help': 'Drag the rows, use the arrows, or open ⋯ to move a service to another group.',
   'organize.bar': 'Organizing',
@@ -371,7 +372,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'health.allUp': 'Tudo no ar por aqui',
   'health.up': '{count} no ar',
   'health.blocked': '{count} sem monitoramento (rede privada não autorizada)',
-  'health.hint': 'Autorize a rede privada em Editar.',
+  'health.hint':
+    'Autorize a rede privada em Editar, ou ative “Novos serviços permitem rede privada” em Configurações.',
   'organize.region': 'Modo organizar',
   'organize.help':
     'Arraste as linhas, use as setas ou abra ⋯ para mover um serviço para outro grupo.',

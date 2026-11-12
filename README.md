@@ -282,6 +282,8 @@ The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on
 
 ### HTTP monitoring options
 
+By default, monitoring does not probe private network addresses (such as `192.168.x.x`) until each service allows it. To save that step for services you add yourself, turn on **Settings → Monitoring → New services allow private network**: it only sets the starting value of the checkbox in the new-service form. Existing services, imports, Docker discovery and agent proposals are unaffected, and loopback, link-local and other special ranges stay blocked.
+
 In a service's advanced settings, **Check path** optionally replaces the path and query of the card URL for the HTTP probe, while keeping its origin. For example, use `/health` to check an endpoint while the card opens `/dashboard`. Leave it empty to check the full card URL. The path must start with a single `/`; a query string is allowed. The destination policy and the service's private-network permission still apply.
 
 **Expected HTTP status** accepts an exact code such as `200` or `302`, or `2xx` / `3xx`. A different response is reported as unavailable with the received and expected codes. Leave it empty to keep the default classification. Both settings are retained when using ping but only apply to HTTP checks, and are included in Homora exports. Checks are anonymous and do not follow redirects: a login page or an access proxy can respond successfully even when the underlying service is down. Use a suitable anonymous health endpoint if one is available.

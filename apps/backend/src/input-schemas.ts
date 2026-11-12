@@ -103,6 +103,7 @@ export const createAgentSchema = z
   })
   .strict();
 
+export const serviceDefaultsSchema = z.object({ allowPrivate: z.boolean() }).strict();
 export const proposalReviewSchema = z.object({ approve: z.boolean() }).strict();
 export const opaqueIdSchema = z.string().regex(/^[0-9a-f]{32}$/);
 

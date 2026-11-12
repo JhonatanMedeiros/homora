@@ -1,9 +1,17 @@
 import type { MessageKey } from '@/i18n';
-import { Bell, Download, Globe, PanelTop, ScanSearch, type LucideIcon } from 'lucide-react';
+import {
+  Activity,
+  Bell,
+  Download,
+  Globe,
+  PanelTop,
+  ScanSearch,
+  type LucideIcon,
+} from 'lucide-react';
 
 /** Subpages of Settings. Each one is a route of its own so it can be linked and reached from the palette. */
 export const settingsSections: {
-  id: 'interface' | 'public' | 'backup' | 'discovery' | 'notifications';
+  id: 'interface' | 'monitoring' | 'public' | 'backup' | 'discovery' | 'notifications';
   icon: LucideIcon;
   title: MessageKey;
   description: MessageKey;
@@ -19,6 +27,12 @@ export const settingsSections: {
     icon: Bell,
     title: 'settings.section.notifications',
     description: 'settings.section.notificationsHint',
+  },
+  {
+    id: 'monitoring',
+    icon: Activity,
+    title: 'settings.section.monitoring',
+    description: 'settings.section.monitoringHint',
   },
   {
     id: 'public',

@@ -135,7 +135,27 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     return selectService(change.id);
   }
 
+  const NEW_SERVICES_PRIVATE_KEY = 'new_services_allow_private';
+
   return {
+    /**
+     * Instance-wide initial value of `allowPrivate` for services created in the web UI. It is only
+     * a default: stored services never change with it, and imports, discovery and proposals do not
+     * read it.
+     */
+    newServicesAllowPrivate() {
+      const row = sqlite
+        .prepare('SELECT value FROM app_settings WHERE key=?')
+        .get(NEW_SERVICES_PRIVATE_KEY) as { value: string } | undefined;
+      return row?.value === 'true';
+    },
+    setNewServicesAllowPrivate(value: boolean) {
+      sqlite
+        .prepare(
+          'INSERT INTO app_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+        )
+        .run(NEW_SERVICES_PRIVATE_KEY, String(value));
+    },
     listServices() {
       return selectServices().map((row) => ({ ...row, allowPrivate: Boolean(row.allowPrivate) }));
     },
