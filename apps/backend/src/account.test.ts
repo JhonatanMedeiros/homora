@@ -177,4 +177,33 @@ describe('account and activity API', () => {
     expect(page.nextBefore).toBe(page.events[1].id);
     expect((await open.call('GET', '/api/activity?kind=nope')).statusCode).toBe(400);
   });
+  it('never leaks tokens or passwords into the activity feed', async () => {
+    open = await setup();
+    const issued = (
+      await open.call('POST', '/api/agents', { name: 'ci-bot', scopes: ['services:read'] })
+    ).json();
+    const agentId = issued.id ?? issued.agent?.id;
+    await open.call('POST', `/api/agents/${agentId}/rotate`);
+    await open.call('POST', '/api/account/password', {
+      currentPassword: TEST_PASSWORD,
+      newPassword: NEW_PASSWORD,
+    });
+    const secrets = [issued.token, TEST_PASSWORD, NEW_PASSWORD].filter(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
+    expect(secrets.length).toBeGreaterThanOrEqual(3);
+    const raw = JSON.stringify((await open.call('GET', '/api/activity?limit=100')).json());
+    for (const secret of secrets) expect(raw).not.toContain(secret);
+  });
+
+  it('combines filters and rejects invalid cursors and limits', async () => {
+    open = await setup();
+    await open.call('POST', '/api/agents', { name: 'one', scopes: ['services:read'] });
+    const combined = (await open.call('GET', '/api/activity?kind=agent&outcome=success')).json();
+    expect(combined.events).toHaveLength(1);
+    const none = (await open.call('GET', '/api/activity?kind=agent&outcome=failure')).json();
+    expect(none.events).toEqual([]);
+    for (const query of ['limit=0', 'limit=101', 'before=-1', 'before=abc', 'outcome=ok'])
+      expect((await open.call('GET', `/api/activity?${query}`)).statusCode).toBe(400);
+  });
 });

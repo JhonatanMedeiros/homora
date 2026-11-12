@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { Link } from 'react-router';
 import { Badge } from '@/components/ui/badge';
 import { StatusLight } from '@/components/status-light';
 import { SectionTitle } from '@/components/section-title';
@@ -78,6 +79,14 @@ export function ActivityFeed({ events }: { events: ActivityEvent[] }) {
                         </Fragment>
                       ))}
                   </p>
+                  {event.proposalId && (
+                    <Link
+                      to="/manage/agents"
+                      className="text-xs text-primary underline-offset-4 hover:underline"
+                    >
+                      {t('activity.viewProposal')}
+                    </Link>
+                  )}
                 </div>
                 <Badge variant="outline" className="hidden md:inline-flex">
                   {t(`activity.chip.${event.kind}`)}
