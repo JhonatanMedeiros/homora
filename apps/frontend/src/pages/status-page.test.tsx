@@ -47,3 +47,20 @@ it('shows a neutral message when the page is closed', async () => {
   render(<App />);
   expect(await screen.findByText('Esta página não está disponível.')).toBeTruthy();
 });
+
+it('explains when an access gateway redirects the request', async () => {
+  window.history.replaceState(null, '', '/status');
+  const fetchMock = vi.fn(async (...args: [string, RequestInit?]) => ({
+    ok: false,
+    status: 0,
+    type: 'opaqueredirect',
+    args,
+    json: async () => ({}),
+  }));
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  expect(await screen.findByText(/portão de login/)).toBeTruthy();
+  const init = fetchMock.mock.calls[0][1];
+  expect(init?.redirect).toBe('manual');
+  expect(init?.credentials).not.toBe('omit');
+});

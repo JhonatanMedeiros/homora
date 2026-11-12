@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { ActivityFeed } from './activity-feed';
 import { eventTitleKey, groupByDay, type ActivityEvent } from './activity-model';
 
@@ -15,6 +16,7 @@ const base: ActivityEvent = {
   actor: { type: 'user', name: 'Ana Lima' },
   detail: 'Chrome · Linux',
   ipAddress: '192.168.1.24',
+  proposalId: null,
 };
 
 it('groups events by local day with today and yesterday labels', () => {
@@ -51,17 +53,19 @@ it('picks a title per action and outcome, with a generic fallback', () => {
 
 it('shows a failed sign-in with only the address and the attempt count', () => {
   render(
-    <ActivityFeed
-      events={[
-        {
-          ...base,
-          outcome: 'failure',
-          actor: { type: 'anonymous', name: null },
-          detail: '3',
-          ipAddress: '192.168.1.77',
-        },
-      ]}
-    />,
+    <MemoryRouter>
+      <ActivityFeed
+        events={[
+          {
+            ...base,
+            outcome: 'failure',
+            actor: { type: 'anonymous', name: null },
+            detail: '3',
+            ipAddress: '192.168.1.77',
+          },
+        ]}
+      />
+    </MemoryRouter>,
   );
   expect(
     screen.getByText(
@@ -69,4 +73,20 @@ it('shows a failed sign-in with only the address and the attempt count', () => {
         node?.textContent === '192.168.1.77 · 3 tentativas em 15 min' && node.tagName === 'P',
     ),
   ).toBeTruthy();
+});
+
+it('links an event that belongs to a proposal to the Agents tab', () => {
+  render(
+    <MemoryRouter>
+      <ActivityFeed
+        events={[
+          { ...base, id: 5, kind: 'proposal', action: 'proposal', proposalId: 'p-1' },
+          { ...base, id: 6 },
+        ]}
+      />
+    </MemoryRouter>,
+  );
+  const links = screen.getAllByRole('link');
+  expect(links).toHaveLength(1);
+  expect(links[0]?.getAttribute('href')).toBe('/manage/agents');
 });

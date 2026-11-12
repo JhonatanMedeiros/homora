@@ -1038,3 +1038,8 @@ Services can optionally check a same-origin path independently of their card URL
 - Validation: `pnpm build`, lint, formatting and type checks passed; 422 application tests passed with `vitest run --maxWorkers=4`, and 6 script tests passed. Two unrestricted `pnpm check` runs timed out in the existing load-sensitive uptime benchmark, which passed in isolation. Telegram and webhook delivery were mocked; the UI was not visually reviewed in a browser.
 
 - Settings groups webhooks and Telegram channels into separate sections, with an inline form opened on request. Validated with the focused frontend tests, lint and frontend build; not visually reviewed in a browser.
+
+## Header search field removed
+
+- The header search field ("Search services") and its quick-results dropdown are gone: the command palette (Ctrl/Cmd+K, or the magnifier button) is the only search. The `/` shortcut, Enter-to-open-first and the text filter on the services page went with it; the category filter stays. The earlier note about the home page search taking its own second row no longer applies.
+- Validated: type-check, lint, prettier and the frontend tests. 18 backend test files fail to import in this worktree; the backend was not touched.
