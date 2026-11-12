@@ -22,6 +22,7 @@ const badgeVariant = {
   rejected: 'destructive',
   expired: 'secondary',
   withdrawn: 'secondary',
+  stale: 'secondary',
 } as const;
 
 type Props = {
@@ -30,10 +31,18 @@ type Props = {
   current?: Service;
   onReview: (approve: boolean) => void;
   onSetupConnection: (draft: unknown) => void;
+  hideReview?: boolean;
 };
 
 /** An agent proposal: author, validity, reviewable diff, and explicit decision. */
-export function ProposalCard({ proposal, agentName, current, onReview, onSetupConnection }: Props) {
+export function ProposalCard({
+  proposal,
+  agentName,
+  current,
+  onReview,
+  onSetupConnection,
+  hideReview,
+}: Props) {
   const diff = parseDiff(proposal.diff);
   const pending = proposal.state === 'pending';
   return (
@@ -75,20 +84,22 @@ export function ProposalCard({ proposal, agentName, current, onReview, onSetupCo
             </pre>
           )}
         </CardContent>
-        {pending && (
+        {!hideReview && (pending || proposal.state === 'stale') && (
           <CardFooter className="justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onReview(false)}>
               <X data-icon="inline-start" />
               {t('proposal.reject')}
             </Button>
-            <Button type="button" onClick={() => onReview(true)}>
-              <Check data-icon="inline-start" />
-              {t(
-                diff?.change?.kind === 'connection-setup'
-                  ? 'proposal.managed.approveSetup'
-                  : 'proposal.approve',
-              )}
-            </Button>
+            {pending && (
+              <Button type="button" onClick={() => onReview(true)}>
+                <Check data-icon="inline-start" />
+                {t(
+                  diff?.change?.kind === 'connection-setup'
+                    ? 'proposal.managed.approveSetup'
+                    : 'proposal.approve',
+                )}
+              </Button>
+            )}
           </CardFooter>
         )}
         {proposal.state === 'approved' && diff?.change?.kind === 'connection-setup' && (

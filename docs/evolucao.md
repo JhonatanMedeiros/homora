@@ -896,3 +896,8 @@ implementation because it changes a security default.
   reports a live Coolify deployment using a manual proxy and runtime environment variable,
   with `list_discovery_suggestions` returning `scanned: 4`; the guide was not re-executed
   from scratch for this documentation change.
+
+## Atomic batch review (issue #51)
+
+- Batch approval validates the original configuration and applies all items in one transaction, with a single revision increment. Conflicting operations roll back; pending remnants of partially decided older batches can be discarded.
+- The review interface groups batch items, distinguishes changed configuration from unavailable proposals and conflicting changes, and shows stale and expired states.

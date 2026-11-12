@@ -143,12 +143,22 @@ it('reviews MCP group and widget proposals through authenticated HTTP across SQL
           payload: { approve: true },
         })
       ).statusCode,
+    ).toBe(409);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/proposal-batches/${batch.batchId}/review`,
+          headers,
+          payload: { approve: true },
+        })
+      ).statusCode,
     ).toBe(200);
     expect(
       (
         await app.inject({
           method: 'POST',
-          url: `/api/proposals/${batch.proposals[1].id}/review`,
+          url: `/api/proposal-batches/${batch.batchId}/review`,
           headers,
           payload: { approve: true },
         })

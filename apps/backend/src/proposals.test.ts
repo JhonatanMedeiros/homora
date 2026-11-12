@@ -170,13 +170,70 @@ it('creates a bounded atomic batch without applying proposals', () => {
   expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({
     count: 20,
   });
-  api.decide(batch.proposals[0].id, true, 'user:admin');
+  expect(() => api.decide(batch.proposals[0].id, true, 'user:admin')).toThrow('collective');
+  api.decideBatch(batch.batchId, true, 'user:admin');
   expect(
     db.prepare("SELECT COUNT(*) AS count FROM service_proposals WHERE state='pending'").get(),
-  ).toEqual({ count: 19 });
+  ).toEqual({ count: 0 });
   for (let i = 0; i < 4; i++) api.proposeBatch(author.id, items);
+  api.proposeBatch(author.id, items.slice(0, 19));
   expect(() => api.proposeBatch(author.id, [items[0], items[1]])).toThrow('limit');
   api.proposeBatch(author.id, [items[0]]);
   expect(() => api.propose(author.id, items[0].change)).toThrow('limit');
+  db.close();
+});
+
+it('applies a batch once with ordered cards and rejects changed or incomplete batches', () => {
+  const { db, api } = fixture();
+  const author = api.issue('bot', ['proposals:create']);
+  const items = Array.from({ length: 3 }, (_, i) => ({
+    kind: 'service',
+    change: { op: 'create', service: { ...card, name: `Card ${i}` } },
+  }));
+  const batch = api.proposeBatch(author.id, items);
+  expect(api.decideBatch(batch.batchId, true, 'human')).toBe('approved');
+  expect(db.prepare('SELECT name,position FROM services ORDER BY position').all()).toEqual([
+    { name: 'Card 0', position: 0 },
+    { name: 'Card 1', position: 1 },
+    { name: 'Card 2', position: 2 },
+  ]);
+  expect(db.prepare('SELECT version FROM config_version').get()).toEqual({ version: 2 });
+  expect(() => api.decideBatch(batch.batchId, true, 'human')).toThrow('unavailable');
+  const stale = api.proposeBatch(author.id, items);
+  db.prepare('UPDATE config_version SET version=version+1').run();
+  expect(() => api.decideBatch(stale.batchId, true, 'human')).toThrow('Configuration has changed');
+  expect(
+    (api.list() as { batchId: string; state: string }[])
+      .filter((p) => p.batchId === stale.batchId)
+      .every((p) => p.state === 'stale'),
+  ).toBe(true);
+  expect(api.decideBatch(stale.batchId, false, 'human')).toBe('rejected');
+  const partial = api.proposeBatch(author.id, items);
+  api.withdraw(author.id, partial.proposals[0].id);
+  expect(() => api.decideBatch(partial.batchId, true, 'human')).toThrow('unavailable');
+  expect(api.decideBatch(partial.batchId, false, 'human')).toBe('rejected');
+  expect(db.prepare('SELECT count(*) AS count FROM services').get()).toEqual({ count: 3 });
+  db.close();
+});
+
+it('rolls back every change when a later batch item fails', () => {
+  const { db, api } = fixture();
+  const author = api.issue('bot', ['proposals:create']);
+  const original = api.propose(author.id, { op: 'create', service: card });
+  api.decide(original.id, true, 'human');
+  const batch = api.proposeBatch(author.id, [
+    { kind: 'service', change: { op: 'delete', id: 1 } },
+    { kind: 'service', change: { op: 'delete', id: 1 } },
+  ]);
+  expect(() => api.decideBatch(batch.batchId, true, 'human')).toThrow();
+  expect(db.prepare('SELECT count(*) AS count FROM services').get()).toEqual({ count: 1 });
+  expect(db.prepare('SELECT version FROM config_version').get()).toEqual({ version: 2 });
+  expect(
+    db
+      .prepare(
+        "SELECT count(*) AS count FROM service_proposals WHERE batch_id=? AND state='pending'",
+      )
+      .get(batch.batchId),
+  ).toEqual({ count: 2 });
   db.close();
 });

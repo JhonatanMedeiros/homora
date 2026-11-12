@@ -203,3 +203,28 @@ it('shows a token returned by an identity proposal review', async () => {
   const dialog = await screen.findByRole('dialog', { name: /Token de/ });
   expect(within(dialog).getByText('one-time-example')).toBeTruthy();
 });
+
+it('reviews a batch together and explains conflicting changes', async () => {
+  const proposals = [1, 2, 3].map((n) => ({
+    id: `p${n}`,
+    author: 'a1',
+    batchId: 'batch',
+    state: 'pending',
+    expiresAt: Date.now() + 600_000,
+    diff: JSON.stringify({ op: 'create', service: { name: `Card ${n}`, url: 'http://x/' } }),
+  }));
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/agents') return { ok: true, json: async () => [active] };
+    if (url === '/api/proposals') return { ok: true, json: async () => proposals };
+    return { ok: false, json: async () => ({ code: 'batch-conflict' }) };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<Harness />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Aprovar lote' }));
+  expect(await screen.findByText(/As alterações do lote entram em conflito/)).toBeTruthy();
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/proposal-batches/batch/review',
+    expect.objectContaining({ method: 'POST', body: JSON.stringify({ approve: true }) }),
+  );
+  expect(screen.queryByRole('button', { name: 'Aprovar e aplicar' })).toBeNull();
+});

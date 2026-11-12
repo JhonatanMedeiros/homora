@@ -65,6 +65,39 @@ export function registerAgentProposalRoutes(
       return reply.code(404).send(errorBody('identity-not-found'));
     }
   });
+  app.post<{ Params: { id: string } }>(
+    '/api/proposal-batches/:id/review',
+    async (request, reply) => {
+      if (!opaqueIdSchema.safeParse(request.params.id).success)
+        return reply.code(404).send(errorBody('proposal-unavailable'));
+      const parsed = proposalReviewSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send(errorBody('invalid-decision'));
+      const session = await auth.session(request.headers);
+      if (!session) return reply.code(401).send(errorBody('auth-required'));
+      try {
+        const state = proposals.decideBatch(
+          request.params.id,
+          parsed.data.approve,
+          `user:${session.userId}`,
+        );
+        if (state === 'approved') void monitor.invalidate();
+        reply.header('Cache-Control', 'no-store');
+        return { state };
+      } catch (error) {
+        return reply
+          .code(409)
+          .send(
+            errorBody(
+              error instanceof Error && error.message === 'Configuration has changed'
+                ? 'config-changed'
+                : error instanceof Error && error.message === 'Batch changes conflict'
+                  ? 'batch-conflict'
+                  : 'proposal-unavailable',
+            ),
+          );
+      }
+    },
+  );
   app.post<{ Params: { id: string } }>('/api/proposals/:id/review', async (request, reply) => {
     if (!opaqueIdSchema.safeParse(request.params.id).success)
       return reply.code(404).send(errorBody('proposal-unavailable'));

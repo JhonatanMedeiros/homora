@@ -348,12 +348,14 @@ export function createProposalService(
               base_version: number;
               expires_at: number;
               state: string;
+              batch_id: string | null;
             }
           | undefined;
         const now = Date.now();
         if (!p || p.state !== 'pending' || p.expires_at <= now)
           throw new Error('Proposal is unavailable');
         if (human === p.author_id) throw new Error('Agent cannot approve its own proposal');
+        if (p.batch_id && accept) throw new Error('Batch requires collective review');
         if (!accept) {
           sqlite
             .prepare(
@@ -465,6 +467,91 @@ export function createProposalService(
       throw error;
     }
   }
+  function decideBatch(batchId: string, accept: boolean, human: string) {
+    try {
+      return configuration.transaction(() => {
+        const rows = sqlite
+          .prepare('SELECT * FROM service_proposals WHERE batch_id=? ORDER BY rowid')
+          .all(batchId) as {
+          id: string;
+          author_id: string;
+          diff: string;
+          base_hash: string;
+          base_version: number;
+          expires_at: number;
+          state: string;
+        }[];
+        const now = Date.now();
+        if (!rows.length || rows.some((p) => p.author_id === human))
+          throw new Error('Proposal is unavailable');
+        const pending = rows.filter((p) => p.state === 'pending' && p.expires_at > now);
+        if (!pending.length || (accept && pending.length !== rows.length))
+          throw new Error('Proposal is unavailable');
+        const version = configuration.version();
+        if (accept) {
+          // Every fingerprint is checked against the original state before any changes are applied.
+          for (const p of rows) {
+            const decoded = JSON.parse(p.diff) as Record<string, unknown>;
+            const managed =
+              decoded.kind === 'managed' ? managedChangeSchema.parse(decoded.change) : null;
+            if (
+              version !== p.base_version ||
+              (managed ? managedBaseHash(managed) : configHash()) !== p.base_hash
+            )
+              throw new Error('Configuration has changed');
+          }
+          try {
+            for (const p of rows) {
+              const decoded = JSON.parse(p.diff) as Record<string, unknown>;
+              if (decoded.kind === 'managed') {
+                applyManagedChange(
+                  sqlite,
+                  managedChangeSchema.parse(decoded.change),
+                  proxmoxConfigured,
+                );
+              } else {
+                const change = serviceProposalSchema.parse(decoded) as ServiceChange;
+                if (change.op === 'create')
+                  change.service.position = configuration.nextServicePosition(
+                    change.service.category,
+                  );
+                configuration.applyProposal(change);
+              }
+            }
+          } catch {
+            throw new Error('Batch changes conflict');
+          }
+          // One logical decision is one configuration revision, even for mixed changes.
+          sqlite.prepare('UPDATE config_version SET version=? WHERE id=1').run(version + 1);
+        }
+        for (const p of pending) {
+          const state = accept ? 'approved' : 'rejected';
+          sqlite
+            .prepare(
+              "UPDATE service_proposals SET state=?,reviewed_at=?,reviewer=? WHERE id=? AND state='pending'",
+            )
+            .run(state, now, human, p.id);
+          sqlite
+            .prepare(
+              'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+            )
+            .run(human, 'review', p.id, state, now);
+        }
+        return accept ? 'approved' : 'rejected';
+      });
+    } catch (error) {
+      try {
+        sqlite
+          .prepare(
+            'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+          )
+          .run(human, 'review', batchId, 'failed', Date.now());
+      } catch {
+        /* database failure */
+      }
+      throw error;
+    }
+  }
   function list() {
     const now = Date.now();
     const expired = sqlite
@@ -490,11 +577,30 @@ export function createProposalService(
         throw error;
       }
     }
-    return sqlite
+    const rows = sqlite
       .prepare(
         'SELECT id,author_id as author,diff,base_hash as baseHash,base_version as baseVersion,expires_at as expiresAt,state,created_at as createdAt,reviewed_at as reviewedAt,reviewer,batch_id as batchId FROM service_proposals ORDER BY created_at DESC',
       )
-      .all();
+      .all() as {
+      state: string;
+      diff: string;
+      baseHash: string;
+      baseVersion: number;
+      batchId: string | null;
+    }[];
+    return rows.map((p) => {
+      if (p.state !== 'pending') return p;
+      const decoded = JSON.parse(p.diff) as Record<string, unknown>;
+      if (decoded.kind === 'agent') return p;
+      const managed = decoded.kind === 'managed' ? managedChangeSchema.parse(decoded.change) : null;
+      const incomplete =
+        p.batchId && rows.some((other) => other.batchId === p.batchId && other.state !== 'pending');
+      return incomplete ||
+        p.baseVersion !== configuration.version() ||
+        p.baseHash !== (managed ? managedBaseHash(managed) : configHash())
+        ? { ...p, state: 'stale' }
+        : p;
+    });
   }
   function listAgents() {
     return sqlite
@@ -549,6 +655,7 @@ export function createProposalService(
     proposeBatch,
     proposeAgent,
     decide,
+    decideBatch,
     list,
     listAgents,
     listOwn,
