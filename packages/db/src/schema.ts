@@ -18,6 +18,8 @@ export const services = sqliteTable('services', {
   // 'http' (GET) or 'ping' (ICMP); interval in seconds is null for monitor default.
   checkType: text('check_type').notNull().default('http'),
   checkInterval: integer('check_interval'),
+  expectedStatus: text('expected_status'),
+  checkPath: text('check_path'),
 });
 
 // Last observations are shared with the separate local MCP process. The service

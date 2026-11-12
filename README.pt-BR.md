@@ -250,3 +250,9 @@ sobrescreve um arquivo existente. Faça uma restauração de teste antes de
 depender de um backup.
 
 A interface e a API não estão preparadas para exposição pública: o Compose não fornece HTTPS e até a conta de administrador existir, qualquer pessoa que alcance a porta pode criá-la, então faça a configuração inicial a partir da própria máquina, antes de expor qualquer coisa. A CA privada do Proxmox também pode ser importada pela interface quando o Homora estiver no container.
+
+### Opções de monitoramento HTTP
+
+Nas opções avançadas de um serviço, **Caminho de verificação** substitui o caminho e a consulta da URL do card na checagem HTTP, mantendo a mesma origem. Por exemplo, `/health` pode ser verificado enquanto o card abre `/dashboard`. Vazio usa a URL completa do card. O caminho deve começar com uma única `/` e pode conter uma consulta. A política de destinos e a permissão de rede privada continuam em vigor.
+
+**Status HTTP esperado** aceita um código exato, como `200` ou `302`, ou `2xx` / `3xx`. Uma resposta diferente aparece como indisponível, com os códigos recebido e esperado. Vazio mantém a classificação padrão. Os dois campos são preservados ao usar ping, mas só se aplicam a checagens HTTP, e são incluídos nas exportações do Homora. As checagens são anônimas e não seguem redirecionamentos: uma página de login ou um proxy de acesso pode responder com sucesso mesmo quando o serviço de origem está fora do ar. Use um endpoint de saúde anônimo adequado, quando disponível.

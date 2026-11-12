@@ -152,6 +152,8 @@ export function useServices() {
           allowPrivate: service.allowPrivate === true,
           checkType: service.checkType ?? 'http',
           checkInterval: service.checkInterval ?? null,
+          expectedStatus: service.expectedStatus ?? null,
+          checkPath: service.checkPath ?? null,
         }),
       });
       if (!response.ok) throw Error();

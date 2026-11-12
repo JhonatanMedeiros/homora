@@ -80,7 +80,7 @@ export function managedSnapshot(db: DatabaseSync) {
     groups: db.prepare('SELECT id,name,position,columns FROM service_groups ORDER BY id').all(),
     services: db
       .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private,check_type,check_interval FROM services ORDER BY id',
+        'SELECT id,name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path FROM services ORDER BY id',
       )
       .all(),
     widgets: db

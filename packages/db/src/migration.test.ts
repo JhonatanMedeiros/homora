@@ -137,8 +137,12 @@ it('adiciona histórico e lotes preservando dados da versão anterior', () => {
     const database = createDatabase(path);
     database.close();
     const check = new DatabaseSync(path);
-    expect(check.prepare('SELECT name FROM services WHERE id=5').get()).toEqual({
+    expect(
+      check.prepare('SELECT name, expected_status, check_path FROM services WHERE id=5').get(),
+    ).toEqual({
       name: 'Existing',
+      expected_status: null,
+      check_path: null,
     });
     expect(check.prepare('SELECT secret_ref FROM integration_instances WHERE id=7').get()).toEqual({
       secret_ref: 'encrypted',

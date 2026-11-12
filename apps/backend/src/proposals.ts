@@ -137,6 +137,8 @@ export function createProposalService(
             : d.service.allowPrivate;
         if (service.checkType === undefined) service.checkType = current.checkType;
         if (service.checkInterval === undefined) service.checkInterval = current.checkInterval;
+        if (service.expectedStatus === undefined) service.expectedStatus = current.expectedStatus;
+        if (service.checkPath === undefined) service.checkPath = current.checkPath;
       }
       diff = d.op === 'create' ? { op: 'create', service } : { op: 'update', id: d.id, service };
     }

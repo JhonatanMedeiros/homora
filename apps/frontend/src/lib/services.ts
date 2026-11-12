@@ -24,6 +24,7 @@ export type StatusReason =
   | 'responding'
   | 'redirect'
   | 'login-required'
+  | 'unexpected-status'
   | 'not-found'
   | 'error-status'
   | 'reachable'
@@ -35,6 +36,7 @@ export type ServiceStatus = {
   reason?: StatusReason;
   httpStatus?: number | null;
   latencyMs?: number | null;
+  expectedStatus?: string | null;
 };
 
 export function hostOf(url: string) {

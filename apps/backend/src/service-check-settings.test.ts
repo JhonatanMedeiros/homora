@@ -6,6 +6,7 @@ import { parse } from 'yaml';
 import { createDatabase } from '@homora/db';
 import { createTestAuth } from './test-auth.js';
 import { createApp } from './app.js';
+import { parseTransfer } from './config-transfer.js';
 
 it('stores check method and interval, validates bounds, and carries values in export/import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-check-settings-'));
@@ -110,6 +111,79 @@ it('stores check method and interval, validates bounds, and carries values in ex
       checkType: 'http',
       checkInterval: null,
     });
+  } finally {
+    await app.close();
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('validates HTTP expectations and paths and preserves them through export and import', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-http-check-'));
+  const db = createDatabase(join(dir, 'db.sqlite'));
+  const { auth, cookie } = await createTestAuth(db.db);
+  const headers = { origin: 'http://localhost:5173', cookie };
+  const app = createApp(db.db, 5173, auth);
+  const send = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>
+    app.inject({ method, url, headers, payload });
+  const base = {
+    name: 'Service',
+    url: 'https://example.test/dashboard',
+    category: 'Home',
+    description: '',
+  };
+  try {
+    for (const checkPath of [
+      '//evil.test/x',
+      '/\\evil.test',
+      'https://evil.test',
+      '/has space',
+      '/a#fragment',
+    ]) {
+      expect((await send('POST', '/api/services', { ...base, checkPath })).statusCode).toBe(400);
+    }
+    expect(
+      (await send('POST', '/api/services', { ...base, expectedStatus: '600' })).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await send('POST', '/api/services', {
+          ...base,
+          name: 'Numeric',
+          url: 'https://numeric.example.test/',
+          expectedStatus: 200,
+        })
+      ).json(),
+    ).toMatchObject({ expectedStatus: '200' });
+    const created = (
+      await send('POST', '/api/services', {
+        ...base,
+        checkPath: '/health?full=1',
+        expectedStatus: '2xx',
+      })
+    ).json();
+    expect(created).toMatchObject({ checkPath: '/health?full=1', expectedStatus: '2xx' });
+    expect((await send('PUT', `/api/services/${created.id}`, base)).json()).toMatchObject({
+      checkPath: '/health?full=1',
+      expectedStatus: '2xx',
+    });
+    for (const format of ['yaml', 'json']) {
+      const content = (await send('GET', `/api/config/export?format=${format}`)).body;
+      const preview = (await send('POST', '/api/config/import/preview', { content })).json();
+      expect(preview.plan.issues).toEqual([]);
+      const exported = parse(content);
+      expect(
+        parseTransfer(content).document.groups[0].services.find(
+          (service) => service.name === 'Service',
+        ),
+      ).toMatchObject({ checkPath: '/health?full=1', expectedStatus: '2xx' });
+      expect(
+        exported.groups[0].services.find((service: { name: string }) => service.name === 'Service'),
+      ).toMatchObject({
+        checkPath: '/health?full=1',
+        expectedStatus: '2xx',
+      });
+    }
   } finally {
     await app.close();
     db.close();

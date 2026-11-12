@@ -11,6 +11,7 @@ export type StatusReason =
   | 'responding' // 2xx
   | 'redirect' // 3xx, without following redirect
   | 'login-required' // 401 or 403: responds, but requires credentials
+  | 'unexpected-status'
   | 'not-found' // 404
   | 'error-status' // other 4xx and 5xx
   | 'reachable' // successful ICMP ping
@@ -25,6 +26,7 @@ export type ServiceStatus = {
   httpStatus: number | null;
   /** Latency in milliseconds; null when no response. */
   latencyMs: number | null;
+  expectedStatus?: string | null;
 };
 
 /** `httpStatus` is null when check was a successful ICMP ping. */
@@ -34,7 +36,19 @@ export type CheckResult = { httpStatus: number | null; latencyMs: number };
 export class PingUnavailableError extends Error {}
 
 /** Translates HTTP status into displayed state. Responding services, even demanding login, are considered online. */
-export function classify(httpStatus: number): Pick<ServiceStatus, 'status' | 'reason'> {
+export function classify(
+  httpStatus: number,
+  expected?: string | number | null,
+): Pick<ServiceStatus, 'status' | 'reason'> {
+  if (expected) {
+    const matches =
+      String(expected) === String(httpStatus) ||
+      (expected === '2xx' && httpStatus >= 200 && httpStatus < 300) ||
+      (expected === '3xx' && httpStatus >= 300 && httpStatus < 400);
+    return matches
+      ? { status: 'available', reason: 'responding' }
+      : { status: 'unavailable', reason: 'unexpected-status' };
+  }
   if (httpStatus >= 200 && httpStatus < 300) return { status: 'available', reason: 'responding' };
   if (httpStatus >= 300 && httpStatus < 400) return { status: 'available', reason: 'redirect' };
   if (httpStatus === 401 || httpStatus === 403)
@@ -169,7 +183,9 @@ export function createServiceMonitor(
             const attemptedAt = new Date(now()).toISOString();
             try {
               const result = await check(
-                service.url,
+                service.checkType !== 'ping' && service.checkPath
+                  ? new URL(service.checkPath, new URL(service.url).origin).href
+                  : service.url,
                 service.allowPrivate === true,
                 service.checkType ?? 'http',
               );
@@ -177,9 +193,12 @@ export function createServiceMonitor(
                 states.set(service.id, {
                   ...(result.httpStatus === null
                     ? { status: 'available' as const, reason: 'reachable' as const }
-                    : classify(result.httpStatus)),
+                    : classify(result.httpStatus, service.expectedStatus)),
                   lastAttempt: attemptedAt,
                   httpStatus: result.httpStatus,
+                  ...(result.httpStatus !== null && service.expectedStatus
+                    ? { expectedStatus: String(service.expectedStatus) }
+                    : {}),
                   latencyMs: result.latencyMs,
                 });
             } catch (error) {
