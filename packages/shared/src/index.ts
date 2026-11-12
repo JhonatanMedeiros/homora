@@ -3,6 +3,17 @@ import { BRAND_ICON_NAMES } from './brand-icons.js';
 export { BRAND_ICON_NAMES };
 /** Service monitor probe method: HTTP GET (default) or ICMP ping. */
 export type CheckType = 'http' | 'ping';
+export type ExpectedStatus = string | number;
+export const isExpectedStatus = (value: unknown): value is ExpectedStatus =>
+  (typeof value === 'string' || typeof value === 'number') &&
+  /^(?:[1-5][0-9]{2}|2xx|3xx)$/.test(String(value));
+export const isCheckPath = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  value.length <= 2048 &&
+  /^\/(?!\/)/.test(value) &&
+  !/[\s\\#]/.test(value) &&
+  !Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127) &&
+  !value.includes('://');
 export const CHECK_INTERVAL_MIN = 30;
 export const CHECK_INTERVAL_MAX = 3600;
 export const CHECK_INTERVAL_DEFAULT = 60;
@@ -19,6 +30,8 @@ export type ServiceInput = {
   checkType?: CheckType;
   /** Seconds between checks; null restores default and omitted preserves current value. */
   checkInterval?: number | null;
+  expectedStatus?: ExpectedStatus | null;
+  checkPath?: string | null;
 };
 export type Service = ServiceInput & { id: number };
 
@@ -192,6 +205,12 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
     allowPrivate: input.allowPrivate === true,
     ...(input.checkType === 'http' || input.checkType === 'ping'
       ? { checkType: input.checkType }
+      : {}),
+    ...(input.expectedStatus === null || isExpectedStatus(input.expectedStatus)
+      ? { expectedStatus: input.expectedStatus === null ? null : String(input.expectedStatus) }
+      : {}),
+    ...(input.checkPath === null || isCheckPath(input.checkPath)
+      ? { checkPath: input.checkPath }
       : {}),
     ...(input.checkInterval === null
       ? { checkInterval: null }

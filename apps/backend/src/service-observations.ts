@@ -10,6 +10,7 @@ const observationSchema = z
     lastAttempt: z.iso.datetime().nullable(),
     reason: z.enum([
       'responding',
+      'unexpected-status',
       'redirect',
       'login-required',
       'not-found',
@@ -20,6 +21,7 @@ const observationSchema = z
     ]),
     httpStatus: z.number().int().min(100).max(599).nullable(),
     latencyMs: z.number().nonnegative().nullable(),
+    expectedStatus: z.string().nullable().optional(),
   })
   .strict();
 const unchecked: ServiceStatus = {
@@ -33,7 +35,12 @@ const HISTORY_RETENTION = 30 * 24 * 60 * 60_000;
 const FAILURE_DETAIL_BARS = 24;
 /** Checks read to find where the current outage began (about 8 h at the default interval). */
 const FAILURE_DETAIL_LOOKBACK = 500;
-function signature(service: Pick<Service, 'url' | 'allowPrivate' | 'checkType' | 'checkInterval'>) {
+function signature(
+  service: Pick<
+    Service,
+    'url' | 'allowPrivate' | 'checkType' | 'checkInterval' | 'expectedStatus' | 'checkPath'
+  >,
+) {
   return createHash('sha256')
     .update(
       JSON.stringify([
@@ -41,6 +48,8 @@ function signature(service: Pick<Service, 'url' | 'allowPrivate' | 'checkType' |
         Boolean(service.allowPrivate),
         service.checkType ?? 'http',
         service.checkInterval ?? null,
+        service.expectedStatus ?? null,
+        service.checkPath ?? null,
       ]),
     )
     .digest('hex');
@@ -118,12 +127,13 @@ export function createObservationStore(db: DatabaseSync) {
         recent: events
           .slice(0, FAILURE_DETAIL_BARS)
           .reverse()
-          .map(({ observedAt, status, reason, httpStatus, latencyMs }) => ({
+          .map(({ observedAt, status, reason, httpStatus, latencyMs, expectedStatus }) => ({
             observedAt,
             status,
             reason,
             httpStatus,
             latencyMs,
+            ...(expectedStatus ? { expectedStatus } : {}),
           })),
         failingSince: failing ? (events[run - 1]?.observedAt ?? null) : null,
         // The outage began before the checks that were read, so `failingSince` is a lower bound.
@@ -136,11 +146,20 @@ export function createObservationStore(db: DatabaseSync) {
     list(now = Date.now()) {
       const rows = db
         .prepare(
-          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_type AS checkType,s.check_interval AS checkInterval,o.signature,o.observation
+          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,o.signature,o.observation
         FROM services s LEFT JOIN service_observations o ON o.service_id=s.id ORDER BY s.id`,
         )
         .all() as unknown as Array<
-        Pick<Service, 'id' | 'url' | 'allowPrivate' | 'checkType' | 'checkInterval'> & {
+        Pick<
+          Service,
+          | 'id'
+          | 'url'
+          | 'allowPrivate'
+          | 'checkType'
+          | 'checkInterval'
+          | 'expectedStatus'
+          | 'checkPath'
+        > & {
           signature: string | null;
           observation: string | null;
         }

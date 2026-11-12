@@ -1,4 +1,10 @@
-import { CHECK_INTERVAL_MAX, CHECK_INTERVAL_MIN, ICON_MAX_LENGTH } from '@homora/shared';
+import {
+  CHECK_INTERVAL_MAX,
+  CHECK_INTERVAL_MIN,
+  ICON_MAX_LENGTH,
+  isCheckPath,
+  isExpectedStatus,
+} from '@homora/shared';
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
 
@@ -21,6 +27,11 @@ export const serviceInputSchema = z
     position: z.number().int().safe().min(0).optional(),
     allowPrivate: z.boolean().optional(),
     checkType: z.enum(['http', 'ping']).optional(),
+    expectedStatus: z
+      .union([z.string().refine(isExpectedStatus), z.number().int().min(100).max(599)])
+      .nullable()
+      .optional(),
+    checkPath: z.string().refine(isCheckPath).nullable().optional(),
     checkInterval: z
       .number()
       .int()

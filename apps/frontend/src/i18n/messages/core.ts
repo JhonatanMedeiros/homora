@@ -114,6 +114,7 @@ export const en = {
   'card.note.notFound': 'Page not found (404)',
   'card.note.error': 'Server returned error {code}',
   'card.note.errorGeneric': 'Server returned an error',
+  'card.note.unexpected': 'Returned {code}, expected {expected}',
   'card.note.noResponse': 'No response',
   'card.note.noResponseAt': 'No response · last attempt {time}',
   'card.note.blocked': 'Destination not authorized for monitoring',
@@ -166,6 +167,12 @@ export const en = {
   'form.checkHttpHint': 'Opens the address and reads the HTTP status code.',
   'form.checkPingHint':
     'Only checks that the host answers ping; it says nothing about the service itself.',
+  'form.checkPath': 'Check path (optional)',
+  'form.checkPathHint':
+    'Uses this path on the same origin. Leave empty to check the service URL. HTTP only.',
+  'form.expectedStatus': 'Expected HTTP status (optional)',
+  'form.expectedStatusHint':
+    'An exact code, 2xx or 3xx. Leave empty for the default behavior. HTTP only.',
   'form.interval': 'Check every (seconds)',
   'form.intervalHint': 'Between {min} and {max}. Leave empty for the default of 60 seconds.',
   'form.allowPrivate': 'Allow monitoring on a private network',
@@ -349,6 +356,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'card.note.notFound': 'Página não encontrada (404)',
   'card.note.error': 'Servidor retornou erro {code}',
   'card.note.errorGeneric': 'Servidor retornou erro',
+  'card.note.unexpected': 'Respondeu {code}, esperado {expected}',
   'card.note.noResponse': 'Sem resposta',
   'card.note.noResponseAt': 'Sem resposta · última tentativa {time}',
   'card.note.blocked': 'Destino não autorizado para monitoramento',
@@ -401,6 +409,12 @@ export const ptBR: Record<keyof typeof en, string> = {
   'form.checkHttpHint': 'Abre o endereço e lê o código de status HTTP.',
   'form.checkPingHint':
     'Só confirma que o host responde ao ping; não diz nada sobre o serviço em si.',
+  'form.checkPath': 'Caminho de verificação (opcional)',
+  'form.checkPathHint':
+    'Usa este caminho na mesma origem. Vazio verifica a URL do serviço. Apenas HTTP.',
+  'form.expectedStatus': 'Status HTTP esperado (opcional)',
+  'form.expectedStatusHint':
+    'Código exato, 2xx ou 3xx. Vazio mantém o comportamento padrão. Apenas HTTP.',
   'form.interval': 'Verificar a cada (segundos)',
   'form.intervalHint': 'Entre {min} e {max}. Deixe vazio para o padrão de 60 segundos.',
   'form.allowPrivate': 'Permitir monitoramento em rede privada',

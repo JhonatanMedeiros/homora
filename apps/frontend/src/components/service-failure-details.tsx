@@ -20,12 +20,15 @@ const BARS = 24;
 
 function reasonText(status: ServiceStatus) {
   const code = typeof status.httpStatus === 'number' ? status.httpStatus : null;
+  if (status.reason === 'unexpected-status' && code !== null && status.expectedStatus)
+    return t('card.note.unexpected', { code, expected: status.expectedStatus });
   if (status.reason === 'not-found') return t('details.reasonNotFound');
   if (status.reason === 'error-status' && code !== null) return t('details.reasonError', { code });
   return t('details.reasonNoResponse');
 }
 
 function tipText(status: ServiceStatus) {
+  if (status.reason === 'unexpected-status') return t('details.tipError');
   if (status.reason === 'not-found') return t('details.tipNotFound');
   if (status.reason === 'error-status') return t('details.tipError');
   return t('details.tipNoResponse');

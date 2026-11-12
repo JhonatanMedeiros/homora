@@ -1,5 +1,7 @@
 import { parse, stringify } from 'yaml';
 import {
+  isCheckPath,
+  isExpectedStatus,
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
   normalizeIcon,
@@ -21,6 +23,8 @@ export type ImportedService = {
   allowPrivate: boolean;
   checkType?: 'http' | 'ping';
   checkInterval?: number;
+  expectedStatus?: string;
+  checkPath?: string;
 };
 export type ImportedGroup = { name: string; columns?: number; services: ImportedService[] };
 export type ImportDocument = { groups: ImportedGroup[] };
@@ -88,6 +92,8 @@ export function serializeConfiguration(
           ...(service.icon ? { icon: service.icon } : {}),
           ...(service.allowPrivate ? { allowPrivate: true } : {}),
           ...(service.checkType === 'ping' ? { check: 'ping' } : {}),
+          ...(service.expectedStatus ? { expectedStatus: service.expectedStatus } : {}),
+          ...(service.checkPath ? { checkPath: service.checkPath } : {}),
           ...(service.checkInterval ? { interval: service.checkInterval } : {}),
         })),
     })),
@@ -129,12 +135,20 @@ export function parseService(
     checkInterval = raw.interval;
   else if (raw.interval !== undefined)
     issues.push({ path: `${path}.interval`, code: 'check-ignored', severity: 'warning' });
+  const expectedStatus =
+    typeof raw.expectedStatus === 'number' ? String(raw.expectedStatus) : raw.expectedStatus;
+  if (raw.expectedStatus !== undefined && !isExpectedStatus(expectedStatus))
+    issues.push({ path: `${path}.expectedStatus`, code: 'check-ignored', severity: 'warning' });
+  if (raw.checkPath !== undefined && !isCheckPath(raw.checkPath))
+    issues.push({ path: `${path}.checkPath`, code: 'check-ignored', severity: 'warning' });
   return {
     name,
     url: url.href,
     description: typeof raw.description === 'string' ? raw.description.trim().slice(0, 140) : '',
     icon,
     allowPrivate: raw.allowPrivate === true,
+    ...(isExpectedStatus(expectedStatus) ? { expectedStatus: String(expectedStatus) } : {}),
+    ...(isCheckPath(raw.checkPath) ? { checkPath: raw.checkPath } : {}),
     ...(checkType ? { checkType } : {}),
     ...(checkInterval ? { checkInterval } : {}),
   };

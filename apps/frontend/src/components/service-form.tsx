@@ -47,7 +47,14 @@ export function ServiceForm({
   const suggestion = suggestBrandIcon(value.name);
   // Starts with the essentials; opens by itself when the service already has advanced values.
   const [advanced, setAdvanced] = useState(() =>
-    Boolean(value.description || value.icon || value.checkType === 'ping' || value.checkInterval),
+    Boolean(
+      value.description ||
+      value.icon ||
+      value.checkType === 'ping' ||
+      value.checkInterval ||
+      value.expectedStatus ||
+      value.checkPath,
+    ),
   );
   return (
     <form
@@ -184,6 +191,31 @@ export function ServiceForm({
               <FieldDescription>
                 {value.checkType === 'ping' ? t('form.checkPingHint') : t('form.checkHttpHint')}
               </FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="service-check-path">{t('form.checkPath')}</FieldLabel>
+              <Input
+                id="service-check-path"
+                disabled={value.checkType === 'ping'}
+                value={value.checkPath ?? ''}
+                onChange={(e) => set({ checkPath: e.target.value || null })}
+                placeholder="/health"
+                pattern="/[^\s\\#]*"
+                maxLength={2048}
+              />
+              <FieldDescription>{t('form.checkPathHint')}</FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="service-expected-status">{t('form.expectedStatus')}</FieldLabel>
+              <Input
+                id="service-expected-status"
+                disabled={value.checkType === 'ping'}
+                value={value.expectedStatus ?? ''}
+                onChange={(e) => set({ expectedStatus: e.target.value || null })}
+                placeholder="200, 2xx"
+                pattern="([1-5][0-9]{2}|2xx|3xx)"
+              />
+              <FieldDescription>{t('form.expectedStatusHint')}</FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="service-interval">{t('form.interval')}</FieldLabel>

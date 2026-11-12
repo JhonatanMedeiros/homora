@@ -155,6 +155,8 @@ export function ServicesPage({
             allowPrivate: service.allowPrivate === true,
             checkType: service.checkType ?? 'http',
             checkInterval: service.checkInterval ?? null,
+            expectedStatus: service.expectedStatus ?? null,
+            checkPath: service.checkPath ?? null,
           }
         : emptyService,
     );
@@ -218,6 +220,8 @@ export function ServicesPage({
             allowPrivate: service.allowPrivate === true,
             checkType: service.checkType ?? 'http',
             checkInterval: service.checkInterval ?? null,
+            expectedStatus: service.expectedStatus ?? null,
+            checkPath: service.checkPath ?? null,
           }
         : emptyService,
     );

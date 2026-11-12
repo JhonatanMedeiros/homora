@@ -27,6 +27,8 @@ export type ServiceFields = {
   allowPrivate?: boolean;
   checkType?: 'http' | 'ping';
   checkInterval?: number | null;
+  expectedStatus?: string | null;
+  checkPath?: string | null;
 };
 export type Diff = {
   op?: string;
@@ -119,6 +121,8 @@ export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['allowPrivate', 'field.allowPrivate'],
   ['checkType', 'field.checkType'],
   ['checkInterval', 'field.checkInterval'],
+  ['expectedStatus', 'form.expectedStatus'],
+  ['checkPath', 'form.checkPath'],
 ];
 
 export const formatDate = formatDateTime;
