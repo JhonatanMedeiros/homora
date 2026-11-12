@@ -125,6 +125,30 @@ export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['checkPath', 'form.checkPath'],
 ];
 
+/** One-line description of what a proposal changes, used by the compact rows. */
+export function proposalSummary(diff: Diff | null, current?: Service): string {
+  if (!diff) return t('proposal.unknown');
+  if (diff.kind === 'agent') return t('proposal.agentChange');
+  if (diff.kind === 'managed' && diff.change) {
+    const kind = diff.change.kind;
+    return t(
+      kind === 'group'
+        ? 'proposal.managed.group'
+        : kind === 'card-order'
+          ? 'proposal.managed.card-order'
+          : kind === 'widget'
+            ? 'proposal.managed.widget'
+            : 'proposal.managed.connection-setup',
+    );
+  }
+  const name = diff.service?.name ?? current?.name;
+  if (diff.op === 'create') return t('proposal.add', { name: name ?? t('proposal.newService') });
+  const label = current?.name ?? name ?? t('proposal.serviceNumber', { id: diff.id ?? '' });
+  if (diff.op === 'update') return t('proposal.update', { name: label });
+  if (diff.op === 'delete') return t('proposal.remove', { name: label });
+  return t('proposal.unknown');
+}
+
 export const formatDate = formatDateTime;
 
 export type { Service };
