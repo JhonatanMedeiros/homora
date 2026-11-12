@@ -111,8 +111,13 @@ releases exist.
 - `integration-connections.ts` orchestrates connection settings, credential encryption,
   persistence, observation caching, and adapter dispatch; route handlers parse requests and
   translate results into HTTP status and JSON responses.
-- `integration-registry.ts` registers metadata and execution handlers for Jellyfin, Home
-  Assistant, Uptime Kuma, AdGuard Home, and Proxmox. All connection adapters use the shared
+- `integration-registry.ts` builds the registry from `integrationDefinitions`
+  (`packages/shared/src/integration-manifest.ts`). Simple read-only integrations are
+  **manifests**, validated at startup (`integration-manifest.ts`) and run by one interpreter
+  (`manifest-adapter.ts`); Proxmox stays a code adapter registered by hand. Type enums, stored
+  config keys, proposal schemas, the connection form, widget text and the catalog endpoint derive
+  from the same definitions ([ADR 0009](decisoes/0009-declarative-integration-adapters.md)).
+  `adapter-contract.ts` is the test every adapter must pass ([adapters](adapters.md)). All connection adapters use the shared
   network transport with destination policy. Legacy Proxmox credentials are copied once, at
   backend startup, into encrypted connection storage; the bridge row and widget references are
   preserved. Nothing outside the migrator reads the legacy file.
@@ -169,9 +174,9 @@ Key areas of attention focus on consistency and safe evolution:
    simplifies test boundaries.
 5. Legacy Proxmox files remain sensitive after migration. The migration marker prevents deleted
    connections from being re-imported, and the legacy HTTP routes were removed.
-6. Integration kinds are currently declared across execution catalogs, backend schemas, and UI.
-   Keep these types explicit; centralize this contract when future adapters make duplication
-   tangible, rather than introducing complex generic code generators now.
+6. Integration kinds, fields and display text used to be declared by hand in the registry, schemas
+   and UI. They now come from one definition per integration (ADR 0009); only code adapters
+   (Proxmox) still carry their own execution and Proxmox-specific rendering.
 
 For ongoing contribution and review rules, consult [Engineering Standards](padroes.md).
 Structural changes affecting boundaries, persistence, security, or deployment must be recorded

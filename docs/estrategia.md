@@ -87,18 +87,25 @@ and no card appears monitored without being checked.
 
 ### R2 — Extensible Integrations
 
-- [ ] Declarative adapter format (specifying capabilities, fields, and fetch logic) to lower
-      contribution friction for external developers.
+- [x] Declarative adapter format (specifying capabilities, fields, and fetch logic) to lower
+      contribution friction for external developers: closed manifest, one interpreter, startup
+      validation, four adapters migrated with parity checks
+      ([ADR 0009](decisoes/0009-declarative-integration-adapters.md)). Proxmox stays code.
 - [ ] Prioritize top ~10 most popular self-hosted integrations, validating each against live instances.
       Maintainer list is a hypothesis and should be refined with user demand.
 - [ ] Reference case integrations: Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel,
-      and Speedtest Tracker. Each is marked complete only with live validation.
+      and Speedtest Tracker. Each is marked complete only with live validation. Speedtest Tracker,
+      Portainer, NetBird, Tailscale and Cloudflare are implemented and **unvalidated** (contract
+      tests and fixtures only, no live service); Beszel (login flow with POST) and TrueNAS
+      (WebSocket-only API) are skipped, see [integrations](integracoes.md#reference-integrations-issue-98).
 - [x] Extract Proxmox from legacy vault into unified connection architecture (see
       [ADR 0001](decisoes/0001-proxmox-connections.md)). The legacy file is migrated at backend
       startup and the legacy routes, transport and fallbacks are gone; only the migrator and the
       `.proxmox` backup remain, to be removed once no unmigrated installation is left.
-- [ ] Proxmox node selection within a connection (widgets and top bar currently show cluster aggregates).
-- [ ] Contribution guide for new adapters with automated contract testing harnesses.
+- [x] Proxmox node selection within a connection: optional, default whole cluster, an unavailable
+      node is reported as such and never replaced by cluster totals.
+- [x] Contribution guide for new adapters with automated contract testing harnesses
+      ([adapters](adapters.md), `adapter-contract.ts`).
 
 **Done Definition:** an external developer can contribute an adapter following documentation,
 and prioritized adapters are verified against live production services.
@@ -143,8 +150,9 @@ below is inferred and must be cross-checked against actual `services.yaml` and `
 | Brand logos by name (Proxmox, Portainer, Vaultwarden…)                | Implemented: 163 bundled brand icons plus `lucide:`, emoji and URL | R1    |
 | Columns with variable widths                                          | Partial: 1 to 6 columns per group; arbitrary widths not supported  | R1    |
 | Top status bar with CPU, memory, storage, date, and clock             | Implemented, fed by a Proxmox connection                           | R1    |
-| Integrations: Proxmox, Uptime Kuma, AdGuard, Home Assistant           | Implemented (read-only, verified with mocks)                       | R2    |
-| Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel, Speedtest | Not implemented                                                    | R2    |
+| Integrations: Proxmox, Uptime Kuma, AdGuard, Home Assistant, Jellyfin | Implemented (read-only, verified with mocks)                       | R2    |
+| Portainer, Cloudflare, Tailscale, Netbird, Speedtest Tracker          | Implemented, unvalidated (no live service tried)                   | R2    |
+| TrueNAS, Beszel                                                       | Skipped: WebSocket-only API; login flow with POST                  | R2    |
 | Background image, translucent glass cards, custom accents             | No                                                                 | R3    |
 | Search bar triggering external web search ("G" button)                | No: search strictly filters local cards                            | R3    |
 | Import `services.yaml`                                                | Implemented (preview before writing); widgets are not imported     | R0    |

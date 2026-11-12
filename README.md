@@ -17,9 +17,9 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - A check method per service (HTTP request or ping) and a check interval per service (30 to 3600 seconds), also kept in exports.
 - Optional Docker discovery: suggests cards from local or remote agent inventories using container labels (`homora.url`, or Homepage's `homepage.href`), with a review step. See [Docker discovery](#docker-discovery).
 - Local administrator account, SQLite storage with migrations, backup and restore scripts.
-- Widgets inside cards: attach a widget (Proxmox, Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home data) to a card on the Integrations page. Each widget shows its own loading or error state, and a failing connection does not affect the other cards.
+- Widgets inside cards: attach a widget (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Speedtest Tracker, Portainer, NetBird, Tailscale or Cloudflare data) to a card on the Integrations page. Each widget shows its own loading or error state, and a failing connection does not affect the other cards.
 - An optional top bar (turn it on in Settings → Interface) with the date, the time and CPU, memory and disk usage from a selected Proxmox connection. The clock can show seconds, use a 12 or 24 hour format and follow another time zone. Interface also holds the theme, language and home page layout; all of it is saved in the browser only.
-- Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) and an MCP server (local stdio or Streamable HTTP) where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
+- Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare) and an MCP server (local stdio or Streamable HTTP) where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
 
 Not available yet: OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md).
 
@@ -218,7 +218,7 @@ The UI shows friendly messages for these errors; MCP may return a generic failur
 
 ## Proxmox and other integrations
 
-Set up Proxmox on the Integrations page with an account and token that have read-only access. Credentials are encrypted at rest with a key stored separately in the same directory; this does not protect against someone who can read both files. Add separate named connections for independent clusters or servers. For a private CA, import the CA's public certificate (PEM); save the connection and choose **Test connection** in the row's **⋯** menu. TLS validation stays on. The top bar source can be selected in Settings. Service limits and requirements are in [docs/integracoes.md](docs/integracoes.md). The adapters were validated with mocks, not against real Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home instances.
+Set up Proxmox on the Integrations page with an account and token that have read-only access. Credentials are encrypted at rest with a key stored separately in the same directory; this does not protect against someone who can read both files. Add separate named connections for independent clusters or servers. For a private CA, import the CA's public certificate (PEM); save the connection and choose **Test connection** in the row's **⋯** menu. TLS validation stays on. The top bar source can be selected in Settings. Service limits and requirements are in [docs/integracoes.md](docs/integracoes.md). A Proxmox connection can optionally show only one node. The adapters were validated with mocks and documented sample responses, not against real instances; see the [integration status table](docs/integracoes.md#integration-status) and [how to add one](docs/adapters.md).
 
 ## MCP and AI agents
 

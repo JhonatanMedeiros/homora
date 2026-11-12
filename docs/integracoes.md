@@ -306,3 +306,31 @@ widening the transport, so they were not implemented (decision recorded in
 - **TrueNAS:** the current API (25.04 and later) is JSON-RPC 2.0 over WebSocket, and the vendor
   deprecated the REST `/api/v2.0` API. WebSocket-only. Source: [TrueNAS API 25.04](https://api.truenas.com/v25.04/),
   read 2026-11-12.
+
+## Integration status
+
+| Integration       | Kind     | Status                                                | Needs                                |
+| ----------------- | -------- | ----------------------------------------------------- | ------------------------------------ |
+| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope | Read-only API token, HTTPS           |
+| Jellyfin          | manifest | Implemented, unvalidated                              | Public info endpoint, no credentials |
+| Home Assistant    | manifest | Implemented, unvalidated                              | Long-lived token, HTTPS              |
+| Uptime Kuma       | manifest | Implemented, unvalidated                              | A published status page              |
+| AdGuard Home      | manifest | Implemented, unvalidated                              | Basic auth user, HTTPS               |
+| Speedtest Tracker | manifest | Implemented, unvalidated                              | Token with Read Results, HTTPS       |
+| Portainer         | manifest | Implemented, unvalidated                              | Access token, HTTPS                  |
+| NetBird           | manifest | Implemented, unvalidated                              | Personal access token, HTTPS         |
+| Tailscale         | manifest | Implemented, unvalidated                              | API access token, HTTPS              |
+| Cloudflare        | manifest | Implemented, unvalidated                              | Token with Zone Read, HTTPS          |
+| Beszel, TrueNAS   | —        | Skipped (see above)                                   | —                                    |
+
+"Unvalidated" means no one has tried it against a live service yet. Adding one is documented in
+[adapters](adapters.md); the manifest vocabulary and its limits are in
+[ADR 0009](decisoes/0009-declarative-integration-adapters.md).
+
+### Proxmox node selection
+
+By default Proxmox widgets and the top bar show cluster totals. Edit a saved Proxmox connection and
+choose a **Node** (listed from the connection's inventory) to scope VMs, containers and CPU, memory and
+disk to that node. If the node disappears or is offline, the widget and the top bar say so; they never
+fall back to cluster totals. The node name is stored with the connection and is never part of the
+public status page. Choose "Whole cluster" to clear it.

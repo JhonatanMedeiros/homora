@@ -55,6 +55,9 @@ are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not 
 - [ ] Publish the first release: the multi-arch workflow (`release.yml`) has not run and no tag exists.
 - [ ] Validate MVP acceptance criteria in a real environment and log improvements.
 - [ ] Evaluate Proxmox helper install script and additional integrations based on user demand.
+      (Declarative adapters, the contract harness, five reference integrations and Proxmox node
+      selection are done and unvalidated; live validation is still pending. Beszel and TrueNAS were
+      skipped for transport reasons, see `integracoes.md`.)
 
 ## Risks and Open Decisions
 
