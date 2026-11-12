@@ -1036,3 +1036,5 @@ Services can optionally check a same-origin path independently of their card URL
 
 - Webhook and Telegram channels, encrypted destinations, per-channel private-network opt-in, bounded asynchronous delivery and persisted service transition state. The five-minute cooldown suppresses a repeated outage and its recovery; unknown checks retain the last known state. Retries can duplicate deliveries and queued messages do not survive a restart.
 - Validation: `pnpm build`, lint, formatting and type checks passed; 422 application tests passed with `vitest run --maxWorkers=4`, and 6 script tests passed. Two unrestricted `pnpm check` runs timed out in the existing load-sensitive uptime benchmark, which passed in isolation. Telegram and webhook delivery were mocked; the UI was not visually reviewed in a browser.
+
+- Settings groups webhooks and Telegram channels into separate sections, with an inline form opened on request. Validated with the focused frontend tests, lint and frontend build; not visually reviewed in a browser.
