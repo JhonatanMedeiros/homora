@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { PasswordInput } from '@/components/password-input';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
@@ -186,6 +187,7 @@ export function ConnectionForm({
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={busy}>
+            {busy && <Spinner data-icon="inline-start" />}
             {t('connections.save')}
           </Button>
         </CardFooter>

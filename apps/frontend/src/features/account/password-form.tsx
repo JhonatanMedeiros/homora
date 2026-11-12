@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -93,6 +94,7 @@ export function PasswordForm({ onChanged }: { onChanged: () => void }) {
           <FormError>{error}</FormError>
           <div>
             <Button type="submit" variant="outline" disabled={saving}>
+              {saving && <Spinner data-icon="inline-start" />}
               {t('account.changePassword')}
             </Button>
           </div>

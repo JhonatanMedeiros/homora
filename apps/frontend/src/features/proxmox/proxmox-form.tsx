@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { PasswordInput } from '@/components/password-input';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,7 @@ export function ProxmoxForm(p: Props) {
             {t('proxmox.test')}
           </Button>
           <Button type="submit" disabled={p.busy}>
+            {p.busy && <Spinner data-icon="inline-start" />}
             {t('proxmox.save')}
           </Button>
           <Button type="button" variant="ghost" onClick={p.onCancel}>

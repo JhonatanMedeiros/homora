@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ export function ProfileForm({
           <FormError>{error}</FormError>
           <div>
             <Button type="submit" disabled={saving || unchanged || !name.trim()}>
+              {saving && <Spinner data-icon="inline-start" />}
               {t('account.saveProfile')}
             </Button>
           </div>

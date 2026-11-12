@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -106,6 +107,7 @@ export function WidgetsSection({
               </NativeSelect>
             </Field>
             <Button type="submit" disabled={busy}>
+              {busy && <Spinner data-icon="inline-start" />}
               {t('widgets.create')}
             </Button>
           </FieldGroup>

@@ -1,5 +1,6 @@
 import { t } from '@/i18n';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
+import { WidgetSkeleton } from '@/components/skeletons';
 
 /** Integration data within the card, with loading, error, and invalid data states. */
 export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
@@ -21,16 +22,11 @@ export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
                 </div>
               ))}
             </dl>
+          ) : entry.status === 'loading' ? (
+            <WidgetSkeleton label={t('cardWidget.loading')} />
           ) : (
-            <p
-              role={entry.status === 'loading' ? 'status' : undefined}
-              className="text-xs text-muted-foreground"
-            >
-              {entry.status === 'loading'
-                ? t('cardWidget.loading')
-                : entry.status === 'invalid'
-                  ? t('cardWidget.invalid')
-                  : t('cardWidget.error')}
+            <p className="text-xs text-muted-foreground">
+              {entry.status === 'invalid' ? t('cardWidget.invalid') : t('cardWidget.error')}
             </p>
           )}
         </section>

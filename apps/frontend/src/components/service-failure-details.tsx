@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CHECK_INTERVAL_DEFAULT, type Service } from '@homora/shared';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { DetailsSkeleton } from '@/components/skeletons';
 import { formatAgo, formatTime, t } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { ServiceStatus } from '@/lib/services';
@@ -63,24 +63,23 @@ export function ServiceFailureDetails({
     };
   }, [service.id, status.lastAttempt]);
 
-  if (detail === 'loading' || detail === 'error') {
+  if (detail === 'loading') {
+    return (
+      <div id={id} className={cn('z-10 border-t border-destructive/35 pt-3', className)}>
+        <DetailsSkeleton label={t('details.loading')} />
+      </div>
+    );
+  }
+  if (detail === 'error') {
     return (
       <div
         id={id}
-        role={detail === 'loading' ? 'status' : undefined}
         className={cn(
           'z-10 flex items-center gap-2 border-t border-destructive/35 pt-3 text-sm text-muted-foreground',
           className,
         )}
       >
-        {detail === 'loading' ? (
-          <>
-            <Spinner />
-            {t('details.loading')}
-          </>
-        ) : (
-          t('details.error')
-        )}
+        {t('details.error')}
       </div>
     );
   }

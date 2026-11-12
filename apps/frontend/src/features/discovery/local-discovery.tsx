@@ -9,7 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { Spinner } from '@/components/ui/spinner';
+import { SectionSkeleton } from '@/components/skeletons';
 import { apiError, t } from '@/i18n';
 import { ImportPreview } from '@/features/transfer/import-preview';
 import type { Plan } from '@/features/transfer/transfer-model';
@@ -125,12 +125,7 @@ export function LocalDiscovery({ onImported }: { onImported: () => void | Promis
 
   return (
     <div className="flex flex-col gap-4">
-      {state.status === 'loading' && (
-        <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner />
-          {t('discovery.loading')}
-        </p>
-      )}
+      {state.status === 'loading' && <SectionSkeleton label={t('discovery.loading')} />}
       {state.status === 'disabled' && (
         <Empty className="rounded-lg border">
           <EmptyHeader>

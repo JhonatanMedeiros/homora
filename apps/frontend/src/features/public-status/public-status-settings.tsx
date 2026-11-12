@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { CopyButton } from '@/components/copy-button';
@@ -163,6 +164,7 @@ export function PublicStatusSettings() {
           </FieldGroup>
           <div>
             <Button type="submit" variant="secondary" disabled={saving || !dirty}>
+              {saving && <Spinner data-icon="inline-start" />}
               {t('settings.public.save')}
             </Button>
           </div>

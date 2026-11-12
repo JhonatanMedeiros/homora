@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
@@ -260,6 +261,7 @@ export function ServiceForm({
           {t('common.cancel')}
         </Button>
         <Button type="submit" disabled={saving}>
+          {saving && <Spinner data-icon="inline-start" />}
           {editing ? t('form.saveChanges') : t('form.saveService')}
         </Button>
       </DialogFooter>

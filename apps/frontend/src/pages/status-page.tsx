@@ -3,6 +3,7 @@ import { StatusLight } from '@/components/status-light';
 import { formatAgo, formatDateTime, t, useI18n } from '@/i18n';
 import type { Availability } from '@/lib/services';
 import { cn } from '@/lib/utils';
+import { PublicStatusSkeleton } from '@/components/skeletons';
 
 export type PublicState = 'up' | 'down' | 'unknown';
 export type PublicService = {
@@ -161,7 +162,7 @@ export function StatusPage() {
           <p className="mt-2 max-w-[65ch] text-muted-foreground">{data.description}</p>
         )}
       </header>
-      {state === 'loading' && <p className="text-muted-foreground">{t('publicStatus.loading')}</p>}
+      {state === 'loading' && <PublicStatusSkeleton label={t('publicStatus.loading')} />}
       {state === 'closed' && (
         <p className="text-muted-foreground">{t('publicStatus.unavailable')}</p>
       )}
