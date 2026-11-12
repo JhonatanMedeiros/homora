@@ -1240,3 +1240,7 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - The service details panel was reduced to what is needed: name and status, address, "Runs on" with a Change host toggle (the host picker opens only then), the impact line only when there is one, dependencies with a dashed "Add dependency" button, "Used by" only when something depends on it, and one "Open card" button. Empty rows ("nothing known", "no dependencies") no longer take space.
 - The top bar follows the mockup: brand, Home › Service map breadcrumb, cluster name, refresh and host list. The mockup's "Beta" badge and "updated 40 s ago" were not added (the app has no beta flag and does not record the inventory time).
 - Not verified in a real browser.
+
+## Map: floating details (2026-11-12)
+
+- Opening the details no longer reserves space or shifts the map: the panel floats over the canvas at the top right (a bottom sheet on narrow windows), sized to its content with a larger shadow. Not verified in a real browser.

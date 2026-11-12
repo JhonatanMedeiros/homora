@@ -507,12 +507,7 @@ export function HostMap({
           }}
           className="absolute inset-0 cursor-grab overflow-auto bg-background bg-[radial-gradient(var(--border)_1px,transparent_1px)] bg-[size:22px_22px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div
-            className={cn(
-              'flex min-h-full w-max min-w-full items-center justify-center p-6 pb-24',
-              selection && 'lg:pr-80',
-            )}
-          >
+          <div className="flex min-h-full w-max min-w-full items-center justify-center p-6 pb-24">
             <div
               style={{ width: layout.width * zoom, height: layout.height * zoom }}
               className="shrink-0"
@@ -608,7 +603,7 @@ export function HostMap({
         {selection && (
           <aside
             aria-label={t('map.panel.title')}
-            className="absolute inset-x-3 bottom-20 z-10 flex max-h-[45%] flex-col gap-3 overflow-auto rounded-xl border bg-card p-4 text-sm shadow-md lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-20 lg:max-h-none lg:w-72"
+            className="absolute inset-x-3 bottom-20 z-10 flex max-h-[45%] flex-col gap-3 overflow-auto rounded-xl border bg-card p-4 text-sm shadow-lg lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-6.5rem)] lg:w-72"
           >
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
