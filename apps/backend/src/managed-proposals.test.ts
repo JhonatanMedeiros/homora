@@ -17,9 +17,9 @@ function fixture() {
     CREATE TABLE integration_widgets(id INTEGER PRIMARY KEY,integration_id INTEGER NOT NULL REFERENCES integration_instances(id) ON DELETE RESTRICT,type TEXT NOT NULL,name TEXT NOT NULL,public_config TEXT NOT NULL,service_id INTEGER REFERENCES services(id) ON DELETE SET NULL);
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
-    CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
+    CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
     CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'immutable'); END;
-    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);
+    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);
     INSERT INTO service_groups VALUES(1,'Media',0,NULL),(2,'Apps',1,NULL);
     INSERT INTO services(id,name,url,category,description,position) VALUES(1,'A','https://a.example','Media','',0),(2,'B','https://b.example','Media','',1),(3,'C','https://c.example','Apps','',0);
     INSERT INTO integration_instances VALUES(1,'jellyfin','Media','{"url":"https://media.example","allowPrivate":false}','encrypted-secret',NULL);
@@ -30,6 +30,47 @@ function fixture() {
 }
 
 describe('managed proposals', () => {
+  it.each([3, 4, 5])('renumbers groups after approving deletion of group %i', (id) => {
+    const { db, api, agent } = fixture();
+    try {
+      db.exec(
+        "INSERT INTO service_groups VALUES(3,'First',5,NULL),(4,'Middle',5,NULL),(5,'Last',9,NULL)",
+      );
+      const proposal = api.proposeManaged(agent.id, {
+        kind: 'group',
+        change: { op: 'delete', id },
+      });
+      expect(db.prepare('SELECT position FROM service_groups WHERE id=?').get(id)).toBeDefined();
+      expect(api.decide(proposal.id, true, 'local-admin')).toBe('approved');
+      const expected = [1, 2, 3, 4, 5].filter((groupId) => groupId !== id);
+      expect(
+        db.prepare('SELECT id,position FROM service_groups ORDER BY position,id').all(),
+      ).toEqual(expected.map((groupId, position) => ({ id: groupId, position })));
+      const create = api.proposeManaged(agent.id, {
+        kind: 'group',
+        change: { op: 'create', name: 'New' },
+      });
+      api.decide(create.id, true, 'local-admin');
+      expect(db.prepare("SELECT position FROM service_groups WHERE name='New'").get()).toEqual({
+        position: 4,
+      });
+      const names = (
+        db.prepare('SELECT name FROM service_groups ORDER BY position').all() as { name: string }[]
+      )
+        .map((row) => row.name)
+        .reverse();
+      const reorder = api.proposeManaged(agent.id, {
+        kind: 'group',
+        change: { op: 'reorder', names },
+      });
+      api.decide(reorder.id, true, 'local-admin');
+      expect(
+        db.prepare('SELECT name,position FROM service_groups ORDER BY position').all(),
+      ).toEqual(names.map((name, position) => ({ name, position })));
+    } finally {
+      db.close();
+    }
+  });
   it('validates group changes without applying them, and applies once with audit', () => {
     const { db, api, agent } = fixture();
     try {

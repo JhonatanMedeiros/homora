@@ -11,9 +11,9 @@ function fixture() {
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER);
     CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
-    CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
+    CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
     CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'proposal contents are immutable'); END;
-    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);`);
+    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);`);
   return { db, api: createProposalService(db) };
 }
 const card = {
@@ -91,8 +91,8 @@ it('serializes review across SQLite connections and prevents replay', () => {
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER);
     CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
-    CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
-    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);
+    CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
+    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);
     CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'proposal contents are immutable'); END;`);
   const second = new DatabaseSync(path);
   try {
@@ -235,5 +235,76 @@ it('rolls back every change when a later batch item fails', () => {
       )
       .get(batch.batchId),
   ).toEqual({ count: 2 });
+  db.close();
+});
+
+it('recreates an expired proposal with the same diff, a new deadline and a human audit event', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  const original = api.propose(agent.id, { op: 'create', service: card });
+  db.prepare('UPDATE service_proposals SET expires_at=0 WHERE id=?').run(original.id);
+  api.setProposalTtlMinutes(30, 'user:admin');
+  const now = Date.now();
+  const recreated = api.recreate(original.id, 'user:admin').proposals[0];
+  expect(recreated.diff).toEqual(original.diff);
+  expect(recreated.expiresAt).toBeGreaterThanOrEqual(now + 30 * 60_000);
+  expect(
+    db.prepare("SELECT actor,detail FROM audit_events WHERE action='proposal-recreate'").get(),
+  ).toEqual({ actor: 'user:admin', detail: original.id });
+  expect(api.decide(recreated.id, true, 'user:admin')).toBe('approved');
+  db.close();
+});
+
+it('does not recreate an expired change whose target was removed', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  db.prepare(
+    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+  ).run();
+  const proposal = api.propose(agent.id, { op: 'delete', id: 1 });
+  db.prepare('UPDATE service_proposals SET expires_at=0 WHERE id=?').run(proposal.id);
+  db.prepare('DELETE FROM services WHERE id=1').run();
+  expect(() => api.recreate(proposal.id, 'user:admin')).toThrow('Service not found');
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({ count: 1 });
+  db.close();
+});
+
+it('enforces the TTL range and applies it to new proposals', () => {
+  const { db, api } = fixture();
+  expect(api.proposalTtlMinutes()).toBe(15);
+  expect(() => api.setProposalTtlMinutes(0, 'user:admin')).toThrow();
+  expect(() => api.setProposalTtlMinutes(121, 'user:admin')).toThrow();
+  api.setProposalTtlMinutes(1, 'user:admin');
+  const agent = api.issue('bot', ['proposals:create']);
+  const now = Date.now();
+  const proposal = api.propose(agent.id, { op: 'create', service: card });
+  expect(proposal.expiresAt).toBeGreaterThanOrEqual(now + 60_000);
+  expect(proposal.expiresAt).toBeLessThan(now + 61_000);
+  db.close();
+});
+
+it('recreates an expired batch as a single new batch and rolls back a missing target', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  db.prepare(
+    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+  ).run();
+  const batch = api.proposeBatch(agent.id, [
+    { kind: 'service', change: { op: 'create', service: card } },
+    { kind: 'service', change: { op: 'delete', id: 1 } },
+  ]);
+  db.prepare('UPDATE service_proposals SET expires_at=0 WHERE batch_id=?').run(batch.batchId);
+  db.prepare('DELETE FROM services WHERE id=1').run();
+  expect(() => api.recreate(batch.proposals[0].id, 'user:admin')).toThrow('Proposal diff changed');
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({ count: 2 });
+  db.prepare(
+    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+  ).run();
+  const next = api.recreate(batch.proposals[0].id, 'user:admin');
+  expect(next.batchId).not.toBe(batch.batchId);
+  expect(next.proposals.map((proposal) => proposal.diff)).toEqual(
+    batch.proposals.map((proposal) => proposal.diff),
+  );
+  expect(api.decideBatch(next.batchId!, true, 'user:admin')).toBe('approved');
   db.close();
 });

@@ -192,6 +192,8 @@ Set up Proxmox on the Integrations page with an account and token that have read
 
 ## MCP and AI agents
 
+The Agents page shows how long each proposal has left. The review period defaults to 15 minutes and can be changed there to 1–120 minutes for new proposals; existing deadlines do not change. Expired proposals remain visible and an administrator can recreate them for another review. Expired batches are recreated together. Re-creation validates the original diff against the current configuration and may fail when it no longer matches; it never applies a change.
+
 Homora supports local stdio and stateless Streamable HTTP. Both use the same agent tokens, scopes and human approval rules. Create an agent on **Agents**, then choose the connection method under **Connect**.
 
 For HTTP, point a compatible client at `http://localhost:8080/mcp` with `Authorization: Bearer <agent-token>` (development: `http://localhost:5173/mcp`). The backend authenticates every request; revocation and rotation take effect immediately. The endpoint accepts the configured web hosts and origins from `HOMORA_ALLOWED_ORIGINS` and limits requests per client. For another machine, use the documented private-network HTTPS reverse proxy and its allowed HTTPS origin. Do not expose Homora publicly. Client configuration formats differ; the interface provides the URL and header. Protect the token as a password.

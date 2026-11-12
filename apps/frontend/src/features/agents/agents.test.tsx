@@ -235,3 +235,27 @@ it('reviews a batch together and explains conflicting changes', async () => {
   );
   expect(screen.queryByRole('button', { name: 'Aprovar e aplicar' })).toBeNull();
 });
+
+it('moves a pending proposal to expired at its deadline without reloading', async () => {
+  const now = Date.now();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/agents') return { ok: true, json: async () => [] };
+      if (url === '/api/proposal-settings')
+        return { ok: true, json: async () => ({ ttlMinutes: 15 }) };
+      return {
+        ok: true,
+        json: async () => [
+          { id: 'p', author: 'a', state: 'pending', expiresAt: now + 120, diff: '{}' },
+        ],
+      };
+    }),
+  );
+  render(<Harness />);
+  expect(await screen.findByText(/Expira em 1 s/)).toBeTruthy();
+  expect(
+    await screen.findByText('O prazo de revisão terminou.', {}, { timeout: 2000 }),
+  ).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Recriar' })).toBeTruthy();
+});

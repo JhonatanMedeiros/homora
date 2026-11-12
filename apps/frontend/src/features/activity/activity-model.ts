@@ -32,6 +32,8 @@ const TITLES = new Set<string>([
   'review.refused',
   'review.failure',
   'expiry',
+  'proposal-recreate',
+  'proposal-ttl-update',
   'withdraw',
   'agent-issue',
   'agent-create',

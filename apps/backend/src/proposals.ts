@@ -44,6 +44,31 @@ export function createProposalService(
   let currentBatchId: string | null = null;
   const transaction = <T>(work: () => T): T =>
     insideBatch ? work() : configuration.transaction(work);
+  function proposalTtlMinutes() {
+    const row = sqlite
+      .prepare("SELECT value FROM app_settings WHERE key='proposal_ttl_minutes'")
+      .get() as { value: string } | undefined;
+    const value = Number(row?.value ?? 15);
+    if (!Number.isInteger(value) || value < 1 || value > 120)
+      throw new Error('Invalid proposal TTL');
+    return value;
+  }
+  function setProposalTtlMinutes(value: number, human: string) {
+    if (!Number.isInteger(value) || value < 1 || value > 120)
+      throw new Error('Invalid proposal TTL');
+    return configuration.transaction(() => {
+      sqlite
+        .prepare(
+          "INSERT INTO app_settings(key,value) VALUES('proposal_ttl_minutes',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        )
+        .run(String(value));
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+        )
+        .run(human, 'proposal-ttl-update', null, 'ok', Date.now());
+    });
+  }
   function checkPending(authorId: string) {
     const count = sqlite
       .prepare(
@@ -145,8 +170,9 @@ export function createProposalService(
     const id = randomBytes(16).toString('hex'),
       now = Date.now();
     const baseVersion = configuration.version();
-    transaction(() => {
+    return transaction(() => {
       checkPending(authorId);
+      const expiresAt = now + proposalTtlMinutes() * 60_000;
       sqlite
         .prepare(
           'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at,batch_id) VALUES(?,?,?,?,?,?,?,?,?)',
@@ -157,7 +183,7 @@ export function createProposalService(
           JSON.stringify(diff),
           configHash(),
           baseVersion,
-          now + 15 * 60_000,
+          expiresAt,
           'pending',
           now,
           currentBatchId,
@@ -167,8 +193,8 @@ export function createProposalService(
           'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
         )
         .run(authorId, 'proposal', id, 'created', now);
+      return { id, diff, expiresAt, state: 'pending' };
     });
-    return { id, diff, expiresAt: now + 15 * 60_000, state: 'pending' };
   }
   function proposeManaged(authorId: string, input: unknown) {
     const change = managedChangeSchema.parse(input);
@@ -241,6 +267,7 @@ export function createProposalService(
       const diff = { kind: 'managed', change, before };
       const id = randomBytes(16).toString('hex');
       const now = Date.now();
+      const expiresAt = now + proposalTtlMinutes() * 60_000;
       sqlite
         .prepare(
           'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at,batch_id) VALUES(?,?,?,?,?,?,?,?,?)',
@@ -251,7 +278,7 @@ export function createProposalService(
           JSON.stringify(diff),
           baseHash,
           baseVersion,
-          now + 15 * 60_000,
+          expiresAt,
           'pending',
           now,
           currentBatchId,
@@ -261,7 +288,7 @@ export function createProposalService(
           'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
         )
         .run(authorId, 'proposal', id, 'created', now);
-      return { id, diff, expiresAt: now + 15 * 60_000, state: 'pending' };
+      return { id, diff, expiresAt, state: 'pending' };
     });
   }
   function proposeBatch(authorId: string, items: { kind: string; change: unknown }[]) {
@@ -316,6 +343,7 @@ export function createProposalService(
       const diff = { kind: 'agent', change, before };
       const id = randomBytes(16).toString('hex');
       const now = Date.now();
+      const expiresAt = now + proposalTtlMinutes() * 60_000;
       sqlite
         .prepare(
           'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at) VALUES(?,?,?,?,?,?,?,?)',
@@ -326,7 +354,7 @@ export function createProposalService(
           JSON.stringify(diff),
           hash(target),
           configuration.version(),
-          now + 15 * 60_000,
+          expiresAt,
           'pending',
           now,
         );
@@ -335,7 +363,68 @@ export function createProposalService(
           'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
         )
         .run(authorId, 'proposal', id, 'created', now);
-      return { id, diff, expiresAt: now + 15 * 60_000, state: 'pending' };
+      return { id, diff, expiresAt, state: 'pending' };
+    });
+  }
+  function recreate(id: string, human: string) {
+    return configuration.transaction(() => {
+      const original = sqlite.prepare('SELECT * FROM service_proposals WHERE id=?').get(id) as
+        | {
+            id: string;
+            author_id: string;
+            diff: string;
+            state: string;
+            expires_at: number;
+            batch_id: string | null;
+          }
+        | undefined;
+      const now = Date.now();
+      if (
+        !original ||
+        !(
+          (original.state === 'pending' && original.expires_at <= now) ||
+          original.state === 'expired'
+        )
+      )
+        throw new Error('Proposal is unavailable');
+      const rows = original.batch_id
+        ? (sqlite
+            .prepare('SELECT * FROM service_proposals WHERE batch_id=? ORDER BY rowid')
+            .all(original.batch_id) as (typeof original)[])
+        : [original];
+      if (
+        rows.some(
+          (row) =>
+            !row ||
+            row.author_id !== original.author_id ||
+            !((row.state === 'pending' && row.expires_at <= now) || row.state === 'expired'),
+        )
+      )
+        throw new Error('Batch is unavailable');
+      insideBatch = true;
+      currentBatchId = original.batch_id ? randomBytes(16).toString('hex') : null;
+      try {
+        const recreated = rows.map((row) => {
+          const decoded = JSON.parse(row.diff) as Record<string, unknown>;
+          const result =
+            decoded.kind === 'managed'
+              ? proposeManaged(row.author_id, decoded.change)
+              : decoded.kind === 'agent'
+                ? proposeAgent(row.author_id, decoded.change)
+                : propose(row.author_id, decoded);
+          if (JSON.stringify(result.diff) !== row.diff) throw new Error('Proposal diff changed');
+          sqlite
+            .prepare(
+              'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+            )
+            .run(human, 'proposal-recreate', result.id, 'created', now, row.id);
+          return result;
+        });
+        return { proposals: recreated, batchId: currentBatchId };
+      } finally {
+        insideBatch = false;
+        currentBatchId = null;
+      }
     });
   }
   function decide(id: string, accept: boolean, human: string) {
@@ -656,6 +745,9 @@ export function createProposalService(
     proposeManaged,
     proposeBatch,
     proposeAgent,
+    recreate,
+    proposalTtlMinutes,
+    setProposalTtlMinutes,
     decide,
     decideBatch,
     list,

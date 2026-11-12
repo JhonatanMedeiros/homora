@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
+import { renumberGroups } from './group-order.js';
 
 const id = z.number().int().safe().positive();
 const name = z.string().trim().min(1).max(40);
@@ -140,6 +141,7 @@ export function applyManagedChange(
         if (db.prepare('SELECT id FROM services WHERE category=? LIMIT 1').get(row.name))
           throw new Error('Group not empty');
         db.prepare('DELETE FROM service_groups WHERE id=?').run(change.id);
+        renumberGroups(db);
       } else {
         db.prepare('UPDATE service_groups SET name=? WHERE id=?').run(change.name, change.id);
         db.prepare('UPDATE services SET category=? WHERE category=?').run(change.name, row.name);

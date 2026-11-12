@@ -103,3 +103,31 @@ it('shows the target and requested permissions before an identity decision', () 
   expect(screen.getByText(/update-scopes/).textContent).toContain('services:read');
   expect(screen.getByText(/Revise todas as alterações antes de decidir/)).toBeTruthy();
 });
+
+it('shows the remaining seconds and an expired proposal with a recreate action', () => {
+  const proposal = { id: 'p', author: 'a', state: 'pending', expiresAt: 130_000, diff: '{}' };
+  const recreate = vi.fn();
+  const { rerender } = render(
+    <ProposalCard
+      proposal={proposal}
+      agentName="Agent"
+      now={100_000}
+      onReview={() => {}}
+      onSetupConnection={() => {}}
+    />,
+  );
+  expect(screen.getByText('Expira em 30 s')).toBeTruthy();
+  rerender(
+    <ProposalCard
+      proposal={{ ...proposal, state: 'expired' }}
+      agentName="Agent"
+      now={130_000}
+      onReview={() => {}}
+      onSetupConnection={() => {}}
+      onRecreate={recreate}
+    />,
+  );
+  expect(screen.getByText('O prazo de revisão terminou.')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Recriar' }));
+  expect(recreate).toHaveBeenCalledOnce();
+});

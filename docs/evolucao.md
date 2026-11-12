@@ -1009,7 +1009,18 @@ Services can optionally check a same-origin path independently of their card URL
 - Deviation from the issue: 7 d uses 2 h buckets (84 points) because 1 h would be 168, above its own 120 cap.
 - Validation: `pnpm check` and `pnpm build`. Tests cover manual counts, unknown exclusion, minimum checks, reconfiguration, 30-day retention, batch/single consistency, routes, migration and the card. A synthetic benchmark of 200 services × 30 days at a 15-minute interval is in `service-uptime.test.ts`: the 24 h and 7 d periods meet the 300 ms goal; 30 d runs close to or above it depending on load (guard set at 1.5 s). At the default 60 s interval history has ~15× more rows, so 7 d and 30 d would be slower; a rollup table is the next step if that matters. Not checked in a browser or against real infrastructure.
 
-### Settings as a hub, a phone bottom bar and Agents tabs
+## Proposal deadlines and recreation (issue #67)
+
+- Agents shows a shared countdown, an expired state and recreation for expired proposals. Expired batches are recreated together, preserving collective review. Recreation validates the original diff and records the human requester; it never applies changes.
+- The review period defaults to 15 minutes and can be set to 1–120 minutes for new proposals. It is stored in the existing settings table and read by both MCP transports. Existing deadlines are unchanged.
+- Validated: `pnpm check` (404 application tests and 6 script tests) and `pnpm build`. Tests cover expiration in the open interface, authentication, TTL, recreation and batch rollback. The interface was not manually checked in a browser; real infrastructure was not needed.
+
+## Group positions after deletion (issue #68)
+
+- Deleting an empty group through the API or an approved proposal renumbers the remaining groups in the same transaction, ordered by position and then ID. Existing gaps are normalized on the next successful deletion; no migration is needed.
+- Validated: `pnpm check` (410 application tests and 6 script tests) and `pnpm build`. Tests cover deletions at the beginning, middle and end, creation and reordering afterward, and existing gaps and duplicate positions in proposals. Existing tests cover rejection of non-empty groups.
+
+## Settings as a hub, a phone bottom bar and Agents tabs
 
 - Settings no longer stacks everything on one page. `/manage/settings` lists four subpages (`interface`, `public`, `backup`, `discovery`), each with its own route (`/manage/settings/:section`); an unknown subpage is "not found". On phones the list and a subpage take turns, with a back link; from `md` up they sit side by side. The section list lives in `features/settings/sections.ts`; the palette's "Import / Export" now opens `/manage/settings/backup`.
 - `MobileTabs` was dead code and is now mounted in the management area on phones: Services, Integrations, Agents and "More", which opens a bottom sheet with Activity and Settings. The sidebar buttons are desktop-only. The organize bar and the toaster were moved above the bottom bar.
