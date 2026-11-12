@@ -10,6 +10,7 @@ import { ptBR as status } from './messages/status';
 import { ptBR as settings } from './messages/settings';
 import { ptBR as hosts } from './messages/hosts';
 import { ptBR as appearance } from './messages/appearance';
+import { ptBR as coolify } from './messages/coolify';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -23,4 +24,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...settings,
   ...hosts,
   ...appearance,
+  ...coolify,
 };

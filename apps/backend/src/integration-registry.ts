@@ -1,8 +1,18 @@
-import { integrationDefinitions, isNodeName, proxmoxDefinition } from '@homora/shared';
+import {
+  coolifyDefinition,
+  integrationDefinitions,
+  isNodeName,
+  proxmoxDefinition,
+} from '@homora/shared';
 import { InputError } from './api-error.js';
-import { createIntegrationRegistry, type IntegrationContext } from './integrations.js';
+import {
+  createIntegrationRegistry,
+  type IntegrationContext,
+  type IntegrationRegistration,
+} from './integrations.js';
 import { assertValidDefinition } from './integration-manifest.js';
 import { createManifestRegistration } from './manifest-adapter.js';
+import { createCoolifyAdapter } from './coolify-connection.js';
 import { createProxmoxConnectionAdapter } from './proxmox-connection.js';
 import type { ProxmoxGuest } from './proxmox-inventory.js';
 
@@ -46,6 +56,29 @@ const proxmoxRegistration = {
   },
 };
 
+/** Coolify stays code: several reads, a composite status and a link workflow (see ADR 0010). */
+assertValidDefinition(coolifyDefinition);
+const coolifyConfig = (context: IntegrationContext) => ({
+  url: String(context.publicConfig.url ?? ''),
+  secret: context.credentials.secret ?? '',
+});
+const coolifyRegistration = {
+  type: coolifyDefinition.type,
+  label: coolifyDefinition.label,
+  capabilities: coolifyDefinition.capabilities,
+  definition: coolifyDefinition,
+  prepare(context: IntegrationContext) {
+    const adapter = createCoolifyAdapter(transportFrom(context));
+    const config = adapter.validate(coolifyConfig(context));
+    return () => adapter.collect(config);
+  },
+  prepareInventory(context: IntegrationContext) {
+    const adapter = createCoolifyAdapter(transportFrom(context));
+    const config = adapter.validate(coolifyConfig(context));
+    return () => adapter.inventory(config);
+  },
+};
+
 /** One definition per integration; manifests are interpreted, code adapters are registered by hand. */
 export const integrationRegistry = createIntegrationRegistry(
   integrationDefinitions.map((definition) =>
@@ -54,7 +87,8 @@ export const integrationRegistry = createIntegrationRegistry(
       : (
           {
             proxmox: proxmoxRegistration,
-          } as Record<string, typeof proxmoxRegistration>
+            coolify: coolifyRegistration,
+          } as Record<string, IntegrationRegistration>
         )[definition.type]!,
   ),
 );

@@ -470,7 +470,10 @@ it('adds pages with a default Home that holds every existing group, and keeps na
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
     // A database created by the previous version (before pages).
-    for (const migration of migrations.slice(0, -1)) {
+    for (const migration of migrations.slice(
+      0,
+      migrations.findIndex((migration) => migration.sql.join('').includes('CREATE TABLE `pages`')),
+    )) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -504,6 +507,73 @@ it('adds pages with a default Home that holds every existing group, and keeps na
     const again = new DatabaseSync(path);
     expect(again.prepare('SELECT COUNT(*) AS n FROM pages').get()).toEqual({ n: 2 });
     again.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds resource links without touching existing cards, connections or widgets, and cascades', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-links-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // A database created by the previous version (before resource links), with data.
+    const first = migrations.findIndex((migration) =>
+      migration.sql.join('').includes('integration_resource_links'),
+    );
+    for (const migration of migrations.slice(0, first)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      `INSERT INTO service_groups(id,name,position) VALUES(1,'Apps',0);
+       INSERT INTO services(id,name,url,category,description) VALUES(1,'A','https://a.test','Apps',''),(2,'B','https://b.test','Apps','');
+       INSERT INTO integration_instances(id,type,name,public_config,secret_ref,certificate_ref) VALUES(1,'proxmox','PVE','{"url":"https://pve.test"}','sealed','secret');
+       INSERT INTO integration_widgets(id,integration_id,type,name,public_config,service_id) VALUES(1,1,'proxmox','W','{}',1)`,
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(check.prepare('SELECT name FROM services ORDER BY id').all()).toEqual([
+      { name: 'A' },
+      { name: 'B' },
+    ]);
+    expect(check.prepare('SELECT type,secret_ref FROM integration_instances').all()).toEqual([
+      { type: 'proxmox', secret_ref: 'sealed' },
+    ]);
+    expect(check.prepare('SELECT name,service_id FROM integration_widgets').all()).toEqual([
+      { name: 'W', service_id: 1 },
+    ]);
+    expect(check.prepare('SELECT COUNT(*) AS n FROM integration_resource_links').get()).toEqual({
+      n: 0,
+    });
+    // One link per card; it goes away with the card or the connection.
+    check.exec("INSERT INTO integration_instances(id,type,name) VALUES(2,'coolify','C')");
+    const insert = check.prepare(
+      "INSERT INTO integration_resource_links(service_id,integration_id,resource_uuid,resource_type,seen_name,seen_url,created_at) VALUES(?,2,?,'application','n',NULL,1)",
+    );
+    insert.run(1, 'u1');
+    insert.run(2, 'u2');
+    expect(() => insert.run(1, 'u3')).toThrow();
+    check.exec('DELETE FROM services WHERE id=1');
+    expect(check.prepare('SELECT service_id FROM integration_resource_links').all()).toEqual([
+      { service_id: 2 },
+    ]);
+    check.exec('DELETE FROM integration_instances WHERE id=2');
+    expect(check.prepare('SELECT COUNT(*) AS n FROM integration_resource_links').get()).toEqual({
+      n: 0,
+    });
+    expect(check.prepare('SELECT COUNT(*) AS n FROM services').get()).toEqual({ n: 1 });
+    check.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -14,6 +14,8 @@ import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
 import { CardWidgets } from '@/components/card-widgets';
+import { CoolifyLine } from '@/components/coolify-line';
+import type { CardCoolify } from '@/hooks/use-resource-links';
 import { ServiceUptime, UptimePercent } from '@/components/service-uptime';
 import { ServiceFailureDetails } from '@/components/service-failure-details';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
@@ -26,6 +28,9 @@ type Props = {
   service: Service;
   status?: ServiceStatus;
   widgets?: CardWidgetState[];
+  /** Linked Coolify resource, with the state Coolify reports (separate from the HTTP status). */
+  coolify?: CardCoolify;
+  onCoolify?: () => void;
   uptime?: UptimeSummary;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
@@ -119,6 +124,8 @@ export function ServiceCard({
   service: s,
   status,
   widgets = [],
+  coolify,
+  onCoolify = () => {},
   uptime,
   uptimeRange = '24h',
   onUptimeRangeChange = () => {},
@@ -235,6 +242,11 @@ export function ServiceCard({
               <CardWidgets widgets={widgets} />
             </div>
           )}
+          {coolify && (
+            <div className="basis-full pl-11">
+              <CoolifyLine info={coolify} onOpen={onCoolify} />
+            </div>
+          )}
         </Item>
       </li>
     );
@@ -295,6 +307,7 @@ export function ServiceCard({
           <ItemDescription className="line-clamp-2">{s.description}</ItemDescription>
         )}
         <CardWidgets widgets={widgets} />
+        {coolify && <CoolifyLine info={coolify} onOpen={onCoolify} />}
         {view.note && (
           <div className="relative z-10 -mb-1 flex items-center justify-between gap-2">
             <p

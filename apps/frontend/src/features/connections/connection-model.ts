@@ -1,4 +1,5 @@
 import { apiError, t, tOr } from '@/i18n';
+import { parseSummary } from '@/lib/coolify';
 import { integrationDefinition, integrationDefinitions, type ManifestField } from '@homora/shared';
 export type Kind = string;
 export type Connection = {
@@ -70,6 +71,8 @@ export function newForm(type: Kind): ConnectionFormState {
     ),
   };
 }
+export const urlField = (type: Kind) =>
+  integrationDefinition(type)?.fields.find(({ kind }) => kind === 'url');
 export const secretField = (type: Kind) =>
   integrationDefinition(type)?.fields.find(({ kind }) => kind === 'secret');
 /** Only public fields from an approved suggestion can prefill this form. */
@@ -187,7 +190,7 @@ function renderManifest(type: WidgetKind, value: unknown) {
 
 export function describeData(type: WidgetKind, value: unknown): string | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  if (type === 'proxmox')
+  if (type === 'proxmox' || type === 'coolify')
     return (
       widgetStats(type, value)
         ?.map((stat) => `${stat.label}: ${stat.value}`)
@@ -196,9 +199,27 @@ export function describeData(type: WidgetKind, value: unknown): string | null {
   return renderManifest(type, value)?.summary ?? null;
 }
 
+/** Coolify counts. Unknown is its own number: a state Homora cannot read is never "offline". */
+function coolifyStats(value: unknown): WidgetStat[] | null {
+  const summary = parseSummary(value);
+  if (!summary) return null;
+  const stats: WidgetStat[] = [
+    { label: t('coolify.stat.total'), value: String(summary.total) },
+    { label: t('coolify.stat.running'), value: String(summary.running) },
+  ];
+  if (summary.degraded > 0)
+    stats.push({ label: t('coolify.stat.degraded'), value: String(summary.degraded) });
+  if (summary.stopped > 0)
+    stats.push({ label: t('coolify.stat.stopped'), value: String(summary.stopped) });
+  if (summary.unknown > 0)
+    stats.push({ label: t('coolify.stat.unknown'), value: String(summary.unknown) });
+  return stats;
+}
+
 /** Short numbers and text from a query, for display within a card. */
 export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (type === 'coolify') return coolifyStats(value);
   if (type !== 'proxmox') return renderManifest(type, value)?.stats ?? null;
   const data = value as Record<string, unknown>;
   // A selected node that is missing or offline: say so, never show the cluster totals.

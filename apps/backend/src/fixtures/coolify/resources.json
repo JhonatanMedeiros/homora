@@ -1,0 +1,49 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample following the documented response schema of GET /api/v1/resources (an array of resources)",
+    "docs": "https://coolify.io/docs/api/endpoints/resources/list-resources",
+    "note": "Read on 2026-11-12: fields uuid, name, description, type (application, service or standalone-<engine>), status (for example running:healthy) and environment_id. Not recorded from a live instance; the unhealthy and exited status strings follow Coolify's composite status format and are unverified."
+  },
+  "body": [
+    {
+      "uuid": "app-uuid-1",
+      "name": "Blog",
+      "description": "Personal blog",
+      "type": "application",
+      "status": "running:healthy",
+      "environment_id": 1,
+      "created_at": "2026-01-01T00:00:00.000000Z",
+      "updated_at": "2026-01-02T00:00:00.000000Z"
+    },
+    {
+      "uuid": "svc-uuid-2",
+      "name": "Plausible",
+      "description": null,
+      "type": "service",
+      "status": "running:unhealthy",
+      "environment_id": 1
+    },
+    {
+      "uuid": "app-uuid-3",
+      "name": "Old app",
+      "description": "",
+      "type": "application",
+      "status": "exited:unhealthy",
+      "environment_id": 2
+    },
+    {
+      "uuid": "app-uuid-4",
+      "name": "Odd status",
+      "type": "application",
+      "status": "restarting",
+      "environment_id": 2
+    },
+    {
+      "uuid": "db-uuid-5",
+      "name": "Postgres",
+      "type": "standalone-postgresql",
+      "status": "running:healthy",
+      "environment_id": 1
+    }
+  ]
+}

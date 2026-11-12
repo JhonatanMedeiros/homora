@@ -1,0 +1,18 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample following the documented response schema of GET /api/v1/applications (an array of applications)",
+    "docs": "https://coolify.io/docs/api/endpoints/applications/list-applications",
+    "note": "Read on 2026-11-12: the documented fqdn field is 'string or null' described as the application domains; that it holds several domains separated by commas is an assumption to verify on a live instance. Not recorded from a live instance. http_basic_auth_password is listed in the documented schema and is included here to prove it is never copied."
+  },
+  "body": [
+    {
+      "uuid": "app-uuid-1",
+      "name": "Blog",
+      "status": "running:healthy",
+      "fqdn": "https://blog.example.test, https://www.blog.example.test,not a url,https://user:pw@evil.test",
+      "http_basic_auth_password": "do-not-copy-9c1"
+    },
+    { "uuid": "app-uuid-3", "name": "Old app", "status": "exited:unhealthy", "fqdn": null },
+    { "uuid": "app-uuid-4", "name": "Odd status", "status": "restarting" }
+  ]
+}

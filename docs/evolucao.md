@@ -1268,3 +1268,11 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 ## Home toolbar buttons (2026-11-12)
 
 - The Group | Host | Map switch, "Suggested hosts" and "View" now share the same 36 px height (the switch was 32 px). The switch items have icons and the selected one is tinted with the primary colour and bold instead of a barely different dark background; "Suggested hosts" has an icon. Not verified in a real browser.
+
+## Coolify read-only integration (issue #102)
+
+- Implemented all four phases in one change, **implemented, unvalidated**: [ADR 0010](decisoes/0010-coolify-read-only-integration.md). Code adapter with a `read`-only Bearer token; summary widget; searchable inventory (`GET /api/connections/:id/resources`); card links by connection and resource UUID (table `integration_resource_links`, migration 0024); discovery with review; a separate Coolify state on the card with "needs review" for changed or missing resources; `Retry-After` exposed by the transport and a Coolify-only pause after 401, 403 and 429.
+- Docs: [Coolify section](integracoes.md#coolify) with set-up, permissions, troubleshooting and the live validation checklist; Portuguese set-up and troubleshooting in `README.pt-BR.md`.
+- Not done on purpose: deployments in progress (the schema carries logs; deferred to validation), project and environment names (not in the documented list endpoints), addresses for services (no documented field; typed by hand), multi-team behavior at scale.
+- Live validation (2026-11-12, Coolify v4.7.5, team token believed unrestricted): connection, test, widget (6 resources, 6 running), inventory with addresses and resources without an address, several domains on one application, link and discovery review, and an invalid token (generic error and pause) worked. A layout bug in the review dialog was found and fixed (`7a9d1a9`). Record in [integracoes.md](integracoes.md#coolify).
+- Still open: a token **limited** to selected resources, an unreachable host, the exact `fqdn` separator for several domains, other `status` strings, services in detail, multi-team behavior and the real 429 path. The issue's live-validation item is therefore only partly done. Results of `pnpm check` and `pnpm build` are recorded in the pull request.

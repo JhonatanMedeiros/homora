@@ -67,6 +67,7 @@ export const ERROR_MESSAGES = {
     'Could not query the integration. Check the connection, permissions and certificate.',
   'integration-changed': 'The integration changed while it was being queried. Try again.',
   'widget-not-found': 'Widget not found.',
+  'resource-link-not-found': 'This card is not linked to a resource.',
   'account-exists': 'Account already configured.',
   'account-setup-failed':
     'Could not create the account. Check the name and email, and use a password with at least 8 characters.',

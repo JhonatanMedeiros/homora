@@ -25,6 +25,7 @@ import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
 import { createNotifications } from './notifications.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
+import { registerResourceLinkRoutes } from './routes/resource-links.js';
 import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
 import { createCustomCss } from './custom-css.js';
 import { registerCustomCssRoutes } from './routes/custom-css.js';
@@ -147,6 +148,7 @@ export function createApp(
   );
   registerHostSuggestionRoutes(app, sqlite, connections, configuration);
   registerServiceDependencyRoutes(app, sqlite, auth, audit);
+  registerResourceLinkRoutes(app, sqlite, auth, audit);
   registerConfigTransferRoutes(app, configuration, serviceMonitor, {
     appearance,
     customCss,
