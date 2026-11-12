@@ -1,7 +1,16 @@
 import { expect, it } from 'vitest';
 import type { Service } from '@homora/shared';
 import { buildHostView, type HostInventories } from './hosts';
-import { MAP, ZOOM, clampZoom, fitZoom, focusOrder, layoutMap, type MapRect } from './map-layout';
+import {
+  MAP,
+  ZOOM,
+  clampZoom,
+  fitZoom,
+  focusOrder,
+  layoutMap,
+  looseColumns,
+  type MapRect,
+} from './map-layout';
 
 const card = (id: number, name: string, vmid?: number, node = 'pve1'): Service => ({
   id,
@@ -110,4 +119,16 @@ it('handles an empty model and bounds the zoom between 0.6 and 1.2', () => {
   const layout = layoutMap(model());
   expect(fitZoom(layout, 100, 100)).toBe(0.6);
   expect(fitZoom(layout, 100_000, 100_000)).toBe(1.2);
+});
+
+it('spreads many unlinked services over a grid instead of one tall column', () => {
+  const many = Array.from({ length: 13 }, (_, i) => card(100 + i, `free${i}`));
+  const layout = layoutMap(buildHostView(many, connections, inventories));
+  const [container] = layout.containers;
+  expect(looseColumns(13)).toBe(3);
+  expect(new Set(container.services.map((item) => item.x)).size).toBe(3);
+  for (const item of container.services) expect(inside(item, container)).toBe(true);
+  container.services.forEach((a, i) =>
+    container.services.slice(i + 1).forEach((b) => expect(overlaps(a, b)).toBe(false)),
+  );
 });

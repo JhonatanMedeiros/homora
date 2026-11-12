@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import type { HostLink, Service } from '@homora/shared';
 import { ArrowLeft, Minus, Plus, RefreshCw, RotateCcw, Scan, X } from 'lucide-react';
 import { HostPicker } from '@/components/host-picker';
@@ -120,6 +120,17 @@ export function HostMap({
       connections,
       inventories,
     );
+
+  const fullscreen = (!mobile || openAnyway) && services.some((service) => service.host);
+  // The map takes the whole window, so the page behind it must not scroll.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [fullscreen]);
 
   // On phones the map is read-only even when opened anyway.
   const canEdit = Boolean(edit) && !mobile;
@@ -303,7 +314,7 @@ export function HostMap({
           aria-pressed={selected}
           onClick={() => setSelection({ kind: 'guest', key: guest.group.key })}
           style={{ height: MAP.guestHeader - 6, width: guest.w - 8 }}
-          className="absolute top-1 left-1 flex h-auto flex-col items-start justify-center rounded-sm px-2 text-left text-xs"
+          className="absolute top-1 left-1 flex h-auto flex-col items-start justify-center gap-0.5 rounded-sm px-2 py-0 text-left text-xs pointer-coarse:h-auto"
         >
           <span className="w-full truncate font-semibold">
             {guest.group.guest.name || t(`hosts.type.${guest.group.guest.type}`)}
@@ -352,6 +363,32 @@ export function HostMap({
     );
   };
 
+  const placed = new Map(
+    layout.containers
+      .flatMap((c) => [...c.guests.flatMap((g) => g.services), ...c.services])
+      .map((i) => [i.service.id, i]),
+  );
+  const edges = dependencies.flatMap((dep) => {
+    const from = placed.get(dep.serviceId);
+    const to = placed.get(dep.dependsOnId);
+    if (!from || !to) return [];
+    const right = to.x >= from.x + from.w;
+    const x1 = right ? from.x + from.w : from.x;
+    const x2 = right ? to.x - 2 : to.x + to.w + 2;
+    const y1 = from.y + from.h / 2;
+    const y2 = to.y + to.h / 2;
+    const bend = Math.max(40, Math.abs(x2 - x1) / 2);
+    const dir = right ? 1 : -1;
+    return [
+      {
+        key: `${dep.serviceId}-${dep.dependsOnId}`,
+        d: `M${x1} ${y1} C ${x1 + dir * bend} ${y1}, ${x2 - dir * bend} ${y2}, ${x2} ${y2}`,
+        active:
+          selection?.kind === 'service' &&
+          (selection.id === dep.serviceId || selection.id === dep.dependsOnId),
+      },
+    ];
+  });
   const linked = services.some((service) => service.host);
   const panelRunsOn = (service: Service) => {
     const found = model.nodes
@@ -364,122 +401,168 @@ export function HostMap({
         : t('hosts.none');
   };
 
+  if (!linked)
+    return (
+      <section aria-label={t('map.title')} className="flex flex-col gap-3">
+        <EmptyNote>{t('map.empty')}</EmptyNote>
+      </section>
+    );
+
   return (
     <section
       aria-label={t('map.title')}
-      className="flex flex-col gap-3"
+      className="fixed inset-0 z-40 flex flex-col bg-background"
       onKeyDown={(event) => {
         if (event.key === 'Escape') setPicking(null);
       }}
     >
-      <p className="text-xs text-muted-foreground">{t('map.hint')}</p>
-      {canEdit && <p className="text-xs text-muted-foreground">{t('map.dragHint')}</p>}
-      {picking !== null && (
-        <Alert>
-          <AlertDescription className="flex flex-wrap items-center gap-3">
-            {t('dependencies.picking', { name: nameOf(picking) })}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="pointer-coarse:h-11"
-              onClick={() => setPicking(null)}
-            >
-              {t('dependencies.cancel')}
-            </Button>
-          </AlertDescription>
-        </Alert>
+      <div className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onListView}>
+          <ArrowLeft data-icon="inline-start" />
+          {t('map.hostList')}
+        </Button>
+        <h2 className="text-sm font-semibold">{t('map.title')}</h2>
+        <p className="mr-auto hidden min-w-0 flex-1 truncate text-xs text-muted-foreground md:block">
+          {canEdit ? t('map.dragHint') : t('map.hint')}
+        </p>
+        <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
+          <RefreshCw data-icon="inline-start" />
+          {t('map.refresh')}
+        </Button>
+      </div>
+      {(picking !== null || message) && (
+        <div className="flex flex-col gap-2 border-b bg-card px-3 py-2">
+          {picking !== null && (
+            <Alert>
+              <AlertDescription className="flex flex-wrap items-center gap-3">
+                {t('dependencies.picking', { name: nameOf(picking) })}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="pointer-coarse:h-11"
+                  onClick={() => setPicking(null)}
+                >
+                  {t('dependencies.cancel')}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       )}
-      <p role="status" className="min-h-4 text-xs empty:hidden">
+      <p role="status" className="px-3 text-xs empty:hidden">
         {message}
       </p>
-      {!linked ? (
-        <EmptyNote>{t('map.empty')}</EmptyNote>
-      ) : (
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <div className="flex h-[70dvh] min-h-96 flex-col overflow-hidden rounded-lg border bg-card">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-card p-2">
-              <div
-                role="group"
-                aria-label={t('map.controls')}
-                className="flex flex-wrap items-center gap-1 rounded-md border bg-background p-1"
-              >
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('map.zoomOut')}
-                  disabled={zoom <= ZOOM.min}
-                  onClick={() => setZoom((z) => clampZoom(z - ZOOM.step))}
-                >
-                  <Minus />
-                </Button>
-                <span
-                  role="status"
-                  className="min-w-16 px-1 text-center font-mono text-xs tabular-nums text-muted-foreground"
-                >
-                  {t('map.zoomLevel', { percent: Math.round(zoom * 100) })}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('map.zoomIn')}
-                  disabled={zoom >= ZOOM.max}
-                  onClick={() => setZoom((z) => clampZoom(z + ZOOM.step))}
-                >
-                  <Plus />
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={fit}>
-                  <Scan data-icon="inline-start" />
-                  {t('map.fit')}
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={reset}>
-                  <RotateCcw data-icon="inline-start" />
-                  {t('map.reset')}
-                </Button>
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
-                  <RefreshCw data-icon="inline-start" />
-                  {t('map.refresh')}
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={onListView}>
-                  <ArrowLeft data-icon="inline-start" />
-                  {t('map.hostList')}
-                </Button>
-              </div>
-            </div>
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={viewport}
+          role="region"
+          aria-label={t('map.canvas')}
+          tabIndex={0}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          className="absolute inset-0 cursor-grab overflow-auto bg-background bg-[radial-gradient(var(--border)_1px,transparent_1px)] bg-[size:22px_22px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div
+            style={{
+              width: layout.width * zoom + 24 + 320,
+              height: layout.height * zoom + 24 + 96,
+            }}
+          >
             <div
-              ref={viewport}
-              role="region"
-              aria-label={t('map.canvas')}
-              tabIndex={0}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endDrag}
-              onPointerCancel={endDrag}
-              className="min-h-0 flex-1 cursor-grab overflow-auto bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{
+                width: layout.width,
+                height: layout.height,
+                transform: `scale(${zoom})`,
+                transformOrigin: '0 0',
+                margin: 12,
+              }}
+              className="relative"
             >
-              <div style={{ width: layout.width * zoom + 24, height: layout.height * zoom + 24 }}>
-                <div
-                  style={{
-                    width: layout.width,
-                    height: layout.height,
-                    transform: `scale(${zoom})`,
-                    transformOrigin: '0 0',
-                    margin: 12,
-                  }}
-                  className="relative"
+              {edges.length > 0 && (
+                <svg
+                  aria-hidden="true"
+                  width={layout.width}
+                  height={layout.height}
+                  className="pointer-events-none absolute top-0 left-0 overflow-visible text-primary"
                 >
-                  {layout.containers.map(renderContainer)}
-                </div>
-              </div>
+                  <defs>
+                    <marker
+                      id="map-arrow"
+                      viewBox="0 0 10 10"
+                      refX="8"
+                      refY="5"
+                      markerWidth="7"
+                      markerHeight="7"
+                      orient="auto-start-reverse"
+                    >
+                      <path d="M1 1 9 5 1 9z" fill="currentColor" />
+                    </marker>
+                  </defs>
+                  {edges.map((edge) => (
+                    <path
+                      key={edge.key}
+                      d={edge.d}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={edge.active ? 2.5 : 1.5}
+                      strokeOpacity={edge.active ? 1 : 0.55}
+                      strokeDasharray="6 5"
+                      markerEnd="url(#map-arrow)"
+                    />
+                  ))}
+                </svg>
+              )}
+              {layout.containers.map(renderContainer)}
             </div>
           </div>
+        </div>
+        <div
+          role="group"
+          aria-label={t('map.controls')}
+          className="absolute bottom-4 left-1/2 z-10 flex max-w-[calc(100%-2rem)] -translate-x-1/2 flex-wrap items-center gap-1 rounded-xl border bg-card p-1.5 shadow-md"
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t('map.zoomOut')}
+            disabled={zoom <= ZOOM.min}
+            onClick={() => setZoom((z) => clampZoom(z - ZOOM.step))}
+          >
+            <Minus />
+          </Button>
+          <span
+            role="status"
+            className="min-w-14 px-1 text-center font-mono text-xs tabular-nums text-muted-foreground"
+          >
+            {t('map.zoomLevel', { percent: Math.round(zoom * 100) })}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t('map.zoomIn')}
+            disabled={zoom >= ZOOM.max}
+            onClick={() => setZoom((z) => clampZoom(z + ZOOM.step))}
+          >
+            <Plus />
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={fit}>
+            <Scan data-icon="inline-start" />
+            {t('map.fit')}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={reset}>
+            <RotateCcw data-icon="inline-start" />
+            {t('map.reset')}
+          </Button>
+        </div>
+        {selection && (
           <aside
             aria-label={t('map.panel.title')}
-            className="flex flex-col gap-3 rounded-lg border bg-card p-4 text-sm"
+            className="absolute inset-x-3 bottom-20 z-10 flex max-h-[45%] flex-col gap-3 overflow-auto rounded-xl border bg-card p-4 text-sm shadow-md lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-20 lg:max-h-none lg:w-72"
           >
             <div className="flex items-center justify-between gap-2">
               <h3 className="font-semibold">{t('map.panel.title')}</h3>
@@ -496,7 +579,6 @@ export function HostMap({
                 </Button>
               )}
             </div>
-            {!selection && <p className="text-muted-foreground">{t('map.panel.none')}</p>}
             {selectedService && (
               <ServicePanel
                 service={selectedService}
@@ -573,8 +655,8 @@ export function HostMap({
               </dl>
             )}
           </aside>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
