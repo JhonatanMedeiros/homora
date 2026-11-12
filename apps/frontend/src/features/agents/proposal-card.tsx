@@ -21,6 +21,7 @@ const badgeVariant = {
   approved: 'success',
   rejected: 'destructive',
   expired: 'secondary',
+  withdrawn: 'secondary',
 } as const;
 
 type Props = {
@@ -51,9 +52,20 @@ export function ProposalCard({ proposal, agentName, current, onReview, onSetupCo
               ? t('proposal.expiresAt', { date: formatDate(proposal.expiresAt) })
               : formatDate(proposal.expiresAt)}
           </CardDescription>
+          {proposal.batchId && (
+            <CardDescription>{t('proposal.batch', { id: proposal.batchId })}</CardDescription>
+          )}
         </CardHeader>
         <CardContent>
-          {diff?.kind === 'managed' && diff.change ? (
+          {diff?.kind === 'agent' ? (
+            <div className="flex flex-col gap-2">
+              <p className="font-semibold">{t('proposal.agentChange')}</p>
+              <p>{t('proposal.agentReview')}</p>
+              <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-sm">
+                {JSON.stringify(diff, null, 2)}
+              </pre>
+            </div>
+          ) : diff?.kind === 'managed' && diff.change ? (
             <ManagedProposalChange diff={diff} />
           ) : diff ? (
             <ProposalChange diff={diff} current={current} />

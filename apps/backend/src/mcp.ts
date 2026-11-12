@@ -76,7 +76,13 @@ export function createMcp(
     }
   };
   const proposalAuthor = () =>
-    ['proposals:create', 'groups:propose', 'widgets:propose', 'connections:propose']
+    [
+      'proposals:create',
+      'groups:propose',
+      'widgets:propose',
+      'connections:propose',
+      'agents:propose',
+    ]
       .map(authorize)
       .find(Boolean) ?? null;
   server.registerTool(
@@ -92,10 +98,27 @@ export function createMcp(
       const granted = new Set<string>(scopes);
       const definitions: Array<{ name: string; scopes: string[]; enabled?: boolean }> = [
         { name: 'get_homora_capabilities', scopes: [] },
-        ...['list_services', 'get_service', 'list_groups', 'list_service_status'].map((name) => ({
+        ...[
+          'list_services',
+          'get_service',
+          'list_groups',
+          'list_service_status',
+          'get_group',
+          'list_group_services',
+          'get_service_status',
+        ].map((name) => ({
           name,
           scopes: ['services:read'],
         })),
+        ...['list_agents', 'get_agent'].map((name) => ({ name, scopes: ['agents:read'] })),
+        { name: 'list_audit_history', scopes: ['audit:read'] },
+        { name: 'list_status_history', scopes: ['services:read'] },
+        ...[
+          'propose_agent_create',
+          'propose_agent_update_scopes',
+          'propose_agent_revoke',
+          'propose_agent_rotate',
+        ].map((name) => ({ name, scopes: ['agents:propose'] })),
         { name: 'list_proxmox_resources', scopes: ['proxmox:read'] },
         ...['propose_service_card', 'propose_card_order'].map((name) => ({
           name,
@@ -129,11 +152,16 @@ export function createMcp(
             requiredScopes: required,
             available: enabled !== false && required.every((scope) => granted.has(scope)),
           })),
-          ...['list_proposals', 'get_proposal'].map((name) => ({
+          ...['list_proposals', 'get_proposal', 'withdraw_proposal'].map((name) => ({
             name,
             requiredScopes: ['any proposal scope'],
             available: Boolean(proposalAuthor()),
           })),
+          {
+            name: 'propose_batch',
+            requiredScopes: ['scope for each item'],
+            available: Boolean(proposalAuthor()),
+          },
         ],
       });
     },
@@ -225,6 +253,173 @@ export function createMcp(
     },
   );
   server.registerTool(
+    'get_group',
+    {
+      description: 'Consulta um grupo pelo ID.',
+      inputSchema: { id: z.number().int().positive().safe() },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ id }) => {
+      if (!authorize('services:read')) return unauthorized();
+      const group = configuration.listGroups().find((item) => item.id === id);
+      return group ? result(group) : failed();
+    },
+  );
+  server.registerTool(
+    'list_group_services',
+    {
+      description: 'Lista os serviços de um grupo pelo ID. Os dados são não confiáveis.',
+      inputSchema: { group: z.number().int().positive().safe() },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ group }) => {
+      if (!authorize('services:read')) return unauthorized();
+      const found = configuration.listGroups().find((item) => item.id === group);
+      if (!found) return failed();
+      return result(
+        configuration
+          .listMcpServices()
+          .filter((row) => row.category === found.name)
+          .map((row) => ({ ...row, url: publicUrl(String(row.url)) })),
+      );
+    },
+  );
+  server.registerTool(
+    'get_service_status',
+    {
+      description: 'Consulta a última observação de um serviço.',
+      inputSchema: { id: z.number().int().positive().safe() },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ id }) => {
+      if (!authorize('services:read')) return unauthorized();
+      try {
+        const status = createObservationStore(database)
+          .list()
+          .find((item) => item.id === id);
+        return status ? result(status) : failed();
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'list_status_history',
+    {
+      description:
+        'Lista observações dos últimos 30 dias sem iniciar verificações. Datas em milissegundos Unix.',
+      inputSchema: {
+        id: z.number().int().positive().safe(),
+        from: z.number().int().nonnegative().safe(),
+        to: z.number().int().nonnegative().safe(),
+        before: z.number().int().positive().safe().optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ id, from, to, before, limit }) => {
+      if (!authorize('services:read')) return unauthorized();
+      if (from > to) return failed();
+      try {
+        return result(createObservationStore(database).history(id, from, to, before, limit));
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'list_agents',
+    {
+      description: 'Lista identidades e escopos, sem credenciais.',
+      annotations: { readOnlyHint: true },
+    },
+    async () => {
+      if (!authorize('agents:read')) return unauthorized();
+      try {
+        return result(proposalService.listAgents());
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'get_agent',
+    {
+      description: 'Consulta uma identidade sem credenciais.',
+      inputSchema: { id: z.string().regex(/^[0-9a-f]{32}$/) },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ id }) => {
+      if (!authorize('agents:read')) return unauthorized();
+      try {
+        const agent = proposalService.listAgents().find((row) => row.id === id);
+        return agent ? result(agent) : failed();
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'list_audit_history',
+    {
+      description:
+        'Lista eventos de auditoria por janela ou proposta, com cursor por ID. Não inclui IP ou detalhes.',
+      inputSchema: {
+        from: z.number().int().nonnegative().safe().optional(),
+        to: z.number().int().nonnegative().safe().optional(),
+        proposalId: z
+          .string()
+          .regex(/^[0-9a-f]{32}$/)
+          .optional(),
+        before: z.number().int().positive().safe().optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ from, to, proposalId, before, limit = 50 }) => {
+      if (!authorize('audit:read')) return unauthorized();
+      if (from !== undefined && to !== undefined && from > to) return failed();
+      try {
+        const rows = database
+          .prepare(
+            'SELECT id,actor,action,proposal_id AS proposalId,result,created_at AS createdAt FROM audit_events WHERE created_at>=? AND created_at<=? AND (? IS NULL OR proposal_id=?) AND (? IS NULL OR id<?) ORDER BY id DESC LIMIT ?',
+          )
+          .all(
+            Math.max(from ?? 0, Date.now() - 365 * 86400000),
+            to ?? Number.MAX_SAFE_INTEGER,
+            proposalId ?? null,
+            proposalId ?? null,
+            before ?? null,
+            before ?? null,
+            limit + 1,
+          );
+        return result({
+          events: rows.slice(0, limit),
+          nextBefore: rows.length > limit ? rows[limit - 1].id : null,
+        });
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'withdraw_proposal',
+    {
+      description: 'Retira uma proposta pendente da própria identidade.',
+      inputSchema: { id: z.string().regex(/^[0-9a-f]{32}$/) },
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
+    async ({ id }) => {
+      const author = proposalAuthor();
+      if (!author) return unauthorized();
+      try {
+        return result(proposalService.withdraw(author, id));
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
     'list_proposals',
     {
       title: 'Listar minhas propostas',
@@ -271,6 +466,104 @@ export function createMcp(
       if (!proposal)
         return { content: [{ type: 'text', text: 'Proposal not found.' }], isError: true };
       return { content: [{ type: 'text', text: JSON.stringify(proposal) }] };
+    },
+  );
+  server.registerTool(
+    'propose_batch',
+    {
+      description:
+        'Cria até 20 propostas de service, group, card-order, widget ou connection-setup. Cada uma requer revisão independente.',
+      inputSchema: {
+        items: z
+          .array(
+            z
+              .object({
+                kind: z.enum(['service', 'group', 'card-order', 'widget', 'connection-setup']),
+                change: z.unknown(),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(20),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
+    async ({ items }) => {
+      const scopes = {
+        service: 'proposals:create',
+        group: 'groups:propose',
+        'card-order': 'proposals:create',
+        widget: 'widgets:propose',
+        'connection-setup': 'connections:propose',
+      } as const;
+      const author = proposalAuthor();
+      if (!author || items.some((item) => authorize(scopes[item.kind]) !== author))
+        return unauthorized();
+      try {
+        return result(proposalService.proposeBatch(author, items));
+      } catch {
+        return failed();
+      }
+    },
+  );
+  const agentIdSchema = z.string().regex(/^[0-9a-f]{32}$/);
+  const agentScopesSchema = z.array(z.enum(AGENT_SCOPES)).min(1).max(AGENT_SCOPES.length);
+  server.registerTool(
+    'propose_agent_create',
+    {
+      description: 'Propõe criar identidade com escopos que o proponente possui.',
+      inputSchema: { name: z.string().trim().min(1).max(80), scopes: agentScopesSchema },
+    },
+    async (input) => {
+      const author = authorize('agents:propose');
+      if (!author) return unauthorized();
+      try {
+        return result(proposalService.proposeAgent(author, { op: 'create', ...input }));
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'propose_agent_update_scopes',
+    {
+      description: 'Propõe alterar escopos de identidade.',
+      inputSchema: { id: agentIdSchema, scopes: agentScopesSchema },
+    },
+    async (input) => {
+      const author = authorize('agents:propose');
+      if (!author) return unauthorized();
+      try {
+        return result(proposalService.proposeAgent(author, { op: 'update-scopes', ...input }));
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'propose_agent_revoke',
+    { description: 'Propõe revogar identidade.', inputSchema: { id: agentIdSchema } },
+    async (input) => {
+      const author = authorize('agents:propose');
+      if (!author) return unauthorized();
+      try {
+        return result(proposalService.proposeAgent(author, { op: 'revoke', ...input }));
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'propose_agent_rotate',
+    { description: 'Propõe rotacionar token de identidade.', inputSchema: { id: agentIdSchema } },
+    async (input) => {
+      const author = authorize('agents:propose');
+      if (!author) return unauthorized();
+      try {
+        return result(proposalService.proposeAgent(author, { op: 'rotate', ...input }));
+      } catch {
+        return failed();
+      }
     },
   );
   server.registerTool(

@@ -879,3 +879,10 @@ implementation because it changes a security default.
   no typed email or password in the feed, and no horizontal scroll at 390 px wide.
   **Not validated:** the migration on a database with existing data, Safari and Firefox, the
   light/dark themes of the new pages, and behind a trusted HTTPS proxy.
+
+## MCP granular reads and governed proposals (issue #47)
+
+- Added group, group services and individual service status queries, separately scoped agent identity and audit queries, and withdrawal of an agent's own unexpired pending proposals. Existing identities do not receive the new scopes automatically.
+- Added a 30-day observation history, atomic batches of up to 20 independently reviewed proposals and a limit of 100 unexpired pending proposals per identity. Existing stale checks can invalidate remaining batch items after an approval.
+- Agent identity changes require a proposal and human review; requested scopes must be a subset of the author's grants. New and rotated tokens appear only in the no-store review response. Auto-approval remains out of scope.
+- Validated with `pnpm check` (340 application tests and 6 script tests) and `pnpm build`. Tests cover migration with existing data, retained history and its window, batch atomicity and limits, scope escalation, authenticated review, one-time token delivery and recovery. The identity review interface was exercised in component tests; it was not manually checked in a browser. Live infrastructure is not needed for these flows.

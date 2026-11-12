@@ -29,6 +29,7 @@ const unchecked: ServiceStatus = {
   httpStatus: null,
   latencyMs: null,
 };
+const HISTORY_RETENTION = 30 * 24 * 60 * 60_000;
 function signature(service: Pick<Service, 'url' | 'allowPrivate' | 'checkType' | 'checkInterval'>) {
   return createHash('sha256')
     .update(
@@ -54,20 +55,51 @@ export function createObservationStore(db: DatabaseSync) {
         const insert = db.prepare(
           'INSERT INTO service_observations(service_id,signature,observation) VALUES(?,?,?)',
         );
+        db.prepare('DELETE FROM service_observation_history WHERE observed_at < ?').run(
+          Date.now() - HISTORY_RETENTION,
+        );
+        const history = db.prepare(
+          'INSERT OR IGNORE INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
+        );
         for (const service of services) {
           const state = states[service.id];
-          if (state)
-            insert.run(
-              service.id,
-              signature(service),
-              JSON.stringify(observationSchema.parse(state)),
-            );
+          if (state) {
+            const parsed = observationSchema.parse(state);
+            insert.run(service.id, signature(service), JSON.stringify(parsed));
+            if (parsed.lastAttempt) {
+              const observedAt = Date.parse(parsed.lastAttempt);
+              if (observedAt >= Date.now() - HISTORY_RETENTION && observedAt <= Date.now())
+                history.run(service.id, signature(service), observedAt, JSON.stringify(parsed));
+            }
+          }
         }
         db.exec('COMMIT');
       } catch (error) {
         db.exec('ROLLBACK');
         throw error;
       }
+    },
+    history(id: number, from: number, to: number, before?: number, limit = 100) {
+      const service = db.prepare('SELECT id FROM services WHERE id=?').get(id);
+      if (!service) throw new Error('Service not found');
+      const rows = db
+        .prepare(
+          'SELECT id,observed_at AS observedAt,observation FROM service_observation_history WHERE service_id=? AND observed_at>=? AND observed_at<=? AND (? IS NULL OR id<?) ORDER BY id DESC LIMIT ?',
+        )
+        .all(
+          id,
+          Math.max(from, Date.now() - HISTORY_RETENTION),
+          to,
+          before ?? null,
+          before ?? null,
+          limit + 1,
+        ) as { id: number; observedAt: number; observation: string }[];
+      const events = rows.slice(0, limit).map((row) => ({
+        id: row.id,
+        observedAt: row.observedAt,
+        ...observationSchema.parse(JSON.parse(row.observation) as unknown),
+      }));
+      return { events, nextBefore: rows.length > limit ? (events.at(-1)?.id ?? null) : null };
     },
     list(now = Date.now()) {
       const rows = db

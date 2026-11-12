@@ -76,3 +76,30 @@ it('shows the exact suggested connection and opens setup only after approval', (
   });
   expect(connectionDraft({ ...change, url: 'https://user:pass@example.test' })).toBeNull();
 });
+
+it('shows the target and requested permissions before an identity decision', () => {
+  const proposal = {
+    id: 'p',
+    author: 'a',
+    state: 'pending',
+    expiresAt: Date.now() + 60000,
+    batchId: 'batch',
+    diff: JSON.stringify({
+      kind: 'agent',
+      change: { op: 'update-scopes', id: 'target', scopes: ['agents:propose'] },
+      before: { name: 'Child', scopes: ['services:read'] },
+    }),
+  };
+  render(
+    <ProposalCard
+      proposal={proposal}
+      agentName="Agent"
+      onReview={() => {}}
+      onSetupConnection={() => {}}
+    />,
+  );
+  expect(screen.getByText(/Alteração de identidade de agente/)).toBeTruthy();
+  expect(screen.getByText(/update-scopes/).textContent).toContain('agents:propose');
+  expect(screen.getByText(/update-scopes/).textContent).toContain('services:read');
+  expect(screen.getByText(/Cada proposta é revisada separadamente/)).toBeTruthy();
+});

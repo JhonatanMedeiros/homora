@@ -105,6 +105,9 @@ releases exist.
   operation in a savepoint and repeat validation inside the approval transaction. The legacy
   vault is included when proposing a Proxmox widget. MCP returns proposals only to their author.
 - The observations migration shares the web monitor's latest results with the MCP process.
+- MCP agent identity and audit queries require separate `agents:read` and `audit:read` grants. Audit queries omit IP addresses and details and are bounded by the 365-day retention window. An agent may withdraw only its own unexpired pending proposal, atomically recording the withdrawal; this does not apply configuration changes.
+- Observations are appended with a settings signature and observation time, deduplicated and retained for 30 days; monitor publication cleans old rows. A batch creates at most 20 independently reviewed proposals in one transaction, subject to 100 unexpired pending proposals per identity. Normal stale-configuration checks still apply after each approval.
+- `agents:propose` enables identity proposals. Requested scopes must be a subset of the proposer's current scopes at creation. The reviewed diff never contains credentials; approval creates or rotates the token in the review transaction and returns it once with `no-store`. Changes to identities are audited under the human reviewer. See [ADR 0002](decisoes/0002-governed-agent-proposals.md).
   Each result is tied to the service check settings; changed settings or stale results are
   reported as unknown. The backend clears old observations at startup and publishes completed
   cycles; an MCP status query does not start checks.

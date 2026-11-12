@@ -30,7 +30,10 @@ const TITLES = new Set<string>([
   'review.refused',
   'review.failure',
   'expiry',
+  'withdraw',
   'agent-issue',
+  'agent-create',
+  'agent-update-scopes',
   'agent-revoke',
   'agent-rotate',
 ]);

@@ -4,6 +4,7 @@ import { validateService } from '@homora/shared';
 import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
 import { serviceProposalSchema } from './input-schemas.js';
 import { AGENT_SCOPES } from './agent-scopes.js';
+import { z } from 'zod';
 import type { createVault } from './vault.js';
 import {
   applyManagedChange,
@@ -15,12 +16,42 @@ import {
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export { AGENT_SCOPES } from './agent-scopes.js';
 type Diff = ServiceChange;
+const identityId = z.string().regex(/^[0-9a-f]{32}$/);
+const identityScopes = z
+  .array(z.enum(AGENT_SCOPES))
+  .min(1)
+  .max(AGENT_SCOPES.length)
+  .refine((items) => new Set(items).size === items.length);
+export const agentChangeSchema = z.discriminatedUnion('op', [
+  z
+    .object({
+      op: z.literal('create'),
+      name: z.string().trim().min(1).max(80),
+      scopes: identityScopes,
+    })
+    .strict(),
+  z.object({ op: z.literal('update-scopes'), id: identityId, scopes: identityScopes }).strict(),
+  z.object({ op: z.literal('revoke'), id: identityId }).strict(),
+  z.object({ op: z.literal('rotate'), id: identityId }).strict(),
+]);
 export function createProposalService(
   sqlite: DatabaseSync,
   configuration = createServiceConfiguration(sqlite),
   vault?: ReturnType<typeof createVault>,
 ) {
   const configHash = configuration.configHash;
+  let insideBatch = false;
+  let currentBatchId: string | null = null;
+  const transaction = <T>(work: () => T): T =>
+    insideBatch ? work() : configuration.transaction(work);
+  function checkPending(authorId: string) {
+    const count = sqlite
+      .prepare(
+        "SELECT COUNT(*) AS count FROM service_proposals WHERE author_id=? AND state='pending' AND expires_at>?",
+      )
+      .get(authorId, Date.now()) as { count: number };
+    if (count.count >= 100) throw new Error('Pending proposal limit reached');
+  }
   const isProxmoxWidget = (change: ReturnType<typeof managedChangeSchema.parse>) =>
     change.kind === 'widget' && change.change.op === 'create' && change.change.source === 'proxmox';
   const managedBaseHash = (change: ReturnType<typeof managedChangeSchema.parse>) =>
@@ -112,10 +143,11 @@ export function createProposalService(
     const id = randomBytes(16).toString('hex'),
       now = Date.now();
     const baseVersion = configuration.version();
-    configuration.transaction(() => {
+    transaction(() => {
+      checkPending(authorId);
       sqlite
         .prepare(
-          'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at) VALUES(?,?,?,?,?,?,?,?)',
+          'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at,batch_id) VALUES(?,?,?,?,?,?,?,?,?)',
         )
         .run(
           id,
@@ -126,6 +158,7 @@ export function createProposalService(
           now + 15 * 60_000,
           'pending',
           now,
+          currentBatchId,
         );
       sqlite
         .prepare(
@@ -137,7 +170,8 @@ export function createProposalService(
   }
   function proposeManaged(authorId: string, input: unknown) {
     const change = managedChangeSchema.parse(input);
-    return configuration.transaction(() => {
+    return transaction(() => {
+      checkPending(authorId);
       const snapshot = managedSnapshot(sqlite);
       const baseHash = managedBaseHash(change);
       const baseVersion = configuration.version();
@@ -207,7 +241,7 @@ export function createProposalService(
       const now = Date.now();
       sqlite
         .prepare(
-          'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at) VALUES(?,?,?,?,?,?,?,?)',
+          'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at,batch_id) VALUES(?,?,?,?,?,?,?,?,?)',
         )
         .run(
           id,
@@ -215,6 +249,81 @@ export function createProposalService(
           JSON.stringify(diff),
           baseHash,
           baseVersion,
+          now + 15 * 60_000,
+          'pending',
+          now,
+          currentBatchId,
+        );
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+        )
+        .run(authorId, 'proposal', id, 'created', now);
+      return { id, diff, expiresAt: now + 15 * 60_000, state: 'pending' };
+    });
+  }
+  function proposeBatch(authorId: string, items: { kind: string; change: unknown }[]) {
+    if (!items.length || items.length > 20) throw new Error('Invalid batch');
+    return configuration.transaction(() => {
+      insideBatch = true;
+      try {
+        const batchId = randomBytes(16).toString('hex');
+        currentBatchId = batchId;
+        const proposals = items.map((item) => {
+          const proposal =
+            item.kind === 'service'
+              ? propose(authorId, item.change)
+              : proposeManaged(authorId, { kind: item.kind, change: item.change });
+          return { ...proposal, batchId };
+        });
+        return { batchId, proposals };
+      } finally {
+        insideBatch = false;
+        currentBatchId = null;
+      }
+    });
+  }
+  function proposeAgent(authorId: string, input: unknown) {
+    const change = agentChangeSchema.parse(input);
+    return transaction(() => {
+      checkPending(authorId);
+      const author = sqlite
+        .prepare('SELECT scopes FROM agent_identities WHERE id=? AND revoked_at IS NULL')
+        .get(authorId) as { scopes: string } | undefined;
+      const allowed = z
+        .array(z.enum(AGENT_SCOPES))
+        .parse(JSON.parse(author?.scopes ?? 'null') as unknown);
+      if (
+        !allowed.includes('agents:propose') ||
+        ('scopes' in change && change.scopes.some((scope) => !allowed.includes(scope)))
+      )
+        throw new Error('Scope denied');
+      const target =
+        'id' in change
+          ? sqlite
+              .prepare(
+                'SELECT id,name,scopes,revoked_at AS revokedAt,token_hash AS tokenHash FROM agent_identities WHERE id=?',
+              )
+              .get(change.id)
+          : null;
+      if ('id' in change && (!target || target.revokedAt !== null))
+        throw new Error('Identity unavailable');
+      const before = target
+        ? { id: target.id, name: target.name, scopes: JSON.parse(String(target.scopes)) as unknown }
+        : null;
+      const diff = { kind: 'agent', change, before };
+      const id = randomBytes(16).toString('hex');
+      const now = Date.now();
+      sqlite
+        .prepare(
+          'INSERT INTO service_proposals(id,author_id,diff,base_hash,base_version,expires_at,state,created_at) VALUES(?,?,?,?,?,?,?,?)',
+        )
+        .run(
+          id,
+          authorId,
+          JSON.stringify(diff),
+          hash(target),
+          configuration.version(),
           now + 15 * 60_000,
           'pending',
           now,
@@ -260,6 +369,59 @@ export function createProposalService(
         }
         const version = configuration.version();
         const decoded: unknown = JSON.parse(p.diff);
+        if (
+          typeof decoded === 'object' &&
+          decoded !== null &&
+          'kind' in decoded &&
+          decoded.kind === 'agent' &&
+          'change' in decoded
+        ) {
+          const change = agentChangeSchema.parse(decoded.change);
+          const target =
+            'id' in change
+              ? sqlite
+                  .prepare(
+                    'SELECT id,name,scopes,revoked_at AS revokedAt,token_hash AS tokenHash FROM agent_identities WHERE id=?',
+                  )
+                  .get(change.id)
+              : null;
+          if (
+            hash(target) !== p.base_hash ||
+            ('id' in change && (!target || target.revokedAt !== null))
+          )
+            throw new Error('Configuration has changed');
+          let token: string | undefined;
+          let agentId: string;
+          if (change.op === 'create') {
+            const issued = issue(change.name, change.scopes);
+            token = issued.token;
+            agentId = issued.id;
+          } else {
+            agentId = change.id;
+            if (change.op === 'update-scopes')
+              sqlite
+                .prepare('UPDATE agent_identities SET scopes=? WHERE id=?')
+                .run(JSON.stringify(change.scopes), change.id);
+            if (change.op === 'revoke') revoke(change.id);
+            if (change.op === 'rotate') token = rotate(change.id);
+          }
+          sqlite
+            .prepare(
+              "UPDATE service_proposals SET state='approved',reviewed_at=?,reviewer=? WHERE id=? AND state='pending'",
+            )
+            .run(now, human, id);
+          sqlite
+            .prepare(
+              'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+            )
+            .run(human, `agent-${change.op}`, id, 'ok', now);
+          sqlite
+            .prepare(
+              'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+            )
+            .run(human, 'review', id, 'approved', now);
+          return { state: 'approved' as const, agentId, ...(token ? { token } : {}) };
+        }
         const isManaged =
           typeof decoded === 'object' &&
           decoded !== null &&
@@ -330,7 +492,7 @@ export function createProposalService(
     }
     return sqlite
       .prepare(
-        'SELECT id,author_id as author,diff,base_hash as baseHash,base_version as baseVersion,expires_at as expiresAt,state,created_at as createdAt,reviewed_at as reviewedAt,reviewer FROM service_proposals ORDER BY created_at DESC',
+        'SELECT id,author_id as author,diff,base_hash as baseHash,base_version as baseVersion,expires_at as expiresAt,state,created_at as createdAt,reviewed_at as reviewedAt,reviewer,batch_id as batchId FROM service_proposals ORDER BY created_at DESC',
       )
       .all();
   }
@@ -346,7 +508,7 @@ export function createProposalService(
     return sqlite
       .prepare(
         `SELECT id,diff,CASE WHEN state='pending' AND expires_at<=? THEN 'expired' ELSE state END AS state,
-                expires_at AS expiresAt,created_at AS createdAt,reviewed_at AS reviewedAt
+                expires_at AS expiresAt,created_at AS createdAt,reviewed_at AS reviewedAt,batch_id AS batchId
          FROM service_proposals WHERE author_id=? ORDER BY created_at DESC LIMIT 200`,
       )
       .all(now, authorId);
@@ -355,10 +517,27 @@ export function createProposalService(
     return sqlite
       .prepare(
         `SELECT id,diff,CASE WHEN state='pending' AND expires_at<=? THEN 'expired' ELSE state END AS state,
-                expires_at AS expiresAt,created_at AS createdAt,reviewed_at AS reviewedAt
+                expires_at AS expiresAt,created_at AS createdAt,reviewed_at AS reviewedAt,batch_id AS batchId
          FROM service_proposals WHERE author_id=? AND id=?`,
       )
       .get(Date.now(), authorId, id);
+  }
+  function withdraw(authorId: string, id: string) {
+    return configuration.transaction(() => {
+      const now = Date.now();
+      const changed = sqlite
+        .prepare(
+          "UPDATE service_proposals SET state='withdrawn',reviewed_at=? WHERE id=? AND author_id=? AND state='pending' AND expires_at>?",
+        )
+        .run(now, id, authorId, now);
+      if (!changed.changes) throw new Error('Proposal unavailable');
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+        )
+        .run(authorId, 'withdraw', id, 'withdrawn', now);
+      return { id, state: 'withdrawn' };
+    });
   }
   return {
     issue,
@@ -367,11 +546,14 @@ export function createProposalService(
     rotate,
     propose,
     proposeManaged,
+    proposeBatch,
+    proposeAgent,
     decide,
     list,
     listAgents,
     listOwn,
     getOwn,
+    withdraw,
     configHash,
   };
 }

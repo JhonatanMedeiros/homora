@@ -11,7 +11,7 @@ function fixture() {
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER);
     CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
-    CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT);
+    CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
     CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'proposal contents are immutable'); END;
     CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);`);
   return { db, api: createProposalService(db) };
@@ -91,7 +91,7 @@ it('serializes review across SQLite connections and prevents replay', () => {
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER);
     CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
-    CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT);
+    CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
     CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER);
     CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'proposal contents are immutable'); END;`);
   const second = new DatabaseSync(path);
@@ -108,4 +108,75 @@ it('serializes review across SQLite connections and prevents replay', () => {
     second.close();
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+it('governs identity changes with subset checks, human review and one-time tokens', () => {
+  const { db, api } = fixture();
+  const author = api.issue('delegator', ['agents:propose', 'services:read']);
+  expect(() =>
+    api.proposeAgent(author.id, { op: 'create', name: 'bad', scopes: ['audit:read'] }),
+  ).toThrow();
+  const proposal = api.proposeAgent(author.id, {
+    op: 'create',
+    name: 'child',
+    scopes: ['services:read'],
+  });
+  expect(() => api.decide(proposal.id, true, author.id)).toThrow('Agent cannot approve');
+  const approved = api.decide(proposal.id, true, 'user:admin');
+  expect(typeof approved).toBe('object');
+  if (typeof approved === 'string' || !approved.token) throw new Error('Missing token');
+  expect(api.authenticate(approved.token, 'services:read')).toBe(approved.agentId);
+  expect(JSON.stringify(api.getOwn(author.id, proposal.id))).not.toContain(approved.token);
+  expect(JSON.stringify(api.list())).not.toContain(approved.token);
+  expect(JSON.stringify(db.prepare('SELECT * FROM audit_events').all())).not.toContain(
+    approved.token,
+  );
+  expect(() => api.decide(proposal.id, true, 'user:admin')).toThrow();
+  const rotated = api.rotate(approved.agentId);
+  expect(api.authenticate(approved.token, 'services:read')).toBeNull();
+  expect(api.authenticate(rotated, 'services:read')).toBe(approved.agentId);
+  const scopeChange = api.proposeAgent(author.id, {
+    op: 'update-scopes',
+    id: approved.agentId,
+    scopes: ['agents:propose'],
+  });
+  api.decide(scopeChange.id, true, 'user:admin');
+  expect(api.authenticate(rotated, 'services:read')).toBeNull();
+  expect(api.authenticate(rotated, 'agents:propose')).toBe(approved.agentId);
+  const rotationProposal = api.proposeAgent(author.id, { op: 'rotate', id: approved.agentId });
+  const rotationResult = api.decide(rotationProposal.id, true, 'user:admin');
+  if (typeof rotationResult === 'string' || !rotationResult.token) throw new Error('Missing token');
+  expect(api.authenticate(rotated, 'agents:propose')).toBeNull();
+  expect(api.authenticate(rotationResult.token, 'agents:propose')).toBe(approved.agentId);
+  const revoke = api.proposeAgent(author.id, { op: 'revoke', id: approved.agentId });
+  api.decide(revoke.id, true, 'user:admin');
+  expect(api.authenticate(rotationResult.token, 'agents:propose')).toBeNull();
+  db.close();
+});
+
+it('creates a bounded atomic batch without applying proposals', () => {
+  const { db, api } = fixture();
+  const author = api.issue('bot', ['proposals:create']);
+  const items = Array.from({ length: 20 }, (_, i) => ({
+    kind: 'service',
+    change: { op: 'create', service: { ...card, name: `Card ${i}` } },
+  }));
+  const batch = api.proposeBatch(author.id, items);
+  expect(batch.proposals).toHaveLength(20);
+  expect(new Set(batch.proposals.map((item) => item.batchId))).toEqual(new Set([batch.batchId]));
+  expect(db.prepare('SELECT COUNT(*) AS count FROM services').get()).toEqual({ count: 0 });
+  expect(() => api.proposeBatch(author.id, [...items, items[0]])).toThrow();
+  expect(() => api.proposeBatch(author.id, [items[0], { kind: 'service', change: {} }])).toThrow();
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({
+    count: 20,
+  });
+  api.decide(batch.proposals[0].id, true, 'user:admin');
+  expect(
+    db.prepare("SELECT COUNT(*) AS count FROM service_proposals WHERE state='pending'").get(),
+  ).toEqual({ count: 19 });
+  for (let i = 0; i < 4; i++) api.proposeBatch(author.id, items);
+  expect(() => api.proposeBatch(author.id, [items[0], items[1]])).toThrow('limit');
+  api.proposeBatch(author.id, [items[0]]);
+  expect(() => api.propose(author.id, items[0].change)).toThrow('limit');
+  db.close();
 });
