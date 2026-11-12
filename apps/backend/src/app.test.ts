@@ -30,6 +30,47 @@ afterEach(async () => {
     });
 });
 describe('Services API', () => {
+  it.each([0, 1, 2])('renumbers groups after deleting index %i', async (deletedIndex) => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const groups: { id: number; name: string }[] = [];
+    for (const name of ['First', 'Middle', 'Last']) {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/groups',
+        headers,
+        payload: { name },
+      });
+      groups.push(response.json());
+    }
+    expect(
+      (
+        await app.inject({
+          method: 'DELETE',
+          url: `/api/groups/${groups[deletedIndex].id}`,
+          headers,
+        })
+      ).statusCode,
+    ).toBe(200);
+    const remaining = groups.filter((_, index) => index !== deletedIndex);
+    const list = async () =>
+      (await app.inject({ method: 'GET', url: '/api/groups', headers })).json();
+    expect(await list()).toMatchObject(
+      remaining.map((group, position) => ({ ...group, position })),
+    );
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/groups',
+      headers,
+      payload: { name: 'New' },
+    });
+    expect(created.json().position).toBe(2);
+    const names = ['New', ...remaining.map((group) => group.name)];
+    expect(
+      (await app.inject({ method: 'PUT', url: '/api/groups/order', headers, payload: { names } }))
+        .statusCode,
+    ).toBe(200);
+    expect(await list()).toMatchObject(names.map((name, position) => ({ name, position })));
+  });
   it('exports, previews, and imports configuration without overwriting anything', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
     const post = (url: string, payload: unknown) =>

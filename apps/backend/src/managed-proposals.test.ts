@@ -30,6 +30,47 @@ function fixture() {
 }
 
 describe('managed proposals', () => {
+  it.each([3, 4, 5])('renumbers groups after approving deletion of group %i', (id) => {
+    const { db, api, agent } = fixture();
+    try {
+      db.exec(
+        "INSERT INTO service_groups VALUES(3,'First',5,NULL),(4,'Middle',5,NULL),(5,'Last',9,NULL)",
+      );
+      const proposal = api.proposeManaged(agent.id, {
+        kind: 'group',
+        change: { op: 'delete', id },
+      });
+      expect(db.prepare('SELECT position FROM service_groups WHERE id=?').get(id)).toBeDefined();
+      expect(api.decide(proposal.id, true, 'local-admin')).toBe('approved');
+      const expected = [1, 2, 3, 4, 5].filter((groupId) => groupId !== id);
+      expect(
+        db.prepare('SELECT id,position FROM service_groups ORDER BY position,id').all(),
+      ).toEqual(expected.map((groupId, position) => ({ id: groupId, position })));
+      const create = api.proposeManaged(agent.id, {
+        kind: 'group',
+        change: { op: 'create', name: 'New' },
+      });
+      api.decide(create.id, true, 'local-admin');
+      expect(db.prepare("SELECT position FROM service_groups WHERE name='New'").get()).toEqual({
+        position: 4,
+      });
+      const names = (
+        db.prepare('SELECT name FROM service_groups ORDER BY position').all() as { name: string }[]
+      )
+        .map((row) => row.name)
+        .reverse();
+      const reorder = api.proposeManaged(agent.id, {
+        kind: 'group',
+        change: { op: 'reorder', names },
+      });
+      api.decide(reorder.id, true, 'local-admin');
+      expect(
+        db.prepare('SELECT name,position FROM service_groups ORDER BY position').all(),
+      ).toEqual(names.map((name, position) => ({ name, position })));
+    } finally {
+      db.close();
+    }
+  });
   it('validates group changes without applying them, and applies once with audit', () => {
     const { db, api, agent } = fixture();
     try {

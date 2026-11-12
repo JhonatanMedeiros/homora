@@ -1014,3 +1014,8 @@ Services can optionally check a same-origin path independently of their card URL
 - Agents shows a shared countdown, an expired state and recreation for expired proposals. Expired batches are recreated together, preserving collective review. Recreation validates the original diff and records the human requester; it never applies changes.
 - The review period defaults to 15 minutes and can be set to 1–120 minutes for new proposals. It is stored in the existing settings table and read by both MCP transports. Existing deadlines are unchanged.
 - Validated: `pnpm check` (404 application tests and 6 script tests) and `pnpm build`. Tests cover expiration in the open interface, authentication, TTL, recreation and batch rollback. The interface was not manually checked in a browser; real infrastructure was not needed.
+
+## Group positions after deletion (issue #68)
+
+- Deleting an empty group through the API or an approved proposal renumbers the remaining groups in the same transaction, ordered by position and then ID. Existing gaps are normalized on the next successful deletion; no migration is needed.
+- Validated: `pnpm check` (410 application tests and 6 script tests) and `pnpm build`. Tests cover deletions at the beginning, middle and end, creation and reordering afterward, and existing gaps and duplicate positions in proposals. Existing tests cover rejection of non-empty groups.
