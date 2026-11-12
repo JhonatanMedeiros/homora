@@ -20,9 +20,8 @@ export function useHostInventory(enabled: boolean, needed: number[]) {
   const [inventories, setInventories] = useState<HostInventories>({});
   const requested = useRef(new Set<number>());
 
-  const wantsData = enabled || needed.length > 0;
+  // The connection list is local (no Proxmox call), so it is always read; guest data is not.
   useEffect(() => {
-    if (!wantsData) return;
     let active = true;
     fetch('/api/connections')
       .then((response) => (response.ok ? (response.json() as Promise<Connection[]>) : []))
@@ -39,7 +38,7 @@ export function useHostInventory(enabled: boolean, needed: number[]) {
     return () => {
       active = false;
     };
-  }, [wantsData]);
+  }, []);
 
   const load = useCallback(async (id: number, refresh = false, silent = false) => {
     requested.current.add(id);

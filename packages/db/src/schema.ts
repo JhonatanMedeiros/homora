@@ -1,5 +1,13 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+  index,
+  integer,
+  primaryKey,
+  real,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 export const serviceGroups = sqliteTable('service_groups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull().unique(),
@@ -250,3 +258,23 @@ export const dockerPushSources = sqliteTable('docker_push_sources', {
   inventoryVersion: integer('inventory_version').notNull().default(0),
   inventory: text('inventory'),
 });
+
+/** Suggested hosts the user dismissed, so they do not return on every refresh (per card and guest). */
+export const hostSuggestionDismissals = sqliteTable(
+  'host_suggestion_dismissals',
+  {
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    connectionId: integer('connection_id')
+      .notNull()
+      .references(() => integrationInstances.id, { onDelete: 'cascade' }),
+    node: text('node').notNull(),
+    vmid: integer('vmid').notNull(),
+    type: text('type').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.serviceId, table.connectionId, table.vmid, table.type] }),
+  ],
+);

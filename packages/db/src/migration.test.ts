@@ -374,3 +374,46 @@ it('adds the optional card-to-guest link without changing existing cards and unl
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('adds suggestion dismissals on top of the host link without touching existing cards', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-dismissal-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // A database created by the previous version (without the dismissals table).
+    for (const migration of migrations.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description,host_connection_id,host_node,host_vmid,host_type) VALUES(7,'Existing','https://example.test','Home','',NULL,'pve1',101,'lxc')",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(check.prepare('SELECT name,host_node FROM services WHERE id=7').get()).toEqual({
+      name: 'Existing',
+      host_node: 'pve1',
+    });
+    check.exec(
+      "INSERT INTO integration_instances(id,type,name) VALUES(3,'proxmox','PVE'); INSERT INTO host_suggestion_dismissals VALUES(7,3,'pve1',101,'lxc',1)",
+    );
+    expect(() =>
+      check.exec("INSERT INTO host_suggestion_dismissals VALUES(7,3,'pve1',101,'lxc',2)"),
+    ).toThrow();
+    check.exec('DELETE FROM services WHERE id=7');
+    expect(check.prepare('SELECT * FROM host_suggestion_dismissals').all()).toEqual([]);
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

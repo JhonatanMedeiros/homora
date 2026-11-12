@@ -19,7 +19,11 @@ function connectionInputError(error: unknown) {
   return errorBody(error instanceof InputError ? error.code : 'integration-save-failed');
 }
 
-export function registerConnectionRoutes(app: FastifyInstance, db: Db, vault?: Vault) {
+export function registerConnectionRoutes(
+  app: FastifyInstance,
+  db: Db,
+  vault?: Vault,
+): ReturnType<typeof createIntegrationConnections> {
   const connections = createIntegrationConnections(db, vault);
 
   app.get('/api/connections', async () => connections.listConnections());
@@ -144,4 +148,5 @@ export function registerConnectionRoutes(app: FastifyInstance, db: Db, vault?: V
       return reply.code(502).send(errorBody('integration-test-failed'));
     }
   });
+  return connections;
 }

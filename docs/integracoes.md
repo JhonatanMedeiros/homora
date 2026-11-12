@@ -132,7 +132,10 @@ grant trust to other endpoints.
   its cluster, subject to token permissions. Separate clusters require separate connections.
 - Besides the aggregates, the same read of `/api2/json/cluster/resources` feeds the guest picker
   and the Host view (node and guest names, ids, state); no other endpoint is called.
-  The UI does not yet filter individual nodes in the widget. Connections
+  The UI does not yet filter individual nodes in the widget. Suggested hosts also read, with GET
+  only, `/nodes/{node}/{lxc|qemu}/{vmid}/config` and, for running VMs,
+  `/nodes/{node}/qemu/{vmid}/agent/network-get-interfaces`; the latter may be refused by a
+  read-only token, which only removes that signal. Connections
   are read-only. Use least-privilege tokens and verify behavior against your own environment.
 
 ### Jellyfin

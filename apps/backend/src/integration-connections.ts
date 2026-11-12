@@ -144,6 +144,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     }
   }
   const caches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
+  const addressCaches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
   const inventoryCaches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
   const cacheFor = (id: number) => {
     let cache = caches.get(id);
@@ -273,6 +274,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     if (current) {
       cacheFor(current.id).invalidate();
       inventoryCaches.get(current.id)?.invalidate();
+      addressCaches.get(current.id)?.invalidate();
     }
     return publicRow(result);
   }
@@ -375,6 +377,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
         sqlite.exec('COMMIT');
         caches.delete(id);
         inventoryCaches.delete(id);
+        addressCaches.delete(id);
         return 'deleted' as const;
       } catch (error) {
         sqlite.exec('ROLLBACK');
@@ -408,6 +411,53 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       return cache.collect(
         () => prepareAdapter(row.type, parseData(row), credentials(row), true)(),
         refresh,
+      );
+    },
+    /**
+     * Static and guest-agent addresses of the given guests (suggestion evidence), cached 5 min per
+     * connection. Same audience as the inventory: authenticated callers only.
+     */
+    async addressData(id: number, guests: readonly unknown[]) {
+      migrateLegacy();
+      const row = await find(id);
+      if (!row || row.type !== 'proxmox') return null;
+      let cache = addressCaches.get(id);
+      if (!cache) {
+        cache = createObservationCache<unknown>(300_000);
+        addressCaches.set(id, cache);
+      }
+      const data = parseData(row);
+      const keys = credentials(row);
+      const transport = async (request: {
+        origin: string;
+        path: string;
+        authorization?: string;
+      }) => {
+        const response = await getAuthorizedResponse(
+          new URL(request.path, request.origin).href,
+          { origins: [new URL(data.url).origin], allowPrivate: data.allowPrivate },
+          {
+            headers: request.authorization ? { authorization: request.authorization } : {},
+            ca: keys.ca,
+            maxBodyBytes: 2_000_000,
+          },
+        );
+        let body: unknown = null;
+        if (response.body) {
+          try {
+            body = JSON.parse(response.body) as unknown;
+          } catch {
+            body = null;
+          }
+        }
+        return { status: response.status, body };
+      };
+      return cache.collect(() =>
+        integrationRegistry.prepareAddresses(row.type, {
+          publicConfig: data,
+          credentials: keys,
+          transport,
+        })(guests),
       );
     },
     async testConnection(id: number) {

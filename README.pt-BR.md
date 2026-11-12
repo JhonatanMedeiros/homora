@@ -227,15 +227,16 @@ O Homora oferece MCP local via stdio e Streamable HTTP sem sessão. Na página *
 
 Após `pnpm build`, configure um cliente MCP confiável para executar `node /caminho/absoluto/homora/apps/backend/dist/mcp-server.js` via stdio. Crie uma identidade na página **Agentes** e passe o token exibido uma vez em `HOMORA_AGENT_TOKEN`. Configure `HOMORA_DATABASE_PATH` com o **mesmo caminho absoluto do banco** usado pelo Homora; `pnpm dev` usa `data/homora-dev.sqlite`, enquanto o padrão normal é `data/homora.sqlite`. O processo precisa ler o arquivo `.key` desse caminho. A configuração Proxmox antiga é migrada quando o backend inicia, portanto inicie o backend ao menos uma vez antes de usar o MCP stdio com dados do Proxmox; o MCP nunca lê o `.proxmox` diretamente. Com Docker, o processo precisa acessar o mesmo volume; um banco diferente no host é outra instância.
 
-| Escopo                                     | Ferramentas                                                                                |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `services:read`                            | `list_services`, `get_service`, `list_groups`, `list_service_status`                       |
-| `proxmox:read`                             | `list_proxmox_resources`                                                                   |
-| `proposals:create`                         | `propose_service_card`, `propose_card_order`                                               |
-| `groups:propose`                           | `propose_group_change`                                                                     |
-| `widgets:read`, `widgets:propose`          | `list_widgets`, `propose_widget_change`, respectivamente                                   |
-| `integrations:read`, `connections:propose` | `list_integrations`, `get_integration_status`; `propose_connection_setup`, respectivamente |
-| `discovery:read`                           | `list_discovery_suggestions`; `propose_discovered_card` também exige `proposals:create`    |
+| Escopo                                     | Ferramentas                                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `services:read`                            | `list_services`, `get_service`, `list_groups`, `list_service_status`                              |
+| `proxmox:read`                             | `list_proxmox_resources`                                                                          |
+| `proposals:create`                         | `propose_service_card`, `propose_card_order`                                                      |
+| `groups:propose`                           | `propose_group_change`                                                                            |
+| `widgets:read`, `widgets:propose`          | `list_widgets`, `propose_widget_change`, respectivamente                                          |
+| `integrations:read`, `connections:propose` | `list_integrations`, `get_integration_status`; `propose_connection_setup`, respectivamente        |
+| `discovery:read`                           | `list_discovery_suggestions`; `propose_discovered_card` também exige `proposals:create`           |
+| `hosts:read`, `hosts:propose`              | `list_host_suggestions`, `propose_host_link`, respectivamente (nomes de convidados são sensíveis) |
 
 `list_proxmox_resources` retorna dados agregados quando existe exatamente uma conexão Proxmox. Com várias, use `list_integrations` e `get_integration_status` com `integrations:read` para escolher a conexão.
 

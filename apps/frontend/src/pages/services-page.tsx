@@ -15,6 +15,7 @@ import { ViewOptions } from '@/components/view-options';
 import { HostView } from '@/components/host-view';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useHostInventory } from '@/hooks/use-host-inventory';
+import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
 import { HostImpactBanner } from '@/components/host-impact-banner';
 import { hostLabel, offlineNodes, serviceImpact } from '@/lib/hosts';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
@@ -96,6 +97,7 @@ export function ServicesPage({
   const [formOpen, setFormOpen] = useState(false);
   const [host, setHost] = useState<HostLink | null>(null);
   const hostView = arrange === 'host' && !managing;
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const linkedConnections = useMemo(
     () => [...new Set(services.flatMap((s) => (s.host ? [s.host.connectionId] : [])))],
     [services],
@@ -490,6 +492,17 @@ export function ServicesPage({
           )}
           {services.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
+              {hostData.connections.length > 0 && services.some((s) => !s.host) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="pointer-coarse:h-11"
+                  onClick={() => setSuggestOpen(true)}
+                >
+                  {t('hosts.suggest.open')}
+                </Button>
+              )}
               <ToggleGroup
                 type="single"
                 variant="outline"
@@ -792,6 +805,16 @@ export function ServicesPage({
           </GroupSection>
         );
       })}
+      <HostSuggestionsPanel
+        open={suggestOpen}
+        onOpenChange={setSuggestOpen}
+        services={services}
+        onChanged={() => void refresh()}
+        onChooseManually={(service) => {
+          setSuggestOpen(false);
+          navigate(`/manage/services/${service.id}/edit`);
+        }}
+      />
       <AlertDialog
         open={removingGroup !== null}
         onOpenChange={(open) => !open && setRemovingGroup(null)}

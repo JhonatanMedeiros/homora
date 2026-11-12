@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import { isNodeName, isVmid, type GuestType } from '@homora/shared';
 
 export type ProxmoxNodeState = 'online' | 'offline' | 'unknown';
@@ -61,3 +62,66 @@ export function inventoryProxmox(resources: unknown): ProxmoxInventory {
   inventory.guests.sort((a, b) => a.node.localeCompare(b.node) || a.vmid - b.vmid);
   return inventory;
 }
+
+const MAX_ADDRESSES = 8;
+const CONFIG_ADDRESS_KEYS = { lxc: /^net\d+$/, qemu: /^ipconfig\d+$/ } as const;
+
+/** Normalizes an IP literal; loopback, link-local and unspecified addresses are not evidence. */
+export function usableAddress(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const address = value
+    .trim()
+    .replace(/\/\d{1,3}$/, '')
+    .toLowerCase();
+  const family = isIP(address);
+  if (!family) return null;
+  if (family === 4 && /^(127\.|0\.|169\.254\.|255\.)/.test(address)) return null;
+  if (family === 6 && (address === '::' || address === '::1' || address.startsWith('fe80:')))
+    return null;
+  return address;
+}
+
+/**
+ * Static addresses written in a guest configuration: `ip=` / `ip6=` of an LXC `netN` line or a
+ * VM cloud-init `ipconfigN` line. `dhcp`, `auto` and `manual` carry no address.
+ */
+export function configAddresses(type: GuestType, config: unknown): string[] {
+  if (!config || typeof config !== 'object') return [];
+  const found = new Set<string>();
+  for (const [key, line] of Object.entries(config as Record<string, unknown>)) {
+    if (!CONFIG_ADDRESS_KEYS[type].test(key) || typeof line !== 'string') continue;
+    for (const part of line.split(',')) {
+      const [name, value] = part.split('=');
+      if (name !== 'ip' && name !== 'ip6') continue;
+      const address = usableAddress(value);
+      if (address) found.add(address);
+    }
+  }
+  return [...found].slice(0, MAX_ADDRESSES);
+}
+
+/** Addresses reported by the QEMU guest agent (`network-get-interfaces`). */
+export function agentAddresses(data: unknown): string[] {
+  const result = (data as { result?: unknown } | null)?.result;
+  if (!Array.isArray(result)) return [];
+  const found = new Set<string>();
+  for (const iface of result) {
+    const list = (iface as Record<string, unknown> | null)?.['ip-addresses'];
+    if (!Array.isArray(list)) continue;
+    for (const entry of list) {
+      const address = usableAddress((entry as Record<string, unknown> | null)?.['ip-address']);
+      if (address) found.add(address);
+    }
+  }
+  return [...found].slice(0, MAX_ADDRESSES);
+}
+
+export type GuestAddresses = {
+  node: string;
+  vmid: number;
+  type: GuestType;
+  /** Static addresses from the guest configuration. */
+  config: string[];
+  /** Addresses from the QEMU guest agent; empty when the token or the agent does not allow it. */
+  agent: string[];
+};
