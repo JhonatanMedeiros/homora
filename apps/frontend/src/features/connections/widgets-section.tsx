@@ -32,8 +32,15 @@ type Props = {
   widgetConnection: string;
   cards: { id: number; name: string }[];
   widgetCard: string;
+  editingWidget: number | null;
+  widgetEditName: string;
+  widgetEditCard: string;
+  onEditCardChange: (value: string) => void;
+  onEdit: (widget: IntegrationWidget) => void;
+  onEditNameChange: (value: string) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: (widget: IntegrationWidget, name: string, card: string) => void;
   onCardChange: (value: string) => void;
-  onMoveWidget: (widget: IntegrationWidget, value: string) => void;
   widgetResult: { id: number; data: unknown } | null;
   onNameChange: (value: string) => void;
   onConnectionChange: (value: string) => void;
@@ -51,7 +58,14 @@ export function WidgetsSection({
   cards,
   widgetCard,
   onCardChange,
-  onMoveWidget,
+  editingWidget,
+  widgetEditName,
+  widgetEditCard,
+  onEditCardChange,
+  onEdit,
+  onEditNameChange,
+  onCancelEdit,
+  onSaveEdit,
   widgetResult,
   onNameChange,
   onConnectionChange,
@@ -64,8 +78,22 @@ export function WidgetsSection({
       <p className="text-sm text-muted-foreground">{t('widgets.description')}</p>
       {(!items || items.length === 0) && <EmptyNote>{t('widgets.needConnection')}</EmptyNote>}
       {items && items.length > 0 && (
-        <form onSubmit={onCreate}>
+        <form onSubmit={onCreate} className="rounded-lg border bg-card p-4">
+          <div className="mb-4 flex flex-col gap-1">
+            <h2 className="font-semibold">{t('widgets.create')}</h2>
+            <p className="text-sm text-muted-foreground">{t('widgets.createHint')}</p>
+          </div>
           <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+            <Field>
+              <FieldLabel htmlFor="widget-name">{t('widgets.name')}</FieldLabel>
+              <Input
+                id="widget-name"
+                required
+                maxLength={80}
+                value={widgetName}
+                onChange={(event) => onNameChange(event.target.value)}
+              />
+            </Field>
             <Field>
               <FieldLabel htmlFor="widget-connection">{t('widgets.connection')}</FieldLabel>
               <FormSelect
@@ -81,16 +109,6 @@ export function WidgetsSection({
                   </FormSelectOption>
                 ))}
               </FormSelect>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="widget-name">{t('widgets.name')}</FieldLabel>
-              <Input
-                id="widget-name"
-                required
-                maxLength={80}
-                value={widgetName}
-                onChange={(event) => onNameChange(event.target.value)}
-              />
             </Field>
             <Field>
               <FieldLabel htmlFor="widget-card">{t('widgets.card')}</FieldLabel>
@@ -134,19 +152,62 @@ export function WidgetsSection({
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions className="flex-wrap">
-                    <FormSelect
-                      aria-label={t('widgets.cardAria', { name: widget.name })}
-                      value={widget.serviceId ?? ''}
-                      disabled={busy}
-                      onChange={(event) => onMoveWidget(widget, event.target.value)}
-                    >
-                      <FormSelectOption value="">{t('widgets.noCard')}</FormSelectOption>
-                      {cards.map((card) => (
-                        <FormSelectOption key={card.id} value={card.id}>
-                          {card.name}
-                        </FormSelectOption>
-                      ))}
-                    </FormSelect>
+                    {editingWidget === widget.id ? (
+                      <>
+                        <Input
+                          aria-label={t('widgets.name')}
+                          maxLength={80}
+                          value={widgetEditName}
+                          onChange={(event) => onEditNameChange(event.target.value)}
+                        />
+                        <FormSelect
+                          aria-label={t('widgets.cardAria', { name: widget.name })}
+                          value={widgetEditCard}
+                          onChange={(event) => onEditCardChange(event.target.value)}
+                        >
+                          <FormSelectOption value="">{t('widgets.noCard')}</FormSelectOption>
+                          {cards.map((card) => (
+                            <FormSelectOption key={card.id} value={card.id}>
+                              {card.name}
+                            </FormSelectOption>
+                          ))}
+                        </FormSelect>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={busy || !widgetEditName.trim()}
+                          onClick={() => onSaveEdit(widget, widgetEditName)}
+                        >
+                          {t('widgets.save')}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={onCancelEdit}
+                        >
+                          {t('common.cancel')}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm text-muted-foreground">
+                          {widget.serviceId
+                            ? cards.find((card) => card.id === widget.serviceId)?.name
+                            : t('widgets.noCard')}
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => onEdit(widget)}
+                        >
+                          {t('common.edit')}
+                        </Button>
+                      </>
+                    )}
                     <RowMenu label={t('widgets.menu', { name: widget.name })} disabled={busy}>
                       <DropdownMenuItem disabled={!connection} onSelect={() => onQuery(widget)}>
                         {t('widgets.viewData')}

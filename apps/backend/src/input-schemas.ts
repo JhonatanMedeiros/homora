@@ -170,8 +170,12 @@ export const createWidgetSchema = z
   .refine((value) => (value.integrationId === undefined) !== (value.source === undefined));
 
 export const updateWidgetSchema = z
-  .object({ serviceId: z.number().int().safe().positive().nullable() })
-  .strict();
+  .object({
+    serviceId: z.number().int().safe().positive().nullable().optional(),
+    name: z.string().trim().min(1).max(80).optional(),
+  })
+  .strict()
+  .refine((value) => value.serviceId !== undefined || value.name !== undefined);
 
 export const refreshQuerySchema = z
   .object({ refresh: z.enum(['true', 'false']).optional() })

@@ -38,6 +38,9 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
   const [widgetName, setWidgetName] = useState('');
   const [widgetConnection, setWidgetConnection] = useState('');
   const [widgetCard, setWidgetCard] = useState('');
+  const [editingWidget, setEditingWidget] = useState<number | null>(null);
+  const [widgetEditName, setWidgetEditName] = useState('');
+  const [widgetEditCard, setWidgetEditCard] = useState('');
   const [cards, setCards] = useState<{ id: number; name: string }[]>([]);
   const [widgetResult, setWidgetResult] = useState<{ id: number; data: unknown } | null>(null);
   const [form, setForm] = useState<ConnectionFormState | null>(initialDraft ?? null);
@@ -53,6 +56,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
     null,
   );
   const [busy, setBusy] = useState(false);
+  const [saveTesting, setSaveTesting] = useState(false);
   const load = useCallback(async () => {
     const [data, widgetData] = await Promise.all([
       request('/api/connections'),
@@ -138,19 +142,23 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
       setBusy(false);
     }
   }
-  async function moveWidget(widget: IntegrationWidget, value: string) {
+  async function updateWidget(widget: IntegrationWidget, name: string, serviceId: string) {
     setBusy(true);
     setMessage('');
     try {
       await request(`/api/widgets/${widget.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceId: value ? Number(value) : null }),
+        body: JSON.stringify({
+          name: name.trim(),
+          serviceId: serviceId ? Number(serviceId) : null,
+        }),
       });
+      setEditingWidget(null);
       await load();
-      setMessage(t('widgets.cardUpdated'));
+      setMessage(t('widgets.updated'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('widgets.cardFailed'));
+      setMessage(error instanceof Error ? error.message : t('widgets.updateFailed'));
     } finally {
       setBusy(false);
     }
@@ -183,10 +191,11 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
       setBusy(false);
     }
   }
-  async function save(event: FormEvent) {
-    event.preventDefault();
+  async function save(event?: FormEvent, testAfterSave = false) {
+    event?.preventDefault();
     if (!form) return;
     setBusy(true);
+    setSaveTesting(testAfterSave);
     setMessage('');
     const optional = new Set(
       extraFields(form.type)
@@ -210,20 +219,28 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
             .filter(([key, value]) => value !== '' || (editing !== null && optional.has(key))),
         ),
       };
-      await request(editing === null ? '/api/connections' : `/api/connections/${editing}`, {
-        method: editing === null ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const saved = (await request(
+        editing === null ? '/api/connections' : `/api/connections/${editing}`,
+        {
+          method: editing === null ? 'POST' : 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        },
+      )) as Connection;
+      if (testAfterSave) {
+        await request(`/api/connections/${saved.id}/test`, { method: 'POST' });
+        setMessage(t('connections.testOk', { name: saved.name }));
+      }
       setForm(null);
       setEditing(null);
       setResult(null);
       await load();
-      setMessage(t('connections.saved'));
+      if (!testAfterSave) setMessage(t('connections.saved'));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t('connections.saveFailed'));
     } finally {
       setBusy(false);
+      setSaveTesting(false);
     }
   }
   async function action(item: Connection, operation: 'test' | 'data' | 'delete') {
@@ -304,10 +321,12 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
               connectionId={editing}
               hasCa={Boolean(editingItem?.hasCa)}
               busy={busy}
+              saveTesting={saveTesting}
               onChange={setForm}
               onUpdate={(update) => setForm((current) => (current ? update(current) : current))}
               onCaError={setMessage}
               onSubmit={(event) => void save(event)}
+              onSaveAndTest={() => void save(undefined, true)}
               onCancel={() => {
                 setForm(null);
                 setEditing(null);
@@ -361,8 +380,19 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
             widgetConnection={selectedConnection}
             cards={cards}
             widgetCard={widgetCard}
+            editingWidget={editingWidget}
+            widgetEditName={widgetEditName}
+            onEdit={(widget) => {
+              setEditingWidget(widget.id);
+              setWidgetEditName(widget.name);
+              setWidgetEditCard(widget.serviceId ? String(widget.serviceId) : '');
+            }}
+            onEditNameChange={setWidgetEditName}
+            widgetEditCard={widgetEditCard}
+            onEditCardChange={setWidgetEditCard}
+            onCancelEdit={() => setEditingWidget(null)}
+            onSaveEdit={(widget, name) => void updateWidget(widget, name, widgetEditCard)}
             onCardChange={setWidgetCard}
-            onMoveWidget={(widget, value) => void moveWidget(widget, value)}
             widgetResult={widgetResult}
             onNameChange={setWidgetName}
             onConnectionChange={setWidgetConnection}
