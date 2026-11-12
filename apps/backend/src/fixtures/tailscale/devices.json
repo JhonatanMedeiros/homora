@@ -1,0 +1,38 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample following the official Go client's Device type for GET /api/v2/tailnet/{tailnet}/devices (an object with a `devices` array)",
+    "docs": "https://github.com/tailscale/tailscale-client-go-v2 (devices.go and client.go, main branch); https://tailscale.com/docs/reference/tailscale-api",
+    "note": "Read on 2026-11-12: base URL https://api.tailscale.com, '-' is the default tailnet, the client authenticates with HTTP Basic using the API key as user name and an empty password, and the response is {\"devices\": [...]}. The public API pages did not render server-side, so field names come from the vendor's client source. Not recorded from a live tailnet."
+  },
+  "body": {
+    "devices": [
+      {
+        "id": "1",
+        "nodeId": "n1",
+        "name": "laptop.example.ts.net",
+        "hostname": "laptop",
+        "connectedToControl": true,
+        "updateAvailable": false,
+        "lastSeen": null
+      },
+      {
+        "id": "2",
+        "nodeId": "n2",
+        "name": "server.example.ts.net",
+        "hostname": "server",
+        "connectedToControl": true,
+        "updateAvailable": true,
+        "lastSeen": null
+      },
+      {
+        "id": "3",
+        "nodeId": "n3",
+        "name": "phone.example.ts.net",
+        "hostname": "phone",
+        "connectedToControl": false,
+        "updateAvailable": false,
+        "lastSeen": "2026-01-01T10:00:00Z"
+      }
+    ]
+  }
+}

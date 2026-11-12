@@ -217,7 +217,8 @@ describe('registry as the single source of truth', () => {
     }
   });
   it('keeps the stored public keys that existing installations use', () => {
-    expect([...publicFieldKeys].sort()).toEqual(['entityId', 'slug', 'username']);
+    // New integrations may add keys; the keys of stored connections must never disappear.
+    expect(publicFieldKeys).toEqual(expect.arrayContaining(['entityId', 'slug', 'username']));
   });
   it('validates connection input and proposals against the registered types only', () => {
     const base = { name: 'X', url: 'https://x.test' };

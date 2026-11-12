@@ -265,3 +265,19 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
   management address. The cloud API is rate limited (120 requests per minute); results are cached 30 seconds.
 - **Live validation checklist:** the `Token` scheme is accepted; a service user with the lowest role can
   list peers; the response size with many peers stays under 2 MB.
+
+### Tailscale
+
+- **Reads:** `GET /api/v2/tailnet/{tailnet}/devices` with HTTP Basic (the API key as user name, empty
+  password); shows how many devices exist, how many are connected to the control server and how many
+  have an update available. Source: the official Go client ([tailscale-client-go-v2](https://github.com/tailscale/tailscale-client-go-v2),
+  `devices.go`, `client.go`), read 2026-11-12. The public API reference pages did not render for the
+  tool used, so field names and the auth scheme come from that source, not from the reference pages.
+- **Least privilege:** create the narrowest access token the admin console offers for reading devices.
+  The scope names were **not verified** here; check them when validating. API access tokens expire
+  (the console limits them to 90 days).
+- **Network:** `https://api.tailscale.com` is public (prefilled): an administrator must allow outbound
+  HTTPS to it; no private-network option is needed. The default tailnet is `-`.
+- **Live validation checklist:** Basic auth with an empty password is accepted for the token type you
+  use; `connectedToControl` and `updateAvailable` are present in the default field set; the response
+  size for a large tailnet stays under 2 MB.
