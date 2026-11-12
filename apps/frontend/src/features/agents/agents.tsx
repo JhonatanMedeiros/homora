@@ -25,13 +25,13 @@ import { RowListSkeleton } from '@/components/skeletons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { SectionTitle } from '@/components/section-title';
 import { PageHeader } from '@/components/page-header';
 import { AgentList } from './agent-list';
 import { parseDiff, type Agent, type Proposal } from './agent-model';
 import { ConnectDialog } from './connect-dialog';
 import { NewAgentDialog } from './new-agent-dialog';
 import { ProposalCard } from './proposal-card';
+import { ProposalRow } from './proposal-row';
 import { TokenDialog } from './token-dialog';
 import { apiError, t } from '@/i18n';
 
@@ -270,6 +270,26 @@ export function Agents({
     );
   };
 
+  const renderRow = (proposal: Proposal) => {
+    const diff = parseDiff(proposal.diff);
+    return (
+      <ProposalRow
+        key={proposal.id}
+        proposal={proposal}
+        agentName={agentName(proposal.author)}
+        current={services.find((service) => service.id === diff?.id)}
+        onRecreate={
+          proposal.state === 'expired' &&
+          !recreating &&
+          (!proposal.batchId ||
+            expired.find((p) => p.batchId === proposal.batchId)?.id === proposal.id)
+            ? () => void recreate(proposal.id)
+            : undefined
+        }
+      />
+    );
+  };
+
   return (
     <section aria-label={t('agents.title')} className="flex flex-col gap-8">
       <PageHeader
@@ -384,24 +404,38 @@ export function Agents({
             </ul>
           )}
           {expired.length > 0 && (
-            <section aria-label={t('proposal.state.expired')} className="flex flex-col gap-3">
-              <SectionTitle>{t('proposal.state.expired')}</SectionTitle>
-              <ul className="flex flex-col gap-3">
-                {expired.map((proposal) => renderProposal(proposal))}
-              </ul>
-            </section>
+            <Collapsible className="flex flex-col gap-3">
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="ghost" className="group w-fit">
+                  {t('agents.expired', { count: expired.length })}
+                  <ChevronDown
+                    data-icon="inline-end"
+                    className="transition-transform group-data-[state=open]:rotate-180"
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="flex flex-col gap-3">
+                <p className="text-sm text-muted-foreground">{t('agents.expiredHint')}</p>
+                <ul className="flex flex-col gap-2">
+                  {expired.map((proposal) => renderRow(proposal))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
           )}
           {history.length > 0 && (
             <Collapsible className="flex flex-col gap-3">
               <CollapsibleTrigger asChild>
-                <Button type="button" variant="ghost" className="w-fit">
+                <Button type="button" variant="ghost" className="group w-fit">
                   {t('agents.history', { count: history.length })}
-                  <ChevronDown data-icon="inline-end" />
+                  <ChevronDown
+                    data-icon="inline-end"
+                    className="transition-transform group-data-[state=open]:rotate-180"
+                  />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <ul className="flex flex-col gap-3">
-                  {history.map((proposal) => renderProposal(proposal))}
+                <ul className="flex flex-col gap-2">
+                  {history.map((proposal) => renderRow(proposal))}
                 </ul>
               </CollapsibleContent>
             </Collapsible>

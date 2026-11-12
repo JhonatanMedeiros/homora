@@ -170,7 +170,14 @@ export function parseId(value: string): number | null {
 }
 
 export const publicStatusSettingsSchema = z
-  .object({ enabled: z.boolean().optional(), title: z.string().trim().max(60).optional() })
+  .object({
+    enabled: z.boolean().optional(),
+    title: z.string().trim().max(60).optional(),
+    description: z.string().trim().max(160).optional(),
+  })
   .strict()
-  .refine((value) => value.enabled !== undefined || value.title !== undefined);
+  .refine(
+    (value) =>
+      value.enabled !== undefined || value.title !== undefined || value.description !== undefined,
+  );
 export const servicePublicSchema = z.object({ isPublic: z.boolean() }).strict();

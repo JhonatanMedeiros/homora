@@ -18,7 +18,7 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - Optional Docker discovery: suggests cards from local or remote agent inventories using container labels (`homora.url`, or Homepage's `homepage.href`), with a review step. See [Docker discovery](#docker-discovery).
 - Local administrator account, SQLite storage with migrations, backup and restore scripts.
 - Widgets inside cards: attach a widget (Proxmox, Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home data) to a card on the Integrations page. Each widget shows its own loading or error state, and a failing connection does not affect the other cards.
-- An optional top bar (turn it on in Settings) with the date, the time and CPU, memory and disk usage from a selected Proxmox connection.
+- An optional top bar (turn it on in Settings → Interface) with the date, the time and CPU, memory and disk usage from a selected Proxmox connection. The clock can show seconds, use a 12 or 24 hour format and follow another time zone. Interface also holds the theme, language and home page layout; all of it is saved in the browser only.
 - Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) and an MCP server (local stdio or Streamable HTTP) where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
 
 Not available yet: OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md).
@@ -81,7 +81,7 @@ Homora can publish a minimal, read-only page at `/status` so others can see what
 - The page calls only `GET /api/public/status`, the one anonymous API path (exact match, never a prefix). It is limited to 60 requests per minute per client address and is cached for 15 seconds.
 - Anonymous visitors receive only: service name, group, online/offline/unknown state, last check time, 24 hourly bars and the 24-hour uptime percentage. Never URLs, descriptions, addresses, latency, HTTP codes, failure reasons or internal ids.
 - With the page disabled or no public service, the endpoint answers `404 not-found`, the same as a route that does not exist.
-- Settings shows a preview of exactly what visitors will see. Enabling or disabling the page, changing its title and marking a service are recorded in the activity feed. Importing a configuration and agent proposals never make a service public; the MCP only reports `publicStatusEnabled`.
+- Settings shows the page address (with copy and open buttons), an optional short description under the title (up to 160 characters, visible to anyone with the link) and a preview of exactly what visitors will see. Enabling or disabling the page, changing its title or description and marking a service are recorded in the activity feed. Importing a configuration and agent proposals never make a service public; the MCP only reports `publicStatusEnabled`.
 - The per-client limit needs the real client address: keep `HOMORA_TRUST_PROXY=true` behind a proxy that overwrites `X-Forwarded-For` (see above), or every visitor shares one limit.
 - If Homora sits behind Cloudflare Access (or a similar gateway), `/status` and `/api/public/status` must use a separate hostname or a bypass policy, otherwise visitors are still asked to sign in. Exposing it to the internet is your decision: review what is marked public first.
 
@@ -141,7 +141,7 @@ The Homepage labels `homepage.href`, `homepage.name`, `homepage.group`, `homepag
 
 ### Remote Docker agents
 
-Remote agents complement the existing local source; neither mode creates cards without review. In **Settings → Docker discovery → Remote Docker agents**, create a named source and copy its token immediately. It is shown only once; generate a replacement if lost. Homora stores a hash, and revocation permanently invalidates the source. To use that host again, remove the revoked source and create a new one. There is a maximum of ten remote sources, including revoked sources until removed. Rotating a token discards that source's last inventory. Removing a source deletes its inventory, not cards already imported.
+Remote agents complement the existing local source; neither mode creates cards without review. In **Settings → Docker discovery → Remote agents**, create a named source and copy its token immediately. It is shown only once; generate a replacement if lost. Homora stores a hash, and revocation permanently invalidates the source. To use that host again, remove the revoked source and create a new one. There is a maximum of ten remote sources, including revoked sources until removed. Rotating a token discards that source's last inventory. Removing a source deletes its inventory, not cards already imported.
 
 On each trusted Docker host, build the agent from this checkout:
 

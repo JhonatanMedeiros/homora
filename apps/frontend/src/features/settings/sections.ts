@@ -9,16 +9,16 @@ export const settingsSections: {
   description: MessageKey;
 }[] = [
   {
-    id: 'notifications',
-    icon: Bell,
-    title: 'settings.section.notifications',
-    description: 'settings.section.notificationsHint',
-  },
-  {
     id: 'interface',
     icon: PanelTop,
     title: 'settings.section.interface',
     description: 'settings.section.interfaceHint',
+  },
+  {
+    id: 'notifications',
+    icon: Bell,
+    title: 'settings.section.notifications',
+    description: 'settings.section.notificationsHint',
   },
   {
     id: 'public',
