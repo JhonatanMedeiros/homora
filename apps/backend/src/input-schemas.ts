@@ -4,6 +4,8 @@ import {
   ICON_MAX_LENGTH,
   isCheckPath,
   isExpectedStatus,
+  isNodeName,
+  isVmid,
 } from '@homora/shared';
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
@@ -41,6 +43,23 @@ export const serviceInputSchema = z
       .optional(),
   })
   .strict();
+
+export const hostLinkSchema = z
+  .object({
+    connectionId: z.number().int().safe().positive(),
+    node: z.string().refine(isNodeName),
+    vmid: z.number().int().safe().refine(isVmid),
+    type: z.enum(['qemu', 'lxc']),
+  })
+  .strict();
+/** Web UI only: agent proposals keep using `serviceInputSchema`, which rejects `host`. */
+export const serviceFormSchema = serviceInputSchema.extend({
+  host: hostLinkSchema.nullable().optional(),
+});
+export const dismissalBodySchema = z
+  .object({ host: hostLinkSchema, dismissed: z.boolean() })
+  .strict();
+export const hostBodySchema = z.object({ host: hostLinkSchema.nullable() }).strict();
 
 const serviceIdSchema = z.number().int().safe().positive();
 export const serviceProposalSchema = z.discriminatedUnion('op', [

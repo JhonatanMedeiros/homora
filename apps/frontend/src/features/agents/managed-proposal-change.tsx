@@ -26,6 +26,16 @@ const labels: Record<string, MessageKey> = {
   connections: 'managed.connections',
   position: 'field.position',
   columns: 'managed.columns',
+  host: 'managed.host',
+  strength: 'managed.strength',
+  evidence: 'managed.evidence',
+  connectionId: 'managed.connectionId',
+  node: 'hosts.node',
+  vmid: 'managed.vmid',
+  host_connection_id: 'managed.connectionId',
+  host_node: 'hosts.node',
+  host_vmid: 'managed.vmid',
+  host_type: 'managed.type',
 };
 const operations: Record<string, MessageKey> = {
   create: 'managed.create',
@@ -62,6 +72,8 @@ function Value({ value, field }: { value: unknown; field?: string }) {
         ))}
       </dl>
     );
+  if (field === 'strength' && (value === 'strong' || value === 'medium'))
+    return <span>{t(`hosts.strength.${value}`)}</span>;
   if (field === 'op' && typeof value === 'string' && operations[value])
     return <span>{t(operations[value])}</span>;
   return <span>{String(value)}</span>;
@@ -75,11 +87,14 @@ export function ManagedProposalChange({ diff }: { diff: Diff }) {
         ? 'proposal.managed.card-order'
         : kind === 'widget'
           ? 'proposal.managed.widget'
-          : 'proposal.managed.connection-setup';
+          : kind === 'host-link'
+            ? 'proposal.managed.host-link'
+            : 'proposal.managed.connection-setup';
   return (
     <div className="flex flex-col gap-3">
       <p className="font-label text-lg font-semibold">{t(title)}</p>
       {kind === 'connection-setup' && <p>{t('proposal.managed.connectionNote')}</p>}
+      {kind === 'host-link' && <p>{t('managed.hostNote')}</p>}
       {diff.before != null && (
         <section className="flex flex-col gap-2">
           <p className="font-semibold">{t('proposal.before')}</p>

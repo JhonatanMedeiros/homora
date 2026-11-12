@@ -31,7 +31,9 @@ are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not 
 - [ ] Validate the Proxmox adapter against real environments: reduced permissions and failure
       scenarios. A connection with an imported CA succeeded in the maintainer environment.
 - [x] Display inventory without modifying infrastructure.
-- [ ] Provide reviewable card suggestions from Proxmox (service-to-host map, R4).
+- [x] Provide reviewable card suggestions from Proxmox (service-to-host map, R4). Delivered in
+      five phases (issue #96, [ADR 0008](decisoes/0008-service-to-host-map.md)); validated only
+      against simulated Proxmox responses, so the real-environment item below stays open.
 - [x] Test destination protection (network policy).
 - [ ] Test unavailability, invalid credentials, and reduced permissions against a real Proxmox.
 

@@ -53,6 +53,12 @@ export const en = {
     'Suggests changes to cards. Nothing changes without your approval.',
   'scope.groups:propose': 'Propose group changes',
   'scope.groups:propose.hint': 'Suggests creating, renaming, ordering or removing groups.',
+  'scope.hosts:read': 'Read host suggestions',
+  'scope.hosts:read.hint':
+    'Sees Proxmox guest names and the evidence that links cards to them. Sensitive inventory.',
+  'scope.hosts:propose': 'Propose host links',
+  'scope.hosts:propose.hint':
+    'Suggests linking a card to a Proxmox guest. Needs independent evidence and your approval.',
   'scope.widgets:read': 'Read widgets',
   'scope.widgets:read.hint': 'Sees widget names and their links.',
   'scope.widgets:propose': 'Propose widget changes',
@@ -256,6 +262,12 @@ export const ptBR: Record<keyof typeof en, string> = {
   'scope.proposals:create.hint': 'Sugere mudanças nos cards. Nada muda sem a sua aprovação.',
   'scope.groups:propose': 'Propor mudanças em grupos',
   'scope.groups:propose.hint': 'Sugere criar, renomear, ordenar ou remover grupos.',
+  'scope.hosts:read': 'Ler hosts sugeridos',
+  'scope.hosts:read.hint':
+    'Vê nomes de convidados do Proxmox e a evidência que liga cartões a eles. Inventário sensível.',
+  'scope.hosts:propose': 'Propor vínculos de host',
+  'scope.hosts:propose.hint':
+    'Sugere vincular um cartão a um convidado do Proxmox. Exige evidência independente e a sua aprovação.',
   'scope.widgets:read': 'Ler widgets',
   'scope.widgets:read.hint': 'Vê nomes e vínculos de widgets.',
   'scope.widgets:propose': 'Propor mudanças em widgets',

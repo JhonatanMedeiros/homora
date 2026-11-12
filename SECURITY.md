@@ -34,6 +34,13 @@ data or real credentials. There is no established response SLA or bug bounty pol
   The administrator setting **New services allow private network** (off by default,
   audited) only provides the initial value for services created in the web UI;
   existing services, imports, Docker discovery and agent proposals never inherit it.
+- The Proxmox guest inventory (names, ids, state) is more sensitive than the aggregate widget.
+  It is returned only to authenticated web sessions, never by the public status page or
+  MCP, and cards store only ids. Homora never writes to Proxmox.
+- Suggested hosts resolve a card's hostname only through the same outbound destination policy
+  (a private result needs that card's own private-network authorization) and never connect to
+  the card. Guest addresses are read with read-only requests; the `hosts:read` MCP scope exposes
+  guest names and must be granted deliberately. A name match is never treated as evidence.
 - Treat service names, URLs, and integration responses as untrusted data.
 
 See the [README](README.md) for backup and recovery, and

@@ -12,5 +12,7 @@ export const AGENT_SCOPES = [
   'integrations:read',
   'connections:propose',
   'discovery:read',
+  'hosts:read',
+  'hosts:propose',
 ] as const;
 export type AgentScope = (typeof AGENT_SCOPES)[number];

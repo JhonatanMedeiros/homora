@@ -24,6 +24,8 @@ import { registerMcpHttp } from './mcp-http.js';
 import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
 import { createNotifications } from './notifications.js';
+import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
+import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -112,7 +114,7 @@ export function createApp(
   registerAuthRoutes(app, auth, webPort, audit);
   registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
-  registerConnectionRoutes(app, db, vault);
+  const connections = registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
@@ -125,6 +127,8 @@ export function createApp(
     auth,
     audit,
   );
+  registerHostSuggestionRoutes(app, sqlite, connections, configuration);
+  registerServiceDependencyRoutes(app, sqlite, auth, audit);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);

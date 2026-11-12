@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
-import type { Service, ServiceInput } from '@homora/shared';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import type { HostLink, Service, ServiceInput } from '@homora/shared';
 import { Check, Plus, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,6 +12,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ViewOptions } from '@/components/view-options';
+import { HostView } from '@/components/host-view';
+import { HostMap } from '@/components/host-map';
+import { useDependencies } from '@/hooks/use-dependencies';
+import { dependsOn, dependentsOf, impairedUpstream, isImpaired } from '@/lib/dependencies';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useHostInventory } from '@/hooks/use-host-inventory';
+import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
+import { HostImpactBanner } from '@/components/host-impact-banner';
+import { hostLabel, offlineNodes, serviceImpact } from '@/lib/hosts';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
 import { CategoryFilter } from '@/components/category-filter';
@@ -67,20 +76,86 @@ export function ServicesPage({
   onAddService,
   formRoute,
   navigate,
-  focusRequest,
-  onFocusHandled,
+  focusRequest: requestedFocus,
+  onFocusHandled: handledFocus,
 }: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
   const [topBar] = useTopBar();
-  const { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange } =
-    useViewPreferences();
+  const {
+    view,
+    setView,
+    arrange,
+    setArrange,
+    showDescriptions,
+    setShowDescriptions,
+    uptimeRange,
+    setUptimeRange,
+  } = useViewPreferences();
   const uptime = useUptime(uptimeRange);
   const list = view === 'list';
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [shared, setShared] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [host, setHost] = useState<HostLink | null>(null);
+  const deps = useDependencies();
+  // Edits to "Depends on" in the open form, applied with the card on save.
+  const [depAdded, setDepAdded] = useState<number[]>([]);
+  const [depRemoved, setDepRemoved] = useState<number[]>([]);
+  // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
+  const [localFocus, setLocalFocus] = useState<FocusRequest | null>(null);
+  const focusRequest = localFocus ?? requestedFocus;
+  const onFocusHandled = () => {
+    setLocalFocus(null);
+    handledFocus?.();
+  };
+  const mapView = arrange === 'map' && !managing;
+  const hostList = arrange === 'host' && !managing;
+  const hostView = hostList || mapView;
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const linkedConnections = useMemo(
+    () => [...new Set(services.flatMap((s) => (s.host ? [s.host.connectionId] : [])))],
+    [services],
+  );
+  const hostData = useHostInventory(hostView || formOpen, linkedConnections);
+  const [nodeFilter, setNodeFilter] = useState<{ connectionId: number; node: string } | null>(null);
+  const impacts = useMemo(
+    () =>
+      new Map(
+        services.map((s) => [
+          s.id,
+          serviceImpact(
+            s,
+            statuses[s.id]?.status,
+            blockedIds.has(s.id),
+            hostData.connections,
+            hostData.inventories,
+          ),
+        ]),
+      ),
+    [services, statuses, blockedIds, hostData.connections, hostData.inventories],
+  );
+  const upstream = useMemo(
+    () => impairedUpstream(services, deps.dependencies, impacts),
+    [services, deps.dependencies, impacts],
+  );
+  const dependencyNotes = useMemo(() => {
+    const notes: Record<number, string> = {};
+    for (const [id, causes] of upstream) {
+      if (isImpaired(impacts.get(id))) continue;
+      const names = causes
+        .map((cause) => services.find((s) => s.id === cause)?.name)
+        .filter(Boolean)
+        .join(', ');
+      if (names) notes[id] = t('dependencies.mayBeAffected', { names });
+    }
+    return notes;
+  }, [upstream, impacts, services]);
+  const offline = useMemo(
+    () => offlineNodes(services, hostData.connections, hostData.inventories),
+    [services, hostData.connections, hostData.inventories],
+  );
   // Instance setting that only seeds the "allow private network" box of a NEW service.
   const privateDefaultRef = useRef(false);
   const [editing, setEditing] = useState<number | null>(null);
@@ -182,6 +257,9 @@ export function ServicesPage({
     navigate(service ? `/manage/services/${service.id}/edit` : '/manage/services/new');
     setConfirming(null);
     setEditing(service?.id ?? null);
+    setHost(service?.host ?? null);
+    setDepAdded([]);
+    setDepRemoved([]);
     setShared(service?.isPublic === true);
     setForm(
       service
@@ -248,6 +326,9 @@ export function ServicesPage({
     initializedRoute.current = formRoute;
     // Initialize the draft once per route after service data arrives.
     setEditing(service?.id ?? null);
+    setHost(service?.host ?? null);
+    setDepAdded([]);
+    setDepRemoved([]);
     setShared(service?.isPublic === true);
     setForm(
       service
@@ -294,7 +375,7 @@ export function ServicesPage({
         {
           method: editing === null ? 'POST' : 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
+          body: JSON.stringify({ ...form, host }),
         },
       );
       const body: unknown = await response.json().catch(() => null);
@@ -309,6 +390,16 @@ export function ServicesPage({
           body: JSON.stringify({ isPublic: shared }),
         });
         if (!visibility.ok) throw new Error(t('error.savePublic'));
+      }
+      if (savedId !== undefined) {
+        for (const id of depAdded) {
+          const failure = await deps.add(savedId, id);
+          if (failure) throw new Error(failure);
+        }
+        for (const id of depRemoved) {
+          const failure = await deps.remove(savedId, id);
+          if (failure) throw new Error(failure);
+        }
       }
       const wasNew = editing === null;
       closeForm();
@@ -463,6 +554,37 @@ export function ServicesPage({
           )}
           {services.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
+              {hostData.connections.length > 0 && services.some((s) => !s.host) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="pointer-coarse:h-11"
+                  onClick={() => setSuggestOpen(true)}
+                >
+                  {t('hosts.suggest.open')}
+                </Button>
+              )}
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                value={arrange}
+                onValueChange={(value) => {
+                  if (value === 'group' || value === 'host' || value === 'map') setArrange(value);
+                }}
+                aria-label={t('hosts.arrange')}
+              >
+                <ToggleGroupItem value="group" className="pointer-coarse:h-11">
+                  {t('hosts.arrange.group')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="host" className="pointer-coarse:h-11">
+                  {t('hosts.arrange.host')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="map" className="pointer-coarse:h-11">
+                  {t('hosts.arrange.map')}
+                </ToggleGroupItem>
+              </ToggleGroup>
               <ViewOptions
                 view={view}
                 onViewChange={setView}
@@ -472,6 +594,20 @@ export function ServicesPage({
             </div>
           )}
         </div>
+      )}
+      {!managing && (
+        <HostImpactBanner
+          nodes={offline}
+          indirect={(node) => {
+            const direct = new Set(node.affected.map((s) => s.id));
+            return dependentsOf([...direct], deps.dependencies).filter((id) => !direct.has(id))
+              .length;
+          }}
+          onSeeImpact={(node) => {
+            setNodeFilter({ connectionId: node.connectionId, node: node.node });
+            setArrange('host');
+          }}
+        />
       )}
       {!managing && data.statusError && (
         <p role="status" className="text-xs text-muted-foreground">
@@ -546,6 +682,29 @@ export function ServicesPage({
             categories={categories}
             error={formError}
             saving={saving}
+            hosts={{
+              value: host,
+              onChange: setHost,
+              connections: hostData.connections,
+              connectionsLoaded: hostData.connectionsLoaded,
+              inventories: hostData.inventories,
+              onReload: (id, refresh) => void hostData.reload(id, refresh),
+            }}
+            dependencies={{
+              selfId: editing,
+              services,
+              value: [
+                ...(editing === null
+                  ? []
+                  : dependsOn(editing, deps.dependencies).filter((id) => !depRemoved.includes(id))),
+                ...depAdded,
+              ],
+              onChange: (next) => {
+                const base = editing === null ? [] : dependsOn(editing, deps.dependencies);
+                setDepAdded(next.filter((id) => !base.includes(id)));
+                setDepRemoved(base.filter((id) => !next.includes(id)));
+              },
+            }}
             isPublic={shared}
             onPublicChange={setShared}
             onChange={setForm}
@@ -580,7 +739,7 @@ export function ServicesPage({
           {flash}
         </p>
       )}
-      {!organizing && services.length > 0 && categories.length > 2 && (
+      {!organizing && !hostView && services.length > 0 && categories.length > 2 && (
         <CategoryFilter
           categories={categories}
           selected={selected}
@@ -592,7 +751,60 @@ export function ServicesPage({
           }
         />
       )}
-      {groups.map(({ category, items }) => {
+      {mapView && services.length > 0 && (
+        <HostMap
+          services={services}
+          connections={hostData.connections}
+          inventories={hostData.inventories}
+          statuses={statuses}
+          blockedIds={blockedIds}
+          onRefresh={() => hostData.connections.forEach((c) => void hostData.reload(c.id, true))}
+          onListView={() => setArrange('host')}
+          onOpenCard={(service) => {
+            setArrange('group');
+            setLocalFocus({ id: service.id, nonce: Date.now() });
+          }}
+          onChangeHost={(service) => navigate(`/manage/services/${service.id}/edit`)}
+          dependencies={deps.dependencies}
+          notes={dependencyNotes}
+          edit={{
+            // The same endpoint the form and the suggestions use, so a link made on the map is
+            // identical to one made anywhere else.
+            onLinkHost: async (service, next) => {
+              try {
+                const response = await fetch(`/api/services/${service.id}/host`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ host: next }),
+                });
+                if (!response.ok) return false;
+                await refresh();
+                return true;
+              } catch {
+                return false;
+              }
+            },
+            onAddDependency: deps.add,
+            onRemoveDependency: deps.remove,
+            connectionsLoaded: hostData.connectionsLoaded,
+            onReload: (id, force) => void hostData.reload(id, force),
+          }}
+        />
+      )}
+      {hostList && services.length > 0 && (
+        <HostView
+          services={services}
+          connections={hostData.connections}
+          inventories={hostData.inventories}
+          statuses={statuses}
+          blockedIds={blockedIds}
+          onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
+          notes={dependencyNotes}
+          nodeFilter={nodeFilter}
+          onClearFilter={() => setNodeFilter(null)}
+        />
+      )}
+      {(hostView ? [] : groups).map(({ category, items }) => {
         const row = groupRows.find((group) => group.name === category);
         return (
           <GroupSection
@@ -697,6 +909,9 @@ export function ServicesPage({
                   uptime={uptime[s.id]}
                   uptimeRange={uptimeRange}
                   onUptimeRangeChange={setUptimeRange}
+                  host={hostLabel(s, hostData.connections, hostData.inventories)}
+                  impact={impacts.get(s.id)}
+                  dependencyNote={dependencyNotes[s.id]}
                   blocked={blockedIds.has(s.id)}
                   managing={managing}
                   list={list}
@@ -711,6 +926,16 @@ export function ServicesPage({
           </GroupSection>
         );
       })}
+      <HostSuggestionsPanel
+        open={suggestOpen}
+        onOpenChange={setSuggestOpen}
+        services={services}
+        onChanged={() => void refresh()}
+        onChooseManually={(service) => {
+          setSuggestOpen(false);
+          navigate(`/manage/services/${service.id}/edit`);
+        }}
+      />
       <AlertDialog
         open={removingGroup !== null}
         onOpenChange={(open) => !open && setRemovingGroup(null)}
@@ -751,7 +976,7 @@ export function ServicesPage({
       {!data.loaded && !data.loadError && (
         <ServicesSkeleton label={t('common.loading')} list={list} />
       )}
-      {data.loaded && !data.loadError && !groups.length && (
+      {data.loaded && !data.loadError && !groups.length && !hostView && (
         <ServicesEmpty
           hasServices={services.length > 0}
           onAdd={() => (managing ? openForm() : onAddService())}

@@ -120,8 +120,9 @@ without sharing administrator credentials.
 - [ ] AI agents proposing widgets, integrations, and discovered shortcuts as reviewable diffs with
       full audit trails.
 - [ ] Visual verification and load testing of proposal lifecycle (P4).
-- [ ] Service-to-host operational map with Proxmox: manual associations and evidence-backed
-      suggestions, never inferred by name alone.
+- [x] Service-to-host operational map with Proxmox: manual associations and evidence-backed
+      suggestions, never inferred by name alone. Done in issue #96; validated with simulated
+      Proxmox data only.
 - [ ] Public demonstration and verifiable positioning: clear boundaries of what agents can and
       cannot do.
 

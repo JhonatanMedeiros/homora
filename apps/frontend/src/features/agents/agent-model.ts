@@ -51,6 +51,8 @@ export const SCOPES = [
     hint: 'scope.proposals:create.hint',
   },
   { id: 'groups:propose', label: 'scope.groups:propose', hint: 'scope.groups:propose.hint' },
+  { id: 'hosts:read', label: 'scope.hosts:read', hint: 'scope.hosts:read.hint' },
+  { id: 'hosts:propose', label: 'scope.hosts:propose', hint: 'scope.hosts:propose.hint' },
   { id: 'widgets:read', label: 'scope.widgets:read', hint: 'scope.widgets:read.hint' },
   { id: 'widgets:propose', label: 'scope.widgets:propose', hint: 'scope.widgets:propose.hint' },
   {
@@ -138,7 +140,9 @@ export function proposalSummary(diff: Diff | null, current?: Service): string {
           ? 'proposal.managed.card-order'
           : kind === 'widget'
             ? 'proposal.managed.widget'
-            : 'proposal.managed.connection-setup',
+            : kind === 'host-link'
+              ? 'proposal.managed.host-link'
+              : 'proposal.managed.connection-setup',
     );
   }
   const name = diff.service?.name ?? current?.name;

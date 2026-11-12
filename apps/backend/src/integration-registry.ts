@@ -8,11 +8,19 @@ import type { HomeAssistantConfig } from './home-assistant.js';
 import type { JellyfinConfig } from './jellyfin.js';
 import type { UptimeKumaConfig } from './uptime-kuma.js';
 import { createProxmoxConnectionAdapter } from './proxmox-connection.js';
+import type { ProxmoxGuest } from './proxmox-inventory.js';
 
 function transportFrom(context: IntegrationContext) {
   if (!context.transport) throw new Error('Integration transport unavailable.');
   return context.transport;
 }
+
+const proxmoxConfig = (context: IntegrationContext) => ({
+  url: String(context.publicConfig.url ?? ''),
+  tokenId: context.credentials.tokenId ?? '',
+  secret: context.credentials.secret ?? '',
+  ca: context.credentials.ca,
+});
 
 export const integrationRegistry = createIntegrationRegistry([
   {
@@ -21,13 +29,18 @@ export const integrationRegistry = createIntegrationRegistry([
     capabilities: ['inventory'],
     prepare(context) {
       const adapter = createProxmoxConnectionAdapter(transportFrom(context));
-      const config = adapter.validate({
-        url: String(context.publicConfig.url ?? ''),
-        tokenId: context.credentials.tokenId ?? '',
-        secret: context.credentials.secret ?? '',
-        ca: context.credentials.ca,
-      });
+      const config = adapter.validate(proxmoxConfig(context));
       return () => adapter.collect(config);
+    },
+    prepareAddresses(context) {
+      const adapter = createProxmoxConnectionAdapter(transportFrom(context));
+      const config = adapter.validate(proxmoxConfig(context));
+      return (guests) => adapter.addresses(config, guests as ProxmoxGuest[]);
+    },
+    prepareInventory(context) {
+      const adapter = createProxmoxConnectionAdapter(transportFrom(context));
+      const config = adapter.validate(proxmoxConfig(context));
+      return () => adapter.inventory(config);
     },
   },
   {

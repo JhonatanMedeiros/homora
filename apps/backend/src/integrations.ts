@@ -22,6 +22,12 @@ export type IntegrationContext = {
 };
 export type IntegrationRegistration = IntegrationMetadata & {
   prepare?: (context: IntegrationContext) => () => Promise<unknown>;
+  /** Detailed read that carries names and ids; only for authenticated callers. */
+  prepareInventory?: (context: IntegrationContext) => () => Promise<unknown>;
+  /** Per-guest addresses for suggestions; same audience as the inventory. */
+  prepareAddresses?: (
+    context: IntegrationContext,
+  ) => (guests: readonly unknown[]) => Promise<unknown>;
 };
 
 /** Explicit registration keeps untrusted or unknown integration types from executing code. */
@@ -45,6 +51,16 @@ export function createIntegrationRegistry<T extends IntegrationRegistration>(
       const entry = entries.get(type);
       if (!entry?.prepare) throw new InputError('integration-type-unavailable');
       return entry.prepare(context);
+    },
+    prepareAddresses: (type: string, context: IntegrationContext) => {
+      const entry = entries.get(type);
+      if (!entry?.prepareAddresses) throw new InputError('integration-type-unavailable');
+      return entry.prepareAddresses(context);
+    },
+    prepareInventory: (type: string, context: IntegrationContext) => {
+      const entry = entries.get(type);
+      if (!entry?.prepareInventory) throw new InputError('integration-type-unavailable');
+      return entry.prepareInventory(context);
     },
   };
 }
