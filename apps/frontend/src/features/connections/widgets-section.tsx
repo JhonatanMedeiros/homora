@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,8 +11,8 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/components/ui/item';
-import { SectionTitle } from '@/components/section-title';
 import { ConnectionMark } from './connection-mark';
+import { RowMenu } from './row-menu';
 import {
   describeData,
   widgetLabels,
@@ -26,7 +27,6 @@ type Props = {
   items: Connection[] | null;
   widgets: IntegrationWidget[];
   busy: boolean;
-  confirming: string | null;
   widgetName: string;
   widgetConnection: string;
   cards: { id: number; name: string }[];
@@ -39,14 +39,12 @@ type Props = {
   onCreate: (event: FormEvent) => void;
   onQuery: (widget: IntegrationWidget) => void;
   onRemove: (widget: IntegrationWidget) => void;
-  onCancelRemoval: (widget: IntegrationWidget) => void;
 };
 
 export function WidgetsSection({
   items,
   widgets,
   busy,
-  confirming,
   widgetName,
   widgetConnection,
   cards,
@@ -59,12 +57,11 @@ export function WidgetsSection({
   onCreate,
   onQuery,
   onRemove,
-  onCancelRemoval,
 }: Props) {
   return (
-    <section aria-labelledby="integration-widgets-title" className="flex flex-col gap-3">
-      <SectionTitle id="integration-widgets-title">{t('widgets.title')}</SectionTitle>
+    <section aria-label={t('widgets.title')} className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">{t('widgets.description')}</p>
+      {(!items || items.length === 0) && <EmptyNote>{t('widgets.needConnection')}</EmptyNote>}
       {items && items.length > 0 && (
         <form onSubmit={onCreate}>
           <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
@@ -120,7 +117,6 @@ export function WidgetsSection({
         <ul className="flex flex-col gap-2">
           {widgets.map((widget) => {
             const connection = items?.find((item) => item.id === widget.integrationId);
-            const confirmingThis = confirming === `widget:${widget.id}`;
             return (
               <li key={widget.id}>
                 <Item variant="outline" className="flex-wrap bg-card">
@@ -147,30 +143,15 @@ export function WidgetsSection({
                         </option>
                       ))}
                     </NativeSelect>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy || !connection}
-                      onClick={() => onQuery(widget)}
-                    >
-                      {t('connections.query', { name: widget.name })}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={confirmingThis ? 'destructive' : 'ghost'}
-                      size="sm"
-                      disabled={busy}
-                      aria-label={
-                        confirmingThis
-                          ? t('widgets.confirmRemoveAria', { name: widget.name })
-                          : t('widgets.removeAria', { name: widget.name })
-                      }
-                      onClick={() => onRemove(widget)}
-                      onBlur={() => onCancelRemoval(widget)}
-                    >
-                      {confirmingThis ? t('card.confirmRemoveShort') : t('common.remove')}
-                    </Button>
+                    <RowMenu label={t('widgets.menu', { name: widget.name })} disabled={busy}>
+                      <DropdownMenuItem disabled={!connection} onSelect={() => onQuery(widget)}>
+                        {t('widgets.viewData')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onSelect={() => onRemove(widget)}>
+                        {t('common.remove')}
+                      </DropdownMenuItem>
+                    </RowMenu>
                   </ItemActions>
                   {widgetResult?.id === widget.id && (
                     <p className="w-full rounded-md bg-muted px-3 py-2 font-mono text-[0.8125rem]">

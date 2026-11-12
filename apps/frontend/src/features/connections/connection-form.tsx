@@ -1,12 +1,11 @@
 import { PasswordInput } from '@/components/password-input';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { emptyForm, labels, type ConnectionFormState, type Kind } from './connection-model';
-import { NativeSelect } from '@/components/native-select';
+import { labels, type ConnectionFormState } from './connection-model';
 import { t } from '@/i18n';
 
 type Props = {
@@ -38,23 +37,15 @@ export function ConnectionForm({
   return (
     <form onSubmit={onSubmit}>
       <Card>
+        <CardHeader>
+          <CardTitle>
+            {editing
+              ? t('card.edit', { name: labels[form.type] })
+              : t('connections.newTitle', { type: labels[form.type] })}
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="connection-type">{t('connections.type')}</FieldLabel>
-              <NativeSelect
-                id="connection-type"
-                value={form.type}
-                disabled={editing}
-                onChange={(event) => onChange({ ...emptyForm, type: event.target.value as Kind })}
-              >
-                {Object.entries(labels).map(([type, label]) => (
-                  <option key={type} value={type}>
-                    {label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
             <Field>
               <FieldLabel htmlFor="connection-name">{t('connections.name')}</FieldLabel>
               <Input

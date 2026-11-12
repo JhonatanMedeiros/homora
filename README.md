@@ -177,7 +177,7 @@ The UI shows friendly messages for these errors; MCP may return a generic failur
 
 ## Proxmox and other integrations
 
-Set up Proxmox on the Integrations page with an account and token that have read-only access. Credentials are encrypted at rest with a key stored separately in the same directory; this does not protect against someone who can read both files. Add separate named connections for independent clusters or servers. For a private CA, import the CA's public certificate (PEM); save the connection and use **Test**. TLS validation stays on. The top bar source can be selected in Settings. Service limits and requirements are in [docs/integracoes.md](docs/integracoes.md). The adapters were validated with mocks, not against real Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home instances.
+Set up Proxmox on the Integrations page with an account and token that have read-only access. Credentials are encrypted at rest with a key stored separately in the same directory; this does not protect against someone who can read both files. Add separate named connections for independent clusters or servers. For a private CA, import the CA's public certificate (PEM); save the connection and choose **Test connection** in the row's **⋯** menu. TLS validation stays on. The top bar source can be selected in Settings. Service limits and requirements are in [docs/integracoes.md](docs/integracoes.md). The adapters were validated with mocks, not against real Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home instances.
 
 ## MCP and AI agents
 
