@@ -950,6 +950,8 @@ implementation because it changes a security default.
 
 ## Auth Log — Better Auth for Web Authentication (2026-11-11)
 
+See [ADR 0004](decisoes/0004-better-auth-web-authentication.md).
+
 - Replaced the file-based account (`<database>.auth`, in-memory sessions) with Better Auth
   1.7.19 (email and password) on the application's SQLite database. Pinned to 1.7.19 because
   1.7.20 was younger than the project's minimum package age; no exception was added.
@@ -1051,6 +1053,8 @@ Services can optionally check a same-origin path independently of their card URL
 
 ## Public read-only status page (issue #63)
 
+See [ADR 0006](decisoes/0006-public-read-only-status-page.md).
+
 - `services.is_public` (default 0) and an `app_settings` table (`public_status_enabled`, `public_status_title`) in migration 0015; existing rows keep `is_public=0`.
 - `GET /api/public/status` is the only anonymous API path (exact-path allowlist in the auth hook, GET only), limited by `@fastify/rate-limit` to 60 requests per minute per client IP, cached 15 s, `404 not-found` when disabled or empty. Payload: name, category, `up|down|unknown`, `checkedAt`, `uptime` (24 h) and 24 hourly `bars`; stale observations read as `unknown`.
 - Visibility is changed only through authenticated, audited endpoints (`PUT /api/public-status/admin`, `PUT /api/services/:id/public`). It is deliberately outside `ServiceInput`, so imports, exports, agent proposals and MCP cannot change it; MCP exposes `publicStatusEnabled` read-only.
@@ -1058,6 +1062,8 @@ Services can optionally check a same-origin path independently of their card URL
 - Validated with `pnpm check`. Backend tests cover the closed default, 404s, opt-in only, no sensitive field or private service in the body, 429, exact-path allowlist, session requirement and audit. The rate limit runs in memory per backend process and the UI was not exercised manually in a browser. Not validated: behavior behind a real Cloudflare Access hostname.
 
 ### Monitor: uptime and latency per service (issue #62)
+
+See [ADR 0007](decisoes/0007-service-observation-history-and-uptime.md).
 
 - `GET /api/services/uptime?range=24h|7d|30d` (all services) and `GET /api/services/:id/uptime` return uptime %, check counts, last latency and a bar of buckets (30 min for 24 h, 2 h for 7 d, 6 h for 30 d; at most 120). Both use the same function, so the numbers match; only the single-service call adds `p95LatencyMs` (nearest rank), because the percentile needs a sort of every latency.
 - Only checks made under the service's current configuration (`signature`) count; the response flags `reconfigured` and the card says so. `unknown` checks stay out of the denominator and empty buckets read `unknown`. With fewer than 5 up/down checks the percentage is `null` and the card shows a dash.
@@ -1116,6 +1122,8 @@ Services can optionally check a same-origin path independently of their card URL
 - Checked in a headless browser at 360 px, 390 px and 1100 px: one row in management mode, and on the home page the search field still takes its own second row. Not checked on a physical phone, and below about 340 px the header can wrap again.
 
 ### Notification channels (issue #61)
+
+See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 - Webhook and Telegram channels, encrypted destinations, per-channel private-network opt-in, bounded asynchronous delivery and persisted service transition state. The five-minute cooldown suppresses a repeated outage and its recovery; unknown checks retain the last known state. Retries can duplicate deliveries and queued messages do not survive a restart.
 - Validation: `pnpm build`, lint, formatting and type checks passed; 422 application tests passed with `vitest run --maxWorkers=4`, and 6 script tests passed. Two unrestricted `pnpm check` runs timed out in the existing load-sensitive uptime benchmark, which passed in isolation. Telegram and webhook delivery were mocked; the UI was not visually reviewed in a browser.
