@@ -128,3 +128,41 @@ it('reports 3xx status code only when requested, without following redirect', as
   await expect(getAuthorizedResponse('http://service.test/', policy)).rejects.toThrow('302');
   expect(spy).toHaveBeenCalledTimes(2);
 });
+
+it('sends JSON with the pinned address and does not follow redirects', async () => {
+  vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
+    url: new URL('http://service.test/hook'),
+    address: { address: '10.0.0.4', family: 4 },
+  });
+  const req = Object.assign(new EventEmitter(), { destroy: vi.fn(), end: vi.fn() });
+  const res = Object.assign(new EventEmitter(), { statusCode: 302, destroy: vi.fn() });
+  const spy = vi.spyOn(http, 'request').mockImplementation((...args: unknown[]) => {
+    queueMicrotask(() => {
+      (args[2] as (response: typeof res) => void)(res);
+      req.emit('close');
+    });
+    return req as unknown as ReturnType<typeof http.request>;
+  });
+  await expect(
+    getAuthorizedResponse(
+      'http://service.test/hook',
+      { origins: ['http://service.test'], allowPrivate: true },
+      { jsonBody: '{"event":"down"}' },
+    ),
+  ).rejects.toThrow('redirect not allowed');
+  expect(spy).toHaveBeenCalledTimes(1);
+  expect(req.end).toHaveBeenCalledWith('{"event":"down"}');
+  expect(res.destroy).toHaveBeenCalled();
+  const options = spy.mock.calls[0][1] as {
+    method: string;
+    lookup: (
+      host: string,
+      options: { all: boolean },
+      callback: (...args: unknown[]) => void,
+    ) => void;
+  };
+  expect(options.method).toBe('POST');
+  const callback = vi.fn();
+  options.lookup('service.test', { all: false }, callback);
+  expect(callback).toHaveBeenCalledWith(null, '10.0.0.4', 4);
+});

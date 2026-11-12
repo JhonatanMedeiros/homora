@@ -249,7 +249,9 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     const saved = current ? credentials(current) : {};
     const value = prepare(input, current, saved);
     const existingRows = await db.select().from(integrationInstances);
-    const hasEncrypted = existingRows.some((row) => row.secretRef !== null);
+    const hasEncrypted =
+      existingRows.some((row) => row.secretRef !== null) ||
+      Boolean(getSqliteHandle(db).prepare('SELECT 1 FROM notification_channels LIMIT 1').get());
     const hasSecret = Boolean(value.keys.secret);
     const hasCa = Boolean(value.keys.ca);
     const secretRef =
