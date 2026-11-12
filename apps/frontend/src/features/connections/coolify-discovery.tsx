@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { IconPicker } from '@/components/icon-picker';
@@ -213,7 +212,7 @@ export function CoolifyDiscovery({
           <DialogTitle>{t('coolify.discoveryTitle')}</DialogTitle>
           <DialogDescription>{t('coolify.discoveryBody')}</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1 pr-3">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-3">
           <ul className="flex flex-col gap-3">
             {rows.map((row) => {
               const uuid = row.resource.uuid;
@@ -456,7 +455,7 @@ export function CoolifyDiscovery({
               );
             })}
           </ul>
-        </ScrollArea>
+        </div>
         {(successes > 0 || failures > 0) && (
           <p role="status" className="text-sm">
             {t('coolify.summary', { saved: successes, failed: failures })}
