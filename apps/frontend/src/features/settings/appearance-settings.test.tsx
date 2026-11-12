@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { DEFAULT_APPEARANCE, type Appearance } from '@homora/shared';
+import { DEFAULT_APPEARANCE, type Appearance, type BackgroundImage } from '@homora/shared';
 import { AppearanceSettings } from './appearance-settings';
 import { resetAppearanceStore } from '@/hooks/use-appearance';
 import { setLocale } from '@/i18n';
@@ -10,14 +10,34 @@ import { chooseSelectOption } from '@/test-select';
 type Call = { method: string; body: unknown };
 let calls: Call[];
 let stored: Appearance;
+let rejectUpload = false;
+const PICTURE: BackgroundImage = {
+  name: 'a'.repeat(32) + '.webp',
+  dim: 60,
+  position: 'fill',
+  average: '#808080',
+  width: 1920,
+  height: 1080,
+  bytes: 150_000,
+  originalBytes: 1_800_000,
+};
 
 function mockServer(initial: Appearance = DEFAULT_APPEARANCE) {
   stored = initial;
   calls = [];
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (_url: string, init?: RequestInit) => {
+    vi.fn(async (url: string, init?: RequestInit) => {
       const method = init?.method ?? 'GET';
+      if (url === '/api/appearance/background') {
+        calls.push({ method: `${method} image`, body: init?.body });
+        if (method === 'PUT') {
+          if (rejectUpload)
+            return new Response(JSON.stringify({ code: 'image-unsupported' }), { status: 415 });
+          stored = { ...stored, image: PICTURE };
+        } else stored = { ...stored, image: null };
+        return new Response(JSON.stringify({ appearance: stored }));
+      }
       const body = init?.body ? JSON.parse(String(init.body)) : undefined;
       calls.push({ method, body });
       if (method === 'PUT') stored = body;
@@ -30,6 +50,8 @@ function mockServer(initial: Appearance = DEFAULT_APPEARANCE) {
 beforeEach(() => {
   setLocale('en');
   resetAppearanceStore();
+  rejectUpload = false;
+  window.innerWidth = 1280;
   mockServer();
 });
 afterEach(() => {
@@ -134,4 +156,70 @@ it('shows a message and keeps the default when loading fails', async () => {
   );
   render(<AppearanceSettings />);
   expect(await screen.findByText(/Could not load the saved appearance/)).toBeTruthy();
+});
+
+const choose = (file: File) =>
+  fireEvent.change(screen.getByLabelText('Choose image', { selector: 'input' }), {
+    target: { files: [file] },
+  });
+
+it('uploads a picture, shows its size before and after, and applies it', async () => {
+  render(<AppearanceSettings />);
+  expect(screen.getByText('No background image.')).toBeTruthy();
+  choose(new File(['x'], 'bg.png', { type: 'image/png' }));
+  expect(
+    await screen.findByText(/1\.7 MB uploaded, 146 KB after processing \(1920×1080 px\)/),
+  ).toBeTruthy();
+  expect(calls.some((c) => c.method === 'PUT image')).toBe(true);
+  await waitFor(() =>
+    expect(document.documentElement.style.getPropertyValue('--ap-page-background-light')).toContain(
+      '/api/appearance/background/',
+    ),
+  );
+  expect(screen.getByRole('slider', { name: 'Dimming' })).toBeTruthy();
+  expect(screen.getByRole('radio', { name: 'Tile' })).toBeTruthy();
+});
+
+it('does not send a file above 2 MB', async () => {
+  render(<AppearanceSettings />);
+  choose(new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'big.png', { type: 'image/png' }));
+  expect(await screen.findByText('The image is larger than 2 MB.')).toBeTruthy();
+  expect(calls.some((c) => c.method === 'PUT image')).toBe(false);
+});
+
+it('shows the server reason when a file is refused', async () => {
+  rejectUpload = true;
+  render(<AppearanceSettings />);
+  choose(new File(['<svg/>'], 'x.svg', { type: 'image/svg+xml' }));
+  expect(await screen.findByText('Use a JPG, PNG or WebP image.')).toBeTruthy();
+});
+
+it('removes the picture', async () => {
+  mockServer({ ...DEFAULT_APPEARANCE, image: PICTURE });
+  render(<AppearanceSettings />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Remove image' }));
+  await waitFor(() => expect(calls.some((c) => c.method === 'DELETE image')).toBe(true));
+  expect(await screen.findByText('No background image.')).toBeTruthy();
+  expect(document.documentElement.style.getPropertyValue('--ap-page-background-light')).toBe('');
+});
+
+it('blocks Save when the dimming leaves the text hard to read', async () => {
+  mockServer({ ...DEFAULT_APPEARANCE, image: { ...PICTURE, dim: 80 } });
+  render(<AppearanceSettings />);
+  const slider = await screen.findByRole('slider', { name: 'Dimming' });
+  fireEvent.keyDown(slider, { key: 'Home' });
+  await waitFor(() => expect(screen.getByText('Contrast too low')).toBeTruthy());
+  expect(save().hasAttribute('disabled')).toBe(true);
+});
+
+it('does not offer uploading on a phone', async () => {
+  window.innerWidth = 390;
+  mockServer({ ...DEFAULT_APPEARANCE, image: PICTURE });
+  render(<AppearanceSettings />);
+  expect(await screen.findByText(/not offered on phones/)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Choose image|Replace image/ })).toBeNull();
+  expect(screen.queryByTestId('image-dropzone')).toBeNull();
+  expect(
+    screen.getByRole('slider', { name: 'Dimming' }).getAttribute('data-disabled'),
+  ).not.toBeNull();
 });

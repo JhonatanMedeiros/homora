@@ -149,6 +149,9 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
     background-image: var(--page-background, none);
+    background-size: var(--ap-page-size, auto);
+    background-repeat: var(--ap-page-repeat, repeat);
+    background-position: center;
     background-attachment: fixed;
   }
   h1,

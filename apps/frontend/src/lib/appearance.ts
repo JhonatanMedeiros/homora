@@ -9,6 +9,8 @@ const KNOWN = [
   'page-background',
   'card-opacity',
   'card-blur',
+  'page-size',
+  'page-repeat',
 ];
 
 /**
@@ -46,6 +48,11 @@ export function previewStyle(appearance: Appearance, theme: ThemeName): Record<s
     style['--accent-text'] = own['--ap-accent-text']!;
   }
   if (own['--ap-page-background']) style.backgroundImage = own['--ap-page-background'];
+  if (tokens.shared['--ap-page-size']) {
+    style.backgroundSize = tokens.shared['--ap-page-size'];
+    style.backgroundRepeat = tokens.shared['--ap-page-repeat']!;
+    style.backgroundPosition = 'center';
+  }
   const opacity = tokens.shared['--ap-card-opacity'];
   if (opacity)
     style['--card'] = `color-mix(in srgb, var(--card-base) ${Number(opacity) * 100}%, transparent)`;

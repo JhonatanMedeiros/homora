@@ -27,6 +27,7 @@ import { createNotifications } from './notifications.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
 import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
 import { createAppearance } from './appearance.js';
+import { createBackgroundStore } from './background-image.js';
 import { registerAppearanceRoutes } from './routes/appearance.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
 
@@ -44,7 +45,7 @@ export function createApp(
    * Enable only when all traffic traverses a reverse proxy that OVERWRITES this header,
    * such as Compose's nginx; otherwise any client could spoof it.
    */
-  options: { trustProxy?: boolean; apiPort?: number } = {},
+  options: { trustProxy?: boolean; apiPort?: number; backgroundPath?: string } = {},
 ) {
   const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
@@ -118,7 +119,13 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   const connections = registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
-  registerAppearanceRoutes(app, createAppearance(sqlite), auth, audit);
+  registerAppearanceRoutes(
+    app,
+    createAppearance(sqlite),
+    auth,
+    audit,
+    options.backgroundPath ? createBackgroundStore(options.backgroundPath) : undefined,
+  );
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceConfigurationRoutes(

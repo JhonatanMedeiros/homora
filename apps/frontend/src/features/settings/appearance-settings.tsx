@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -10,12 +10,17 @@ import {
   CARD_OPACITY_MIN,
   CARD_OPACITY_STEP,
   DEFAULT_APPEARANCE,
+  IMAGE_DIM_MAX,
+  IMAGE_DIM_STEP,
+  IMAGE_MAX_BYTES,
+  IMAGE_POSITIONS,
   contrastProblems,
   isHexColor,
   type AccentId,
   type Appearance,
   type BackgroundId,
   type ContrastProblem,
+  type ImagePosition,
   type ThemeName,
 } from '@homora/shared';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -25,12 +30,16 @@ import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { FormError } from '@/components/form-error';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppearance } from '@/hooks/use-appearance';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/hooks/use-theme';
 import { t, type MessageKey } from '@/i18n';
 import { previewStyle } from '@/lib/appearance';
+import { apiError } from '@/i18n/api-errors';
+import { Segmented } from './segmented';
 import { SettingRow, SettingsGroup } from './setting-row';
 
 const OPACITIES = Array.from(
@@ -39,10 +48,15 @@ const OPACITIES = Array.from(
 );
 const CUSTOM_FALLBACK = '#2f7d6b';
 
+const formatBytes = (bytes: number) =>
+  bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
 /** One decimal, rounded down, so a failing ratio never reads as exactly the minimum. */
 const ratioText = (value: number) => (Math.floor(value * 10) / 10).toFixed(1);
 
-export function problemText(problem: ContrastProblem) {
+function problemText(problem: ContrastProblem) {
   return t(`appearance.problem.${problem.code}` as MessageKey, {
     ratio: ratioText(problem.ratio),
     required: String(problem.required),
@@ -59,12 +73,15 @@ const swatchBackground = (id: BackgroundId, theme: ThemeName) => {
 
 /** Accent, page background and card translucency, saved on the server for every device. */
 export function AppearanceSettings() {
-  const { appearance: saved, failed, save, reset } = useAppearance();
+  const { appearance: saved, failed, save, reset, uploadImage, removeImage } = useAppearance();
+  const phone = useIsMobile();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
   const { theme } = useTheme();
   const [lastSaved, setLastSaved] = useState(saved);
   const [draft, setDraft] = useState(saved);
   const [hexText, setHexText] = useState(saved.customAccent ?? CUSTOM_FALLBACK);
-  const [busy, setBusy] = useState<'save' | 'reset' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'reset' | 'image' | null>(null);
   const [error, setError] = useState('');
   // The saved value arrived (or changed): start the draft from it.
   if (saved !== lastSaved) {
@@ -102,6 +119,26 @@ export function AppearanceSettings() {
     const result = await save(candidate);
     setBusy(null);
     if (!result.ok) setError(result.message || t('appearance.error'));
+  };
+  const send = async (file: File) => {
+    if (file.size > IMAGE_MAX_BYTES) {
+      setError(apiError({ code: 'image-too-large' }, t('appearance.error')));
+      return;
+    }
+    setBusy('image');
+    setError('');
+    const result = await uploadImage(file);
+    setBusy(null);
+    if (result.ok) toast.success(t('appearance.imageSet'));
+    else setError(result.message || t('appearance.error'));
+  };
+  const dropImage = async () => {
+    setBusy('image');
+    setError('');
+    const result = await removeImage();
+    setBusy(null);
+    if (result.ok) toast.success(t('appearance.imageRemoved'));
+    else setError(result.message || t('appearance.error'));
   };
   const restore = async () => {
     setBusy('reset');
@@ -206,6 +243,122 @@ export function AppearanceSettings() {
           ))}
         </ToggleGroup>
       </SettingRow>
+
+      <SettingRow label={t('appearance.image')} description={t('appearance.imageHint')}>
+        {phone ? (
+          <p className="max-w-[40ch] text-sm text-muted-foreground">{t('appearance.imagePhone')}</p>
+        ) : (
+          <div
+            data-testid="image-dropzone"
+            data-dragging={dragging || undefined}
+            className="flex w-full flex-col items-start gap-2 rounded-lg border border-dashed p-3 data-[dragging=true]:border-primary sm:w-80"
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragging(false);
+              const file = event.dataTransfer.files[0];
+              if (file && busy === null) void send(file);
+            }}
+          >
+            <p className="text-sm text-muted-foreground">{t('appearance.imageDrop')}</p>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              tabIndex={-1}
+              aria-label={t('appearance.imageChoose')}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (file) void send(file);
+              }}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="pointer-coarse:h-11"
+                disabled={busy !== null}
+                onClick={() => fileInput.current?.click()}
+              >
+                {busy === 'image' && <Spinner data-icon="inline-start" />}
+                {saved.image ? t('appearance.imageReplace') : t('appearance.imageChoose')}
+              </Button>
+              {saved.image && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="pointer-coarse:h-11"
+                  disabled={busy !== null}
+                  onClick={() => void dropImage()}
+                >
+                  {t('appearance.imageRemove')}
+                </Button>
+              )}
+            </div>
+            <p aria-live="polite" className="text-sm">
+              {busy === 'image'
+                ? t('appearance.imageWorking')
+                : saved.image
+                  ? t('appearance.imageSizes', {
+                      before: formatBytes(saved.image.originalBytes),
+                      after: formatBytes(saved.image.bytes),
+                      width: saved.image.width,
+                      height: saved.image.height,
+                    })
+                  : t('appearance.imageNone')}
+            </p>
+          </div>
+        )}
+      </SettingRow>
+      {draft.image && (
+        <>
+          <SettingRow label={t('appearance.imageDim')} description={t('appearance.imageDimHint')}>
+            <div className="flex w-full items-center gap-3 sm:w-64">
+              <Slider
+                aria-label={t('appearance.imageDim')}
+                min={0}
+                max={IMAGE_DIM_MAX}
+                step={IMAGE_DIM_STEP}
+                disabled={phone}
+                value={[draft.image.dim]}
+                onValueChange={([dim]) =>
+                  setDraft((current) =>
+                    current.image && dim !== undefined
+                      ? { ...current, image: { ...current.image, dim } }
+                      : current,
+                  )
+                }
+              />
+              <span className="w-12 text-right font-mono text-sm">
+                {t('appearance.imageDimValue', { value: draft.image.dim })}
+              </span>
+            </div>
+          </SettingRow>
+          <SettingRow label={t('appearance.imagePosition')}>
+            <Segmented<ImagePosition>
+              label={t('appearance.imagePosition')}
+              value={draft.image.position}
+              onChange={(position) =>
+                setDraft((current) =>
+                  current.image ? { ...current, image: { ...current.image, position } } : current,
+                )
+              }
+              options={IMAGE_POSITIONS.map((position) => ({
+                value: position,
+                label: t(`appearance.imagePosition.${position}` as MessageKey),
+              }))}
+            />
+          </SettingRow>
+        </>
+      )}
 
       <SettingRow
         htmlFor="appearance-opacity"

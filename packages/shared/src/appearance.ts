@@ -4,7 +4,8 @@
  * and the UI runs the very same check live, so both always agree.
  */
 
-export const APPEARANCE_VERSION = 1;
+/** Version 2 added the optional background image; version 1 values are read as `image: null`. */
+export const APPEARANCE_VERSION = 2;
 export const APPEARANCE_KEY = 'appearance';
 
 export const ACCENT_IDS = ['ember', 'moss', 'sky', 'rose', 'violet', 'slate'] as const;
@@ -23,6 +24,33 @@ export const CARD_OPACITY_MIN = 60;
 export const CARD_OPACITY_MAX = 100;
 export const CARD_OPACITY_STEP = 5;
 
+export const IMAGE_POSITIONS = ['fill', 'fit', 'tile'] as const;
+export type ImagePosition = (typeof IMAGE_POSITIONS)[number];
+export const IMAGE_DIM_MAX = 80;
+export const IMAGE_DIM_STEP = 5;
+export const IMAGE_MAX_BYTES = 2 * 1024 * 1024;
+export const IMAGE_MAX_SIDE = 1920;
+/** The served name is random per upload; it is the only thing that locates the file. */
+export const IMAGE_NAME = /^[0-9a-f]{32}\.webp$/;
+export const imageUrl = (name: string) => `/api/appearance/background/${name}`;
+
+/**
+ * A processed background image. Only `dim` and `position` are chosen by the user; the rest is
+ * measured by the server when the image is uploaded, and the server ignores what a client sends.
+ */
+export type BackgroundImage = {
+  name: string;
+  /** Percent the picture fades toward the page colour, 0 to 80. */
+  dim: number;
+  position: ImagePosition;
+  /** Mean colour of the processed picture, `#rrggbb`; feeds the contrast gate. */
+  average: string;
+  width: number;
+  height: number;
+  bytes: number;
+  originalBytes: number;
+};
+
 export type Appearance = {
   version: typeof APPEARANCE_VERSION;
   /** A preset id, or `custom` together with `customAccent`. */
@@ -33,6 +61,8 @@ export type Appearance = {
   /** Percent, 60 to 100 in steps of 5. */
   cardOpacity: number;
   blur: boolean;
+  /** When set it replaces the background preset. */
+  image: BackgroundImage | null;
 };
 
 export const DEFAULT_APPEARANCE: Appearance = {
@@ -42,6 +72,7 @@ export const DEFAULT_APPEARANCE: Appearance = {
   background: 'flat',
   cardOpacity: 100,
   blur: false,
+  image: null,
 };
 
 export type ThemeName = 'light' | 'dark';
@@ -133,9 +164,18 @@ export function onAccent(accent: Rgb): '#ffffff' | '#000000' {
 export function parseAppearance(input: unknown): Appearance | null {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) return null;
   const raw = input as Record<string, unknown>;
-  const allowed = ['version', 'accent', 'customAccent', 'background', 'cardOpacity', 'blur'];
+  const allowed = [
+    'version',
+    'accent',
+    'customAccent',
+    'background',
+    'cardOpacity',
+    'blur',
+    'image',
+  ];
   if (Object.keys(raw).some((key) => !allowed.includes(key))) return null;
-  if (raw.version !== APPEARANCE_VERSION) return null;
+  if (raw.version !== 1 && raw.version !== APPEARANCE_VERSION) return null;
+  if (raw.version === 1 && raw.image !== undefined) return null;
   const accent = raw.accent;
   if (accent !== 'custom' && !(ACCENT_IDS as readonly unknown[]).includes(accent)) return null;
   let customAccent: string | null = null;
@@ -154,6 +194,8 @@ export function parseAppearance(input: unknown): Appearance | null {
   )
     return null;
   if (typeof raw.blur !== 'boolean') return null;
+  const image = raw.image === undefined || raw.image === null ? null : parseImage(raw.image);
+  if (raw.image !== undefined && raw.image !== null && !image) return null;
   return {
     version: APPEARANCE_VERSION,
     accent: accent as Appearance['accent'],
@@ -161,6 +203,42 @@ export function parseAppearance(input: unknown): Appearance | null {
     background: raw.background as BackgroundId,
     cardOpacity: opacity,
     blur: raw.blur,
+    image,
+  };
+}
+
+function parseImage(input: unknown): BackgroundImage | null {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) return null;
+  const raw = input as Record<string, unknown>;
+  const keys = ['name', 'dim', 'position', 'average', 'width', 'height', 'bytes', 'originalBytes'];
+  if (Object.keys(raw).length !== keys.length || keys.some((key) => !(key in raw))) return null;
+  const { name, dim, position, average, width, height, bytes, originalBytes } = raw;
+  if (typeof name !== 'string' || !IMAGE_NAME.test(name)) return null;
+  if (
+    typeof dim !== 'number' ||
+    !Number.isInteger(dim) ||
+    dim < 0 ||
+    dim > IMAGE_DIM_MAX ||
+    dim % IMAGE_DIM_STEP !== 0
+  )
+    return null;
+  if (!(IMAGE_POSITIONS as readonly unknown[]).includes(position)) return null;
+  if (!isHexColor(average)) return null;
+  for (const size of [width, height])
+    if (!Number.isInteger(size) || (size as number) < 1 || (size as number) > IMAGE_MAX_SIDE)
+      return null;
+  for (const count of [bytes, originalBytes])
+    if (!Number.isInteger(count) || (count as number) < 1 || (count as number) > 100_000_000)
+      return null;
+  return {
+    name,
+    dim,
+    position: position as ImagePosition,
+    average: average.toLowerCase(),
+    width: width as number,
+    height: height as number,
+    bytes: bytes as number,
+    originalBytes: originalBytes as number,
   };
 }
 
@@ -185,8 +263,17 @@ export const accentFor = (appearance: Appearance, theme: ThemeName): string =>
     : ACCENT_PRESETS[appearance.accent][theme];
 
 /** The page colours the background can show, per theme (a flat background is the theme's own). */
-export const backgroundStops = (background: BackgroundId, theme: ThemeName): string[] =>
-  BACKGROUND_PRESETS[background]?.[theme] ?? [THEME_SURFACES[theme].background];
+export const backgroundStops = (appearance: Appearance, theme: ThemeName): string[] => {
+  const page = THEME_SURFACES[theme].background;
+  // The picture fades toward the page colour of each theme, so the same file can serve both.
+  if (appearance.image)
+    return [
+      rgbToHex(
+        blend(hexToRgb(page), hexToRgb(appearance.image.average), appearance.image.dim / 100),
+      ),
+    ];
+  return BACKGROUND_PRESETS[appearance.background]?.[theme] ?? [page];
+};
 
 /**
  * Every combination that has to stay readable, across both themes (the setting is shared by
@@ -209,7 +296,7 @@ export function contrastProblems(appearance: Appearance): ContrastProblem[] {
     const ink = hexToRgb(surfaces.ink);
     const muted = hexToRgb(surfaces.muted);
     const accent = hexToRgb(accentFor(appearance, theme));
-    for (const stop of backgroundStops(appearance.background, theme)) {
+    for (const stop of backgroundStops(appearance, theme)) {
       const page = hexToRgb(stop);
       const card = blend(hexToRgb(surfaces.card), page, appearance.cardOpacity / 100);
       const checks: [ContrastProblem['code'], ContrastProblem['on'], Rgb, Rgb, number][] = [
@@ -259,7 +346,7 @@ export function appearanceTokens(appearance: Appearance): AppearanceTokens {
       const fill = hexToRgb(accentFor(appearance, theme));
       const surfaces = THEME_SURFACES[theme];
       // Hardest surface for the text: the darkest card under dark ink, the lightest under light ink.
-      const cards = backgroundStops(appearance.background, theme)
+      const cards = backgroundStops(appearance, theme)
         .map((stop) => blend(hexToRgb(surfaces.card), hexToRgb(stop), appearance.cardOpacity / 100))
         .sort((a, b) => relativeLuminance(a) - relativeLuminance(b));
       const worstCard = theme === 'light' ? cards[0]! : cards[cards.length - 1]!;
@@ -271,8 +358,23 @@ export function appearanceTokens(appearance: Appearance): AppearanceTokens {
       target['--ap-ring'] = hex;
       target['--ap-accent-text'] = text;
     }
-    const stops = BACKGROUND_PRESETS[appearance.background]?.[theme];
-    if (stops) target['--ap-page-background'] = `linear-gradient(160deg, ${stops.join(', ')})`;
+    if (appearance.image) {
+      const { name, dim } = appearance.image;
+      const fade = `linear-gradient(color-mix(in srgb, ${THEME_SURFACES[theme].background} ${dim}%, transparent), color-mix(in srgb, ${THEME_SURFACES[theme].background} ${dim}%, transparent))`;
+      target['--ap-page-background'] = `${fade}, url("${imageUrl(name)}")`;
+    } else {
+      const stops = BACKGROUND_PRESETS[appearance.background]?.[theme];
+      if (stops) target['--ap-page-background'] = `linear-gradient(160deg, ${stops.join(', ')})`;
+    }
+  }
+  if (appearance.image) {
+    const layout = {
+      fill: ['100% 100%, cover', 'no-repeat, no-repeat'],
+      fit: ['100% 100%, contain', 'no-repeat, no-repeat'],
+      tile: ['100% 100%, auto', 'no-repeat, repeat'],
+    }[appearance.image.position];
+    tokens.shared['--ap-page-size'] = layout[0]!;
+    tokens.shared['--ap-page-repeat'] = layout[1]!;
   }
   if (appearance.cardOpacity < 100)
     tokens.shared['--ap-card-opacity'] = String(appearance.cardOpacity / 100);

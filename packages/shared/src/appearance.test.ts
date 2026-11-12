@@ -12,6 +12,7 @@ import {
   onAccent,
   parseAppearance,
   type Appearance,
+  type BackgroundImage,
 } from './appearance.js';
 
 const make = (patch: Partial<Appearance>): Appearance => ({ ...DEFAULT_APPEARANCE, ...patch });
@@ -102,7 +103,7 @@ describe('parseAppearance', () => {
     ['not an object', 'x'],
     ['an array', []],
     ['unknown field', { ...DEFAULT_APPEARANCE, extra: 1 }],
-    ['wrong version', { ...DEFAULT_APPEARANCE, version: 2 }],
+    ['wrong version', { ...DEFAULT_APPEARANCE, version: 3 }],
     ['unknown accent', { ...DEFAULT_APPEARANCE, accent: 'lime' }],
     ['custom without a colour', { ...DEFAULT_APPEARANCE, accent: 'custom' }],
     ['custom with a bad colour', { ...DEFAULT_APPEARANCE, accent: 'custom', customAccent: 'red' }],
@@ -137,5 +138,65 @@ describe('appearanceTokens', () => {
   it('never emits an external url', () => {
     for (const background of BACKGROUND_IDS)
       expect(JSON.stringify(appearanceTokens(make({ background })))).not.toMatch(/url\(|https?:/);
+  });
+});
+
+const picture = (patch: Partial<BackgroundImage> = {}): BackgroundImage => ({
+  name: 'a'.repeat(32) + '.webp',
+  dim: 40,
+  position: 'fill',
+  average: '#808080',
+  width: 1920,
+  height: 1080,
+  bytes: 120_000,
+  originalBytes: 900_000,
+  ...patch,
+});
+
+describe('background image', () => {
+  it('reads a version 1 value as one without an image', () => {
+    const v1: Record<string, unknown> = { ...DEFAULT_APPEARANCE, version: 1 };
+    delete v1.image;
+    expect(parseAppearance(v1)).toEqual(DEFAULT_APPEARANCE);
+    expect(parseAppearance({ ...v1, image: null })).toBeNull();
+  });
+
+  it('round-trips an image and rejects malformed ones', () => {
+    const ok = make({ image: picture({ average: '#ABCDEF' }) });
+    expect(parseAppearance(ok)?.image?.average).toBe('#abcdef');
+    for (const bad of [
+      picture({ name: '../../etc/passwd' }),
+      picture({ name: 'https://example.test/a.webp' }),
+      picture({ dim: 85 }),
+      picture({ dim: 7 }),
+      picture({ position: 'stretch' as never }),
+      picture({ average: 'red' }),
+      picture({ width: 4000 }),
+      { ...picture(), extra: 1 },
+    ])
+      expect(parseAppearance(make({ image: bad as BackgroundImage }))).toBeNull();
+  });
+
+  it('gates on the average colour after dimming toward the page colour', () => {
+    // A mid-grey picture cannot keep text readable in both themes without enough fade.
+    expect(contrastProblems(make({ image: picture({ dim: 0 }) })).length).toBeGreaterThan(0);
+    expect(contrastProblems(make({ image: picture({ dim: 80 }) }))).toEqual([]);
+    // A white picture needs fading for the dark theme; a black one for the light theme.
+    const white = contrastProblems(make({ image: picture({ average: '#ffffff', dim: 0 }) }));
+    expect(white.some((p) => p.theme === 'dark' && p.on === 'page')).toBe(true);
+    const black = contrastProblems(make({ image: picture({ average: '#000000', dim: 0 }) }));
+    expect(black.some((p) => p.theme === 'light' && p.on === 'page')).toBe(true);
+  });
+
+  it('lets the image replace the preset and only ever points at the same origin', () => {
+    const tokens = appearanceTokens(
+      make({ background: 'dusk', image: picture({ position: 'tile' }) }),
+    );
+    expect(tokens.light['--ap-page-background']).toContain(
+      'url("/api/appearance/background/' + 'a'.repeat(32) + '.webp")',
+    );
+    expect(tokens.light['--ap-page-background']).not.toContain('linear-gradient(160deg');
+    expect(tokens.shared['--ap-page-repeat']).toBe('no-repeat, repeat');
+    expect(JSON.stringify(tokens)).not.toMatch(/https?:|\/\/[a-z]/);
   });
 });

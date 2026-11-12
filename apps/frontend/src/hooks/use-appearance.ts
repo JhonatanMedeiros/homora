@@ -45,12 +45,12 @@ async function load() {
 export type SaveResult =
   { ok: true } | { ok: false; message: string; problems?: ContrastProblem[] };
 
-async function send(init: RequestInit): Promise<SaveResult> {
+async function send(init: RequestInit, url = '/api/appearance'): Promise<SaveResult> {
   try {
-    const response = await fetch('/api/appearance', {
+    const response = await fetch(url, {
       ...init,
       // A JSON content type with no body is rejected by the server.
-      headers: init.body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: init.headers ?? (init.body ? { 'Content-Type': 'application/json' } : undefined),
     });
     const body = (await response.json().catch(() => null)) as {
       appearance?: unknown;
@@ -92,5 +92,17 @@ export function useAppearance() {
     [],
   );
   const reset = useCallback(() => send({ method: 'DELETE' }), []);
-  return { ...current, save, reset };
+  const uploadImage = useCallback(
+    (file: Blob) =>
+      send(
+        { method: 'PUT', body: file, headers: { 'Content-Type': 'application/octet-stream' } },
+        '/api/appearance/background',
+      ),
+    [],
+  );
+  const removeImage = useCallback(
+    () => send({ method: 'DELETE' }, '/api/appearance/background'),
+    [],
+  );
+  return { ...current, save, reset, uploadImage, removeImage };
 }

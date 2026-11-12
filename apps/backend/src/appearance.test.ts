@@ -21,7 +21,8 @@ async function setup() {
 }
 
 const valid = {
-  version: 1,
+  version: 2,
+  image: null,
   accent: 'moss',
   customAccent: null,
   background: 'dusk',
