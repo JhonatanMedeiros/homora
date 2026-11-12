@@ -624,6 +624,25 @@ appears monitored without being checked, and reference migration benchmark can b
   390 px, dark and light) with mocked API data. Not reviewed visually: the View popover and
   command palette opened, organize mode, and integrations or agents pages with real data.
 
+## Command palette evolution (2026-11-12, issue #64)
+
+- Header search button (visible on phones, `Ctrl K` hint from `md` up) opens the palette without a
+  keyboard. The palette lists recents (last five opened, `homora-recent-services`, no duplicates)
+  while the search is empty.
+- Each service has two paths: Enter opens it in a new tab; the row arrow button or `Shift`+`Enter`
+  goes to its card (clears the search and category filter, expands a collapsed group without
+  changing the saved preference, `scrollIntoView` centred, 2 s highlight, reduced motion respected).
+  Cards and rows carry a stable `service-{id}` id.
+- Navigation to Integrations, Agents, Activity, Settings, Import / Export (same Settings page) and
+  Account. Navigation and view only: the palette does not write.
+- Search covers name, group, description and host. Prefixes `status:down|up|unknown` and
+  `group:`/`grupo:` (quote names with spaces) and a sort control (relevance, name, status).
+  Ranking is local (`lib/palette-search.ts`) instead of cmdk's default scorer because the prefixes
+  must be stripped first.
+- Not done: Discovery destination (no such screen exists), favourites, `#tag` (no tags model).
+- Validation: `pnpm check`; component tests for filters, navigation, recents, go-to-card and
+  header button. Not reviewed visually in a browser.
+
 ### Follow-up — Private network default for new services (not started)
 
 **Problem:** monitoring denies RFC1918 and ULA destinations unless each service opts in

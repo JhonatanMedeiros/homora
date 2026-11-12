@@ -57,9 +57,18 @@ type Props = {
   navigate: (path: string, replace?: boolean) => void;
   onAddService: () => void;
   data: ReturnType<typeof useServices>;
+  /** Set by the command palette: scroll to this service and highlight it briefly. */
+  focusRequest?: FocusRequest | null;
+  /** Called once the request was served, so remounting the page later does not scroll again. */
+  onFocusHandled?: () => void;
   /** Search opens the first result on Enter; the page registers here how to do so. */
   openFirstRef: MutableRefObject<(() => void) | null>;
 };
+
+/** Asks the page to scroll to a service and flash it; `nonce` makes repeated requests distinct. */
+export type FocusRequest = { id: number; nonce: number };
+
+const HIGHLIGHT_MS = 2000;
 
 export function ServicesPage({
   query,
@@ -69,6 +78,8 @@ export function ServicesPage({
   onAddService,
   formRoute,
   navigate,
+  focusRequest,
+  onFocusHandled,
 }: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
@@ -101,6 +112,37 @@ export function ServicesPage({
   const addButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => () => window.clearTimeout(flashTimer.current), []);
+
+  // "Go to card": clear the category filter, let the group expand, then scroll and flash the card.
+  const focusService = focusRequest ? services.find((s) => s.id === focusRequest.id) : undefined;
+  const focusNonce = focusRequest?.nonce;
+  useEffect(() => {
+    if (focusNonce === undefined || !focusService) return;
+    const timers: number[] = [];
+    // Two steps: first lift the category filter that could hide the card, then, once the group has
+    // rendered and expanded, scroll and flash.
+    timers.push(
+      window.setTimeout(() => {
+        setSelected(null);
+        timers.push(
+          window.setTimeout(() => {
+            const card = document.getElementById(`service-${focusService.id}`);
+            if (card) {
+              const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+              card.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' });
+              card.dataset.highlight = 'true';
+              // Not cancelled on cleanup: handing the request back re-runs this effect.
+              window.setTimeout(() => delete card.dataset.highlight, HIGHLIGHT_MS);
+            }
+            onFocusHandled?.();
+          }, 50),
+        );
+      }, 0),
+    );
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+    // Only a new request (nonce) should trigger it, not later edits to the service list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusNonce, focusService?.id]);
   function announce(text: string) {
     setFlash(text);
     window.clearTimeout(flashTimer.current);
@@ -565,6 +607,7 @@ export function ServicesPage({
             list={list}
             managing={managing}
             searching={Boolean(needle)}
+            revealSignal={focusService?.category === category ? focusNonce : undefined}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
             groupId={row?.id}
