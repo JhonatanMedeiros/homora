@@ -1261,6 +1261,14 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 - Opening the details no longer reserves space or shifts the map: the panel floats over the canvas at the top right (a bottom sheet on narrow windows), sized to its content with a larger shadow. Not verified in a real browser.
 
+## Settings reorganization
+
+- The long Interface page was split into three: **Appearance** (theme, language, accent, background, custom CSS), **Home and pages** (layout, descriptions, uptime, pages) and **Top bar and shortcuts** (top bar, clock, search, keyboard). The sidebar groups them as Personalize and System and shows only titles on wide screens; descriptions remain on phones. The `/manage/settings/interface` route no longer exists (it was never linked outside the app).
+
+## Home toolbar buttons (2026-11-12)
+
+- The Group | Host | Map switch, "Suggested hosts" and "View" now share the same 36 px height (the switch was 32 px). The switch items have icons and the selected one is tinted with the primary colour and bold instead of a barely different dark background; "Suggested hosts" has an icon. Not verified in a real browser.
+
 ## Coolify read-only integration (issue #102)
 
 - Implemented all four phases in one change, **implemented, unvalidated**: [ADR 0010](decisoes/0010-coolify-read-only-integration.md). Code adapter with a `read`-only Bearer token; summary widget; searchable inventory (`GET /api/connections/:id/resources`); card links by connection and resource UUID (table `integration_resource_links`, migration 0024); discovery with review; a separate Coolify state on the card with "needs review" for changed or missing resources; `Retry-After` exposed by the transport and a Coolify-only pause after 401, 403 and 429.

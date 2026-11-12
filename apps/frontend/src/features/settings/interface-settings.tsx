@@ -29,46 +29,10 @@ const PROBLEM_MESSAGE: Record<TemplateProblem, MessageKey> = {
   protocol: 'settings.ui.webSearchErrorProtocol',
   invalid: 'settings.ui.webSearchErrorInvalid',
 };
-
-/** Preferences kept in this browser only. */
-export function InterfaceSettings({ onChanged }: { onChanged?: () => void | Promise<void> }) {
+/** Theme, language, accent, background and custom CSS. */
+export function InterfaceSettings() {
   const { theme, setTheme } = useTheme();
   const { locale, setLocale } = useI18n();
-  const { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange } =
-    useViewPreferences();
-  const [topBar, setTopBar] = useTopBar();
-  const clock = useClockPreferences();
-  const [shortcuts, setShortcuts] = useShortcutsPreference();
-  const search = useWebSearchPreferences();
-  const [customDraft, setCustomDraft] = useState(search.customUrl);
-  const [customProblem, setCustomProblem] = useState<TemplateProblem | null>(null);
-  const [connections, setConnections] = useState<{ id: number; name: string; type: string }[]>([]);
-  const [source, setSource] = useState(() => {
-    try {
-      return localStorage.getItem('homora-top-bar-connection') ?? '';
-    } catch {
-      return '';
-    }
-  });
-  const timeZones = useMemo(() => listTimeZones(), []);
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/connections', { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : []))
-      .then((data: unknown) => {
-        if (Array.isArray(data))
-          setConnections(
-            data.filter(
-              (item) =>
-                item?.type === 'proxmox' &&
-                Number.isSafeInteger(item.id) &&
-                typeof item.name === 'string',
-            ),
-          );
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
   return (
     <div className="flex flex-col gap-8">
       <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
@@ -112,8 +76,17 @@ export function InterfaceSettings({ onChanged }: { onChanged?: () => void | Prom
       <AppearanceSettings />
 
       <CustomCssSettings />
+    </div>
+  );
+}
 
-      <PagesSettings onChanged={onChanged} />
+/** How the dashboard lists services, and its pages. */
+export function HomeSettings({ onChanged }: { onChanged?: () => void | Promise<void> }) {
+  const { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange } =
+    useViewPreferences();
+  return (
+    <div className="flex flex-col gap-8">
+      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
 
       <SettingsGroup id="ui-home" title={t('settings.ui.home')}>
         <SettingRow label={t('settings.ui.layout')} description={t('settings.ui.layoutHint')}>
@@ -151,6 +124,50 @@ export function InterfaceSettings({ onChanged }: { onChanged?: () => void | Prom
           />
         </SettingRow>
       </SettingsGroup>
+
+      <PagesSettings onChanged={onChanged} />
+    </div>
+  );
+}
+
+/** Top bar, command palette search and keyboard shortcuts. */
+export function TopBarSettings() {
+  const [topBar, setTopBar] = useTopBar();
+  const clock = useClockPreferences();
+  const [shortcuts, setShortcuts] = useShortcutsPreference();
+  const search = useWebSearchPreferences();
+  const [customDraft, setCustomDraft] = useState(search.customUrl);
+  const [customProblem, setCustomProblem] = useState<TemplateProblem | null>(null);
+  const [connections, setConnections] = useState<{ id: number; name: string; type: string }[]>([]);
+  const [source, setSource] = useState(() => {
+    try {
+      return localStorage.getItem('homora-top-bar-connection') ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const timeZones = useMemo(() => listTimeZones(), []);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/connections', { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((data: unknown) => {
+        if (Array.isArray(data))
+          setConnections(
+            data.filter(
+              (item) =>
+                item?.type === 'proxmox' &&
+                Number.isSafeInteger(item.id) &&
+                typeof item.name === 'string',
+            ),
+          );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+  return (
+    <div className="flex flex-col gap-8">
+      <p className="text-sm text-muted-foreground">{t('settings.ui.browserOnly')}</p>
 
       <SettingsGroup id="ui-keyboard" title={t('settings.ui.keyboardSection')}>
         <SettingRow

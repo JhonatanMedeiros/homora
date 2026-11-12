@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import type { HostLink, Service, ServiceInput } from '@homora/shared';
-import { Check, Plus, SlidersHorizontal } from 'lucide-react';
+import {
+  Check,
+  LayoutGrid,
+  Map as MapIcon,
+  Plus,
+  Server,
+  SlidersHorizontal,
+  Sparkles,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -595,6 +603,7 @@ export function ServicesPage({
                   className="pointer-coarse:h-11"
                   onClick={() => setSuggestOpen(true)}
                 >
+                  <Sparkles aria-hidden="true" />
                   {t('hosts.suggest.open')}
                 </Button>
               )}
@@ -608,13 +617,25 @@ export function ServicesPage({
                 }}
                 aria-label={t('hosts.arrange')}
               >
-                <ToggleGroupItem value="group" className="pointer-coarse:h-11">
+                <ToggleGroupItem
+                  value="group"
+                  className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+                >
+                  <LayoutGrid aria-hidden="true" />
                   {t('hosts.arrange.group')}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="host" className="pointer-coarse:h-11">
+                <ToggleGroupItem
+                  value="host"
+                  className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+                >
+                  <Server aria-hidden="true" />
                   {t('hosts.arrange.host')}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="map" className="pointer-coarse:h-11">
+                <ToggleGroupItem
+                  value="map"
+                  className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+                >
+                  <MapIcon aria-hidden="true" />
                   {t('hosts.arrange.map')}
                 </ToggleGroupItem>
               </ToggleGroup>
