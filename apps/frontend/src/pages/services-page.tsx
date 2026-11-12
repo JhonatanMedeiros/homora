@@ -15,7 +15,8 @@ import { ViewOptions } from '@/components/view-options';
 import { HostView } from '@/components/host-view';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useHostInventory } from '@/hooks/use-host-inventory';
-import { hostLabel } from '@/lib/hosts';
+import { HostImpactBanner } from '@/components/host-impact-banner';
+import { hostLabel, offlineNodes, serviceImpact } from '@/lib/hosts';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
 import { CategoryFilter } from '@/components/category-filter';
@@ -100,6 +101,11 @@ export function ServicesPage({
     [services],
   );
   const hostData = useHostInventory(hostView || formOpen, linkedConnections);
+  const [nodeFilter, setNodeFilter] = useState<{ connectionId: number; node: string } | null>(null);
+  const offline = useMemo(
+    () => offlineNodes(services, hostData.connections, hostData.inventories),
+    [services, hostData.connections, hostData.inventories],
+  );
   // Instance setting that only seeds the "allow private network" box of a NEW service.
   const privateDefaultRef = useRef(false);
   const [editing, setEditing] = useState<number | null>(null);
@@ -511,6 +517,15 @@ export function ServicesPage({
           )}
         </div>
       )}
+      {!managing && (
+        <HostImpactBanner
+          nodes={offline}
+          onSeeImpact={(node) => {
+            setNodeFilter({ connectionId: node.connectionId, node: node.node });
+            setArrange('host');
+          }}
+        />
+      )}
       {!managing && data.statusError && (
         <p role="status" className="text-xs text-muted-foreground">
           {t('status.stale')}
@@ -646,6 +661,8 @@ export function ServicesPage({
           statuses={statuses}
           blockedIds={blockedIds}
           onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
+          nodeFilter={nodeFilter}
+          onClearFilter={() => setNodeFilter(null)}
         />
       )}
       {(hostView ? [] : groups).map(({ category, items }) => {
@@ -754,6 +771,13 @@ export function ServicesPage({
                   uptimeRange={uptimeRange}
                   onUptimeRangeChange={setUptimeRange}
                   host={hostLabel(s, hostData.connections, hostData.inventories)}
+                  impact={serviceImpact(
+                    s,
+                    info?.status,
+                    blockedIds.has(s.id),
+                    hostData.connections,
+                    hostData.inventories,
+                  )}
                   blocked={blockedIds.has(s.id)}
                   managing={managing}
                   list={list}

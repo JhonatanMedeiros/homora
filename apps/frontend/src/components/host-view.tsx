@@ -11,7 +11,13 @@ import { EmptyNote } from '@/components/empty-note';
 import { StatusLight } from '@/components/status-light';
 import { ServiceIcon } from '@/components/service-icon';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { buildHostView, type HostConnection, type HostInventories } from '@/lib/hosts';
+import {
+  buildHostView,
+  serviceImpact,
+  type HostConnection,
+  type HostInventories,
+  type Impact,
+} from '@/lib/hosts';
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { describeStatus } from '@/lib/status-text';
 import { t } from '@/i18n';
@@ -23,17 +29,29 @@ type Props = {
   statuses: Record<number, ServiceStatus>;
   blockedIds: Set<number>;
   onEdit?: (service: Service) => void;
+  /** Show only this node (from the "See impact" banner link). */
+  nodeFilter?: { connectionId: number; node: string } | null;
+  onClearFilter?: () => void;
 };
+
+const IMPACT_TEXT = {
+  'host-offline': 'hosts.impact.hostOffline',
+  'guest-stopped': 'hosts.impact.guestStopped',
+  'service-down': 'hosts.impact.serviceDown',
+  unknown: 'hosts.impact.unknown',
+} as const;
 
 function ServiceRow({
   service,
   status,
   blocked,
+  impact,
   onEdit,
 }: {
   service: Service;
   status?: ServiceStatus;
   blocked: boolean;
+  impact: Impact;
   onEdit?: (service: Service) => void;
 }) {
   const view = describeStatus(status, blocked);
@@ -58,6 +76,11 @@ function ServiceRow({
         <span className="truncate font-mono text-xs text-muted-foreground">
           {hostOf(service.url)}
         </span>
+        {impact in IMPACT_TEXT && (
+          <span className="text-xs font-semibold text-destructive">
+            {t(IMPACT_TEXT[impact as keyof typeof IMPACT_TEXT])}
+          </span>
+        )}
       </span>
       <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
       {onEdit && (
@@ -86,9 +109,23 @@ export function HostView({
   statuses,
   blockedIds,
   onEdit,
+  nodeFilter = null,
+  onClearFilter,
 }: Props) {
   const mobile = useIsMobile();
-  const model = buildHostView(services, connections, inventories);
+  const full = buildHostView(services, connections, inventories);
+  const model = nodeFilter
+    ? {
+        ...full,
+        nodes: full.nodes.filter(
+          (node) =>
+            node.connectionId === nodeFilter.connectionId && node.node.name === nodeFilter.node,
+        ),
+        notFound: [],
+        unavailable: [],
+        unlinked: [],
+      }
+    : full;
   const rows = (items: Service[]) => (
     <ul className="flex flex-col divide-y">
       {items.map((service) => (
@@ -97,6 +134,13 @@ export function HostView({
           service={service}
           status={statuses[service.id]}
           blocked={blockedIds.has(service.id)}
+          impact={serviceImpact(
+            service,
+            statuses[service.id]?.status,
+            blockedIds.has(service.id),
+            connections,
+            inventories,
+          )}
           onEdit={onEdit}
         />
       ))}
@@ -122,7 +166,22 @@ export function HostView({
   const linked = services.some((service) => service.host);
   return (
     <section aria-label={t('hosts.view.title')} className="flex flex-col gap-4">
-      {!linked && <EmptyNote>{`${t('hosts.view.empty')} ${t('hosts.view.emptyHint')}`}</EmptyNote>}
+      {nodeFilter && (
+        <p className="flex flex-wrap items-center gap-2 text-sm">
+          {t('hosts.view.filter', { node: nodeFilter.node })}
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 pointer-coarse:min-h-11"
+            onClick={onClearFilter}
+          >
+            {t('hosts.view.clearFilter')}
+          </Button>
+        </p>
+      )}
+      {!linked && !nodeFilter && (
+        <EmptyNote>{`${t('hosts.view.empty')} ${t('hosts.view.emptyHint')}`}</EmptyNote>
+      )}
       <Accordion
         type="multiple"
         // Phones start collapsed except the first node; wide screens show everything.
@@ -141,6 +200,8 @@ export function HostView({
                 )}
                 <small className="text-muted-foreground">
                   {t(`hosts.node.${node.node.status}`)} · {count(node.count)}
+                  {node.node.status === 'offline' &&
+                    ` · ${t('hosts.view.affected', { count: node.count })}`}
                 </small>
               </span>
             </AccordionTrigger>

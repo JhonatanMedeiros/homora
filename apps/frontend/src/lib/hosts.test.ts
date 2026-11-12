@@ -88,3 +88,37 @@ it('resolves the label from the live inventory so renames follow', () => {
   expect(hostLabel(service, connections, {})).toEqual({ kind: 'unavailable' });
   expect(hostLabel(card(3, 'free'), connections, ready)).toBeNull();
 });
+
+import { offlineNodes, serviceImpact } from './hosts';
+
+it('computes impact: online, offline node, stopped guest, down service, connection error, unlinked', () => {
+  const impact = (service: Service, availability: 'available' | 'unavailable', inv = ready) =>
+    serviceImpact(service, availability, false, connections, inv);
+  expect(impact(card(1, 'a', link(101)), 'available')).toBe('ok');
+  expect(impact(card(1, 'a'), 'available')).toBe('none');
+  expect(impact(card(2, 'b', link(200, 'pve2', 'qemu')), 'unavailable')).toBe('host-offline');
+  expect(impact(card(3, 'c', link(100, 'pve1', 'qemu')), 'unavailable')).toBe('guest-stopped');
+  expect(impact(card(4, 'd', link(101)), 'unavailable')).toBe('service-down');
+  expect(serviceImpact(card(4, 'd', link(101)), 'unavailable', true, connections, ready)).toBe(
+    'ok',
+  );
+  // An unreadable or loading inventory is "unknown", never "offline".
+  expect(impact(card(5, 'e', link(101)), 'unavailable', { 1: { status: 'error' } })).toBe(
+    'unknown',
+  );
+  expect(impact(card(5, 'e', link(101)), 'unavailable', {})).toBe('unknown');
+  expect(impact(card(6, 'f', link(999)), 'unavailable')).toBe('unknown');
+});
+
+it('lists offline nodes with their affected cards and ignores unreadable inventories', () => {
+  const cards = [
+    card(1, 'a', link(200, 'pve2', 'qemu')),
+    card(2, 'b', link(201, 'pve2', 'qemu')),
+    card(3, 'c', link(101)),
+  ];
+  const found = offlineNodes(cards, connections, ready);
+  expect(found).toHaveLength(1);
+  expect(found[0].node).toBe('pve2');
+  expect(found[0].affected.map((s) => s.name)).toEqual(['a', 'b']);
+  expect(offlineNodes(cards, connections, { 1: { status: 'error' } })).toEqual([]);
+});

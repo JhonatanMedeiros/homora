@@ -127,3 +127,65 @@ export function hostLabel(
   const guest = findGuest(inventory, link);
   return guest ? { kind: 'found', guest } : { kind: 'missing' };
 }
+
+/**
+ * Why a linked card may be affected. `unknown` means the Proxmox inventory could not be read:
+ * it is never reported as offline. A monitor failure on a running guest is a different cause
+ * (`service-down`) from a stopped guest or an offline node.
+ */
+export type Impact = 'none' | 'ok' | 'host-offline' | 'guest-stopped' | 'service-down' | 'unknown';
+
+export function serviceImpact(
+  service: Service,
+  availability: 'available' | 'unavailable' | 'unknown' | undefined,
+  blocked: boolean,
+  connections: HostConnection[],
+  inventories: HostInventories,
+): Impact {
+  const link = service.host;
+  if (!link) return 'none';
+  const inventory = inventories[link.connectionId];
+  if (!connections.some((item) => item.id === link.connectionId) || inventory?.status !== 'ready')
+    return 'unknown';
+  if (inventory.nodes.find((node) => node.name === link.node)?.status === 'offline')
+    return 'host-offline';
+  const guest = findGuest(inventory, link);
+  if (!guest) return 'unknown';
+  if (guest.status !== 'running') return guest.status === 'stopped' ? 'guest-stopped' : 'unknown';
+  return availability === 'unavailable' && !blocked ? 'service-down' : 'ok';
+}
+
+export type OfflineNode = {
+  connectionId: number;
+  connectionName: string;
+  node: string;
+  affected: Service[];
+};
+
+/** Offline nodes that have linked cards, from a successfully read inventory only. */
+export function offlineNodes(
+  services: Service[],
+  connections: HostConnection[],
+  inventories: HostInventories,
+): OfflineNode[] {
+  const result: OfflineNode[] = [];
+  for (const connection of connections) {
+    const inventory = inventories[connection.id];
+    if (inventory?.status !== 'ready') continue;
+    for (const node of inventory.nodes) {
+      if (node.status !== 'offline') continue;
+      const affected = services.filter(
+        (service) =>
+          service.host?.connectionId === connection.id && service.host.node === node.name,
+      );
+      if (affected.length)
+        result.push({
+          connectionId: connection.id,
+          connectionName: connection.name,
+          node: node.name,
+          affected,
+        });
+    }
+  }
+  return result.sort((a, b) => a.node.localeCompare(b.node));
+}

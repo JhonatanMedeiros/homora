@@ -20,7 +20,7 @@ import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { cn } from '@/lib/utils';
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { describeStatus } from '@/lib/status-text';
-import type { HostLabel } from '@/lib/hosts';
+import type { HostLabel, Impact } from '@/lib/hosts';
 
 type Props = {
   service: Service;
@@ -31,6 +31,8 @@ type Props = {
   onUptimeRangeChange?: (range: UptimeRange) => void;
   /** Where the card runs, resolved from the live Proxmox inventory (null when not linked). */
   host?: HostLabel | null;
+  /** Why the card may be affected; text is always shown, never only color. */
+  impact?: Impact;
   blocked: boolean;
   managing: boolean;
   list?: boolean;
@@ -81,6 +83,31 @@ function hostText(host: HostLabel) {
   return host.kind === 'missing' ? t('hosts.notFound') : t('hosts.unavailable');
 }
 
+const IMPACT_TEXT = {
+  'host-offline': 'hosts.impact.hostOffline',
+  'guest-stopped': 'hosts.impact.guestStopped',
+  'service-down': 'hosts.impact.serviceDown',
+  unknown: 'hosts.impact.unknown',
+} as const;
+function HostLine({ host, impact }: { host: HostLabel; impact: Impact }) {
+  const key = impact in IMPACT_TEXT ? IMPACT_TEXT[impact as keyof typeof IMPACT_TEXT] : null;
+  return (
+    <span className="truncate text-xs text-muted-foreground">
+      {hostText(host)}
+      {key && (
+        <>
+          {' · '}
+          <strong
+            className={impact === 'unknown' ? 'font-medium' : 'font-semibold text-destructive'}
+          >
+            {t(key)}
+          </strong>
+        </>
+      )}
+    </span>
+  );
+}
+
 /** A service: opens in a new tab, displays its status light, and has edit actions. */
 /** Stable id for "go to card"; `data-highlight` is set for a moment by the command palette. */
 const SERVICE_LI =
@@ -94,6 +121,7 @@ export function ServiceCard({
   uptimeRange = '24h',
   onUptimeRangeChange = () => {},
   host = null,
+  impact = 'none',
   blocked,
   managing,
   list = false,
@@ -148,9 +176,7 @@ export function ServiceCard({
             <span className="truncate font-mono text-xs text-muted-foreground">
               {hostOf(s.url)}
             </span>
-            {host && (
-              <span className="truncate text-xs text-muted-foreground">{hostText(host)}</span>
-            )}
+            {host && <HostLine host={host} impact={impact} />}
           </ItemContent>
           <StatusLight
             state={view.state}
@@ -251,9 +277,7 @@ export function ServiceCard({
             <span className="truncate font-mono text-[0.8125rem] text-muted-foreground">
               {hostOf(s.url)}
             </span>
-            {host && (
-              <span className="truncate text-xs text-muted-foreground">{hostText(host)}</span>
-            )}
+            {host && <HostLine host={host} impact={impact} />}
           </ItemContent>
         </div>
         {s.description && showDescription && !repeatsName(s.name, s.description) && (

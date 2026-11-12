@@ -41,9 +41,9 @@ export function useHostInventory(enabled: boolean, needed: number[]) {
     };
   }, [wantsData]);
 
-  const load = useCallback(async (id: number, refresh = false) => {
+  const load = useCallback(async (id: number, refresh = false, silent = false) => {
     requested.current.add(id);
-    setInventories((current) => ({ ...current, [id]: { status: 'loading' } }));
+    if (!silent) setInventories((current) => ({ ...current, [id]: { status: 'loading' } }));
     let next: HostInventory = { status: 'error' };
     try {
       const response = await fetch(
@@ -72,6 +72,16 @@ export function useHostInventory(enabled: boolean, needed: number[]) {
     for (const id of key ? key.split(',').map(Number) : [])
       if (!requested.current.has(id)) void load(id);
   }, [key, load, connectionsLoaded]);
+  // Re-reads the (30 s cached) inventory once a minute, like the monitor status, so the offline
+  // banner follows reality. A failed refresh turns the state into "unknown", never "offline".
+  useEffect(() => {
+    if (!key) return;
+    const timer = window.setInterval(
+      () => key.split(',').forEach((id) => void load(Number(id), false, true)),
+      60_000,
+    );
+    return () => window.clearInterval(timer);
+  }, [key, load]);
 
   return { connections, connectionsLoaded, inventories, reload: load };
 }

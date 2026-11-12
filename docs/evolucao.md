@@ -1174,3 +1174,11 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Frontend: "Runs on" field in the service form (connection, node, search and guest list in a bottom sheet on phones, side sheet on desktop; "Unlink host"), a **Group | Host** control on Home (the Map joins in phase 4), the Host view (accordion per node, unlinked cards in their own section, "Host not found" and "Host unavailable" sections) and a "Runs on" line on each card.
 - Validated: `pnpm check` and `pnpm build`. New tests: migration, inventory parsing, link/unlink/validation/rename/connection-delete flow with a mocked Proxmox transport, host grouping, picker (search, node filter, select, unlink, not found, no connection) and Host view.
 - Not verified: no real Proxmox, no browser session on a phone, no screen-reader pass.
+
+### Service-to-host map, phase 2: impact (issue #96)
+
+- Impact is computed in the browser (`serviceImpact`, `offlineNodes` in `lib/hosts.ts`) from the card link, the node/guest state of the live inventory and the existing monitor status; the backend and the monitor are unchanged and no new polling of Proxmox targets was added. The guest inventory is re-read once a minute (backend cache is 30 s), the same cadence as the status refresh.
+- Causes are kept apart: node offline shows "Host offline"; a stopped guest "Guest stopped"; a down monitor on a **running** guest "Service down". An unreadable or loading inventory, or a guest in an unrecognised state, is "Host state unknown" (cards) and never "offline"; the banner is not shown in that case. This is open decision 4 resolved as "derive, show unknown": no last-known state is stored.
+- Home shows "pve2 is offline. N services are affected." with "See impact", which switches to the Host view filtered to that node (with "Show all hosts"). Node headers show state and the affected count; every service row and card also writes the cause as text.
+- Validated: `pnpm check` and `pnpm build`. Tests cover online, offline node, stopped guest, down service (and a blocked check), connection error, loading, unlinked, banner, filter and the cause wording.
+- Not verified: no real node taken offline; behaviour of `/cluster/resources` for an offline node (guests listed with a stale status) is assumed from the Proxmox API and covered only with simulated data.
