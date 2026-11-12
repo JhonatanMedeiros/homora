@@ -10,7 +10,13 @@ const skeletonStats = (type: string) => {
 };
 
 /** Integration data within the card, with loading, error, and invalid data states. */
-export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
+export function CardWidgets({
+  widgets,
+  layout = 'card',
+}: {
+  widgets: CardWidgetState[];
+  layout?: 'card' | 'list';
+}) {
   if (widgets.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
@@ -18,14 +24,18 @@ export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
         <section
           key={entry.widget.id}
           aria-label={t('cardWidget.region', { name: entry.widget.name })}
-          className="w-full max-w-2xl rounded-md bg-muted/60 px-3 py-2"
+          className={
+            layout === 'list'
+              ? 'w-full max-w-full'
+              : 'w-full max-w-2xl rounded-md bg-muted/60 px-3 py-2'
+          }
         >
           {entry.status === 'ready' ? (
-            <dl className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-x-4 gap-y-2">
+            <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               {entry.stats.map((stat) => (
-                <div key={stat.label} className="flex min-w-0 flex-col gap-0.5">
-                  <dt className="truncate text-xs text-muted-foreground">{stat.label}</dt>
-                  <dd className="truncate font-mono text-sm font-medium tabular-nums">
+                <div key={stat.label} className="flex min-w-0 items-baseline gap-1.5">
+                  <dt className="shrink-0 text-xs text-muted-foreground">{stat.label}</dt>
+                  <dd className="min-w-0 truncate font-mono text-sm font-medium tabular-nums">
                     {stat.value}
                   </dd>
                 </div>

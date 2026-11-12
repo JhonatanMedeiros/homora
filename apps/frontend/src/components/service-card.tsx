@@ -118,7 +118,7 @@ function HostLine({ host, impact }: { host: HostLabel; impact: Impact }) {
 /** A service: opens in a new tab, displays its status light, and has edit actions. */
 /** Stable id for "go to card"; `data-highlight` is set for a moment by the command palette. */
 const SERVICE_LI =
-  'group/service flex min-w-0 scroll-mt-24 rounded-lg data-[highlight=true]:ring-2 data-[highlight=true]:ring-primary data-[highlight=true]:ring-offset-2 data-[highlight=true]:ring-offset-background';
+  'group/service flex min-w-0 self-start scroll-mt-24 rounded-lg data-[highlight=true]:ring-2 data-[highlight=true]:ring-primary data-[highlight=true]:ring-offset-2 data-[highlight=true]:ring-offset-background';
 
 export function ServiceCard({
   service: s,
@@ -191,6 +191,7 @@ export function ServiceCard({
             {dependencyNote && (
               <span className="truncate text-xs text-muted-foreground">{dependencyNote}</span>
             )}
+            <CardWidgets widgets={widgets} layout="list" />
           </ItemContent>
           <StatusLight
             state={view.state}
@@ -237,11 +238,6 @@ export function ServiceCard({
               {view.note}
             </p>
           )}
-          {widgets.length > 0 && (
-            <div className="basis-full">
-              <CardWidgets widgets={widgets} />
-            </div>
-          )}
           {coolify && (
             <div className="basis-full pl-11">
               <CoolifyLine info={coolify} onOpen={onCoolify} />
@@ -257,7 +253,7 @@ export function ServiceCard({
         data-homora="service-card"
         variant="outline"
         className={cn(
-          'service-surface relative w-full flex-col items-stretch gap-3 bg-card hover:bg-accent/60 focus-within:bg-accent/60',
+          'service-surface relative h-fit w-full flex-col flex-nowrap items-stretch gap-3 bg-card hover:bg-accent/60 focus-within:bg-accent/60',
           state === 'available' &&
             !isBlocked &&
             'shadow-[inset_0_1px_0_color-mix(in_oklch,var(--primary)_16%,transparent)]',

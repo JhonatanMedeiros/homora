@@ -50,7 +50,12 @@ export function createApp(
    * Enable only when all traffic traverses a reverse proxy that OVERWRITES this header,
    * such as Compose's nginx; otherwise any client could spoof it.
    */
-  options: { trustProxy?: boolean; apiPort?: number; backgroundPath?: string } = {},
+  options: {
+    trustProxy?: boolean;
+    apiPort?: number;
+    backgroundPath?: string;
+    developmentMocks?: boolean;
+  } = {},
 ) {
   const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
@@ -124,7 +129,7 @@ export function createApp(
   registerAuthRoutes(app, auth, webPort, audit);
   registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.describe());
-  const connections = registerConnectionRoutes(app, db, vault);
+  const connections = registerConnectionRoutes(app, db, vault, options.developmentMocks === true);
   registerNotificationRoutes(app, notifications);
   registerPageRoutes(app, createPages(sqlite), auth, audit);
   registerCustomCssRoutes(app, customCss, auth, audit);

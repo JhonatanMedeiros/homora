@@ -23,6 +23,7 @@ export function registerConnectionRoutes(
   app: FastifyInstance,
   db: Db,
   vault?: Vault,
+  developmentMocks = false,
 ): ReturnType<typeof createIntegrationConnections> {
   const connections = createIntegrationConnections(db, vault);
 
@@ -109,6 +110,23 @@ export function registerConnectionRoutes(
       const query = refreshQuerySchema.safeParse(request.query);
       if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
       try {
+        if (developmentMocks) {
+          const connection = (await connections.listConnections()).find(
+            (item) =>
+              item.id === id && item.name === 'Demo Proxmox (mock)' && item.type === 'proxmox',
+          );
+          if (connection)
+            return {
+              data: {
+                vms: { running: 3, total: 5 },
+                containers: { running: 8, total: 11 },
+                cpu: 23,
+                memory: 61,
+                disk: 37,
+              },
+              checkedAt: new Date().toISOString(),
+            };
+        }
         const result = await connections.connectionData(id, query.data.refresh === 'true');
         return result ?? reply.code(404).send(errorBody('integration-not-found'));
       } catch {

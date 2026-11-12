@@ -2,7 +2,7 @@ import { mkdirSync, openSync, closeSync } from 'node:fs';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { root } from './config.js';
-import { seedDevelopmentDatabase } from './dev-seed.js';
+import { seedDevelopmentDatabase, seedDevelopmentIntegrationMocks } from './dev-seed.js';
 
 const dataDir = join(root, 'data');
 const databasePath = join(dataDir, 'homora-dev.sqlite');
@@ -23,5 +23,14 @@ if (created) {
   }
   console.log('Development database created with sample services.');
 }
+{
+  const database = createDatabase(databasePath);
+  try {
+    seedDevelopmentIntegrationMocks(getSqliteHandle(database.db));
+  } finally {
+    database.close();
+  }
+}
 process.env.HOMORA_DATABASE_PATH = databasePath;
+process.env.HOMORA_DEV_MOCKS = 'true';
 await import('./server.js');
