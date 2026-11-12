@@ -31,6 +31,28 @@ export const appSettings = sqliteTable('app_settings', {
   value: text('value').notNull(),
 });
 
+/** Notification destinations and Telegram credentials are encrypted with the integration key. */
+export const notificationChannels = sqliteTable('notification_channels', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  type: text('type').notNull(),
+  secret: text('secret').notNull(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
+  includeUrl: integer('include_url', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull(),
+  lastSentAt: text('last_sent_at'),
+  lastError: text('last_error'),
+  failures: integer('failures').notNull().default(0),
+});
+
+export const notificationStates = sqliteTable('notification_states', {
+  serviceId: integer('service_id')
+    .primaryKey()
+    .references(() => services.id, { onDelete: 'cascade' }),
+  state: text('state').notNull(),
+});
+
 // Last observations are shared with the separate local MCP process. The service
 // signature prevents an old result from being attributed to edited settings.
 export const serviceObservations = sqliteTable('service_observations', {

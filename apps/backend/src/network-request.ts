@@ -12,6 +12,8 @@ export type RequestOptions = {
   maxBodyBytes?: number;
   /** Returns 3xx status code instead of failing. Redirect is not followed. */
   reportRedirect?: boolean;
+  /** Only notification delivery uses POST. */
+  jsonBody?: string;
 };
 export type AuthorizedResponse = { status: number; body: string };
 
@@ -22,6 +24,8 @@ export async function getAuthorizedResponse(
   options: RequestOptions = {},
 ): Promise<AuthorizedResponse> {
   const timeoutMs = options.timeoutMs ?? 8000;
+  if (options.jsonBody !== undefined && Buffer.byteLength(options.jsonBody) > 65536)
+    throw new Error('Request exceeded limit.');
   const maxBodyBytes = options.maxBodyBytes ?? 262144;
   if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1 || maxBodyBytes > 2_000_000)
     throw new Error('Invalid response limit.');
@@ -58,12 +62,21 @@ export async function getAuthorizedResponse(
   };
   return new Promise((resolve, reject) => {
     const transport = url.protocol === 'https:' ? https : http;
-    const req = transport.get(
+    const request = options.jsonBody === undefined ? transport.get : transport.request;
+    const req = request(
       url,
       {
+        method: options.jsonBody === undefined ? 'GET' : 'POST',
         lookup: pinnedLookup,
         agent: false,
-        headers,
+        headers:
+          options.jsonBody === undefined
+            ? headers
+            : {
+                ...headers,
+                'content-type': 'application/json',
+                'content-length': Buffer.byteLength(options.jsonBody),
+              },
         ...(options.ca && url.protocol === 'https:'
           ? { ca: [...getCACertificates('default'), options.ca] }
           : {}),
@@ -102,6 +115,7 @@ export async function getAuthorizedResponse(
     const timer = setTimeout(() => req.destroy(new Error('Timeout exceeded.')), remainingMs);
     req.on('close', () => clearTimeout(timer));
     req.on('error', () => reject(new Error('Connection failed.')));
+    if (options.jsonBody !== undefined) req.end(options.jsonBody);
   });
 }
 

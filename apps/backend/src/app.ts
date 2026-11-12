@@ -24,6 +24,8 @@ import { registerDockerPushRoutes } from './routes/docker-push.js';
 import { registerMcpHttp } from './mcp-http.js';
 import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
+import { createNotifications } from './notifications.js';
+import { registerNotificationRoutes } from './routes/notifications.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -47,6 +49,7 @@ export function createApp(
   const audit = createAuditLog(sqlite);
   const proposals = createProposalService(sqlite, configuration, vault);
   const observations = createObservationStore(sqlite);
+  const notifications = createNotifications(sqlite, vault);
   // An old backend process may have stopped without clearing its last observation.
   observations.clear();
   const serviceMonitor = createServiceMonitor(
@@ -56,6 +59,7 @@ export function createApp(
     (rows, states) => {
       try {
         observations.publish(rows, states);
+        notifications.publish(rows, states);
       } catch {
         /* Keep the dashboard usable on storage errors. */
       }
@@ -63,7 +67,10 @@ export function createApp(
   );
   const publicStatus = createPublicStatus(sqlite, observations);
   const stopServiceMonitor = startServiceMonitor(serviceMonitor);
-  app.addHook('onClose', async () => stopServiceMonitor());
+  app.addHook('onClose', async () => {
+    stopServiceMonitor();
+    await notifications.stop();
+  });
 
   const allowedOrigins = new Set([
     `http://127.0.0.1:${webPort}`,
@@ -107,6 +114,7 @@ export function createApp(
   registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
+  registerNotificationRoutes(app, notifications);
   registerProxmoxRoutes(app, vault, db);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);

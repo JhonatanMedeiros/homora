@@ -223,3 +223,39 @@ it('adds push sources while preserving existing services and defaulting to no so
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('upgrades the Docker push schema to notifications without changing existing data', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-notification-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of migrations.slice(0, 18)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(1,'Existing','https://example.test','Home',''); INSERT INTO docker_push_sources(id,name,token_hash,created_at,inventory_version) VALUES('source','Docker','test-hash',1,3);",
+    );
+    old.close();
+    const database = createDatabase(path);
+    const db = getSqliteHandle(database.db);
+    expect(db.prepare('SELECT name,inventory_version FROM docker_push_sources').get()).toEqual({
+      name: 'Docker',
+      inventory_version: 3,
+    });
+    expect(db.prepare('SELECT name FROM services WHERE id=1').get()).toEqual({ name: 'Existing' });
+    expect(db.prepare('SELECT * FROM notification_channels').all()).toEqual([]);
+    expect(db.prepare('SELECT * FROM notification_states').all()).toEqual([]);
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
