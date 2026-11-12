@@ -117,3 +117,25 @@ it('keeps the specific messages for not found and refused access', async () => {
     ha.collect({ url: 'https://h.example', entityId: 'sensor.a', secret: 't' }),
   ).rejects.toThrow('refused authentication');
 });
+
+it('sends the secret only through the whitelisted header each auth type names', async () => {
+  const run = async (auth: IntegrationManifest['auth'], secret: string) => {
+    const manifest = {
+      ...jellyfinManifest,
+      auth,
+      fields: [
+        ...jellyfinManifest.fields,
+        { key: 'secret', kind: 'secret', label: 'S', required: true, maxLength: 50 } as const,
+      ],
+    };
+    return (
+      await collect(manifest, { url: 'https://x.test', secret }, { ServerName: 'a', Version: '1' })
+    ).calls[0];
+  };
+  expect(await run({ type: 'token' }, 'abc')).toMatchObject({ authorization: 'Token abc' });
+  expect(await run({ type: 'api-key' }, 'abc')).toMatchObject({ apiKey: 'abc' });
+  expect(await run({ type: 'api-key' }, 'abc')).not.toHaveProperty('authorization');
+  expect(await run({ type: 'basic-key' }, 'abc')).toMatchObject({
+    authorization: `Basic ${Buffer.from('abc:').toString('base64')}`,
+  });
+});

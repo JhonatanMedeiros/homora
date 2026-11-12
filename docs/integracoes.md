@@ -250,3 +250,18 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
 - **Live validation checklist:** the header name is accepted (`X-API-Key`); `Status` values on a stopped
   environment; behaviour with a very large number of environments (the count stops at 10,000 and is
   then reported as an invalid response).
+
+### NetBird
+
+- **Reads:** `GET /api/peers` with `Authorization: Token <token>`; shows how many peers exist and how
+  many report `connected`. Sources: [peers API](https://docs.netbird.io/api/resources/peers),
+  [authentication](https://docs.netbird.io/api/guides/authentication) and the official OpenAPI file in
+  the NetBird repository, read 2026-11-12.
+- **Least privilege:** the documentation recommends service users for API calls and does not describe
+  a read-only token. Use a service user with the lowest role that can list peers, and confirm that when
+  validating.
+- **Network:** NetBird Cloud is the public `https://api.netbird.io` (prefilled): an administrator must
+  allow outbound HTTPS to it and no private-network option is needed. For a self-hosted server use its
+  management address. The cloud API is rate limited (120 requests per minute); results are cached 30 seconds.
+- **Live validation checklist:** the `Token` scheme is accepted; a service user with the lowest role can
+  list peers; the response size with many peers stays under 2 MB.
