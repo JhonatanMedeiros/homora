@@ -53,9 +53,9 @@ type Props = {
 const MAX_COLUMNS = 3;
 /** Complete utility classes (Tailwind must see exact tokens): small screens constrain to 1 or 2 columns. */
 const COLUMN_CLASSES: Record<number, string> = {
-  1: 'grid grid-cols-1 gap-3',
-  2: 'grid grid-cols-1 gap-3 sm:grid-cols-2',
-  3: 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3',
+  1: 'columns-1 gap-3',
+  2: 'columns-1 gap-3 sm:columns-2',
+  3: 'columns-1 gap-3 sm:columns-2 xl:columns-3',
 };
 /** Rows are tighter than cards, so the same counts use a smaller gap. */
 const ROW_COLUMN_CLASSES: Record<number, string> = {
@@ -100,7 +100,7 @@ export function GroupSection({
         ? (rowLayout ? ROW_COLUMN_CLASSES : COLUMN_CLASSES)[cols]
         : rowLayout
           ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
-          : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
+          : 'columns-1 gap-3 sm:columns-2 xl:columns-3';
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('homora-collapsed-groups') ?? '[]').includes(category);
