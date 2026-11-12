@@ -186,6 +186,11 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
     if (!form) return;
     setBusy(true);
     setMessage('');
+    const optional = new Set(
+      extraFields(form.type)
+        .filter(({ required }) => !required)
+        .map(({ key }) => key),
+    );
     try {
       const payload = {
         type: form.type,
@@ -199,7 +204,8 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
         ...Object.fromEntries(
           extraFields(form.type)
             .map(({ key }) => [key, form.values[key] ?? ''] as const)
-            .filter(([, value]) => value !== ''),
+            // Saved optional fields are sent even when empty, so they can be cleared.
+            .filter(([key, value]) => value !== '' || (editing !== null && optional.has(key))),
         ),
       };
       await request(editing === null ? '/api/connections' : `/api/connections/${editing}`, {
@@ -293,6 +299,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
             <ConnectionForm
               form={form}
               editing={editing !== null}
+              connectionId={editing}
               hasCa={Boolean(editingItem?.hasCa)}
               busy={busy}
               onChange={setForm}

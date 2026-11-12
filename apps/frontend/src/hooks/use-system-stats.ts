@@ -9,6 +9,7 @@ export type SystemStats =
   | { status: 'loading' }
   | { status: 'none' }
   | { status: 'error' }
+  | { status: 'node-unavailable' }
   | { status: 'ready'; stats: WidgetStat[] };
 
 const REFRESH_MS = 60_000;
@@ -54,6 +55,8 @@ export function useSystemStats(enabled: boolean): SystemStats {
         const body = (await getJson(`/api/connections/${connectionId}/data`, signal)) as {
           data?: unknown;
         };
+        if ((body.data as { unavailable?: unknown } | null)?.unavailable === true)
+          return setState({ status: 'node-unavailable' });
         const stats = widgetStats('proxmox', body.data)?.filter((stat) => stat.id !== undefined);
         if (signal.aborted) return;
         setState(stats && stats.length > 0 ? { status: 'ready', stats } : { status: 'error' });

@@ -25,6 +25,8 @@ export type ManifestField = {
   httpsOnly?: boolean;
   /** url fields only: keep a base path (for example a reverse proxy prefix). */
   allowPath?: boolean;
+  /** The form offers a choice list read from the connection (only while editing a saved connection). */
+  picker?: 'proxmox-node';
   /** Changing this field requires a new secret, because the credential identity changes. */
   identity?: boolean;
   /** Stable API error code when this field is invalid. */
@@ -190,6 +192,18 @@ export const proxmoxDefinition: CodeDefinition = {
       maxLength: 255,
       identity: true,
       errorCode: 'invalid-token',
+    },
+    {
+      key: 'node',
+      kind: 'text',
+      label: 'Node',
+      labelKey: 'proxmox.node',
+      help: 'Show only this node in widgets and the top bar. Leave empty for the whole cluster.',
+      required: false,
+      maxLength: 63,
+      pattern: '[A-Za-z0-9][A-Za-z0-9-]{0,62}',
+      picker: 'proxmox-node',
+      errorCode: 'invalid-config',
     },
     {
       key: 'secret',

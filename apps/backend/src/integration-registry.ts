@@ -1,4 +1,5 @@
-import { integrationDefinitions, proxmoxDefinition } from '@homora/shared';
+import { integrationDefinitions, isNodeName, proxmoxDefinition } from '@homora/shared';
+import { InputError } from './api-error.js';
 import { createIntegrationRegistry, type IntegrationContext } from './integrations.js';
 import { assertValidDefinition } from './integration-manifest.js';
 import { createManifestRegistration } from './manifest-adapter.js';
@@ -27,7 +28,11 @@ const proxmoxRegistration = {
   prepare(context: IntegrationContext) {
     const adapter = createProxmoxConnectionAdapter(transportFrom(context));
     const config = adapter.validate(proxmoxConfig(context));
-    return () => adapter.collect(config);
+    // Optional scope: one node instead of the whole cluster. Empty or absent keeps the cluster totals.
+    const node = context.publicConfig.node;
+    if (node === undefined || node === '') return () => adapter.collect(config);
+    if (!isNodeName(node)) throw new InputError('invalid-config');
+    return () => adapter.collectNode(config, node);
   },
   prepareAddresses(context: IntegrationContext) {
     const adapter = createProxmoxConnectionAdapter(transportFrom(context));

@@ -8,10 +8,13 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { extraFields, labels, secretField, type ConnectionFormState } from './connection-model';
 import { t, tOr } from '@/i18n';
+import { NodePicker } from './node-picker';
 
 type Props = {
   form: ConnectionFormState;
   editing: boolean;
+  /** Id of the saved connection being edited; choice lists need it. */
+  connectionId?: number | null;
   hasCa: boolean;
   busy: boolean;
   onChange: (form: ConnectionFormState) => void;
@@ -24,6 +27,7 @@ type Props = {
 export function ConnectionForm({
   form,
   editing,
+  connectionId,
   hasCa,
   busy,
   onChange,
@@ -67,32 +71,43 @@ export function ConnectionForm({
                 onChange={(event) => set({ url: event.target.value })}
               />
             </Field>
-            {extraFields(form.type).map((field) => (
-              <Field key={field.key}>
-                <FieldLabel htmlFor={`connection-field-${field.key}`}>
-                  {tOr(field.labelKey, field.label)}
-                </FieldLabel>
-                <Input
-                  id={`connection-field-${field.key}`}
-                  required={field.required && !(editing && field.kind === 'token-id')}
-                  maxLength={field.maxLength}
-                  autoComplete={field.identity ? 'username' : undefined}
-                  value={form.values[field.key] ?? ''}
-                  placeholder={
-                    field.placeholderKey || field.placeholder
-                      ? tOr(field.placeholderKey, field.placeholder ?? '')
-                      : undefined
-                  }
-                  onChange={(event) =>
-                    set({ values: { ...form.values, [field.key]: event.target.value } })
-                  }
-                />
-                {editing && field.kind === 'token-id' && (
-                  <FieldDescription>{t('connections.keepSecret')}</FieldDescription>
-                )}
-                {field.help && <FieldDescription>{field.help}</FieldDescription>}
-              </Field>
-            ))}
+            {extraFields(form.type).map((field) =>
+              field.picker && connectionId == null ? null : (
+                <Field key={field.key}>
+                  <FieldLabel htmlFor={`connection-field-${field.key}`}>
+                    {tOr(field.labelKey, field.label)}
+                  </FieldLabel>
+                  {field.picker && connectionId != null ? (
+                    <NodePicker
+                      id={`connection-field-${field.key}`}
+                      connectionId={connectionId}
+                      value={form.values[field.key] ?? ''}
+                      onChange={(value) => set({ values: { ...form.values, [field.key]: value } })}
+                    />
+                  ) : (
+                    <Input
+                      id={`connection-field-${field.key}`}
+                      required={field.required && !(editing && field.kind === 'token-id')}
+                      maxLength={field.maxLength}
+                      autoComplete={field.identity ? 'username' : undefined}
+                      value={form.values[field.key] ?? ''}
+                      placeholder={
+                        field.placeholderKey || field.placeholder
+                          ? tOr(field.placeholderKey, field.placeholder ?? '')
+                          : undefined
+                      }
+                      onChange={(event) =>
+                        set({ values: { ...form.values, [field.key]: event.target.value } })
+                      }
+                    />
+                  )}
+                  {editing && field.kind === 'token-id' && (
+                    <FieldDescription>{t('connections.keepSecret')}</FieldDescription>
+                  )}
+                  {field.help && <FieldDescription>{field.help}</FieldDescription>}
+                </Field>
+              ),
+            )}
             {secret && (
               <Field>
                 <FieldLabel htmlFor="connection-secret">

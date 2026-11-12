@@ -86,3 +86,18 @@ it('accepts Proxmox responses without disk and rejects invalid disk values', () 
   );
   expect(widgetStats('proxmox', { ...base, cpu: 1, memory: 2, disk: 150 })).toBeNull();
 });
+
+it('says the selected node is unavailable instead of showing cluster totals', async () => {
+  stubApi({
+    '/api/widgets': json([
+      { id: 1, integrationId: 9, type: 'proxmox', name: 'PVE', serviceId: null },
+    ]),
+    '/api/connections/9/data': json({ data: { unavailable: true } }),
+  });
+  render(<TopBar />);
+  await waitFor(() => expect(screen.getByText('Nó selecionado indisponível')).toBeTruthy());
+  expect(screen.queryByText(/%/)).toBeNull();
+  expect(widgetStats('proxmox', { unavailable: true })).toEqual([
+    { label: 'Nó', value: 'Nó indisponível' },
+  ]);
+});

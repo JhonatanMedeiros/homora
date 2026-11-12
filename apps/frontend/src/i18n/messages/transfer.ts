@@ -105,6 +105,7 @@ export const en = {
     'Shows the date, the time and CPU, memory and disk usage from a Proxmox connection. Saved in this browser only.',
   'topBar.label': 'Date, time and system resources',
   'topBar.unavailable': 'System resources unavailable',
+  'topBar.nodeUnavailable': 'Selected node unavailable',
   'settings.description': 'Export your dashboard, bring in an existing one and keep it versioned.',
   'transfer.exportTitle': 'Export',
   'transfer.exportHint':
@@ -279,6 +280,7 @@ export const ptBR: Record<keyof typeof en, string> = {
     'Mostra data, hora e o uso de CPU, memória e disco de uma conexão Proxmox. Salvo apenas neste navegador.',
   'topBar.label': 'Data, hora e recursos do sistema',
   'topBar.unavailable': 'Recursos do sistema indisponíveis',
+  'topBar.nodeUnavailable': 'Nó selecionado indisponível',
   'settings.description': 'Exporte o seu painel, traga um já existente e mantenha-o versionado.',
   'transfer.exportTitle': 'Exportar',
   'transfer.exportHint':

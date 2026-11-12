@@ -43,6 +43,10 @@ export const en = {
   'connections.slug': 'Public page identifier',
   'connections.username': 'Username',
   'connections.tailnet': 'Tailnet',
+  'connections.nodeAll': 'Whole cluster',
+  'connections.nodeMissing': '{name} (not found)',
+  'stat.node': 'Node',
+  'stat.nodeUnavailable': 'Node unavailable',
   'connections.accessToken': 'Access token',
   'connections.password': 'Password',
   'connections.keepSecret':
@@ -156,6 +160,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'connections.slug': 'Identificador da página pública',
   'connections.username': 'Usuário',
   'connections.tailnet': 'Tailnet',
+  'connections.nodeAll': 'Cluster inteiro',
+  'connections.nodeMissing': '{name} (não encontrado)',
+  'stat.node': 'Nó',
+  'stat.nodeUnavailable': 'Nó indisponível',
   'connections.accessToken': 'Token de acesso',
   'connections.password': 'Senha',
   'connections.keepSecret':

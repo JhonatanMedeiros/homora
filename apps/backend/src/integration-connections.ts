@@ -185,12 +185,13 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       url: input.url || old?.url || '',
       allowPrivate: input.allowPrivate ?? old?.allowPrivate ?? false,
       ...Object.fromEntries(
-        publicFieldsOf(type).map(({ key }) => [
-          key,
-          (typeof input[key] === 'string' && input[key]) ||
-            (old?.[key] as string | undefined) ||
-            '',
-        ]),
+        publicFieldsOf(type).flatMap(({ key, required }) => {
+          const given = typeof input[key] === 'string' ? (input[key] as string) : undefined;
+          const kept = (old?.[key] as string | undefined) ?? '';
+          // A required field keeps its saved value when empty; an optional one can be cleared.
+          const value = required ? given || kept : (given ?? kept);
+          return value === '' && !required ? [] : [[key, value]];
+        }),
       ),
     };
     const identityFields = publicFieldsOf(type).filter(({ identity }) => identity);

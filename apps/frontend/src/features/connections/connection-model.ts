@@ -201,6 +201,9 @@ export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | nu
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   if (type !== 'proxmox') return renderManifest(type, value)?.stats ?? null;
   const data = value as Record<string, unknown>;
+  // A selected node that is missing or offline: say so, never show the cluster totals.
+  if (data.unavailable === true)
+    return [{ label: t('stat.node'), value: t('stat.nodeUnavailable') }];
   const count = (v: unknown): v is number =>
     typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
   const group = (v: unknown): v is { running: number; total: number } =>

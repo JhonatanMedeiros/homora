@@ -385,3 +385,57 @@ it('generates each form from its integration definition', async () => {
   expect(screen.getByLabelText('Senha')).toBeTruthy();
   expect(screen.queryByLabelText('Identificador da página pública')).toBeNull();
 });
+
+it('scopes a Proxmox connection to a node picked from its inventory, and can clear it', async () => {
+  const bodies: unknown[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        bodies.push(JSON.parse(String(init.body)));
+        return { ok: true, json: async () => ({ ok: true }) };
+      }
+      if (url === '/api/connections/1/guests')
+        return {
+          ok: true,
+          json: async () => ({ nodes: [{ name: 'pve1' }, { name: 'pve2' }], guests: [] }),
+        };
+      if (url === '/api/connections')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 1,
+              type: 'proxmox',
+              name: 'Phobos',
+              url: 'https://pve.test',
+              allowPrivate: true,
+              node: 'pve2',
+              hasSecret: true,
+            },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<Connections />);
+  await choose('Phobos', 'Editar');
+  const picker = await screen.findByRole('combobox', { name: 'Nó' });
+  expect(picker.textContent).toContain('pve2');
+  fireEvent.click(picker);
+  fireEvent.click(await screen.findByRole('option', { name: 'Cluster inteiro' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar conexão' }));
+  await waitFor(() => expect(bodies).toHaveLength(1));
+  expect(bodies[0]).toMatchObject({ type: 'proxmox', node: '' });
+});
+
+it('does not offer the node field while creating a Proxmox connection', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => [] })),
+  );
+  render(<Connections />);
+  await pick(/Proxmox/);
+  expect(screen.getByLabelText('ID do token')).toBeTruthy();
+  expect(screen.queryByLabelText('Nó')).toBeNull();
+});
