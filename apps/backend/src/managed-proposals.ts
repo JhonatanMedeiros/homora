@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
+import { isNodeName, isVmid } from '@homora/shared';
 import { renumberGroups } from './group-order.js';
 
 const id = z.number().int().safe().positive();
@@ -67,11 +68,32 @@ export const connectionSetupSchema = z
   })
   .strict()
   .refine((value) => value.type !== 'proxmox' || value.url.startsWith('https://'));
+/**
+ * Links a card to a Proxmox guest. The strength and evidence are computed by the server when the
+ * proposal is created (an agent cannot supply them) and shown to the reviewer next to the diff.
+ */
+export const hostLinkChangeSchema = z
+  .object({
+    op: z.literal('link'),
+    serviceId: id,
+    host: z
+      .object({
+        connectionId: id,
+        node: z.string().refine(isNodeName),
+        vmid: z.number().int().safe().refine(isVmid),
+        type: z.enum(['qemu', 'lxc']),
+      })
+      .strict(),
+    strength: z.enum(['strong', 'medium']),
+    evidence: z.array(z.string().max(200)).min(1).max(5),
+  })
+  .strict();
 export const managedChangeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('group'), change: groupChangeSchema }).strict(),
   z.object({ kind: z.literal('card-order'), change: cardOrderSchema }).strict(),
   z.object({ kind: z.literal('widget'), change: widgetChangeSchema }).strict(),
   z.object({ kind: z.literal('connection-setup'), change: connectionSetupSchema }).strict(),
+  z.object({ kind: z.literal('host-link'), change: hostLinkChangeSchema }).strict(),
 ]);
 export type ManagedChange = z.infer<typeof managedChangeSchema>;
 
@@ -81,7 +103,7 @@ export function managedSnapshot(db: DatabaseSync) {
     groups: db.prepare('SELECT id,name,position,columns FROM service_groups ORDER BY id').all(),
     services: db
       .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path FROM services ORDER BY id',
+        'SELECT id,name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,host_connection_id,host_node,host_vmid,host_type FROM services ORDER BY id',
       )
       .all(),
     widgets: db
@@ -227,6 +249,22 @@ export function applyManagedChange(
       if (!db.prepare('DELETE FROM integration_widgets WHERE id=?').run(change.id).changes)
         throw new Error('Widget not found');
     }
+  } else if (kind === 'host-link') {
+    if (!db.prepare('SELECT id FROM services WHERE id=?').get(change.serviceId))
+      throw new Error('Service not found');
+    const connection = db
+      .prepare('SELECT type FROM integration_instances WHERE id=?')
+      .get(change.host.connectionId) as { type: string } | undefined;
+    if (connection?.type !== 'proxmox') throw new Error('Connection not found');
+    db.prepare(
+      'UPDATE services SET host_connection_id=?,host_node=?,host_vmid=?,host_type=? WHERE id=?',
+    ).run(
+      change.host.connectionId,
+      change.host.node,
+      change.host.vmid,
+      change.host.type,
+      change.serviceId,
+    );
   }
   // Connection setup is an approved request for the human to finish in the integration form.
   if (kind !== 'connection-setup')

@@ -8,6 +8,7 @@ import { ptBR as account } from './messages/account';
 import { ptBR as apiErrors } from './messages/api-errors';
 import { ptBR as status } from './messages/status';
 import { ptBR as settings } from './messages/settings';
+import { ptBR as hosts } from './messages/hosts';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -19,4 +20,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...apiErrors,
   ...status,
   ...settings,
+  ...hosts,
 };

@@ -324,3 +324,136 @@ it('shortens stored signatures to 16 characters and keeps rows matching', () => 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('adds the optional card-to-guest link without changing existing cards and unlinks on connection delete', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-host-link-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // Database created by the previous version: every migration except the last one.
+    for (const migration of migrations.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(7,'Existing','https://example.test','Home','')",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(
+      check
+        .prepare(
+          'SELECT name,host_connection_id,host_node,host_vmid,host_type FROM services WHERE id=7',
+        )
+        .get(),
+    ).toEqual({
+      name: 'Existing',
+      host_connection_id: null,
+      host_node: null,
+      host_vmid: null,
+      host_type: null,
+    });
+    check.exec(
+      "INSERT INTO integration_instances(id,type,name) VALUES(3,'proxmox','PVE'); UPDATE services SET host_connection_id=3,host_node='pve1',host_vmid=100,host_type='lxc' WHERE id=7; DELETE FROM integration_instances WHERE id=3",
+    );
+    expect(
+      check.prepare('SELECT host_connection_id,host_node FROM services WHERE id=7').get(),
+    ).toEqual({ host_connection_id: null, host_node: 'pve1' });
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds suggestion dismissals on top of the host link without touching existing cards', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-dismissal-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // A database created by the previous version (without the dismissals table).
+    for (const migration of migrations.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description,host_connection_id,host_node,host_vmid,host_type) VALUES(7,'Existing','https://example.test','Home','',NULL,'pve1',101,'lxc')",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(check.prepare('SELECT name,host_node FROM services WHERE id=7').get()).toEqual({
+      name: 'Existing',
+      host_node: 'pve1',
+    });
+    check.exec(
+      "INSERT INTO integration_instances(id,type,name) VALUES(3,'proxmox','PVE'); INSERT INTO host_suggestion_dismissals VALUES(7,3,'pve1',101,'lxc',1)",
+    );
+    expect(() =>
+      check.exec("INSERT INTO host_suggestion_dismissals VALUES(7,3,'pve1',101,'lxc',2)"),
+    ).toThrow();
+    check.exec('DELETE FROM services WHERE id=7');
+    expect(check.prepare('SELECT * FROM host_suggestion_dismissals').all()).toEqual([]);
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds service dependencies on top of the previous schema, rejecting self links and cascading', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-dependency-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // A database created by the previous version (without the dependencies table).
+    for (const migration of migrations.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(1,'A','https://a.test','Home',''),(2,'B','https://b.test','Home','')",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(check.prepare('SELECT name FROM services ORDER BY id').all()).toEqual([
+      { name: 'A' },
+      { name: 'B' },
+    ]);
+    check.exec('INSERT INTO service_dependencies VALUES(1,2,1)');
+    expect(() => check.exec('INSERT INTO service_dependencies VALUES(1,2,2)')).toThrow();
+    expect(() => check.exec('INSERT INTO service_dependencies VALUES(1,1,2)')).toThrow();
+    check.exec('DELETE FROM services WHERE id=2');
+    expect(check.prepare('SELECT * FROM service_dependencies').all()).toEqual([]);
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
