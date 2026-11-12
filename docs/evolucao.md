@@ -1071,3 +1071,12 @@ Services can optionally check a same-origin path independently of their card URL
   isolated migration and concurrent-connection tests, audit rollback and lifecycle
   tests, and Chromium at 390 px for dialog cancellation and terminal revocation.
   CI and cross-host LXC validation remain separate from this local evidence.
+
+## Mobile header fits one row
+
+- On phones the header wrapped: the brand, search, language, theme, user menu and the Manage / Back button did not fit in 390 px, so the user menu and the button dropped to a second row. Below `sm` the wordmark is now visually hidden (the logo still links home), the Manage / Back button shows only its icon (the label stays for screen readers) and the gaps are tighter. From `sm` up nothing changes.
+- Checked in a headless browser at 360 px, 390 px and 1100 px: one row in management mode, and on the home page the search field still takes its own second row. Not checked on a physical phone, and below about 340 px the header can wrap again.
+- After integrating the subsequent mobile-header change, the load-sensitive uptime
+  benchmark timed out in the first full run. It passed in isolation; a second full
+  `pnpm check` passed (425 application tests and 9 script tests), followed by
+  `pnpm build`.
