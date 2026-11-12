@@ -11,3 +11,6 @@ export const navItems: { id: Exclude<Tab, 'account'>; label: MessageKey; icon: L
   { id: 'activity', label: 'nav.activity', icon: Activity },
   { id: 'settings', label: 'nav.settings', icon: Settings },
 ];
+
+/** Router path of a section; the account lives outside the management area. */
+export const tabPath = (tab: Tab) => (tab === 'account' ? '/account' : `/manage/${tab}`);

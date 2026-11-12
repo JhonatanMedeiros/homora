@@ -16,7 +16,7 @@ import { CommandPalette } from '@/components/command-palette';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
-import type { Tab } from '@/components/app-nav';
+import { tabPath, type Tab } from '@/components/app-nav';
 import { lower, t, useI18n } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { SettingsPage } from '@/pages/settings-page';
@@ -28,7 +28,7 @@ import { AuthPage } from '@/pages/auth-page';
 import { AccountPage } from '@/pages/account-page';
 import { ActivityPage } from '@/pages/activity-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
-import { ServicesPage } from '@/pages/services-page';
+import { ServicesPage, type FocusRequest } from '@/pages/services-page';
 
 type DashboardRoute = { tab: Tab; managing: boolean; form: 'new' | number | null; valid: boolean };
 const validPaths = [
@@ -79,6 +79,7 @@ function Dashboard({
   const search = useRef<HTMLInputElement>(null);
   const openFirst = useRef<(() => void) | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const { toggleTheme } = useTheme();
   const { profile, failed: profileFailed, setProfile } = useProfile();
   const viewPrefs = useViewPreferences();
@@ -109,9 +110,10 @@ function Dashboard({
         navigate(value ? '/manage/services' : '/');
       }}
       onTabChange={(next) => {
-        navigate(next === 'account' ? '/account' : `/manage/${next}`);
+        navigate(tabPath(next));
       }}
       onLogout={onLogout}
+      onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
       toolbar={
         <div className="relative">
@@ -167,6 +169,13 @@ function Dashboard({
           navigate('/manage/services/new');
         }}
         onToggleTheme={toggleTheme}
+        onNavigate={navigate}
+        onGoToCard={(service) => {
+          // The card only exists on the dashboard, and a search filter could be hiding it.
+          setQuery('');
+          if (managing || tab !== 'services') navigate('/');
+          setFocusRequest((previous) => ({ id: service.id, nonce: (previous?.nonce ?? 0) + 1 }));
+        }}
         view={viewPrefs.view}
         onViewChange={viewPrefs.setView}
         showDescriptions={viewPrefs.showDescriptions}
@@ -186,6 +195,8 @@ function Dashboard({
             query={query}
             data={data}
             openFirstRef={openFirst}
+            focusRequest={focusRequest}
+            onFocusHandled={() => setFocusRequest(null)}
             managing={managing}
             formRoute={route.form}
             navigate={navigate}

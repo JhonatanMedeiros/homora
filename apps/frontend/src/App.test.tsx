@@ -793,6 +793,45 @@ it('shows the list view by default and opens the command palette with Ctrl K', a
   localStorage.clear();
 });
 
+it('opens the palette from the header button and goes to a card inside a collapsed group', async () => {
+  localStorage.clear();
+  localStorage.setItem('homora-collapsed-groups', JSON.stringify(['Infra']));
+  window.history.replaceState(null, '', '/');
+  Element.prototype.scrollIntoView = vi.fn();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Wiki/ });
+  expect(document.getElementById('service-2')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Buscar ou executar um comando' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Ir para o card de Proxmox' }));
+  await waitFor(() => expect(document.getElementById('service-2')?.dataset.highlight).toBe('true'));
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  // The expansion is temporary: the saved preference is kept.
+  expect(localStorage.getItem('homora-collapsed-groups')).toContain('Infra');
+  await waitFor(
+    () => expect(document.getElementById('service-2')?.dataset.highlight).toBeUndefined(),
+    {
+      timeout: 3000,
+    },
+  );
+  localStorage.clear();
+});
+
 it('opens the new service form straight from the empty dashboard', async () => {
   localStorage.clear();
   window.history.replaceState(null, '', '/');

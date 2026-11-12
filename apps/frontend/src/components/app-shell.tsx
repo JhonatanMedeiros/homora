@@ -1,5 +1,14 @@
 import type { ReactNode } from 'react';
-import { Activity, ArrowLeft, ChevronDown, LogOut, Settings, UserRound } from 'lucide-react';
+import {
+  Activity,
+  ArrowLeft,
+  ChevronDown,
+  LogOut,
+  Search,
+  Settings,
+  UserRound,
+} from 'lucide-react';
+import { Kbd } from '@/components/ui/kbd';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +32,7 @@ type Props = {
   onManageChange: (value: boolean) => void;
   onTabChange: (tab: Tab) => void;
   onLogout: () => void;
+  onOpenPalette: () => void;
   profile: Profile | null;
   toolbar: ReactNode;
   children: ReactNode;
@@ -34,6 +44,7 @@ export function AppShell({
   onManageChange,
   onTabChange,
   onLogout,
+  onOpenPalette,
   profile,
   toolbar,
   children,
@@ -51,6 +62,18 @@ export function AppShell({
             </div>
           )}
           <span className="mr-auto" />
+          <Button
+            variant="ghost"
+            aria-label={t('palette.button')}
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={onOpenPalette}
+            className="gap-2 px-2.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <Search aria-hidden="true" />
+            <Kbd className="hidden bg-sidebar-accent text-sidebar-foreground md:inline-flex">
+              Ctrl K
+            </Kbd>
+          </Button>
           <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <DropdownMenu>
