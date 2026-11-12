@@ -2,7 +2,7 @@
  * Homora stress benchmark. Everything runs against an isolated temporary database and a
  * server process started on random loopback ports; no real infrastructure is touched.
  *
- *   pnpm --filter @homora/backend bench -- --profile quick|heavy|extreme [--suite db,monitor,...]
+ *   bun run --filter @homora/backend bench --profile quick|heavy|extreme [--suite db,monitor,...]
  */
 import { mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import net from 'node:net';

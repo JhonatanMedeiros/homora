@@ -113,7 +113,7 @@ export type ExportedSettings = {
 /**
  * Serializes groups and cards in current order. Never includes secrets, connections or IDs.
  * Appearance and custom CSS are included when given; the background picture is not (it is part of
- * the database backup, see `pnpm backup`).
+ * the database backup, see `bun run backup`).
  */
 export function serializeConfiguration(
   groups: { name: string; columns?: number | null; page?: string }[],

@@ -41,20 +41,18 @@ Interface agradável e acessível, configuração simples, dados sob controle do
 
 ## Desenvolvimento local
 
-Requisitos: Node.js 24 (veja `.nvmrc`) e pnpm 12.4.2. No WSL:
+Requisitos: Bun 1.4.4 (veja `packageManager` em `package.json`):
 
 ```bash
-nvm use
-corepack enable
-pnpm install --frozen-lockfile
-pnpm dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
 A autenticação usa `/login` e retorna à rota local solicitada após a entrada. O painel fica em `/`; o gerenciamento usa `/manage/services`, `/manage/integrations`, `/manage/agents` e `/manage/settings`, com navegação pelo histórico do navegador. Os formulários de serviço usam `/manage/services/new` e `/manage/services/:id/edit`; rotas desconhecidas mostram uma página de erro. Em hospedagem própria da interface, configure o servidor para retornar `index.html` nessas rotas.
 
-Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. `pnpm dev` usa o banco isolado `data/homora-dev.sqlite`, criado com serviços fictícios na primeira execução. Alterações persistem entre reinícios e serviços removidos não são recriados. Os endereços são ilustrativos, sem autorização de monitoramento privado. O primeiro acesso exige criar a conta de administrador. Fora do desenvolvimento, o banco padrão é `data/homora.sqlite` e pode ser configurado por `HOMORA_DATABASE_PATH`; essa variável não altera o banco isolado de `pnpm dev`. Para encerrar, use Ctrl+C.
+Abra <http://localhost:5173>. O Vite encaminha `/api` para o backend Fastify local na porta 3000. `bun run dev` usa o banco isolado `data/homora-dev.sqlite`, criado com serviços fictícios na primeira execução. Alterações persistem entre reinícios e serviços removidos não são recriados. Os endereços são ilustrativos, sem autorização de monitoramento privado. O primeiro acesso exige criar a conta de administrador. Fora do desenvolvimento, o banco padrão é `data/homora.sqlite` e pode ser configurado por `HOMORA_DATABASE_PATH`; essa variável não altera o banco isolado de `bun run dev`. Para encerrar, use Ctrl+C.
 
-O monorepo usa pnpm e Turborepo, com React, Vite, Tailwind CSS e shadcn/ui no frontend, Node.js e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `pnpm build`, `pnpm type-check` e `pnpm test` para verificar o projeto. `pnpm db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
+O monorepo usa workspaces do Bun e Turborepo, com React, Vite, Tailwind CSS e shadcn/ui no frontend, Bun e TypeScript no backend, contratos compartilhados e Drizzle ORM com SQLite. Execute `bun run build`, `bun run type-check` e `bun run test` para verificar o projeto. `bun run db:generate` gera migrações a partir do esquema Drizzle. Na inicialização, as migrações são aplicadas em uma transação; bancos anteriores são adotados somente quando o esquema é compatível. Faça backup do banco antes de atualizar o projeto.
 
 Esta versão permite cadastrar serviços, criar uma conta de administrador local e configurar integrações de leitura em caráter experimental. Veja os serviços, requisitos e limites em [integrações](docs/integracoes.md). O MCP local permite consultas autorizadas e propostas de alteração de cards, sempre sujeitas à revisão humana. O Docker Compose está em fase inicial de validação. A aplicação é configurada para acesso local e não deve ser exposta na rede.
 
@@ -79,10 +77,10 @@ Em **Configurações** você baixa grupos, cards e a ordem deles em YAML ou JSON
 
 ## Qualidade e commits
 
-- `pnpm check`: ESLint, Prettier, tipos e testes.
-- `pnpm test`, `pnpm test:watch` e `pnpm test:coverage`: Vitest.
-- `pnpm lint`, `pnpm lint:fix`, `pnpm format` e `pnpm format:check`: análise e formatação.
-- O Husky executa lint-staged no pre-commit e Commitlint no commit-msg. Use mensagens como `feat: adiciona integração`. Os hooks são instalados pelo `pnpm install`; para reinstalá-los, execute `pnpm exec husky`.
+- `bun run check`: ESLint, Prettier, tipos e testes.
+- `bun run test`, `bun run test:watch` e `bun run test:coverage`: Vitest.
+- `bun run lint`, `bun run lint:fix`, `bun run format` e `bun run format:check`: análise e formatação.
+- O Husky executa lint-staged no pre-commit e Commitlint no commit-msg. Use mensagens como `feat: adiciona integração`. Os hooks são instalados pelo `bun run install`; para reinstalá-los, execute `bun run exec husky`.
 
 Migrações geradas e arquivos de skills vendorizadas são excluídos das verificações globais de formatação e lint.
 
@@ -91,10 +89,10 @@ Migrações geradas e arquivos de skills vendorizadas são excluídos das verifi
 Crie uma cópia consistente do banco (não sobrescreve arquivos existentes):
 
 ```bash
-pnpm backup data/homora.sqlite backups/homora.sqlite
+bun run backup data/homora.sqlite backups/homora.sqlite
 ```
 
-Guarde o arquivo em um local protegido. Para restaurar, pare o Homora, preserve o banco atual e use o backup como origem de um novo arquivo; por exemplo: `pnpm backup backups/homora.sqlite data/restaurado.sqlite`. Aponte `HOMORA_DATABASE_PATH` para esse arquivo e reinicie o Homora. Verifique os dados antes de remover qualquer cópia anterior. Este backup contém o banco, que inclui a conta de administrador e as sessões. As conexões incluem credenciais cifradas no banco; a chave de cifragem fica no arquivo `.key` ao lado dele, e a integração Proxmox original usa também `.proxmox`. Copie esses arquivos existentes separadamente em um backup protegido e restaure-os com os mesmos nomes derivados do caminho do banco. A chave e o conteúdo cifrado juntos permitem recuperar credenciais. Sem a chave, as credenciais precisarão ser configuradas novamente. Um arquivo `.auth` deixado por versões anteriores não é mais lido e pode ser apagado.
+Guarde o arquivo em um local protegido. Para restaurar, pare o Homora, preserve o banco atual e use o backup como origem de um novo arquivo; por exemplo: `bun run backup backups/homora.sqlite data/restaurado.sqlite`. Aponte `HOMORA_DATABASE_PATH` para esse arquivo e reinicie o Homora. Verifique os dados antes de remover qualquer cópia anterior. Este backup contém o banco, que inclui a conta de administrador e as sessões. As conexões incluem credenciais cifradas no banco; a chave de cifragem fica no arquivo `.key` ao lado dele, e a integração Proxmox original usa também `.proxmox`. Copie esses arquivos existentes separadamente em um backup protegido e restaure-os com os mesmos nomes derivados do caminho do banco. A chave e o conteúdo cifrado juntos permitem recuperar credenciais. Sem a chave, as credenciais precisarão ser configuradas novamente. Um arquivo `.auth` deixado por versões anteriores não é mais lido e pode ser apagado.
 
 ## Atualização e recuperação
 
@@ -117,7 +115,7 @@ em uma cópia de trabalho antes de retomar o serviço.
 ## Sessões, redefinição de senha e rotação de segredos
 
 - **Sessões** ficam no banco por oito horas e sobrevivem a um reinício do backend. O cookie (`homora.session_token`) é `HttpOnly`, `SameSite=Strict` e, ao entrar por uma origem HTTPS, `Secure`. Ele é assinado com um segredo guardado em `<banco>.session-secret` (criado automaticamente, modo 0600) ou vindo de `HOMORA_SESSION_SECRET` (mínimo de 32 caracteres). Trocar ou perder esse segredo apenas encerra as sessões. Requisições que alteram estado só são aceitas de uma origem permitida. Dez tentativas de login de um mesmo endereço em 15 minutos bloqueiam esse endereço até o fim da janela (o contador fica em memória e zera ao reiniciar).
-- **Esqueceu a senha:** execute `pnpm auth:reset` para ver a conta e `pnpm auth:reset --yes` para remover a conta e todas as sessões (com Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`). Abra o Homora para criar uma nova conta; cards e conexões cifradas são mantidos. Até a primeira conta ser criada, qualquer pessoa que alcance a interface por uma origem permitida pode reivindicá-la; faça isso em rede privada.
+- **Esqueceu a senha:** execute `bun run auth:reset` para ver a conta e `bun run auth:reset --yes` para remover a conta e todas as sessões (com Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`). Abra o Homora para criar uma nova conta; cards e conexões cifradas são mantidos. Até a primeira conta ser criada, qualquer pessoa que alcance a interface por uma origem permitida pode reivindicá-la; faça isso em rede privada.
 - **Rotação de segredos de conexões:** a rotação da própria chave de cifragem não é suportada, e remover `<banco>.key` com conexões cifradas as torna ilegíveis (o Homora não cria uma chave nova por cima delas). Na prática, crie um novo token na origem (Proxmox, Home Assistant etc.), informe-o de novo na conexão em Integrações e então revogue o token antigo. Tokens de agentes podem ser trocados na página Agentes ("Gerar novo token") ou revogados.
 - Trate o banco, `.key` e os backups como um único conjunto secreto: quem tem a chave e o banco lê as credenciais guardadas.
 
@@ -225,7 +223,7 @@ A página Agentes mostra o tempo restante de cada proposta. O prazo de revisão 
 
 O Homora oferece MCP local via stdio e Streamable HTTP sem sessão. Na página **Agentes**, crie um agente e use **Conectar** para obter os dados. Para HTTP, configure a URL `http://localhost:8080/mcp` (em desenvolvimento, `http://localhost:5173/mcp`) e o cabeçalho `Authorization: Bearer <token-do-agente>`. O token e seus escopos são verificados em cada requisição; revogação e rotação têm efeito imediato. Para acesso de outra máquina, use o proxy HTTPS de rede privada documentado e configure sua origem em `HOMORA_ALLOWED_ORIGINS`. Não exponha o Homora à internet pública. Proteja o token como uma senha. Os dois transportes mantêm as mesmas permissões e revisão humana das propostas.
 
-Após `pnpm build`, configure um cliente MCP confiável para executar `node /caminho/absoluto/homora/apps/backend/dist/mcp-server.js` via stdio. Crie uma identidade na página **Agentes** e passe o token exibido uma vez em `HOMORA_AGENT_TOKEN`. Configure `HOMORA_DATABASE_PATH` com o **mesmo caminho absoluto do banco** usado pelo Homora; `pnpm dev` usa `data/homora-dev.sqlite`, enquanto o padrão normal é `data/homora.sqlite`. O processo precisa ler o arquivo `.key` desse caminho. A configuração Proxmox antiga é migrada quando o backend inicia, portanto inicie o backend ao menos uma vez antes de usar o MCP stdio com dados do Proxmox; o MCP nunca lê o `.proxmox` diretamente. Com Docker, o processo precisa acessar o mesmo volume; um banco diferente no host é outra instância.
+Após `bun run build`, configure um cliente MCP confiável para executar `node /caminho/absoluto/homora/apps/backend/dist/mcp-server.js` via stdio. Crie uma identidade na página **Agentes** e passe o token exibido uma vez em `HOMORA_AGENT_TOKEN`. Configure `HOMORA_DATABASE_PATH` com o **mesmo caminho absoluto do banco** usado pelo Homora; `bun run dev` usa `data/homora-dev.sqlite`, enquanto o padrão normal é `data/homora.sqlite`. O processo precisa ler o arquivo `.key` desse caminho. A configuração Proxmox antiga é migrada quando o backend inicia, portanto inicie o backend ao menos uma vez antes de usar o MCP stdio com dados do Proxmox; o MCP nunca lê o `.proxmox` diretamente. Com Docker, o processo precisa acessar o mesmo volume; um banco diferente no host é outra instância.
 
 | Escopo                                     | Ferramentas                                                                                       |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------- |

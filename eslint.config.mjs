@@ -17,6 +17,7 @@ export default tseslint.config(
       '.github/skills/**',
       '.impeccable/**',
       '.turbo/**',
+      'packages/db/src/migrations.generated.ts',
       '.idea/**',
       'packages/db/migrations/**',
       'coverage/**',

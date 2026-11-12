@@ -1,9 +1,0 @@
-packages:
-  - 'apps/*'
-  - 'packages/*'
-allowBuilds:
-  esbuild: true
-# better-auth declares optional peers (drizzle-orm, kysely). Without this, pnpm installs a second
-# drizzle-orm copy for the backend and its SQL types stop matching those of @homora/db.
-dedupePeers: true
-autoInstallPeers: false

@@ -23,7 +23,7 @@ client address resolved by Fastify, honoring `HOMORA_TRUST_PROXY`. Cookies are
 HttpOnly and SameSite=Strict; Secure follows the request origin. Only
 `sign-in/email`, `sign-out` and `get-session` are exposed from Better Auth.
 Homora's authenticated routes manage the account, password and sessions.
-Recover an account locally with `pnpm auth:reset`.
+Recover an account locally with `bun run auth:reset`.
 
 ## Alternatives and consequences
 

@@ -38,10 +38,10 @@ not necessarily the existing implementation.
   contracts and validation. `scripts/` contains backup utilities and tests.
 - Consult [engineering standards](docs/padroes.md) for module boundaries,
   validation, persistence, tests, and recording architectural decisions.
-- Use the Node version specified in `.nvmrc` and the pnpm version in `package.json`.
+- Use the Bun version in `package.json` (`packageManager`).
   See the README for local installation and execution.
-- Available checks: `pnpm check` (lint, formatting, types, and tests) and
-  `pnpm build`. For smaller changes, run the relevant specific tests as well.
+- Available checks: `bun run check` (lint, formatting, types, and tests) and
+  `bun run build`. For smaller changes, run the relevant specific tests as well.
   If dependencies or environment prevent execution, report it.
 - Schema changes require a compatible migration and validation of data
   preservation. Do not delete existing databases or backups for testing; use

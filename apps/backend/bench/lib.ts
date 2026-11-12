@@ -192,11 +192,20 @@ export async function startServer(options: {
 }): Promise<ServerHandle> {
   const dist = join(backendDir, 'dist', 'server.js');
   const mode = existsSync(dist) ? 'dist' : 'tsx';
+  // HOMORA_BENCH_RUNTIME=node|bun picks the server runtime; default is the one running the bench.
+  const requested = process.env.HOMORA_BENCH_RUNTIME;
+  const executable = requested ?? process.execPath;
+  const isBun = requested ? requested === 'bun' : !!process.versions.bun;
+  // V8 flags (heap cap) do not exist in Bun; the RSS guard in run.ts still applies.
   const args = [
-    ...(options.nodeArgs ?? []),
-    ...(mode === 'dist' ? [dist] : ['--import', 'tsx', join(backendDir, 'src', 'server.ts')]),
+    ...(isBun ? [] : (options.nodeArgs ?? [])),
+    ...(mode === 'dist'
+      ? [dist]
+      : isBun
+        ? [join(backendDir, 'src', 'server.ts')]
+        : ['--import', 'tsx', join(backendDir, 'src', 'server.ts')]),
   ];
-  const child: ChildProcess = spawn(process.execPath, args, {
+  const child: ChildProcess = spawn(executable, args, {
     cwd: backendDir,
     env: {
       ...process.env,

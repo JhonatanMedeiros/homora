@@ -10,9 +10,10 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "embed-migrations": "bun scripts/embed-migrations.mjs",
+    "build": "bun scripts/embed-migrations.mjs && tsc -p tsconfig.json",
     "type-check": "tsc -p tsconfig.json --noEmit",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate && bun scripts/embed-migrations.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.4"
