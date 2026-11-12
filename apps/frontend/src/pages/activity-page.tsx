@@ -119,6 +119,7 @@ export function ActivityPage() {
           )}
         </>
       )}
+      <p className="text-sm text-muted-foreground">{t('activity.retention')}</p>
     </section>
   );
 }
