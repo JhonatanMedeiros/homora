@@ -296,8 +296,9 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
 
 ### Coolify
 
-Read-only, with resource inventory, card links and reviewed discovery (issue #102). **Implemented,
-unvalidated** until the live checklist below is filled in against a real instance.
+Read-only, with resource inventory, card links and reviewed discovery (issue #102). **Partly
+validated** against a live instance (see the record at the end of this section); the items not
+covered there remain unvalidated.
 
 - **Reads:** `GET /api/v1/resources` (applications and services; databases and other types are
   ignored) and `GET /api/v1/applications` (only the `fqdn` field, for addresses), with
@@ -351,12 +352,29 @@ unvalidated** until the live checklist below is filled in against a real instanc
   list with a limited token usually means the token's scope excludes the resources. "Connection
   failed": check the address, HTTPS and the private-network option from the Homora backend (inside a
   container `localhost` is the container itself).
-- **Live validation checklist (fill in before calling it validated):** the Coolify version and the
-  token scope tried; `/resources` answers to a `read`-only limited token; an application, a service and
-  a resource without a web address all appear correctly; `fqdn` format with several domains (comma
-  separated?); `status` values seen (`running:healthy`, others); `/applications` works with `read` only;
-  a revoked token gives the generic message and the pause works; no credential shows in the UI, logs or
-  API responses.
+- **Live validation record (2026-11-12, maintainer, Coolify v4.7.5, Homora branch of PR #115):**
+
+  ```text
+  Integration: Coolify     Service version: v4.7.5     Date: 2026-11-12
+  Validated by: maintainer (manual run in a local development instance)
+  - [x] Connection saved with a read-only credential (a `read`-only team token)
+  - [x] Widget shows the expected values (6 resources, 6 running)
+  - [x] Wrong credential gives a generic error (invalid token tried; pause behaved as designed)
+  - [ ] Unreachable host gives a generic error (not tried)
+  - [ ] Private or public destination policy behaved as documented (a LAN address was used; not
+        otherwise exercised)
+  - [x] No credential visible in the UI (not inspected in logs or API responses)
+  Also seen working: inventory with addresses, applications without an address, several domains on
+  one application (it appeared to work; the exact `fqdn` separator was not inspected), link and
+  discovery review dialogs.
+  Not covered: a token limited to selected resources (the token was the team token, believed to be
+  unrestricted), a service without an address in detail, `/applications` with a token that lacks it,
+  environments with several teams, and the 429 path against the real server.
+  Notes / deviations: the review dialog's list did not scroll (fixed in 7a9d1a9).
+  ```
+
+  Still to confirm: the behavior of a **limited** token (the issue requires it to work without
+  team-level permissions), and the `status` strings other than the running state.
 
 ### Skipped (follow-up issues)
 
@@ -373,20 +391,20 @@ widening the transport, so they were not implemented (decision recorded in
 
 ## Integration status
 
-| Integration       | Kind     | Status                                                 | Needs                                |
-| ----------------- | -------- | ------------------------------------------------------ | ------------------------------------ |
-| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope  | Read-only API token, HTTPS           |
-| Jellyfin          | manifest | Implemented, unvalidated                               | Public info endpoint, no credentials |
-| Home Assistant    | manifest | Implemented, unvalidated                               | Long-lived token, HTTPS              |
-| Uptime Kuma       | manifest | Implemented, unvalidated                               | A published status page              |
-| AdGuard Home      | manifest | Implemented, unvalidated                               | Basic auth user, HTTPS               |
-| Speedtest Tracker | manifest | Implemented, unvalidated                               | Token with Read Results, HTTPS       |
-| Portainer         | manifest | Implemented, unvalidated                               | Access token, HTTPS                  |
-| NetBird           | manifest | Implemented, unvalidated                               | Personal access token, HTTPS         |
-| Tailscale         | manifest | Implemented, unvalidated                               | API access token, HTTPS              |
-| Cloudflare        | manifest | Implemented, unvalidated                               | Token with Zone Read, HTTPS          |
-| Coolify           | code     | Implemented, unvalidated (inventory, links, discovery) | Token with `read` only, HTTPS        |
-| Beszel, TrueNAS   | —        | Skipped (see above)                                    | —                                    |
+| Integration       | Kind     | Status                                                   | Needs                                |
+| ----------------- | -------- | -------------------------------------------------------- | ------------------------------------ |
+| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope    | Read-only API token, HTTPS           |
+| Jellyfin          | manifest | Implemented, unvalidated                                 | Public info endpoint, no credentials |
+| Home Assistant    | manifest | Implemented, unvalidated                                 | Long-lived token, HTTPS              |
+| Uptime Kuma       | manifest | Implemented, unvalidated                                 | A published status page              |
+| AdGuard Home      | manifest | Implemented, unvalidated                                 | Basic auth user, HTTPS               |
+| Speedtest Tracker | manifest | Implemented, unvalidated                                 | Token with Read Results, HTTPS       |
+| Portainer         | manifest | Implemented, unvalidated                                 | Access token, HTTPS                  |
+| NetBird           | manifest | Implemented, unvalidated                                 | Personal access token, HTTPS         |
+| Tailscale         | manifest | Implemented, unvalidated                                 | API access token, HTTPS              |
+| Cloudflare        | manifest | Implemented, unvalidated                                 | Token with Zone Read, HTTPS          |
+| Coolify           | code     | Partly validated on v4.7.5 (inventory, links, discovery) | Token with `read` only, HTTPS        |
+| Beszel, TrueNAS   | —        | Skipped (see above)                                      | —                                    |
 
 "Unvalidated" means no one has tried it against a live service yet. Adding one is documented in
 [adapters](adapters.md); the manifest vocabulary and its limits are in
