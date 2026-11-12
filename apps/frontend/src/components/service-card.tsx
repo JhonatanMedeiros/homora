@@ -119,7 +119,7 @@ function HostLine({ host, impact }: { host: HostLabel; impact: Impact }) {
 /** Stable id for "go to card"; `data-highlight` is set for a moment by the command palette. */
 const SERVICE_LI =
   'group/service flex min-w-0 self-start scroll-mt-24 rounded-lg data-[highlight=true]:ring-2 data-[highlight=true]:ring-primary data-[highlight=true]:ring-offset-2 data-[highlight=true]:ring-offset-background';
-const SERVICE_CARD_LI = `${SERVICE_LI} mb-3 break-inside-avoid-column`;
+const SERVICE_CARD_LI = `${SERVICE_LI} mb-3 w-full break-inside-avoid-column`;
 
 export function ServiceCard({
   service: s,
