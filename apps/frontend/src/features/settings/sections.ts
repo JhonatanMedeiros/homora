@@ -4,23 +4,56 @@ import {
   Bell,
   Download,
   Globe,
-  PanelTop,
+  Home,
+  Keyboard,
+  Palette,
   ScanSearch,
   type LucideIcon,
 } from 'lucide-react';
 
+export type SettingsSection = (typeof settingsSections)[number]['id'];
+
+/** Sidebar groups: what the person tweaks about their own view, then how the system behaves. */
+export const settingsGroups: { title: MessageKey; sections: SettingsSection[] }[] = [
+  { title: 'settings.group.personal', sections: ['appearance', 'home', 'topbar'] },
+  {
+    title: 'settings.group.system',
+    sections: ['notifications', 'monitoring', 'public', 'backup', 'discovery'],
+  },
+];
+
 /** Subpages of Settings. Each one is a route of its own so it can be linked and reached from the palette. */
 export const settingsSections: {
-  id: 'interface' | 'monitoring' | 'public' | 'backup' | 'discovery' | 'notifications';
+  id:
+    | 'appearance'
+    | 'home'
+    | 'topbar'
+    | 'monitoring'
+    | 'public'
+    | 'backup'
+    | 'discovery'
+    | 'notifications';
   icon: LucideIcon;
   title: MessageKey;
   description: MessageKey;
 }[] = [
   {
-    id: 'interface',
-    icon: PanelTop,
-    title: 'settings.section.interface',
-    description: 'settings.section.interfaceHint',
+    id: 'appearance',
+    icon: Palette,
+    title: 'settings.section.appearance',
+    description: 'settings.section.appearanceHint',
+  },
+  {
+    id: 'home',
+    icon: Home,
+    title: 'settings.section.home',
+    description: 'settings.section.homeHint',
+  },
+  {
+    id: 'topbar',
+    icon: Keyboard,
+    title: 'settings.section.topbar',
+    description: 'settings.section.topbarHint',
   },
   {
     id: 'notifications',
@@ -53,8 +86,6 @@ export const settingsSections: {
     description: 'settings.section.discoveryHint',
   },
 ];
-
-export type SettingsSection = (typeof settingsSections)[number]['id'];
 
 export const isSettingsSection = (value: string | undefined): value is SettingsSection =>
   settingsSections.some((section) => section.id === value);

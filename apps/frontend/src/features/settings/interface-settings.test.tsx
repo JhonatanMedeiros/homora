@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { InterfaceSettings } from './interface-settings';
+import { HomeSettings, TopBarSettings } from './interface-settings';
 import { setLocale } from '@/i18n';
 import { chooseSelectOption } from '@/test-select';
 
@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 it('keeps the clock options hidden until the top bar is on', () => {
-  render(<InterfaceSettings />);
+  render(<TopBarSettings />);
   expect(screen.queryByLabelText('Show seconds')).toBeNull();
   fireEvent.click(screen.getByRole('switch', { name: /Show the top bar/ }));
   expect(localStorage.getItem('homora-top-bar')).toBe('on');
@@ -33,7 +33,7 @@ it(
   { timeout: 20_000 },
   async () => {
     localStorage.setItem('homora-top-bar', 'on');
-    render(<InterfaceSettings />);
+    render(<TopBarSettings />);
     fireEvent.click(screen.getByRole('radio', { name: '24 h', checked: false }));
     fireEvent.click(screen.getByRole('switch', { name: 'Show seconds' }));
     await chooseSelectOption('Time zone', 'UTC');
@@ -44,7 +44,7 @@ it(
 );
 
 it('saves the home layout and only allows descriptions in cards', () => {
-  render(<InterfaceSettings />);
+  render(<HomeSettings />);
   const descriptions = screen.getByRole('switch', { name: 'Descriptions' });
   expect(descriptions.hasAttribute('disabled')).toBe(true);
   fireEvent.click(screen.getByRole('radio', { name: 'Cards' }));
@@ -53,7 +53,7 @@ it('saves the home layout and only allows descriptions in cards', () => {
 });
 
 it('turns the single-key shortcuts off and on, on by default', () => {
-  render(<InterfaceSettings />);
+  render(<TopBarSettings />);
   const toggle = screen.getByRole('switch', { name: 'Keyboard shortcuts' });
   expect(toggle.getAttribute('aria-checked')).toBe('true');
   fireEvent.click(toggle);
@@ -62,7 +62,7 @@ it('turns the single-key shortcuts off and on, on by default', () => {
 });
 
 it('keeps web search off by default and warns that the text goes to a third party', async () => {
-  render(<InterfaceSettings />);
+  render(<TopBarSettings />);
   const toggle = screen.getByRole('switch', { name: 'Web search' });
   expect(toggle.getAttribute('aria-checked')).toBe('false');
   expect(
@@ -78,7 +78,7 @@ it('keeps web search off by default and warns that the text goes to a third part
 it('validates the custom search URL before saving it', () => {
   localStorage.setItem('homora-web-search', 'on');
   localStorage.setItem('homora-web-search-engine', 'custom');
-  render(<InterfaceSettings />);
+  render(<TopBarSettings />);
   const field = screen.getByLabelText('Custom search URL');
   fireEvent.change(field, { target: { value: 'https://example.com/?q=' } });
   expect(screen.getByText('The URL must contain %s where the search text goes.')).toBeTruthy();

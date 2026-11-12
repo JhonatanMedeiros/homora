@@ -11,7 +11,7 @@ export const en = {
   'settings.copy': 'Copy',
   'settings.copied': 'Copied',
   'settings.ui.browserOnly': 'Saved in this browser only. Other devices keep their own choices.',
-  'settings.ui.appearance': 'Appearance',
+  'settings.ui.appearance': 'This browser',
   'settings.ui.theme': 'Theme',
   'settings.ui.themeHint': 'Dark is the default; light is a complete theme too.',
   'settings.ui.light': 'Light',
@@ -145,7 +145,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.copied': 'Copiado',
   'settings.ui.browserOnly':
     'Salvo apenas neste navegador. Cada dispositivo mantém as próprias escolhas.',
-  'settings.ui.appearance': 'Aparência',
+  'settings.ui.appearance': 'Neste navegador',
   'settings.ui.theme': 'Tema',
   'settings.ui.themeHint': 'O escuro é o padrão; o claro também é um tema completo.',
   'settings.ui.light': 'Claro',

@@ -1260,3 +1260,7 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 ## Map: floating details (2026-11-12)
 
 - Opening the details no longer reserves space or shifts the map: the panel floats over the canvas at the top right (a bottom sheet on narrow windows), sized to its content with a larger shadow. Not verified in a real browser.
+
+## Settings reorganization
+
+- The long Interface page was split into three: **Appearance** (theme, language, accent, background, custom CSS), **Home and pages** (layout, descriptions, uptime, pages) and **Top bar and shortcuts** (top bar, clock, search, keyboard). The sidebar groups them as Personalize and System and shows only titles on wide screens; descriptions remain on phones. The `/manage/settings/interface` route no longer exists (it was never linked outside the app).
