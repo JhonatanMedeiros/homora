@@ -2,28 +2,27 @@
   "name": "homora",
   "private": true,
   "license": "MIT",
-  "packageManager": "pnpm@12.4.2",
+  "packageManager": "bun@1.4.4",
   "engines": {
-    "node": "^24.0.0",
-    "pnpm": ">=12.4.2 <13"
+    "bun": ">=1.4.4 <2"
   },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
     "type-check": "turbo type-check",
-    "test": "vitest run && node --test scripts/test/*.test.mjs",
-    "db:generate": "pnpm --filter @homora/db db:generate",
+    "test": "bun --bun vitest run && bun test scripts/test",
+    "db:generate": "bun run --filter @homora/db db:generate",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "node scripts/check.mjs",
+    "check": "bun scripts/check.mjs",
     "prepare": "husky",
-    "backup": "node scripts/backup.mjs",
-    "auth:reset": "node scripts/auth-reset.mjs",
-    "css:reset": "node scripts/css-reset.mjs"
+    "backup": "bun scripts/backup.mjs",
+    "auth:reset": "bun scripts/auth-reset.mjs",
+    "css:reset": "bun scripts/css-reset.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
@@ -54,5 +53,12 @@
     ],
     "*.{json,md,html,css,yml,yaml}": "prettier --write"
   },
-  "type": "module"
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "trustedDependencies": [
+    "esbuild"
+  ]
 }

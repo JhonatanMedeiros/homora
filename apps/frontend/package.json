@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "dev": "bun --bun vite --host 127.0.0.1",
+    "build": "tsc --noEmit && bun --bun vite build",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

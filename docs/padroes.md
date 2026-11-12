@@ -133,7 +133,7 @@ are documented in [architecture](arquitetura.md).
   Do not depend on live networks or external infrastructure in standard test suites.
 - When modifying authorization, contracts, persistence, integrations, or security,
   include negative and failure test cases alongside happy paths.
-- Execute checks commensurate with the scope of changes (`pnpm check` and `pnpm build`
+- Execute checks commensurate with the scope of changes (`bun run check` and `bun run build`
   for broad changes; targeted unit tests for isolated edits) and report exact test results.
 - Keep documentation up to date: README for setup/usage; architecture for boundaries
   and designs; evolution plan for validated progress; this document when conventions evolve.

@@ -10,18 +10,16 @@ Adding an integration? Read [docs/adapters.md](docs/adapters.md). Follow the [en
 [architecture](docs/arquitetura.md) before making changes across modules,
 persistence, or integrations.
 
-Use Node.js 24 (`.nvmrc`) and pnpm 12.4.2 (`packageManager`):
+Use Bun 1.4.4 (`packageManager`):
 
 ```sh
-nvm use
-corepack enable
-pnpm install --frozen-lockfile
-pnpm check
-pnpm build
+bun install --frozen-lockfile
+bun run check
+bun run build
 ```
 
 For local development, copy `.env.example` to `.env` if you need to customize
-ports or database path, then run `pnpm dev`. Backup tests use temporary files;
+ports or database path, then run `bun run dev`. Backup tests use temporary files;
 do not use personal data or production databases in tests.
 
 ## Submitting Changes

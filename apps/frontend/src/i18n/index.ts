@@ -26,7 +26,7 @@ function detectLocale(): Locale {
   } catch {
     // No storage available: follow the browser language.
   }
-  const preferred = typeof navigator === 'undefined' ? '' : navigator.language;
+  const preferred = typeof navigator === 'undefined' ? '' : (navigator.language ?? '');
   return preferred.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en';
 }
 

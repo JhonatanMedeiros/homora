@@ -21,7 +21,7 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - An optional top bar (turn it on in Settings → Top bar and shortcuts) with the date, the time and CPU, memory and disk usage from a selected Proxmox connection. The clock can show seconds, use a 12 or 24 hour format and follow another time zone. Appearance and Home and pages hold the theme, language and home page layout; all of it is saved in the browser only.
 - Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare) and an MCP server (local stdio or Streamable HTTP) where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
 
-- Personalization: accent color, gradients, card translucency, an optional background image and custom CSS (Settings → Appearance), shared by every device. If custom CSS makes the interface unusable, open any page with `?safe=1` or run `pnpm css:reset` (with Compose: `docker compose exec backend node scripts/css-reset.mjs`) to turn it off without losing the text. The background image is processed on the server and is stored next to the database as `<database>.background`.
+- Personalization: accent color, gradients, card translucency, an optional background image and custom CSS (Settings → Appearance), shared by every device. If custom CSS makes the interface unusable, open any page with `?safe=1` or run `bun run css:reset` (with Compose: `docker compose exec backend node scripts/css-reset.mjs`) to turn it off without losing the text. The background image is processed on the server and is stored next to the database as `<database>.background`.
 - Pages: group your cards into tabs on the Home (Settings → Home and pages); keys `1` to `9` switch pages.
 
 Not available yet: OIDC or multi-user access, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md).
@@ -103,10 +103,10 @@ Icons from other dashboards are kept only when Homora has an equivalent (an imag
 Create a consistent copy of the database (existing files are never overwritten):
 
 ```bash
-pnpm backup data/homora.sqlite backups/homora.sqlite
+bun run backup data/homora.sqlite backups/homora.sqlite
 ```
 
-The database holds your cards, the administrator account (and its sessions) and encrypted connection credentials, so a database backup already includes the account. The encryption key lives in a `.key` file next to the database, and the original Proxmox integration also uses `.proxmox`. Copy those separately into a protected backup and restore them with the same derived names. Without the key you must configure credentials again. A `.auth` file left by earlier versions is no longer read and can be deleted. To restore, stop Homora, keep the current database and use the backup as the source of a new file, for example `pnpm backup backups/homora.sqlite data/restored.sqlite`. Point `HOMORA_DATABASE_PATH` at it and restart.
+The database holds your cards, the administrator account (and its sessions) and encrypted connection credentials, so a database backup already includes the account. The encryption key lives in a `.key` file next to the database, and the original Proxmox integration also uses `.proxmox`. Copy those separately into a protected backup and restore them with the same derived names. Without the key you must configure credentials again. A `.auth` file left by earlier versions is no longer read and can be deleted. To restore, stop Homora, keep the current database and use the backup as the source of a new file, for example `bun run backup backups/homora.sqlite data/restored.sqlite`. Point `HOMORA_DATABASE_PATH` at it and restart.
 
 With Docker Compose, use a new protected directory on the host (the commands do not overwrite backups):
 
@@ -118,12 +118,12 @@ docker compose cp backend:/app/data/homora.sqlite.key backups/backup-2026-11-10/
 docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11-10/homora.sqlite.proxmox
 ```
 
-`.proxmox` and `.background` (the background image) may not exist on every installation; skip the copy if a file is missing. `pnpm backup` already copies `.background` next to the database copy. With Compose, copy `homora.sqlite.background` the same way. Keep the key as protected as the database, and do a test restore before relying on a backup.
+`.proxmox` and `.background` (the background image) may not exist on every installation; skip the copy if a file is missing. `bun run backup` already copies `.background` next to the database copy. With Compose, copy `homora.sqlite.background` the same way. Keep the key as protected as the database, and do a test restore before relying on a backup.
 
 ## Sessions, password reset and secret rotation
 
 - **Sessions** are stored in the database and last eight hours; they survive a backend restart. The cookie (`homora.session_token`) is `HttpOnly`, `SameSite=Strict` and, when you sign in from an HTTPS origin, `Secure`. It is signed with a secret kept in `<database>.session-secret` (created automatically, mode 0600) or taken from `HOMORA_SESSION_SECRET` (at least 32 characters). Changing or losing that secret only signs everyone out. State-changing requests are accepted only from an allowed origin. Ten sign-in attempts from one client address in 15 minutes block that address until the window ends (the counter is in memory and resets on restart).
-- **Forgot the password:** run `pnpm auth:reset` to see the account, then `pnpm auth:reset --yes` to remove the account and every session (with Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`). Open Homora to create a new account; cards and encrypted connections are kept. Until the first account is created, anyone who can reach the interface from an allowed origin can claim it, so do this on a private network.
+- **Forgot the password:** run `bun run auth:reset` to see the account, then `bun run auth:reset --yes` to remove the account and every session (with Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`). Open Homora to create a new account; cards and encrypted connections are kept. Until the first account is created, anyone who can reach the interface from an allowed origin can claim it, so do this on a private network.
 - **Rotating connection secrets:** rotating the encryption key itself is not supported, and removing `<database>.key` while encrypted connections exist makes them unreadable (Homora will not create a new key over them). To rotate what matters in practice, create a new token at the source (Proxmox, Home Assistant, and so on), enter it again on the connection in Integrations, then revoke the old token. Agent tokens can be replaced in the Agents page ("Generate new token") or revoked. Revoked agents remain available in a collapsed section for reference; the main list and count show active agents.
 - Treat the database, `.key` and backups as one secret set: anyone holding the key and the database can read the stored credentials.
 
@@ -231,7 +231,7 @@ Homora supports local stdio and stateless Streamable HTTP. Both use the same age
 
 For HTTP, point a compatible client at `http://localhost:8080/mcp` with `Authorization: Bearer <agent-token>` (development: `http://localhost:5173/mcp`). The backend authenticates every request; revocation and rotation take effect immediately. The endpoint accepts the configured web hosts and origins from `HOMORA_ALLOWED_ORIGINS` and limits requests per client. For another machine, use the documented private-network HTTPS reverse proxy and its allowed HTTPS origin. Do not expose Homora publicly. Client configuration formats differ; the interface provides the URL and header. Protect the token as a password.
 
-For stdio, after `pnpm build`, configure a trusted MCP client to run `node /absolute/path/to/homora/apps/backend/dist/mcp-server.js` over stdio. Create an agent on the **Agents** page and pass its one-time token as `HOMORA_AGENT_TOKEN`; the **Connect** button there shows ready-to-copy setup for Claude Code, Codex, Claude Desktop, Cursor, VS Code, and generic JSON. Set `HOMORA_DATABASE_PATH` to the **same absolute database path** used by Homora; `pnpm dev` uses `data/homora-dev.sqlite`, whereas the normal default is `data/homora.sqlite`. The MCP process needs the matching `.key` file. A legacy Proxmox configuration is migrated when the backend starts, so start the backend at least once before relying on the stdio MCP for Proxmox data; the MCP never reads `.proxmox` directly. With Docker, it needs access to the same volume; a host-side process with a different database is a different instance.
+For stdio, after `bun run build`, configure a trusted MCP client to run `bun /absolute/path/to/homora/apps/backend/dist/mcp-server.js` over stdio. Create an agent on the **Agents** page and pass its one-time token as `HOMORA_AGENT_TOKEN`; the **Connect** button there shows ready-to-copy setup for Claude Code, Codex, Claude Desktop, Cursor, VS Code, and generic JSON. Set `HOMORA_DATABASE_PATH` to the **same absolute database path** used by Homora; `bun run dev` uses `data/homora-dev.sqlite`, whereas the normal default is `data/homora.sqlite`. The MCP process needs the matching `.key` file. A legacy Proxmox configuration is migrated when the backend starts, so start the backend at least once before relying on the stdio MCP for Proxmox data; the MCP never reads `.proxmox` directly. With Docker, it needs access to the same volume; a host-side process with a different database is a different instance.
 
 | Scope                                      | Tools                                                                                    |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -260,20 +260,18 @@ The stdio MCP process reads the local database and vault directly. Neither trans
 
 ## Development
 
-Requirements: Node.js 24 (see `.nvmrc`) and pnpm 12.4.2.
+Requirements: Bun 1.4.4 (see `packageManager` in `package.json`).
 
 ```bash
-nvm use
-corepack enable
-pnpm install --frozen-lockfile
-pnpm dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
 Sign-in uses `/login` and returns to the requested local route after authentication. The dashboard uses `/`; management sections use `/manage/services`, `/manage/integrations`, `/manage/agents`, and `/manage/settings`, with browser history support. Service forms use `/manage/services/new` and `/manage/services/:id/edit`; unknown routes show a not-found page. When hosting the frontend separately, configure the server to return `index.html` for these routes.
 
-Open <http://localhost:5173>. Vite forwards `/api` to the local Fastify backend on port 3000. `pnpm dev` uses the isolated `data/homora-dev.sqlite` database and seeds example services on first creation. Changes persist between runs; deleted examples are not recreated. Example addresses are illustrative and private-network monitoring is not enabled. The first run still requires creating an administrator account. Outside development, the default database is `data/homora.sqlite` and can be configured with `HOMORA_DATABASE_PATH`; `pnpm dev` always uses its isolated database.
+Open <http://localhost:5173>. Vite forwards `/api` to the local Fastify backend on port 3000. `bun run dev` uses the isolated `data/homora-dev.sqlite` database and seeds example services on first creation. Changes persist between runs; deleted examples are not recreated. Example addresses are illustrative and private-network monitoring is not enabled. The first run still requires creating an administrator account. Outside development, the default database is `data/homora.sqlite` and can be configured with `HOMORA_DATABASE_PATH`; `bun run dev` always uses its isolated database.
 
-The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Node.js, TypeScript and Fastify on the backend; shared contracts; Drizzle ORM with SQLite. Run `pnpm check` (lint, format, types and tests) and `pnpm build` before sending changes. Commits follow Conventional Commits (`feat: ...`), enforced by Husky and Commitlint. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/padroes.md](docs/padroes.md).
+The monorepo uses Bun workspaces and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Bun, TypeScript and Fastify on the backend; shared contracts; Drizzle ORM with SQLite. Run `bun run check` (lint, format, types and tests) and `bun run build` before sending changes. Commits follow Conventional Commits (`feat: ...`), enforced by Husky and Commitlint. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/padroes.md](docs/padroes.md).
 
 ## Documentation
 

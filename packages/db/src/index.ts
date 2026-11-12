@@ -1,7 +1,7 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
-import { fileURLToPath } from 'node:url';
-import { readMigrationFiles } from 'drizzle-orm/migrator';
+import { createHash } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
+import { embeddedMigrations } from './migrations.generated.js';
 export {
   services,
   serviceGroups,
@@ -20,11 +20,19 @@ export function getSqliteHandle(db: object) {
   return handle;
 }
 
+/** Same shape and hash as Drizzle's readMigrationFiles, read from the embedded copy. */
+export function loadMigrations() {
+  return embeddedMigrations.map((migration) => ({
+    sql: migration.sql.split('--> statement-breakpoint'),
+    bps: migration.breakpoints,
+    folderMillis: migration.when,
+    hash: createHash('sha256').update(migration.sql).digest('hex'),
+  }));
+}
+
 /** Apply generated Drizzle migrations atomically, adopting only the known legacy schema. */
 function migrate(sqlite: DatabaseSync) {
-  const migrations = readMigrationFiles({
-    migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-  });
+  const migrations = loadMigrations();
   sqlite.exec('BEGIN IMMEDIATE');
   try {
     sqlite.exec(

@@ -6,11 +6,11 @@ closed-loop load generator. It never touches real infrastructure; monitored targ
 servers on a private address of this machine (Homora refuses loopback targets by policy).
 
 ```sh
-pnpm build
-pnpm --filter @homora/backend bench --profile quick            # about 2 min, smoke
-pnpm --filter @homora/backend bench --profile heavy            # 20-40 min, 5k services, 1M history rows
-pnpm --filter @homora/backend bench --profile extreme          # over 1 h, 20k+ services, up to 60k connections
-pnpm --filter @homora/backend bench --profile heavy --suite http,write --dir /some/disk
+bun run build
+bun run --filter @homora/backend bench --profile quick            # about 2 min, smoke
+bun run --filter @homora/backend bench --profile heavy            # 20-40 min, 5k services, 1M history rows
+bun run --filter @homora/backend bench --profile extreme          # over 1 h, 20k+ services, up to 60k connections
+bun run --filter @homora/backend bench --profile heavy --suite http,write --dir /some/disk
 ```
 
 Suites: `db`, `monitor`, `http`, `write`, `blocking`, `monitor-real`, `connections`, `abuse`, `soak`.

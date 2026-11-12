@@ -8,6 +8,7 @@ import { expect, it } from 'vitest';
 import {
   createDatabase,
   getSqliteHandle,
+  loadMigrations,
   services,
   serviceGroups,
   integrationInstances,
@@ -507,4 +508,12 @@ it('adds pages with a default Home that holds every existing group, and keeps na
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+it('embeds exactly the migrations on disk, with the hashes Drizzle records', () => {
+  const onDisk = readMigrationFiles({
+    migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+  });
+  // Stale? Run `bun run --filter @homora/db embed-migrations`.
+  expect(loadMigrations()).toEqual(onDisk);
 });

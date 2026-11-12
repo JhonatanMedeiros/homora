@@ -84,7 +84,7 @@ runAdapterContract({
 });
 ```
 
-Run `pnpm vitest run apps/backend/src/adapter-contract.test.ts`, then `pnpm check` and `pnpm build`.
+Run `bun --bun vitest run apps/backend/src/adapter-contract.test.ts`, then `bun run check` and `bun run build`.
 The harness checks, with a fake transport: input validation, request shape (only `origin`, `path`
 and `authorization`; a safe path built from validated config; hostile values such as `../`, `?`, `#`,
 `%2f`, whitespace and control characters rejected), secrets absent from data, errors and the registry
@@ -118,4 +118,4 @@ Notes / deviations:
 - [ ] Only GET through the shared transport; no new header, method or code loading
 - [ ] Required permissions documented (read-only token where supported)
 - [ ] Marked "implemented, unvalidated" in the docs
-- [ ] `pnpm check` and `pnpm build` pass
+- [ ] `bun run check` and `bun run build` pass

@@ -9,7 +9,7 @@ node_modules
 .github/skills
 .impeccable
 data
-pnpm-lock.yaml
+bun.lock
 packages/db/migrations
 coverage
 # Skills de agentes instaladas por ferramentas externas
@@ -22,3 +22,4 @@ coverage
 .github/agents
 .impeccable
 skills-lock.json
+packages/db/src/migrations.generated.ts
