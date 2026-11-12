@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { HostLinkError } from '../service-configuration.js';
 import { ServiceValidationError, UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
@@ -8,7 +9,8 @@ import {
   groupNameSchema,
   groupOrderSchema,
   parseId,
-  serviceInputSchema,
+  hostBodySchema,
+  serviceFormSchema,
   serviceDefaultsSchema,
   serviceOrderSchema,
 } from '../input-schemas.js';
@@ -147,38 +149,75 @@ export function registerServiceConfigurationRoutes(
   });
 
   app.post('/api/services', async (request, reply) => {
-    const parsed = serviceInputSchema.safeParse(request.body);
+    const parsed = serviceFormSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
+    const { host, ...input } = parsed.data;
     try {
       // Only the UI create path applies the instance default, and only when the form sent no value.
-      const created = configuration.createService({
-        ...parsed.data,
-        allowPrivate: parsed.data.allowPrivate ?? configuration.newServicesAllowPrivate(),
-      });
+      const created = configuration.createService(
+        { ...input, allowPrivate: input.allowPrivate ?? configuration.newServicesAllowPrivate() },
+        host ?? null,
+      );
       void monitor.invalidate();
       return reply.code(201).send(publicService(created));
     } catch (error) {
       return reply
         .code(400)
-        .send(errorBody(error instanceof ServiceValidationError ? error.code : 'invalid-data'));
+        .send(
+          errorBody(
+            error instanceof ServiceValidationError || error instanceof HostLinkError
+              ? error.code
+              : 'invalid-data',
+          ),
+        );
     }
   });
 
   app.put<{ Params: { id: string } }>('/api/services/:id', async (request, reply) => {
     const id = parseId(request.params.id);
     if (id === null) return reply.code(404).send(errorBody('service-not-found'));
-    const parsed = serviceInputSchema.safeParse(request.body);
+    const parsed = serviceFormSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
+    const { host, ...input } = parsed.data;
     try {
-      const updated = configuration.updateService(id, parsed.data);
+      const updated = configuration.updateService(id, input, host);
       if (!updated) return reply.code(404).send(errorBody('service-not-found'));
       void monitor.invalidate();
       return publicService(updated);
     } catch (error) {
       return reply
         .code(400)
-        .send(errorBody(error instanceof ServiceValidationError ? error.code : 'invalid-data'));
+        .send(
+          errorBody(
+            error instanceof ServiceValidationError || error instanceof HostLinkError
+              ? error.code
+              : 'invalid-data',
+          ),
+        );
     }
+  });
+
+  app.put<{ Params: { id: string } }>('/api/services/:id/host', async (request, reply) => {
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send(errorBody('service-not-found'));
+    const parsed = hostBodySchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
+    try {
+      if (!configuration.setServiceHost(id, parsed.data.host))
+        return reply.code(404).send(errorBody('service-not-found'));
+    } catch (error) {
+      if (error instanceof HostLinkError) return reply.code(400).send(errorBody(error.code));
+      throw error;
+    }
+    const session = await auth.session(request.headers);
+    audit.record({
+      actor: session ? `user:${session.userId}` : 'user:unknown',
+      action: parsed.data.host ? 'service-host-link' : 'service-host-unlink',
+      result: 'ok',
+      detail: `service:${id}`,
+      ipAddress: request.ip,
+    });
+    return { host: parsed.data.host };
   });
 
   app.delete<{ Params: { id: string } }>('/api/services/:id', async (request, reply) => {

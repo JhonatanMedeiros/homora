@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
-import type { Service, ServiceInput } from '@homora/shared';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import type { HostLink, Service, ServiceInput } from '@homora/shared';
 import { Check, Plus, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,6 +12,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ViewOptions } from '@/components/view-options';
+import { HostView } from '@/components/host-view';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useHostInventory } from '@/hooks/use-host-inventory';
+import { hostLabel } from '@/lib/hosts';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
 import { CategoryFilter } from '@/components/category-filter';
@@ -73,14 +77,29 @@ export function ServicesPage({
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
   const [topBar] = useTopBar();
-  const { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange } =
-    useViewPreferences();
+  const {
+    view,
+    setView,
+    arrange,
+    setArrange,
+    showDescriptions,
+    setShowDescriptions,
+    uptimeRange,
+    setUptimeRange,
+  } = useViewPreferences();
   const uptime = useUptime(uptimeRange);
   const list = view === 'list';
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [shared, setShared] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [host, setHost] = useState<HostLink | null>(null);
+  const hostView = arrange === 'host' && !managing;
+  const linkedConnections = useMemo(
+    () => [...new Set(services.flatMap((s) => (s.host ? [s.host.connectionId] : [])))],
+    [services],
+  );
+  const hostData = useHostInventory(hostView || formOpen, linkedConnections);
   // Instance setting that only seeds the "allow private network" box of a NEW service.
   const privateDefaultRef = useRef(false);
   const [editing, setEditing] = useState<number | null>(null);
@@ -182,6 +201,7 @@ export function ServicesPage({
     navigate(service ? `/manage/services/${service.id}/edit` : '/manage/services/new');
     setConfirming(null);
     setEditing(service?.id ?? null);
+    setHost(service?.host ?? null);
     setShared(service?.isPublic === true);
     setForm(
       service
@@ -248,6 +268,7 @@ export function ServicesPage({
     initializedRoute.current = formRoute;
     // Initialize the draft once per route after service data arrives.
     setEditing(service?.id ?? null);
+    setHost(service?.host ?? null);
     setShared(service?.isPublic === true);
     setForm(
       service
@@ -294,7 +315,7 @@ export function ServicesPage({
         {
           method: editing === null ? 'POST' : 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
+          body: JSON.stringify({ ...form, host }),
         },
       );
       const body: unknown = await response.json().catch(() => null);
@@ -463,6 +484,23 @@ export function ServicesPage({
           )}
           {services.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                value={arrange}
+                onValueChange={(value) => {
+                  if (value === 'group' || value === 'host') setArrange(value);
+                }}
+                aria-label={t('hosts.arrange')}
+              >
+                <ToggleGroupItem value="group" className="pointer-coarse:h-11">
+                  {t('hosts.arrange.group')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="host" className="pointer-coarse:h-11">
+                  {t('hosts.arrange.host')}
+                </ToggleGroupItem>
+              </ToggleGroup>
               <ViewOptions
                 view={view}
                 onViewChange={setView}
@@ -546,6 +584,14 @@ export function ServicesPage({
             categories={categories}
             error={formError}
             saving={saving}
+            hosts={{
+              value: host,
+              onChange: setHost,
+              connections: hostData.connections,
+              connectionsLoaded: hostData.connectionsLoaded,
+              inventories: hostData.inventories,
+              onReload: (id, refresh) => void hostData.reload(id, refresh),
+            }}
             isPublic={shared}
             onPublicChange={setShared}
             onChange={setForm}
@@ -580,7 +626,7 @@ export function ServicesPage({
           {flash}
         </p>
       )}
-      {!organizing && services.length > 0 && categories.length > 2 && (
+      {!organizing && !hostView && services.length > 0 && categories.length > 2 && (
         <CategoryFilter
           categories={categories}
           selected={selected}
@@ -592,7 +638,17 @@ export function ServicesPage({
           }
         />
       )}
-      {groups.map(({ category, items }) => {
+      {hostView && services.length > 0 && (
+        <HostView
+          services={services}
+          connections={hostData.connections}
+          inventories={hostData.inventories}
+          statuses={statuses}
+          blockedIds={blockedIds}
+          onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
+        />
+      )}
+      {(hostView ? [] : groups).map(({ category, items }) => {
         const row = groupRows.find((group) => group.name === category);
         return (
           <GroupSection
@@ -697,6 +753,7 @@ export function ServicesPage({
                   uptime={uptime[s.id]}
                   uptimeRange={uptimeRange}
                   onUptimeRangeChange={setUptimeRange}
+                  host={hostLabel(s, hostData.connections, hostData.inventories)}
                   blocked={blockedIds.has(s.id)}
                   managing={managing}
                   list={list}
@@ -751,7 +808,7 @@ export function ServicesPage({
       {!data.loaded && !data.loadError && (
         <ServicesSkeleton label={t('common.loading')} list={list} />
       )}
-      {data.loaded && !data.loadError && !groups.length && (
+      {data.loaded && !data.loadError && !groups.length && !hostView && (
         <ServicesEmpty
           hasServices={services.length > 0}
           onAdd={() => (managing ? openForm() : onAddService())}

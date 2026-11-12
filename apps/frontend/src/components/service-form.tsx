@@ -6,6 +6,7 @@ import {
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
   ICON_MAX_LENGTH,
+  type HostLink,
   type ServiceInput,
 } from '@homora/shared';
 import { NativeSelect } from '@/components/native-select';
@@ -19,9 +20,22 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
 import { ServiceIcon } from '@/components/service-icon';
+import { HostPicker } from '@/components/host-picker';
+import type { HostConnection, HostInventories } from '@/lib/hosts';
 import { t } from '@/i18n';
 
+/** Proxmox data for the "Runs on" section; omitted when the form is used without hosts. */
+export type FormHosts = {
+  value: HostLink | null;
+  onChange: (value: HostLink | null) => void;
+  connections: HostConnection[];
+  connectionsLoaded: boolean;
+  inventories: HostInventories;
+  onReload: (connectionId: number, refresh?: boolean) => void;
+};
+
 type Props = {
+  hosts?: FormHosts;
   editing: boolean;
   value: ServiceInput;
   categories: string[];
@@ -36,6 +50,7 @@ type Props = {
 };
 
 export function ServiceForm({
+  hosts,
   editing,
   value,
   categories,
@@ -112,6 +127,7 @@ export function ServiceForm({
             ))}
           </datalist>
         </Field>
+        {hosts && <HostPicker {...hosts} />}
         <Field orientation="horizontal" className="items-start sm:col-span-2">
           <Checkbox
             id="service-private"

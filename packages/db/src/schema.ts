@@ -23,6 +23,14 @@ export const services = sqliteTable('services', {
   checkPath: text('check_path'),
   // Opt-in to the read-only public status page. Never set by imports or agent proposals.
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+  // Optional "runs on" link to a Proxmox guest. Ids only: names are resolved from the live
+  // inventory so renames follow. All four columns are set together or all are null.
+  hostConnectionId: integer('host_connection_id').references(() => integrationInstances.id, {
+    onDelete: 'set null',
+  }),
+  hostNode: text('host_node'),
+  hostVmid: integer('host_vmid'),
+  hostType: text('host_type'),
 });
 
 /** Small instance-wide settings (key/value). Values are plain text and never hold secrets. */

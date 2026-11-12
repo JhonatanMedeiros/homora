@@ -123,6 +123,7 @@ releases exist.
   and connections, including encrypted references without displaying them. They validate the
   operation in a savepoint and repeat validation inside the approval transaction. A Proxmox
   widget proposal requires an existing Proxmox connection. MCP returns proposals only to their author.
+- Cards may link to a Proxmox guest (`host_*` columns on `services`, ids only); `proxmox-inventory.ts` and `GET /api/connections/:id/guests` expose guest names to authenticated sessions only. Neither the public status page nor MCP returns them. See [ADR 0008](decisoes/0008-service-to-host-map.md).
 - The opt-in anonymous status page is described in [ADR 0006](decisoes/0006-public-read-only-status-page.md).
 - The observations migration shares the web monitor's latest results with the MCP process.
 - MCP agent identity and audit queries require separate `agents:read` and `audit:read` grants. Audit queries omit IP addresses and details and are bounded by the 365-day retention window. An agent may withdraw only its own unexpired pending proposal, atomically recording the withdrawal; this does not apply configuration changes.

@@ -30,6 +30,7 @@ export const ERROR_MESSAGES = {
   'invalid-status-page': 'Provide a valid status page identifier.',
   'invalid-name-or-type': 'Provide a valid name and type.',
   'invalid-name-or-category': 'Provide a valid name and category.',
+  'invalid-host': 'Choose an existing Proxmox connection for the host.',
   'invalid-ca': 'Invalid CA certificate.',
   'secret-required': 'Enter the secret again when changing the address or its identity.',
   'service-not-found': 'Service not found.',

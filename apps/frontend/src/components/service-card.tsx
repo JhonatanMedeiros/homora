@@ -20,6 +20,7 @@ import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { cn } from '@/lib/utils';
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { describeStatus } from '@/lib/status-text';
+import type { HostLabel } from '@/lib/hosts';
 
 type Props = {
   service: Service;
@@ -28,6 +29,8 @@ type Props = {
   uptime?: UptimeSummary;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
+  /** Where the card runs, resolved from the live Proxmox inventory (null when not linked). */
+  host?: HostLabel | null;
   blocked: boolean;
   managing: boolean;
   list?: boolean;
@@ -71,6 +74,13 @@ function StatusMeta({
   );
 }
 
+/** Where a card runs; text only, so it never depends on color. */
+function hostText(host: HostLabel) {
+  if (host.kind === 'found')
+    return `${t('hosts.runsOn')} ${host.guest.name || host.guest.vmid} · ${t('hosts.on', { node: host.guest.node })}`;
+  return host.kind === 'missing' ? t('hosts.notFound') : t('hosts.unavailable');
+}
+
 /** A service: opens in a new tab, displays its status light, and has edit actions. */
 /** Stable id for "go to card"; `data-highlight` is set for a moment by the command palette. */
 const SERVICE_LI =
@@ -83,6 +93,7 @@ export function ServiceCard({
   uptime,
   uptimeRange = '24h',
   onUptimeRangeChange = () => {},
+  host = null,
   blocked,
   managing,
   list = false,
@@ -137,6 +148,9 @@ export function ServiceCard({
             <span className="truncate font-mono text-xs text-muted-foreground">
               {hostOf(s.url)}
             </span>
+            {host && (
+              <span className="truncate text-xs text-muted-foreground">{hostText(host)}</span>
+            )}
           </ItemContent>
           <StatusLight
             state={view.state}
@@ -237,6 +251,9 @@ export function ServiceCard({
             <span className="truncate font-mono text-[0.8125rem] text-muted-foreground">
               {hostOf(s.url)}
             </span>
+            {host && (
+              <span className="truncate text-xs text-muted-foreground">{hostText(host)}</span>
+            )}
           </ItemContent>
         </div>
         {s.description && showDescription && !repeatsName(s.name, s.description) && (

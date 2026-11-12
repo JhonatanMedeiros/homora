@@ -1,6 +1,13 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import { validateService, type CheckType, type Service, type ServiceInput } from '@homora/shared';
+import {
+  parseHostLink,
+  validateService,
+  type CheckType,
+  type HostLink,
+  type Service,
+  type ServiceInput,
+} from '@homora/shared';
 import { renumberGroups } from './group-order.js';
 import {
   MAX_GROUP_COLUMNS,
@@ -20,6 +27,15 @@ export type ServiceChange =
   | { op: 'create'; service: ServiceInput }
   | { op: 'update'; id: number; service: ServiceInput }
   | { op: 'delete'; id: number };
+
+/** The card-to-guest link points to a connection that is missing or is not Proxmox. */
+export class HostLinkError extends Error {
+  readonly code = 'invalid-host' as const;
+  constructor() {
+    super('Choose an existing Proxmox connection for the host.');
+    this.name = 'HostLinkError';
+  }
+}
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
@@ -48,6 +64,52 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath FROM services WHERE id=?',
       )
       .get(id) as ServiceRow | undefined;
+  type HostRow = {
+    id: number;
+    connectionId: number | null;
+    node: string | null;
+    vmid: number | null;
+    type: string | null;
+  };
+  /** Links by card id. A link whose connection was deleted (or a partial row) counts as absent. */
+  const selectHosts = () => {
+    const hosts = new Map<number, HostLink>();
+    const rows = sqlite
+      .prepare(
+        'SELECT id,host_connection_id as connectionId,host_node as node,host_vmid as vmid,host_type as type FROM services WHERE host_connection_id IS NOT NULL',
+      )
+      .all() as unknown as HostRow[];
+    for (const row of rows) {
+      const link = parseHostLink({
+        connectionId: row.connectionId,
+        node: row.node,
+        vmid: row.vmid,
+        type: row.type,
+      });
+      if (link) hosts.set(row.id, link);
+    }
+    return hosts;
+  };
+  /** Stores ids only, after checking the connection. Pass null to unlink. */
+  const writeHost = (id: number, host: HostLink | null) => {
+    if (host) {
+      const connection = sqlite
+        .prepare('SELECT type FROM integration_instances WHERE id=?')
+        .get(host.connectionId) as { type: string } | undefined;
+      if (connection?.type !== 'proxmox') throw new HostLinkError();
+    }
+    sqlite
+      .prepare(
+        'UPDATE services SET host_connection_id=?,host_node=?,host_vmid=?,host_type=? WHERE id=?',
+      )
+      .run(
+        host?.connectionId ?? null,
+        host?.node ?? null,
+        host?.vmid ?? null,
+        host?.type ?? null,
+        id,
+      );
+  };
   const selectGroups = () =>
     sqlite
       .prepare('SELECT id,name,position,columns FROM service_groups ORDER BY position,name')
@@ -157,8 +219,15 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         .run(NEW_SERVICES_PRIVATE_KEY, String(value));
     },
     listServices() {
-      return selectServices().map((row) => ({ ...row, allowPrivate: Boolean(row.allowPrivate) }));
+      const hosts = selectHosts();
+      return selectServices().map((row) => ({
+        ...row,
+        allowPrivate: Boolean(row.allowPrivate),
+        host: hosts.get(row.id) ?? null,
+      }));
     },
+    /** Card-to-guest links by card id, for impact and suggestions. */
+    listHosts: selectHosts,
     listMcpServices() {
       return sqlite
         .prepare('SELECT id,name,url,category,description FROM services ORDER BY category,name')
@@ -343,7 +412,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         return true;
       });
     },
-    createService(input: Partial<ServiceInput>) {
+    createService(input: Partial<ServiceInput>, host: HostLink | null = null) {
       return transaction(() => {
         const service = validateService(input);
         ensureGroup(service.category);
@@ -365,13 +434,15 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             service.expectedStatus ?? null,
             service.checkPath ?? null,
           );
-        bumpVersion();
         const created = selectService(Number(result.lastInsertRowid));
         if (!created) throw new Error('Created service could not be loaded');
-        return created;
+        if (host) writeHost(created.id, host);
+        bumpVersion();
+        return { ...created, host };
       });
     },
-    updateService(id: number, input: Partial<ServiceInput>) {
+    /** `host` undefined keeps the current link; null unlinks. */
+    updateService(id: number, input: Partial<ServiceInput>, host?: HostLink | null) {
       return transaction(() => {
         const current = selectService(id);
         if (!current) return null;
@@ -401,8 +472,19 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
             id,
           );
+        if (host !== undefined) writeHost(id, host);
         bumpVersion();
-        return selectService(id);
+        const updated = selectService(id);
+        return updated ? { ...updated, host: selectHosts().get(id) ?? null } : updated;
+      });
+    },
+    /** Links or unlinks a card without touching its other settings. False when the card is gone. */
+    setServiceHost(id: number, host: HostLink | null) {
+      return transaction(() => {
+        if (!selectService(id)) return false;
+        writeHost(id, host);
+        bumpVersion();
+        return true;
       });
     },
     deleteService(id: number) {

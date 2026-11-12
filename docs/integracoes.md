@@ -130,7 +130,9 @@ grant trust to other endpoints.
   private network access when needed and provide the public CA certificate when applicable.
 - Save, then use **Test** on the connection. A single endpoint may return inventory across
   its cluster, subject to token permissions. Separate clusters require separate connections.
-- The UI displays cluster aggregates; it does not yet filter individual nodes. Connections
+- Besides the aggregates, the same read of `/api2/json/cluster/resources` feeds the guest picker
+  and the Host view (node and guest names, ids, state); no other endpoint is called.
+  The UI does not yet filter individual nodes in the widget. Connections
   are read-only. Use least-privilege tokens and verify behavior against your own environment.
 
 ### Jellyfin

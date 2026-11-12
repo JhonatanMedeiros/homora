@@ -2,9 +2,12 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 
 export type View = 'list' | 'cards';
+/** How Home arranges services: by group (default) or by the Proxmox host they run on. */
+export type Arrange = 'group' | 'host';
 const VIEW_KEY = 'homora-density';
 const DESCRIPTIONS_KEY = 'homora-descriptions';
 const UPTIME_RANGE_KEY = 'homora-uptime-range';
+const ARRANGE_KEY = 'homora-arrange';
 
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => {
@@ -35,12 +38,18 @@ function currentView(): View {
 }
 const currentRange = (): UptimeRange =>
   UPTIME_RANGES.find((range) => range === read(UPTIME_RANGE_KEY)) ?? '24h';
+const currentArrange = (): Arrange => (read(ARRANGE_KEY) === 'host' ? 'host' : 'group');
 const currentDescriptions = () => read(DESCRIPTIONS_KEY) !== 'hidden';
 
 /** Home view preferences (list or cards, descriptions, uptime period), saved in this browser. */
 export function useViewPreferences() {
   const view = useSyncExternalStore(subscribe, currentView, () => 'list' as View);
   const showDescriptions = useSyncExternalStore(subscribe, currentDescriptions, () => true);
+  const arrange = useSyncExternalStore(subscribe, currentArrange, () => 'group' as Arrange);
+  const setArrange = useCallback((next: Arrange) => {
+    write(ARRANGE_KEY, next);
+    notify();
+  }, []);
   const uptimeRange = useSyncExternalStore(subscribe, currentRange, () => '24h' as UptimeRange);
   const setUptimeRange = useCallback((next: UptimeRange) => {
     write(UPTIME_RANGE_KEY, next);
@@ -54,5 +63,14 @@ export function useViewPreferences() {
     write(DESCRIPTIONS_KEY, next ? 'visible' : 'hidden');
     notify();
   }, []);
-  return { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange };
+  return {
+    view,
+    setView,
+    arrange,
+    setArrange,
+    showDescriptions,
+    setShowDescriptions,
+    uptimeRange,
+    setUptimeRange,
+  };
 }
