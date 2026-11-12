@@ -128,7 +128,7 @@ function Dashboard({
     >
       <SafeModeBanner
         onEdit={() => {
-          navigate(settingsPath('interface'));
+          navigate(settingsPath('appearance'));
           window.setTimeout(
             () => document.getElementById('ui-css')?.scrollIntoView({ behavior: 'smooth' }),
             150,

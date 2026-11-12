@@ -1096,7 +1096,14 @@ it('lists the settings subpages and opens one from its own URL', async () => {
   window.history.replaceState(null, '', '/manage/settings');
   render(<App />);
   const nav = await screen.findByRole('navigation', { name: 'Configurações' });
-  for (const name of [/Interface/, /Status público/, /Exportar e importar/, /Descoberta Docker/])
+  for (const name of [
+    /Aparência/,
+    /Início e páginas/,
+    /Barra superior e atalhos/,
+    /Status público/,
+    /Exportar e importar/,
+    /Descoberta Docker/,
+  ])
     expect(within(nav).getByRole('link', { name })).toBeTruthy();
   fireEvent.click(within(nav).getByRole('link', { name: /Exportar e importar/ }));
   expect(window.location.pathname).toBe('/manage/settings/backup');
