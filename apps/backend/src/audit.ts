@@ -13,7 +13,14 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'public-status-update',
     'service-public',
   ],
-  proposal: ['proposal', 'review', 'expiry', 'withdraw'],
+  proposal: [
+    'proposal',
+    'review',
+    'expiry',
+    'withdraw',
+    'proposal-recreate',
+    'proposal-ttl-update',
+  ],
   agent: ['agent-issue', 'agent-create', 'agent-update-scopes', 'agent-revoke', 'agent-rotate'],
 };
 const RESULTS_BY_OUTCOME: Record<AuditOutcome, readonly string[]> = {

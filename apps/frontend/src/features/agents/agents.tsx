@@ -22,6 +22,8 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
+import { Input } from '@/components/ui/input';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { PageHeader } from '@/components/page-header';
 import { SectionTitle } from '@/components/section-title';
 import { AgentList } from './agent-list';
@@ -30,7 +32,7 @@ import { ConnectDialog } from './connect-dialog';
 import { NewAgentDialog } from './new-agent-dialog';
 import { ProposalCard } from './proposal-card';
 import { TokenDialog } from './token-dialog';
-import { t } from '@/i18n';
+import { apiError, t } from '@/i18n';
 
 export function Agents({
   services,
@@ -55,6 +57,29 @@ export function Agents({
   // Name shown in the token dialog; the token itself lives in the parent so it survives navigation.
   const [tokenFor, setTokenFor] = useState('');
   const [loadFailed, setLoadFailed] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [ttl, setTtl] = useState('15');
+  const [recreating, setRecreating] = useState(false);
+  useEffect(() => {
+    fetch('/api/proposal-settings')
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((data: { ttlMinutes: number }) => setTtl(String(data.ttlMinutes)))
+      .catch(() => setMessage(t('agents.ttlFailed')));
+  }, []);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const interval = window.setInterval(tick, 30_000);
+    const next = (proposals ?? [])
+      .filter((p) => (p.state === 'pending' || p.state === 'stale') && p.expiresAt > now)
+      .reduce((min, p) => Math.min(min, p.expiresAt), Infinity);
+    const timeout = Number.isFinite(next)
+      ? window.setTimeout(tick, Math.max(0, next - Date.now()))
+      : undefined;
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+  }, [proposals, now]);
 
   const load = useCallback(async () => {
     try {
@@ -175,11 +200,46 @@ export function Agents({
       await load();
     }
   }
-  const pending = (proposals ?? []).filter(
+  async function recreate(id: string) {
+    setRecreating(true);
+    const response = await fetch(`/api/proposals/${id}/recreate`, { method: 'POST' }).catch(
+      () => null,
+    );
+    const body = !response?.ok
+      ? ((await response?.json().catch(() => null)) as { code?: string } | null)
+      : null;
+    setMessage(
+      response?.ok
+        ? t('agents.recreated')
+        : body?.code === 'config-changed'
+          ? t('agents.recreateChanged')
+          : apiError(body, t('agents.recreateFailed')),
+    );
+    await load();
+    setRecreating(false);
+  }
+  async function saveTtl(event: React.FormEvent) {
+    event.preventDefault();
+    const response = await fetch('/api/proposal-settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ttlMinutes: Number(ttl) }),
+    }).catch(() => null);
+    if (!response?.ok) setMessage(t('agents.ttlFailed'));
+    else setMessage('');
+  }
+  const effective = (proposals ?? []).map((proposal) =>
+    (proposal.state === 'pending' || proposal.state === 'stale') && proposal.expiresAt <= now
+      ? { ...proposal, state: 'expired' }
+      : proposal,
+  );
+  const pending = effective.filter(
     (proposal) => proposal.state === 'pending' || proposal.state === 'stale',
   );
-  const history = (proposals ?? []).filter(
-    (proposal) => proposal.state !== 'pending' && proposal.state !== 'stale',
+  const expired = effective.filter((proposal) => proposal.state === 'expired');
+  const history = effective.filter(
+    (proposal) =>
+      proposal.state !== 'pending' && proposal.state !== 'stale' && proposal.state !== 'expired',
   );
   const agentName = (id: string) =>
     agents?.find((agent) => agent.id === id)?.name ?? t('agents.fallbackName');
@@ -190,6 +250,15 @@ export function Agents({
       <ProposalCard
         key={proposal.id}
         proposal={proposal}
+        now={now}
+        onRecreate={
+          proposal.state === 'expired' &&
+          !recreating &&
+          (!proposal.batchId ||
+            expired.find((p) => p.batchId === proposal.batchId)?.id === proposal.id)
+            ? () => void recreate(proposal.id)
+            : undefined
+        }
         hideReview={hideReview}
         agentName={agentName(proposal.author)}
         current={services.find((service) => service.id === diff?.id)}
@@ -232,6 +301,23 @@ export function Agents({
         </Alert>
       )}
 
+      <form onSubmit={(event) => void saveTtl(event)} className="flex flex-wrap items-end gap-2">
+        <Field className="w-auto">
+          <FieldLabel htmlFor="proposal-ttl">{t('agents.ttl')}</FieldLabel>
+          <Input
+            id="proposal-ttl"
+            type="number"
+            min={1}
+            max={120}
+            required
+            value={ttl}
+            onChange={(event) => setTtl(event.target.value)}
+          />
+        </Field>
+        <Button type="submit" variant="outline">
+          {t('agents.ttlSave')}
+        </Button>
+      </form>
       <section aria-labelledby="proposals-title" className="flex flex-col gap-3">
         <SectionTitle id="proposals-title" count={pending.length || undefined}>
           {t('agents.proposals')}
@@ -277,6 +363,14 @@ export function Agents({
               );
             })}
           </ul>
+        )}
+        {expired.length > 0 && (
+          <section aria-label={t('proposal.state.expired')} className="flex flex-col gap-3">
+            <SectionTitle>{t('proposal.state.expired')}</SectionTitle>
+            <ul className="flex flex-col gap-3">
+              {expired.map((proposal) => renderProposal(proposal))}
+            </ul>
+          </section>
         )}
         {history.length > 0 && (
           <Collapsible className="flex flex-col gap-3">

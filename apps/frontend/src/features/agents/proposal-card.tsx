@@ -32,6 +32,8 @@ type Props = {
   onReview: (approve: boolean) => void;
   onSetupConnection: (draft: unknown) => void;
   hideReview?: boolean;
+  now?: number;
+  onRecreate?: () => void;
 };
 
 /** An agent proposal: author, validity, reviewable diff, and explicit decision. */
@@ -42,9 +44,12 @@ export function ProposalCard({
   onReview,
   onSetupConnection,
   hideReview,
+  now,
+  onRecreate,
 }: Props) {
   const diff = parseDiff(proposal.diff);
   const pending = proposal.state === 'pending';
+  const seconds = now === undefined ? 0 : Math.max(0, Math.ceil((proposal.expiresAt - now) / 1000));
   return (
     <li>
       <Card className={cn(pending && 'border-primary')}>
@@ -58,7 +63,11 @@ export function ProposalCard({
           </Badge>
           <CardDescription>
             {pending
-              ? t('proposal.expiresAt', { date: formatDate(proposal.expiresAt) })
+              ? now === undefined
+                ? t('proposal.expiresAt', { date: formatDate(proposal.expiresAt) })
+                : seconds < 60
+                  ? t('proposal.expiresSeconds', { count: seconds })
+                  : t('proposal.expiresMinutes', { count: Math.ceil(seconds / 60) })
               : formatDate(proposal.expiresAt)}
           </CardDescription>
           {proposal.batchId && (
@@ -98,6 +107,16 @@ export function ProposalCard({
                     ? 'proposal.managed.approveSetup'
                     : 'proposal.approve',
                 )}
+              </Button>
+            )}
+          </CardFooter>
+        )}
+        {proposal.state === 'expired' && (
+          <CardFooter className="justify-between gap-2">
+            <p>{t('proposal.expiredHint')}</p>
+            {onRecreate && (
+              <Button type="button" variant="outline" onClick={onRecreate}>
+                {t(proposal.batchId ? 'proposal.recreateBatch' : 'proposal.recreate')}
               </Button>
             )}
           </CardFooter>

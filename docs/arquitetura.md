@@ -145,3 +145,5 @@ Key areas of attention focus on consistency and safe evolution:
 For ongoing contribution and review rules, consult [Engineering Standards](padroes.md).
 Structural changes affecting boundaries, persistence, security, or deployment must be recorded
 in an Architecture Decision Record (ADR) alongside documentation updates.
+
+Proposal review deadlines default to 15 minutes and are configurable from 1 to 120 minutes in SQLite. Changes affect new proposals only and are shared by the web API and both MCP transports. An authenticated administrator can recreate an expired proposal or its complete expired batch; the original diff is revalidated, no change is applied, and recreation and TTL changes are audited. Recreated proposals retain the original agent attribution; the audit records the human requester and source proposal.

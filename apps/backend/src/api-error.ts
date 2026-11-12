@@ -55,6 +55,7 @@ export const ERROR_MESSAGES = {
   'session-not-found': 'Session not found.',
   'identity-invalid': 'Invalid identity or scopes.',
   'identity-not-found': 'Identity not found.',
+  'proposal-limit': 'The agent has reached its pending proposal limit.',
   'proposal-unavailable': 'Proposal unavailable.',
   'batch-conflict': 'The changes in this batch conflict. No changes were applied.',
   'config-changed': 'The configuration changed. Review it again.',
