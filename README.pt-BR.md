@@ -127,13 +127,52 @@ services:
 
 Os labels do Homepage (`homepage.href`, `homepage.name`, `homepage.group`, `homepage.description`, `homepage.icon`) também funcionam, e `homora.*` vence quando os dois existem. Labels nunca ativam o monitoramento de endereços privados; você escolhe isso nos cards que adicionar.
 
-O socket do Docker dá acesso privilegiado ao daemon, então o Homora nunca o monta. Ative com um proxy restrito que só responde à listagem de contêineres:
+### Ativar a descoberta
+
+O socket concede acesso privilegiado ao daemon; montá-lo como somente leitura não torna a API Docker somente leitura. Use estas opções apenas em um host confiável. Mantenha o proxy em rede privada confiável, sem porta publicada: quem o alcança pode ler metadados e labels dos contêineres e exportar seus sistemas de arquivos (`GET /containers/{id}/export`), o que pode expor dados da aplicação. Trate o acesso a ele como privilegiado.
+
+**Docker Compose:** inicie o proxy restrito com o override:
 
 ```bash
 docker compose -f compose.yml -f compose.docker-discovery.yml up -d --build
 ```
 
-Isso sobe o `tecnativa/docker-socket-proxy` (socket somente leitura, só contêineres, sem porta publicada) e define `HOMORA_DOCKER_HOST=http://docker-proxy:2375` no backend. Fora do Compose, `HOMORA_DOCKER_HOST` também aceita `unix:///var/run/docker.sock`, que entrega o socket direto ao backend; prefira o proxy. Use apenas em um host confiável.
+O proxy `tecnativa/docker-socket-proxy` permite endpoints GET de contêineres, bloqueia escritas e não publica porta. O backend recebe `HOMORA_DOCKER_HOST=http://docker-proxy:2375`.
+
+**Coolify ou PaaS que lê um único Compose:** a plataforma não combina o override acima. No host Docker que executa o backend:
+
+1. Identifique a rede Docker efetivamente ligada ao backend, por exemplo com `docker network ls` e `docker inspect <contêiner-backend>`. Substitua `<rede-do-projeto>` pela rede encontrada (frequentemente o UUID do app; confirme antes).
+2. Inicie o proxy nessa rede, com a mesma imagem fixada pelo override:
+
+   ```bash
+   docker run -d --name homora-docker-proxy --restart unless-stopped \
+     --network <rede-do-projeto> --network-alias docker-proxy \
+     -e CONTAINERS=1 -e POST=0 \
+     -v /var/run/docker.sock:/var/run/docker.sock:ro \
+     tecnativa/docker-socket-proxy:0.3.0@sha256:9e4b9e7517a6b660f2cc903a19b257b1852d5b3344794e3ea334ff00ae677ac2
+   ```
+
+3. Configure `HOMORA_DOCKER_HOST=http://docker-proxy:2375` como variável de ambiente de execução do serviço **backend** na plataforma e faça o redeploy. Se a plataforma apenas fornecer variáveis de interpolação do Compose, adicione `HOMORA_DOCKER_HOST: ${HOMORA_DOCKER_HOST}` em `environment` do serviço backend na definição Compose única. Confira novamente a rede e o alias se ela for recriada.
+4. Verifique conforme abaixo. O proxy é gerenciado fora da stack: sua manutenção e atualização são manuais, assim como sua reconexão se a plataforma substituir a rede.
+
+**Socket Unix direto:** fora da configuração Compose fornecida, use `HOMORA_DOCKER_HOST=unix:///var/run/docker.sock` se o processo backend puder acessar o socket. Isso concede acesso privilegiado direto ao daemon; prefira o proxy restrito. Os arquivos Compose fornecidos não montam o socket no backend.
+
+Um proxy próprio deve permitir `GET /containers/json` e retornar HTTP 200 com um array JSON. O Homora usa timeout de 5 segundos, aceita até 4 MiB por resposta e processa apenas os primeiros 1.000 contêineres. A conexão HTTP com o proxy não é cifrada; mantenha-a em rede privada confiável. A ACL de GET de contêineres do proxy é mais ampla que esse endpoint.
+
+### Verificar e solucionar problemas
+
+Em **Configurações**, a seção de descoberta Docker mostra a quantidade de contêineres em execução lidos após uma consulta bem-sucedida, mesmo sem sugestões. No MCP, `get_homora_capabilities` informa `discoveryEnabled: true` quando configurado; `list_discovery_suggestions` (exige `discovery:read`) consulta de fato e retorna `enabled` e `scanned`. Em stdio, configure `HOMORA_DOCKER_HOST` no próprio processo MCP; em HTTP, vale a configuração do backend. A configuração, por si só, não comprova que o proxy está acessível.
+
+A descoberta consulta apenas contêineres em execução de um único daemon configurado. É sob demanda, não faz varredura periódica nem atualiza cards automaticamente, e exige revisão e confirmação antes de adicioná-los. Labels e nomes são dados não confiáveis; labels sozinhos nunca autorizam o monitoramento de endereços privados.
+
+| Sintoma                   | Verificação e correção                                                                                                                                                                              |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nenhuma sugestão          | Confira se há contêiner em execução nesse daemon com label `homora.url` ou `homepage.href` válido; revise os avisos de validação.                                                                   |
+| `discovery-disabled`      | Configure `HOMORA_DOCKER_HOST` no ambiente de execução do backend (ou do MCP stdio) e reinicie o processo.                                                                                          |
+| `docker-unavailable`      | Confira se o proxy está ativo, acessível na rede do backend e permite `GET /containers/json`; confira o acesso ao socket e o daemon. Respostas diferentes de 200 e timeout também causam esse erro. |
+| `docker-invalid-response` | Confira se o proxy retorna um array JSON de até 4 MiB; reduza metadados ou labels se necessário.                                                                                                    |
+
+A interface mostra mensagens amigáveis para esses erros; o MCP pode retornar uma falha genérica na consulta.
 
 ## Primeiro acesso e Proxmox
 

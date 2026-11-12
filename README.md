@@ -128,13 +128,52 @@ services:
 
 The Homepage labels `homepage.href`, `homepage.name`, `homepage.group`, `homepage.description` and `homepage.icon` also work, and `homora.*` wins when both are set. Labels never turn on monitoring of private addresses; you choose that for the cards you add.
 
-The Docker socket gives privileged access to the daemon, so Homora never mounts it. Enable discovery with a restricted proxy that only answers "list containers":
+### Enable discovery
+
+The Docker socket grants privileged access to the daemon; even a read-only socket mount does not make the Docker API read-only. Use these options only on a trusted host. Keep the proxy on a trusted private network, with no published port: anyone who can reach it can read container metadata and labels and export container filesystems (`GET /containers/{id}/export`), potentially exposing application data. Treat access to it as privileged.
+
+**Docker Compose:** start the restricted proxy with the override:
 
 ```bash
 docker compose -f compose.yml -f compose.docker-discovery.yml up -d --build
 ```
 
-This starts `tecnativa/docker-socket-proxy` (read-only socket, containers only, no published port) and sets `HOMORA_DOCKER_HOST=http://docker-proxy:2375` for the backend. Outside Compose, `HOMORA_DOCKER_HOST` also accepts `unix:///var/run/docker.sock`, which gives the backend the socket directly; prefer the proxy. Run this only on a host you trust.
+This starts `tecnativa/docker-socket-proxy` and sets `HOMORA_DOCKER_HOST=http://docker-proxy:2375` on the backend. The proxy permits container GET endpoints, blocks writes and does not publish a port.
+
+**Coolify or another single-Compose PaaS:** the override above cannot be combined by a platform that reads only one Compose file. On the Docker host running the Homora backend:
+
+1. Find the actual Docker network attached to the backend, for example with `docker network ls` and `docker inspect <backend-container>`. Replace `<project-network>` below with that network name (often the app UUID); do not assume the UUID is always the network name.
+2. Start the proxy on that network, using the same pinned image as the override:
+
+   ```bash
+   docker run -d --name homora-docker-proxy --restart unless-stopped \
+     --network <project-network> --network-alias docker-proxy \
+     -e CONTAINERS=1 -e POST=0 \
+     -v /var/run/docker.sock:/var/run/docker.sock:ro \
+     tecnativa/docker-socket-proxy:0.3.0@sha256:9e4b9e7517a6b660f2cc903a19b257b1852d5b3344794e3ea334ff00ae677ac2
+   ```
+
+3. Set `HOMORA_DOCKER_HOST=http://docker-proxy:2375` as a runtime environment variable on the **backend** service in the platform, then redeploy the application. If the platform only supplies Compose interpolation variables, add `HOMORA_DOCKER_HOST: ${HOMORA_DOCKER_HOST}` to the backend service’s `environment` in its single Compose definition. Check the network attachment and alias again if redeployment recreates the network.
+4. Verify as described below. The proxy is managed separately from the app stack: maintain and update it yourself, and reconnect it if the platform replaces the network.
+
+**Direct Unix socket:** outside the supplied Compose setup, the backend can use `HOMORA_DOCKER_HOST=unix:///var/run/docker.sock` if that socket is accessible to its process. This gives the backend direct privileged daemon access; prefer the restricted proxy. The bundled Compose files do not mount the socket into the backend.
+
+A custom proxy must allow `GET /containers/json` and return a JSON array with HTTP 200. Homora uses a 5-second timeout, accepts at most 4 MiB per response and processes only the first 1,000 containers. HTTP proxy connections are unencrypted; keep them on a trusted private network. The proxy's container GET ACL is broader than this one endpoint.
+
+### Verify and troubleshoot
+
+In **Settings**, the Docker discovery section reports the number of running containers read after a successful scan, even when there are no suggestions. In MCP, `get_homora_capabilities` reports `discoveryEnabled: true` when configured; `list_discovery_suggestions` (requires `discovery:read`) actually scans and returns `enabled` and `scanned`. For stdio, configure `HOMORA_DOCKER_HOST` in the MCP process itself; HTTP uses the backend setting. Configuration alone does not prove the proxy is reachable.
+
+Discovery reads only running containers from one configured Docker daemon. It scans on demand, does not periodically scan or automatically update cards, and requires review and confirmation before adding them. Container labels and names are untrusted data; labels alone never authorize monitoring private addresses.
+
+| Symptom                   | Check and remedy                                                                                                                                                                              |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No suggestions            | Ensure a running container on that daemon has a valid `homora.url` or `homepage.href` label; review any validation warnings.                                                                  |
+| `discovery-disabled`      | Set `HOMORA_DOCKER_HOST` in the backend runtime environment (or the stdio MCP process) and restart it.                                                                                        |
+| `docker-unavailable`      | Check the proxy is running, reachable on the backend network and permits `GET /containers/json`; check socket access and daemon health. Non-200 responses and timeouts also cause this error. |
+| `docker-invalid-response` | Ensure the proxy returns a JSON array and the response is no larger than 4 MiB; reduce container metadata or labels if needed.                                                                |
+
+The UI shows friendly messages for these errors; MCP may return a generic failure for a failed scan.
 
 ## Proxmox and other integrations
 
