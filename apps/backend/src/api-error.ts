@@ -55,6 +55,7 @@ export const ERROR_MESSAGES = {
   'identity-invalid': 'Invalid identity or scopes.',
   'identity-not-found': 'Identity not found.',
   'proposal-unavailable': 'Proposal unavailable.',
+  'batch-conflict': 'The changes in this batch conflict. No changes were applied.',
   'config-changed': 'The configuration changed. Review it again.',
   'proxmox-not-configured': 'Proxmox is not configured.',
   'proxmox-config-failed': 'Could not load the existing configuration.',

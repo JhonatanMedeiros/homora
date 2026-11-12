@@ -82,6 +82,7 @@ export const scopeLabel = (id: string) => {
 
 export const STATES: Record<string, MessageKey> = {
   pending: 'proposal.state.pending',
+  stale: 'proposal.state.stale',
   approved: 'proposal.state.approved',
   rejected: 'proposal.state.rejected',
   expired: 'proposal.state.expired',

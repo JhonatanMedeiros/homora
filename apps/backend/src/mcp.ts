@@ -472,7 +472,7 @@ export function createMcp(
     'propose_batch',
     {
       description:
-        'Cria até 20 propostas de service, group, card-order, widget ou connection-setup. Cada uma requer revisão independente.',
+        'Cria até 20 propostas de service, group, card-order, widget ou connection-setup. O lote inteiro requer uma única revisão humana.',
       inputSchema: {
         items: z
           .array(

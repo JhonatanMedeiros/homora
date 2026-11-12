@@ -129,12 +129,15 @@ export function Agents({
     if (!response?.ok) setMessage(t('agents.revokeFailed'));
     else await load();
   }
-  async function review(id: string, approve: boolean) {
-    const response = await fetch(`/api/proposals/${id}/review`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approve }),
-    }).catch(() => null);
+  async function review(id: string, approve: boolean, batch = false) {
+    const response = await fetch(
+      batch ? `/api/proposal-batches/${id}/review` : `/api/proposals/${id}/review`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approve }),
+      },
+    ).catch(() => null);
     if (response?.ok) {
       const result = (await response.json()) as { token?: string; agentId?: string };
       if (result.token) {
@@ -157,21 +160,37 @@ export function Agents({
       await load();
       await onApplied();
     } else {
-      setMessage(t('agents.reviewFailed'));
+      const body = (await response?.json().catch(() => null)) as { code?: string } | null;
+      setMessage(
+        t(
+          body?.code === 'batch-conflict'
+            ? 'agents.batchConflict'
+            : body?.code === 'config-changed'
+              ? 'agents.configChanged'
+              : body?.code === 'proposal-unavailable'
+                ? 'agents.proposalUnavailable'
+                : 'agents.reviewFailed',
+        ),
+      );
       await load();
     }
   }
-  const pending = (proposals ?? []).filter((proposal) => proposal.state === 'pending');
-  const history = (proposals ?? []).filter((proposal) => proposal.state !== 'pending');
+  const pending = (proposals ?? []).filter(
+    (proposal) => proposal.state === 'pending' || proposal.state === 'stale',
+  );
+  const history = (proposals ?? []).filter(
+    (proposal) => proposal.state !== 'pending' && proposal.state !== 'stale',
+  );
   const agentName = (id: string) =>
     agents?.find((agent) => agent.id === id)?.name ?? t('agents.fallbackName');
 
-  const renderProposal = (proposal: Proposal) => {
+  const renderProposal = (proposal: Proposal, hideReview = false) => {
     const diff = parseDiff(proposal.diff);
     return (
       <ProposalCard
         key={proposal.id}
         proposal={proposal}
+        hideReview={hideReview}
         agentName={agentName(proposal.author)}
         current={services.find((service) => service.id === diff?.id)}
         onReview={(approve) => void review(proposal.id, approve)}
@@ -229,7 +248,35 @@ export function Agents({
             </EmptyHeader>
           </Empty>
         ) : (
-          <ul className="flex flex-col gap-3">{pending.map(renderProposal)}</ul>
+          <ul className="flex flex-col gap-3">
+            {pending.map((proposal, index) => {
+              if (!proposal.batchId) return renderProposal(proposal);
+              if (pending.findIndex((p) => p.batchId === proposal.batchId) !== index) return null;
+              const batch = pending.filter((p) => p.batchId === proposal.batchId);
+              const id = proposal.batchId;
+              return (
+                <li key={id} className="flex flex-col gap-3">
+                  <ul className="flex flex-col gap-3">
+                    {batch.map((item) => renderProposal(item, true))}
+                  </ul>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void review(id, false, true)}
+                    >
+                      {t('proposal.batchReject')}
+                    </Button>
+                    {batch.every((p) => p.state === 'pending') && (
+                      <Button type="button" onClick={() => void review(id, true, true)}>
+                        {t('proposal.batchApprove')}
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
         {history.length > 0 && (
           <Collapsible className="flex flex-col gap-3">
@@ -240,7 +287,9 @@ export function Agents({
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <ul className="flex flex-col gap-3">{history.map(renderProposal)}</ul>
+              <ul className="flex flex-col gap-3">
+                {history.map((proposal) => renderProposal(proposal))}
+              </ul>
             </CollapsibleContent>
           </Collapsible>
         )}

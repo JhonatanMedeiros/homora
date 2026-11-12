@@ -101,5 +101,5 @@ it('shows the target and requested permissions before an identity decision', () 
   expect(screen.getByText(/Alteração de identidade de agente/)).toBeTruthy();
   expect(screen.getByText(/update-scopes/).textContent).toContain('agents:propose');
   expect(screen.getByText(/update-scopes/).textContent).toContain('services:read');
-  expect(screen.getByText(/Cada proposta é revisada separadamente/)).toBeTruthy();
+  expect(screen.getByText(/Revise todas as alterações antes de decidir/)).toBeTruthy();
 });
