@@ -87,6 +87,8 @@ it('validates proposal inputs and lists services without secrets', async () => {
       );
       const published = tools.tools.find((t) => t.name === name)?.inputSchema.properties ?? {};
       expect(new Set(Object.keys(published)), name).toEqual(expected);
+      const ops = schema.options.map((option) => (option as z.ZodObject).shape.op.value);
+      expect((published.op as { enum: string[] }).enum, name).toEqual(ops);
     }
     const result = await client.callTool({ name: 'list_services', arguments: {} });
     expect(JSON.stringify(result)).toContain('Jellyfin');
@@ -145,6 +147,9 @@ it('validates proposal inputs and lists services without secrets', async () => {
     });
     expect(order.isError, JSON.stringify(order)).not.toBe(true);
     for (const [name, args] of [
+      ['propose_service_card', { op: 'create' }],
+      ['propose_service_card', { op: 'unknown' }],
+      ['propose_service_card', { op: 'delete', id: 1, extra: 1 }],
       ['propose_group_change', { op: 'rename', name: 'x' }],
       ['propose_group_change', { op: 'unknown' }],
       ['propose_group_change', { op: 'create', name: 'x', extra: 1 }],

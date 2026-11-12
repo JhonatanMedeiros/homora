@@ -4,10 +4,15 @@ import { createVault } from './vault.js';
 import { createProposalService } from './proposals.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { integrationRegistry } from './integration-registry.js';
-import { serviceInputSchema } from './input-schemas.js';
+import { serviceProposalSchema } from './input-schemas.js';
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
-import { connectionSetupSchema } from './managed-proposals.js';
+import {
+  cardOrderSchema,
+  connectionSetupSchema,
+  groupChangeSchema,
+  widgetChangeSchema,
+} from './managed-proposals.js';
 import { parseDocker, type DockerSource } from './docker-discovery.js';
 import type { createIntegrationConnections } from './integration-connections.js';
 import { createObservationStore } from './service-observations.js';
@@ -16,43 +21,21 @@ import { createObservationStore } from './service-observations.js';
 // advertise these flat object schemas for discovery. The strict discriminated
 // unions in proposals.ts / managed-proposals.ts remain the source of truth and
 // re-validate every call.
-const discoveryId = z.number().int().safe().positive();
-const serviceProposalDiscoverySchema = z
-  .object({
-    op: z.enum(['create', 'update', 'delete']),
-    id: discoveryId.optional(),
-    service: serviceInputSchema.optional(),
-  })
-  .strict();
-const groupChangeDiscoverySchema = z
-  .object({
-    op: z.enum(['create', 'rename', 'delete', 'reorder']),
-    id: discoveryId.optional(),
-    name: z.string().optional(),
-    names: z.array(z.string()).optional(),
-  })
-  .strict();
-const cardOrderDiscoverySchema = z
-  .object({
-    op: z.enum(['reorder', 'move']),
-    category: z.string().optional(),
-    ids: z.array(discoveryId).optional(),
-    id: discoveryId.optional(),
-    targetCategory: z.string().optional(),
-    sourceIds: z.array(discoveryId).optional(),
-    targetIds: z.array(discoveryId).optional(),
-  })
-  .strict();
-const widgetChangeDiscoverySchema = z
-  .object({
-    op: z.enum(['create', 'link', 'delete']),
-    id: discoveryId.optional(),
-    integrationId: discoveryId.optional(),
-    source: z.literal('proxmox').optional(),
-    name: z.string().optional(),
-    serviceId: discoveryId.nullable().optional(),
-  })
-  .strict();
+type OpObject = z.ZodObject<{ op: z.ZodLiteral<string> } & z.ZodRawShape>;
+function discoverySchema(union: { options: readonly unknown[] }) {
+  const options = union.options as OpObject[];
+  const shape: Record<string, z.ZodType> = {
+    op: z.enum(options.map((option) => option.shape.op.value) as [string, ...string[]]),
+  };
+  for (const option of options)
+    for (const [key, field] of Object.entries(option.shape))
+      if (key !== 'op') shape[key] ??= (field as z.ZodType).optional();
+  return z.object(shape).strict();
+}
+const serviceProposalDiscoverySchema = discoverySchema(serviceProposalSchema);
+const groupChangeDiscoverySchema = discoverySchema(groupChangeSchema);
+const cardOrderDiscoverySchema = discoverySchema(cardOrderSchema);
+const widgetChangeDiscoverySchema = discoverySchema(widgetChangeSchema);
 
 type McpOptions = {
   connections?: ReturnType<typeof createIntegrationConnections>;
