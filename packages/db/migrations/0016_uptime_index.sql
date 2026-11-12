@@ -1,0 +1,3 @@
+ALTER TABLE `service_observation_history` ADD `status` text GENERATED ALWAYS AS (json_extract(observation, '$.status')) VIRTUAL;--> statement-breakpoint
+ALTER TABLE `service_observation_history` ADD `latency_ms` real GENERATED ALWAYS AS (json_extract(observation, '$.latencyMs')) VIRTUAL;--> statement-breakpoint
+CREATE INDEX `observation_history_uptime_idx` ON `service_observation_history` (`service_id`,`signature`,`observed_at`,`status`,`latency_ms`);

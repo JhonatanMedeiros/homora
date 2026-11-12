@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { ServiceValidationError } from '@homora/shared';
+import { ServiceValidationError, UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
 import type { createObservationStore } from '../service-observations.js';
@@ -43,6 +43,23 @@ export function registerServiceConfigurationRoutes(
       return reply.code(404).send(errorBody('service-not-found'));
     }
   });
+  const rangeOf = (value: unknown): UptimeRange | null =>
+    value === undefined ? '24h' : (UPTIME_RANGES.find((range) => range === value) ?? null);
+  app.get<{ Querystring: { range?: string } }>('/api/services/uptime', async (request, reply) => {
+    const range = rangeOf(request.query.range);
+    if (!range) return reply.code(400).send(errorBody('invalid-query'));
+    return observations.uptime(range);
+  });
+  app.get<{ Params: { id: string }; Querystring: { range?: string } }>(
+    '/api/services/:id/uptime',
+    async (request, reply) => {
+      const id = parseId(request.params.id);
+      const range = rangeOf(request.query.range);
+      if (!range) return reply.code(400).send(errorBody('invalid-query'));
+      const summary = id === null ? undefined : observations.uptime(range, Date.now(), id)[id];
+      return summary ?? reply.code(404).send(errorBody('service-not-found'));
+    },
+  );
   app.get('/api/groups', async () => configuration.listGroups());
 
   app.post('/api/groups', async (request, reply) => {
