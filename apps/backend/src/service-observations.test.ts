@@ -99,3 +99,93 @@ it('retains unique observations for thirty days and filters the requested window
     db.close();
   }
 });
+
+it('summarizes failure details: recent checks, outage start and last success', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER);
+    CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
+    CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
+    INSERT INTO services VALUES(1,'https://example.test',0,'http',30);`);
+  try {
+    const store = createObservationStore(db);
+    const now = Date.now();
+    const add = (minutesAgo: number, up: boolean) => {
+      const observedAt = now - minutesAgo * 60_000;
+      const observation = up
+        ? { status: 'available', reason: 'responding', httpStatus: 200, latencyMs: 40 }
+        : { status: 'unavailable', reason: 'no-response', httpStatus: null, latencyMs: null };
+      db.prepare(
+        'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
+      ).run(
+        1,
+        'sig',
+        observedAt,
+        JSON.stringify({ ...observation, lastAttempt: new Date(observedAt).toISOString() }),
+      );
+    };
+    expect(store.detail(1, now)).toMatchObject({
+      recent: [],
+      failingSince: null,
+      lastSuccess: null,
+    });
+    add(5, true);
+    add(4, true);
+    expect(store.detail(1, now)).toMatchObject({ failingSince: null });
+    add(3, false);
+    add(2, false);
+    add(1, false);
+    const detail = store.detail(1, now);
+    expect(detail.recent.map((event) => event.status)).toEqual([
+      'available',
+      'available',
+      'unavailable',
+      'unavailable',
+      'unavailable',
+    ]);
+    expect(detail.failingSince).toBe(now - 3 * 60_000);
+    expect(detail.failingSinceIsApproximate).toBe(false);
+    expect(detail.lastSuccess).toEqual({ observedAt: now - 4 * 60_000, latencyMs: 40 });
+    expect(Object.keys(detail.recent[0] ?? {}).sort()).toEqual([
+      'httpStatus',
+      'latencyMs',
+      'observedAt',
+      'reason',
+      'status',
+    ]);
+    expect(() => store.detail(99, now)).toThrow('Service not found');
+  } finally {
+    db.close();
+  }
+});
+
+it('marks the outage start as approximate when every read check failed', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER);
+    CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
+    CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
+    INSERT INTO services VALUES(1,'https://example.test',0,'http',30);`);
+  try {
+    const store = createObservationStore(db);
+    const now = Date.now();
+    db.prepare(
+      'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
+    ).run(
+      1,
+      'sig',
+      now - 1000,
+      JSON.stringify({
+        status: 'unavailable',
+        reason: 'no-response',
+        httpStatus: null,
+        latencyMs: null,
+        lastAttempt: new Date(now - 1000).toISOString(),
+      }),
+    );
+    const detail = store.detail(1, now);
+    expect(detail.failingSince).toBe(now - 1000);
+    expect(detail.failingSinceIsApproximate).toBe(true);
+    expect(detail.lastSuccess).toBeNull();
+  } finally {
+    db.close();
+  }
+});

@@ -415,7 +415,9 @@ appears monitored without being checked, and reference migration benchmark can b
   | network, DNS, TLS, timeout error | unavailable | `no-response`    | No Response      |
   | not yet probed                   | unknown     | `unchecked`      | Not Checked      |
 
-  Cards display `HTTP <code> · <ms>` when the reason is not a standard 2xx response.
+  Cards displayed `HTTP <code> · <ms>` when the reason was not a standard 2xx response. The
+  labels above were replaced by Online / Offline and plain sentences; see
+  [Service Card Status Text](#service-card-status-text-2026-11-12).
 
 - Product decision: a service responding with a login challenge or redirect is running and
   accessible, so it does not count as downtime. 404 remains unavailable (configured URL does
@@ -699,6 +701,30 @@ implementation because it changes a security default.
 - Verified with tests and desktop and 390 px screenshots of the toast. If another change happens
   within the 8 seconds (for example another move), Undo still restores the order captured at the
   time of its own move, which can overwrite the later change.
+
+### Service Card Status Text (2026-11-12)
+
+- Background: card footers mixed the probe result with technical detail ("Redirects", "HTTP 302 ·
+  72 ms", "Ping · 4 ms"), and a description repeating the name took a line of its own.
+- `lib/status-text.ts` (`describeStatus`) is now the single place that turns an observation into
+  text, used by the card and the list row. Healthy answers read Online / No ar whatever the code;
+  `login` and `ping` appear as small tags next to the latency; the HTTP code stays in a tooltip.
+  Failures read Offline / Fora do ar with a sentence (not found, server error `{code}`, no
+  response). Unchecked reads Waiting; blocked monitoring reads Not monitored with the reason.
+  The reason-specific `status.*` keys were removed from the i18n files.
+- A description is hidden when it only repeats the name (equal, or the name plus at most one word).
+- Failure details: a "Details" button on failing cards (card layout only) expands a panel with
+  the reason, when the outage started, the last success, the check type and interval, the last 24
+  checks as a strip and a fixed tip per failure type. Data comes from the new
+  `GET /api/services/:id/status-detail`, which reads the existing 30-day
+  `service_observation_history`: only status, reason, HTTP code and latency are returned, never
+  response bodies or headers. The outage start is a lower bound when it is older than the 500
+  checks read. The monitor does not record the kind of failure (DNS, timeout, TLS), so the panel
+  says "No response" and does not claim a cause.
+- Validation: `pnpm check` and `pnpm build`; tests for `detail()`, the route (401 and 404) and
+  the card, list row and panel. Chromium with a mocked API at 400 px (cards and list, dark) and
+  1100 px (cards, light): no horizontal overflow, panel open and closed. **Not verified:** real
+  monitor data, a physical phone, the details panel in the list layout (it has none by design).
 
 ### Agents Tab Redesign (2026-11-11)
 

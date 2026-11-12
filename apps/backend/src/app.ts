@@ -101,7 +101,7 @@ export function createApp(
   registerConnectionRoutes(app, db, vault);
   registerProxmoxRoutes(app, vault, db);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
-  registerServiceConfigurationRoutes(app, configuration, serviceMonitor);
+  registerServiceConfigurationRoutes(app, configuration, serviceMonitor, observations);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
 

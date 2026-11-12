@@ -1,5 +1,6 @@
 import type { Service } from '@homora/shared';
-import { Pencil, Trash2 } from 'lucide-react';
+import { useId, useState } from 'react';
+import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Item,
@@ -13,9 +14,11 @@ import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
 import { CardWidgets } from '@/components/card-widgets';
+import { ServiceFailureDetails } from '@/components/service-failure-details';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { cn } from '@/lib/utils';
-import { formatAttempt, hostOf, type ServiceStatus } from '@/lib/services';
+import { hostOf, type ServiceStatus } from '@/lib/services';
+import { describeStatus } from '@/lib/status-text';
 
 type Props = {
   service: Service;
@@ -31,16 +34,38 @@ type Props = {
   onCancelRemoval: () => void;
 };
 
-const REASON_LABEL = {
-  responding: 'status.available',
-  redirect: 'status.redirect',
-  'login-required': 'status.loginRequired',
-  'not-found': 'status.notFound',
-  'error-status': 'status.errorStatus',
-  reachable: 'status.reachable',
-  'no-response': 'status.noResponse',
-  unchecked: 'status.unchecked',
-} as const;
+/** A description that only repeats the name ("Proxmox" / "Proxmox Phobos") adds nothing. */
+function repeatsName(name: string, description: string) {
+  const n = name.trim().toLowerCase();
+  const d = description.trim().toLowerCase();
+  return d === n || (d.startsWith(`${n} `) && d.split(/\s+/).length <= 2);
+}
+
+/** Latency or fallback next to the status, with the type of check as a small tag. */
+function StatusMeta({
+  tag,
+  meta,
+  title,
+}: {
+  tag: string | null;
+  meta: string | null;
+  title: string | null;
+}) {
+  if (!tag && !meta) return null;
+  return (
+    <span
+      title={title ?? undefined}
+      className="inline-flex shrink-0 items-center gap-2 font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums"
+    >
+      {tag && (
+        <span className="rounded-sm border px-1 py-0.5 text-[0.625rem] leading-none tracking-wider uppercase">
+          {tag}
+        </span>
+      )}
+      {meta}
+    </span>
+  );
+}
 
 /** A service: opens in a new tab, displays its status light, and has edit actions. */
 export function ServiceCard({
@@ -57,19 +82,10 @@ export function ServiceCard({
   onCancelRemoval,
 }: Props) {
   const state = status?.status ?? 'unknown';
-  const reason = status?.reason;
-  const detail =
-    reason === 'reachable' && typeof status?.latencyMs === 'number'
-      ? `Ping · ${status.latencyMs} ms`
-      : reason && reason !== 'responding' && typeof status?.httpStatus === 'number'
-        ? [
-            `HTTP ${status.httpStatus}`,
-            typeof status.latencyMs === 'number' && `${status.latencyMs} ms`,
-          ]
-            .filter(Boolean)
-            .join(' · ')
-        : null;
-  const isBlocked = blocked && state !== 'available';
+  const view = describeStatus(status, blocked);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsId = useId();
+  const isBlocked = view.blocked;
   const inline = confirmingRemoval;
   if (list) {
     return (
@@ -112,18 +128,12 @@ export function ServiceCard({
             </span>
           </ItemContent>
           <StatusLight
-            state={state}
+            state={view.state}
             blocked={isBlocked}
-            label={
-              !isBlocked && reason && reason !== 'responding' ? t(REASON_LABEL[reason]) : undefined
-            }
+            label={view.label}
             className="shrink-0 max-sm:[&>span:last-child]:sr-only"
           />
-          {!isBlocked && status?.lastAttempt && state !== 'available' && (
-            <time dateTime={status.lastAttempt} className="shrink-0 text-xs text-muted-foreground">
-              {t('card.lastAttempt', { time: formatAttempt(status.lastAttempt) })}
-            </time>
-          )}
+          <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
           {managing && (
             <ItemActions className="z-10 ml-auto shrink-0 gap-0.5">
               <Button
@@ -150,6 +160,16 @@ export function ServiceCard({
                 {confirmingRemoval && t('card.confirmRemoveShort')}
               </Button>
             </ItemActions>
+          )}
+          {view.note && (
+            <p
+              className={cn(
+                'basis-full pl-11 text-xs',
+                view.failing ? 'text-destructive' : 'text-muted-foreground',
+              )}
+            >
+              {view.note}
+            </p>
           )}
           {widgets.length > 0 && (
             <div className="basis-full">
@@ -207,26 +227,51 @@ export function ServiceCard({
             </span>
           </ItemContent>
         </div>
-        {s.description && showDescription && (
+        {s.description && showDescription && !repeatsName(s.name, s.description) && (
           <ItemDescription className="line-clamp-2">{s.description}</ItemDescription>
         )}
         <CardWidgets widgets={widgets} />
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <StatusLight
-            state={state}
-            blocked={isBlocked}
-            label={
-              !isBlocked && reason && reason !== 'responding' ? t(REASON_LABEL[reason]) : undefined
-            }
-          />
-          {!isBlocked && detail && (
-            <span className="font-mono text-xs text-muted-foreground">{detail}</span>
+        {view.note && (
+          <div className="relative z-10 -mb-1 flex items-center justify-between gap-2">
+            <p
+              className={cn(
+                'min-w-0 text-sm',
+                view.failing ? 'text-destructive' : 'text-muted-foreground',
+              )}
+            >
+              {view.note}
+            </p>
+            {view.failing && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="-my-1 -mr-2 shrink-0"
+                aria-expanded={detailsOpen}
+                aria-controls={detailsId}
+                aria-label={t('card.detailsFor', { name: s.name })}
+                onClick={() => setDetailsOpen((open) => !open)}
+              >
+                {t('card.details')}
+                <ChevronDown
+                  aria-hidden="true"
+                  className={cn('transition-transform', detailsOpen && 'rotate-180')}
+                />
+              </Button>
+            )}
+          </div>
+        )}
+        {view.failing && detailsOpen && status && (
+          <ServiceFailureDetails id={detailsId} service={s} status={status} onEdit={onEdit} />
+        )}
+        <div
+          className={cn(
+            'flex items-center justify-between gap-3 border-t pt-3',
+            view.failing && !isBlocked && 'border-destructive/35',
           )}
-          {!isBlocked && status?.lastAttempt && state !== 'available' && (
-            <time dateTime={status.lastAttempt} className="text-xs text-muted-foreground">
-              {t('card.lastAttempt', { time: formatAttempt(status.lastAttempt) })}
-            </time>
-          )}
+        >
+          <StatusLight state={view.state} blocked={isBlocked} label={view.label} />
+          <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
         </div>
         {managing && (
           <ItemActions
