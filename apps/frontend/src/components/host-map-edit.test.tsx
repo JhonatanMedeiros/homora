@@ -112,6 +112,7 @@ it('offers the non-drag alternative: select the service, then choose a host', as
   const { edit } = setup();
   fireEvent.click(tile('notes'));
   const panel = screen.getByRole('complementary', { name: 'Details' });
+  fireEvent.click(within(panel).getByRole('button', { name: 'Change host' }));
   fireEvent.click(within(panel).getByRole('button', { name: 'Choose host' }));
   fireEvent.click(await screen.findByRole('button', { name: /dns/ }));
   await waitFor(() => expect(edit.onLinkHost).toHaveBeenCalledTimes(1));
@@ -127,6 +128,7 @@ it('offers the non-drag alternative: select the service, then choose a host', as
 it('unlinks from the panel and reports a failed change without pretending it worked', async () => {
   const { edit } = setup();
   fireEvent.click(tile('pihole'));
+  fireEvent.click(screen.getByRole('button', { name: 'Change host' }));
   fireEvent.click(screen.getByRole('button', { name: 'Unlink host' }));
   await waitFor(() =>
     expect(edit.onLinkHost).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), null),
@@ -222,4 +224,19 @@ it('adds the manual dependency count to the offline banner as a secondary line',
   expect(
     screen.getByText('2 more may be affected through dependencies you recorded.'),
   ).toBeTruthy();
+});
+
+it('closes the details with a click on the empty canvas or Escape, but not on a tile', () => {
+  setup();
+  fireEvent.click(tile('pihole'));
+  expect(screen.getByRole('complementary', { name: 'Details' })).toBeTruthy();
+  fireEvent.click(tile('jellyfin'));
+  expect(screen.getByRole('complementary', { name: 'Details' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('region', { name: 'Map of services by host' }));
+  expect(screen.queryByRole('complementary', { name: 'Details' })).toBeNull();
+  fireEvent.click(tile('pihole'));
+  fireEvent.keyDown(screen.getByRole('region', { name: 'Map of services by host' }), {
+    key: 'Escape',
+  });
+  expect(screen.queryByRole('complementary', { name: 'Details' })).toBeNull();
 });
