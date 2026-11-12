@@ -12,6 +12,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'profile-update',
     'public-status-update',
     'service-public',
+    'service-defaults-update',
   ],
   proposal: [
     'proposal',

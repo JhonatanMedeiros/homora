@@ -643,7 +643,7 @@ appears monitored without being checked, and reference migration benchmark can b
 - Validation: `pnpm check`; component tests for filters, navigation, recents, go-to-card and
   header button. Not reviewed visually in a browser.
 
-### Follow-up — Private network default for new services (not started)
+### Follow-up — Private network default for new services (done, issue #83)
 
 **Problem:** monitoring denies RFC1918 and ULA destinations unless each service opts in
 (`allowPrivate`). Most homelab services use private addresses, so on first use the home shows
@@ -669,6 +669,23 @@ validation in the API; apply the default only on UI-created services; Settings s
 initialized from the default; tests proving imports, Docker, and MCP do not inherit it; update
 `SECURITY.md` and `docs/arquitetura.md`. Needs an explicit maintainer decision before
 implementation because it changes a security default.
+
+**Done (option 2, issue #83):**
+
+- Setting `new_services_allow_private` in `app_settings` (no migration; missing = off), read and
+  written through `GET`/`PUT /api/service-defaults`, validated by a strict Zod schema, audited as
+  `service-defaults-update` (`allow-private:on|off`, only when the value changes).
+- `POST /api/services` uses it only when the request omits `allowPrivate`. Update, import, Docker
+  discovery (local and push) and proposals do not read it; toggling never touches stored services.
+- Settings has a new **Monitoring** section with the switch; the new-service form starts its checkbox
+  from the setting (editing keeps the stored value). The blocked-state hint mentions the setting.
+  English and pt-BR strings added.
+- Docs: `SECURITY.md`, `docs/arquitetura.md`, README.
+- Verified by automated tests only: backend (default off, on, explicit false wins, existing
+  services unchanged, auth, validation, audit, and import, Docker local, Docker push and proposals
+  not inheriting) and frontend (switch loads/saves/fails, form initial value for new vs edit).
+  **Not checked in a browser or on a running instance** (fresh instance, a `192.168.x.x` service
+  becoming monitored, an imported service staying blocked).
 
 ## Organize Mode Redesign (2026-11-11)
 

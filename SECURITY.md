@@ -31,6 +31,9 @@ data or real credentials. There is no established response SLA or bug bounty pol
   authorizes only those ranges at the exact configured origin. DNS is pinned for
   the connection, and mixed responses, special ranges, and redirects remain
   blocked. The special ranges list does not cover every local network topology policy.
+  The administrator setting **New services allow private network** (off by default,
+  audited) only provides the initial value for services created in the web UI;
+  existing services, imports, Docker discovery and agent proposals never inherit it.
 - Treat service names, URLs, and integration responses as untrusted data.
 
 See the [README](README.md) for backup and recovery, and

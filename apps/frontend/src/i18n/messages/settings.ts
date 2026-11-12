@@ -1,5 +1,13 @@
 /** Text for the Interface, Public status and Docker discovery settings. */
 export const en = {
+  'settings.section.monitoring': 'Monitoring',
+  'settings.section.monitoringHint': 'Defaults for how new services are checked.',
+  'settings.monitoring.defaults': 'New services',
+  'settings.monitoring.allowPrivate': 'New services allow private network',
+  'settings.monitoring.allowPrivateHint':
+    'Monitoring may probe addresses on your private network, such as 192.168.x.x. This only sets the starting value for services you add here; each service keeps its own switch, and existing services, imports, Docker discovery and agent proposals are not affected.',
+  'settings.monitoring.loadError': 'Could not load this setting.',
+  'settings.monitoring.saveError': 'Could not save this setting.',
   'settings.copy': 'Copy',
   'settings.copied': 'Copied',
   'settings.ui.browserOnly': 'Saved in this browser only. Other devices keep their own choices.',
@@ -92,6 +100,14 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
+  'settings.section.monitoring': 'Monitoramento',
+  'settings.section.monitoringHint': 'Padrões de como novos serviços são verificados.',
+  'settings.monitoring.defaults': 'Novos serviços',
+  'settings.monitoring.allowPrivate': 'Novos serviços permitem rede privada',
+  'settings.monitoring.allowPrivateHint':
+    'O monitoramento pode consultar endereços da sua rede privada, como 192.168.x.x. Isso só define o valor inicial dos serviços adicionados aqui; cada serviço mantém seu próprio controle, e serviços existentes, importações, descoberta Docker e propostas de agentes não são afetados.',
+  'settings.monitoring.loadError': 'Não foi possível carregar esta configuração.',
+  'settings.monitoring.saveError': 'Não foi possível salvar esta configuração.',
   'settings.copy': 'Copiar',
   'settings.copied': 'Copiado',
   'settings.ui.browserOnly':

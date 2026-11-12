@@ -81,6 +81,8 @@ export function ServicesPage({
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [shared, setShared] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  // Instance setting that only seeds the "allow private network" box of a NEW service.
+  const privateDefaultRef = useRef(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -103,6 +105,25 @@ export function ServicesPage({
   const addButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => () => window.clearTimeout(flashTimer.current), []);
+  useEffect(() => {
+    if (!managing) return;
+    const controller = new AbortController();
+    fetch('/api/service-defaults', { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { allowPrivate?: unknown } | null) => {
+        const value = data?.allowPrivate === true;
+        privateDefaultRef.current = value;
+        // It can arrive after a "new service" form opened: seed it while the form is untouched.
+        if (value && initializedRoute.current === 'new')
+          setForm((current) =>
+            current.name || current.url || current.allowPrivate
+              ? current
+              : { ...current, allowPrivate: true },
+          );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [managing]);
 
   // "Go to card": clear the category filter, let the group expand, then scroll and flash the card.
   const focusService = focusRequest ? services.find((s) => s.id === focusRequest.id) : undefined;
@@ -177,7 +198,7 @@ export function ServicesPage({
             expectedStatus: service.expectedStatus ?? null,
             checkPath: service.checkPath ?? null,
           }
-        : emptyService,
+        : { ...emptyService, allowPrivate: privateDefaultRef.current },
     );
     setFormError('');
     setFormOpen(true);
@@ -243,7 +264,7 @@ export function ServicesPage({
             expectedStatus: service.expectedStatus ?? null,
             checkPath: service.checkPath ?? null,
           }
-        : emptyService,
+        : { ...emptyService, allowPrivate: privateDefaultRef.current },
     );
     setFormError('');
     setFormOpen(true);

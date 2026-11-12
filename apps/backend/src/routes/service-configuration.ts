@@ -9,10 +9,13 @@ import {
   groupOrderSchema,
   parseId,
   serviceInputSchema,
+  serviceDefaultsSchema,
   serviceOrderSchema,
 } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
 import type { createPublicStatus } from '../public-status.js';
+import type { createAuth } from '../auth.js';
+import type { AuditLog } from '../audit.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
@@ -28,10 +31,32 @@ export function registerServiceConfigurationRoutes(
   monitor: Monitor,
   observations: Observations,
   publicStatus: ReturnType<typeof createPublicStatus>,
+  auth: ReturnType<typeof createAuth>,
+  audit: AuditLog,
 ) {
   app.get('/api/services', async () => {
     const shared = publicStatus.publicIds();
     return configuration.listServices().map((row) => ({ ...row, isPublic: shared.has(row.id) }));
+  });
+  app.get('/api/service-defaults', async () => ({
+    allowPrivate: configuration.newServicesAllowPrivate(),
+  }));
+  app.put('/api/service-defaults', async (request, reply) => {
+    const parsed = serviceDefaultsSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
+    const before = configuration.newServicesAllowPrivate();
+    configuration.setNewServicesAllowPrivate(parsed.data.allowPrivate);
+    if (before !== parsed.data.allowPrivate) {
+      const session = await auth.session(request.headers);
+      audit.record({
+        actor: session ? `user:${session.userId}` : 'user:unknown',
+        action: 'service-defaults-update',
+        result: 'ok',
+        detail: parsed.data.allowPrivate ? 'allow-private:on' : 'allow-private:off',
+        ipAddress: request.ip,
+      });
+    }
+    return { allowPrivate: parsed.data.allowPrivate };
   });
   app.get('/api/service-status', async () => monitor.snapshot());
   app.get<{ Params: { id: string } }>('/api/services/:id/status-detail', async (request, reply) => {
@@ -125,7 +150,11 @@ export function registerServiceConfigurationRoutes(
     const parsed = serviceInputSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
     try {
-      const created = configuration.createService(parsed.data);
+      // Only the UI create path applies the instance default, and only when the form sent no value.
+      const created = configuration.createService({
+        ...parsed.data,
+        allowPrivate: parsed.data.allowPrivate ?? configuration.newServicesAllowPrivate(),
+      });
       void monitor.invalidate();
       return reply.code(201).send(publicService(created));
     } catch (error) {

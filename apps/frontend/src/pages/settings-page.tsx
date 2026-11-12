@@ -12,6 +12,7 @@ import {
 import { Discovery } from '@/features/discovery/discovery';
 import { PublicStatusSettings } from '@/features/public-status/public-status-settings';
 import { InterfaceSettings } from '@/features/settings/interface-settings';
+import { MonitoringSettings } from '@/features/settings/monitoring-settings';
 import { NotificationSettings } from '@/features/settings/notification-settings';
 import {
   isSettingsSection,
@@ -81,6 +82,7 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
             {t('settings.title')}
           </Link>
           {current === 'interface' && <InterfaceSettings />}
+          {current === 'monitoring' && <MonitoringSettings />}
           {current === 'public' && <PublicStatusSettings />}
           {current === 'notifications' && <NotificationSettings />}
           {current === 'backup' && <ConfigTransfer onImported={onImported} />}
