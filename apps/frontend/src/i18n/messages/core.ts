@@ -1,6 +1,10 @@
 /** Text for the shell, authentication, and services screen. */
 export const en = {
   'route.notFound': 'Page not found',
+  'error.retry': 'Try again',
+  'error.unexpected': 'Something went wrong',
+  'error.recovery': 'Reload the page to try again. Unsaved changes may be lost.',
+  'error.reload': 'Reload page',
   'route.home': 'Go to dashboard',
   'route.serviceNotFound': 'Service not found.',
   'route.services': 'Back to services',
@@ -273,6 +277,11 @@ export const en = {
 
 export const ptBR: Record<keyof typeof en, string> = {
   'route.notFound': 'Página não encontrada',
+  'error.retry': 'Tentar novamente',
+  'error.unexpected': 'Algo deu errado',
+  'error.recovery':
+    'Recarregue a página para tentar novamente. Alterações não salvas podem ser perdidas.',
+  'error.reload': 'Recarregar página',
   'route.home': 'Ir para o painel',
   'route.serviceNotFound': 'Serviço não encontrado.',
   'route.services': 'Voltar para serviços',

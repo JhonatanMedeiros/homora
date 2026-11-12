@@ -7,6 +7,7 @@ export const ERROR_MESSAGES = {
   'auth-required': 'Authentication required.',
   'origin-not-allowed': 'Origin not allowed.',
   'not-found': 'Not found.',
+  'internal-error': 'An unexpected server error occurred.',
   'invalid-data': 'Invalid data.',
   'invalid-query': 'Invalid query.',
   'invalid-decision': 'Invalid decision.',

@@ -15,10 +15,11 @@ type Props = {
   status: AuthStatus | null;
   error: string;
   onSubmit: (credentials: Credentials) => Promise<boolean>;
+  onRetry?: () => void;
 };
 
 /** Admin account setup and sign in. */
-export function AuthPage({ status, error, onSubmit }: Props) {
+export function AuthPage({ status, error, onSubmit, onRetry }: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -141,6 +142,11 @@ export function AuthPage({ status, error, onSubmit }: Props) {
                 {!error && <Spinner />}
                 {error || t('auth.connecting')}
               </p>
+              {error && onRetry && (
+                <Button className="mt-4" onClick={onRetry}>
+                  {t('error.retry')}
+                </Button>
+              )}
             </CardContent>
           )}
         </Card>

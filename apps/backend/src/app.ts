@@ -129,6 +129,17 @@ export function createApp(
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);
 
+  app.setErrorHandler((error, _request, reply) => {
+    const status =
+      typeof error === 'object' &&
+      error !== null &&
+      'statusCode' in error &&
+      typeof error.statusCode === 'number'
+        ? error.statusCode
+        : 500;
+    if (status >= 500) return reply.code(status).send(errorBody('internal-error'));
+    return reply.send(error);
+  });
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));
   return app;
 }
