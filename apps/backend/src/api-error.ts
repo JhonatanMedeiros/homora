@@ -14,6 +14,7 @@ export const ERROR_MESSAGES = {
   'invalid-group-order': 'Invalid group order.',
   'invalid-columns': 'Choose between 1 and 6 columns, or automatic.',
   'invalid-group-name': 'Provide a group name with up to 40 characters.',
+  'discovery-stale': 'The inventory is unavailable or changed. Review it again.',
   'discovery-disabled': 'Docker discovery is not enabled.',
   'docker-unavailable':
     'Could not read the Docker containers. Check HOMORA_DOCKER_HOST and the proxy.',

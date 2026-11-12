@@ -936,3 +936,25 @@ implementation because it changes a security default.
 
 - Batch approval validates the original configuration and applies all items in one transaction, with a single revision increment. Conflicting operations roll back; pending remnants of partially decided older batches can be discarded.
 - The review interface groups batch items, distinguishes changed configuration from unavailable proposals and conflicting changes, and shows stale and expired states.
+
+## Docker push discovery (issue #56)
+
+- Added a separately authenticated remote Docker inventory agent, source lifecycle,
+  five-minute freshness, and review/import tied to a transactional source-version
+  check. Existing local Docker discovery remains available. The stored inventory
+  contains only supported discovery labels; the agent token is stored as a hash.
+- Added UI in English and Portuguese, scoped MCP tools for both transports, a
+  Docker image target and release matrix entry. Setup, socket privilege, TLS,
+  token handling and limits are documented in both READMEs. The protocol accepts
+  the last valid arrival; it does not enforce message ordering or replay counters.
+- Validated locally with two fake Unix-socket Docker daemons, real agent code,
+  HTTPS with a temporary CA, the real backend, card review/import, rejection of an
+  untrusted certificate, revoked token and expired inventory. Tested a concurrent
+  source update through a second SQLite connection, migration with existing data,
+  MCP HTTP and in-memory transport, and frontend interactions. Chromium at 390 px
+  showed source creation and one-time token; at 1280 px it exercised source creation,
+  upload, review and import. Neither viewport showed horizontal overflow or page errors. The agent
+  image built locally. No real Docker socket or production database was used.
+- Not validated: actual communication between separate LXC hosts (none available),
+  physical mobile devices, screen readers, and agent image on arm64. The local
+  tests do not establish safety for public exposure.

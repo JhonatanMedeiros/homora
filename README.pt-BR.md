@@ -30,7 +30,7 @@ Um espaço pessoal para visualizar e organizar serviços, infraestrutura e infor
 - Método de verificação por serviço (requisição HTTP ou ping) e intervalo por serviço (30 a 3600 segundos), também mantidos nas exportações.
 - Widgets dentro do card: ligue um widget (dados do Proxmox, Jellyfin, Home Assistant, Uptime Kuma ou AdGuard Home) a um card na página Integrações. Cada widget mostra o próprio estado de carregamento ou erro, e uma conexão com falha não afeta os outros cards.
 - Faixa superior opcional (ative em Configurações) com data, hora e uso de CPU, memória e disco da conexão Proxmox escolhida.
-- Descoberta Docker opcional: sugere cards a partir de labels de contêineres (`homora.url` ou o `homepage.href` do Homepage), com etapa de revisão. Veja [Descoberta Docker](#descoberta-docker).
+- Descoberta Docker opcional: sugere cards de inventários locais ou de agentes remotos a partir de labels de contêineres (`homora.url` ou o `homepage.href` do Homepage), com etapa de revisão. Veja [Descoberta Docker](#descoberta-docker).
 - Integrações experimentais de leitura (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) e agentes de IA com permissões, via MCP local.
 
 Ideias e recursos planejados estão em [estratégia](docs/estrategia.md) e no [plano de evolução](docs/evolucao.md), separados do que já existe.
@@ -126,6 +126,34 @@ services:
 ```
 
 Os labels do Homepage (`homepage.href`, `homepage.name`, `homepage.group`, `homepage.description`, `homepage.icon`) também funcionam, e `homora.*` vence quando os dois existem. Labels nunca ativam o monitoramento de endereços privados; você escolhe isso nos cards que adicionar.
+
+### Agentes Docker remotos
+
+Os agentes remotos complementam a fonte local; nenhum dos modos cria cards sem revisão. Em **Configurações → Agentes Docker remotos**, crie uma fonte e copie o token imediatamente. Ele aparece uma única vez; se o perder, gere outro. O Homora armazena um hash, e a revogação invalida o token. O limite é de dez fontes remotas, inclusive revogadas até serem removidas. Gerar outro token descarta o último inventário da fonte. Remover a fonte apaga o inventário, mas preserva os cards importados.
+
+Em cada host Docker confiável, construa o agente a partir deste repositório:
+
+```bash
+docker build --target discovery-agent -t homora-discovery-agent:local .
+```
+
+Guarde o token em um arquivo protegido nesse host. Execute o agente com um usuário que possa ler o arquivo e o socket Docker; por exemplo, no Linux, substitua os caminhos e a origem HTTPS do Homora:
+
+```bash
+docker run -d --name homora-discovery-agent --restart unless-stopped \
+  --user "$(id -u):$(id -g)" --group-add "$(stat -c '%g' /var/run/docker.sock)" \
+  -e HOMORA_AGENT_ORIGIN=https://homora.example.home \
+  -e HOMORA_AGENT_TOKEN_FILE=/run/secrets/homora-token \
+  -v /caminho/do/token-protegido:/run/secrets/homora-token:ro \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  homora-discovery-agent:local
+```
+
+Mantenha o arquivo privado e legível pelo usuário escolhido. Para uma CA privada, monte o certificado público e defina `HOMORA_AGENT_CA_FILE` com seu caminho no container. A validação do certificado e do nome HTTPS permanece ativa. Configure um proxy HTTPS privado conforme [Cenários de implantação](#cenários-de-implantação); isso não torna a exposição pública suportada. O agente envia para `/docker-push/inventory`, que precisa ser encaminhado pelo proxy. O nginx incluído já o encaminha. `HOMORA_AGENT_INTERVAL` aceita 30–300 segundos (padrão 60); `HOMORA_AGENT_DOCKER_SOCKET` altera o caminho do socket Unix dentro do container.
+
+**O acesso ao socket é privilegiado:** uma montagem somente de leitura não torna a API Docker somente de leitura. O agente usa apenas `GET /containers/json`, mas um agente comprometido com acesso ao socket poderia controlar o daemon. Execute apenas imagens confiáveis em hosts confiáveis. Não publique a porta do socket ou proxy Docker. O agente envia somente IDs, primeiro nome e labels de descoberta suportados; labels podem conter dados sensíveis, portanto não coloque segredos neles. Ele aceita até 1.000 containers, lê até 4 MiB do Docker e envia até 1 MiB. Inventários maiores ou inválidos falham integralmente e mantêm o anterior.
+
+Configurações mostra o último recebimento. Um inventário com mais de cinco minutos não pode ser revisado nem importado. A prévia seleciona uma fonte por vez; se os dados, a autorização da fonte ou a configuração do dashboard mudarem antes da confirmação, revise novamente. Cards permanecem após a revogação da fonte. O monitoramento de destinos privados ainda exige escolha explícita. No MCP, `list_docker_push_sources` e `list_docker_push_suggestions` exigem `discovery:read`; `propose_docker_push_card` também exige `proposals:create` e continua gerando proposta para revisão humana. Os dois transportes MCP leem os mesmos inventários armazenados.
 
 ### Ativar a descoberta
 

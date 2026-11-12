@@ -1,6 +1,28 @@
 /** Text for settings, export, and import. */
 export const en = {
   'nav.settings': 'Settings',
+  'push.title': 'Remote Docker agents',
+  'push.hint': 'Agents send a limited inventory over HTTPS. Suggestions require your review.',
+  'push.name': 'Source name',
+  'push.create': 'Add source',
+  'push.empty': 'No remote sources yet.',
+  'push.token': 'Copy this token now. It will not be shown again.',
+  'push.dismiss': 'I saved the token',
+  'push.never': 'No inventory received',
+  'push.last': 'Last received: {time}',
+  'push.expired': 'Inventory is older than five minutes; wait for the agent.',
+  'push.revoked': 'Revoked',
+  'push.refresh': 'Refresh sources',
+  'push.review': 'Review suggestions',
+  'push.revoke': 'Revoke token',
+  'push.confirmRevoke': 'Confirm revocation',
+  'push.remove': 'Remove source',
+  'push.confirmRemove': 'Confirm removal',
+  'push.rotate': 'Generate new token',
+  'push.confirmRotate': 'Confirm new token',
+  'push.failed': 'Could not complete the request. Refresh and try again.',
+  'push.cancel': 'Cancel',
+
   'discovery.title': 'Docker discovery',
   'discovery.hint':
     'Suggests cards from container labels (homora.url, homora.name, homora.group, homora.description, homora.icon, or the Homepage equivalents). Nothing is added until you pick containers and confirm.',
@@ -96,6 +118,29 @@ export const en = {
 
 export const ptBR: Record<keyof typeof en, string> = {
   'nav.settings': 'Configurações',
+  'push.title': 'Agentes Docker remotos',
+  'push.hint':
+    'Os agentes enviam um inventário limitado por HTTPS. As sugestões precisam da sua revisão.',
+  'push.name': 'Nome da fonte',
+  'push.create': 'Adicionar fonte',
+  'push.empty': 'Nenhuma fonte remota cadastrada.',
+  'push.token': 'Copie este token agora. Ele não será exibido novamente.',
+  'push.dismiss': 'Já salvei o token',
+  'push.never': 'Nenhum inventário recebido',
+  'push.last': 'Último recebimento: {time}',
+  'push.expired': 'Inventário com mais de cinco minutos; aguarde o agente.',
+  'push.revoked': 'Revogada',
+  'push.refresh': 'Atualizar fontes',
+  'push.review': 'Revisar sugestões',
+  'push.revoke': 'Revogar token',
+  'push.confirmRevoke': 'Confirmar revogação',
+  'push.remove': 'Remover fonte',
+  'push.confirmRemove': 'Confirmar remoção',
+  'push.rotate': 'Gerar novo token',
+  'push.confirmRotate': 'Confirmar novo token',
+  'push.failed': 'Não foi possível concluir. Atualize e tente novamente.',
+  'push.cancel': 'Cancelar',
+
   'discovery.title': 'Descoberta Docker',
   'discovery.hint':
     'Sugere cards a partir dos labels dos contêineres (homora.url, homora.name, homora.group, homora.description, homora.icon ou os equivalentes do Homepage). Nada é adicionado antes de você escolher os contêineres e confirmar.',

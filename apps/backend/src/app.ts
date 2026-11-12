@@ -19,6 +19,8 @@ import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
 import { createObservationStore } from './service-observations.js';
+import { createDockerPush } from './docker-push.js';
+import { registerDockerPushRoutes } from './routes/docker-push.js';
 import { registerMcpHttp } from './mcp-http.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -69,6 +71,7 @@ export function createApp(
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     if (
       request.url.split('?')[0] !== '/mcp' &&
+      request.url.split('?')[0] !== '/docker-push/inventory' &&
       !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
       !allowedOrigins.has(request.headers.origin ?? '')
     )
@@ -104,6 +107,7 @@ export function createApp(
   registerServiceConfigurationRoutes(app, configuration, serviceMonitor, observations);
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
+  registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor);
 
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));
   return app;

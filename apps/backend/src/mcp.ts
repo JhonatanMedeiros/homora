@@ -16,6 +16,7 @@ import {
 } from './managed-proposals.js';
 import { parseDocker, type DockerSource } from './docker-discovery.js';
 import type { createIntegrationConnections } from './integration-connections.js';
+import { createDockerPush } from './docker-push.js';
 import { createObservationStore } from './service-observations.js';
 
 // The MCP SDK publishes an empty inputSchema for z.discriminatedUnion, so tools
@@ -41,6 +42,7 @@ export function createMcp(
   options: McpOptions = {},
 ) {
   const configuration = createServiceConfiguration(database);
+  const dockerPush = createDockerPush(database);
   const proposalService = createProposalService(database, configuration, vault);
   const server = new McpServer({ name: 'homora', version: '0.1.0' });
   const token = () => options.token ?? process.env.HOMORA_AGENT_TOKEN;
@@ -96,6 +98,7 @@ export function createMcp(
       const scopes = AGENT_SCOPES.filter((scope) => authorize(scope));
       if (!scopes.length) return unauthorized();
       const granted = new Set<string>(scopes);
+      const remoteSources = dockerPush.countActive();
       const definitions: Array<{ name: string; scopes: string[]; enabled?: boolean }> = [
         { name: 'get_homora_capabilities', scopes: [] },
         ...[
@@ -132,6 +135,11 @@ export function createMcp(
           scopes: ['integrations:read'],
         })),
         { name: 'propose_connection_setup', scopes: ['connections:propose'] },
+        ...['list_docker_push_sources', 'list_docker_push_suggestions'].map((name) => ({
+          name,
+          scopes: ['discovery:read'],
+        })),
+        { name: 'propose_docker_push_card', scopes: ['discovery:read', 'proposals:create'] },
         {
           name: 'list_discovery_suggestions',
           scopes: ['discovery:read'],
@@ -145,7 +153,11 @@ export function createMcp(
       ];
       return result({
         scopes,
-        discoveryEnabled: Boolean(options.docker),
+        discoveryEnabled: Boolean(options.docker) || remoteSources > 0,
+        discovery: {
+          enabled: Boolean(options.docker) || remoteSources > 0,
+          sources: remoteSources + Number(Boolean(options.docker)),
+        },
         tools: [
           ...definitions.map(({ name, scopes: required, enabled }) => ({
             name,
@@ -803,6 +815,84 @@ export function createMcp(
         );
         if (cards.length !== 1) return failed();
         return result(proposalService.propose(author, { op: 'create', service: cards[0] }));
+      } catch {
+        return failed();
+      }
+    },
+  );
+  server.registerTool(
+    'list_docker_push_sources',
+    {
+      title: 'List Docker push sources',
+      description: 'Lists remote discovery sources and their latest receipt time.',
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    },
+    async () =>
+      authorize('discovery:read') ? result({ sources: dockerPush.list() }) : unauthorized(),
+  );
+  server.registerTool(
+    'list_docker_push_suggestions',
+    {
+      title: 'List remote Docker suggestions',
+      description: 'Lists current untrusted labels from one source.',
+      inputSchema: { sourceId: z.string().regex(/^[a-f0-9]{32}$/) },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    },
+    async ({ sourceId }) => {
+      if (!authorize('discovery:read')) return unauthorized();
+      const source = dockerPush.snapshot(sourceId);
+      if (!source) return failed();
+      const { entries, scanned } = parseDocker(source.containers);
+      return result({
+        source: {
+          id: source.id,
+          name: source.name,
+          receivedAt: source.receivedAt,
+          version: source.version,
+        },
+        scanned,
+        entries: entries.map((entry) => ({ ...entry, url: publicUrl(entry.url) })),
+      });
+    },
+  );
+  server.registerTool(
+    'propose_docker_push_card',
+    {
+      title: 'Propose remote Docker card',
+      description: 'Creates a reviewable proposal from a current remote inventory.',
+      inputSchema: {
+        sourceId: z.string().regex(/^[a-f0-9]{32}$/),
+        id: z.string().regex(/^[a-f0-9]{12}$/),
+        inventoryVersion: z.number().int().positive(),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    },
+    async ({ sourceId, id, inventoryVersion }) => {
+      if (!authorize('discovery:read')) return unauthorized();
+      const author = authorize('proposals:create');
+      if (!author) return unauthorized();
+      try {
+        const source = dockerPush.snapshot(sourceId);
+        if (!source || source.version !== inventoryVersion) return failed();
+        const { parsed } = parseDocker(source.containers, new Set([id]));
+        const cards = parsed.document.groups.flatMap((group) =>
+          group.services.map((service) => ({
+            ...service,
+            url: publicUrl(service.url),
+            icon:
+              service.icon && /^https?:\/\//i.test(service.icon)
+                ? publicUrl(service.icon)
+                : service.icon,
+            category: group.name,
+            allowPrivate: false,
+          })),
+        );
+        if (cards.length !== 1) return failed();
+        return result(
+          proposalService.propose(author, { op: 'create', service: cards[0] }, () =>
+            dockerPush.isCurrent(sourceId, inventoryVersion),
+          ),
+        );
       } catch {
         return failed();
       }

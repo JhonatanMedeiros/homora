@@ -183,7 +183,12 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
      */
     applyImport(
       parsed: ParsedImport,
-      options: { keepPrivate: boolean; grantPrivate?: boolean; expectedVersion?: number },
+      options: {
+        keepPrivate: boolean;
+        grantPrivate?: boolean;
+        expectedVersion?: number;
+        guard?: () => boolean;
+      },
     ): { status: 'stale' } | { status: 'applied'; plan: ImportPlan; created: number } {
       return transaction(() => {
         const current = (
@@ -191,7 +196,10 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             version: number;
           }
         ).version;
-        if (options.expectedVersion !== undefined && options.expectedVersion !== current)
+        if (
+          (options.expectedVersion !== undefined && options.expectedVersion !== current) ||
+          (options.guard && !options.guard())
+        )
           return { status: 'stale' as const };
         const plan = planImport(parsed, {
           groups: selectGroups().map((group) => group.name),

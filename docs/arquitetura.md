@@ -28,6 +28,10 @@ flowchart LR
   IC --> REG[Integrations Registry]
   MCP --> REG
   MCP --> VAULT
+  DA[Docker inventory agent] --> PUSH[Push ingestion]
+  PUSH --> DB
+  HTTP --> PUSH
+  MCP --> PUSH
   REG --> EXT[Proxmox and External Services]
 ```
 
@@ -49,6 +53,19 @@ flowchart LR
   Credentials for connection adapters are encrypted at rest with an isolated key file;
   an old Proxmox credential file is retained after its transactional migration. Automatic key
   rotation and defense against host compromise are not yet implemented.
+
+## Docker push discovery
+
+A remote Docker agent reads the local Unix socket and pushes only supported discovery
+labels to the backend. The ingestion endpoint uses a source-specific hashed token,
+not the web session or MCP identity. The SQLite source record stores the latest bounded
+inventory and receipt time. Sources expire after five minutes; rotations discard the
+inventory. Card import reads a source snapshot and checks its version, freshness and
+revocation within the same SQLite write transaction that applies the reviewed cards.
+MCP reads the shared inventory directly and can only create reviewable proposals.
+The local Docker source remains independent. The Docker socket remains privileged,
+and the agent requires a private HTTPS path with certificate verification. See
+[ADR 0003](decisoes/0003-docker-push-discovery.md) and the README for limits and setup.
 
 ## Initial Domain Model
 

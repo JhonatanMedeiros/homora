@@ -76,6 +76,9 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'propose_connection_setup',
       'list_discovery_suggestions',
       'propose_discovered_card',
+      'list_docker_push_sources',
+      'list_docker_push_suggestions',
+      'propose_docker_push_card',
       'list_proxmox_resources',
     ]);
     for (const name of [

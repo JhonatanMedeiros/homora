@@ -85,3 +85,79 @@ it('authenticates each HTTP request, enforces scopes and revocation, and rejects
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('exposes remote push discovery over HTTP only to authorized MCP scopes', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-push-http-'));
+  const path = join(dir, 'data.sqlite');
+  const db = createDatabase(path);
+  const { auth, cookie } = await createTestAuth(db.db);
+  const probe = createServer();
+  await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
+  const address = probe.address();
+  if (!address || typeof address === 'string') throw new Error('missing port');
+  const port = address.port;
+  await new Promise<void>((resolve, reject) =>
+    probe.close((error) => (error ? reject(error) : resolve())),
+  );
+  const app = createApp(db.db, 5173, auth, createVault(path), [], undefined, { apiPort: port });
+  const headers = { cookie, origin: 'http://localhost:5173' };
+  const source = (
+    await app.inject({
+      method: 'POST',
+      url: '/api/discovery/sources',
+      headers,
+      payload: { name: 'Remote' },
+    })
+  ).json();
+  await app.inject({
+    method: 'POST',
+    url: '/docker-push/inventory',
+    headers: { authorization: `Bearer ${source.token}` },
+    payload: {
+      containers: [
+        {
+          Id: 'c'.repeat(64),
+          Names: ['/app'],
+          Labels: { 'homora.url': 'https://example.test/?key=hidden' },
+        },
+      ],
+    },
+  });
+  const identity = (
+    await app.inject({
+      method: 'POST',
+      url: '/api/agents',
+      headers,
+      payload: { name: 'reader', scopes: ['discovery:read'] },
+    })
+  ).json();
+  const client = new Client({ name: 'test', version: '1' });
+  try {
+    await app.listen({ port, host: '127.0.0.1' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`), {
+        requestInit: { headers: { authorization: `Bearer ${identity.token}` } },
+      }),
+    );
+    const suggestions = await client.callTool({
+      name: 'list_docker_push_suggestions',
+      arguments: { sourceId: source.id },
+    });
+    expect(suggestions.isError).not.toBe(true);
+    expect(JSON.stringify(suggestions)).toContain('example.test');
+    expect(JSON.stringify(suggestions)).not.toContain('hidden');
+    expect(
+      (
+        await client.callTool({
+          name: 'propose_docker_push_card',
+          arguments: { sourceId: source.id, id: 'c'.repeat(12), inventoryVersion: 1 },
+        })
+      ).isError,
+    ).toBe(true);
+  } finally {
+    await client.close();
+    await app.close();
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
