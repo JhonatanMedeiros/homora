@@ -5,6 +5,7 @@ import {
   CHORDS,
   SINGLE_KEYS,
   isModifierKey,
+  pageIndexForKey,
   shouldIgnoreSingleKey,
   type ShortcutAction,
 } from '@/lib/shortcuts';
@@ -19,6 +20,8 @@ type Handlers = {
   onOpenHelp: () => void;
   onGo: (tab: Exclude<Tab, 'account'>) => void;
   onNewService: () => void;
+  /** Digits switch pages on Home; return true when the key was used so it is not passed on. */
+  onGoPage?: (index: number) => boolean;
 };
 
 /**
@@ -66,6 +69,11 @@ export function useShortcuts(handlers: Handlers) {
       }
       if (event.key === 'g') {
         chord = setTimeout(cancelChord, CHORD_TIMEOUT_MS);
+        return;
+      }
+      const pageIndex = pageIndexForKey(event.key);
+      if (pageIndex !== null) {
+        if (latest.current.onGoPage?.(pageIndex)) event.preventDefault();
         return;
       }
       run(SINGLE_KEYS.get(event.key), event);

@@ -8,6 +8,7 @@ import { en as apiErrors } from './messages/api-errors';
 import { en as status } from './messages/status';
 import { en as settings } from './messages/settings';
 import { en as hosts } from './messages/hosts';
+import { en as appearance } from './messages/appearance';
 
 /** Source of truth for translation keys: every language must provide these exact keys. */
 export const en = {
@@ -21,5 +22,6 @@ export const en = {
   ...status,
   ...settings,
   ...hosts,
+  ...appearance,
 } as const;
 export type MessageKey = keyof typeof en;

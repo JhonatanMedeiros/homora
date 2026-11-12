@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import {
+  MAX_PAGES,
   parseHostLink,
   validateService,
   type CheckType,
@@ -22,9 +23,15 @@ type ServiceRow = Omit<Service, 'position' | 'allowPrivate' | 'checkType' | 'che
   checkType: CheckType;
   checkInterval: number | null;
 };
-type Group = { id: number; name: string; position: number; columns: number | null };
+type Group = {
+  id: number;
+  name: string;
+  position: number;
+  columns: number | null;
+  pageId: number | null;
+};
 export type ServiceChange =
-  | { op: 'create'; service: ServiceInput }
+  | { op: 'create'; service: ServiceInput; page?: string }
   | { op: 'update'; id: number; service: ServiceInput }
   | { op: 'delete'; id: number };
 
@@ -110,22 +117,43 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         id,
       );
   };
+  // A group with no page (never expected after the migration) counts as being on the first page.
   const selectGroups = () =>
     sqlite
-      .prepare('SELECT id,name,position,columns FROM service_groups ORDER BY position,name')
+      .prepare(
+        'SELECT id,name,position,columns,COALESCE(page_id,(SELECT id FROM pages ORDER BY position,id LIMIT 1)) as pageId FROM service_groups ORDER BY position,name',
+      )
       .all() as Group[];
   const bumpVersion = () =>
     sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
-  const ensureGroup = (name: string, columns: number | null = null) => {
+  const firstPageId = () =>
+    (sqlite.prepare('SELECT id FROM pages ORDER BY position,id LIMIT 1').get() as { id: number })
+      .id;
+  /** Creates the group when it is new, on `pageId` (the first page by default). */
+  const ensureGroup = (name: string, columns: number | null = null, pageId?: number) => {
     const exists = sqlite.prepare('SELECT id FROM service_groups WHERE name=?').get(name);
     if (exists) return;
     const next = sqlite
       .prepare('SELECT COALESCE(MAX(position), -1)+1 as position FROM service_groups')
       .get() as { position: number };
     sqlite
-      .prepare('INSERT INTO service_groups(name,position,columns) VALUES(?,?,?)')
-      .run(name, next.position, columns);
+      .prepare('INSERT INTO service_groups(name,position,columns,page_id) VALUES(?,?,?,?)')
+      .run(name, next.position, columns, pageId ?? firstPageId());
   };
+  const pageIdByName = (name: string) =>
+    (
+      sqlite.prepare('SELECT id FROM pages WHERE name=? COLLATE NOCASE').get(name) as
+        { id: number } | undefined
+    )?.id;
+  /** Page a group is on, by group name; `undefined` when there is no such group. */
+  const pageOfGroup = (name: string) =>
+    (
+      sqlite
+        .prepare(
+          'SELECT COALESCE(page_id,(SELECT id FROM pages ORDER BY position,id LIMIT 1)) as id FROM service_groups WHERE name=?',
+        )
+        .get(name) as { id: number } | undefined
+    )?.id;
   const nextServicePosition = (category: string) => {
     const row = sqlite
       .prepare('SELECT COALESCE(MAX(position), -1)+1 as position FROM services WHERE category=?')
@@ -136,10 +164,23 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   if (!sqlite.prepare('SELECT id FROM config_version WHERE id=1').get())
     sqlite.prepare('INSERT INTO config_version(id,version) VALUES(1,1)').run();
 
+  /**
+   * Page for a service that may create its group: only a new group takes `page` (the first page
+   * when none is given); an existing group stays where it is and must agree with `page`.
+   */
+  function pageForNewService(category: string, page?: string): number | undefined {
+    const wanted = page === undefined ? undefined : pageIdByName(page);
+    if (page !== undefined && wanted === undefined) throw new Error('Page not found');
+    const current = pageOfGroup(category);
+    if (current !== undefined && wanted !== undefined && current !== wanted)
+      throw new Error('Group is on another page');
+    return wanted;
+  }
+
   function applyProposal(change: ServiceChange) {
     if (change.op === 'create') {
       const service = validateService(change.service);
-      ensureGroup(service.category);
+      ensureGroup(service.category, null, pageForNewService(service.category, change.page));
       const created = sqlite
         .prepare(
           'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
@@ -230,12 +271,26 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     listHosts: selectHosts,
     listMcpServices() {
       return sqlite
-        .prepare('SELECT id,name,url,category,description FROM services ORDER BY category,name')
+        .prepare(
+          `SELECT s.id,s.name,s.url,s.category,s.description,
+             (SELECT p.name FROM pages p WHERE p.id=COALESCE(g.page_id,(SELECT id FROM pages ORDER BY position,id LIMIT 1))) AS page
+           FROM services s LEFT JOIN service_groups g ON g.name=s.category ORDER BY s.category,s.name`,
+        )
         .all();
     },
     findService: selectService,
     nextServicePosition,
     listGroups: selectGroups,
+    pageIdByName,
+    pageOfGroup,
+    listPages: () =>
+      sqlite.prepare('SELECT id,name FROM pages ORDER BY position,id').all() as {
+        id: number;
+        name: string;
+      }[],
+    pageExists: (id: number) => Boolean(sqlite.prepare('SELECT id FROM pages WHERE id=?').get(id)),
+    /** Fails like applying would, so a proposal is refused up front rather than at review. */
+    checkNewServicePage: pageForNewService,
     version() {
       return (
         sqlite.prepare('SELECT version FROM config_version WHERE id=1').get() as { version: number }
@@ -248,8 +303,20 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     applyProposal,
     /** Groups and cards in current order, for export. */
     exportData() {
+      const pageNames = new Map(
+        (
+          sqlite.prepare('SELECT id,name FROM pages ORDER BY position,id').all() as {
+            id: number;
+            name: string;
+          }[]
+        ).map((row) => [row.id, row.name]),
+      );
       return {
-        groups: selectGroups(),
+        pages: [...pageNames.values()],
+        groups: selectGroups().map((group) => ({
+          ...group,
+          page: group.pageId === null ? undefined : pageNames.get(group.pageId),
+        })),
         services: selectServices().map((row) => ({
           ...row,
           allowPrivate: Boolean(row.allowPrivate),
@@ -268,6 +335,12 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         plan: planImport(parsed, {
           groups: selectGroups().map((group) => group.name),
           services: rows.map((row) => ({ category: row.category, url: row.url })),
+          pages: (
+            sqlite.prepare('SELECT id,name FROM pages ORDER BY position,id').all() as {
+              id: number;
+              name: string;
+            }[]
+          ).map((page) => page.name),
         }),
       };
     },
@@ -284,6 +357,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         grantPrivate?: boolean;
         expectedVersion?: number;
         guard?: () => boolean;
+        /** Put every new group on this page instead of the pages named in the file. */
+        pageId?: number;
       },
     ): { status: 'stale' } | { status: 'applied'; plan: ImportPlan; created: number } {
       return transaction(() => {
@@ -297,10 +372,45 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           (options.guard && !options.guard())
         )
           return { status: 'stale' as const };
+        const existingPages = sqlite
+          .prepare('SELECT id,name FROM pages ORDER BY position,id')
+          .all() as { id: number; name: string }[];
+        if (
+          options.pageId !== undefined &&
+          !existingPages.some((page) => page.id === options.pageId)
+        )
+          return { status: 'stale' as const };
         const plan = planImport(parsed, {
           groups: selectGroups().map((group) => group.name),
           services: selectServices().map((row) => ({ category: row.category, url: row.url })),
+          pages: existingPages.map((page) => page.name),
         });
+        // Pages the file asks for are created while there is room; the rest fall back to the first page.
+        const pageIds = new Map(
+          existingPages.map((page) => [page.name.toLocaleLowerCase(), page.id]),
+        );
+        if (options.pageId === undefined) {
+          let count = existingPages.length;
+          for (const page of plan.pages) {
+            const key = page.name.toLocaleLowerCase();
+            if (pageIds.has(key)) continue;
+            if (count >= MAX_PAGES) {
+              plan.issues.push({
+                path: `pages.${page.name}`,
+                code: 'page-limit',
+                severity: 'warning',
+              });
+              continue;
+            }
+            const created = sqlite
+              .prepare(
+                'INSERT INTO pages(name,position) VALUES(?,(SELECT COALESCE(MAX(position),-1)+1 FROM pages))',
+              )
+              .run(page.name);
+            pageIds.set(key, Number(created.lastInsertRowid));
+            count += 1;
+          }
+        }
         const insert = sqlite.prepare(
           'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
         );
@@ -311,7 +421,13 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         const columnsOf = new Map(
           parsed.document.groups.map((group) => [group.name, group.columns ?? null]),
         );
-        for (const group of plan.groups) ensureGroup(group.name, columnsOf.get(group.name) ?? null);
+        for (const group of plan.groups)
+          ensureGroup(
+            group.name,
+            columnsOf.get(group.name) ?? null,
+            options.pageId ??
+              (group.page ? pageIds.get(group.page.toLocaleLowerCase()) : undefined),
+          );
         queue.forEach(({ group, service }, index) => {
           if (plan.services[index].status !== 'new') return;
           const valid = validateService({
@@ -339,7 +455,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         return { status: 'applied' as const, plan, created };
       });
     },
-    createGroup(name: string) {
+    createGroup(name: string, pageId?: number) {
       return transaction(() => {
         const position = (
           sqlite
@@ -347,10 +463,12 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             .get() as { position: number }
         ).position;
         const result = sqlite
-          .prepare('INSERT INTO service_groups(name,position) VALUES(?,?)')
-          .run(name, position);
+          .prepare('INSERT INTO service_groups(name,position,page_id) VALUES(?,?,?)')
+          .run(name, position, pageId ?? firstPageId());
         return sqlite
-          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
+          .prepare(
+            'SELECT id,name,position,columns,page_id as pageId FROM service_groups WHERE id=?',
+          )
           .get(Number(result.lastInsertRowid)) as Group;
       });
     },
@@ -366,14 +484,18 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           .run(columns, id);
         if (!result.changes) return null;
         return sqlite
-          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
+          .prepare(
+            'SELECT id,name,position,columns,page_id as pageId FROM service_groups WHERE id=?',
+          )
           .get(id) as Group;
       });
     },
     renameGroup(id: number, name: string) {
       return transaction(() => {
         const current = sqlite
-          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
+          .prepare(
+            'SELECT id,name,position,columns,page_id as pageId FROM service_groups WHERE id=?',
+          )
           .get(id) as Group | undefined;
         if (!current) return null;
         sqlite.prepare('UPDATE service_groups SET name=? WHERE id=?').run(name, id);
@@ -382,7 +504,9 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           .run(name, current.name);
         if (changed.changes) bumpVersion();
         return sqlite
-          .prepare('SELECT id,name,position,columns FROM service_groups WHERE id=?')
+          .prepare(
+            'SELECT id,name,position,columns,page_id as pageId FROM service_groups WHERE id=?',
+          )
           .get(id) as Group;
       });
     },

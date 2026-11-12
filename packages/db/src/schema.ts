@@ -9,12 +9,25 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
+/** Tabs of the Home. Names are unique ignoring case; at most 12; never zero. */
+export const pages = sqliteTable(
+  'pages',
+  {
+    id: integer('id').primaryKey(),
+    name: text('name').notNull(),
+    position: integer('position').notNull().default(0),
+  },
+  (table) => [uniqueIndex('pages_name_nocase_idx').on(sql`${table.name} COLLATE NOCASE`)],
+);
 export const serviceGroups = sqliteTable('service_groups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull().unique(),
   position: integer('position').notNull().default(0),
   // Grid columns on wide viewports (1 to 6); null retains automatic responsive layout.
   columns: integer('columns'),
+  // The page (tab) the group appears on. Nullable only because SQLite cannot add a NOT NULL
+  // reference to an existing table; the migration assigns every group and the code always sets it.
+  pageId: integer('page_id').references(() => pages.id, { onDelete: 'restrict' }),
 });
 export const services = sqliteTable('services', {
   id: integer('id').primaryKey(),

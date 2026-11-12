@@ -21,7 +21,10 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - An optional top bar (turn it on in Settings → Interface) with the date, the time and CPU, memory and disk usage from a selected Proxmox connection. The clock can show seconds, use a 12 or 24 hour format and follow another time zone. Interface also holds the theme, language and home page layout; all of it is saved in the browser only.
 - Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare) and an MCP server (local stdio or Streamable HTTP) where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
 
-Not available yet: OIDC or multi-user access, custom CSS and themes, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md).
+- Personalization: accent color, gradients, card translucency, an optional background image and custom CSS (Settings → Interface), shared by every device. If custom CSS makes the interface unusable, open any page with `?safe=1` or run `pnpm css:reset` (with Compose: `docker compose exec backend node scripts/css-reset.mjs`) to turn it off without losing the text. The background image is processed on the server and is stored next to the database as `<database>.background`.
+- Pages: group your cards into tabs on the Home (Settings → Interface → Pages); keys `1` to `9` switch pages.
+
+Not available yet: OIDC or multi-user access, and a validated setup for exposing Homora beyond your own machine. The plan lives in [docs/estrategia.md](docs/estrategia.md) and [docs/evolucao.md](docs/evolucao.md).
 
 ## Install with Docker
 
@@ -115,7 +118,7 @@ docker compose cp backend:/app/data/homora.sqlite.key backups/backup-2026-11-10/
 docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11-10/homora.sqlite.proxmox
 ```
 
-`.proxmox` may not exist on every installation; skip the copy if the file is missing. Keep the key as protected as the database, and do a test restore before relying on a backup.
+`.proxmox` and `.background` (the background image) may not exist on every installation; skip the copy if a file is missing. `pnpm backup` already copies `.background` next to the database copy. With Compose, copy `homora.sqlite.background` the same way. Keep the key as protected as the database, and do a test restore before relying on a backup.
 
 ## Sessions, password reset and secret rotation
 

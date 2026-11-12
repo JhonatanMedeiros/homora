@@ -9,13 +9,15 @@ type Props = {
   onSeeImpact: (node: OfflineNode) => void;
   /** Services that may also break through manual dependencies (clearly secondary). */
   indirect?: (node: OfflineNode) => number;
+  /** How many pages the affected services are on; shown when more than one. */
+  pageCount?: (node: OfflineNode) => number;
 };
 
 /** One line per offline node that has linked services. Never shown when the inventory is unreadable. */
-export function HostImpactBanner({ nodes, onSeeImpact, indirect }: Props) {
+export function HostImpactBanner({ nodes, onSeeImpact, indirect, pageCount }: Props) {
   if (nodes.length === 0) return null;
   return (
-    <div role="status" className="flex flex-col gap-2">
+    <div role="status" data-homora="impact-banner" className="flex flex-col gap-2">
       {nodes.map((node) => (
         <Alert key={`${node.connectionId}:${node.node}`} variant="destructive">
           <TriangleAlert aria-hidden="true" />
@@ -24,6 +26,11 @@ export function HostImpactBanner({ nodes, onSeeImpact, indirect }: Props) {
             {indirect && indirect(node) > 0 && (
               <span className="text-muted-foreground">
                 {t('hosts.banner.indirect', { count: indirect(node) })}
+              </span>
+            )}
+            {pageCount && pageCount(node) > 1 && (
+              <span className="text-muted-foreground">
+                {t('pages.impact', { count: pageCount(node) })}
               </span>
             )}
             <Button

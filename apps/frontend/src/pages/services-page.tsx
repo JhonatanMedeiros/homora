@@ -23,6 +23,7 @@ import { HostImpactBanner } from '@/components/host-impact-banner';
 import { hostLabel, offlineNodes, serviceImpact } from '@/lib/hosts';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
+import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { HealthSummary } from '@/components/health-summary';
@@ -79,7 +80,11 @@ export function ServicesPage({
   focusRequest: requestedFocus,
   onFocusHandled: handledFocus,
 }: Props) {
-  const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
+  const { services, groupRows, statuses, sortedIn, blockedIds, refresh, pages } = data;
+  const { activePageId, pageIdOf } = data;
+  const allCategories = data.categories;
+  // Group view shows one page at a time; Host and Map views show every page.
+  const paged = pages.length > 1 && !managing;
   const cardWidgets = useCardWidgets();
   const [topBar] = useTopBar();
   const {
@@ -236,7 +241,21 @@ export function ServicesPage({
     flashTimer.current = window.setTimeout(() => setFlash(''), 5000);
   }
 
-  const filtered = services.filter((s) => selected === null || s.category === selected);
+  const categories = useMemo(
+    () =>
+      paged && !hostView
+        ? allCategories.filter((category) => pageIdOf(category) === activePageId)
+        : allCategories,
+    [paged, hostView, allCategories, pageIdOf, activePageId],
+  );
+  const pageName = (service: Service) =>
+    pages.length > 1
+      ? pages.find((page) => page.id === pageIdOf(service.category))?.name
+      : undefined;
+  const onPage = (service: Service) => !paged || hostView || categories.includes(service.category);
+  const filtered = services.filter(
+    (s) => onPage(s) && (selected === null || s.category === selected),
+  );
   const isDown = (s: Service) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id);
   const groups = categories
     .map((category) => ({
@@ -437,7 +456,10 @@ export function ServicesPage({
         {
           method: editingGroup === null ? 'POST' : 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: groupDraft }),
+          body: JSON.stringify({
+            name: groupDraft,
+            ...(editingGroup === null && pages.length > 1 && { pageId: activePageId }),
+          }),
         },
       );
       const body: unknown = await response.json().catch(() => null);
@@ -520,7 +542,7 @@ export function ServicesPage({
           title={t('manage.services')}
           description={
             total
-              ? `${t('page.summary', { services: t('page.servicesCount', { count: total }), groups: t('page.groupsCount', { count: categories.length }) })} ${t('manage.serviceDescription')}`
+              ? `${t('page.summary', { services: t('page.servicesCount', { count: total }), groups: t('page.groupsCount', { count: allCategories.length }) })} ${t('manage.serviceDescription')}`
               : t('page.emptyDescription')
           }
           actions={
@@ -605,6 +627,7 @@ export function ServicesPage({
       {!managing && (
         <HostImpactBanner
           nodes={offline}
+          pageCount={(node) => new Set(node.affected.map((s) => pageIdOf(s.category))).size}
           indirect={(node) => {
             const direct = new Set(node.affected.map((s) => s.id));
             return dependentsOf([...direct], deps.dependencies).filter((id) => !direct.has(id))
@@ -686,7 +709,7 @@ export function ServicesPage({
             nameRef={nameInput}
             editing={editing !== null}
             value={form}
-            categories={categories}
+            categories={allCategories}
             error={formError}
             saving={saving}
             hosts={{
@@ -746,6 +769,20 @@ export function ServicesPage({
           {flash}
         </p>
       )}
+      {paged && !hostView && (
+        <PageTabs
+          pages={pages}
+          activeId={activePageId}
+          onSelect={(id) => {
+            data.selectPage(id);
+            setSelected(null);
+          }}
+          counts={(pageId) => {
+            const onThis = services.filter((s) => pageIdOf(s.category) === pageId);
+            return { total: onThis.length, down: onThis.filter(isDown).length };
+          }}
+        />
+      )}
       {!organizing && !hostView && services.length > 0 && categories.length > 2 && (
         <CategoryFilter
           categories={categories}
@@ -753,7 +790,7 @@ export function ServicesPage({
           onSelect={setSelected}
           counts={(category) =>
             category === null
-              ? services.length
+              ? services.filter(onPage).length
               : services.filter((s) => s.category === category).length
           }
         />
@@ -772,6 +809,7 @@ export function ServicesPage({
             setArrange('group');
             setLocalFocus({ id: service.id, nonce: Date.now() });
           }}
+          pageName={pageName}
           onChangeHost={(service) => navigate(`/manage/services/${service.id}/edit`)}
           dependencies={deps.dependencies}
           notes={dependencyNotes}
@@ -808,6 +846,7 @@ export function ServicesPage({
           blockedIds={blockedIds}
           onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
           notes={dependencyNotes}
+          pageName={pageName}
           nodeFilter={nodeFilter}
           onClearFilter={() => setNodeFilter(null)}
         />
@@ -823,6 +862,9 @@ export function ServicesPage({
             list={list}
             managing={managing}
             revealSignal={focusService?.category === category ? focusNonce : undefined}
+            pages={pages}
+            pageId={row?.pageId}
+            onPage={(pageId) => row && void reorder(data.moveGroupToPage(row.id, pageId))}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}
             groupId={row?.id}
@@ -888,7 +930,12 @@ export function ServicesPage({
                   <OrganizeRow
                     key={s.id}
                     service={s}
-                    otherGroups={categories.filter((name) => name !== s.category)}
+                    otherGroups={allCategories.filter((name) => name !== s.category)}
+                    pageLabel={(name) =>
+                      pages.length > 1
+                        ? pages.find((page) => page.id === pageIdOf(name))?.name
+                        : undefined
+                    }
                     first={index === 0}
                     last={index === items.length - 1}
                     dragging={dragging === s.id}
@@ -984,12 +1031,19 @@ export function ServicesPage({
       {!data.loaded && !data.loadError && (
         <ServicesSkeleton label={t('common.loading')} list={list} />
       )}
-      {data.loaded && !data.loadError && !groups.length && !hostView && (
-        <ServicesEmpty
-          hasServices={services.length > 0}
-          onAdd={() => (managing ? openForm() : onAddService())}
-        />
+      {data.loaded && !data.loadError && paged && !hostView && categories.length === 0 && (
+        <p className="text-sm text-muted-foreground">{t('pages.empty')}</p>
       )}
+      {data.loaded &&
+        !data.loadError &&
+        !groups.length &&
+        !hostView &&
+        !(paged && categories.length === 0) && (
+          <ServicesEmpty
+            hasServices={services.length > 0}
+            onAdd={() => (managing ? openForm() : onAddService())}
+          />
+        )}
     </section>
   );
 }

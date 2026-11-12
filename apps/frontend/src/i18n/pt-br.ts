@@ -9,6 +9,7 @@ import { ptBR as apiErrors } from './messages/api-errors';
 import { ptBR as status } from './messages/status';
 import { ptBR as settings } from './messages/settings';
 import { ptBR as hosts } from './messages/hosts';
+import { ptBR as appearance } from './messages/appearance';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -21,4 +22,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...status,
   ...settings,
   ...hosts,
+  ...appearance,
 };

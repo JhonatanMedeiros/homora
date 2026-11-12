@@ -25,7 +25,12 @@ const app = createApp(
   vault,
   config.allowedOrigins,
   config.dockerHost ? createDockerSource(config.dockerHost) : undefined,
-  { trustProxy: config.trustProxy, apiPort: config.apiPort },
+  {
+    trustProxy: config.trustProxy,
+    apiPort: config.apiPort,
+    // Next to the database, so a backup of the database can take the picture along.
+    backgroundPath: `${config.databasePath}.background`,
+  },
 );
 app.addHook('onClose', async () => database.close());
 await app.listen({ port: config.apiPort, host: config.bindHost });

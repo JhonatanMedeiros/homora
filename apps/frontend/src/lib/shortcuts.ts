@@ -8,7 +8,8 @@ export type ShortcutAction =
   | { type: 'palette' }
   | { type: 'help' }
   | { type: 'go'; tab: Exclude<Tab, 'account'> }
-  | { type: 'newService' };
+  | { type: 'newService' }
+  | { type: 'page'; index: number };
 
 export type Shortcut = {
   /** Keys as shown to the person, in order. */
@@ -33,6 +34,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: ['g', 't'], label: 'shortcuts.goActivity', action: { type: 'go', tab: 'activity' } },
   { keys: ['g', 's'], label: 'shortcuts.goSettings', action: { type: 'go', tab: 'settings' } },
   { keys: ['n'], label: 'shortcuts.newService', action: { type: 'newService' } },
+  { keys: ['1–9'], label: 'shortcuts.pages' },
   { keys: ['Ctrl/⌘', 'K'], label: 'shortcuts.paletteToggle', modifier: true },
   { keys: ['Ctrl/⌘', 'B'], label: 'shortcuts.sidebar', modifier: true },
 ];
@@ -68,3 +70,7 @@ export function shouldIgnoreSingleKey(event: KeyboardEvent): boolean {
   // Any open dialog, sheet, menu or the palette: its own keys win, wherever the focus is.
   return Boolean(document.querySelector(OVERLAY));
 }
+
+/** The page index (0 based) a digit key switches to on Home, or null for any other key. */
+export const pageIndexForKey = (key: string): number | null =>
+  /^[1-9]$/.test(key) ? Number(key) - 1 : null;

@@ -34,6 +34,8 @@ export type Diff = {
   op?: string;
   id?: number;
   service?: ServiceFields;
+  /** Page a new service's group is created on (create proposals only). */
+  page?: string;
   kind?: string;
   change?: { kind?: string; change?: unknown };
   before?: unknown;

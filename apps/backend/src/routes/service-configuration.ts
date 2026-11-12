@@ -6,6 +6,7 @@ import type { createServiceMonitor } from '../service-monitor.js';
 import type { createObservationStore } from '../service-observations.js';
 import {
   groupColumnsSchema,
+  groupCreateSchema,
   groupNameSchema,
   groupOrderSchema,
   parseId,
@@ -91,10 +92,12 @@ export function registerServiceConfigurationRoutes(
   app.get('/api/groups', async () => configuration.listGroups());
 
   app.post('/api/groups', async (request, reply) => {
-    const parsed = groupNameSchema.safeParse(request.body);
+    const parsed = groupCreateSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-group-name'));
+    if (parsed.data.pageId !== undefined && !configuration.pageExists(parsed.data.pageId))
+      return reply.code(404).send(errorBody('page-not-found'));
     try {
-      return reply.code(201).send(configuration.createGroup(parsed.data.name));
+      return reply.code(201).send(configuration.createGroup(parsed.data.name, parsed.data.pageId));
     } catch {
       return reply.code(409).send(errorBody('group-exists'));
     }

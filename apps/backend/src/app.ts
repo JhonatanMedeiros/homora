@@ -26,6 +26,13 @@ import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-
 import { createNotifications } from './notifications.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
 import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
+import { createCustomCss } from './custom-css.js';
+import { registerCustomCssRoutes } from './routes/custom-css.js';
+import { createPages } from './pages.js';
+import { registerPageRoutes } from './routes/pages.js';
+import { createAppearance } from './appearance.js';
+import { createBackgroundStore } from './background-image.js';
+import { registerAppearanceRoutes } from './routes/appearance.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -42,12 +49,14 @@ export function createApp(
    * Enable only when all traffic traverses a reverse proxy that OVERWRITES this header,
    * such as Compose's nginx; otherwise any client could spoof it.
    */
-  options: { trustProxy?: boolean; apiPort?: number } = {},
+  options: { trustProxy?: boolean; apiPort?: number; backgroundPath?: string } = {},
 ) {
   const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
   const audit = createAuditLog(sqlite);
+  const appearance = createAppearance(sqlite);
+  const customCss = createCustomCss(sqlite);
   const proposals = createProposalService(sqlite, configuration);
   const observations = createObservationStore(sqlite);
   const notifications = createNotifications(sqlite, vault);
@@ -116,6 +125,15 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.describe());
   const connections = registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
+  registerPageRoutes(app, createPages(sqlite), auth, audit);
+  registerCustomCssRoutes(app, customCss, auth, audit);
+  registerAppearanceRoutes(
+    app,
+    appearance,
+    auth,
+    audit,
+    options.backgroundPath ? createBackgroundStore(options.backgroundPath) : undefined,
+  );
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceConfigurationRoutes(
@@ -129,7 +147,10 @@ export function createApp(
   );
   registerHostSuggestionRoutes(app, sqlite, connections, configuration);
   registerServiceDependencyRoutes(app, sqlite, auth, audit);
-  registerConfigTransferRoutes(app, configuration, serviceMonitor);
+  registerConfigTransferRoutes(app, configuration, serviceMonitor, {
+    appearance,
+    customCss,
+  });
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);
 

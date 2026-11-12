@@ -51,6 +51,7 @@ export function HostSuggestionsPanel({ open, onOpenChange, ...rest }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
+        data-homora="host-suggestions"
         side={mobile ? 'bottom' : 'right'}
         className={cn('gap-0', mobile ? 'h-dvh max-h-dvh rounded-none' : 'sm:max-w-lg')}
       >

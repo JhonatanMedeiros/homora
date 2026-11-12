@@ -144,6 +144,7 @@ export function ServiceCard({
     return (
       <li id={`service-${s.id}`} className={SERVICE_LI}>
         <Item
+          data-homora="service-card"
           variant="outline"
           size="sm"
           className={cn(
@@ -241,6 +242,7 @@ export function ServiceCard({
   return (
     <li id={`service-${s.id}`} className={SERVICE_LI}>
       <Item
+        data-homora="service-card"
         variant="outline"
         className={cn(
           'service-surface relative w-full flex-col items-stretch gap-3 bg-card hover:bg-accent/60 focus-within:bg-accent/60',

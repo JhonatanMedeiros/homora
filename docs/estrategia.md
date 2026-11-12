@@ -115,7 +115,8 @@ and prioritized adapters are verified against live production services.
 - [ ] Optional OIDC authentication and read-only guest access mode.
 - [ ] Finalize and document supported network topology scenarios (P2) before advertising access
       outside localhost.
-- [ ] Theming, custom CSS, background images, translucent cards, and multi-page/tab views.
+- [x] Theming, custom CSS, background images, translucent cards, and multi-page/tab views
+      (issue #97, [ADR 0009](decisoes/0009-appearance-and-pages.md)); not yet checked in a real browser.
 - [x] Keyboard shortcuts and optional web search redirection (configurable engine, without leaking
       Homora internal data).
 
@@ -153,7 +154,7 @@ below is inferred and must be cross-checked against actual `services.yaml` and `
 | Integrations: Proxmox, Uptime Kuma, AdGuard, Home Assistant, Jellyfin | Implemented (read-only, verified with mocks)                       | R2    |
 | Portainer, Cloudflare, Tailscale, Netbird, Speedtest Tracker          | Implemented, unvalidated (no live service tried)                   | R2    |
 | TrueNAS, Beszel                                                       | Skipped: WebSocket-only API; login flow with POST                  | R2    |
-| Background image, translucent glass cards, custom accents             | No                                                                 | R3    |
+| Background image, translucent glass cards, custom accents             | Implemented (server-side setting, contrast checked)                | R3    |
 | Search bar triggering external web search ("G" button)                | No: search strictly filters local cards                            | R3    |
 | Import `services.yaml`                                                | Implemented (preview before writing); widgets are not imported     | R0    |
 

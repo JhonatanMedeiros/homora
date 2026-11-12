@@ -15,14 +15,18 @@ export type IssueCode =
   | 'check-ignored'
   | 'widget-ignored'
   | 'pages-ignored'
-  | 'group-renamed';
+  | 'group-renamed'
+  | 'page-invalid'
+  | 'page-limit';
 export type Issue = { path: string; code: IssueCode; severity: 'error' | 'warning' };
 export type Plan = {
+  pages?: { name: string; status: 'new' | 'existing' }[];
   groups: { name: string; status: 'new' | 'existing' }[];
   services: { group: string; name: string; url: string; status: 'new' | 'duplicate' }[];
   issues: Issue[];
   summary: {
     newGroups: number;
+    newPages?: number;
     newServices: number;
     duplicates: number;
     errors: number;

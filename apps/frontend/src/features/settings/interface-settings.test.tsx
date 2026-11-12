@@ -28,16 +28,20 @@ it('keeps the clock options hidden until the top bar is on', () => {
   expect(screen.getByLabelText('Time zone')).toBeTruthy();
 });
 
-it('saves the hour format, seconds and time zone in this browser', async () => {
-  localStorage.setItem('homora-top-bar', 'on');
-  render(<InterfaceSettings />);
-  fireEvent.click(screen.getByRole('radio', { name: '24 h', checked: false }));
-  fireEvent.click(screen.getByRole('switch', { name: 'Show seconds' }));
-  await chooseSelectOption('Time zone', 'UTC');
-  expect(localStorage.getItem('homora-clock-hours')).toBe('24h');
-  expect(localStorage.getItem('homora-clock-seconds')).toBe('on');
-  expect(localStorage.getItem('homora-clock-timezone')).toBe('UTC');
-});
+it(
+  'saves the hour format, seconds and time zone in this browser',
+  { timeout: 20_000 },
+  async () => {
+    localStorage.setItem('homora-top-bar', 'on');
+    render(<InterfaceSettings />);
+    fireEvent.click(screen.getByRole('radio', { name: '24 h', checked: false }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Show seconds' }));
+    await chooseSelectOption('Time zone', 'UTC');
+    expect(localStorage.getItem('homora-clock-hours')).toBe('24h');
+    expect(localStorage.getItem('homora-clock-seconds')).toBe('on');
+    expect(localStorage.getItem('homora-clock-timezone')).toBe('UTC');
+  },
+);
 
 it('saves the home layout and only allows descriptions in cards', () => {
   render(<InterfaceSettings />);

@@ -142,7 +142,7 @@ export function applyManagedChange(
   if (kind === 'group') {
     if (change.op === 'create') {
       db.prepare(
-        'INSERT INTO service_groups(name,position) VALUES(?,(SELECT COALESCE(MAX(position),-1)+1 FROM service_groups))',
+        'INSERT INTO service_groups(name,position,page_id) VALUES(?,(SELECT COALESCE(MAX(position),-1)+1 FROM service_groups),(SELECT id FROM pages ORDER BY position,id LIMIT 1))',
       ).run(change.name);
     } else if (change.op === 'reorder') {
       const rows = db.prepare('SELECT name FROM service_groups ORDER BY position,name').all() as {

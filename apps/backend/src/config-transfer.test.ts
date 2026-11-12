@@ -58,7 +58,7 @@ describe('parsing', () => {
     ['invalid syntax', 'groups: [unclosed', 'invalid-syntax'],
     ['document without groups', 'version: 1\n', 'invalid-document'],
     ['root that is not an object', '- a\n- b', 'invalid-document'],
-    ['unsupported version', 'version: 2\ngroups: []', 'unsupported-version'],
+    ['unsupported version', 'version: 3\ngroups: []', 'unsupported-version'],
   ])('rejects %s', (_name, content, code) => {
     const parsed = parseTransfer(content);
     expect(parsed.issues).toEqual([{ path: '', code, severity: 'error' }]);
@@ -162,5 +162,55 @@ groups:
 
   it('with empty configuration everything is new', () => {
     expect(planImport(file, none).summary.newServices).toBe(2);
+  });
+});
+
+describe('appearance and custom CSS in the export', () => {
+  const appearance = {
+    version: 2 as const,
+    accent: 'moss' as const,
+    customAccent: null,
+    background: 'dusk' as const,
+    cardOpacity: 80,
+    blur: true,
+    image: {
+      name: 'a'.repeat(32) + '.webp',
+      dim: 40,
+      position: 'fill' as const,
+      average: '#808080',
+      width: 10,
+      height: 10,
+      bytes: 100,
+      originalBytes: 200,
+    },
+  };
+
+  it('includes both, without the background picture', () => {
+    const text = serializeConfiguration([], [], 'json', {
+      appearance,
+      customCss: { enabled: true, css: 'a { color: red }' },
+    });
+    const document = JSON.parse(text);
+    expect(document.appearance).toMatchObject({ accent: 'moss', cardOpacity: 80, image: null });
+    expect(text).not.toContain('a'.repeat(32));
+    expect(document.customCss).toEqual({ enabled: true, css: 'a { color: red }' });
+  });
+
+  it('leaves them out when empty or not asked for', () => {
+    expect(serializeConfiguration([], [], 'json')).not.toContain('appearance');
+    const empty = serializeConfiguration([], [], 'json', {
+      customCss: { enabled: false, css: '  ' },
+    });
+    expect(empty).not.toContain('customCss');
+  });
+
+  it('leaves them unread on import: import only adds cards and groups', () => {
+    const text = serializeConfiguration([{ name: 'Media' }], [], 'yaml', {
+      appearance,
+      customCss: { enabled: true, css: 'a { color: red }' },
+    });
+    const parsed = parseTransfer(text);
+    expect(parsed.issues).toEqual([]);
+    expect(parsed.document).toEqual({ groups: [{ name: 'Media', services: [] }] });
   });
 });

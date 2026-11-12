@@ -31,6 +31,10 @@ type Props = {
   /** Custom column count for the group; null or omitted falls back to automatic responsive grid. */
   columns?: number | null;
   onColumns?: (columns: number | null) => void;
+  /** Pages the group can be on; the menu offers them when there is more than one. */
+  pages?: { id: number; name: string }[];
+  pageId?: number;
+  onPage?: (pageId: number) => void;
   onRename: () => void;
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
@@ -74,6 +78,9 @@ export function GroupSection({
   groupId,
   columns,
   onColumns,
+  pages,
+  pageId,
+  onPage,
   onRename,
   onRemove,
   onMove,
@@ -127,6 +134,7 @@ export function GroupSection({
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <h2
           id={titleId}
+          data-homora="group-title"
           className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground"
         >
           <span className="break-words">{category}</span>
@@ -213,6 +221,22 @@ export function GroupSection({
                         {[1, 2, 3].map((count) => (
                           <DropdownMenuRadioItem key={count} value={String(count)}>
                             {t('group.columnsCount', { count })}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  {onPage && pages && pages.length > 1 && (
+                    <>
+                      <DropdownMenuLabel>{t('pages.moveGroupTo')}</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup
+                        value={String(pageId ?? '')}
+                        onValueChange={(value) => onPage(Number(value))}
+                      >
+                        {pages.map((page) => (
+                          <DropdownMenuRadioItem key={page.id} value={String(page.id)}>
+                            {page.name}
                           </DropdownMenuRadioItem>
                         ))}
                       </DropdownMenuRadioGroup>

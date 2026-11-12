@@ -159,6 +159,9 @@ export const en = {
   'transfer.issue.pages-ignored':
     'Other pages listed in "pages" were not read. Import each file separately.',
   'transfer.issue.group-renamed': 'The group name was shortened to 40 characters.',
+  'transfer.issue.page-invalid': 'The page name is not valid; the group goes to the first page.',
+  'transfer.issue.page-limit':
+    'The limit of 12 pages was reached; the group goes to the first page.',
   'transfer.issue.columns-ignored':
     'The number of columns must be between 1 and 6; it was ignored.',
   'transfer.issue.check-ignored':
@@ -334,6 +337,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'transfer.issue.pages-ignored':
     'As outras páginas listadas em "pages" não foram lidas. Importe cada arquivo separadamente.',
   'transfer.issue.group-renamed': 'O nome do grupo foi encurtado para 40 caracteres.',
+  'transfer.issue.page-invalid':
+    'O nome da página não é válido; o grupo vai para a primeira página.',
+  'transfer.issue.page-limit':
+    'O limite de 12 páginas foi atingido; o grupo vai para a primeira página.',
   'transfer.issue.columns-ignored': 'O número de colunas deve estar entre 1 e 6; foi ignorado.',
   'transfer.issue.check-ignored':
     'O método de verificação deve ser http ou ping e o intervalo ficar entre 30 e 3600 segundos; foi ignorado.',

@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { MAX_FILE_BYTES, SOURCES, type Preview, type Source } from './transfer-model';
 
 const json = { 'Content-Type': 'application/json' };
+type PageRow = { id: number; name: string };
+const FROM_FILE = 'file';
 
 /** Export and import of groups and cards, with mandatory preview before saving. */
 export function ConfigTransfer({ onImported }: { onImported: () => void | Promise<void> }) {
@@ -23,6 +25,18 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
   const [busy, setBusy] = useState(false);
   const [fileKey, setFileKey] = useState(0);
   const [source, setSource] = useState<Source>('homora');
+  const [pages, setPages] = useState<PageRow[]>([]);
+  const [target, setTarget] = useState(FROM_FILE);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/pages', { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((data: unknown) => {
+        if (Array.isArray(data)) setPages(data as PageRow[]);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   function reset() {
     setContent('');
@@ -89,6 +103,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
           content,
           source,
           keepPrivate: source === 'homora' && keepPrivate,
+          ...(target !== FROM_FILE && { pageId: Number(target) }),
           expectedVersion: preview.version,
         }),
       });
@@ -180,6 +195,27 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
               />
             </Field>
             {preview && <ImportPreview plan={preview.plan} />}
+            {preview && pages.length > 1 && (
+              <Field>
+                <FieldLabel htmlFor="import-page">{t('pages.importTarget')}</FieldLabel>
+                <FormSelect
+                  id="import-page"
+                  aria-label={t('pages.importTarget')}
+                  value={target}
+                  disabled={busy}
+                  onChange={(event) => setTarget(event.target.value)}
+                >
+                  <FormSelectOption value={FROM_FILE}>
+                    {t('pages.importTargetFile')}
+                  </FormSelectOption>
+                  {pages.map((page) => (
+                    <FormSelectOption key={page.id} value={String(page.id)}>
+                      {page.name}
+                    </FormSelectOption>
+                  ))}
+                </FormSelect>
+              </Field>
+            )}
             {preview && source === 'homora' && (
               <Field orientation="horizontal" className="items-start">
                 <Checkbox

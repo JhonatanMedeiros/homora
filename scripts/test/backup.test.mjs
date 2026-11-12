@@ -76,3 +76,60 @@ test('source failure does not leave incomplete backup nor modify existing target
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('backup takes the background image along and a restore round trip keeps it', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'homora-backup-image-'));
+  try {
+    const source = join(dir, 'source.sqlite');
+    const target = join(dir, 'backup.sqlite');
+    const restoredPath = join(dir, 'restored.sqlite');
+    const db = new DatabaseSync(source);
+    db.exec("CREATE TABLE items (name TEXT); INSERT INTO items VALUES ('Jellyfin');");
+    db.close();
+    const picture = Buffer.from('processed-picture-bytes');
+    await writeFile(`${source}.background`, picture);
+    const run = (from, to) =>
+      spawnSync(process.execPath, ['scripts/backup.mjs', from, to], { encoding: 'utf8' });
+    assert.equal(run(source, target).status, 0);
+    assert.deepEqual(await readFile(`${target}.background`), picture);
+    assert.equal((await stat(`${target}.background`)).mode & 0o777, 0o600);
+    assert.equal(run(target, restoredPath).status, 0);
+    assert.deepEqual(await readFile(`${restoredPath}.background`), picture);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('a database without a picture makes a backup without one', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'homora-backup-noimage-'));
+  try {
+    const source = join(dir, 'source.sqlite');
+    const target = join(dir, 'backup.sqlite');
+    new DatabaseSync(source).close();
+    const result = spawnSync(process.execPath, ['scripts/backup.mjs', source, target], {
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    await assert.rejects(stat(`${target}.background`), { code: 'ENOENT' });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('an existing picture next to the target is never overwritten or deleted', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'homora-backup-keep-'));
+  try {
+    const source = join(dir, 'source.sqlite');
+    const target = join(dir, 'backup.sqlite');
+    new DatabaseSync(source).close();
+    await writeFile(`${source}.background`, 'new');
+    await writeFile(`${target}.background`, 'previous');
+    const result = spawnSync(process.execPath, ['scripts/backup.mjs', source, target], {
+      encoding: 'utf8',
+    });
+    assert.notEqual(result.status, 0);
+    assert.equal(await readFile(`${target}.background`, 'utf8'), 'previous');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
