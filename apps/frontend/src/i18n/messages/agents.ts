@@ -26,6 +26,8 @@ export const en = {
   'agents.identitiesHint':
     'Each agent signs in with its own token and sees only what you allow below.',
   'agents.noIdentities': 'No agents created yet.',
+  'agents.noActive': 'No active agents.',
+  'agents.revokedList': 'Revoked agents ({count})',
   'agents.agentName': 'Agent name',
   'agents.agentNamePlaceholder': 'e.g. Home assistant',
   'agents.canDo': 'What it can do',
@@ -228,6 +230,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'agents.identitiesHint':
     'Cada agente entra com um token próprio e só enxerga o que você permitir abaixo.',
   'agents.noIdentities': 'Nenhum agente ainda.',
+  'agents.noActive': 'Nenhum agente ativo.',
+  'agents.revokedList': 'Agentes revogados ({count})',
   'agents.agentName': 'Nome do agente',
   'agents.agentNamePlaceholder': 'Ex.: Assistente da casa',
   'agents.canDo': 'O que ele pode fazer',

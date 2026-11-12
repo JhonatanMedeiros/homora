@@ -260,3 +260,22 @@ it('moves a pending proposal to expired at its deadline without reloading', asyn
   fireEvent.click(toggle);
   expect(screen.getByRole('button', { name: 'Recriar' })).toBeTruthy();
 });
+
+it('keeps revoked agents collapsed and counts only active agents', async () => {
+  mockApi([active, { ...active, id: 'old', name: 'Antigo', revokedAt: Date.now() }]);
+  render(<Harness />);
+  await openAgents();
+  expect(screen.getByRole('tab', { name: 'Agentes 1' })).toBeTruthy();
+  expect(screen.getByText('Assistente')).toBeTruthy();
+  expect(screen.queryByText('Antigo')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Agentes revogados (1)' }));
+  expect(screen.getByText('Antigo')).toBeTruthy();
+});
+
+it('shows an empty active list when all agents are revoked', async () => {
+  mockApi([{ ...active, revokedAt: Date.now() }]);
+  render(<Harness />);
+  await openAgents();
+  expect(screen.getByText('Nenhum agente ativo.')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Agentes revogados (1)' })).toBeTruthy();
+});
