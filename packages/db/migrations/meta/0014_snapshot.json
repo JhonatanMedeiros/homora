@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2476069c-7e0b-40ab-941a-bcd6d988f6c0",
+  "id": "35a1f2c8-ef4e-47d0-89c3-44e3d4f92ce0",
   "prevId": "77e86be4-3c57-4205-9858-1ac7bd8958c7",
   "tables": {
     "account": {
@@ -280,89 +280,6 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "docker_push_sources": {
-      "name": "docker_push_sources",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "token_hash": {
-          "name": "token_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "revoked": {
-          "name": "revoked",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "received_at": {
-          "name": "received_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "inventory_version": {
-          "name": "inventory_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "inventory": {
-          "name": "inventory",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "docker_push_sources_name_unique": {
-          "name": "docker_push_sources_name_unique",
-          "columns": [
-            "name"
-          ],
-          "isUnique": true
-        },
-        "docker_push_sources_token_hash_unique": {
-          "name": "docker_push_sources_token_hash_unique",
-          "columns": [
-            "token_hash"
-          ],
-          "isUnique": true
-        }
-      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -846,6 +763,20 @@
         "check_interval": {
           "name": "check_interval",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "expected_status": {
+          "name": "expected_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "check_path": {
+          "name": "check_path",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

@@ -1,4 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
@@ -32,7 +42,10 @@ export function PushSources({ onImported }: { onImported: () => void | Promise<v
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [confirm, setConfirm] = useState('');
+  const [confirm, setConfirm] = useState<{
+    source: Source;
+    action: 'revoke' | 'remove' | 'rotate';
+  } | null>(null);
   const [allowPrivate, setAllowPrivate] = useState(false);
   const [message, setMessage] = useState('');
   const load = useCallback(async () => {
@@ -79,21 +92,14 @@ export function PushSources({ onImported }: { onImported: () => void | Promise<v
     }
   }
   async function change(source: Source, actionName: 'revoke' | 'remove' | 'rotate') {
-    const key = `${source.id}:${actionName}`;
-    if (confirm !== key) {
-      setConfirm(key);
-      return;
-    }
     await action(async () => {
       if (actionName === 'rotate') {
         const data = await call(`/api/discovery/sources/${source.id}/rotate`, 'POST');
         setToken(data.token);
-      } else
-        await call(
-          `/api/discovery/sources/${source.id}${actionName === 'remove' ? '/remove' : ''}`,
-          'DELETE',
-        );
-      setConfirm('');
+      } else if (actionName === 'revoke')
+        await call(`/api/discovery/sources/${source.id}/revoke`, 'POST');
+      else await call(`/api/discovery/sources/${source.id}`, 'DELETE');
+      setConfirm(null);
       setPreview(null);
       await load();
     });
@@ -193,29 +199,18 @@ export function PushSources({ onImported }: { onImported: () => void | Promise<v
                       key={item}
                       type="button"
                       variant="outline"
-                      disabled={busy || (item === 'revoke' && Boolean(source.revoked))}
-                      onClick={() => void change(source, item)}
+                      disabled={busy || (item !== 'remove' && Boolean(source.revoked))}
+                      onClick={() => setConfirm({ source, action: item })}
                     >
                       {t(
-                        confirm === `${source.id}:${item}`
-                          ? item === 'revoke'
-                            ? 'push.confirmRevoke'
-                            : item === 'rotate'
-                              ? 'push.confirmRotate'
-                              : 'push.confirmRemove'
-                          : item === 'revoke'
-                            ? 'push.revoke'
-                            : item === 'rotate'
-                              ? 'push.rotate'
-                              : 'push.remove',
+                        item === 'revoke'
+                          ? 'push.revoke'
+                          : item === 'rotate'
+                            ? 'push.rotate'
+                            : 'push.remove',
                       )}
                     </Button>
                   ))}
-                  {confirm.startsWith(`${source.id}:`) && (
-                    <Button type="button" variant="ghost" onClick={() => setConfirm('')}>
-                      {t('push.cancel')}
-                    </Button>
-                  )}
                 </div>
               </li>
             ))}
@@ -309,6 +304,56 @@ export function PushSources({ onImported }: { onImported: () => void | Promise<v
           )}
         </CardContent>
       </Card>
+      <AlertDialog
+        open={confirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirm(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirm &&
+                t(
+                  confirm.action === 'revoke'
+                    ? 'push.confirmRevoke'
+                    : confirm.action === 'rotate'
+                      ? 'push.confirmRotate'
+                      : 'push.confirmRemove',
+                )}{' '}
+              · {confirm?.source.name}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm &&
+                t(
+                  confirm.action === 'revoke'
+                    ? 'push.revokeBody'
+                    : confirm.action === 'rotate'
+                      ? 'push.rotateBody'
+                      : 'push.removeBody',
+                )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('push.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (confirm) void change(confirm.source, confirm.action);
+              }}
+            >
+              {confirm &&
+                t(
+                  confirm.action === 'revoke'
+                    ? 'push.confirmRevoke'
+                    : confirm.action === 'rotate'
+                      ? 'push.confirmRotate'
+                      : 'push.confirmRemove',
+                )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

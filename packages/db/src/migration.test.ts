@@ -7,6 +7,7 @@ import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { expect, it } from 'vitest';
 import {
   createDatabase,
+  getSqliteHandle,
   services,
   serviceGroups,
   integrationInstances,
@@ -137,8 +138,12 @@ it('adiciona histórico e lotes preservando dados da versão anterior', () => {
     const database = createDatabase(path);
     database.close();
     const check = new DatabaseSync(path);
-    expect(check.prepare('SELECT name FROM services WHERE id=5').get()).toEqual({
+    expect(
+      check.prepare('SELECT name, expected_status, check_path FROM services WHERE id=5').get(),
+    ).toEqual({
       name: 'Existing',
+      expected_status: null,
+      check_path: null,
     });
     expect(check.prepare('SELECT secret_ref FROM integration_instances WHERE id=7').get()).toEqual({
       secret_ref: 'encrypted',
@@ -157,6 +162,29 @@ it('adiciona histórico e lotes preservando dados da versão anterior', () => {
   }
 });
 
+it('exposes status and latency of existing history rows through virtual columns', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-uptime-')),
+    path = join(dir, 'data.sqlite');
+  try {
+    const database = createDatabase(path);
+    const sqlite = getSqliteHandle(database.db);
+    sqlite.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(1,'S','http://x/','C','');",
+    );
+    sqlite
+      .prepare(
+        'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(1,?,?,?)',
+      )
+      .run('sig', 1, JSON.stringify({ status: 'available', latencyMs: 12.5 }));
+    expect(
+      sqlite.prepare('SELECT status,latency_ms AS latency FROM service_observation_history').all(),
+    ).toEqual([{ status: 'available', latency: 12.5 }]);
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 it('adds push sources while preserving existing services and defaulting to no sources', () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-push-migration-'));
   const path = join(dir, 'data.sqlite');
@@ -168,22 +196,27 @@ it('adds push sources while preserving existing services and defaulting to no so
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
-    for (const migration of migrations.slice(0, 14)) {
+    for (const migration of migrations.slice(0, 17)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
         .run(migration.hash, migration.folderMillis);
     }
     old.exec(
-      "INSERT INTO services(id,name,url,category,description) VALUES(5,'Existing','https://example.test','Home','')",
+      "INSERT INTO services(id,name,url,category,description,is_public,expected_status,check_path) VALUES(5,'Existing','https://example.test','Home','',1,'2xx','/health'); INSERT INTO app_settings(key,value) VALUES('public_status_enabled','true')",
     );
     old.close();
     const database = createDatabase(path);
     database.close();
     const check = new DatabaseSync(path);
-    expect(check.prepare('SELECT name FROM services WHERE id=5').get()).toEqual({
-      name: 'Existing',
-    });
+    expect(
+      check
+        .prepare('SELECT name,is_public,expected_status,check_path FROM services WHERE id=5')
+        .get(),
+    ).toEqual({ name: 'Existing', is_public: 1, expected_status: '2xx', check_path: '/health' });
+    expect(
+      check.prepare("SELECT value FROM app_settings WHERE key='public_status_enabled'").get(),
+    ).toEqual({ value: 'true' });
     expect(check.prepare('SELECT * FROM docker_push_sources').all()).toEqual([]);
     check.close();
   } finally {

@@ -28,6 +28,7 @@ describe('Docker push sources', () => {
       expect(push.ingest(source.token, valid)).toBe('ok');
       expect(push.list()[0]).toMatchObject({ inventoryVersion: 1 });
       expect(push.revoke(source.id)).toBe(true);
+      expect(push.rotate(source.id)).toBeNull();
       expect(push.ingest(source.token, valid)).toBe('unauthorized');
       expect(push.list()[0]).toMatchObject({ inventoryVersion: 1 });
     } finally {
@@ -105,17 +106,63 @@ it('isolates sources and enforces snapshot review, authorization and revocation 
       name: 'changed',
       allowPrivate: false,
     });
-    expect((await send('DELETE', `/api/discovery/sources/${a.id}`)).statusCode).toBe(204);
+    expect((await send('POST', `/api/discovery/sources/${a.id}/revoke`)).statusCode).toBe(204);
     expect((await push(a.token, container('first'))).statusCode).toBe(401);
     expect((await send('GET', `/api/discovery/sources/${b.id}/suggestions`)).statusCode).toBe(200);
     expect(JSON.stringify((await send('GET', '/api/discovery/sources')).json())).not.toContain(
       a.token,
     );
+    const events = getSqliteHandle(db.db)
+      .prepare(
+        "SELECT actor,action,detail,ip_address FROM audit_events WHERE action LIKE 'docker-source-%' ORDER BY id",
+      )
+      .all();
+    expect(events).toHaveLength(3);
+    expect(events[2]).toMatchObject({
+      action: 'docker-source-revoke',
+      detail: a.id,
+      ip_address: '127.0.0.1',
+    });
+    expect(JSON.stringify(events)).not.toContain(a.token);
+    expect(events[0]).toMatchObject({ actor: expect.stringMatching(/^user:/) });
+    expect((await send('POST', `/api/discovery/sources/${a.id}/rotate`)).statusCode).toBe(404);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/docker-push/inventory',
+          headers: { authorization: `Bearer ${b.token}`, 'content-type': 'text/plain' },
+          payload: '{}',
+        })
+      ).statusCode,
+    ).toBe(415);
+    const tooLarge = await app.inject({
+      method: 'POST',
+      url: '/docker-push/inventory',
+      headers: { authorization: `Bearer ${b.token}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ containers: [], padding: 'x'.repeat(1024 * 1024) }),
+    });
+    expect(tooLarge.statusCode).toBe(413);
+    expect(tooLarge.json().code).toBe('inventory-too-large');
+    const rotated = await send('POST', `/api/discovery/sources/${b.id}/rotate`);
+    expect(rotated.statusCode).toBe(200);
+    expect((await push(b.token, container('second'))).statusCode).toBe(401);
+    expect((await send('DELETE', `/api/discovery/sources/${b.id}`)).statusCode).toBe(204);
+    const actions = getSqliteHandle(db.db)
+      .prepare("SELECT action FROM audit_events WHERE action LIKE 'docker-source-%' ORDER BY id")
+      .all();
+    expect(actions.map((event) => event.action)).toEqual([
+      'docker-source-create',
+      'docker-source-create',
+      'docker-source-revoke',
+      'docker-source-rotate',
+      'docker-source-remove',
+    ]);
   } finally {
     await app.close();
     db.close();
   }
-});
+}, 15000);
 
 it('supports scoped MCP reads and proposals without leaking URL query secrets', async () => {
   const { mkdtempSync, rmSync } = await import('node:fs');
@@ -171,6 +218,11 @@ it('supports scoped MCP reads and proposals without leaking URL query secrets', 
     });
     expect(proposal.isError).not.toBe(true);
     expect(JSON.stringify(proposal)).not.toContain('synthetic-secret');
+    const proposalId = JSON.parse((proposal.content as { text: string }[])[0].text).id;
+    expect(push.revoke(source.id)).toBe(true);
+    expect(createProposalService(sqlite).decide(proposalId, true, 'user:reviewer')).toBe(
+      'approved',
+    );
     const stale = await client.callTool({
       name: 'propose_docker_push_card',
       arguments: { sourceId: source.id, id: 'a'.repeat(12), inventoryVersion: 2 },
@@ -290,3 +342,72 @@ it('enforces the source cap, freshness, unchanged inventory and token rotation',
     db.close();
   }
 });
+
+it('does not change the inventory version when Docker reorders containers', () => {
+  const db = createDatabase(':memory:');
+  try {
+    const push = createDockerPush(getSqliteHandle(db.db));
+    const source = push.create('source');
+    if (!source) throw new Error('missing source');
+    const containers = ['a', 'b'].map((id) => ({
+      Id: id.repeat(64),
+      Names: ['/app'],
+      Labels: { 'homora.url': `https://${id}.example.test` },
+    }));
+    expect(push.ingest(source.token, { containers })).toBe('ok');
+    expect(push.ingest(source.token, { containers: [...containers].reverse() })).toBe('ok');
+    expect(push.snapshot(source.id)?.version).toBe(1);
+  } finally {
+    db.close();
+  }
+});
+
+it('rolls back lifecycle changes if their audit record cannot be stored', () => {
+  const db = createDatabase(':memory:');
+  try {
+    const sqlite = getSqliteHandle(db.db);
+    const push = createDockerPush(sqlite);
+    const actor = { id: 'user:synthetic', ipAddress: '127.0.0.1' };
+    const source = push.create('source', actor);
+    if (!source) throw new Error('missing source');
+    sqlite.exec(
+      "CREATE TRIGGER fail_push_audit BEFORE INSERT ON audit_events WHEN NEW.action LIKE 'docker-source-%' BEGIN SELECT RAISE(ABORT, 'audit failure'); END;",
+    );
+    expect(() => push.rotate(source.id, actor)).toThrow();
+    expect(() => push.revoke(source.id, actor)).toThrow();
+    expect(() => push.remove(source.id, actor)).toThrow();
+    expect(() => push.create('other', actor)).toThrow();
+    expect(push.list()).toHaveLength(1);
+    expect(push.ingest(source.token, { containers: [] })).toBe('ok');
+  } finally {
+    db.close();
+  }
+});
+
+it('returns a distinct source limit error and audits only successful operations', async () => {
+  const { createTestAuth } = await import('./test-auth.js');
+  const { createApp } = await import('./app.js');
+  const db = createDatabase(':memory:');
+  const { auth, cookie } = await createTestAuth(db.db);
+  const app = createApp(db.db, 5173, auth);
+  const push = createDockerPush(getSqliteHandle(db.db));
+  try {
+    for (let i = 0; i < 10; i++) expect(push.create(`source-${i}`)).not.toBeNull();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/discovery/sources',
+      headers: { origin: 'http://localhost:5173', cookie },
+      payload: { name: 'extra' },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().code).toBe('source-limit');
+    expect(
+      getSqliteHandle(db.db)
+        .prepare("SELECT * FROM audit_events WHERE action='docker-source-create'")
+        .all(),
+    ).toEqual([]);
+  } finally {
+    await app.close();
+    db.close();
+  }
+}, 15000);

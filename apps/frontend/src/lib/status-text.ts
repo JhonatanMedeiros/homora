@@ -64,20 +64,26 @@ export function describeStatus(status: ServiceStatus | undefined, blocked: boole
   }
   if (state === 'unavailable') {
     const note =
-      reason === 'not-found'
-        ? t('card.note.notFound')
-        : reason === 'error-status'
-          ? code === null
-            ? t('card.note.errorGeneric')
-            : t('card.note.error', { code })
-          : reason === 'no-response'
-            ? status?.lastAttempt
-              ? t('card.note.noResponseAt', { time: formatTime(status.lastAttempt) })
-              : t('card.note.noResponse')
-            : status?.lastAttempt
-              ? t('card.lastAttempt', { time: formatTime(status.lastAttempt) })
-              : null;
-    const known = reason === 'not-found' || reason === 'error-status' || reason === 'no-response';
+      reason === 'unexpected-status' && code !== null && status?.expectedStatus
+        ? t('card.note.unexpected', { code, expected: status.expectedStatus })
+        : reason === 'not-found'
+          ? t('card.note.notFound')
+          : reason === 'error-status'
+            ? code === null
+              ? t('card.note.errorGeneric')
+              : t('card.note.error', { code })
+            : reason === 'no-response'
+              ? status?.lastAttempt
+                ? t('card.note.noResponseAt', { time: formatTime(status.lastAttempt) })
+                : t('card.note.noResponse')
+              : status?.lastAttempt
+                ? t('card.lastAttempt', { time: formatTime(status.lastAttempt) })
+                : null;
+    const known =
+      reason === 'unexpected-status' ||
+      reason === 'not-found' ||
+      reason === 'error-status' ||
+      reason === 'no-response';
     return {
       state,
       blocked: false,

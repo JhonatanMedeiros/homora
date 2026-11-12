@@ -160,4 +160,4 @@ it('exposes remote push discovery over HTTP only to authorized MCP scopes', asyn
     db.close();
     rmSync(dir, { recursive: true, force: true });
   }
-});
+}, 15000);

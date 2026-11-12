@@ -102,7 +102,7 @@ async function main() {
   if (!origin || !tokenFile)
     throw new Error('HOMORA_AGENT_ORIGIN and HOMORA_AGENT_TOKEN_FILE are required');
   const seconds = Number(process.env.HOMORA_AGENT_INTERVAL ?? '60');
-  if (!Number.isInteger(seconds) || seconds < 30 || seconds > 300)
+  if (!Number.isInteger(seconds) || seconds < 30 || seconds > 240)
     throw new Error('Invalid interval');
   const ca = process.env.HOMORA_AGENT_CA_FILE
     ? readFileSync(process.env.HOMORA_AGENT_CA_FILE)

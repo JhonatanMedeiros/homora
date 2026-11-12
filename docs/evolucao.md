@@ -624,6 +624,25 @@ appears monitored without being checked, and reference migration benchmark can b
   390 px, dark and light) with mocked API data. Not reviewed visually: the View popover and
   command palette opened, organize mode, and integrations or agents pages with real data.
 
+## Command palette evolution (2026-11-12, issue #64)
+
+- Header search button (visible on phones, `Ctrl K` hint from `md` up) opens the palette without a
+  keyboard. The palette lists recents (last five opened, `homora-recent-services`, no duplicates)
+  while the search is empty.
+- Each service has two paths: Enter opens it in a new tab; the row arrow button or `Shift`+`Enter`
+  goes to its card (clears the search and category filter, expands a collapsed group without
+  changing the saved preference, `scrollIntoView` centred, 2 s highlight, reduced motion respected).
+  Cards and rows carry a stable `service-{id}` id.
+- Navigation to Integrations, Agents, Activity, Settings, Import / Export (same Settings page) and
+  Account. Navigation and view only: the palette does not write.
+- Search covers name, group, description and host. Prefixes `status:down|up|unknown` and
+  `group:`/`grupo:` (quote names with spaces) and a sort control (relevance, name, status).
+  Ranking is local (`lib/palette-search.ts`) instead of cmdk's default scorer because the prefixes
+  must be stripped first.
+- Not done: Discovery destination (no such screen exists), favourites, `#tag` (no tags model).
+- Validation: `pnpm check`; component tests for filters, navigation, recents, go-to-card and
+  header button. Not reviewed visually in a browser.
+
 ### Follow-up — Private network default for new services (not started)
 
 **Problem:** monitoring denies RFC1918 and ULA destinations unless each service opts in
@@ -734,6 +753,38 @@ implementation because it changes a security default.
   suggestion now matches the name "Coolify". Existing cards keep their icon: set it on the card
   (or accept the suggestion) to switch from the letter fallback.
 - Validation: `pnpm check` and `pnpm build`. **Not verified:** appearance on a real dashboard.
+
+### Integrations Page: Single List with a Type Picker (2026-11-12)
+
+- Background: the page stacked widgets, connections and a read-only "available integrations"
+  catalog; each connection row had four text buttons repeating its name.
+- Two tabs, **Connections** and **Widgets**. The catalog card is gone: **Add connection** first
+  shows the types (with what each one reads, taken from `/api/integrations/catalog`, and how many
+  connections of that type exist), then opens that type's form. The form no longer has a type
+  select. If the catalog cannot be loaded the picker still lists the known types.
+- Each connection and widget row has a "⋯" menu (Test connection, Refresh data, Edit, Remove for
+  connections; See data now and Remove for widgets). Removing asks in an alert dialog instead of
+  the inline two-step button. The widget's card is still changed with the select in its row.
+- Not done on purpose: a "connected" status per row. Connections have no stored health, only the
+  result of a manual test, so the list does not claim one.
+- Validation: `pnpm check` and `pnpm build`; component tests for the picker, the form, the menu
+  actions, the removal dialog and the widgets tab. Chromium with a mocked API at 1100 px and
+  390 px (list, open menu, picker, widgets tab): no horizontal overflow or console errors.
+  **Not verified:** real connections and the removal flow in a browser.
+
+### Account Outside the Management Area (2026-11-12)
+
+- The account used to be a tab of the management sidebar (`/manage/account`), next to services,
+  integrations, agents, activity and settings, although it is about the signed-in user.
+- It is now its own page at `/account`, opened from the avatar menu. The page has the top bar and
+  a "Back to dashboard" button, with no management sidebar and no search, in a narrower column.
+  `/manage/account` redirects to `/account` so old links keep working. The management sidebar no
+  longer lists the account (`navItems` excludes it).
+- Activity stays where it is (management sidebar and avatar menu); it was not part of this change.
+- Validation: `pnpm check` and `pnpm build`; App tests for the avatar menu route, the redirect and
+  the sidebar list. Chromium with a mocked API at 1100 px and 390 px: menu, page, no horizontal
+  overflow. **Not verified:** the sign-in redirect that returns to `/account` after a session
+  expires (the path is accepted as a valid destination, but I did not run that flow).
 
 ### Agents Tab Redesign (2026-11-11)
 
@@ -943,6 +994,8 @@ implementation because it changes a security default.
   five-minute freshness, and review/import tied to a transactional source-version
   check. Existing local Docker discovery remains available. The stored inventory
   contains only supported discovery labels; the agent token is stored as a hash.
+  Source lifecycle changes are audited atomically; revocation is terminal and
+  interval is capped at 240 seconds.
 - Added UI in English and Portuguese, scoped MCP tools for both transports, a
   Docker image target and release matrix entry. Setup, socket privilege, TLS,
   token handling and limits are documented in both READMEs. The protocol accepts
@@ -958,3 +1011,63 @@ implementation because it changes a security default.
 - Not validated: actual communication between separate LXC hosts (none available),
   physical mobile devices, screen readers, and agent image on arm64. The local
   tests do not establish safety for public exposure.
+
+### Monitor HTTP: expected status and check path
+
+Services can optionally check a same-origin path independently of their card URL and match an exact HTTP status or the 2xx/3xx classes. Existing services retain their previous behavior; ping retains but ignores these HTTP settings. Anonymous responses do not prove an authenticated origin is healthy. Observation history records the expectation in effect for unexpected responses, and changing either setting invalidates the current shared observation.
+
+## Public read-only status page (issue #63)
+
+- `services.is_public` (default 0) and an `app_settings` table (`public_status_enabled`, `public_status_title`) in migration 0015; existing rows keep `is_public=0`.
+- `GET /api/public/status` is the only anonymous API path (exact-path allowlist in the auth hook, GET only), limited by `@fastify/rate-limit` to 60 requests per minute per client IP, cached 15 s, `404 not-found` when disabled or empty. Payload: name, category, `up|down|unknown`, `checkedAt`, `uptime` (24 h) and 24 hourly `bars`; stale observations read as `unknown`.
+- Visibility is changed only through authenticated, audited endpoints (`PUT /api/public-status/admin`, `PUT /api/services/:id/public`). It is deliberately outside `ServiceInput`, so imports, exports, agent proposals and MCP cannot change it; MCP exposes `publicStatusEnabled` read-only.
+- Frontend: `/status` is routed before the authenticated shell and calls only the public endpoint; Settings has the toggle, title and an exact preview; the service form has the checkbox.
+- Validated with `pnpm check`. Backend tests cover the closed default, 404s, opt-in only, no sensitive field or private service in the body, 429, exact-path allowlist, session requirement and audit. The rate limit runs in memory per backend process and the UI was not exercised manually in a browser. Not validated: behavior behind a real Cloudflare Access hostname.
+
+### Monitor: uptime and latency per service (issue #62)
+
+- `GET /api/services/uptime?range=24h|7d|30d` (all services) and `GET /api/services/:id/uptime` return uptime %, check counts, last latency and a bar of buckets (30 min for 24 h, 2 h for 7 d, 6 h for 30 d; at most 120). Both use the same function, so the numbers match; only the single-service call adds `p95LatencyMs` (nearest rank), because the percentile needs a sort of every latency.
+- Only checks made under the service's current configuration (`signature`) count; the response flags `reconfigured` and the card says so. `unknown` checks stay out of the denominator and empty buckets read `unknown`. With fewer than 5 up/down checks the percentage is `null` and the card shows a dash.
+- Migration `0016` adds virtual columns `status` and `latency_ms` (generated from the observation JSON, so existing rows need no backfill) and a covering index `(service_id, signature, observed_at, status, latency_ms)`. No row is rewritten.
+- Card: percentage and bucket bar (with a text `aria-label`); the History toggle shows current latency, p95, check counts and the period selector, saved in this browser with the view preferences. The list layout shows only the percentage.
+- Deviation from the issue: 7 d uses 2 h buckets (84 points) because 1 h would be 168, above its own 120 cap.
+- Validation: `pnpm check` and `pnpm build`. Tests cover manual counts, unknown exclusion, minimum checks, reconfiguration, 30-day retention, batch/single consistency, routes, migration and the card. A synthetic benchmark of 200 services × 30 days at a 15-minute interval is in `service-uptime.test.ts`: the 24 h and 7 d periods meet the 300 ms goal; 30 d runs close to or above it depending on load (guard set at 1.5 s). At the default 60 s interval history has ~15× more rows, so 7 d and 30 d would be slower; a rollup table is the next step if that matters. Not checked in a browser or against real infrastructure.
+
+## Proposal deadlines and recreation (issue #67)
+
+- Agents shows a shared countdown, an expired state and recreation for expired proposals. Expired batches are recreated together, preserving collective review. Recreation validates the original diff and records the human requester; it never applies changes.
+- The review period defaults to 15 minutes and can be set to 1–120 minutes for new proposals. It is stored in the existing settings table and read by both MCP transports. Existing deadlines are unchanged.
+- Validated: `pnpm check` (404 application tests and 6 script tests) and `pnpm build`. Tests cover expiration in the open interface, authentication, TTL, recreation and batch rollback. The interface was not manually checked in a browser; real infrastructure was not needed.
+
+## Group positions after deletion (issue #68)
+
+- Deleting an empty group through the API or an approved proposal renumbers the remaining groups in the same transaction, ordered by position and then ID. Existing gaps are normalized on the next successful deletion; no migration is needed.
+- Validated: `pnpm check` (410 application tests and 6 script tests) and `pnpm build`. Tests cover deletions at the beginning, middle and end, creation and reordering afterward, and existing gaps and duplicate positions in proposals. Existing tests cover rejection of non-empty groups.
+
+## Settings as a hub, a phone bottom bar and Agents tabs
+
+- Settings no longer stacks everything on one page. `/manage/settings` lists four subpages (`interface`, `public`, `backup`, `discovery`), each with its own route (`/manage/settings/:section`); an unknown subpage is "not found". On phones the list and a subpage take turns, with a back link; from `md` up they sit side by side. The section list lives in `features/settings/sections.ts`; the palette's "Import / Export" now opens `/manage/settings/backup`.
+- `MobileTabs` was dead code and is now mounted in the management area on phones: Services, Integrations, Agents and "More", which opens a bottom sheet with Activity and Settings. The sidebar buttons are desktop-only. The organize bar and the toaster were moved above the bottom bar.
+- Validated with `pnpm check` and `pnpm build` (the one failure on the first `pnpm check`, the 200-service uptime benchmark, passed on its own: it is load-sensitive). Tests cover the hub, direct links, the unknown subpage, the "More" sheet and the Agents tabs. Not checked in a browser or on a physical phone.
+- Agents now splits Proposals (with the pending count) and Agents into two tabs; Connect and New agent stay in the header. The tab is local state, not a route.
+
+### Docker push discovery — PR review and main integration
+
+- Merged current `main` and regenerated the source migration as `0017`, after the
+  existing monitor, public-status and uptime migrations. An isolated upgrade test
+  preserves a public service, monitor settings and public-status configuration.
+- Revocation is terminal; token rotation cannot reactivate a source. Source creation,
+  rotation, revocation and removal record administrator, source ID and client IP in
+  the same database transaction as the change. Names and tokens are not recorded.
+- Agent interval is capped at 240 seconds against a five-minute freshness window.
+  Inventory order is canonicalized by container ID, avoiding version changes from
+  reordered Docker results. API endpoints now distinguish revocation from removal,
+  expose the source limit and oversized-body errors, and require JSON ingestion.
+- Direct import checks source validity in its transaction. MCP checks the source at
+  proposal creation; an already-created proposal remains independently reviewable
+  after source revocation. Both cases have tests. Source limit counts revoked rows,
+  as documented, until removed.
+- Validated `pnpm check` (425 application tests and 9 script tests), `pnpm build`,
+  isolated migration and concurrent-connection tests, audit rollback and lifecycle
+  tests, and Chromium at 390 px for dialog cancellation and terminal revocation.
+  CI and cross-host LXC validation remain separate from this local evidence.

@@ -17,6 +17,8 @@ function setup(value: ServiceInput = emptyService) {
       error=""
       saving={false}
       nameRef={null}
+      isPublic={false}
+      onPublicChange={() => {}}
       onChange={onChange}
       onSubmit={(event) => event.preventDefault()}
       onCancel={() => {}}

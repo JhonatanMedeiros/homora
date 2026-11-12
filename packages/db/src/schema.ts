@@ -1,4 +1,5 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const serviceGroups = sqliteTable('service_groups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull().unique(),
@@ -18,6 +19,16 @@ export const services = sqliteTable('services', {
   // 'http' (GET) or 'ping' (ICMP); interval in seconds is null for monitor default.
   checkType: text('check_type').notNull().default('http'),
   checkInterval: integer('check_interval'),
+  expectedStatus: text('expected_status'),
+  checkPath: text('check_path'),
+  // Opt-in to the read-only public status page. Never set by imports or agent proposals.
+  isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+});
+
+/** Small instance-wide settings (key/value). Values are plain text and never hold secrets. */
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
 });
 
 // Last observations are shared with the separate local MCP process. The service
@@ -39,8 +50,22 @@ export const serviceObservationHistory = sqliteTable(
     signature: text('signature').notNull(),
     observedAt: integer('observed_at').notNull(),
     observation: text('observation').notNull(),
+    // Virtual columns read from the JSON so uptime can aggregate on an index without parsing rows.
+    status: text('status').generatedAlwaysAs(sql`json_extract(observation, '$.status')`, {
+      mode: 'virtual',
+    }),
+    latencyMs: real('latency_ms').generatedAlwaysAs(sql`json_extract(observation, '$.latencyMs')`, {
+      mode: 'virtual',
+    }),
   },
   (table) => [
+    index('observation_history_uptime_idx').on(
+      table.serviceId,
+      table.signature,
+      table.observedAt,
+      table.status,
+      table.latencyMs,
+    ),
     uniqueIndex('observation_history_service_time_idx').on(
       table.serviceId,
       table.observedAt,

@@ -1,4 +1,10 @@
-import { CHECK_INTERVAL_MAX, CHECK_INTERVAL_MIN, ICON_MAX_LENGTH } from '@homora/shared';
+import {
+  CHECK_INTERVAL_MAX,
+  CHECK_INTERVAL_MIN,
+  ICON_MAX_LENGTH,
+  isCheckPath,
+  isExpectedStatus,
+} from '@homora/shared';
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
 
@@ -21,6 +27,11 @@ export const serviceInputSchema = z
     position: z.number().int().safe().min(0).optional(),
     allowPrivate: z.boolean().optional(),
     checkType: z.enum(['http', 'ping']).optional(),
+    expectedStatus: z
+      .union([z.string().refine(isExpectedStatus), z.number().int().min(100).max(599)])
+      .nullable()
+      .optional(),
+    checkPath: z.string().refine(isCheckPath).nullable().optional(),
     checkInterval: z
       .number()
       .int()
@@ -157,3 +168,9 @@ export function parseId(value: string): number | null {
   const parsed = numericIdSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
+
+export const publicStatusSettingsSchema = z
+  .object({ enabled: z.boolean().optional(), title: z.string().trim().max(60).optional() })
+  .strict()
+  .refine((value) => value.enabled !== undefined || value.title !== undefined);
+export const servicePublicSchema = z.object({ isPublic: z.boolean() }).strict();

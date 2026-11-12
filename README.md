@@ -74,6 +74,17 @@ With a reverse proxy that terminates HTTPS in front of Homora:
 
 The `homora-data` volume is preserved and database migrations run on startup inside a transaction. There is no automated downgrade: if a migration fails, keep the original volume and restore a backup into a working copy before resuming. Try the upgrade on a copy of your data if the installation holds anything important.
 
+## Public status page (optional, read-only)
+
+Homora can publish a minimal, read-only page at `/status` so others can see what is up without signing in. It is **closed by default**: nothing is public until an administrator enables it in **Settings** and marks each service with "Show on the public status page" in its form.
+
+- The page calls only `GET /api/public/status`, the one anonymous API path (exact match, never a prefix). It is limited to 60 requests per minute per client address and is cached for 15 seconds.
+- Anonymous visitors receive only: service name, group, online/offline/unknown state, last check time, 24 hourly bars and the 24-hour uptime percentage. Never URLs, descriptions, addresses, latency, HTTP codes, failure reasons or internal ids.
+- With the page disabled or no public service, the endpoint answers `404 not-found`, the same as a route that does not exist.
+- Settings shows a preview of exactly what visitors will see. Enabling or disabling the page, changing its title and marking a service are recorded in the activity feed. Importing a configuration and agent proposals never make a service public; the MCP only reports `publicStatusEnabled`.
+- The per-client limit needs the real client address: keep `HOMORA_TRUST_PROXY=true` behind a proxy that overwrites `X-Forwarded-For` (see above), or every visitor shares one limit.
+- If Homora sits behind Cloudflare Access (or a similar gateway), `/status` and `/api/public/status` must use a separate hostname or a bypass policy, otherwise visitors are still asked to sign in. Exposing it to the internet is your decision: review what is marked public first.
+
 ## Import and export
 
 Open **Settings**. Download your groups, cards and their order as YAML or JSON (`GET /api/config/export`). The file never contains passwords, tokens, connections or IDs, so it is safe to keep in version control.
@@ -130,7 +141,7 @@ The Homepage labels `homepage.href`, `homepage.name`, `homepage.group`, `homepag
 
 ### Remote Docker agents
 
-Remote agents complement the existing local source; neither mode creates cards without review. In **Settings → Remote Docker agents**, create a named source and copy its token immediately. It is shown only once; generate a replacement if lost. Homora stores a hash, and revocation invalidates the token. There is a maximum of ten remote sources, including revoked sources until removed. Rotating a token discards that source's last inventory. Removing a source deletes its inventory, not cards already imported.
+Remote agents complement the existing local source; neither mode creates cards without review. In **Settings → Docker discovery → Remote Docker agents**, create a named source and copy its token immediately. It is shown only once; generate a replacement if lost. Homora stores a hash, and revocation permanently invalidates the source. To use that host again, remove the revoked source and create a new one. There is a maximum of ten remote sources, including revoked sources until removed. Rotating a token discards that source's last inventory. Removing a source deletes its inventory, not cards already imported.
 
 On each trusted Docker host, build the agent from this checkout:
 
@@ -150,11 +161,11 @@ docker run -d --name homora-discovery-agent --restart unless-stopped \
   homora-discovery-agent:local
 ```
 
-Keep the token file private and readable by the selected user. For a private CA, mount its public certificate and set `HOMORA_AGENT_CA_FILE` to its path in the container. HTTPS certificate and hostname validation remain enabled. Configure a private HTTPS reverse proxy as described in [Deployment scenarios](#deployment-scenarios); this does not make public exposure supported. The agent sends to `/docker-push/inventory`, so the proxy must forward this path. The bundled nginx forwards it. `HOMORA_AGENT_INTERVAL` is 30–300 seconds (default 60); `HOMORA_AGENT_DOCKER_SOCKET` optionally changes the in-container Unix socket path.
+Keep the token file private and readable by the selected user. For a private CA, mount its public certificate and set `HOMORA_AGENT_CA_FILE` to its path in the container. HTTPS certificate and hostname validation remain enabled. Configure a private HTTPS reverse proxy as described in [Deployment scenarios](#deployment-scenarios); this does not make public exposure supported. The agent sends to `/docker-push/inventory`, so the proxy must forward this path. The bundled nginx forwards it. `HOMORA_AGENT_INTERVAL` is 30–240 seconds (default 60), leaving a nominal one-minute margin before the five-minute freshness deadline (network delays reduce it); `HOMORA_AGENT_DOCKER_SOCKET` optionally changes the in-container Unix socket path.
 
 **Socket access is privileged:** a read-only mount does not make Docker's API read-only. The agent only calls `GET /containers/json`, but a compromised agent with socket access could control the daemon. Run only trusted images on trusted hosts. Do not publish the Docker socket or proxy port. The agent sends only container IDs, first name and supported discovery labels; labels can contain sensitive information, so do not put secrets in them. It sends at most 1,000 containers, reads at most 4 MiB from Docker and publishes at most 1 MiB. Oversized or invalid inventories fail as a whole and retain the previous one.
 
-Settings shows the last receipt time. An inventory older than five minutes cannot be reviewed or imported. Preview selects one source at a time; if its data, authorization, or the dashboard configuration changes before confirmation, review again. A card remains after the source is revoked. Monitoring private destinations still requires your explicit choice. For MCP, `list_docker_push_sources` and `list_docker_push_suggestions` require `discovery:read`; `propose_docker_push_card` also requires `proposals:create` and still creates a human-reviewable proposal. Both MCP transports read the same stored inventories.
+Settings shows the last receipt time. An inventory older than five minutes cannot be reviewed or imported. Preview selects one source at a time; if its data, authorization, or the dashboard configuration changes before confirmation, review again. A card remains after the source is revoked. Monitoring private destinations still requires your explicit choice. For MCP, `list_docker_push_sources` and `list_docker_push_suggestions` require `discovery:read`; `propose_docker_push_card` also requires `proposals:create` and still creates a human-reviewable proposal. Both MCP transports read the same stored inventories. A proposal already created by MCP is independent of the source: revoking the source does not cancel it, and a human can still review and approve the exact saved proposal.
 
 ### Enable discovery
 
@@ -205,9 +216,11 @@ The UI shows friendly messages for these errors; MCP may return a generic failur
 
 ## Proxmox and other integrations
 
-Set up Proxmox on the Integrations page with an account and token that have read-only access. Credentials are encrypted at rest with a key stored separately in the same directory; this does not protect against someone who can read both files. Add separate named connections for independent clusters or servers. For a private CA, import the CA's public certificate (PEM); save the connection and use **Test**. TLS validation stays on. The top bar source can be selected in Settings. Service limits and requirements are in [docs/integracoes.md](docs/integracoes.md). The adapters were validated with mocks, not against real Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home instances.
+Set up Proxmox on the Integrations page with an account and token that have read-only access. Credentials are encrypted at rest with a key stored separately in the same directory; this does not protect against someone who can read both files. Add separate named connections for independent clusters or servers. For a private CA, import the CA's public certificate (PEM); save the connection and choose **Test connection** in the row's **⋯** menu. TLS validation stays on. The top bar source can be selected in Settings. Service limits and requirements are in [docs/integracoes.md](docs/integracoes.md). The adapters were validated with mocks, not against real Jellyfin, Home Assistant, Uptime Kuma or AdGuard Home instances.
 
 ## MCP and AI agents
+
+The Agents page shows how long each proposal has left. The review period defaults to 15 minutes and can be changed there to 1–120 minutes for new proposals; existing deadlines do not change. Expired proposals remain visible and an administrator can recreate them for another review. Expired batches are recreated together. Re-creation validates the original diff against the current configuration and may fail when it no longer matches; it never applies a change.
 
 Homora supports local stdio and stateless Streamable HTTP. Both use the same agent tokens, scopes and human approval rules. Create an agent on **Agents**, then choose the connection method under **Connect**.
 
@@ -266,3 +279,9 @@ The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on
 ## License
 
 [MIT](LICENSE). Third-party licenses are summarized in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### HTTP monitoring options
+
+In a service's advanced settings, **Check path** optionally replaces the path and query of the card URL for the HTTP probe, while keeping its origin. For example, use `/health` to check an endpoint while the card opens `/dashboard`. Leave it empty to check the full card URL. The path must start with a single `/`; a query string is allowed. The destination policy and the service's private-network permission still apply.
+
+**Expected HTTP status** accepts an exact code such as `200` or `302`, or `2xx` / `3xx`. A different response is reported as unavailable with the received and expected codes. Leave it empty to keep the default classification. Both settings are retained when using ping but only apply to HTTP checks, and are included in Homora exports. Checks are anonymous and do not follow redirects: a login page or an access proxy can respond successfully even when the underlying service is down. Use a suitable anonymous health endpoint if one is available.

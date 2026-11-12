@@ -62,3 +62,41 @@ it('creates a source, shows its token once and imports only reviewed suggestions
     expectedVersion: 7,
   });
 });
+
+it('requires an explicit dialog before rotating and cannot rotate a revoked source', async () => {
+  setLocale('pt-BR');
+  const sources = [
+    { id: 'a'.repeat(32), name: 'Ativa', revoked: 0, receivedAt: null, stale: false },
+    { id: 'b'.repeat(32), name: 'Fonte antiga', revoked: 1, receivedAt: null, stale: false },
+  ];
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => ({
+    ok: true,
+    status: 200,
+    json: async () =>
+      url.endsWith('/rotate') && init?.method === 'POST'
+        ? { token: 'new-synthetic-token' }
+        : { sources },
+  }));
+  vi.stubGlobal('fetch', fetchMock);
+  render(<PushSources onImported={() => {}} />);
+  await screen.findByText('Ativa');
+  const { within } = await import('@testing-library/react');
+  const active = screen.getByText('Ativa').closest('li');
+  const revoked = screen.getByText('Fonte antiga').closest('li');
+  if (!active || !revoked) throw new Error('missing source');
+  expect(
+    within(revoked).getByRole('button', { name: 'Gerar novo token' }).hasAttribute('disabled'),
+  ).toBe(true);
+  fireEvent.click(within(active).getByRole('button', { name: 'Gerar novo token' }));
+  expect(screen.getByRole('alertdialog')).toBeTruthy();
+  expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/rotate'))).toBe(false);
+  fireEvent.click(
+    within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' }),
+  );
+  expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/rotate'))).toBe(false);
+  fireEvent.click(within(active).getByRole('button', { name: 'Gerar novo token' }));
+  fireEvent.click(
+    within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar novo token' }),
+  );
+  expect(await screen.findByText('new-synthetic-token')).toBeTruthy();
+});

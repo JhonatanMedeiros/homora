@@ -17,7 +17,7 @@ Keep the existing local discovery and add a separately authenticated push
 source for remote hosts. Each source has a distinct stable identity and a
 revocable, randomly generated token. Store only a token hash in Homora; show
 new tokens once and do not expose tokens in logs or inventory responses. A
-revoked source cannot publish or be imported. Define a controlled recovery and
+revoked source cannot publish or be imported and cannot be reactivated by token rotation. Define a controlled recovery and
 rotation flow before exposing the feature.
 
 The agent collects only container identifiers, names and the supported
@@ -42,7 +42,9 @@ status. Confirmation validates freshness, authorization, selected identity and
 configuration version, and applies exactly the reviewed data. A concurrent
 update, revocation or removal must not permit unreviewed changes to be applied.
 Use a single transactional decision for applicable persisted state, including
-checks and card creation. Source data cannot enable private monitoring on its
+checks and card creation. MCP proposal creation checks the source inside its creation
+transaction; once created, the proposal is a separate reviewed artifact. Later source
+revocation does not cancel it or prevent approval of its exact saved diff. Source data cannot enable private monitoring on its
 own. The HTTP UI and both MCP transports must enforce the same boundaries.
 
 ## Alternatives and consequences

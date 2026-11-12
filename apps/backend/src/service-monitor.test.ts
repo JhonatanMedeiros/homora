@@ -323,3 +323,38 @@ describe('service monitoring', () => {
     await expect(checkService('http://nas.lan/', false, 'ping')).rejects.toThrow('authorized');
   });
 });
+
+it('applies an explicit expected status while preserving the default classifier', () => {
+  for (const code of [200, 301, 302, 401, 403, 404, 500]) {
+    expect(classify(code, String(code)).status).toBe('available');
+    expect(classify(code, code === 200 ? '302' : '200')).toEqual({
+      status: 'unavailable',
+      reason: 'unexpected-status',
+    });
+  }
+  expect(classify(201, '2xx').status).toBe('available');
+  expect(classify(302, '3xx').status).toBe('available');
+  expect(classify(302)).toEqual({ status: 'available', reason: 'redirect' });
+});
+
+it('checks the configured path on the same origin and applies the expectation', async () => {
+  const check = vi.fn(async () => ({ httpStatus: 302, latencyMs: 10 }));
+  const monitor = createServiceMonitor(
+    async () => [
+      {
+        ...service(1, 'https://example.test/link?q=1'),
+        checkPath: '/health?full=1',
+        expectedStatus: '200',
+      },
+    ],
+    check,
+  );
+  await monitor.run();
+  expect(check).toHaveBeenCalledWith('https://example.test/health?full=1', false, 'http');
+  expect(monitor.snapshot()[1]).toMatchObject({
+    status: 'unavailable',
+    reason: 'unexpected-status',
+    httpStatus: 302,
+    expectedStatus: '200',
+  });
+});

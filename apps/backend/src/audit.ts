@@ -5,9 +5,33 @@ export type AuditOutcome = 'success' | 'failure' | 'refused';
 
 const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
   access: ['login', 'logout'],
-  account: ['password-change', 'session-revoke', 'sessions-revoke-others', 'profile-update'],
-  proposal: ['proposal', 'review', 'expiry', 'withdraw'],
-  agent: ['agent-issue', 'agent-create', 'agent-update-scopes', 'agent-revoke', 'agent-rotate'],
+  account: [
+    'password-change',
+    'session-revoke',
+    'sessions-revoke-others',
+    'profile-update',
+    'public-status-update',
+    'service-public',
+  ],
+  proposal: [
+    'proposal',
+    'review',
+    'expiry',
+    'withdraw',
+    'proposal-recreate',
+    'proposal-ttl-update',
+  ],
+  agent: [
+    'agent-issue',
+    'agent-create',
+    'agent-update-scopes',
+    'agent-revoke',
+    'agent-rotate',
+    'docker-source-create',
+    'docker-source-rotate',
+    'docker-source-revoke',
+    'docker-source-remove',
+  ],
 };
 const RESULTS_BY_OUTCOME: Record<AuditOutcome, readonly string[]> = {
   success: ['ok', 'created', 'approved'],

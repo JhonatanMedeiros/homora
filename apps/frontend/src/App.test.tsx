@@ -495,10 +495,14 @@ it('shows pending proposals in clear language and approves with a single click',
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Agentes' }));
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+      name: 'Agentes',
+    }),
+  );
   expect(await screen.findByText('Adicionar “Immich”')).toBeTruthy();
   expect(screen.getByText('Aguardando você')).toBeTruthy();
-  expect(screen.getAllByText('Ler serviços').length).toBeGreaterThan(0);
+  expect(screen.getByRole('tab', { name: /^Propostas\s*1$/ })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /Aprovar e aplicar/ }));
   await waitFor(() =>
     expect(fetchMock).toHaveBeenCalledWith(
@@ -506,6 +510,8 @@ it('shows pending proposals in clear language and approves with a single click',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ approve: true }) }),
     ),
   );
+  fireEvent.mouseDown(screen.getByRole('tab', { name: /^Agentes/ }));
+  expect((await screen.findAllByText('Ler serviços')).length).toBeGreaterThan(0);
 });
 
 it('does not treat unauthorized private network as service down', async () => {
@@ -598,7 +604,11 @@ it('shows before and after of an update proposal', async () => {
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Agentes' }));
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+      name: 'Agentes',
+    }),
+  );
   expect(await screen.findByText('Alterar “Jellyfin”')).toBeTruthy();
   expect(screen.getByText('http://antigo.local:8096/')).toBeTruthy();
   expect(screen.getByText('http://novo.local:8096/')).toBeTruthy();
@@ -690,7 +700,11 @@ it('opens a management route directly and responds to browser history', async ()
   );
   render(<App />);
   expect(await screen.findByRole('heading', { name: 'Integrações' })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Agentes' }));
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+      name: 'Agentes',
+    }),
+  );
   expect(window.location.pathname).toBe('/manage/agents');
   window.history.replaceState(null, '', '/');
   fireEvent.popState(window);
@@ -790,6 +804,45 @@ it('shows the list view by default and opens the command palette with Ctrl K', a
   expect(screen.getByText('Alternar tema')).toBeTruthy();
   fireEvent.click(screen.getByText('Adicionar serviço'));
   expect(window.location.pathname).toBe('/manage/services/new');
+  localStorage.clear();
+});
+
+it('opens the palette from the header button and goes to a card inside a collapsed group', async () => {
+  localStorage.clear();
+  localStorage.setItem('homora-collapsed-groups', JSON.stringify(['Infra']));
+  window.history.replaceState(null, '', '/');
+  Element.prototype.scrollIntoView = vi.fn();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Wiki/ });
+  expect(document.getElementById('service-2')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Buscar ou executar um comando' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Ir para o card de Proxmox' }));
+  await waitFor(() => expect(document.getElementById('service-2')?.dataset.highlight).toBe('true'));
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  // The expansion is temporary: the saved preference is kept.
+  expect(localStorage.getItem('homora-collapsed-groups')).toContain('Infra');
+  await waitFor(
+    () => expect(document.getElementById('service-2')?.dataset.highlight).toBeUndefined(),
+    {
+      timeout: 3000,
+    },
+  );
   localStorage.clear();
 });
 
@@ -1020,4 +1073,98 @@ it('undoes a move to another group, restoring group and order', async () => {
   const puts = calls.filter((call) => call.url === '/api/services/1' && call.method === 'PUT');
   expect(puts.map((call) => JSON.parse(call.body ?? '{}').category)).toEqual(['Infra', 'Casa']);
   window.history.replaceState(null, '', '/');
+});
+
+function stubSignedIn() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/account')
+        return { ok: true, json: async () => ({ name: 'Maria', email: 'maria@example.com' }) };
+      if (url === '/api/account/sessions') return { ok: true, json: async () => [] };
+      if (url === '/api/proxmox/status')
+        return { ok: true, json: async () => ({ configured: false }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+}
+
+it('opens the account from the user menu as its own page, outside the management area', async () => {
+  stubSignedIn();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.keyDown(await screen.findByRole('button', { name: /Menu da conta de/ }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Conta' }));
+  expect(await screen.findByRole('heading', { name: 'Conta' })).toBeTruthy();
+  expect(window.location.pathname).toBe('/account');
+  // No management sidebar and no search: only a way back.
+  expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
+  expect(screen.queryByRole('searchbox')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
+  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  expect(window.location.pathname).toBe('/');
+});
+
+it('keeps old /manage/account links working by redirecting to /account', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/account');
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Conta' })).toBeTruthy();
+  await waitFor(() => expect(window.location.pathname).toBe('/account'));
+});
+
+it('does not list the account among the management sections', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/services');
+  render(<App />);
+  const nav = await screen.findByRole('navigation', { name: 'Gerenciamento' });
+  expect(within(nav).queryByRole('button', { name: 'Conta' })).toBeNull();
+  for (const name of ['Serviços', 'Integrações', 'Agentes', 'Atividade', 'Configurações'])
+    expect(within(nav).getByRole('button', { name })).toBeTruthy();
+});
+
+it('lists the settings subpages and opens one from its own URL', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/settings');
+  render(<App />);
+  const nav = await screen.findByRole('navigation', { name: 'Configurações' });
+  for (const name of [/Interface/, /Status público/, /Exportar e importar/, /Descoberta Docker/])
+    expect(within(nav).getByRole('link', { name })).toBeTruthy();
+  fireEvent.click(within(nav).getByRole('link', { name: /Exportar e importar/ }));
+  expect(window.location.pathname).toBe('/manage/settings/backup');
+  expect(await screen.findByRole('heading', { name: 'Exportar' })).toBeTruthy();
+  expect(
+    within(screen.getByRole('navigation', { name: 'Configurações' }))
+      .getByRole('link', { name: /Exportar e importar/ })
+      .getAttribute('aria-current'),
+  ).toBe('page');
+});
+
+it('shows not found for an unknown settings subpage', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/settings/nao-existe');
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeTruthy();
+});
+
+it('reaches Activity and Settings from "More" in the phone bottom bar', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/services');
+  render(<App />);
+  const bar = await screen.findByRole('navigation', { name: 'Seções' });
+  expect(
+    within(bar)
+      .getAllByRole('button')
+      .map((button) => button.textContent),
+  ).toEqual(['Serviços', 'Integrações', 'Agentes', 'Mais']);
+  fireEvent.click(within(bar).getByRole('button', { name: 'Mais' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/settings'));
+  expect(within(bar).getByRole('button', { name: 'Mais' }).getAttribute('aria-current')).toBe(
+    'page',
+  );
 });

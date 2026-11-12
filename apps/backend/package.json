@@ -11,6 +11,7 @@
     "mcp": "node dist/mcp-server.js"
   },
   "dependencies": {
+    "@fastify/rate-limit": "^11.2.2",
     "@homora/db": "workspace:*",
     "@homora/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.2",

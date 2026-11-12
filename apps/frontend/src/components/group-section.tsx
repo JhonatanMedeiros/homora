@@ -23,6 +23,8 @@ type Props = {
   /** Management shows one editable row per line; the home packs two columns. */
   managing?: boolean;
   searching: boolean;
+  /** Changes each time something inside the group must be shown; expands the group without saving. */
+  revealSignal?: number;
   /** Present only for registered groups (can be renamed and removed). */
   canEdit: boolean;
   canRemove: boolean;
@@ -68,6 +70,7 @@ export function GroupSection({
   list = false,
   managing = false,
   searching,
+  revealSignal,
   canEdit,
   canRemove,
   groupId,
@@ -100,6 +103,13 @@ export function GroupSection({
       return false;
     }
   });
+  // Expands for a reveal request without saving it. Adjusting state while rendering (not in an
+  // effect) avoids a second render pass with the group still collapsed.
+  const [seenReveal, setSeenReveal] = useState<number | undefined>(undefined);
+  if (revealSignal !== seenReveal) {
+    setSeenReveal(revealSignal);
+    if (revealSignal !== undefined) setCollapsed(false);
+  }
   function toggleCollapsed() {
     const next = !collapsed;
     setCollapsed(next);

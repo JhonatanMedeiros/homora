@@ -5,6 +5,7 @@ import { parseDocker } from '../docker-discovery.js';
 import type { createDockerPush } from '../docker-push.js';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
+import type { createAuth } from '../auth.js';
 
 const createSchema = z.object({ name: z.string().trim().min(1).max(80) }).strict();
 const idSchema = z.object({ id: z.string().regex(/^[a-f0-9]{32}$/) }).strict();
@@ -25,35 +26,50 @@ export function registerDockerPushRoutes(
   push: ReturnType<typeof createDockerPush>,
   configuration: ReturnType<typeof createServiceConfiguration>,
   monitor: ReturnType<typeof createServiceMonitor>,
+  auth: ReturnType<typeof createAuth>,
 ) {
+  const actor = async (request: { headers: Parameters<typeof auth.session>[0]; ip: string }) => {
+    const session = await auth.session(request.headers);
+    return session ? { id: `user:${session.userId}`, ipAddress: request.ip } : null;
+  };
   app.get('/api/discovery/sources', async () => ({ sources: push.list() }));
   app.post('/api/discovery/sources', async (request, reply) => {
     const body = createSchema.safeParse(request.body);
     if (!body.success) return reply.code(400).send(errorBody('invalid-data'));
+    const who = await actor(request);
+    if (!who) return reply.code(401).send(errorBody('auth-required'));
     try {
-      const source = push.create(body.data.name);
-      if (!source) return reply.code(409).send(errorBody('invalid-data'));
+      const source = push.create(body.data.name, who);
+      if (!source) return reply.code(409).send(errorBody('source-limit'));
       return reply.code(201).send(source);
-    } catch {
-      return reply.code(409).send(errorBody('invalid-data'));
+    } catch (error) {
+      if ((error as { errcode?: number }).errcode === 2067)
+        return reply.code(409).send(errorBody('invalid-data'));
+      throw error;
     }
   });
   app.post('/api/discovery/sources/:id/rotate', async (request, reply) => {
     const params = idSchema.safeParse(request.params);
     if (!params.success) return reply.code(400).send(errorBody('invalid-data'));
-    const token = push.rotate(params.data.id);
+    const who = await actor(request);
+    if (!who) return reply.code(401).send(errorBody('auth-required'));
+    const token = push.rotate(params.data.id, who);
     return token ? { token } : reply.code(404).send(errorBody('not-found'));
+  });
+  app.post('/api/discovery/sources/:id/revoke', async (request, reply) => {
+    const params = idSchema.safeParse(request.params);
+    if (!params.success) return reply.code(400).send(errorBody('invalid-data'));
+    const who = await actor(request);
+    if (!who) return reply.code(401).send(errorBody('auth-required'));
+    if (!push.revoke(params.data.id, who)) return reply.code(404).send(errorBody('not-found'));
+    return reply.code(204).send();
   });
   app.delete('/api/discovery/sources/:id', async (request, reply) => {
     const params = idSchema.safeParse(request.params);
     if (!params.success) return reply.code(400).send(errorBody('invalid-data'));
-    if (!push.revoke(params.data.id)) return reply.code(404).send(errorBody('not-found'));
-    return reply.code(204).send();
-  });
-  app.delete('/api/discovery/sources/:id/remove', async (request, reply) => {
-    const params = idSchema.safeParse(request.params);
-    if (!params.success) return reply.code(400).send(errorBody('invalid-data'));
-    if (!push.remove(params.data.id)) return reply.code(404).send(errorBody('not-found'));
+    const who = await actor(request);
+    if (!who) return reply.code(401).send(errorBody('auth-required'));
+    if (!push.remove(params.data.id, who)) return reply.code(404).send(errorBody('not-found'));
     return reply.code(204).send();
   });
   app.get('/api/discovery/sources/:id/suggestions', async (request, reply) => {
@@ -99,6 +115,11 @@ export function registerDockerPushRoutes(
     '/docker-push/inventory',
     {
       bodyLimit: 1024 * 1024,
+      errorHandler: (error, _request, reply) => {
+        if (error.code === 'FST_ERR_CTP_BODY_TOO_LARGE')
+          return reply.code(413).send(errorBody('inventory-too-large'));
+        return reply.send(error);
+      },
       onRequest: async (request, reply) => {
         if (request.headers.origin) return reply.code(403).send(errorBody('origin-not-allowed'));
         const now = Date.now();
@@ -109,6 +130,8 @@ export function registerDockerPushRoutes(
         entry.count++;
         attempts.set(request.ip, entry);
         if (entry.count > 60) return reply.code(429).send(errorBody('too-many-attempts'));
+        if (!/^application\/json(?:\s*;|$)/i.test(request.headers['content-type'] ?? ''))
+          return reply.code(415).send(errorBody('invalid-data'));
       },
     },
     async (request, reply) => {

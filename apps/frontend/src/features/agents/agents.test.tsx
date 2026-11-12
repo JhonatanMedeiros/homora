@@ -59,9 +59,13 @@ const active = {
   createdAt: Date.UTC(2026, 10, 10),
 };
 
+const openAgents = async () =>
+  fireEvent.mouseDown(await screen.findByRole('tab', { name: /^Agentes/ }));
+
 it('creates an agent in a dialog, then shows the token with a setup guide that includes it', async () => {
   const calls = mockApi([]);
   render(<Harness />);
+  await openAgents();
   expect(await screen.findByText('Nenhum agente ainda.')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Novo agente' }));
   const form = await screen.findByRole('dialog', { name: 'Novo agente' });
@@ -94,6 +98,7 @@ it('creates an agent in a dialog, then shows the token with a setup guide that i
 it('asks before closing the token dialog without confirming the token was saved', async () => {
   mockApi([]);
   render(<Harness />);
+  await openAgents();
   fireEvent.click(await screen.findByRole('button', { name: 'Criar o primeiro agente' }));
   const form = await screen.findByRole('dialog', { name: 'Novo agente' });
   fireEvent.change(within(form).getByLabelText('Nome do agente'), { target: { value: 'Casa' } });
@@ -129,6 +134,7 @@ it('lets a custom profile choose each permission', async () => {
 it('shows each agent with pending proposals and confirms before rotating or revoking', async () => {
   const calls = mockApi([active]);
   render(<Harness />);
+  await openAgents();
   expect(await screen.findByText('1 pendentes')).toBeTruthy();
   expect(screen.getByText(/Criado em/)).toBeTruthy();
   const open = () =>
@@ -156,6 +162,7 @@ it('shows each agent with pending proposals and confirms before rotating or revo
 it('opens the setup guide any time, with a token placeholder and a remembered folder', async () => {
   mockApi([active]);
   render(<Harness />);
+  await openAgents();
   await screen.findByRole('button', { name: 'Opções de Assistente' });
   fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
   const dialog = await screen.findByRole('dialog', { name: 'Conectar um agente' });
@@ -227,4 +234,28 @@ it('reviews a batch together and explains conflicting changes', async () => {
     expect.objectContaining({ method: 'POST', body: JSON.stringify({ approve: true }) }),
   );
   expect(screen.queryByRole('button', { name: 'Aprovar e aplicar' })).toBeNull();
+});
+
+it('moves a pending proposal to expired at its deadline without reloading', async () => {
+  const now = Date.now();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/agents') return { ok: true, json: async () => [] };
+      if (url === '/api/proposal-settings')
+        return { ok: true, json: async () => ({ ttlMinutes: 15 }) };
+      return {
+        ok: true,
+        json: async () => [
+          { id: 'p', author: 'a', state: 'pending', expiresAt: now + 120, diff: '{}' },
+        ],
+      };
+    }),
+  );
+  render(<Harness />);
+  expect(await screen.findByText(/Expira em 1 s/)).toBeTruthy();
+  expect(
+    await screen.findByText('O prazo de revisão terminou.', {}, { timeout: 2000 }),
+  ).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Recriar' })).toBeTruthy();
 });

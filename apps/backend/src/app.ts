@@ -22,6 +22,8 @@ import { createObservationStore } from './service-observations.js';
 import { createDockerPush } from './docker-push.js';
 import { registerDockerPushRoutes } from './routes/docker-push.js';
 import { registerMcpHttp } from './mcp-http.js';
+import { createPublicStatus } from './public-status.js';
+import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -59,6 +61,7 @@ export function createApp(
       }
     },
   );
+  const publicStatus = createPublicStatus(sqlite, observations);
   const stopServiceMonitor = startServiceMonitor(serviceMonitor);
   app.addHook('onClose', async () => stopServiceMonitor());
 
@@ -81,6 +84,8 @@ export function createApp(
     if (
       request.url.startsWith('/api/') &&
       !request.url.startsWith('/api/auth/') &&
+      // The one anonymous exception: exact path, read-only.
+      !(request.method === 'GET' && request.url.split('?')[0] === PUBLIC_STATUS_PATH) &&
       !(await auth.session(request.headers))
     )
       return reply.code(401).send(errorBody('auth-required'));
@@ -104,10 +109,17 @@ export function createApp(
   registerConnectionRoutes(app, db, vault);
   registerProxmoxRoutes(app, vault, db);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
-  registerServiceConfigurationRoutes(app, configuration, serviceMonitor, observations);
+  registerPublicStatusRoutes(app, publicStatus, auth, audit);
+  registerServiceConfigurationRoutes(
+    app,
+    configuration,
+    serviceMonitor,
+    observations,
+    publicStatus,
+  );
   registerConfigTransferRoutes(app, configuration, serviceMonitor);
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
-  registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor);
+  registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);
 
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));
   return app;

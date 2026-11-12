@@ -33,6 +33,48 @@ export function registerAgentProposalRoutes(
       });
   };
   app.get('/api/proposals', async () => proposals.list());
+  app.get('/api/proposal-settings', async () => ({ ttlMinutes: proposals.proposalTtlMinutes() }));
+  app.put('/api/proposal-settings', async (request, reply) => {
+    const session = await auth.session(request.headers);
+    if (!session) return reply.code(401).send(errorBody('auth-required'));
+    const body = request.body as { ttlMinutes?: unknown } | null;
+    if (
+      !body ||
+      Object.keys(body).length !== 1 ||
+      typeof body.ttlMinutes !== 'number' ||
+      !Number.isInteger(body.ttlMinutes) ||
+      body.ttlMinutes < 1 ||
+      body.ttlMinutes > 120
+    )
+      return reply.code(400).send(errorBody('invalid-data'));
+    proposals.setProposalTtlMinutes(body.ttlMinutes, `user:${session.userId}`);
+    return { ttlMinutes: body.ttlMinutes };
+  });
+  app.post<{ Params: { id: string } }>('/api/proposals/:id/recreate', async (request, reply) => {
+    const session = await auth.session(request.headers);
+    if (!session) return reply.code(401).send(errorBody('auth-required'));
+    if (!opaqueIdSchema.safeParse(request.params.id).success)
+      return reply.code(404).send(errorBody('proposal-unavailable'));
+    try {
+      return reply.code(201).send(proposals.recreate(request.params.id, `user:${session.userId}`));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      const codes = {
+        'Service not found': 'service-not-found',
+        'Group not found': 'group-not-found',
+        'Group not empty': 'group-not-empty',
+        'Connection not found': 'integration-not-found',
+        'Widget not found': 'widget-not-found',
+        'Identity unavailable': 'identity-not-found',
+        'Proposal diff changed': 'config-changed',
+        'Pending proposal limit reached': 'proposal-limit',
+        'Invalid order': 'batch-conflict',
+        'Invalid move': 'batch-conflict',
+      } as const;
+      const code = codes[message as keyof typeof codes] ?? 'proposal-unavailable';
+      return reply.code(409).send(errorBody(code));
+    }
+  });
   app.post('/api/agents', async (request, reply) => {
     const parsed = createAgentSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('identity-invalid'));

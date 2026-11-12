@@ -1,5 +1,14 @@
 import type { ReactNode } from 'react';
-import { Activity, ArrowLeft, ChevronDown, LogOut, Settings, UserRound } from 'lucide-react';
+import {
+  Activity,
+  ArrowLeft,
+  ChevronDown,
+  LogOut,
+  Search,
+  Settings,
+  UserRound,
+} from 'lucide-react';
+import { Kbd } from '@/components/ui/kbd';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +25,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { navItems, type Tab } from '@/components/app-nav';
+import { MobileTabs } from '@/components/mobile-tabs';
 
 type Props = {
   tab: Tab;
@@ -23,6 +33,7 @@ type Props = {
   onManageChange: (value: boolean) => void;
   onTabChange: (tab: Tab) => void;
   onLogout: () => void;
+  onOpenPalette: () => void;
   profile: Profile | null;
   toolbar: ReactNode;
   children: ReactNode;
@@ -34,21 +45,36 @@ export function AppShell({
   onManageChange,
   onTabChange,
   onLogout,
+  onOpenPalette,
   profile,
   toolbar,
   children,
 }: Props) {
+  // The account is a page of its own: no sidebar and no search, just a way back.
+  const standalone = tab === 'account' && !managing;
   return (
     <div className="min-h-svh bg-background">
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-3 px-4 py-2 md:px-8">
           <BrandMark className="text-sidebar-foreground" />
-          {!managing && (
+          {!managing && !standalone && (
             <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-md sm:flex-1">
               {toolbar}
             </div>
           )}
           <span className="mr-auto" />
+          <Button
+            variant="ghost"
+            aria-label={t('palette.button')}
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={onOpenPalette}
+            className="gap-2 px-2.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <Search aria-hidden="true" />
+            <Kbd className="hidden bg-sidebar-accent text-sidebar-foreground md:inline-flex">
+              Ctrl K
+            </Kbd>
+          </Button>
           <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <DropdownMenu>
@@ -90,16 +116,18 @@ export function AppShell({
           </DropdownMenu>
           <Button
             variant="outline"
-            onClick={() => onManageChange(!managing)}
+            onClick={() => onManageChange(!(managing || standalone))}
             className="border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            {managing ? <ArrowLeft /> : <Settings />}{' '}
-            {managing ? t('manage.back') : t('manage.open')}
+            {managing || standalone ? <ArrowLeft /> : <Settings />}{' '}
+            {managing || standalone ? t('manage.back') : t('manage.open')}
           </Button>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8">
-        {!managing && (
+      <main
+        className={`mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${managing ? 'pb-24 md:pb-8' : ''}`}
+      >
+        {!managing && !standalone && (
           <>
             <h1 className="sr-only">{t('home.title')}</h1>
             <p className="sr-only">{t('home.description')}</p>
@@ -107,7 +135,7 @@ export function AppShell({
         )}
         {managing ? (
           <div className="flex flex-col gap-8 md:flex-row md:items-start">
-            <aside className="shrink-0 md:sticky md:top-8 md:w-52">
+            <aside className="hidden shrink-0 md:sticky md:top-8 md:block md:w-52">
               <div className="mb-3 px-3">
                 <p className="font-label text-xl font-semibold">{t('manage.title')}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{t('manage.description')}</p>
@@ -131,10 +159,13 @@ export function AppShell({
               {children}
             </div>
           </div>
+        ) : standalone ? (
+          <div className="motion-panel mx-auto w-full max-w-3xl">{children}</div>
         ) : (
           children
         )}
       </main>
+      {managing && <MobileTabs tab={tab} onTabChange={onTabChange} />}
     </div>
   );
 }

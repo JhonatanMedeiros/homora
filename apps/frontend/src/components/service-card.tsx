@@ -1,4 +1,4 @@
-import type { Service } from '@homora/shared';
+import type { Service, UptimeRange, UptimeSummary } from '@homora/shared';
 import { useId, useState } from 'react';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
 import { CardWidgets } from '@/components/card-widgets';
+import { ServiceUptime, UptimePercent } from '@/components/service-uptime';
 import { ServiceFailureDetails } from '@/components/service-failure-details';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,9 @@ type Props = {
   service: Service;
   status?: ServiceStatus;
   widgets?: CardWidgetState[];
+  uptime?: UptimeSummary;
+  uptimeRange?: UptimeRange;
+  onUptimeRangeChange?: (range: UptimeRange) => void;
   blocked: boolean;
   managing: boolean;
   list?: boolean;
@@ -68,10 +72,17 @@ function StatusMeta({
 }
 
 /** A service: opens in a new tab, displays its status light, and has edit actions. */
+/** Stable id for "go to card"; `data-highlight` is set for a moment by the command palette. */
+const SERVICE_LI =
+  'group/service flex min-w-0 scroll-mt-24 rounded-lg data-[highlight=true]:ring-2 data-[highlight=true]:ring-primary data-[highlight=true]:ring-offset-2 data-[highlight=true]:ring-offset-background';
+
 export function ServiceCard({
   service: s,
   status,
   widgets = [],
+  uptime,
+  uptimeRange = '24h',
+  onUptimeRangeChange = () => {},
   blocked,
   managing,
   list = false,
@@ -89,7 +100,7 @@ export function ServiceCard({
   const inline = confirmingRemoval;
   if (list) {
     return (
-      <li className="group/service flex min-w-0">
+      <li id={`service-${s.id}`} className={SERVICE_LI}>
         <Item
           variant="outline"
           size="sm"
@@ -134,6 +145,7 @@ export function ServiceCard({
             className="shrink-0 max-sm:[&>span:last-child]:sr-only"
           />
           <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
+          <UptimePercent summary={uptime} />
           {managing && (
             <ItemActions className="z-10 ml-auto shrink-0 gap-0.5">
               <Button
@@ -181,7 +193,7 @@ export function ServiceCard({
     );
   }
   return (
-    <li className="group/service flex min-w-0">
+    <li id={`service-${s.id}`} className={SERVICE_LI}>
       <Item
         variant="outline"
         className={cn(
@@ -264,6 +276,12 @@ export function ServiceCard({
         {view.failing && detailsOpen && status && (
           <ServiceFailureDetails id={detailsId} service={s} status={status} onEdit={onEdit} />
         )}
+        <ServiceUptime
+          service={s}
+          summary={uptime}
+          range={uptimeRange}
+          onRangeChange={onUptimeRangeChange}
+        />
         <div
           className={cn(
             'flex items-center justify-between gap-3 border-t pt-3',

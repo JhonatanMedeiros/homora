@@ -32,12 +32,37 @@ export const pushInventorySchema = z
   })
   .strict();
 export const PUSH_FRESHNESS_MS = 5 * 60_000;
+type Actor = { id: string; ipAddress: string };
+const record = (
+  sqlite: DatabaseSync,
+  actor: Actor | undefined,
+  action: string,
+  sourceId: string,
+) => {
+  if (actor)
+    sqlite
+      .prepare(
+        'INSERT INTO audit_events(actor,action,result,created_at,detail,ip_address) VALUES(?,?,?,?,?,?)',
+      )
+      .run(actor.id, action, 'ok', Date.now(), sourceId, actor.ipAddress.slice(0, 64));
+};
+const transaction = <T>(sqlite: DatabaseSync, run: () => T): T => {
+  sqlite.exec('BEGIN IMMEDIATE');
+  try {
+    const result = run();
+    sqlite.exec('COMMIT');
+    return result;
+  } catch (error) {
+    sqlite.exec('ROLLBACK');
+    throw error;
+  }
+};
 const digest = (token: string) => createHash('sha256').update(token).digest('hex');
 
 /** Storage for machine identities, independent of MCP and web sessions. */
 export function createDockerPush(sqlite: DatabaseSync) {
   return {
-    create(name: string) {
+    create(name: string, actor?: Actor) {
       sqlite.exec('BEGIN IMMEDIATE');
       try {
         const count = sqlite.prepare('SELECT count(*) AS n FROM docker_push_sources').get() as {
@@ -52,6 +77,7 @@ export function createDockerPush(sqlite: DatabaseSync) {
         sqlite
           .prepare('INSERT INTO docker_push_sources(id,name,token_hash,created_at) VALUES(?,?,?,?)')
           .run(id, name, digest(token), Date.now());
+        record(sqlite, actor, 'docker-source-create', id);
         sqlite.exec('COMMIT');
         return { id, token };
       } catch (error) {
@@ -84,11 +110,15 @@ export function createDockerPush(sqlite: DatabaseSync) {
         stale: row.receivedAt !== null && Date.now() - row.receivedAt > PUSH_FRESHNESS_MS,
       }));
     },
-    revoke(id: string) {
-      return (
-        sqlite.prepare('UPDATE docker_push_sources SET revoked=1 WHERE id=? AND revoked=0').run(id)
-          .changes === 1
-      );
+    revoke(id: string, actor?: Actor) {
+      return transaction(sqlite, () => {
+        const changed =
+          sqlite
+            .prepare('UPDATE docker_push_sources SET revoked=1 WHERE id=? AND revoked=0')
+            .run(id).changes === 1;
+        if (changed) record(sqlite, actor, 'docker-source-revoke', id);
+        return changed;
+      });
     },
     snapshot(id: string) {
       const row = sqlite
@@ -134,17 +164,26 @@ export function createDockerPush(sqlite: DatabaseSync) {
         Date.now() - row.receivedAt <= PUSH_FRESHNESS_MS,
       );
     },
-    rotate(id: string) {
-      const token = randomBytes(32).toString('hex');
-      const result = sqlite
-        .prepare(
-          'UPDATE docker_push_sources SET token_hash=?,revoked=0,inventory=NULL,received_at=NULL,inventory_version=inventory_version+1 WHERE id=?',
-        )
-        .run(digest(token), id);
-      return result.changes === 1 ? token : null;
+    rotate(id: string, actor?: Actor) {
+      return transaction(sqlite, () => {
+        const token = randomBytes(32).toString('hex');
+        const result = sqlite
+          .prepare(
+            'UPDATE docker_push_sources SET token_hash=?,inventory=NULL,received_at=NULL,inventory_version=inventory_version+1 WHERE id=? AND revoked=0',
+          )
+          .run(digest(token), id);
+        if (result.changes !== 1) return null;
+        record(sqlite, actor, 'docker-source-rotate', id);
+        return token;
+      });
     },
-    remove(id: string) {
-      return sqlite.prepare('DELETE FROM docker_push_sources WHERE id=?').run(id).changes === 1;
+    remove(id: string, actor?: Actor) {
+      return transaction(sqlite, () => {
+        const changed =
+          sqlite.prepare('DELETE FROM docker_push_sources WHERE id=?').run(id).changes === 1;
+        if (changed) record(sqlite, actor, 'docker-source-remove', id);
+        return changed;
+      });
     },
     ingest(token: string, input: unknown) {
       if (!/^[a-f0-9]{64}$/.test(token)) return 'unauthorized' as const;
@@ -159,11 +198,16 @@ export function createDockerPush(sqlite: DatabaseSync) {
           parsed.data.containers.length
       )
         return 'invalid' as const;
+      const inventory = JSON.stringify({
+        containers: [...parsed.data.containers].sort((a, b) =>
+          a.Id < b.Id ? -1 : a.Id > b.Id ? 1 : 0,
+        ),
+      });
       const result = sqlite
         .prepare(
           'UPDATE docker_push_sources SET inventory_version=inventory_version+CASE WHEN inventory IS ? THEN 0 ELSE 1 END,inventory=?,received_at=? WHERE token_hash=? AND revoked=0',
         )
-        .run(JSON.stringify(parsed.data), JSON.stringify(parsed.data), Date.now(), digest(token));
+        .run(inventory, inventory, Date.now(), digest(token));
       return result.changes === 1 ? ('ok' as const) : ('unauthorized' as const);
     },
   };

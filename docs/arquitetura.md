@@ -62,7 +62,8 @@ not the web session or MCP identity. The SQLite source record stores the latest 
 inventory and receipt time. Sources expire after five minutes; rotations discard the
 inventory. Card import reads a source snapshot and checks its version, freshness and
 revocation within the same SQLite write transaction that applies the reviewed cards.
-MCP reads the shared inventory directly and can only create reviewable proposals.
+MCP reads the shared inventory directly and can only create reviewable proposals. Once
+created, a proposal remains independently reviewable if its source is later revoked.
 The local Docker source remains independent. The Docker socket remains privileged,
 and the agent requires a private HTTPS path with certificate verification. See
 [ADR 0003](decisoes/0003-docker-push-discovery.md) and the README for limits and setup.
@@ -162,3 +163,5 @@ Key areas of attention focus on consistency and safe evolution:
 For ongoing contribution and review rules, consult [Engineering Standards](padroes.md).
 Structural changes affecting boundaries, persistence, security, or deployment must be recorded
 in an Architecture Decision Record (ADR) alongside documentation updates.
+
+Proposal review deadlines default to 15 minutes and are configurable from 1 to 120 minutes in SQLite. Changes affect new proposals only and are shared by the web API and both MCP transports. An authenticated administrator can recreate an expired proposal or its complete expired batch; the original diff is revalidated, no change is applied, and recreation and TTL changes are audited. Recreated proposals retain the original agent attribution; the audit records the human requester and source proposal.

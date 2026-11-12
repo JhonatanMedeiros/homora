@@ -16,10 +16,11 @@ import { CommandPalette } from '@/components/command-palette';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
-import type { Tab } from '@/components/app-nav';
+import { tabPath, type Tab } from '@/components/app-nav';
 import { lower, t, useI18n } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { SettingsPage } from '@/pages/settings-page';
+import { isSettingsSection, settingsPath, settingsSections } from '@/features/settings/sections';
 import { useAuth } from '@/hooks/use-auth';
 import { useServices } from '@/hooks/use-services';
 import { Agents } from '@/features/agents/agents';
@@ -28,7 +29,8 @@ import { AuthPage } from '@/pages/auth-page';
 import { AccountPage } from '@/pages/account-page';
 import { ActivityPage } from '@/pages/activity-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
-import { ServicesPage } from '@/pages/services-page';
+import { ServicesPage, type FocusRequest } from '@/pages/services-page';
+import { StatusPage } from '@/pages/status-page';
 
 type DashboardRoute = { tab: Tab; managing: boolean; form: 'new' | number | null; valid: boolean };
 const validPaths = [
@@ -40,8 +42,10 @@ const validPaths = [
   '/manage/integrations',
   '/manage/agents',
   '/manage/activity',
+  '/account',
   '/manage/account',
   '/manage/settings',
+  ...settingsSections.map((section) => settingsPath(section.id)),
 ].map((path) => ({ path }));
 function validDestination(path: string) {
   return (
@@ -78,6 +82,7 @@ function Dashboard({
   const search = useRef<HTMLInputElement>(null);
   const openFirst = useRef<(() => void) | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const { toggleTheme } = useTheme();
   const { profile, failed: profileFailed, setProfile } = useProfile();
   const viewPrefs = useViewPreferences();
@@ -108,9 +113,10 @@ function Dashboard({
         navigate(value ? '/manage/services' : '/');
       }}
       onTabChange={(next) => {
-        navigate(`/manage/${next}`);
+        navigate(tabPath(next));
       }}
       onLogout={onLogout}
+      onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
       toolbar={
         <div className="relative">
@@ -166,6 +172,13 @@ function Dashboard({
           navigate('/manage/services/new');
         }}
         onToggleTheme={toggleTheme}
+        onNavigate={navigate}
+        onGoToCard={(service) => {
+          // The card only exists on the dashboard, and a search filter could be hiding it.
+          setQuery('');
+          if (managing || tab !== 'services') navigate('/');
+          setFocusRequest((previous) => ({ id: service.id, nonce: (previous?.nonce ?? 0) + 1 }));
+        }}
         view={viewPrefs.view}
         onViewChange={viewPrefs.setView}
         showDescriptions={viewPrefs.showDescriptions}
@@ -185,6 +198,8 @@ function Dashboard({
             query={query}
             data={data}
             openFirstRef={openFirst}
+            focusRequest={focusRequest}
+            onFocusHandled={() => setFocusRequest(null)}
             managing={managing}
             formRoute={route.form}
             navigate={navigate}
@@ -196,7 +211,7 @@ function Dashboard({
       )}
       {managing && tab === 'integrations' && <IntegrationsPage />}
       {managing && tab === 'activity' && <ActivityPage />}
-      {managing && tab === 'account' && (
+      {tab === 'account' && (
         <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />
       )}
       {managing && tab === 'settings' && <SettingsPage onImported={data.refresh} />}
@@ -212,7 +227,7 @@ function Dashboard({
         />
       )}
       {/* Above the fixed mobile bar of organize mode. */}
-      <Toaster position="bottom-center" mobileOffset={{ bottom: 80 }} />
+      <Toaster position="bottom-center" mobileOffset={{ bottom: 136 }} />
     </AppShell>
   );
 }
@@ -228,6 +243,8 @@ function DashboardForRoute({
 }) {
   const { pathname } = useLocation();
   if (matchPath('/manage', pathname)) return <Navigate replace to="/manage/services" />;
+  // The account used to be a management tab; keep old links working.
+  if (matchPath('/manage/account', pathname)) return <Navigate replace to="/account" />;
   const home = Boolean(matchPath('/', pathname));
   const isList = Boolean(matchPath('/manage/services', pathname));
   const isNew = Boolean(matchPath('/manage/services/new', pathname));
@@ -240,19 +257,25 @@ function DashboardForRoute({
       ? 'agents'
       : matchPath('/manage/activity', pathname)
         ? 'activity'
-        : matchPath('/manage/account', pathname)
+        : matchPath('/account', pathname)
           ? 'account'
-          : matchPath('/manage/settings', pathname)
+          : matchPath({ path: '/manage/settings', end: false }, pathname)
             ? 'settings'
             : 'services';
-  const valid = home || isList || isNew || isEdit || tab !== 'services';
+  const settingsSection = matchPath('/manage/settings/:section', pathname)?.params.section;
+  const unknownSettings =
+    Boolean(matchPath('/manage/settings/*', pathname)) &&
+    !matchPath('/manage/settings', pathname) &&
+    !isSettingsSection(settingsSection);
+  const valid = home || isList || isNew || isEdit || (tab !== 'services' && !unknownSettings);
+  const account = tab === 'account';
   return (
     <Dashboard
       token={token}
       setToken={setToken}
       onLogout={onLogout}
       tab={tab}
-      managing={valid && !home}
+      managing={valid && !home && !account}
       valid={valid}
       form={isNew ? 'new' : isEdit ? number : null}
     />
@@ -307,7 +330,11 @@ function AppRoutes() {
 export function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <Routes>
+        {/* Anonymous and outside the authenticated shell: AppRoutes (and its auth calls) never mount here. */}
+        <Route path="/status" element={<StatusPage />} />
+        <Route path="*" element={<AppRoutes />} />
+      </Routes>
     </BrowserRouter>
   );
 }
