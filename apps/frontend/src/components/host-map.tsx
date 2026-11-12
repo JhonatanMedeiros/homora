@@ -303,7 +303,7 @@ export function HostMap({
           aria-pressed={selected}
           onClick={() => setSelection({ kind: 'guest', key: guest.group.key })}
           style={{ height: MAP.guestHeader - 6, width: guest.w - 8 }}
-          className="absolute top-1 left-1 flex h-auto flex-col items-start justify-center rounded-sm px-2 text-left text-xs"
+          className="absolute top-1 left-1 flex h-auto flex-col items-start justify-center gap-0.5 rounded-sm px-2 py-0 text-left text-xs pointer-coarse:h-auto"
         >
           <span className="w-full truncate font-semibold">
             {guest.group.guest.name || t(`hosts.type.${guest.group.guest.type}`)}
@@ -352,6 +352,32 @@ export function HostMap({
     );
   };
 
+  const placed = new Map(
+    layout.containers
+      .flatMap((c) => [...c.guests.flatMap((g) => g.services), ...c.services])
+      .map((i) => [i.service.id, i]),
+  );
+  const edges = dependencies.flatMap((dep) => {
+    const from = placed.get(dep.serviceId);
+    const to = placed.get(dep.dependsOnId);
+    if (!from || !to) return [];
+    const right = to.x >= from.x + from.w;
+    const x1 = right ? from.x + from.w : from.x;
+    const x2 = right ? to.x - 2 : to.x + to.w + 2;
+    const y1 = from.y + from.h / 2;
+    const y2 = to.y + to.h / 2;
+    const bend = Math.max(40, Math.abs(x2 - x1) / 2);
+    const dir = right ? 1 : -1;
+    return [
+      {
+        key: `${dep.serviceId}-${dep.dependsOnId}`,
+        d: `M${x1} ${y1} C ${x1 + dir * bend} ${y1}, ${x2 - dir * bend} ${y2}, ${x2} ${y2}`,
+        active:
+          selection?.kind === 'service' &&
+          (selection.id === dep.serviceId || selection.id === dep.dependsOnId),
+      },
+    ];
+  });
   const linked = services.some((service) => service.host);
   const panelRunsOn = (service: Service) => {
     const found = model.nodes
@@ -372,8 +398,7 @@ export function HostMap({
         if (event.key === 'Escape') setPicking(null);
       }}
     >
-      <p className="text-xs text-muted-foreground">{t('map.hint')}</p>
-      {canEdit && <p className="text-xs text-muted-foreground">{t('map.dragHint')}</p>}
+      <p className="text-xs text-muted-foreground">{canEdit ? t('map.dragHint') : t('map.hint')}</p>
       {picking !== null && (
         <Alert>
           <AlertDescription className="flex flex-wrap items-center gap-3">
@@ -397,7 +422,7 @@ export function HostMap({
         <EmptyNote>{t('map.empty')}</EmptyNote>
       ) : (
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <div className="flex h-[70dvh] min-h-96 flex-col overflow-hidden rounded-lg border bg-card">
+          <div className="flex max-h-[70dvh] min-h-80 flex-col self-start overflow-hidden rounded-lg border bg-card">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-card p-2">
               <div
                 role="group"
@@ -459,7 +484,7 @@ export function HostMap({
               onPointerMove={onPointerMove}
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
-              className="min-h-0 flex-1 cursor-grab overflow-auto bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="min-h-0 flex-1 cursor-grab overflow-auto bg-background bg-[radial-gradient(var(--border)_1px,transparent_1px)] bg-[size:22px_22px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div style={{ width: layout.width * zoom + 24, height: layout.height * zoom + 24 }}>
                 <div
@@ -472,6 +497,40 @@ export function HostMap({
                   }}
                   className="relative"
                 >
+                  {edges.length > 0 && (
+                    <svg
+                      aria-hidden="true"
+                      width={layout.width}
+                      height={layout.height}
+                      className="pointer-events-none absolute top-0 left-0 overflow-visible text-primary"
+                    >
+                      <defs>
+                        <marker
+                          id="map-arrow"
+                          viewBox="0 0 10 10"
+                          refX="8"
+                          refY="5"
+                          markerWidth="7"
+                          markerHeight="7"
+                          orient="auto-start-reverse"
+                        >
+                          <path d="M1 1 9 5 1 9z" fill="currentColor" />
+                        </marker>
+                      </defs>
+                      {edges.map((edge) => (
+                        <path
+                          key={edge.key}
+                          d={edge.d}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={edge.active ? 2.5 : 1.5}
+                          strokeOpacity={edge.active ? 1 : 0.55}
+                          strokeDasharray="6 5"
+                          markerEnd="url(#map-arrow)"
+                        />
+                      ))}
+                    </svg>
+                  )}
                   {layout.containers.map(renderContainer)}
                 </div>
               </div>
