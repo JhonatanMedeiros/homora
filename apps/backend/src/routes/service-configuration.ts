@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { ServiceValidationError } from '@homora/shared';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
+import type { createObservationStore } from '../service-observations.js';
 import {
   groupColumnsSchema,
   groupNameSchema,
@@ -14,6 +15,7 @@ import { errorBody } from '../api-error.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
+type Observations = ReturnType<typeof createObservationStore>;
 const publicService = <T extends { allowPrivate: number | boolean }>(row: T) => ({
   ...row,
   allowPrivate: Boolean(row.allowPrivate),
@@ -23,9 +25,19 @@ export function registerServiceConfigurationRoutes(
   app: FastifyInstance,
   configuration: Configuration,
   monitor: Monitor,
+  observations: Observations,
 ) {
   app.get('/api/services', async () => configuration.listServices());
   app.get('/api/service-status', async () => monitor.snapshot());
+  app.get<{ Params: { id: string } }>('/api/services/:id/status-detail', async (request, reply) => {
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send(errorBody('service-not-found'));
+    try {
+      return observations.detail(id);
+    } catch {
+      return reply.code(404).send(errorBody('service-not-found'));
+    }
+  });
   app.get('/api/groups', async () => configuration.listGroups());
 
   app.post('/api/groups', async (request, reply) => {

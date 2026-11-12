@@ -1,0 +1,184 @@
+import { useEffect, useState } from 'react';
+import { CHECK_INTERVAL_DEFAULT, type Service } from '@homora/shared';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { formatAgo, formatTime, t } from '@/i18n';
+import { cn } from '@/lib/utils';
+import type { ServiceStatus } from '@/lib/services';
+
+type Check = Pick<ServiceStatus, 'status' | 'reason' | 'httpStatus' | 'latencyMs'> & {
+  observedAt: number;
+};
+type Detail = {
+  recent: Check[];
+  failingSince: number | null;
+  failingSinceIsApproximate: boolean;
+  lastSuccess: { observedAt: number; latencyMs: number | null } | null;
+};
+
+const BARS = 24;
+
+function reasonText(status: ServiceStatus) {
+  const code = typeof status.httpStatus === 'number' ? status.httpStatus : null;
+  if (status.reason === 'not-found') return t('details.reasonNotFound');
+  if (status.reason === 'error-status' && code !== null) return t('details.reasonError', { code });
+  return t('details.reasonNoResponse');
+}
+
+function tipText(status: ServiceStatus) {
+  if (status.reason === 'not-found') return t('details.tipNotFound');
+  if (status.reason === 'error-status') return t('details.tipError');
+  return t('details.tipNoResponse');
+}
+
+/** Why a service is offline, from the checks Homora already keeps. No response bodies or headers. */
+export function ServiceFailureDetails({
+  id,
+  service,
+  status,
+  onEdit,
+  className,
+}: {
+  id: string;
+  service: Service;
+  status: ServiceStatus;
+  onEdit: () => void;
+  className?: string;
+}) {
+  const [detail, setDetail] = useState<Detail | 'loading' | 'error'>('loading');
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/services/${service.id}/status-detail`)
+      .then((response) => {
+        if (!response.ok) throw new Error();
+        return response.json() as Promise<Detail>;
+      })
+      .then((data) => active && setDetail(data))
+      .catch(() => active && setDetail('error'));
+    return () => {
+      active = false;
+    };
+  }, [service.id, status.lastAttempt]);
+
+  if (detail === 'loading' || detail === 'error') {
+    return (
+      <div
+        id={id}
+        role={detail === 'loading' ? 'status' : undefined}
+        className={cn(
+          'z-10 flex items-center gap-2 border-t border-destructive/35 pt-3 text-sm text-muted-foreground',
+          className,
+        )}
+      >
+        {detail === 'loading' ? (
+          <>
+            <Spinner />
+            {t('details.loading')}
+          </>
+        ) : (
+          t('details.error')
+        )}
+      </div>
+    );
+  }
+
+  const seconds = service.checkInterval ?? CHECK_INTERVAL_DEFAULT;
+  const since = detail.failingSince ?? (status.lastAttempt ? Date.parse(status.lastAttempt) : null);
+  const bars: (Check | null)[] = [
+    ...Array.from<null>({ length: Math.max(0, BARS - detail.recent.length) }).fill(null),
+    ...detail.recent.slice(-BARS),
+  ];
+  const failed = detail.recent.filter((check) => check.status === 'unavailable').length;
+  const facts: [string, string][] = [
+    [t('details.reason'), reasonText(status)],
+    ...(since === null
+      ? []
+      : [
+          [
+            t('details.since'),
+            [
+              detail.failingSinceIsApproximate
+                ? t('details.sinceApprox', { time: formatTime(since) })
+                : formatTime(since),
+              formatAgo(since),
+            ].join(' · '),
+          ] as [string, string],
+        ]),
+    [
+      t('details.lastSuccess'),
+      detail.lastSuccess
+        ? [
+            formatTime(detail.lastSuccess.observedAt),
+            typeof detail.lastSuccess.latencyMs === 'number' &&
+              `${Math.round(detail.lastSuccess.latencyMs)} ms`,
+          ]
+            .filter(Boolean)
+            .join(' · ')
+        : t('details.noSuccess'),
+    ],
+    [
+      t('details.check'),
+      t(service.checkType === 'ping' ? 'details.checkPing' : 'details.checkHttp', { seconds }),
+    ],
+  ];
+  return (
+    <div
+      id={id}
+      className={cn(
+        'z-10 flex flex-col gap-3.5 border-t border-destructive/35 pt-3 text-sm',
+        className,
+      )}
+    >
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3.5 gap-y-1.5 text-[0.8125rem]">
+        {facts.map(([label, value]) => (
+          <div key={label} className="contents">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="min-w-0 break-words">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {detail.recent.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <div
+            role="img"
+            aria-label={t('details.historyLabel', { failed, total: detail.recent.length })}
+            className="grid h-5 grid-cols-[repeat(24,minmax(0,1fr))] items-end gap-0.5"
+          >
+            {bars.map((check, index) => (
+              <span
+                key={index}
+                title={check ? formatTime(check.observedAt) : undefined}
+                className={cn(
+                  'h-full rounded-[2px]',
+                  check === null
+                    ? 'bg-border'
+                    : check.status === 'unavailable'
+                      ? 'bg-destructive'
+                      : 'bg-success/85',
+                )}
+              />
+            ))}
+          </div>
+          <div className="flex justify-between font-mono text-[0.6875rem] text-muted-foreground">
+            <span>{t('details.historyOldest')}</span>
+            <span>{t('details.historyNow')}</span>
+          </div>
+        </div>
+      )}
+      <p className="rounded-md border bg-card px-3 py-2 text-[0.8125rem]">
+        <b className="font-semibold">{t('details.tryTitle')}:</b> {tipText(status)}
+      </p>
+      <div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          aria-label={t('card.edit', { name: service.name })}
+          onClick={onEdit}
+        >
+          {t('common.edit')}
+        </Button>
+      </div>
+    </div>
+  );
+}

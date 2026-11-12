@@ -92,7 +92,7 @@ it('shows unknown status and timestamp of last attempt without depending on stat
     }),
   );
   render(<App />);
-  expect(await screen.findByText('Indisponível')).toBeTruthy();
+  expect(await screen.findByText('Fora do ar')).toBeTruthy();
   expect(screen.getByText(/última tentativa/)).toBeTruthy();
 });
 
@@ -536,8 +536,8 @@ it('does not treat unauthorized private network as service down', async () => {
     }),
   );
   render(<App />);
-  expect(await screen.findByText('Monitoramento bloqueado')).toBeTruthy();
-  expect(screen.queryByText('Indisponível')).toBeNull();
+  expect(await screen.findByText('Sem monitoramento')).toBeTruthy();
+  expect(screen.queryByText('Fora do ar')).toBeNull();
   expect(screen.getByText(/1 de \d+ no ar/)).toBeTruthy();
   expect(screen.getByText(/1 sem monitoramento/)).toBeTruthy();
 });

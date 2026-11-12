@@ -30,6 +30,9 @@ const unchecked: ServiceStatus = {
   latencyMs: null,
 };
 const HISTORY_RETENTION = 30 * 24 * 60 * 60_000;
+const FAILURE_DETAIL_BARS = 24;
+/** Checks read to find where the current outage began (about 8 h at the default interval). */
+const FAILURE_DETAIL_LOOKBACK = 500;
 function signature(service: Pick<Service, 'url' | 'allowPrivate' | 'checkType' | 'checkInterval'>) {
   return createHash('sha256')
     .update(
@@ -100,6 +103,35 @@ export function createObservationStore(db: DatabaseSync) {
         ...observationSchema.parse(JSON.parse(row.observation) as unknown),
       }));
       return { events, nextBefore: rows.length > limit ? (events.at(-1)?.id ?? null) : null };
+    },
+    /**
+     * Failure details for one service: the latest checks (oldest first), when the current
+     * outage started and the last successful check. Raw responses are never stored.
+     */
+    detail(id: number, now = Date.now()) {
+      const { events } = this.history(id, 0, now, undefined, FAILURE_DETAIL_LOOKBACK);
+      let run = 0;
+      while (run < events.length && events[run]?.status === 'unavailable') run++;
+      const failing = run > 0;
+      const lastSuccess = events.find((event) => event.status === 'available');
+      return {
+        recent: events
+          .slice(0, FAILURE_DETAIL_BARS)
+          .reverse()
+          .map(({ observedAt, status, reason, httpStatus, latencyMs }) => ({
+            observedAt,
+            status,
+            reason,
+            httpStatus,
+            latencyMs,
+          })),
+        failingSince: failing ? (events[run - 1]?.observedAt ?? null) : null,
+        // The outage began before the checks that were read, so `failingSince` is a lower bound.
+        failingSinceIsApproximate: failing && run === events.length,
+        lastSuccess: lastSuccess
+          ? { observedAt: lastSuccess.observedAt, latencyMs: lastSuccess.latencyMs }
+          : null,
+      };
     },
     list(now = Date.now()) {
       const rows = db

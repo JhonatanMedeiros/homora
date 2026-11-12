@@ -209,6 +209,32 @@ groups:
   it('does not expose services without an active session', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
     expect((await app.inject({ method: 'GET', url: '/api/service-status' })).statusCode).toBe(401);
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/services/1/status-detail' })).statusCode,
+    ).toBe(401);
+  });
+  it('serves failure details only for existing services', async () => {
+    const headers = { origin: 'http://localhost:5173', cookie };
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/services',
+      headers,
+      payload: { name: 'Detalhe', url: 'http://localhost:8097', category: 'Teste' },
+    });
+    const id = created.json().id;
+    const found = await app.inject({
+      method: 'GET',
+      url: `/api/services/${id}/status-detail`,
+      headers: { cookie },
+    });
+    expect(found.statusCode).toBe(200);
+    expect(found.json()).toMatchObject({ recent: [], failingSince: null, lastSuccess: null });
+    for (const url of ['/api/services/999999/status-detail', '/api/services/abc/status-detail']) {
+      const missing = await app.inject({ method: 'GET', url, headers: { cookie } });
+      expect(missing.statusCode).toBe(404);
+      expect(missing.json().code).toBe('service-not-found');
+    }
+    await app.inject({ method: 'DELETE', url: `/api/services/${id}`, headers });
   });
   it('creates, lists, updates, and deletes services', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };

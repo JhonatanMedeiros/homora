@@ -1,13 +1,17 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ServiceCard } from './service-card';
 import type { ServiceStatus } from '@/lib/services';
 
 afterEach(cleanup);
 
 const noop = () => {};
-function show(status?: ServiceStatus, blocked = false) {
+function show(
+  status?: ServiceStatus,
+  blocked = false,
+  extra: { list?: boolean; description?: string; onEdit?: () => void } = {},
+) {
   cleanup();
   return render(
     <ul>
@@ -17,14 +21,15 @@ function show(status?: ServiceStatus, blocked = false) {
           name: 'Wiki',
           url: 'https://wiki.test',
           category: 'Casa',
-          description: '',
+          description: extra.description ?? '',
         }}
         status={status}
         blocked={blocked}
         managing={false}
+        list={extra.list}
         showDescription
         confirmingRemoval={false}
-        onEdit={noop}
+        onEdit={extra.onEdit ?? noop}
         onRemove={noop}
         onCancelRemoval={noop}
       />
@@ -33,17 +38,41 @@ function show(status?: ServiceStatus, blocked = false) {
 }
 const base = { lastAttempt: '2026-11-10T12:30:00.000Z' };
 
-it('explains status with reason, HTTP code, and latency', () => {
+afterEach(() => vi.unstubAllGlobals());
+
+it('says "No ar" for any healthy answer and keeps the HTTP code out of sight', () => {
+  show({ ...base, status: 'available', reason: 'redirect', httpStatus: 302, latencyMs: 72 });
+  expect(screen.getByText('No ar')).toBeTruthy();
+  expect(screen.getByText('72 ms')).toBeTruthy();
+  expect(screen.queryByText(/Redireciona|HTTP 302/)).toBeNull();
+  expect(screen.getByText('72 ms').closest('span[title]')?.getAttribute('title')).toBe('HTTP 302');
+  expect(screen.queryByRole('button', { name: /Detalhes/ })).toBeNull();
+
+  show({ ...base, status: 'available', reason: 'responding', httpStatus: 200, latencyMs: 30 });
+  expect(screen.getByText('No ar')).toBeTruthy();
+  expect(screen.getByText('30 ms')).toBeTruthy();
+});
+
+it('tags healthy answers that need a qualifier', () => {
   show({ ...base, status: 'available', reason: 'login-required', httpStatus: 401, latencyMs: 42 });
-  expect(screen.getByText('Exige login')).toBeTruthy();
-  expect(screen.getByText('HTTP 401 · 42 ms')).toBeTruthy();
+  expect(screen.getByText('No ar')).toBeTruthy();
+  expect(screen.getByText('login')).toBeTruthy();
+  expect(screen.getByText(/42 ms/)).toBeTruthy();
 
+  show({ ...base, status: 'available', reason: 'reachable', httpStatus: null, latencyMs: 4 });
+  expect(screen.getByText('ping')).toBeTruthy();
+  expect(screen.getByText(/4 ms/)).toBeTruthy();
+  expect(screen.queryByText(/HTTP|Responde ao ping/)).toBeNull();
+});
+
+it('explains failures in plain words with a Details button', () => {
   show({ ...base, status: 'unavailable', reason: 'not-found', httpStatus: 404, latencyMs: 9 });
-  expect(screen.getByText('Não encontrado')).toBeTruthy();
-  expect(screen.getByText('HTTP 404 · 9 ms')).toBeTruthy();
+  expect(screen.getByText('Fora do ar')).toBeTruthy();
+  expect(screen.getByText('Página não encontrada (404)')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Detalhes de Wiki' })).toBeTruthy();
 
-  show({ ...base, status: 'available', reason: 'redirect', httpStatus: 302, latencyMs: 5 });
-  expect(screen.getByText('Redireciona')).toBeTruthy();
+  show({ ...base, status: 'unavailable', reason: 'error-status', httpStatus: 503, latencyMs: 212 });
+  expect(screen.getByText('Servidor retornou erro 503')).toBeTruthy();
 
   show({
     ...base,
@@ -52,28 +81,101 @@ it('explains status with reason, HTTP code, and latency', () => {
     httpStatus: null,
     latencyMs: null,
   });
-  expect(screen.getByText('Sem resposta')).toBeTruthy();
+  expect(screen.getByText(/Sem resposta · última tentativa/)).toBeTruthy();
   expect(screen.queryByText(/HTTP/)).toBeNull();
+});
 
+it('shows waiting, blocked, and tolerates responses without a reason', () => {
   show({ status: 'unknown', lastAttempt: null, reason: 'unchecked', httpStatus: null });
-  expect(screen.getByText('Não verificado')).toBeTruthy();
-});
-
-it('renders successful ping with latency without HTTP code', () => {
-  show({ ...base, status: 'available', reason: 'reachable', httpStatus: null, latencyMs: 4 });
-  expect(screen.getByText('Responde ao ping')).toBeTruthy();
-  expect(screen.getByText('Ping · 4 ms')).toBeTruthy();
-  expect(screen.queryByText(/HTTP/)).toBeNull();
-});
-
-it('retains simple badge when responding normally and tolerates responses without reason', () => {
-  show({ ...base, status: 'available', reason: 'responding', httpStatus: 200, latencyMs: 30 });
-  expect(screen.getByText('Disponível')).toBeTruthy();
-  expect(screen.queryByText(/HTTP/)).toBeNull();
-
-  show({ ...base, status: 'unavailable' });
-  expect(screen.getByText('Indisponível')).toBeTruthy();
+  expect(screen.getByText('Aguardando')).toBeTruthy();
+  expect(screen.getByText('primeira checagem em instantes')).toBeTruthy();
 
   show({ ...base, status: 'unavailable', reason: 'no-response' }, true);
-  expect(screen.getByText('Monitoramento bloqueado')).toBeTruthy();
+  expect(screen.getByText('Sem monitoramento')).toBeTruthy();
+  expect(screen.getByText('Destino não autorizado para monitoramento')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Detalhes/ })).toBeNull();
+
+  show({ ...base, status: 'unavailable' });
+  expect(screen.getByText('Fora do ar')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Detalhes/ })).toBeNull();
+});
+
+it('hides a description that only repeats the name', () => {
+  show({ ...base, status: 'available', reason: 'responding' }, false, { description: 'Wiki Casa' });
+  expect(screen.queryByText('Wiki Casa')).toBeNull();
+  show({ ...base, status: 'available', reason: 'responding' }, false, {
+    description: 'Notas e documentação do lab',
+  });
+  expect(screen.getByText('Notas e documentação do lab')).toBeTruthy();
+});
+
+it('opens failure details from the card and loads the recent checks', async () => {
+  const detail = {
+    recent: [
+      {
+        observedAt: Date.now() - 180_000,
+        status: 'available',
+        reason: 'responding',
+        httpStatus: 200,
+        latencyMs: 40,
+      },
+      {
+        observedAt: Date.now() - 120_000,
+        status: 'unavailable',
+        reason: 'no-response',
+        httpStatus: null,
+        latencyMs: null,
+      },
+    ],
+    failingSince: Date.now() - 120_000,
+    failingSinceIsApproximate: false,
+    lastSuccess: { observedAt: Date.now() - 180_000, latencyMs: 40 },
+  };
+  const fetchMock = vi.fn(async () => ({ ok: true, json: async () => detail }));
+  vi.stubGlobal('fetch', fetchMock);
+  const onEdit = vi.fn();
+  show({ ...base, status: 'unavailable', reason: 'no-response', httpStatus: null }, false, {
+    onEdit,
+  });
+  const button = screen.getByRole('button', { name: 'Detalhes de Wiki' });
+  expect(button.getAttribute('aria-expanded')).toBe('false');
+  fireEvent.click(button);
+  expect(button.getAttribute('aria-expanded')).toBe('true');
+  expect(await screen.findByText(/Sem resposta \(tempo esgotado/)).toBeTruthy();
+  expect(fetchMock).toHaveBeenCalledWith('/api/services/1/status-detail');
+  expect(screen.getByText('Fora do ar desde')).toBeTruthy();
+  expect(screen.getByRole('img', { name: '1 de 2 checagens recentes falharam' })).toBeTruthy();
+  expect(screen.getByText(/O que tentar/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Wiki' }));
+  expect(onEdit).toHaveBeenCalled();
+  fireEvent.click(button);
+  await waitFor(() => expect(screen.queryByText('Fora do ar desde')).toBeNull());
+});
+
+it('shows a short message when failure details cannot be loaded', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: false, json: async () => ({}) })),
+  );
+  show({ ...base, status: 'unavailable', reason: 'error-status', httpStatus: 500 });
+  fireEvent.click(screen.getByRole('button', { name: 'Detalhes de Wiki' }));
+  expect(await screen.findByText('Não foi possível carregar os detalhes.')).toBeTruthy();
+});
+
+it('uses the same words in the list layout, with the failure sentence on its own line', () => {
+  show(
+    { ...base, status: 'available', reason: 'redirect', httpStatus: 302, latencyMs: 72 },
+    false,
+    { list: true },
+  );
+  expect(screen.getByText('No ar')).toBeTruthy();
+  expect(screen.getByText('72 ms')).toBeTruthy();
+  expect(screen.queryByText(/Redireciona/)).toBeNull();
+
+  show({ ...base, status: 'unavailable', reason: 'no-response', httpStatus: null }, false, {
+    list: true,
+  });
+  expect(screen.getByText('Fora do ar')).toBeTruthy();
+  expect(screen.getByText(/Sem resposta/)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Detalhes/ })).toBeNull();
 });
