@@ -3,6 +3,8 @@ export const en = {
   'publicStatus.title': 'Service status',
   'publicStatus.loading': 'Loading status…',
   'publicStatus.unavailable': 'This page is not available.',
+  'publicStatus.gateway':
+    'A sign-in gateway is blocking this page. The administrator must allow /status and /api/public/status without login.',
   'publicStatus.error': 'Could not load the status. Retrying…',
   'publicStatus.updated': 'Updated {time}',
   'publicStatus.checked': 'checked {ago}',
@@ -47,6 +49,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'publicStatus.title': 'Status dos serviços',
   'publicStatus.loading': 'Carregando status…',
   'publicStatus.unavailable': 'Esta página não está disponível.',
+  'publicStatus.gateway':
+    'Um portão de login está bloqueando esta página. O administrador precisa liberar /status e /api/public/status sem login.',
   'publicStatus.error': 'Não foi possível carregar o status. Tentando de novo…',
   'publicStatus.updated': 'Atualizado {time}',
   'publicStatus.checked': 'verificado {ago}',

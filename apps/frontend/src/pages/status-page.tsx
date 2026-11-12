@@ -104,14 +104,24 @@ export function PublicStatusView({ data }: { data: PublicStatus }) {
 export function StatusPage() {
   const { locale } = useI18n();
   const [data, setData] = useState<PublicStatus | null>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'closed' | 'error'>('loading');
+  const [state, setState] = useState<'loading' | 'ready' | 'closed' | 'gateway' | 'error'>(
+    'loading',
+  );
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const load = async () => {
       try {
-        const response = await fetch('/api/public/status', { credentials: 'omit' });
+        // Same-origin cookies are sent on purpose: behind an access gateway such as Cloudflare
+        // Access, omitting them would break the page even for visitors who already signed in.
+        // `manual` lets a gateway redirect be told apart from a plain network failure.
+        const response = await fetch('/api/public/status', { redirect: 'manual' });
         if (!active) return;
+        if (response.type === 'opaqueredirect') {
+          setData(null);
+          setState('gateway');
+          return;
+        }
         if (response.status === 404) {
           setData(null);
           setState('closed');
@@ -146,6 +156,11 @@ export function StatusPage() {
       {state === 'loading' && <p className="text-muted-foreground">{t('publicStatus.loading')}</p>}
       {state === 'closed' && (
         <p className="text-muted-foreground">{t('publicStatus.unavailable')}</p>
+      )}
+      {state === 'gateway' && (
+        <p role="status" className="text-muted-foreground">
+          {t('publicStatus.gateway')}
+        </p>
       )}
       {state === 'error' && (
         <p role="status" className="text-muted-foreground">
