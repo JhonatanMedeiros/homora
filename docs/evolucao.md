@@ -925,9 +925,16 @@ implementation because it changes a security default.
 
 - Removed the unused legacy Proxmox screen from the frontend (`features/proxmox/`); nothing rendered it
   and it called the legacy `/api/proxmox/*` routes.
-- Still pending, to be done once installations have migrated: `routes/proxmox.ts`, the `.proxmox`
-  `load`/`save` in `vault.ts` (keep `seal`/`unseal`, which every connection uses), and the legacy
-  lookups in `integration-connections.ts`, `mcp.ts`, `proposals.ts` and `managed-proposals.ts`.
+- Step 1 done: the idempotent migration runs at backend startup and never stops it (missing key or
+  unreadable file is logged without secrets, the file stays untouched).
+- Step 2 done: removed `routes/proxmox.ts`, the legacy transport (`proxmox.ts`, `proxmoxAdapter`),
+  `legacyConfig`, and the `.proxmox` fallbacks in `mcp.ts`, `proposals.ts` and
+  `managed-proposals.ts` (no hidden bridge row any more). Validated with automated tests only; no
+  live Proxmox validation. Pending proposals for a Proxmox widget created before this change are
+  rejected as stale.
+- Step 3 pending (separate issue, once the maintainer confirms no unmigrated installation remains):
+  delete the migrator, `vault.load`/`save`, the `.proxmox` file handling and the related
+  README/SECURITY text. Keep `seal`/`unseal`, which every connection uses.
 - Next step for the connection model: node selection within a Proxmox connection (ADR 0001).
 
 ### Named Proxmox connections
@@ -935,9 +942,9 @@ implementation because it changes a security default.
 - Proxmox uses named connections, with one API endpoint per connection, shared destination
   controls, encrypted credentials, reusable widgets and selectable top-bar source. Cluster
   data remains aggregated; node-specific widgets are not implemented.
-- Legacy credentials are migrated transactionally on first connection access, preserving the
+- Legacy credentials are migrated transactionally at backend startup, preserving the
   bridge ID and widgets. The legacy file is retained; a migration marker prevents resurrection
-  after deletion. Old HTTP endpoints return 410 after migration.
+  after deletion. The old HTTP endpoints were removed.
 - Automated tests exercise migration with and without widgets, missing keys, multiple independent
   configurations and mocked network requests. Live cluster compatibility remains unverified.
 

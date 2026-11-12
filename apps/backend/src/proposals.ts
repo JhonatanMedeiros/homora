@@ -5,7 +5,6 @@ import { createServiceConfiguration, type ServiceChange } from './service-config
 import { serviceProposalSchema } from './input-schemas.js';
 import { AGENT_SCOPES } from './agent-scopes.js';
 import { z } from 'zod';
-import type { createVault } from './vault.js';
 import {
   applyManagedChange,
   managedChangeSchema,
@@ -37,7 +36,6 @@ export const agentChangeSchema = z.discriminatedUnion('op', [
 export function createProposalService(
   sqlite: DatabaseSync,
   configuration = createServiceConfiguration(sqlite),
-  vault?: ReturnType<typeof createVault>,
 ) {
   const configHash = configuration.configHash;
   let insideBatch = false;
@@ -77,10 +75,8 @@ export function createProposalService(
       .get(authorId, Date.now()) as { count: number };
     if (count.count >= 100) throw new Error('Pending proposal limit reached');
   }
-  const isProxmoxWidget = (change: ReturnType<typeof managedChangeSchema.parse>) =>
-    change.kind === 'widget' && change.change.op === 'create' && change.change.source === 'proxmox';
-  const managedBaseHash = (change: ReturnType<typeof managedChangeSchema.parse>) =>
-    hash([managedHash(sqlite), isProxmoxWidget(change) ? (vault?.load() ?? null) : null]);
+  // The trailing `null` keeps the hashes of pending proposals created before this change.
+  const managedBaseHash = () => hash([managedHash(sqlite), null]);
   const proxmoxConfigured = () => {
     const marker = sqlite
       .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
@@ -97,7 +93,7 @@ export function createProposalService(
         )
       );
     }
-    return Boolean(vault?.load());
+    return false;
   };
   function issue(name: string, scopes: string[]) {
     if (
@@ -202,7 +198,7 @@ export function createProposalService(
     return transaction(() => {
       checkPending(authorId);
       const snapshot = managedSnapshot(sqlite);
-      const baseHash = managedBaseHash(change);
+      const baseHash = managedBaseHash();
       const baseVersion = configuration.version();
       // Validate the exact operation without retaining the simulated changes.
       sqlite.exec('SAVEPOINT validate_proposal');
@@ -525,7 +521,7 @@ export function createProposalService(
           isManaged && 'change' in decoded ? managedChangeSchema.parse(decoded.change) : null;
         if (
           version !== p.base_version ||
-          (managedChange ? managedBaseHash(managedChange) : configHash()) !== p.base_hash
+          (managedChange ? managedBaseHash() : configHash()) !== p.base_hash
         )
           throw new Error('Configuration has changed');
         if (managedChange) {
@@ -588,7 +584,7 @@ export function createProposalService(
               decoded.kind === 'managed' ? managedChangeSchema.parse(decoded.change) : null;
             if (
               version !== p.base_version ||
-              (managed ? managedBaseHash(managed) : configHash()) !== p.base_hash
+              (managed ? managedBaseHash() : configHash()) !== p.base_hash
             )
               throw new Error('Configuration has changed');
           }
@@ -689,7 +685,7 @@ export function createProposalService(
         p.batchId && rows.some((other) => other.batchId === p.batchId && other.state !== 'pending');
       return incomplete ||
         p.baseVersion !== configuration.version() ||
-        p.baseHash !== (managed ? managedBaseHash(managed) : configHash())
+        p.baseHash !== (managed ? managedBaseHash() : configHash())
         ? { ...p, state: 'stale' }
         : p;
     });

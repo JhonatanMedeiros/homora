@@ -1,6 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DatabaseSync } from 'node:sqlite';
-import { createVault } from './vault.js';
 import { createProposalService } from './proposals.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { integrationRegistry } from './integration-registry.js';
@@ -36,14 +35,10 @@ type McpOptions = {
   docker?: DockerSource;
   token?: string;
 };
-export function createMcp(
-  database: DatabaseSync,
-  vault: ReturnType<typeof createVault>,
-  options: McpOptions = {},
-) {
+export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
   const configuration = createServiceConfiguration(database);
   const dockerPush = createDockerPush(database);
-  const proposalService = createProposalService(database, configuration, vault);
+  const proposalService = createProposalService(database, configuration);
   const server = new McpServer({ name: 'homora', version: '0.1.0' });
   const publicStatusEnabled = () => {
     try {
@@ -718,7 +713,7 @@ export function createMcp(
           catalog: integrationRegistry.list(),
           proxmoxConfigured: configured
             ? configured.some((item) => item.type === 'proxmox')
-            : Boolean(vault.load()),
+            : false,
           connections: configured
             ? configured.map((connection) => ({
                 ...connection,
@@ -927,38 +922,23 @@ export function createMcp(
           isError: true,
         };
       try {
-        if (options.connections) {
-          const connections = (await options.connections.listConnections()).filter(
-            (item) => item.type === 'proxmox',
-          );
-          if (connections.length !== 1)
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Select a Proxmox connection with list_integrations and get_integration_status.',
-                },
-              ],
-              isError: true,
-            };
-          const data = await options.connections.connectionData(connections[0].id);
-          return data ? result(data) : failed();
-        }
-        if (
-          database
-            .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
-            .get()
-        )
-          return failed();
-        const config = vault.load();
-        if (!config)
+        const connections = (await options.connections?.listConnections())?.filter(
+          (item) => item.type === 'proxmox',
+        );
+        if (!connections?.length)
           return { content: [{ type: 'text', text: 'Proxmox is not configured.' }], isError: true };
-        const data = await integrationRegistry.prepare('proxmox', {
-          publicConfig: {},
-          credentials: {},
-          legacyConfig: config,
-        })();
-        return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        if (connections.length !== 1)
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Select a Proxmox connection with list_integrations and get_integration_status.',
+              },
+            ],
+            isError: true,
+          };
+        const data = await options.connections!.connectionData(connections[0].id);
+        return data ? result(data) : failed();
       } catch {
         return {
           content: [

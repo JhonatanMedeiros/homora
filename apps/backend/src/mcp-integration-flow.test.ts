@@ -30,7 +30,7 @@ it('queries only authorized non-Proxmox integrations through the controlled tran
     body: JSON.stringify({ ServerName: 'Media', Version: '10.9' }),
   } as Awaited<ReturnType<typeof getAuthorizedResponse>>);
   const connections = createIntegrationConnections(database.db, vault);
-  const server = createMcp(db, vault, { connections });
+  const server = createMcp(db, { connections });
   const client = new Client({ name: 'test', version: '1' });
   const [a, b] = InMemoryTransport.createLinkedPair();
   try {
@@ -90,7 +90,7 @@ it('lists and queries independent Proxmox connections without exposing their cre
     status: 200,
     body: JSON.stringify({ data: [{ type: 'qemu', status: 'running', name: 'private-vm' }] }),
   });
-  const server = createMcp(db, vault, { connections });
+  const server = createMcp(db, { connections });
   const client = new Client({ name: 'test', version: '1' });
   const [a, b] = InMemoryTransport.createLinkedPair();
   try {
