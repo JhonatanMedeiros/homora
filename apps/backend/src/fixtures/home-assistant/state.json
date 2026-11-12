@@ -1,0 +1,13 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample",
+    "docs": "https://developers.home-assistant.io/docs/api/rest/",
+    "note": "Field names follow the documented endpoint and the adapter's parser; not recorded from a live instance and not re-verified against the docs in this change."
+  },
+  "body": {
+    "entity_id": "sensor.temperature",
+    "state": "21.5",
+    "attributes": { "unit_of_measurement": "C" },
+    "last_updated": "2026-01-01T10:00:00+00:00"
+  }
+}

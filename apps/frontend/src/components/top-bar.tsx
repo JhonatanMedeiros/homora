@@ -58,6 +58,11 @@ export function TopBar() {
           ))}
         </dl>
       )}
+      {system.status === 'node-unavailable' && (
+        <p role="status" className="text-xs text-muted-foreground">
+          {t('topBar.nodeUnavailable')}
+        </p>
+      )}
       {system.status === 'error' && (
         <p className="text-xs text-muted-foreground">{t('topBar.unavailable')}</p>
       )}

@@ -3,6 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { isNodeName, isVmid } from '@homora/shared';
 import { renumberGroups } from './group-order.js';
+import { definitionOf, integrationTypeSchema, publicFieldShape } from './integration-fields.js';
 
 const id = z.number().int().safe().positive();
 const name = z.string().trim().min(1).max(40);
@@ -41,7 +42,7 @@ export const widgetChangeSchema = z.discriminatedUnion('op', [
 ]);
 export const connectionSetupSchema = z
   .object({
-    type: z.enum(['jellyfin', 'home-assistant', 'uptime-kuma', 'adguard-home', 'proxmox']),
+    type: integrationTypeSchema,
     name: widgetName,
     url: z
       .string()
@@ -62,12 +63,13 @@ export const connectionSetupSchema = z
           return false;
         }
       }),
-    entityId: z.string().trim().max(255).optional(),
-    username: z.string().trim().max(255).optional(),
-    slug: z.string().trim().max(255).optional(),
+    ...publicFieldShape(255, true),
   })
   .strict()
-  .refine((value) => value.type !== 'proxmox' || value.url.startsWith('https://'));
+  .refine((value) => {
+    const url = definitionOf(value.type)?.fields.find(({ kind }) => kind === 'url');
+    return !url?.httpsOnly || value.url.startsWith('https://');
+  });
 /**
  * Links a card to a Proxmox guest. The strength and evidence are computed by the server when the
  * proposal is created (an agent cannot supply them) and shown to the reviewer next to the diff.

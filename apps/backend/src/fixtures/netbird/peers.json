@@ -1,0 +1,27 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample following the official OpenAPI schema of GET /api/peers (a JSON array of peers)",
+    "docs": "https://docs.netbird.io/api/resources/peers and https://github.com/netbirdio/netbird/blob/main/shared/management/http/api/openapi.yml",
+    "note": "Read on 2026-11-12: Authorization: Token <token>; the 200 response is an array of peers with a boolean `connected`; cloud base URL https://api.netbird.io. Not recorded from a live instance."
+  },
+  "body": [
+    {
+      "id": "chacbco6lnnbn6cg5s90",
+      "name": "stage-host-1",
+      "connected": true,
+      "last_seen": "2026-01-01T10:05:26.420578Z"
+    },
+    {
+      "id": "chacbco6lnnbn6cg5s91",
+      "name": "stage-host-2",
+      "connected": true,
+      "last_seen": "2026-01-01T10:05:26.420578Z"
+    },
+    {
+      "id": "chacbco6lnnbn6cg5s92",
+      "name": "stage-host-3",
+      "connected": false,
+      "last_seen": "2025-12-01T10:05:26.420578Z"
+    }
+  ]
+}

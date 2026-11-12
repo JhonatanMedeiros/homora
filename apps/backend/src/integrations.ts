@@ -1,3 +1,4 @@
+import type { IntegrationDefinition } from '@homora/shared';
 import { InputError } from './api-error.js';
 
 /** An adapter never exposes credentials through its public metadata. */
@@ -14,6 +15,10 @@ export type IntegrationTransport = (request: {
   origin: string;
   path: string;
   authorization?: string;
+  /** Sent as `x-api-key`, a header the shared transport already whitelists. */
+  apiKey?: string;
+  /** Response size limit for this request; the transport caps it at 2 MB. */
+  maxBodyBytes?: number;
 }) => Promise<{ status: number; body: unknown }>;
 export type IntegrationContext = {
   publicConfig: Record<string, unknown>;
@@ -21,6 +26,8 @@ export type IntegrationContext = {
   transport?: IntegrationTransport;
 };
 export type IntegrationRegistration = IntegrationMetadata & {
+  /** Public, static description used to generate forms and widget text. Never holds secrets. */
+  definition?: IntegrationDefinition;
   prepare?: (context: IntegrationContext) => () => Promise<unknown>;
   /** Detailed read that carries names and ids; only for authenticated callers. */
   prepareInventory?: (context: IntegrationContext) => () => Promise<unknown>;
@@ -45,6 +52,22 @@ export function createIntegrationRegistry<T extends IntegrationRegistration>(
         type,
         label,
         capabilities: [...capabilities],
+      })),
+    /** Public definitions (fields, display) for clients; code adapters carry metadata only. */
+    describe: () =>
+      [...entries.values()].map(({ type, label, capabilities, definition }) => ({
+        type,
+        label,
+        capabilities: [...capabilities],
+        ...(definition
+          ? {
+              kind: definition.kind,
+              mark: definition.mark,
+              brandIcon: definition.brandIcon,
+              fields: definition.fields,
+              display: definition.display,
+            }
+          : {}),
       })),
     get: (type: string) => entries.get(type),
     prepare: (type: string, context: IntegrationContext) => {

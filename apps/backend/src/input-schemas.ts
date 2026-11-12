@@ -9,14 +9,11 @@ import {
 } from '@homora/shared';
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
+import {
+  integrationTypeSchema as integrationType,
+  publicFieldShape,
+} from './integration-fields.js';
 
-const integrationType = z.enum([
-  'jellyfin',
-  'home-assistant',
-  'uptime-kuma',
-  'adguard-home',
-  'proxmox',
-]);
 const boundedText = (max: number) => z.string().max(max);
 
 export const serviceInputSchema = z
@@ -132,10 +129,8 @@ const connectionFields = z
     name: z.string().trim().min(1).max(80).optional(),
     url: z.string().trim().min(1).max(2048).optional(),
     allowPrivate: z.boolean().optional(),
-    entityId: boundedText(255).optional(),
-    username: boundedText(255).optional(),
+    ...publicFieldShape(255),
     tokenId: boundedText(255).optional(),
-    slug: boundedText(255).optional(),
     secret: boundedText(65536).optional(),
     ca: boundedText(65536).optional(),
     removeCa: z.boolean().optional(),

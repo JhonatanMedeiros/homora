@@ -216,3 +216,121 @@ are currently used by Homora; consult the guide above for active functionality.
   read queries. Verify server versions, payload schemas, retention limits, rate limits, and
   behavior when statistics are disabled. Endpoints and fields must be verified in tests and
   against real installations before declaring compatibility.
+
+## Reference integrations (issue #98)
+
+Every integration below is **implemented, unvalidated**: it passes the adapter contract harness
+(`apps/backend/src/adapter-contract.test.ts`) against fixtures that follow the vendor's published API
+documentation or source, and none has been tried against a live service. The fixtures say which. Fill
+in the [live validation template](adapters.md#live-validation-template) before calling one validated.
+All use the shared transport: GET only, destination policy, TLS validation, a 2 MB response cap, and
+credentials sent only over HTTPS (a plain-HTTP address cannot be used with a token).
+
+### Speedtest Tracker
+
+- **Reads:** `GET /api/v1/results/latest` with `Authorization: Bearer <token>`; shows the last
+  download, upload and ping. Source: [API docs](https://docs.speedtest-tracker.dev/api/responses/results),
+  read 2026-11-12.
+- **Least privilege:** create the token at `/admin/api-tokens` with only the **Read Results** ability
+  (`results:read`).
+- **Network:** your own instance; an HTTPS address is required. Use "allow private network" for a LAN
+  address.
+- **Live validation checklist:** the response is the Result object itself (not wrapped in `data`); a
+  fresh install with no result yields the "no result yet" message; a token without the ability is
+  refused with the generic access message.
+
+### Portainer
+
+- **Reads:** `GET /api/endpoints?excludeSnapshots=true` with the `X-API-Key` header; shows how many
+  environments exist and how many are up (`Status` 1) or down (`Status` 2). Sources: [access tokens](https://docs.portainer.io/api/access)
+  and the Portainer source annotations (`api/portainer.go`, `endpoint_list.go`), read 2026-11-12.
+- **Least privilege:** the list is filtered by what the token's user may see. Create the token for a
+  standard (non-administrator) user with access to only the environments to show.
+- **Network:** your own instance; HTTPS is required for the token. The response is limited to 1 MB.
+- **Live validation checklist:** the header name is accepted (`X-API-Key`); `Status` values on a stopped
+  environment; behaviour with a very large number of environments (the count stops at 10,000 and is
+  then reported as an invalid response).
+
+### NetBird
+
+- **Reads:** `GET /api/peers` with `Authorization: Token <token>`; shows how many peers exist and how
+  many report `connected`. Sources: [peers API](https://docs.netbird.io/api/resources/peers),
+  [authentication](https://docs.netbird.io/api/guides/authentication) and the official OpenAPI file in
+  the NetBird repository, read 2026-11-12.
+- **Least privilege:** the documentation recommends service users for API calls and does not describe
+  a read-only token. Use a service user with the lowest role that can list peers, and confirm that when
+  validating.
+- **Network:** NetBird Cloud is the public `https://api.netbird.io` (prefilled): an administrator must
+  allow outbound HTTPS to it and no private-network option is needed. For a self-hosted server use its
+  management address. The cloud API is rate limited (120 requests per minute); results are cached 30 seconds.
+- **Live validation checklist:** the `Token` scheme is accepted; a service user with the lowest role can
+  list peers; the response size with many peers stays under 2 MB.
+
+### Tailscale
+
+- **Reads:** `GET /api/v2/tailnet/{tailnet}/devices` with HTTP Basic (the API key as user name, empty
+  password); shows how many devices exist, how many are connected to the control server and how many
+  have an update available. Source: the official Go client ([tailscale-client-go-v2](https://github.com/tailscale/tailscale-client-go-v2),
+  `devices.go`, `client.go`), read 2026-11-12. The public API reference pages did not render for the
+  tool used, so field names and the auth scheme come from that source, not from the reference pages.
+- **Least privilege:** create the narrowest access token the admin console offers for reading devices.
+  The scope names were **not verified** here; check them when validating. API access tokens expire
+  (the console limits them to 90 days).
+- **Network:** `https://api.tailscale.com` is public (prefilled): an administrator must allow outbound
+  HTTPS to it; no private-network option is needed. The default tailnet is `-`.
+- **Live validation checklist:** Basic auth with an empty password is accepted for the token type you
+  use; `connectedToControl` and `updateAvailable` are present in the default field set; the response
+  size for a large tailnet stays under 2 MB.
+
+### Cloudflare
+
+- **Reads:** `GET /client/v4/zones?per_page=5` and `GET /client/v4/zones?status=active&per_page=5` with
+  `Authorization: Bearer <API token>`; shows the number of zones and of active zones from
+  `result_info.total_count` (only the first small page is transferred). Source: [List Zones](https://developers.cloudflare.com/api/resources/zones/methods/list/),
+  read 2026-11-12.
+- **Least privilege:** an API token with only **Zone > Zone > Read**. Do not use the Global API key.
+- **Network:** `https://api.cloudflare.com` is public (prefilled): an administrator must allow outbound
+  HTTPS to it; no private-network option is needed.
+- **Live validation checklist:** both queries return `success: true`; the counts match the dashboard; a
+  token without Zone Read is refused with the generic access message.
+
+### Skipped (follow-up issues)
+
+Both were evaluated against the declarative format and the shared transport; neither fits without
+widening the transport, so they were not implemented (decision recorded in
+[ADR 0009](decisoes/0009-declarative-integration-adapters.md)).
+
+- **Beszel:** the hub API is PocketBase's. A client logs in with `POST /api/collections/users/auth-with-password`
+  and then sends the returned token. That is a login flow with POST; the transport is GET only.
+  Source: [Beszel REST API guide](https://beszel.dev/guide/rest-api), read 2026-11-12.
+- **TrueNAS:** the current API (25.04 and later) is JSON-RPC 2.0 over WebSocket, and the vendor
+  deprecated the REST `/api/v2.0` API. WebSocket-only. Source: [TrueNAS API 25.04](https://api.truenas.com/v25.04/),
+  read 2026-11-12.
+
+## Integration status
+
+| Integration       | Kind     | Status                                                | Needs                                |
+| ----------------- | -------- | ----------------------------------------------------- | ------------------------------------ |
+| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope | Read-only API token, HTTPS           |
+| Jellyfin          | manifest | Implemented, unvalidated                              | Public info endpoint, no credentials |
+| Home Assistant    | manifest | Implemented, unvalidated                              | Long-lived token, HTTPS              |
+| Uptime Kuma       | manifest | Implemented, unvalidated                              | A published status page              |
+| AdGuard Home      | manifest | Implemented, unvalidated                              | Basic auth user, HTTPS               |
+| Speedtest Tracker | manifest | Implemented, unvalidated                              | Token with Read Results, HTTPS       |
+| Portainer         | manifest | Implemented, unvalidated                              | Access token, HTTPS                  |
+| NetBird           | manifest | Implemented, unvalidated                              | Personal access token, HTTPS         |
+| Tailscale         | manifest | Implemented, unvalidated                              | API access token, HTTPS              |
+| Cloudflare        | manifest | Implemented, unvalidated                              | Token with Zone Read, HTTPS          |
+| Beszel, TrueNAS   | —        | Skipped (see above)                                   | —                                    |
+
+"Unvalidated" means no one has tried it against a live service yet. Adding one is documented in
+[adapters](adapters.md); the manifest vocabulary and its limits are in
+[ADR 0009](decisoes/0009-declarative-integration-adapters.md).
+
+### Proxmox node selection
+
+By default Proxmox widgets and the top bar show cluster totals. Edit a saved Proxmox connection and
+choose a **Node** (listed from the connection's inventory) to scope VMs, containers and CPU, memory and
+disk to that node. If the node disappears or is offline, the widget and the top bar say so; they never
+fall back to cluster totals. The node name is stored with the connection and is never part of the
+public status page. Choose "Whole cluster" to clear it.

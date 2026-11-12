@@ -79,6 +79,20 @@ export function t(key: MessageKey, params?: Params): string {
   );
 }
 
+/**
+ * Like `t` for keys that come from data (integration definitions): an unknown key falls back to
+ * the English default text, so a definition never needs a message in every locale to work.
+ */
+export function tOr(key: string | undefined, fallback: string, params?: Params): string {
+  const dictionary: Record<string, string> = dictionaries[current];
+  const template =
+    key !== undefined && Object.hasOwn(dictionary, key) ? dictionary[key]! : fallback;
+  if (!params) return template;
+  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
+    name in params ? String(params[name]) : match,
+  );
+}
+
 /** Hook that re-renders on locale change and returns `t` and the current locale. */
 export function useI18n() {
   const locale = useSyncExternalStore(subscribe, getLocale, () => 'en' as Locale);

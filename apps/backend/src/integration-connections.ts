@@ -10,9 +10,10 @@ import {
 } from '@homora/db';
 import { createVault, validateProxmoxConfig } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
-import { createObservationCache } from './integrations.js';
+import { createObservationCache, type IntegrationTransport } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
 import { InputError } from './api-error.js';
+import { hasField, publicFieldShape, publicFieldsOf } from './integration-fields.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
@@ -22,30 +23,25 @@ type ConnectionInput = {
   name?: string;
   url?: string;
   allowPrivate?: boolean;
-  entityId?: string;
-  username?: string;
   tokenId?: string;
-  slug?: string;
   secret?: string;
   ca?: string;
   removeCa?: boolean;
+  /** Public fields declared by the integration definition (entityId, username, slug, ...). */
+  [field: string]: string | boolean | undefined;
 };
 type Credentials = { secret?: string; ca?: string; tokenId?: string };
 type ConnectionData = {
   url: string;
   allowPrivate: boolean;
-  entityId?: string;
-  username?: string;
-  slug?: string;
+  [field: string]: string | boolean | undefined;
 };
 const connectionTypes = new Set(integrationRegistry.list().map(({ type }) => type));
 const storedConfigSchema = z
   .object({
     url: z.string().max(2048),
     allowPrivate: z.boolean().default(false),
-    entityId: z.string().max(255).optional(),
-    username: z.string().max(255).optional(),
-    slug: z.string().max(255).optional(),
+    ...publicFieldShape(255),
   })
   .strict();
 const credentialsSchema = z
@@ -181,17 +177,25 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     return parsed.data;
   }
   function prepare(input: ConnectionInput, current?: Row, saved: Credentials = {}) {
-    const old = current ? parseData(current) : undefined;
+    const old = current ? (parseData(current) as ConnectionData) : undefined;
     const type = input.type || current?.type || '';
     const name = input.name || current?.name || '';
     if (!connectionTypes.has(type) || !name) throw new InputError('invalid-name-or-type');
     const data: ConnectionData = {
       url: input.url || old?.url || '',
       allowPrivate: input.allowPrivate ?? old?.allowPrivate ?? false,
-      ...(type === 'home-assistant' ? { entityId: input.entityId || old?.entityId || '' } : {}),
-      ...(type === 'adguard-home' ? { username: input.username || old?.username || '' } : {}),
-      ...(type === 'uptime-kuma' ? { slug: input.slug || old?.slug || '' } : {}),
+      ...Object.fromEntries(
+        publicFieldsOf(type).flatMap(({ key, required }) => {
+          const given = typeof input[key] === 'string' ? (input[key] as string) : undefined;
+          const kept = (old?.[key] as string | undefined) ?? '';
+          // A required field keeps its saved value when empty; an optional one can be cleared.
+          const value = required ? given || kept : (given ?? kept);
+          return value === '' && !required ? [] : [[key, value]];
+        }),
+      ),
     };
+    const identityFields = publicFieldsOf(type).filter(({ identity }) => identity);
+    const tokenField = hasField(type, 'token-id');
     let originChanged = false;
     if (old) {
       try {
@@ -204,15 +208,14 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       !!current &&
       (current.type !== type ||
         originChanged ||
-        (type === 'adguard-home' && old?.username !== data.username) ||
-        (type === 'proxmox' && !!input.tokenId && saved.tokenId !== input.tokenId));
+        identityFields.some(({ key }) => old?.[key] !== data[key]) ||
+        (tokenField && !!input.tokenId && saved.tokenId !== input.tokenId));
     if (identityChanged && saved.secret && !input.secret) throw new InputError('secret-required');
     const keys: Credentials = {
       secret: input.secret || (identityChanged ? undefined : saved.secret),
-      tokenId:
-        type === 'proxmox'
-          ? input.tokenId || (originChanged ? undefined : saved.tokenId)
-          : undefined,
+      tokenId: tokenField
+        ? input.tokenId || (originChanged ? undefined : saved.tokenId)
+        : undefined,
       ca: input.removeCa ? undefined : input.ca || (identityChanged ? undefined : saved.ca),
     };
     if (keys.ca) validateCa(keys.ca);
@@ -220,14 +223,21 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
     return { type, name, data, keys };
   }
   function prepareAdapter(type: string, data: ConnectionData, keys: Credentials, detail = false) {
-    const transport = async (request: { origin: string; path: string; authorization?: string }) => {
+    const transport = async (request: Parameters<IntegrationTransport>[0]) => {
       const response = await getAuthorizedResponse(
         new URL(request.path, request.origin).href,
         { origins: [new URL(data.url).origin], allowPrivate: data.allowPrivate },
         {
-          headers: request.authorization ? { authorization: request.authorization } : {},
+          headers: {
+            ...(request.authorization ? { authorization: request.authorization } : {}),
+            ...(request.apiKey ? { 'x-api-key': request.apiKey } : {}),
+          },
           ca: keys.ca,
-          ...(type === 'proxmox' ? { maxBodyBytes: 2_000_000 } : {}),
+          ...(type === 'proxmox'
+            ? { maxBodyBytes: 2_000_000 }
+            : request.maxBodyBytes
+              ? { maxBodyBytes: request.maxBodyBytes }
+              : {}),
         },
       );
       let body: unknown = null;

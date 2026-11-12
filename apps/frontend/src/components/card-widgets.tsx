@@ -1,14 +1,13 @@
+import { integrationDefinition } from '@homora/shared';
 import { t } from '@/i18n';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { WidgetSkeleton } from '@/components/skeletons';
 
-const SKELETON_STATS = {
-  proxmox: 5,
-  jellyfin: 2,
-  'home-assistant': 1,
-  'uptime-kuma': 5,
-  'adguard-home': 3,
-} as const;
+/** Placeholder rows while loading: the number of stats the definition shows (Proxmox shows five). */
+const skeletonStats = (type: string) => {
+  const definition = integrationDefinition(type);
+  return definition?.kind === 'manifest' ? definition.display.stats.length : 5;
+};
 
 /** Integration data within the card, with loading, error, and invalid data states. */
 export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
@@ -35,7 +34,7 @@ export function CardWidgets({ widgets }: { widgets: CardWidgetState[] }) {
           ) : entry.status === 'loading' ? (
             <WidgetSkeleton
               label={t('cardWidget.loading')}
-              count={SKELETON_STATS[entry.widget.type]}
+              count={skeletonStats(entry.widget.type)}
             />
           ) : (
             <p className="text-xs text-muted-foreground">
