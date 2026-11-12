@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { summarizeProxmox } from './proxmox-summary.js';
@@ -77,7 +77,7 @@ it('migrates legacy Proxmox while preserving card widgets and aggregate data', a
   const dir = mkdtempSync(join(tmpdir(), 'homora-proxmox-widget-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const vault = createVault(path);
   const app = createApp(db.db, 5173, auth, vault);

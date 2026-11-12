@@ -3,10 +3,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { parseAllowedOrigins } from './config.js';
 const database = createDatabase(':memory:');
-const { auth, cookie } = await createTestAuth(database.db);
+const { auth, cookie } = await createTestSession();
 const app = createApp(database.db, 5173, auth);
 afterEach(async () => {
   const response = await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } });

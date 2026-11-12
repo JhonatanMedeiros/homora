@@ -7,14 +7,14 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { createDatabase } from '@homora/db';
 import { expect, it } from 'vitest';
 import { createApp } from './app.js';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 
 it('authenticates each HTTP request, enforces scopes and revocation, and rejects hostile hosts and origins', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-http-'));
   const path = join(dir, 'data.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const probe = createServer();
   await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
   const bound = probe.address();
@@ -90,7 +90,7 @@ it('exposes remote push discovery over HTTP only to authorized MCP scopes', asyn
   const dir = mkdtempSync(join(tmpdir(), 'homora-push-http-'));
   const path = join(dir, 'data.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const probe = createServer();
   await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
   const address = probe.address();

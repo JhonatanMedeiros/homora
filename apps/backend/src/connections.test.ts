@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { rootCertificates } from 'node:tls';
 import { expect, it } from 'vitest';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 
@@ -12,7 +12,7 @@ it('protects credentials of multiple integrations and preserves associations', a
   const dir = mkdtempSync(join(tmpdir(), 'homora-connections-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, createVault(path));
   try {

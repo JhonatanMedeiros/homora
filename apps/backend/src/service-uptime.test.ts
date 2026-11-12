@@ -178,18 +178,23 @@ it('answers 25 services with 30 days of history at the default 60 s interval wit
     const insertService = db.prepare(
       "INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(?,'https://one.test',0,'http',30)",
     );
-    const insert = db.prepare(
-      'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
-    );
     for (let id = 3; id <= SERVICES; id++) insertService.run(id);
-    for (let id = 1; id <= SERVICES; id++)
-      for (let i = 0; i < PER_SERVICE; i++)
-        insert.run(
-          id,
-          sig,
-          now - i * 60_000,
-          JSON.stringify({ status: i % 50 ? 'available' : 'unavailable', latencyMs: i % 300 }),
-        );
+    // Generate the representative history inside SQLite instead of crossing the JS/SQLite
+    // boundary once per row. This test measures the uptime query, not fixture insertion.
+    db.prepare(
+      `WITH RECURSIVE checks(i) AS (
+        VALUES(0)
+        UNION ALL SELECT i + 1 FROM checks WHERE i + 1 < ?
+      )
+      INSERT INTO service_observation_history(service_id,signature,observed_at,observation)
+      SELECT services.id, ?, ? - checks.i * 60000,
+        json_object(
+          'status', CASE WHEN checks.i % 50 = 0 THEN 'unavailable' ELSE 'available' END,
+          'latencyMs', checks.i % 300
+        )
+      FROM services CROSS JOIN checks
+      WHERE services.id <= ?`,
+    ).run(PER_SERVICE, sig, now, SERVICES);
     db.exec('COMMIT');
     const timings: Record<string, number> = {};
     for (const range of ['24h', '7d', '30d'] as const) {

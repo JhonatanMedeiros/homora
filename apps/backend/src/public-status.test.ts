@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { createObservationStore } from './service-observations.js';
 import type { ServiceStatus } from './service-monitor.js';
@@ -22,7 +22,7 @@ const SECRET_DESCRIPTION = 'private-description-marker';
 
 async function setup() {
   const database = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(database.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(database.db, 5173, auth);
   const sqlite = getSqliteHandle(database.db);
   const headers = { origin: 'http://localhost:5173', cookie };

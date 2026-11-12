@@ -3,11 +3,11 @@ import { createDatabase, getSqliteHandle } from '@homora/db';
 import { CUSTOM_CSS_MAX_BYTES } from '@homora/shared';
 import { createApp } from './app.js';
 import { createCustomCss } from './custom-css.js';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 
 async function setup() {
   const database = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(database.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(database.db, 5173, auth);
   const headers = { origin: 'http://localhost:5173', cookie };
   const put = (payload: unknown) =>

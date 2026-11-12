@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createDatabase } from '@homora/db';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
 import { inventoryProxmox } from './proxmox-inventory.js';
@@ -51,7 +51,7 @@ it('links, resolves, unlinks and validates the card-to-guest link', async () => 
   const dir = mkdtempSync(join(tmpdir(), 'homora-host-link-'));
   const path = join(dir, 'db.sqlite');
   const db = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(db.db);
+  const { auth, cookie } = await createTestSession();
   const headers = { origin: 'http://localhost:5173', cookie };
   const app = createApp(db.db, 5173, auth, createVault(path));
   const send = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: object) =>

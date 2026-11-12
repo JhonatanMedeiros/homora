@@ -98,11 +98,11 @@ it('retries failures independently and exposes only a sanitized HTTP error', asy
 
 it('protects channel routes with the session and never returns credentials', async () => {
   const { createApp } = await import('./app.js');
-  const { createTestAuth } = await import('./test-auth.js');
+  const { createTestSession } = await import('./test-auth.js');
   const dir = mkdtempSync(join(tmpdir(), 'homora-notification-routes-'));
   const path = join(dir, 'db.sqlite');
   const database = createDatabase(path);
-  const { auth, cookie } = await createTestAuth(database.db);
+  const { auth, cookie } = await createTestSession();
   const app = createApp(database.db, 5173, auth, createVault(path));
   try {
     expect(

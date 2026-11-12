@@ -2,14 +2,14 @@ import type { InjectOptions } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDatabase } from '@homora/db';
 import { createApp } from './app.js';
-import { createTestAuth, TEST_EMAIL, TEST_PASSWORD } from './test-auth.js';
+import { createTestAuth, createTestSession, TEST_EMAIL, TEST_PASSWORD } from './test-auth.js';
 
 const ORIGIN = 'http://localhost:5173';
 const NEW_PASSWORD = 'another-password-1';
 
-async function setup() {
+async function setup(sessionOnly = false) {
   const database = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(database.db);
+  const { auth, cookie } = sessionOnly ? createTestSession() : await createTestAuth(database.db);
   const app = createApp(database.db, 5173, auth);
   const call = (
     method: 'GET' | 'POST' | 'PATCH',
@@ -29,7 +29,7 @@ afterEach(async () => {
 
 describe('account and activity API', () => {
   it('requires a session', async () => {
-    open = await setup();
+    open = await setup(true);
     for (const [method, url] of [
       ['GET', '/api/account'],
       ['GET', '/api/account/sessions'],
@@ -119,7 +119,8 @@ describe('account and activity API', () => {
       401,
     );
     let last = 0;
-    for (let i = 0; i < 12; i++)
+    // Ten guesses are allowed; the eleventh verifies that the account-level limit trips.
+    for (let i = 0; i < 11; i++)
       last = (
         await open.call('POST', '/api/account/password', {
           currentPassword: 'wrong-password',
@@ -197,7 +198,7 @@ describe('account and activity API', () => {
   });
 
   it('combines filters and rejects invalid cursors and limits', async () => {
-    open = await setup();
+    open = await setup(true);
     await open.call('POST', '/api/agents', { name: 'one', scopes: ['services:read'] });
     const combined = (await open.call('GET', '/api/activity?kind=agent&outcome=success')).json();
     expect(combined.events).toHaveLength(1);

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
-import { createTestAuth } from './test-auth.js';
+import { createTestSession } from './test-auth.js';
 import { createProposalService } from './proposals.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import type { DockerSource } from './docker-discovery.js';
@@ -17,7 +17,7 @@ const containers = [
 
 async function setup() {
   const database = createDatabase(':memory:');
-  const { auth, cookie } = await createTestAuth(database.db);
+  const { auth, cookie } = await createTestSession();
   const source = { list: async () => containers } as unknown as DockerSource;
   const app = createApp(database.db, 5173, auth, undefined, [], source);
   closers.push(async () => {

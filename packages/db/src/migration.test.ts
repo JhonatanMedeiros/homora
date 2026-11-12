@@ -13,6 +13,10 @@ import {
   integrationInstances,
   integrationWidgets,
 } from './index.js';
+
+const MIGRATIONS = readMigrationFiles({
+  migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+});
 it('adopts legacy database and preserves its data across restarts', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-migration-')),
     path = join(dir, 'data.sqlite');
@@ -90,9 +94,7 @@ it('upgrades database with first migration already registered and preserves data
   const dir = mkdtempSync(join(tmpdir(), 'homora-versioned-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migration = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    })[0];
+    const migration = MIGRATIONS[0];
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -118,9 +120,7 @@ it('adiciona histórico e lotes preservando dados da versão anterior', () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-observation-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -189,9 +189,7 @@ it('adds push sources while preserving existing services and defaulting to no so
   const dir = mkdtempSync(join(tmpdir(), 'homora-push-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -228,9 +226,7 @@ it('upgrades the Docker push schema to notifications without changing existing d
   const dir = mkdtempSync(join(tmpdir(), 'homora-notification-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -266,9 +262,7 @@ it('shortens stored signatures to 16 characters and keeps rows matching', () => 
   const long = 'a1b2c3d4e5f60718'.repeat(4);
   const short = long.slice(0, 16);
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -329,9 +323,7 @@ it('adds the optional card-to-guest link without changing existing cards and unl
   const dir = mkdtempSync(join(tmpdir(), 'homora-host-link-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -379,9 +371,7 @@ it('adds suggestion dismissals on top of the host link without touching existing
   const dir = mkdtempSync(join(tmpdir(), 'homora-dismissal-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -422,9 +412,7 @@ it('adds service dependencies on top of the previous schema, rejecting self link
   const dir = mkdtempSync(join(tmpdir(), 'homora-dependency-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -462,9 +450,7 @@ it('adds pages with a default Home that holds every existing group, and keeps na
   const dir = mkdtempSync(join(tmpdir(), 'homora-pages-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
@@ -516,9 +502,7 @@ it('adds resource links without touching existing cards, connections or widgets,
   const dir = mkdtempSync(join(tmpdir(), 'homora-links-migration-'));
   const path = join(dir, 'data.sqlite');
   try {
-    const migrations = readMigrationFiles({
-      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-    });
+    const migrations = MIGRATIONS;
     const old = new DatabaseSync(path);
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
