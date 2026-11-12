@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { integrationDefinitions } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { ConnectionMark } from './connection-mark';
 import { labels, type Kind } from './connection-model';
-import { t, type MessageKey } from '@/i18n';
+import { t, tOr } from '@/i18n';
 
 type Props = {
   /** Connections already registered, by type. */
@@ -11,38 +11,8 @@ type Props = {
   onCancel: () => void;
 };
 
-const known = new Set(['inventory', 'server-info', 'entity-state', 'status-page', 'dns-status']);
-
-/** What each type reads, from the server catalog. Missing data only hides the description. */
-function useCapabilities() {
-  const [byType, setByType] = useState<Record<string, string[]>>({});
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/integrations/catalog', { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const data: unknown = await response.json();
-        if (!Array.isArray(data) || controller.signal.aborted) return;
-        const next: Record<string, string[]> = {};
-        for (const entry of data as { type?: unknown; capabilities?: unknown }[]) {
-          if (typeof entry?.type === 'string' && Array.isArray(entry.capabilities))
-            next[entry.type] = entry.capabilities.filter(
-              (item): item is string => typeof item === 'string' && known.has(item),
-            );
-        }
-        setByType(next);
-      })
-      .catch(() => {
-        // The picker works from the known types even without the catalog.
-      });
-    return () => controller.abort();
-  }, []);
-  return byType;
-}
-
 /** First step of adding a connection: pick the type, then fill in its form. */
 export function ConnectionPicker({ counts, onPick, onCancel }: Props) {
-  const capabilities = useCapabilities();
   return (
     <section aria-labelledby="connection-picker-title" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -57,10 +27,10 @@ export function ConnectionPicker({ counts, onPick, onCancel }: Props) {
         </Button>
       </div>
       <ul className="flex flex-col gap-2">
-        {(Object.keys(labels) as Kind[]).map((type) => {
+        {integrationDefinitions.map(({ type, capabilities }) => {
           const count = counts[type] ?? 0;
-          const description = (capabilities[type] ?? [])
-            .map((capability) => t(`catalog.${capability}` as MessageKey))
+          const description = capabilities
+            .map((capability) => tOr(`catalog.${capability}`, capability))
             .join(', ');
           return (
             <li key={type}>

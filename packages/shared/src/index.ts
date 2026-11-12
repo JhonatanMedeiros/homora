@@ -260,3 +260,4 @@ export function parseHostLink(value: unknown): HostLink | null {
   if (!isNodeName(node) || !isVmid(vmid) || (type !== 'qemu' && type !== 'lxc')) return null;
   return { connectionId: Number(connectionId), node, vmid, type };
 }
+export * from './integration-manifest.js';

@@ -1,5 +1,6 @@
-import { apiError, t } from '@/i18n';
-export type Kind = 'jellyfin' | 'home-assistant' | 'uptime-kuma' | 'adguard-home' | 'proxmox';
+import { apiError, t, tOr } from '@/i18n';
+import { integrationDefinition, integrationDefinitions, type ManifestField } from '@homora/shared';
+export type Kind = string;
 export type Connection = {
   id: number;
   type: Kind;
@@ -8,9 +9,8 @@ export type Connection = {
   allowPrivate: boolean;
   hasSecret: boolean;
   hasCa: boolean;
-  entityId?: string;
-  username?: string;
-  slug?: string;
+  /** Public fields declared by the integration definition (entityId, username, slug, ...). */
+  [field: string]: string | number | boolean | undefined;
 };
 /** Widget kinds: connection catalog types and Proxmox, which still uses the legacy vault. */
 export type WidgetKind = Kind;
@@ -30,39 +30,33 @@ export type ConnectionFormState = {
   secret: string;
   ca: string;
   removeCa: boolean;
-  entityId: string;
-  username: string;
-  tokenId: string;
-  slug: string;
+  /** Public text fields and the token id, by key, as declared by the definition. */
+  values: Record<string, string>;
 };
-export const labels: Record<Kind, string> = {
-  jellyfin: 'Jellyfin',
-  'home-assistant': 'Home Assistant',
-  'uptime-kuma': 'Uptime Kuma',
-  'adguard-home': 'AdGuard Home',
-  proxmox: 'Proxmox VE',
-};
+export const labels: Record<Kind, string> = Object.fromEntries(
+  integrationDefinitions.map(({ type, label }) => [type, label]),
+);
 export const widgetLabels: Record<WidgetKind, string> = labels;
-export const marks: Record<Kind, string> = {
-  jellyfin: 'J',
-  'home-assistant': 'HA',
-  'uptime-kuma': 'UK',
-  'adguard-home': 'A',
-  proxmox: 'PVE',
-};
+export const marks: Record<Kind, string> = Object.fromEntries(
+  integrationDefinitions.map(({ type, mark }) => [type, mark]),
+);
 export const emptyForm: ConnectionFormState = {
-  type: 'jellyfin',
+  type: integrationDefinitions[0]!.type,
   name: '',
   url: '',
   allowPrivate: false,
   secret: '',
   ca: '',
   removeCa: false,
-  entityId: '',
-  username: '',
-  tokenId: '',
-  slug: '',
+  values: {},
 };
+/** Form fields beyond the address and the secret, in definition order. */
+export const extraFields = (type: Kind): readonly ManifestField[] =>
+  integrationDefinition(type)?.fields.filter(
+    ({ kind }) => kind === 'text' || kind === 'token-id',
+  ) ?? [];
+export const secretField = (type: Kind) =>
+  integrationDefinition(type)?.fields.find(({ kind }) => kind === 'secret');
 /** Only public fields from an approved suggestion can prefill this form. */
 export function connectionDraft(value: unknown): ConnectionFormState | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -92,9 +86,11 @@ export function connectionDraft(value: unknown): ConnectionFormState | null {
     type: input.type as Kind,
     name: input.name.slice(0, 80),
     url: input.url.slice(0, 2048),
-    entityId: typeof input.entityId === 'string' ? input.entityId.slice(0, 255) : '',
-    username: typeof input.username === 'string' ? input.username.slice(0, 255) : '',
-    slug: typeof input.slug === 'string' ? input.slug.slice(0, 255) : '',
+    values: Object.fromEntries(
+      extraFields(input.type)
+        .filter(({ kind }) => kind === 'text')
+        .map(({ key }) => [key, typeof input[key] === 'string' ? input[key].slice(0, 255) : '']),
+    ),
   };
 }
 export function proxmoxDraft(value: unknown): string | null {
@@ -120,121 +116,99 @@ export async function request(url: string, init?: RequestInit): Promise<unknown>
   return data;
 }
 
-export function describeData(type: WidgetKind, value: unknown): string | null {
+/** A value the display may show: bounded text, a boolean or a non-negative finite number. */
+function displayable(value: unknown): value is string | number | boolean {
+  if (typeof value === 'string') return value.length <= 1024;
+  if (typeof value === 'number') return Number.isFinite(value) && value >= 0;
+  return typeof value === 'boolean';
+}
+
+/** Renders a manifest display over validated output; null when the data is not displayable. */
+function renderManifest(type: WidgetKind, value: unknown) {
+  const definition = integrationDefinition(type);
+  if (definition?.kind !== 'manifest') return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const data = value as Record<string, unknown>;
-  const text = (v: unknown) => typeof v === 'string' && v.length <= 1024;
-  const count = (v: unknown) => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
-  switch (type) {
-    case 'proxmox':
-      return (
-        widgetStats(type, value)
-          ?.map((stat) => `${stat.label}: ${stat.value}`)
-          .join(' · ') ?? null
-      );
-    case 'jellyfin':
-      return text(data.name) && text(data.version)
-        ? t('data.jellyfin', { name: String(data.name), version: String(data.version) })
-        : null;
-    case 'home-assistant':
-      return text(data.entityId) && text(data.state)
-        ? t('data.homeAssistant', { entity: String(data.entityId), state: String(data.state) })
-        : null;
-    case 'uptime-kuma':
-      return [data.up, data.down, data.pending, data.maintenance, data.unknown].every(count)
-        ? t('data.uptimeKuma', {
-            up: Number(data.up),
-            down: Number(data.down),
-            pending: Number(data.pending),
-            maintenance: Number(data.maintenance),
-            unknown: Number(data.unknown),
-          })
-        : null;
-    case 'adguard-home':
-      return typeof data.running === 'boolean' &&
-        typeof data.protectionEnabled === 'boolean' &&
-        text(data.version)
-        ? t('data.adguard', {
-            service: data.running ? t('data.running') : t('data.stopped'),
-            protection: data.protectionEnabled ? t('data.enabled') : t('data.disabled'),
-            version: String(data.version),
-          })
-        : null;
+  const { display } = definition;
+  const names = new Map<string, string>();
+  const read = (name: string) => {
+    const spec = display.values?.[name];
+    const raw = data[spec?.from ?? name];
+    if (!displayable(raw)) return null;
+    if (spec?.map) {
+      const entry = spec.map[String(raw)];
+      return entry ? tOr(entry.key, entry.text) : null;
+    }
+    return String(raw);
+  };
+  const fill = (template: string) => {
+    let missing = false;
+    const text = template.replace(/\{(\w+)\}/g, (_match, name: string) => {
+      if (!names.has(name)) {
+        const resolved = read(name);
+        if (resolved === null) missing = true;
+        names.set(name, resolved ?? '');
+      }
+      return names.get(name)!;
+    });
+    return missing ? null : text;
+  };
+  const params: Record<string, string> = {};
+  for (const match of display.summary.text.matchAll(/\{(\w+)\}/g)) {
+    const resolved = read(match[1]!);
+    if (resolved === null) return null;
+    params[match[1]!] = resolved;
   }
+  const summary = tOr(display.summary.key, display.summary.text, params);
+  const stats: WidgetStat[] = [];
+  for (const stat of display.stats) {
+    if (stat.hideWhenZero !== undefined && data[stat.hideWhenZero] === 0) continue;
+    const text = fill(stat.value);
+    if (text === null) return null;
+    stats.push({ label: tOr(stat.labelKey, stat.label), value: text });
+  }
+  return { summary, stats };
+}
+
+export function describeData(type: WidgetKind, value: unknown): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (type === 'proxmox')
+    return (
+      widgetStats(type, value)
+        ?.map((stat) => `${stat.label}: ${stat.value}`)
+        .join(' · ') ?? null
+    );
+  return renderManifest(type, value)?.summary ?? null;
 }
 
 /** Short numbers and text from a query, for display within a card. */
 export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (type !== 'proxmox') return renderManifest(type, value)?.stats ?? null;
   const data = value as Record<string, unknown>;
-  const text = (v: unknown): v is string => typeof v === 'string' && v.length <= 1024;
   const count = (v: unknown): v is number =>
     typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
-  switch (type) {
-    case 'proxmox': {
-      const group = (v: unknown): v is { running: number; total: number } =>
-        !!v &&
-        typeof v === 'object' &&
-        count((v as Record<string, unknown>).running) &&
-        count((v as Record<string, unknown>).total);
-      const share = (v: unknown): v is number | null =>
-        v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100);
-      if (!group(data.vms) || !group(data.containers) || !share(data.cpu) || !share(data.memory))
-        return null;
-      // Responses from older versions lacked disk metric; treat as absent.
-      const disk = data.disk === undefined ? null : data.disk;
-      if (!share(disk)) return null;
-      const stats: WidgetStat[] = [
-        { label: t('stat.vms'), value: `${data.vms.running} / ${data.vms.total}` },
-        { label: t('stat.lxc'), value: `${data.containers.running} / ${data.containers.total}` },
-      ];
-      if (data.cpu !== null) stats.push({ id: 'cpu', label: t('stat.cpu'), value: `${data.cpu}%` });
-      if (data.memory !== null)
-        stats.push({ id: 'memory', label: t('stat.memory'), value: `${data.memory}%` });
-      if (disk !== null) stats.push({ id: 'disk', label: t('stat.disk'), value: `${disk}%` });
-      return stats;
-    }
-    case 'jellyfin':
-      return text(data.name) && text(data.version)
-        ? [
-            { label: t('stat.server'), value: data.name },
-            { label: t('stat.version'), value: data.version },
-          ]
-        : null;
-    case 'home-assistant':
-      return text(data.entityId) && text(data.state)
-        ? [{ label: t('stat.state'), value: data.state }]
-        : null;
-    case 'uptime-kuma': {
-      const { up, down, pending, maintenance, unknown } = data;
-      if (!count(up) || !count(down) || !count(pending) || !count(maintenance) || !count(unknown))
-        return null;
-      const stats = [
-        { label: t('stat.up'), value: String(up) },
-        { label: t('stat.down'), value: String(down) },
-      ];
-      if (pending) stats.push({ label: t('stat.pending'), value: String(pending) });
-      if (maintenance) stats.push({ label: t('stat.maintenance'), value: String(maintenance) });
-      if (unknown) stats.push({ label: t('stat.unknown'), value: String(unknown) });
-      return stats;
-    }
-    case 'adguard-home':
-      return typeof data.running === 'boolean' &&
-        typeof data.protectionEnabled === 'boolean' &&
-        text(data.version)
-        ? [
-            {
-              label: t('stat.service'),
-              value: data.running ? t('data.running') : t('data.stopped'),
-            },
-            {
-              label: t('stat.protection'),
-              value: data.protectionEnabled ? t('data.enabled') : t('data.disabled'),
-            },
-            { label: t('stat.version'), value: data.version },
-          ]
-        : null;
-  }
+  const group = (v: unknown): v is { running: number; total: number } =>
+    !!v &&
+    typeof v === 'object' &&
+    count((v as Record<string, unknown>).running) &&
+    count((v as Record<string, unknown>).total);
+  const share = (v: unknown): v is number | null =>
+    v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100);
+  if (!group(data.vms) || !group(data.containers) || !share(data.cpu) || !share(data.memory))
+    return null;
+  // Responses from older versions lacked disk metric; treat as absent.
+  const disk = data.disk === undefined ? null : data.disk;
+  if (!share(disk)) return null;
+  const stats: WidgetStat[] = [
+    { label: t('stat.vms'), value: `${data.vms.running} / ${data.vms.total}` },
+    { label: t('stat.lxc'), value: `${data.containers.running} / ${data.containers.total}` },
+  ];
+  if (data.cpu !== null) stats.push({ id: 'cpu', label: t('stat.cpu'), value: `${data.cpu}%` });
+  if (data.memory !== null)
+    stats.push({ id: 'memory', label: t('stat.memory'), value: `${data.memory}%` });
+  if (disk !== null) stats.push({ id: 'disk', label: t('stat.disk'), value: `${disk}%` });
+  return stats;
 }
 
 export function hostOf(url: string) {

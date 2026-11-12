@@ -19,6 +19,7 @@ import { ConnectionList } from './connection-list';
 import { ConnectionPicker } from './connection-picker';
 import {
   emptyForm,
+  extraFields,
   request,
   type Connection,
   type ConnectionFormState,
@@ -102,9 +103,11 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
       name: item.name,
       url: item.url,
       allowPrivate: item.allowPrivate,
-      entityId: item.entityId ?? '',
-      username: item.username ?? '',
-      slug: item.slug ?? '',
+      values: Object.fromEntries(
+        extraFields(item.type)
+          .filter(({ kind }) => kind === 'text')
+          .map(({ key }) => [key, typeof item[key] === 'string' ? item[key] : '']),
+      ),
     });
     setMessage('');
   }
@@ -191,10 +194,12 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
         ...(form.secret ? { secret: form.secret } : {}),
         ...(form.ca ? { ca: form.ca } : {}),
         ...(form.removeCa ? { removeCa: true } : {}),
-        ...(form.type === 'home-assistant' ? { entityId: form.entityId } : {}),
-        ...(form.type === 'adguard-home' ? { username: form.username } : {}),
-        ...(form.type === 'proxmox' && form.tokenId ? { tokenId: form.tokenId } : {}),
-        ...(form.type === 'uptime-kuma' ? { slug: form.slug } : {}),
+        // Only the fields this integration declares; empty optional values are not sent.
+        ...Object.fromEntries(
+          extraFields(form.type)
+            .map(({ key }) => [key, form.values[key] ?? ''] as const)
+            .filter(([, value]) => value !== ''),
+        ),
       };
       await request(editing === null ? '/api/connections' : `/api/connections/${editing}`, {
         method: editing === null ? 'POST' : 'PUT',

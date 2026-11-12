@@ -6,8 +6,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { labels, type ConnectionFormState } from './connection-model';
-import { t } from '@/i18n';
+import { extraFields, labels, secretField, type ConnectionFormState } from './connection-model';
+import { t, tOr } from '@/i18n';
 
 type Props = {
   form: ConnectionFormState;
@@ -33,8 +33,7 @@ export function ConnectionForm({
   onCancel,
 }: Props) {
   const set = (patch: Partial<ConnectionFormState>) => onChange({ ...form, ...patch });
-  const hasSecret =
-    form.type === 'home-assistant' || form.type === 'adguard-home' || form.type === 'proxmox';
+  const secret = secretField(form.type);
   return (
     <form onSubmit={onSubmit}>
       <Card>
@@ -68,66 +67,41 @@ export function ConnectionForm({
                 onChange={(event) => set({ url: event.target.value })}
               />
             </Field>
-            {form.type === 'home-assistant' && (
-              <Field>
-                <FieldLabel htmlFor="connection-entity">{t('connections.entity')}</FieldLabel>
+            {extraFields(form.type).map((field) => (
+              <Field key={field.key}>
+                <FieldLabel htmlFor={`connection-field-${field.key}`}>
+                  {tOr(field.labelKey, field.label)}
+                </FieldLabel>
                 <Input
-                  id="connection-entity"
-                  required
-                  value={form.entityId}
-                  placeholder={t('connections.entityPlaceholder')}
-                  onChange={(event) => set({ entityId: event.target.value })}
+                  id={`connection-field-${field.key}`}
+                  required={field.required && !(editing && field.kind === 'token-id')}
+                  maxLength={field.maxLength}
+                  autoComplete={field.identity ? 'username' : undefined}
+                  value={form.values[field.key] ?? ''}
+                  placeholder={
+                    field.placeholderKey || field.placeholder
+                      ? tOr(field.placeholderKey, field.placeholder ?? '')
+                      : undefined
+                  }
+                  onChange={(event) =>
+                    set({ values: { ...form.values, [field.key]: event.target.value } })
+                  }
                 />
+                {editing && field.kind === 'token-id' && (
+                  <FieldDescription>{t('connections.keepSecret')}</FieldDescription>
+                )}
+                {field.help && <FieldDescription>{field.help}</FieldDescription>}
               </Field>
-            )}
-            {form.type === 'uptime-kuma' && (
-              <Field>
-                <FieldLabel htmlFor="connection-slug">{t('connections.slug')}</FieldLabel>
-                <Input
-                  id="connection-slug"
-                  required
-                  value={form.slug}
-                  onChange={(event) => set({ slug: event.target.value })}
-                />
-              </Field>
-            )}
-            {form.type === 'adguard-home' && (
-              <Field>
-                <FieldLabel htmlFor="connection-username">{t('connections.username')}</FieldLabel>
-                <Input
-                  id="connection-username"
-                  required
-                  autoComplete="username"
-                  value={form.username}
-                  onChange={(event) => set({ username: event.target.value })}
-                />
-              </Field>
-            )}
-            {form.type === 'proxmox' && (
-              <Field>
-                <FieldLabel htmlFor="connection-token-id">{t('proxmox.tokenId')}</FieldLabel>
-                <Input
-                  id="connection-token-id"
-                  required={!editing}
-                  value={form.tokenId}
-                  placeholder={t('proxmox.tokenIdPlaceholder')}
-                  onChange={(event) => set({ tokenId: event.target.value })}
-                />
-                {editing && <FieldDescription>{t('connections.keepSecret')}</FieldDescription>}
-              </Field>
-            )}
-            {hasSecret && (
+            ))}
+            {secret && (
               <Field>
                 <FieldLabel htmlFor="connection-secret">
-                  {form.type === 'proxmox'
-                    ? t('proxmox.secret')
-                    : form.type === 'home-assistant'
-                      ? t('connections.accessToken')
-                      : t('connections.password')}
+                  {tOr(secret.labelKey, secret.label)}
                 </FieldLabel>
                 <PasswordInput
                   id="connection-secret"
                   required={!editing}
+                  maxLength={secret.maxLength}
                   autoComplete="new-password"
                   value={form.secret}
                   onChange={(event) => set({ secret: event.target.value })}

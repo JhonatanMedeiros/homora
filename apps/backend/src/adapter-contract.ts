@@ -17,7 +17,12 @@ import {
   type IntegrationAdapter,
 } from './integrations.js';
 
-export type FakeRequest = { origin: string; path: string; authorization?: string };
+export type FakeRequest = {
+  origin: string;
+  path: string;
+  authorization?: string;
+  apiKey?: string;
+};
 export type FakeResponse = { status: number; body: unknown };
 export type FakeTransport = (request: FakeRequest) => Promise<FakeResponse>;
 
@@ -94,7 +99,9 @@ export function assertBounded(value: unknown, depth = 0) {
 /** Rules for each request an adapter makes, regardless of the adapter. */
 export function assertRequestIsSafe(request: FakeRequest, secrets: readonly string[]) {
   expect(
-    Object.keys(request).every((key) => ['origin', 'path', 'authorization'].includes(key)),
+    Object.keys(request).every((key) =>
+      ['origin', 'path', 'authorization', 'apiKey'].includes(key),
+    ),
   ).toBe(true);
   expect(new URL(request.origin).origin).toBe(request.origin);
   expect(['http:', 'https:']).toContain(new URL(request.origin).protocol);
@@ -107,6 +114,10 @@ export function assertRequestIsSafe(request: FakeRequest, secrets: readonly stri
   if (request.authorization !== undefined) {
     expect(request.authorization.length).toBeLessThanOrEqual(4096);
     expect(request.authorization).not.toMatch(/[\r\n]/);
+  }
+  if (request.apiKey !== undefined) {
+    expect(request.apiKey.length).toBeLessThanOrEqual(4096);
+    expect(request.apiKey).not.toMatch(/[\r\n]/);
   }
   for (const secret of secrets) {
     expect(request.origin).not.toContain(secret);

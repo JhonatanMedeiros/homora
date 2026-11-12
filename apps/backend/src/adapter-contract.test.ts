@@ -6,10 +6,13 @@ import {
   assertRequestIsSafe,
   HOSTILE_PATH_VALUES,
 } from './adapter-contract.js';
-import { createJellyfinAdapter } from './jellyfin.js';
-import { createHomeAssistantAdapter } from './home-assistant.js';
-import { createUptimeKumaAdapter } from './uptime-kuma.js';
-import { createAdGuardAdapter } from './adguard.js';
+import {
+  adguardManifest,
+  homeAssistantManifest,
+  jellyfinManifest,
+  uptimeKumaManifest,
+} from '@homora/shared';
+import { createManifestAdapter } from './manifest-adapter.js';
 import { createProxmoxConnectionAdapter } from './proxmox-connection.js';
 import { integrationRegistry } from './integration-registry.js';
 
@@ -40,7 +43,7 @@ const urlCases = (extra: string[] = []) => [
 const jellyfin = fixture('jellyfin/system-info-public.json') as Record<string, unknown>;
 runAdapterContract({
   name: 'jellyfin',
-  create: createJellyfinAdapter,
+  create: (transport) => createManifestAdapter(jellyfinManifest, transport),
   validConfig: { url: 'https://jelly.example.test' },
   secrets: [],
   invalidConfigs: [...urlCases(), { label: 'missing url', url: undefined }]
@@ -63,28 +66,35 @@ runAdapterContract({
 const token = 'ha-token-SECRET123';
 runAdapterContract({
   name: 'home-assistant',
-  create: createHomeAssistantAdapter,
-  validConfig: { url: 'https://ha.example.test', token, entityId: 'sensor.temperature' },
+  create: (transport) => createManifestAdapter(homeAssistantManifest, transport),
+  validConfig: { url: 'https://ha.example.test', secret: token, entityId: 'sensor.temperature' },
   secrets: [token],
   invalidConfigs: [
     ...urlCases(['http://ha.example.test', 'https://ha.example.test/sub']).map(
-      ({ label, url }) => ({ label, config: { url, token, entityId: 'sensor.temperature' } }),
+      ({ label, url }) => ({
+        label,
+        config: { url, secret: token, entityId: 'sensor.temperature' },
+      }),
     ),
     {
       label: 'empty token',
-      config: { url: 'https://ha.example.test', token: '', entityId: 'sensor.a' },
+      config: { url: 'https://ha.example.test', secret: '', entityId: 'sensor.a' },
     },
     {
       label: 'token with whitespace',
-      config: { url: 'https://ha.example.test', token: 'a b', entityId: 'sensor.a' },
+      config: { url: 'https://ha.example.test', secret: 'a b', entityId: 'sensor.a' },
     },
     {
       label: 'oversized token',
-      config: { url: 'https://ha.example.test', token: long, entityId: 'sensor.a' },
+      config: { url: 'https://ha.example.test', secret: long, entityId: 'sensor.a' },
     },
     {
       label: 'oversized entity',
-      config: { url: 'https://ha.example.test', token, entityId: `sensor.${'a'.repeat(300)}` },
+      config: {
+        url: 'https://ha.example.test',
+        secret: token,
+        entityId: `sensor.${'a'.repeat(300)}`,
+      },
     },
   ],
   pathFields: ['entityId'],
@@ -113,7 +123,7 @@ runAdapterContract({
 
 runAdapterContract({
   name: 'uptime-kuma',
-  create: createUptimeKumaAdapter,
+  create: (transport) => createManifestAdapter(uptimeKumaManifest, transport),
   validConfig: { url: 'https://kuma.example.test', slug: 'home' },
   secrets: [],
   invalidConfigs: [
@@ -145,29 +155,29 @@ runAdapterContract({
 const password = 'adguard-pass-SECRET456';
 runAdapterContract({
   name: 'adguard-home',
-  create: createAdGuardAdapter,
-  validConfig: { url: 'https://adguard.example.test', username: 'admin', password },
+  create: (transport) => createManifestAdapter(adguardManifest, transport),
+  validConfig: { url: 'https://adguard.example.test', username: 'admin', secret: password },
   secrets: [password],
   invalidConfigs: [
     ...urlCases(['http://adguard.example.test']).map(({ label, url }) => ({
       label,
-      config: { url, username: 'admin', password },
+      config: { url, username: 'admin', secret: password },
     })),
     {
       label: 'username with colon',
-      config: { url: 'https://adguard.example.test', username: 'a:b', password },
+      config: { url: 'https://adguard.example.test', username: 'a:b', secret: password },
     },
     {
       label: 'empty password',
-      config: { url: 'https://adguard.example.test', username: 'admin', password: '' },
+      config: { url: 'https://adguard.example.test', username: 'admin', secret: '' },
     },
     {
       label: 'control char in password',
-      config: { url: 'https://adguard.example.test', username: 'admin', password: 'a\nb' },
+      config: { url: 'https://adguard.example.test', username: 'admin', secret: 'a\nb' },
     },
     {
       label: 'oversized username',
-      config: { url: 'https://adguard.example.test', username: long, password },
+      config: { url: 'https://adguard.example.test', username: long, secret: password },
     },
   ],
   fixtures: {

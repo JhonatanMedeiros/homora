@@ -233,13 +233,24 @@ groups:
       headers: { cookie },
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual([
-      { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] },
-      { type: 'jellyfin', label: 'Jellyfin', capabilities: ['server-info'] },
-      { type: 'home-assistant', label: 'Home Assistant', capabilities: ['entity-state'] },
-      { type: 'uptime-kuma', label: 'Uptime Kuma', capabilities: ['status-page'] },
-      { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
-    ]);
+    const catalog = response.json() as {
+      type: string;
+      label: string;
+      capabilities: string[];
+      fields: { key: string }[];
+    }[];
+    expect(catalog.map(({ type, label, capabilities }) => ({ type, label, capabilities }))).toEqual(
+      [
+        { type: 'jellyfin', label: 'Jellyfin', capabilities: ['server-info'] },
+        { type: 'home-assistant', label: 'Home Assistant', capabilities: ['entity-state'] },
+        { type: 'uptime-kuma', label: 'Uptime Kuma', capabilities: ['status-page'] },
+        { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
+        { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] },
+      ],
+    );
+    // Field descriptions only: no stored values, requests or extraction rules.
+    expect(catalog[1]!.fields.map((field) => field.key)).toEqual(['url', 'entityId', 'secret']);
+    expect(JSON.stringify(catalog)).not.toContain('/api/states');
   });
   it('does not expose services without an active session', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);

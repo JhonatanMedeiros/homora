@@ -27,6 +27,7 @@ export const ERROR_MESSAGES = {
   'https-url-required': 'Provide a valid HTTPS URL.',
   'invalid-token': 'Provide a valid token.',
   'invalid-credentials': 'Provide a valid username and password.',
+  'invalid-config': 'Provide valid values for this integration.',
   'invalid-entity': 'Provide a valid entity identifier.',
   'invalid-status-page': 'Provide a valid status page identifier.',
   'invalid-name-or-type': 'Provide a valid name and type.',

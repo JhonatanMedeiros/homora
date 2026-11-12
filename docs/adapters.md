@@ -5,21 +5,39 @@ integration today: **implemented, unvalidated** (see [live validation](#live-val
 Integrations are built in: they are registered in the repository, never loaded from the database,
 the network or the user. Do not add runtime code loading.
 
-## Files to touch
+## Two ways to add an integration
 
-| Purpose                 | File                                                                                                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Adapter                 | `apps/backend/src/<name>.ts`: `create<Name>Adapter(transport)` returning `{ type, label, capabilities, validate, collect }`                                               |
-| Registration            | `apps/backend/src/integration-registry.ts`: add an entry with `prepare(context)`                                                                                          |
-| Type enums              | `apps/backend/src/input-schemas.ts` and `managed-proposals.ts`                                                                                                            |
-| Stored config           | `apps/backend/src/integration-connections.ts`: public config keys (`url`, `allowPrivate`, `entityId`, `username`, `slug`), credential mapping (`secret`, `tokenId`, `ca`) |
-| Connection form         | `apps/frontend/src/features/connections/connection-model.ts`, `connection-form.tsx` and the i18n messages (English and pt-BR)                                             |
-| Brand icon              | `packages/shared/src/brand-icons.ts`                                                                                                                                      |
-| Fixtures                | `apps/backend/src/fixtures/<type>/*.json`                                                                                                                                 |
-| Contract and unit tests | a `runAdapterContract` call in `apps/backend/src/adapter-contract.test.ts` plus `<name>.test.ts` for data mapping                                                         |
-| Docs                    | the integration entry in `docs/integracoes.md` with required permissions                                                                                                  |
+Most read-only integrations are a **manifest**: data in `packages/shared/src/integration-manifest.ts`
+validated at startup and run by one interpreter (`apps/backend/src/manifest-adapter.ts`). Read
+[ADR 0009](decisoes/0009-declarative-integration-adapters.md) for the vocabulary and what it does not
+cover. Anything needing more than that (several requests with partial failure, CA pinning, large
+payloads, POST, a login flow, a non-whitelisted header) stays a **code adapter**, and a service that
+needs a write call or a new header is out of scope until a decision says otherwise.
 
-The coverage test in `adapter-contract.test.ts` fails when a registered type has no contract run.
+### Files to touch for a manifest
+
+| Purpose                 | File                                                                                                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Manifest                | `packages/shared/src/integration-manifest.ts`: export a manifest and add it to `integrationDefinitions`                                                          |
+| Brand icon              | must already be in `packages/shared/src/brand-icons.ts` (`BRAND_ICON_NAMES`); add the logo there first if not                                                    |
+| Fixtures                | `apps/backend/src/fixtures/<type>/*.json`                                                                                                                        |
+| Contract and unit tests | a `runAdapterContract` call in `apps/backend/src/adapter-contract.test.ts` (use `createManifestAdapter`), and a data-mapping case in `manifest-adapters.test.ts` |
+| Translations (optional) | `labelKey` and `key` values must exist in `apps/frontend/src/i18n/messages`; without them the English text shows                                                 |
+| Docs                    | the integration entry in `docs/integracoes.md` with required permissions                                                                                         |
+
+Type enums, stored fields, the connection form, widget text, the picker and the catalog endpoint derive
+from the manifest. You do not edit `input-schemas.ts`, `managed-proposals.ts`,
+`integration-connections.ts` or the frontend connection files.
+
+### Files to touch for a code adapter
+
+| Purpose      | File                                                                                                                        |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Adapter      | `apps/backend/src/<name>.ts`: `create<Name>Adapter(transport)` returning `{ type, label, capabilities, validate, collect }` |
+| Metadata     | a `kind: 'code'` entry in `integrationDefinitions` (fields, mark, brand icon)                                               |
+| Registration | `apps/backend/src/integration-registry.ts`                                                                                  |
+| Display      | the frontend renders only manifest displays; a code adapter needs its own rendering in `connection-model.ts`                |
+| Tests, docs  | as above                                                                                                                    |
 
 ## Security rules
 
@@ -94,7 +112,7 @@ Notes / deviations:
 
 ## Pull request checklist
 
-- [ ] Every file in the table above is updated
+- [ ] Every file in the relevant table above is updated
 - [ ] Contract test passes and the type is covered
 - [ ] Fixtures cite their source honestly
 - [ ] Only GET through the shared transport; no new header, method or code loading
