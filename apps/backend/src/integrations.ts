@@ -19,7 +19,7 @@ export type IntegrationTransport = (request: {
   apiKey?: string;
   /** Response size limit for this request; the transport caps it at 2 MB. */
   maxBodyBytes?: number;
-}) => Promise<{ status: number; body: unknown }>;
+}) => Promise<{ status: number; body: unknown; retryAfterSeconds?: number }>;
 export type IntegrationContext = {
   publicConfig: Record<string, unknown>;
   credentials: { secret?: string; ca?: string; tokenId?: string };

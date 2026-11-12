@@ -273,6 +273,34 @@ export const dockerPushSources = sqliteTable('docker_push_sources', {
   inventory: text('inventory'),
 });
 
+/**
+ * Link between a card and one resource (application or service) of an integration connection.
+ * Keyed by the connection and the resource UUID, never by name. `seen_name` and `seen_url` are
+ * the values the user last reviewed; a later difference is flagged for review, never applied.
+ * One resource per card; the link disappears with the card or the connection.
+ */
+export const integrationResourceLinks = sqliteTable(
+  'integration_resource_links',
+  {
+    id: integer('id').primaryKey(),
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    integrationId: integer('integration_id')
+      .notNull()
+      .references(() => integrationInstances.id, { onDelete: 'cascade' }),
+    resourceUuid: text('resource_uuid').notNull(),
+    resourceType: text('resource_type').notNull(),
+    seenName: text('seen_name').notNull(),
+    seenUrl: text('seen_url'),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('integration_resource_links_service_idx').on(table.serviceId),
+    index('integration_resource_links_resource_idx').on(table.integrationId, table.resourceUuid),
+  ],
+);
+
 /** Suggested hosts the user dismissed, so they do not return on every refresh (per card and guest). */
 export const hostSuggestionDismissals = sqliteTable(
   'host_suggestion_dismissals',

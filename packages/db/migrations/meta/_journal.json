@@ -169,6 +169,13 @@
       "when": 1794508044611,
       "tag": "0023_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1794510106532,
+      "tag": "0024_coolify_resource_links",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,18 @@ export type RequestOptions = {
   /** Only notification delivery uses POST. */
   jsonBody?: string;
 };
-export type AuthorizedResponse = { status: number; body: string };
+export type AuthorizedResponse = {
+  status: number;
+  body: string;
+  /** Seconds from a valid `Retry-After` header of a 429 response, clamped to 1..3600. */
+  retryAfterSeconds?: number;
+};
+
+/** Integer seconds only; an HTTP date, a fraction or any other text is ignored. */
+export function parseRetryAfter(value: string | string[] | undefined): number | undefined {
+  if (typeof value !== 'string' || !/^\d{1,9}$/.test(value.trim())) return undefined;
+  return Math.min(3600, Math.max(1, Number(value.trim())));
+}
 
 /** Read-only query, pinning DNS and not following redirects. */
 export async function getAuthorizedResponse(
@@ -93,8 +104,10 @@ export async function getAuthorizedResponse(
           return;
         }
         if (status < 200 || status >= 300) {
+          const retryAfterSeconds =
+            status === 429 ? parseRetryAfter(res.headers?.['retry-after']) : undefined;
           res.destroy();
-          resolve({ status, body: '' });
+          resolve({ status, body: '', ...(retryAfterSeconds ? { retryAfterSeconds } : {}) });
           return;
         }
         const chunks: Buffer[] = [];

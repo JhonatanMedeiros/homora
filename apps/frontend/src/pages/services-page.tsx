@@ -46,6 +46,8 @@ import { OrganizePanel } from '@/components/organize-panel';
 import { PageHeader } from '@/components/page-header';
 import { ServiceCard } from '@/components/service-card';
 import { useCardWidgets } from '@/hooks/use-card-widgets';
+import { useResourceLinks } from '@/hooks/use-resource-links';
+import { CoolifyReviewDialog } from '@/components/coolify-review-dialog';
 import { ServiceForm } from '@/components/service-form';
 import { OrganizeRow } from '@/components/organize-row';
 import { ServicesEmpty } from '@/components/services-empty';
@@ -86,6 +88,8 @@ export function ServicesPage({
   // Group view shows one page at a time; Host and Map views show every page.
   const paged = pages.length > 1 && !managing;
   const cardWidgets = useCardWidgets();
+  const resourceLinks = useResourceLinks();
+  const [coolifyReview, setCoolifyReview] = useState<number | null>(null);
   const [topBar] = useTopBar();
   const {
     view,
@@ -961,6 +965,8 @@ export function ServicesPage({
                   service={s}
                   status={info}
                   widgets={cardWidgets[s.id]}
+                  coolify={resourceLinks.byService[s.id]}
+                  onCoolify={() => setCoolifyReview(s.id)}
                   uptime={uptime[s.id]}
                   uptimeRange={uptimeRange}
                   onUptimeRangeChange={setUptimeRange}
@@ -991,6 +997,19 @@ export function ServicesPage({
           navigate(`/manage/services/${service.id}/edit`);
         }}
       />
+      {coolifyReview !== null &&
+        resourceLinks.byService[coolifyReview] &&
+        services.find((item) => item.id === coolifyReview) && (
+          <CoolifyReviewDialog
+            service={services.find((item) => item.id === coolifyReview)!}
+            info={resourceLinks.byService[coolifyReview]}
+            onClose={() => setCoolifyReview(null)}
+            onChanged={() => {
+              void refresh();
+              resourceLinks.reload();
+            }}
+          />
+        )}
       <AlertDialog
         open={removingGroup !== null}
         onOpenChange={(open) => !open && setRemovingGroup(null)}
