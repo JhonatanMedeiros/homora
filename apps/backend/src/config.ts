@@ -56,6 +56,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     allowedOrigins,
     sessionSecret,
     trustProxy: env.HOMORA_TRUST_PROXY === 'true',
+    developmentMocks: env.HOMORA_DEV_MOCKS === 'true',
     dockerHost: parseDockerHost(env.HOMORA_DOCKER_HOST),
     databasePath: resolve(root, env.HOMORA_DATABASE_PATH || 'data/homora.sqlite'),
   };

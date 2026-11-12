@@ -27,6 +27,7 @@ const app = createApp(
   config.dockerHost ? createDockerSource(config.dockerHost) : undefined,
   {
     trustProxy: config.trustProxy,
+    developmentMocks: config.developmentMocks,
     apiPort: config.apiPort,
     // Next to the database, so a backup of the database can take the picture along.
     backgroundPath: `${config.databasePath}.background`,
