@@ -1,0 +1,13 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample",
+    "docs": "https://api.jellyfin.org/",
+    "note": "Field names follow the documented endpoint and the adapter's parser; not recorded from a live instance and not re-verified against the docs in this change."
+  },
+  "body": {
+    "ServerName": "Server",
+    "Version": "10.10.3",
+    "Id": "private-id",
+    "LocalAddress": "http://10.0.0.2:8096"
+  }
+}

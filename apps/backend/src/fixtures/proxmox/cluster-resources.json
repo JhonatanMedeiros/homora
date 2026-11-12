@@ -1,0 +1,23 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample",
+    "docs": "https://pve.proxmox.com/pve-docs/api-viewer/",
+    "note": "Field names follow the documented endpoint and the adapter's parser; not recorded from a live instance and not re-verified against the docs in this change."
+  },
+  "body": {
+    "data": [
+      {
+        "type": "node",
+        "status": "online",
+        "cpu": 0.5,
+        "maxcpu": 4,
+        "mem": 2000,
+        "maxmem": 4000,
+        "disk": 10,
+        "maxdisk": 100
+      },
+      { "type": "qemu", "status": "running", "vmid": 100 },
+      { "type": "lxc", "status": "stopped", "vmid": 101 }
+    ]
+  }
+}

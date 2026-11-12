@@ -124,7 +124,7 @@ it('visits services in the same order as the Host view, which is the DOM and foc
 
 it('selects a service with the keyboard-operable button and shows its details', () => {
   const handlers = setup();
-  expect(screen.getByText('Select a service or a guest to see its details.')).toBeTruthy();
+  expect(screen.queryByRole('complementary', { name: 'Details' })).toBeNull();
   const tile = screen.getByRole('button', { name: /^jellyfin, / });
   fireEvent.click(tile);
   expect(tile.getAttribute('aria-pressed')).toBe('true');
@@ -145,7 +145,7 @@ it('selects a guest and lists its services', () => {
   expect(within(panel).getByRole('button', { name: 'pihole' })).toBeTruthy();
   expect(within(panel).getByRole('button', { name: 'adguard' })).toBeTruthy();
   fireEvent.click(within(panel).getByRole('button', { name: 'Close details' }));
-  expect(screen.getByText('Select a service or a guest to see its details.')).toBeTruthy();
+  expect(screen.queryByRole('complementary', { name: 'Details' })).toBeNull();
 });
 
 it('keeps zoom between 60% and 120%', () => {
@@ -177,9 +177,7 @@ it('does not animate recentering when the user prefers reduced motion', () => {
 it('refreshes and links to the list view', () => {
   const handlers = setup();
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-  const canvas = screen.getByRole('region', { name: 'Map of services by host' });
-  const frame = canvas.parentElement;
-  const hostList = within(frame!).getByRole('button', { name: 'Host list' });
+  const hostList = screen.getByRole('button', { name: 'Host list' });
   expect(hostList).toBeTruthy();
   fireEvent.click(hostList);
   expect(handlers.onRefresh).toHaveBeenCalled();

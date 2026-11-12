@@ -3,6 +3,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { InputError } from './api-error.js';
 export type ProxmoxConfig = { url: string; tokenId: string; secret: string; ca?: string };
 export function validateProxmoxConfig(input: ProxmoxConfig): ProxmoxConfig {
+  if (typeof input.url !== 'string' || input.url.length > 2048)
+    throw new InputError('https-url-required');
   let url: URL;
   try {
     url = new URL(input.url);

@@ -122,7 +122,7 @@ export function createApp(
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
   registerAuthRoutes(app, auth, webPort, audit);
   registerAccountRoutes(app, auth, audit);
-  app.get('/api/integrations/catalog', async () => integrationRegistry.list());
+  app.get('/api/integrations/catalog', async () => integrationRegistry.describe());
   const connections = registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
   registerPageRoutes(app, createPages(sqlite), auth, audit);

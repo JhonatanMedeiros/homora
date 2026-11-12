@@ -1,0 +1,13 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample",
+    "docs": "https://github.com/AdguardTeam/AdGuardHome/tree/master/openapi",
+    "note": "Field names follow the documented endpoint and the adapter's parser; not recorded from a live instance and not re-verified against the docs in this change."
+  },
+  "body": {
+    "running": true,
+    "protection_enabled": true,
+    "version": "v0.107.52",
+    "dns_addresses": ["192.168.1.2"]
+  }
+}

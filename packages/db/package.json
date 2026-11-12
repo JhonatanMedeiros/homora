@@ -15,11 +15,11 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "0.45.4"
   },
   "devDependencies": {
-    "drizzle-kit": "0.31.10",
-    "typescript": "6.0.3",
-    "@types/node": "26.6.1"
+    "@types/node": "26.6.6",
+    "drizzle-kit": "0.31.11",
+    "typescript": "6.0.3"
   }
 }

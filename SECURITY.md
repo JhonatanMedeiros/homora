@@ -29,6 +29,14 @@ data or real credentials. There is no established response SLA or bug bounty pol
   only served to signed-in sessions; it is included in backups.
 - MCP is a local read process that accesses the database and key file directly.
   Web sessions do not protect it; use only with trusted system users and MCP clients.
+- Integrations are built in: they are registered in the repository, and no manifest or code is
+  loaded from the database, the network or a user at runtime. A declarative adapter is data
+  validated at startup and run by one reviewed interpreter (no eval, no expressions). Every
+  integration request is a GET through the shared transport (destination policy, DNS pinning,
+  TLS, timeouts, a 2 MB response cap) and may only carry the `authorization`, `x-api-key` and
+  `accept` headers; credentials are only sent over HTTPS. Cloud integrations (Cloudflare,
+  Tailscale, NetBird Cloud) call public endpoints, so an administrator must allow outbound HTTPS
+  to those hosts. Reference integrations are unvalidated against live services.
 - Use integration credentials with least privilege and validate TLS certificates.
   Do not disable TLS validation.
 - Service monitoring blocks RFC1918 and ULA destinations by default. An

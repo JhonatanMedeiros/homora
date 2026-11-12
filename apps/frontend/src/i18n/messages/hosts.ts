@@ -104,6 +104,8 @@ export const en = {
   'map.reset': 'Reset',
   'map.refresh': 'Refresh',
   'map.hostList': 'Host list',
+  'map.breadcrumbHome': 'Home',
+  'map.cluster': 'Cluster “{name}”',
   'map.phoneNotice': 'The map is not optimized for phones yet. It works best on a larger screen.',
   'map.useList': 'Use the host list',
   'map.openAnyway': 'Open the map anyway',
@@ -268,6 +270,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'map.reset': 'Restaurar',
   'map.refresh': 'Atualizar',
   'map.hostList': 'Lista de hosts',
+  'map.breadcrumbHome': 'Início',
+  'map.cluster': 'Cluster “{name}”',
   'map.phoneNotice':
     'O mapa ainda não é otimizado para celulares. Funciona melhor em uma tela maior.',
   'map.useList': 'Usar a lista de hosts',

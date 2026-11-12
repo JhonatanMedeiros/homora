@@ -10,6 +10,7 @@ import {
   type ProxmoxInventory,
 } from './proxmox-inventory.js';
 
+export type NodeUnavailable = { unavailable: true };
 const MAX_GUESTS = 200;
 const CONCURRENCY = 4;
 
@@ -18,6 +19,11 @@ export function createProxmoxConnectionAdapter(transport: IntegrationTransport):
   ProxmoxConfig,
   ProxmoxSummary
 > & {
+  /**
+   * Summary of one node. A node that is missing from the cluster or not online yields
+   * `{ unavailable: true }`; it never falls back to the cluster totals.
+   */
+  collectNode(config: ProxmoxConfig, node: string): Promise<ProxmoxSummary | NodeUnavailable>;
   inventory(config: ProxmoxConfig): Promise<ProxmoxInventory>;
   addresses(config: ProxmoxConfig, guests: ProxmoxGuest[]): Promise<GuestAddresses[]>;
 } {
@@ -44,6 +50,18 @@ export function createProxmoxConnectionAdapter(transport: IntegrationTransport):
     validate: validateProxmoxConfig,
     async collect(config) {
       return summarizeProxmox(await resources(config));
+    },
+    async collectNode(config, node) {
+      const data = await resources(config);
+      // Node state comes from the inventory read (#96), not from a second listing.
+      const state = inventoryProxmox(data).nodes.find((item) => item.name === node);
+      if (!state || state.status !== 'online') return { unavailable: true };
+      return summarizeProxmox(
+        data.filter(
+          (item) =>
+            !!item && typeof item === 'object' && (item as { node?: unknown }).node === node,
+        ),
+      );
     },
     async inventory(config) {
       return inventoryProxmox(await resources(config));

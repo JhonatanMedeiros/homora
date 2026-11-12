@@ -68,8 +68,10 @@ it('shows the exact suggested connection and opens setup only after approval', (
   expect(container.querySelector('script')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Completar configuração da conexão' }));
   expect(open).toHaveBeenCalledWith(change);
+  const { entityId, ...rest } = change as typeof change & { entityId: string };
   expect(connectionDraft(change)).toMatchObject({
-    ...change,
+    ...rest,
+    values: { entityId },
     allowPrivate: false,
     secret: '',
     ca: '',

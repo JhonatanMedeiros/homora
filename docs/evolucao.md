@@ -1230,3 +1230,33 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Export now writes version 2 (pages and a page per group) and still reads version 1. It also includes appearance and custom CSS, which import deliberately does not read.
 - Validation: `pnpm check` and `pnpm build` on every phase. Tests cover the contrast function, image processing, CSS validation, the routes (auth, audit, limits), the migration, import and export with pages, the settings screens, the tab strip and the digit shortcuts.
 - Not verified: any behaviour in a real browser (rendering of gradients, blur and the background image, the look of the tab strip on phones, drag and drop, keyboard focus order), screen readers, real HTTP proxies in front of the 2 MB upload, and a CSP (none is shipped).
+
+## Extensible integrations (issue #98)
+
+- **Phase 1:** `adapter-contract.ts` (`runAdapterContract`) tests every adapter with a fake transport: validation, request shape and path safety, secrets, each response class, bounds and the observation cache. Fixtures carry a `_source` block. `docs/adapters.md` is the contribution guide. The harness found that Home Assistant, Uptime Kuma, AdGuard Home and the Proxmox validator accepted URLs over 2048 characters; all four now reject them.
+- **Phase 2:** [ADR 0009](decisoes/0009-declarative-integration-adapters.md). A closed manifest format in `packages/shared`, validated at startup and run by one interpreter. Jellyfin, Uptime Kuma, Home Assistant and AdGuard Home were migrated after a differential run (URLs, ids, credentials, responses) showed identical decisions, requests and data; their expectations live in `manifest-adapters.test.ts`. Type enums, stored keys, proposal schemas, the form, widget text, the picker and the catalog now derive from the definitions. Proposals now require `https://` for every HTTPS-only integration, not only Proxmox.
+- **Phase 3:** Speedtest Tracker, Portainer, NetBird, Tailscale and Cloudflare added as manifests, each **implemented, unvalidated**. Fixtures are hand-written from the vendors' published schemas or source (cited, read 2026-11-12), not recorded from live services. Beszel (login flow with POST) and TrueNAS (WebSocket-only API) were skipped. Vocabulary extensions: `basic-key` auth, root-array counting, forwarded `maxBodyBytes`, field defaults and an optional brand icon; the transport and header whitelist are unchanged.
+- **Phase 4:** a Proxmox connection can scope widgets and the top bar to one node (stored as public config `node`, picked from the inventory while editing). Whole cluster stays the default; a missing or offline node reports `unavailable` and never falls back to cluster totals.
+- Validated: `pnpm check` and `pnpm build`. Not verified: any integration against a live service, the new UI in a real browser, screen readers, and the Tailscale scope names and NetBird role needed for a read-only token.
+- Follow-ups: live validation of each integration; Beszel and TrueNAS need a login-flow or WebSocket decision; a ranked list of further integrations is in the pull request.
+
+## Map canvas layout fix (2026-11-12)
+
+- Fixed the clipped guest header: the guest button inherited the default button vertical padding, which left no room for its two text lines. Guest header height is now 52 and the button has no vertical padding.
+- Loose containers (not linked, host not found, host unavailable) lay their services out in a grid of up to three columns instead of one tall column.
+- Only one hint is shown: the drag hint when editing is allowed, the read-only hint otherwise.
+- Manual dependencies are drawn as dashed arrows between service tiles (decorative, `aria-hidden`; the side panel and Host view remain the accessible equivalent). The canvas gets a dotted background and no longer stretches to 70% of the viewport height when the map is small.
+- Not verified: rendering in a real browser (changes were checked only through tests, `pnpm check` and `pnpm build`).
+- Follow-up: the map now takes the whole window like the mockup (fixed layer above the page, top bar with "Host list" and refresh, full-bleed canvas, zoom toolbar floating at the bottom centre, details panel floating at the right and shown only while something is selected; a bottom sheet on narrow windows). The page behind does not scroll while the map is open. Not verified in a real browser.
+
+## Map polish: centred canvas, lighter details, breadcrumb header (2026-11-12)
+
+- The map content is centred in the canvas (both axes) and keeps room for the toolbar and, on wide windows, the details panel.
+- Clicking the empty canvas closes the details (not after a pan, not on a tile); Escape closes them when no dependency is being picked.
+- The service details panel was reduced to what is needed: name and status, address, "Runs on" with a Change host toggle (the host picker opens only then), the impact line only when there is one, dependencies with a dashed "Add dependency" button, "Used by" only when something depends on it, and one "Open card" button. Empty rows ("nothing known", "no dependencies") no longer take space.
+- The top bar follows the mockup: brand, Home › Service map breadcrumb, cluster name, refresh and host list. The mockup's "Beta" badge and "updated 40 s ago" were not added (the app has no beta flag and does not record the inventory time).
+- Not verified in a real browser.
+
+## Map: floating details (2026-11-12)
+
+- Opening the details no longer reserves space or shifts the map: the panel floats over the canvas at the top right (a bottom sheet on narrow windows), sized to its content with a larger shadow. Not verified in a real browser.
