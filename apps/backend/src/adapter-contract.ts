@@ -302,12 +302,19 @@ export function runAdapterContract<Config, Data>(options: AdapterContractOptions
         // Invalidation while a request is in flight must not store the late result.
         let release: (response: FakeResponse) => void = () => undefined;
         let started = false;
-        const slow = options.create(
-          () =>
-            new Promise<FakeResponse>((resolve) => {
-              started = true;
-              release = resolve;
-            }),
+        let released = false;
+        const valid: FakeResponse = { status: 200, body: fixtures.valid.body };
+        // The first request waits; later ones (multi-request adapters) answer at once.
+        const slow = options.create(() =>
+          released
+            ? Promise.resolve(valid)
+            : new Promise<FakeResponse>((resolve) => {
+                started = true;
+                release = (response) => {
+                  released = true;
+                  resolve(response);
+                };
+              }),
         );
         const fresh = createObservationCache<Data>(ttl, () => now);
         const pending = fresh.collect(() => slow.collect(validConfig));

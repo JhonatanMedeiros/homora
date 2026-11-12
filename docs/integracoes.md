@@ -281,3 +281,28 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
 - **Live validation checklist:** Basic auth with an empty password is accepted for the token type you
   use; `connectedToControl` and `updateAvailable` are present in the default field set; the response
   size for a large tailnet stays under 2 MB.
+
+### Cloudflare
+
+- **Reads:** `GET /client/v4/zones?per_page=5` and `GET /client/v4/zones?status=active&per_page=5` with
+  `Authorization: Bearer <API token>`; shows the number of zones and of active zones from
+  `result_info.total_count` (only the first small page is transferred). Source: [List Zones](https://developers.cloudflare.com/api/resources/zones/methods/list/),
+  read 2026-11-12.
+- **Least privilege:** an API token with only **Zone > Zone > Read**. Do not use the Global API key.
+- **Network:** `https://api.cloudflare.com` is public (prefilled): an administrator must allow outbound
+  HTTPS to it; no private-network option is needed.
+- **Live validation checklist:** both queries return `success: true`; the counts match the dashboard; a
+  token without Zone Read is refused with the generic access message.
+
+### Skipped (follow-up issues)
+
+Both were evaluated against the declarative format and the shared transport; neither fits without
+widening the transport, so they were not implemented (decision recorded in
+[ADR 0009](decisoes/0009-declarative-integration-adapters.md)).
+
+- **Beszel:** the hub API is PocketBase's. A client logs in with `POST /api/collections/users/auth-with-password`
+  and then sends the returned token. That is a login flow with POST; the transport is GET only.
+  Source: [Beszel REST API guide](https://beszel.dev/guide/rest-api), read 2026-11-12.
+- **TrueNAS:** the current API (25.04 and later) is JSON-RPC 2.0 over WebSocket, and the vendor
+  deprecated the REST `/api/v2.0` API. WebSocket-only. Source: [TrueNAS API 25.04](https://api.truenas.com/v25.04/),
+  read 2026-11-12.

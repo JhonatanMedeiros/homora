@@ -1,0 +1,16 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample following the official API reference for GET /client/v4/zones (the same shape is returned for the active-only query)",
+    "docs": "https://developers.cloudflare.com/api/resources/zones/methods/list/",
+    "note": "Read on 2026-11-12: Authorization: Bearer <API token>; the envelope has `success` and `result_info.total_count`; per_page minimum 5, maximum 50; `status` filters by zone status. Not recorded from a live account."
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      { "id": "023e105f4ecef8ad9ca31a8372d0c353", "name": "example.com", "status": "active" }
+    ],
+    "result_info": { "count": 5, "page": 1, "per_page": 5, "total_count": 7, "total_pages": 2 }
+  }
+}
