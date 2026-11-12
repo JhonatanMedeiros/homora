@@ -951,7 +951,7 @@ implementation because it changes a security default.
   HTTPS with a temporary CA, the real backend, card review/import, rejection of an
   untrusted certificate, revoked token and expired inventory. Tested a concurrent
   source update through a second SQLite connection, migration with existing data,
-  MCP HTTP and in-memory transport, and frontend interactions. Chromium at 390 px
+  MCP HTTP and a real stdio process, and frontend interactions. Chromium at 390 px
   showed source creation and one-time token; at 1280 px it exercised source creation,
   upload, review and import. Neither viewport showed horizontal overflow or page errors. The agent
   image built locally. No real Docker socket or production database was used.
