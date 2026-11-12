@@ -29,7 +29,9 @@ export function seedDevelopmentDatabase(sqlite: DatabaseSync) {
   ];
   sqlite.exec('BEGIN');
   try {
-    const insertGroup = sqlite.prepare('INSERT INTO service_groups(name, position) VALUES (?, ?)');
+    const insertGroup = sqlite.prepare(
+      'INSERT INTO service_groups(name, position, page_id) VALUES (?, ?, (SELECT id FROM pages ORDER BY position,id LIMIT 1))',
+    );
     const insertService = sqlite.prepare(
       'INSERT INTO services(name, url, category, description, icon, position, allow_private) VALUES (?, ?, ?, ?, ?, ?, 0)',
     );

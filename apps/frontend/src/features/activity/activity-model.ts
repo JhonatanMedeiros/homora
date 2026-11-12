@@ -32,6 +32,7 @@ const TITLES = new Set<string>([
   'appearance-reset',
   'custom-css-update',
   'custom-css-reset',
+  'page-update',
   'proposal',
   'review.success',
   'review.refused',

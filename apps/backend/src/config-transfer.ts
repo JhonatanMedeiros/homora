@@ -5,12 +5,18 @@ import {
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
   normalizeIcon,
+  normalizePageName,
+  samePageName,
   type Appearance,
   type Service,
 } from '@homora/shared';
 
-/** Homora export format version. */
-export const TRANSFER_VERSION = 1;
+/**
+ * Homora export format version. Version 2 added pages (`pages` and a `page` on each group);
+ * version 1 files are still read, and their groups go to the first page.
+ */
+export const TRANSFER_VERSION = 2;
+export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2];
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
 export const MAX_GROUP_COLUMNS = 6;
@@ -41,8 +47,14 @@ export type ImportedService = {
   expectedStatus?: string;
   checkPath?: string;
 };
-export type ImportedGroup = { name: string; columns?: number; services: ImportedService[] };
-export type ImportDocument = { groups: ImportedGroup[] };
+export type ImportedGroup = {
+  name: string;
+  columns?: number;
+  /** Name of the page the group belongs to in the file (Homora files only). */
+  page?: string;
+  services: ImportedService[];
+};
+export type ImportDocument = { groups: ImportedGroup[]; pages?: string[] };
 
 /** Stable codes: the UI translates them; the server returns no language-specific text. */
 export type IssueCode =
@@ -62,17 +74,26 @@ export type IssueCode =
   | 'check-ignored'
   | 'widget-ignored'
   | 'pages-ignored'
+  | 'page-invalid'
+  | 'page-limit'
   | 'group-renamed';
 export type ImportIssue = { path: string; code: IssueCode; severity: 'error' | 'warning' };
 export type ParsedImport = { document: ImportDocument; issues: ImportIssue[] };
 
-type Existing = { groups: string[]; services: { category: string; url: string }[] };
+type Existing = {
+  groups: string[];
+  services: { category: string; url: string }[];
+  pages?: string[];
+};
 export type ImportPlan = {
-  groups: { name: string; status: 'new' | 'existing' }[];
+  groups: { name: string; status: 'new' | 'existing'; page?: string }[];
+  /** Pages the file asks for, and whether they exist already. */
+  pages: { name: string; status: 'new' | 'existing' }[];
   services: { group: string; name: string; url: string; status: 'new' | 'duplicate' }[];
   issues: ImportIssue[];
   summary: {
     newGroups: number;
+    newPages: number;
     newServices: number;
     duplicates: number;
     errors: number;
@@ -95,10 +116,10 @@ export type ExportedSettings = {
  * the database backup, see `pnpm backup`).
  */
 export function serializeConfiguration(
-  groups: { name: string; columns?: number | null }[],
+  groups: { name: string; columns?: number | null; page?: string }[],
   services: Service[],
   format: 'yaml' | 'json',
-  settings: ExportedSettings = {},
+  settings: ExportedSettings & { pages?: string[] } = {},
 ): string {
   const names = [...new Set([...groups.map((g) => g.name), ...services.map((s) => s.category)])];
   const document = {
@@ -107,10 +128,14 @@ export function serializeConfiguration(
     ...(settings.customCss && settings.customCss.css.trim() !== ''
       ? { customCss: settings.customCss }
       : {}),
+    ...(settings.pages && settings.pages.length > 0 ? { pages: settings.pages } : {}),
     groups: names.map((name) => ({
       name,
       ...(groups.find((group) => group.name === name)?.columns
         ? { columns: groups.find((group) => group.name === name)?.columns }
+        : {}),
+      ...(groups.find((group) => group.name === name)?.page
+        ? { page: groups.find((group) => group.name === name)?.page }
         : {}),
       services: services
         .filter((service) => service.category === name)
@@ -202,10 +227,23 @@ export function parseTransfer(content: string): ParsedImport {
     return fail('invalid-syntax');
   }
   if (!isRecord(raw) || !Array.isArray(raw.groups)) return fail('invalid-document');
-  if (raw.version !== TRANSFER_VERSION) return fail('unsupported-version');
+  if (!READABLE_TRANSFER_VERSIONS.includes(raw.version)) return fail('unsupported-version');
   if (raw.groups.length > MAX_GROUPS) return fail('too-many-groups');
   // `appearance` and `customCss` are exported for backup and moving by hand, but import only adds
   // cards and groups and never overwrites settings, so they are left unread on purpose.
+  if (raw.pages !== undefined) {
+    const names = Array.isArray(raw.pages) ? raw.pages : [];
+    const listed: string[] = [];
+    names.forEach((value: unknown, index) => {
+      const name = normalizePageName(value);
+      if (!name)
+        issues.push({ path: `pages[${index}]`, code: 'page-invalid', severity: 'warning' });
+      else if (!listed.some((known) => samePageName(known, name))) listed.push(name);
+    });
+    if (!Array.isArray(raw.pages))
+      issues.push({ path: 'pages', code: 'page-invalid', severity: 'warning' });
+    if (listed.length) document.pages = listed;
+  }
   let total = 0;
   raw.groups.forEach((rawGroup: unknown, gi) => {
     const path = `groups[${gi}]`;
@@ -216,6 +254,11 @@ export function parseTransfer(content: string): ParsedImport {
       return;
     }
     const group: ImportedGroup = { name, services: [] };
+    if (rawGroup.page !== undefined && rawGroup.page !== null) {
+      const page = normalizePageName(rawGroup.page);
+      if (page) group.page = page;
+      else issues.push({ path: `${path}.page`, code: 'page-invalid', severity: 'warning' });
+    }
     if (rawGroup.columns !== undefined && rawGroup.columns !== null) {
       if (
         typeof rawGroup.columns === 'number' &&
@@ -246,11 +289,27 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
   const existingKeys = new Set(existing.services.map((s) => `${s.category}\n${s.url}`));
   const fileKeys = new Set<string>();
   const groups: ImportPlan['groups'] = [];
+  const knownPages = existing.pages ?? [];
+  const pages: ImportPlan['pages'] = [];
+  const wantedPages = [
+    ...(parsed.document.pages ?? []),
+    ...parsed.document.groups.flatMap((group) => (group.page ? [group.page] : [])),
+  ];
+  for (const name of wantedPages)
+    if (!pages.some((page) => samePageName(page.name, name)))
+      pages.push({
+        name,
+        status: knownPages.some((known) => samePageName(known, name)) ? 'existing' : 'new',
+      });
   const services: ImportPlan['services'] = [];
   parsed.document.groups.forEach((group, groupIndex) => {
     if (!seenGroups.has(group.name)) {
       seenGroups.add(group.name);
-      groups.push({ name: group.name, status: knownGroups.has(group.name) ? 'existing' : 'new' });
+      groups.push({
+        name: group.name,
+        status: knownGroups.has(group.name) ? 'existing' : 'new',
+        ...(group.page ? { page: group.page } : {}),
+      });
     }
     group.services.forEach((service, index) => {
       const key = `${group.name}\n${service.url}`;
@@ -272,10 +331,12 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
   });
   return {
     groups,
+    pages,
     services,
     issues,
     summary: {
       newGroups: groups.filter((g) => g.status === 'new').length,
+      newPages: pages.filter((page) => page.status === 'new').length,
       newServices: services.filter((s) => s.status === 'new').length,
       duplicates: services.filter((s) => s.status === 'duplicate').length,
       errors: issues.filter((i) => i.severity === 'error').length,

@@ -27,6 +27,8 @@ export function ProposalChange({ diff, current }: { diff: Diff; current?: Servic
       next: next == null ? '' : String(next),
     };
   });
+  if (diff.op === 'create' && diff.page)
+    rows.push({ key: 'page' as never, label: t('diff.page'), before: '', next: diff.page });
   const changed = rows.filter((row) =>
     diff.op === 'update' ? row.next !== row.before : diff.op === 'create' ? row.next : row.before,
   );

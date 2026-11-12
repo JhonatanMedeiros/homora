@@ -103,6 +103,13 @@ function Dashboard({
     onOpenHelp: () => setHelpOpen(true),
     onGo: (target) => navigate(target === 'services' ? '/' : tabPath(target)),
     onNewService: () => navigate('/manage/services/new'),
+    // Pages are the tabs of the dashboard only: not in manage mode, not on other sections.
+    onGoPage: (index) => {
+      const page = data.pages[index];
+      if (tab !== 'services' || managing || !page) return false;
+      data.selectPage(page.id);
+      return true;
+    },
   });
 
   return (
@@ -149,9 +156,15 @@ function Dashboard({
         }}
         onToggleTheme={toggleTheme}
         onNavigate={navigate}
+        pageName={(service) =>
+          data.pages.length > 1
+            ? data.pages.find((page) => page.id === data.pageIdOf(service.category))?.name
+            : undefined
+        }
         onGoToCard={(service) => {
           // The card only exists on the dashboard.
           if (managing || tab !== 'services') navigate('/');
+          data.selectPage(data.pageIdOf(service.category));
           setFocusRequest((previous) => ({ id: service.id, nonce: (previous?.nonce ?? 0) + 1 }));
         }}
         view={viewPrefs.view}

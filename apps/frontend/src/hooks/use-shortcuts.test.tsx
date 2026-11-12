@@ -152,3 +152,19 @@ it('removes its listener on unmount', () => {
   press('/');
   expect(h.onOpenPalette).not.toHaveBeenCalled();
 });
+
+it('switches pages with the digit keys and only claims the key when a page took it', () => {
+  const onGoPage = vi.fn((index: number) => index === 1);
+  setup({ onGoPage } as never);
+  expect(press('2')).toBe(false);
+  expect(onGoPage).toHaveBeenCalledWith(1);
+  expect(press('3')).toBe(true);
+  expect(onGoPage).toHaveBeenLastCalledWith(2);
+});
+
+it('ignores the digit keys while typing in a field', () => {
+  const onGoPage = vi.fn(() => true);
+  setup({ onGoPage } as never);
+  press('1', {}, document.querySelector('input') as Element);
+  expect(onGoPage).not.toHaveBeenCalled();
+});

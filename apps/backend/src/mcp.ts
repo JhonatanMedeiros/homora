@@ -39,6 +39,14 @@ type McpOptions = {
 };
 export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
   const configuration = createServiceConfiguration(database);
+  /** Groups with the name of the page they are on, so agents can name it. */
+  const groupsWithPage = () => {
+    const names = new Map(configuration.listPages().map((page) => [page.id, page.name]));
+    return configuration.listGroups().map(({ pageId, ...group }) => ({
+      ...group,
+      page: pageId === null ? null : (names.get(pageId) ?? null),
+    }));
+  };
   const dockerPush = createDockerPush(database);
   const proposalService = createProposalService(database, configuration);
   const server = new McpServer({ name: 'homora', version: '0.1.0' });
@@ -274,7 +282,7 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
           ],
           isError: true,
         };
-      return { content: [{ type: 'text', text: JSON.stringify(configuration.listGroups()) }] };
+      return { content: [{ type: 'text', text: JSON.stringify(groupsWithPage()) }] };
     },
   );
   server.registerTool(
@@ -286,7 +294,7 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
     },
     async ({ id }) => {
       if (!authorize('services:read')) return unauthorized();
-      const group = configuration.listGroups().find((item) => item.id === id);
+      const group = groupsWithPage().find((item) => item.id === id);
       return group ? result(group) : failed();
     },
   );

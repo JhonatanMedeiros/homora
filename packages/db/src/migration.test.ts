@@ -337,7 +337,7 @@ it('adds the optional card-to-guest link without changing existing cards and unl
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
     // Database created by the previous version: every migration except the last one.
-    for (const migration of migrations.slice(0, -1)) {
+    for (const migration of migrations.slice(0, 20)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -387,7 +387,7 @@ it('adds suggestion dismissals on top of the host link without touching existing
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
     // A database created by the previous version (without the dismissals table).
-    for (const migration of migrations.slice(0, -1)) {
+    for (const migration of migrations.slice(0, 21)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -430,7 +430,7 @@ it('adds service dependencies on top of the previous schema, rejecting self link
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
     // A database created by the previous version (without the dependencies table).
-    for (const migration of migrations.slice(0, -1)) {
+    for (const migration of migrations.slice(0, 22)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -453,6 +453,57 @@ it('adds service dependencies on top of the previous schema, rejecting self link
     check.exec('DELETE FROM services WHERE id=2');
     expect(check.prepare('SELECT * FROM service_dependencies').all()).toEqual([]);
     check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds pages with a default Home that holds every existing group, and keeps names unique', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-pages-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const migrations = readMigrationFiles({
+      migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+    });
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // A database created by the previous version (before pages).
+    for (const migration of migrations.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO service_groups(id,name,position,columns) VALUES(1,'Media',0,3),(2,'Tools',1,NULL); INSERT INTO services(id,name,url,category,description) VALUES(1,'A','https://a.test','Media','')",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(check.prepare('SELECT id,name,position FROM pages').all()).toEqual([
+      { id: 1, name: 'Home', position: 0 },
+    ]);
+    expect(
+      check.prepare('SELECT name,position,columns,page_id FROM service_groups ORDER BY id').all(),
+    ).toEqual([
+      { name: 'Media', position: 0, columns: 3, page_id: 1 },
+      { name: 'Tools', position: 1, columns: null, page_id: 1 },
+    ]);
+    expect(check.prepare('SELECT name,category FROM services').all()).toEqual([
+      { name: 'A', category: 'Media' },
+    ]);
+    expect(() => check.exec("INSERT INTO pages(name,position) VALUES('HOME',1)")).toThrow();
+    expect(() => check.exec('DELETE FROM pages WHERE id=1')).toThrow();
+    check.exec("INSERT INTO pages(name,position) VALUES('Lab',1)");
+    // Opening it again changes nothing.
+    check.close();
+    createDatabase(path).close();
+    const again = new DatabaseSync(path);
+    expect(again.prepare('SELECT COUNT(*) AS n FROM pages').get()).toEqual({ n: 2 });
+    again.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

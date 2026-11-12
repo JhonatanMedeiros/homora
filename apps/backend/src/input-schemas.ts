@@ -63,12 +63,26 @@ export const hostBodySchema = z.object({ host: hostLinkSchema.nullable() }).stri
 
 const serviceIdSchema = z.number().int().safe().positive();
 export const serviceProposalSchema = z.discriminatedUnion('op', [
-  z.object({ op: z.literal('create'), service: serviceInputSchema }).strict(),
+  z
+    .object({
+      op: z.literal('create'),
+      service: serviceInputSchema,
+      // Only used when the card's group does not exist yet; the first page when omitted.
+      page: z.string().trim().min(1).max(40).optional(),
+    })
+    .strict(),
   z.object({ op: z.literal('update'), id: serviceIdSchema, service: serviceInputSchema }).strict(),
   z.object({ op: z.literal('delete'), id: serviceIdSchema }).strict(),
 ]);
 
 export const groupNameSchema = z.object({ name: z.string().trim().min(1).max(40) }).strict();
+
+export const groupCreateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(40),
+    pageId: z.number().int().safe().positive().optional(),
+  })
+  .strict();
 
 export const groupColumnsSchema = z
   .object({ columns: z.number().int().min(1).max(6).nullable() })

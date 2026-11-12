@@ -34,6 +34,8 @@ type Props = {
   notes?: Record<number, string>;
   nodeFilter?: { connectionId: number; node: string } | null;
   onClearFilter?: () => void;
+  /** Name of the page a service is on; undefined with a single page. */
+  pageName?: (service: Service) => string | undefined;
 };
 
 const IMPACT_TEXT = {
@@ -49,8 +51,10 @@ function ServiceRow({
   blocked,
   impact,
   note,
+  page,
   onEdit,
 }: {
+  page?: string;
   service: Service;
   status?: ServiceStatus;
   blocked: boolean;
@@ -78,6 +82,7 @@ function ServiceRow({
           <span className="sr-only">{t('card.opensNewTab')}</span>
         </a>
         <span className="truncate font-mono text-xs text-muted-foreground">
+          {page ? `${page} · ` : ''}
           {hostOf(service.url)}
         </span>
         {note && <span className="text-xs text-muted-foreground">{note}</span>}
@@ -117,6 +122,7 @@ export function HostView({
   notes = {},
   nodeFilter = null,
   onClearFilter,
+  pageName,
 }: Props) {
   const mobile = useIsMobile();
   const full = buildHostView(services, connections, inventories);
@@ -148,6 +154,7 @@ export function HostView({
             inventories,
           )}
           note={notes[service.id]}
+          page={pageName?.(service)}
           onEdit={onEdit}
         />
       ))}

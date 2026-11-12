@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/sqlite-proxy';
 export {
   services,
   serviceGroups,
+  pages,
   integrationInstances,
   integrationWidgets,
   agentIdentities,

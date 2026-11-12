@@ -45,6 +45,8 @@ type Props = {
   dependencies?: Dependency[];
   /** "May be affected through ..." hints by service id, from manual dependencies. */
   notes?: Record<number, string>;
+  /** Name of the page a service is on; undefined with a single page. */
+  pageName?: (service: Service) => string | undefined;
   services: Service[];
   connections: HostConnection[];
   inventories: HostInventories;
@@ -96,6 +98,7 @@ export function HostMap({
   onListView,
   onOpenCard,
   onChangeHost,
+  pageName,
 }: Props) {
   const mobile = useIsMobile();
   const [openAnyway, setOpenAnyway] = useState(false);
@@ -504,6 +507,7 @@ export function HostMap({
                 status={statuses[selectedService.id]}
                 blocked={blockedIds.has(selectedService.id)}
                 runsOn={panelRunsOn(selectedService)}
+                page={pageName?.(selectedService)}
                 impact={[impactText(impactOf(selectedService)), notes[selectedService.id]]
                   .filter(Boolean)
                   .join(' · ')}
@@ -594,6 +598,7 @@ function ServicePanel({
   status,
   blocked,
   runsOn,
+  page,
   impact,
   dependsOnList,
   usedByList,
@@ -609,6 +614,7 @@ function ServicePanel({
   status?: ServiceStatus;
   blocked: boolean;
   runsOn: string;
+  page?: string;
   impact: string;
   dependsOnList: { id: number; name: string }[];
   usedByList: { id: number; name: string }[];
@@ -639,6 +645,7 @@ function ServicePanel({
         <Row label={t('map.panel.status')}>
           <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
         </Row>
+        {page && <Row label={t('pages.title')}>{page}</Row>}
         <Row label={t('map.panel.runsOn')}>{runsOn}</Row>
         <Row label={t('map.panel.affectedBy')}>{impact || t('map.panel.nothingAffects')}</Row>
         <Row label={`${t('dependencies.title')} (${t('dependencies.manual')})`}>

@@ -7,7 +7,8 @@ function fixture() {
   db.exec(`
     PRAGMA foreign_keys=ON;
     CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT NOT NULL,url TEXT NOT NULL,category TEXT NOT NULL,description TEXT NOT NULL,icon TEXT NOT NULL DEFAULT '',position INTEGER NOT NULL DEFAULT 0,allow_private INTEGER NOT NULL DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT);
-    CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER);
+    CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
+    CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
     CREATE TABLE integration_instances(id INTEGER PRIMARY KEY,type TEXT NOT NULL,name TEXT NOT NULL,public_config TEXT NOT NULL,secret_ref TEXT,certificate_ref TEXT);
     CREATE TABLE integration_migrations(name TEXT PRIMARY KEY);
     CREATE TABLE integration_widgets(id INTEGER PRIMARY KEY,integration_id INTEGER NOT NULL REFERENCES integration_instances(id) ON DELETE RESTRICT,type TEXT NOT NULL,name TEXT NOT NULL,public_config TEXT NOT NULL,service_id INTEGER REFERENCES services(id) ON DELETE SET NULL);
@@ -16,7 +17,7 @@ function fixture() {
     CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
     CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'immutable'); END;
     CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);
-    INSERT INTO service_groups VALUES(1,'Media',0,NULL),(2,'Apps',1,NULL);
+    INSERT INTO service_groups VALUES(1,'Media',0,NULL,1),(2,'Apps',1,NULL,1);
     INSERT INTO services(id,name,url,category,description,position) VALUES(1,'A','https://a.example','Media','',0),(2,'B','https://b.example','Media','',1),(3,'C','https://c.example','Apps','',0);
     INSERT INTO integration_instances VALUES(1,'jellyfin','Media','{"url":"https://media.example","allowPrivate":false}','encrypted-secret',NULL);
   `);
@@ -30,7 +31,7 @@ describe('managed proposals', () => {
     const { db, api, agent } = fixture();
     try {
       db.exec(
-        "INSERT INTO service_groups VALUES(3,'First',5,NULL),(4,'Middle',5,NULL),(5,'Last',9,NULL)",
+        "INSERT INTO service_groups VALUES(3,'First',5,NULL,1),(4,'Middle',5,NULL,1),(5,'Last',9,NULL,1)",
       );
       const proposal = api.proposeManaged(agent.id, {
         kind: 'group',

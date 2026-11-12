@@ -81,7 +81,7 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
             <ChevronLeft aria-hidden="true" className="size-4" />
             {t('settings.title')}
           </Link>
-          {current === 'interface' && <InterfaceSettings />}
+          {current === 'interface' && <InterfaceSettings onChanged={onImported} />}
           {current === 'monitoring' && <MonitoringSettings />}
           {current === 'public' && <PublicStatusSettings />}
           {current === 'notifications' && <NotificationSettings />}

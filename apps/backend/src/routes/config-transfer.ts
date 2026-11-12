@@ -20,6 +20,8 @@ const previewSchema = z
 const applySchema = previewSchema
   .extend({
     keepPrivate: z.boolean().optional(),
+    // Every new group goes on this page (the page picker of the import dialog).
+    pageId: z.number().int().safe().positive().optional(),
     expectedVersion: z.number().int().safe().nonnegative().optional(),
   })
   .strict();
@@ -33,20 +35,18 @@ export function registerConfigTransferRoutes(
 ) {
   app.get<{ Querystring: { format?: string } }>('/api/config/export', async (request, reply) => {
     const format = request.query.format === 'json' ? 'json' : 'yaml';
-    const { groups, services } = configuration.exportData();
+    const { groups, services, pages } = configuration.exportData();
     return reply
       .header('Content-Type', format === 'json' ? 'application/json' : 'application/yaml')
       .header('Content-Disposition', `attachment; filename="homora-config.${format}"`)
       .send(
-        serializeConfiguration(
-          groups,
-          services,
-          format,
-          settings && {
+        serializeConfiguration(groups, services, format, {
+          pages,
+          ...(settings && {
             appearance: settings.appearance.get(),
             customCss: (({ enabled, css }) => ({ enabled, css }))(settings.customCss.get()),
-          },
-        ),
+          }),
+        }),
       );
   });
 
@@ -72,6 +72,7 @@ export function registerConfigTransferRoutes(
         parseBySource(body.data.source ?? 'homora', body.data.content),
         {
           keepPrivate: body.data.keepPrivate === true,
+          pageId: body.data.pageId,
           expectedVersion: body.data.expectedVersion,
         },
       );

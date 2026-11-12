@@ -57,6 +57,8 @@ type Props = {
   onNavigate: (path: string) => void;
   /** Closes the palette and scrolls to the service's card on the dashboard. */
   onGoToCard: (service: Service) => void;
+  /** Name of the page a service's group is on; undefined with a single page. */
+  pageName?: (service: Service) => string | undefined;
   view: View;
   onViewChange: (view: View) => void;
   showDescriptions: boolean;
@@ -100,6 +102,7 @@ export function CommandPalette({
   onToggleTheme,
   onNavigate,
   onGoToCard,
+  pageName,
   view,
   onViewChange,
   showDescriptions,
@@ -166,6 +169,7 @@ export function CommandPalette({
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{service.name}</span>
           <span className="block truncate font-mono text-xs text-muted-foreground">
+            {pageName?.(service) ? `${pageName(service)} · ` : ''}
             {service.category} · {hostOf(service.url)}
           </span>
         </span>

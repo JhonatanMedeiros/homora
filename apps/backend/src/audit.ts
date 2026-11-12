@@ -21,6 +21,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'appearance-reset',
     'custom-css-update',
     'custom-css-reset',
+    'page-update',
   ],
   proposal: [
     'proposal',

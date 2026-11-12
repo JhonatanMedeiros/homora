@@ -161,7 +161,11 @@ export function createProposalService(
         if (service.expectedStatus === undefined) service.expectedStatus = current.expectedStatus;
         if (service.checkPath === undefined) service.checkPath = current.checkPath;
       }
-      diff = d.op === 'create' ? { op: 'create', service } : { op: 'update', id: d.id, service };
+      if (d.op === 'create') configuration.checkNewServicePage(service.category, d.page);
+      diff =
+        d.op === 'create'
+          ? { op: 'create', service, ...(d.page ? { page: d.page } : {}) }
+          : { op: 'update', id: d.id, service };
     }
     const id = randomBytes(16).toString('hex'),
       now = Date.now();

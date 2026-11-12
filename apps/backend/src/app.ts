@@ -28,6 +28,8 @@ import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
 import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
 import { createCustomCss } from './custom-css.js';
 import { registerCustomCssRoutes } from './routes/custom-css.js';
+import { createPages } from './pages.js';
+import { registerPageRoutes } from './routes/pages.js';
 import { createAppearance } from './appearance.js';
 import { createBackgroundStore } from './background-image.js';
 import { registerAppearanceRoutes } from './routes/appearance.js';
@@ -123,6 +125,7 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   const connections = registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
+  registerPageRoutes(app, createPages(sqlite), auth, audit);
   registerCustomCssRoutes(app, customCss, auth, audit);
   registerAppearanceRoutes(
     app,

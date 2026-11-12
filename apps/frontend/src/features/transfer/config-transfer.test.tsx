@@ -22,6 +22,9 @@ const preview: Preview = {
     summary: { newGroups: 1, newServices: 1, duplicates: 1, errors: 1, warnings: 0 },
   },
 };
+/** Calls other than the page list that the import dialog loads on its own. */
+const api = (mock: { mock: { calls: unknown[][] } }) =>
+  mock.mock.calls.filter(([url]) => url !== '/api/pages');
 const file = (text: string, name = 'homora-config.yaml') => new File([text], name);
 const choose = (input: HTMLElement, f: File) => fireEvent.change(input, { target: { files: [f] } });
 
@@ -49,11 +52,11 @@ it('shows preview, reports skipped items, and only saves on confirmation', async
   expect(screen.getByText('Pi-hole')).toBeTruthy();
   expect(screen.getByText('Já existe')).toBeTruthy();
   expect(screen.getByText(/URL deve ser http ou https/)).toBeTruthy();
-  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(api(fetchMock)).toHaveLength(1);
 
   fireEvent.click(screen.getByRole('button', { name: 'Importar (1)' }));
   await waitFor(() => expect(onImported).toHaveBeenCalled());
-  const [, init] = fetchMock.mock.calls[1] as unknown as [string, { body: string }];
+  const [, init] = api(fetchMock)[1] as unknown as [string, { body: string }];
   expect(JSON.parse(init.body)).toEqual({
     content: 'version: 1',
     source: 'homora',
@@ -74,8 +77,8 @@ it('sends keepPrivate only when user checks the option', async () => {
   choose(screen.getByLabelText('Arquivo de configuração'), file('x'));
   fireEvent.click(await screen.findByRole('checkbox', { name: /Manter as permissões/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Importar (1)' }));
-  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-  const [, init] = fetchMock.mock.calls[1] as unknown as [string, { body: string }];
+  await waitFor(() => expect(api(fetchMock)).toHaveLength(2));
+  const [, init] = api(fetchMock)[1] as unknown as [string, { body: string }];
   expect(JSON.parse(init.body).keepPrivate).toBe(true);
 });
 
@@ -94,14 +97,14 @@ it('prompts for new review when configuration has changed', async () => {
 });
 
 it('rejects large files without calling server and discards preview', async () => {
-  const fetchMock = vi.fn();
+  const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [] }));
   vi.stubGlobal('fetch', fetchMock);
   render(<ConfigTransfer onImported={() => {}} />);
   const big = file('x');
   Object.defineProperty(big, 'size', { value: 1_000_001 });
   choose(screen.getByLabelText('Arquivo de configuração'), big);
   expect(await screen.findByText('O arquivo tem mais de 1 MB.')).toBeTruthy();
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(api(fetchMock)).toHaveLength(0);
 });
 
 it('does not offer import when there is nothing new', async () => {
@@ -135,13 +138,13 @@ it('sends selected source, regenerates preview on format switch, and hides priva
   choose(screen.getByLabelText('Arquivo de configuração'), file('- Casa: []'));
   await screen.findByRole('checkbox', { name: /Manter as permissões/ });
   await chooseSelectOption('Formato do arquivo', /Homepage/);
-  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-  const [, previewInit] = fetchMock.mock.calls[1] as unknown as [string, { body: string }];
+  await waitFor(() => expect(api(fetchMock)).toHaveLength(2));
+  const [, previewInit] = api(fetchMock)[1] as unknown as [string, { body: string }];
   expect(JSON.parse(previewInit.body)).toEqual({ content: '- Casa: []', source: 'homepage' });
   expect(screen.queryByRole('checkbox', { name: /Manter as permissões/ })).toBeNull();
   expect(screen.getByText(/Monitoramento, widgets, vínculos com Docker/)).toBeTruthy();
   fireEvent.click(await screen.findByRole('button', { name: 'Importar (1)' }));
-  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-  const [, applyInit] = fetchMock.mock.calls[2] as unknown as [string, { body: string }];
+  await waitFor(() => expect(api(fetchMock)).toHaveLength(3));
+  const [, applyInit] = api(fetchMock)[2] as unknown as [string, { body: string }];
   expect(JSON.parse(applyInit.body)).toMatchObject({ source: 'homepage', keepPrivate: false });
 });

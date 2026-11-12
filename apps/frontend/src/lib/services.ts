@@ -15,6 +15,8 @@ export type ServiceGroup = {
   id: number;
   name: string;
   position: number;
+  /** Page (tab of the Home) the group is on. */
+  pageId?: number;
   /** Grid columns on wide viewports (1 to 6); null falls back to automatic responsive grid. */
   columns?: number | null;
 };

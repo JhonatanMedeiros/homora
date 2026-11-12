@@ -23,6 +23,8 @@ type Props = {
   service: Service;
   /** Groups the service can move to (the current one is left out). */
   otherGroups: string[];
+  /** Page of a group, shown beside its name when the groups of several pages are listed. */
+  pageLabel?: (group: string) => string | undefined;
   first: boolean;
   last: boolean;
   dragging: boolean;
@@ -45,6 +47,7 @@ type Props = {
 export function OrganizeRow({
   service: s,
   otherGroups,
+  pageLabel,
   first,
   last,
   dragging,
@@ -133,6 +136,11 @@ export function OrganizeRow({
                       {otherGroups.map((group) => (
                         <DropdownMenuItem key={group} onSelect={() => onMoveToGroup(group)}>
                           {group}
+                          {pageLabel?.(group) && (
+                            <span className="ml-auto pl-3 text-xs text-muted-foreground">
+                              {pageLabel(group)}
+                            </span>
+                          )}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuSubContent>

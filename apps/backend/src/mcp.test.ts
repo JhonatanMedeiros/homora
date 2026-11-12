@@ -20,7 +20,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
     "UPDATE services SET url='http://localhost/?api_key=synthetic-secret' WHERE id=1",
   ).run();
   db.exec(
-    "CREATE TABLE service_groups (id INTEGER PRIMARY KEY, name TEXT, position INTEGER, columns INTEGER); INSERT INTO service_groups VALUES (1,'Mídia',0,NULL)",
+    "CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0); CREATE TABLE service_groups (id INTEGER PRIMARY KEY, name TEXT, position INTEGER, columns INTEGER,page_id INTEGER); INSERT INTO service_groups VALUES (1,'Mídia',0,NULL,1)",
   );
   db.exec(`CREATE TABLE integration_instances(id INTEGER PRIMARY KEY,type TEXT,name TEXT,public_config TEXT,secret_ref TEXT,certificate_ref TEXT);
     CREATE TABLE integration_widgets(id INTEGER PRIMARY KEY,integration_id INTEGER,type TEXT,name TEXT,public_config TEXT,service_id INTEGER);

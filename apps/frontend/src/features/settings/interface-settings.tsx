@@ -20,6 +20,7 @@ import {
 } from '@/lib/web-search';
 import { AppearanceSettings } from './appearance-settings';
 import { CustomCssSettings } from './custom-css-settings';
+import { PagesSettings } from './pages-settings';
 import { Segmented } from './segmented';
 import { SettingRow, SettingsGroup } from './setting-row';
 
@@ -30,7 +31,7 @@ const PROBLEM_MESSAGE: Record<TemplateProblem, MessageKey> = {
 };
 
 /** Preferences kept in this browser only. */
-export function InterfaceSettings() {
+export function InterfaceSettings({ onChanged }: { onChanged?: () => void | Promise<void> }) {
   const { theme, setTheme } = useTheme();
   const { locale, setLocale } = useI18n();
   const { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange } =
@@ -111,6 +112,8 @@ export function InterfaceSettings() {
       <AppearanceSettings />
 
       <CustomCssSettings />
+
+      <PagesSettings onChanged={onChanged} />
 
       <SettingsGroup id="ui-home" title={t('settings.ui.home')}>
         <SettingRow label={t('settings.ui.layout')} description={t('settings.ui.layoutHint')}>
