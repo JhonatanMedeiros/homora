@@ -3,7 +3,7 @@ import { UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 
 export type View = 'list' | 'cards';
 /** How Home arranges services: by group (default) or by the Proxmox host they run on. */
-export type Arrange = 'group' | 'host';
+export type Arrange = 'group' | 'host' | 'map';
 const VIEW_KEY = 'homora-density';
 const DESCRIPTIONS_KEY = 'homora-descriptions';
 const UPTIME_RANGE_KEY = 'homora-uptime-range';
@@ -38,7 +38,10 @@ function currentView(): View {
 }
 const currentRange = (): UptimeRange =>
   UPTIME_RANGES.find((range) => range === read(UPTIME_RANGE_KEY)) ?? '24h';
-const currentArrange = (): Arrange => (read(ARRANGE_KEY) === 'host' ? 'host' : 'group');
+const currentArrange = (): Arrange => {
+  const saved = read(ARRANGE_KEY);
+  return saved === 'host' || saved === 'map' ? saved : 'group';
+};
 const currentDescriptions = () => read(DESCRIPTIONS_KEY) !== 'hidden';
 
 /** Home view preferences (list or cards, descriptions, uptime period), saved in this browser. */

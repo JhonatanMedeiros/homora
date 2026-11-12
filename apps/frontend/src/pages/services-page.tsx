@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { ViewOptions } from '@/components/view-options';
 import { HostView } from '@/components/host-view';
+import { HostMap } from '@/components/host-map';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useHostInventory } from '@/hooks/use-host-inventory';
 import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
@@ -73,8 +74,8 @@ export function ServicesPage({
   onAddService,
   formRoute,
   navigate,
-  focusRequest,
-  onFocusHandled,
+  focusRequest: requestedFocus,
+  onFocusHandled: handledFocus,
 }: Props) {
   const { services, groupRows, statuses, categories, sortedIn, blockedIds, refresh } = data;
   const cardWidgets = useCardWidgets();
@@ -96,7 +97,16 @@ export function ServicesPage({
   const [shared, setShared] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [host, setHost] = useState<HostLink | null>(null);
-  const hostView = arrange === 'host' && !managing;
+  // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
+  const [localFocus, setLocalFocus] = useState<FocusRequest | null>(null);
+  const focusRequest = localFocus ?? requestedFocus;
+  const onFocusHandled = () => {
+    setLocalFocus(null);
+    handledFocus?.();
+  };
+  const mapView = arrange === 'map' && !managing;
+  const hostList = arrange === 'host' && !managing;
+  const hostView = hostList || mapView;
   const [suggestOpen, setSuggestOpen] = useState(false);
   const linkedConnections = useMemo(
     () => [...new Set(services.flatMap((s) => (s.host ? [s.host.connectionId] : [])))],
@@ -509,7 +519,7 @@ export function ServicesPage({
                 size="sm"
                 value={arrange}
                 onValueChange={(value) => {
-                  if (value === 'group' || value === 'host') setArrange(value);
+                  if (value === 'group' || value === 'host' || value === 'map') setArrange(value);
                 }}
                 aria-label={t('hosts.arrange')}
               >
@@ -518,6 +528,9 @@ export function ServicesPage({
                 </ToggleGroupItem>
                 <ToggleGroupItem value="host" className="pointer-coarse:h-11">
                   {t('hosts.arrange.host')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="map" className="pointer-coarse:h-11">
+                  {t('hosts.arrange.map')}
                 </ToggleGroupItem>
               </ToggleGroup>
               <ViewOptions
@@ -666,7 +679,23 @@ export function ServicesPage({
           }
         />
       )}
-      {hostView && services.length > 0 && (
+      {mapView && services.length > 0 && (
+        <HostMap
+          services={services}
+          connections={hostData.connections}
+          inventories={hostData.inventories}
+          statuses={statuses}
+          blockedIds={blockedIds}
+          onRefresh={() => hostData.connections.forEach((c) => void hostData.reload(c.id, true))}
+          onListView={() => setArrange('host')}
+          onOpenCard={(service) => {
+            setArrange('group');
+            setLocalFocus({ id: service.id, nonce: Date.now() });
+          }}
+          onChangeHost={(service) => navigate(`/manage/services/${service.id}/edit`)}
+        />
+      )}
+      {hostList && services.length > 0 && (
         <HostView
           services={services}
           connections={hostData.connections}
