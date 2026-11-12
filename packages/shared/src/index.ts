@@ -33,7 +33,8 @@ export type ServiceInput = {
   expectedStatus?: ExpectedStatus | null;
   checkPath?: string | null;
 };
-export type Service = ServiceInput & { id: number };
+/** `isPublic` comes only from the authenticated listing; it is not part of ServiceInput on purpose. */
+export type Service = ServiceInput & { id: number; isPublic?: boolean };
 
 /** Invalid service input; `code` is stable and message is in English. */
 export class ServiceValidationError extends Error {

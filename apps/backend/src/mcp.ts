@@ -43,6 +43,16 @@ export function createMcp(
   const configuration = createServiceConfiguration(database);
   const proposalService = createProposalService(database, configuration, vault);
   const server = new McpServer({ name: 'homora', version: '0.1.0' });
+  const publicStatusEnabled = () => {
+    try {
+      const row = database
+        .prepare("SELECT value FROM app_settings WHERE key='public_status_enabled'")
+        .get() as { value: string } | undefined;
+      return row?.value === 'true';
+    } catch {
+      return false;
+    }
+  };
   const token = () => options.token ?? process.env.HOMORA_AGENT_TOKEN;
   const authorize = (scope: string) => proposalService.authenticate(token(), scope);
   const unauthorized = () => ({
@@ -146,6 +156,8 @@ export function createMcp(
       return result({
         scopes,
         discoveryEnabled: Boolean(options.docker),
+        // Read-only: agents cannot change what is public; that is an administrator decision.
+        publicStatusEnabled: publicStatusEnabled(),
         tools: [
           ...definitions.map(({ name, scopes: required, enabled }) => ({
             name,

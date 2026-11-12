@@ -25,6 +25,8 @@ const TITLES = new Set<string>([
   'session-revoke',
   'sessions-revoke-others',
   'profile-update',
+  'public-status-update',
+  'service-public',
   'proposal',
   'review.success',
   'review.refused',

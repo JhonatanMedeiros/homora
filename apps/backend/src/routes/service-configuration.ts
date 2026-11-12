@@ -12,6 +12,7 @@ import {
   serviceOrderSchema,
 } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
+import type { createPublicStatus } from '../public-status.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
@@ -26,8 +27,12 @@ export function registerServiceConfigurationRoutes(
   configuration: Configuration,
   monitor: Monitor,
   observations: Observations,
+  publicStatus: ReturnType<typeof createPublicStatus>,
 ) {
-  app.get('/api/services', async () => configuration.listServices());
+  app.get('/api/services', async () => {
+    const shared = publicStatus.publicIds();
+    return configuration.listServices().map((row) => ({ ...row, isPublic: shared.has(row.id) }));
+  });
   app.get('/api/service-status', async () => monitor.snapshot());
   app.get<{ Params: { id: string } }>('/api/services/:id/status-detail', async (request, reply) => {
     const id = parseId(request.params.id);
