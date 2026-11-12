@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type DragEvent,
-  type FormEvent,
-  type MutableRefObject,
-} from 'react';
+import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import type { Service, ServiceInput } from '@homora/shared';
 import { Check, Plus, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -47,12 +40,11 @@ import { ServiceForm } from '@/components/service-form';
 import { OrganizeRow } from '@/components/organize-row';
 import { ServicesEmpty } from '@/components/services-empty';
 import type { useServices } from '@/hooks/use-services';
-import { apiError, lower, t } from '@/i18n';
+import { apiError, t } from '@/i18n';
 import { emptyService } from '@/lib/services';
 
 /** Main screen: service groups with status, search, edit, and Organize mode. */
 type Props = {
-  query: string;
   managing: boolean;
   formRoute: 'new' | number | null;
   navigate: (path: string, replace?: boolean) => void;
@@ -62,8 +54,6 @@ type Props = {
   focusRequest?: FocusRequest | null;
   /** Called once the request was served, so remounting the page later does not scroll again. */
   onFocusHandled?: () => void;
-  /** Search opens the first result on Enter; the page registers here how to do so. */
-  openFirstRef: MutableRefObject<(() => void) | null>;
 };
 
 /** Asks the page to scroll to a service and flash it; `nonce` makes repeated requests distinct. */
@@ -72,9 +62,7 @@ export type FocusRequest = { id: number; nonce: number };
 const HIGHLIGHT_MS = 2000;
 
 export function ServicesPage({
-  query,
   data,
-  openFirstRef,
   managing,
   onAddService,
   formRoute,
@@ -152,12 +140,7 @@ export function ServicesPage({
     flashTimer.current = window.setTimeout(() => setFlash(''), 5000);
   }
 
-  const needle = lower(query).trim();
-  const filtered = services.filter(
-    (s) =>
-      (selected === null || s.category === selected) &&
-      lower(`${s.name} ${s.category} ${s.description} ${s.url}`).includes(needle),
-  );
+  const filtered = services.filter((s) => selected === null || s.category === selected);
   const isDown = (s: Service) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id);
   const groups = categories
     .map((category) => ({
@@ -167,18 +150,7 @@ export function ServicesPage({
         // Unavailable services rise to top within the group, except in Organize mode (user sets order).
         .sort((a, b) => (organizing ? 0 : Number(isDown(b)) - Number(isDown(a)))),
     }))
-    .filter((group) => group.items.length || (!needle && selected === null));
-
-  useEffect(() => {
-    const ref = openFirstRef;
-    ref.current = () => {
-      const first = groups.flatMap((group) => group.items)[0];
-      if (first) window.open(first.url, '_blank', 'noopener,noreferrer');
-    };
-    return () => {
-      ref.current = null;
-    };
-  });
+    .filter((group) => group.items.length || selected === null);
 
   function focusEditTrigger(id: number | null) {
     if (id !== null)
@@ -609,7 +581,6 @@ export function ServicesPage({
             organizing={organizing}
             list={list}
             managing={managing}
-            searching={Boolean(needle)}
             revealSignal={focusService?.category === category ? focusNonce : undefined}
             canEdit={Boolean(row)}
             canRemove={!services.some((service) => service.category === category)}

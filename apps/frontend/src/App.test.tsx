@@ -25,9 +25,6 @@ it('displays services, filters, and submits a new entry', async () => {
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   expect(await screen.findByRole('link', { name: /Jellyfin/ })).toBeTruthy();
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'nada' } });
-  expect(screen.getByText('Nenhum serviço encontrado')).toBeTruthy();
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: '' } });
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
@@ -647,11 +644,6 @@ it('provides quick search, cards view, and collapsible groups', async () => {
   expect(localStorage.getItem('homora-density')).toBe('cards');
   fireEvent.click(screen.getByRole('button', { name: 'Recolher grupo Mídia' }));
   expect(screen.queryByRole('link', { name: /Jellyfin/ })).toBeNull();
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Jelly' } });
-  const results = screen.getByRole('list', { name: 'Resultados rápidos' });
-  expect(within(results).getByRole('link', { name: /Jellyfin/ })).toBeTruthy();
-  fireEvent.keyDown(screen.getByRole('searchbox'), { key: 'ArrowDown' });
-  expect(document.activeElement).toBe(within(results).getByRole('link', { name: /Jellyfin/ }));
   localStorage.clear();
 });
 
@@ -664,7 +656,6 @@ it('opens service management directly and returns to dashboard', async () => {
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'teste' } });
   const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
   expect(window.location.pathname).toBe('/manage/services');
@@ -680,7 +671,6 @@ it('opens service management directly and returns to dashboard', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
   expect(screen.getByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
   expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
-  expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('teste');
   expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
     serviceRequests,
   );
@@ -1101,9 +1091,8 @@ it('opens the account from the user menu as its own page, outside the management
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Conta' }));
   expect(await screen.findByRole('heading', { name: 'Conta' })).toBeTruthy();
   expect(window.location.pathname).toBe('/account');
-  // No management sidebar and no search: only a way back.
+  // No management sidebar: only a way back.
   expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
-  expect(screen.queryByRole('searchbox')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
   expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
   expect(window.location.pathname).toBe('/');

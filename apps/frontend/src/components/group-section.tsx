@@ -22,7 +22,6 @@ type Props = {
   list?: boolean;
   /** Management shows one editable row per line; the home packs two columns. */
   managing?: boolean;
-  searching: boolean;
   /** Changes each time something inside the group must be shown; expands the group without saving. */
   revealSignal?: number;
   /** Present only for registered groups (can be renamed and removed). */
@@ -69,7 +68,6 @@ export function GroupSection({
   organizing,
   list = false,
   managing = false,
-  searching,
   revealSignal,
   canEdit,
   canRemove,
@@ -138,13 +136,13 @@ export function GroupSection({
           </span>
         </h2>
         <Separator className="min-w-8 flex-1" />
-        {!organizing && !searching && (
+        {!organizing && (
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
             aria-label={t(collapsed ? 'group.expand' : 'group.collapse', { name: category })}
-            aria-expanded={!collapsed || searching}
+            aria-expanded={!collapsed}
             aria-controls={`${titleId}:content`}
             onClick={toggleCollapsed}
           >
@@ -240,7 +238,7 @@ export function GroupSection({
           </div>
         )}
       </div>
-      {(!collapsed || organizing || searching) && (
+      {(!collapsed || organizing) && (
         <div id={`${titleId}:content`} className="motion-group flex flex-col gap-3">
           {count === 0 && (
             <p
