@@ -176,7 +176,7 @@ export function WidgetsSection({
                           type="button"
                           size="sm"
                           disabled={busy || !widgetEditName.trim()}
-                          onClick={() => onSaveEdit(widget, widgetEditName)}
+                          onClick={() => onSaveEdit(widget, widgetEditName, widgetEditCard)}
                         >
                           {t('widgets.save')}
                         </Button>
