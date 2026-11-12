@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group';
 import { Switch } from '@/components/ui/switch';
 import { SettingRow, SettingsGroup } from '@/features/settings/setting-row';
@@ -95,9 +96,9 @@ export function PublicStatusSettings() {
           />
         </SettingRow>
         <div className="flex flex-col gap-2 p-4">
-          <label htmlFor="public-status-address" className="text-sm font-medium">
+          <Label htmlFor="public-status-address" className="text-sm font-medium">
             {t('settings.public.address')}
-          </label>
+          </Label>
           <div className="flex flex-wrap gap-2">
             <InputGroup className="min-w-60 flex-1">
               <InputGroupInput

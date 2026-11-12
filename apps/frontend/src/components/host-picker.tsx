@@ -11,7 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { NativeSelect } from '@/components/native-select';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { EmptyNote } from '@/components/empty-note';
 import { FormError } from '@/components/form-error';
 import { Spinner } from '@/components/ui/spinner';
@@ -143,8 +143,9 @@ export function HostPicker({
             {connections.length > 1 && (
               <Field>
                 <FieldLabel htmlFor="host-connection">{t('hosts.connection')}</FieldLabel>
-                <NativeSelect
+                <FormSelect
                   id="host-connection"
+                  aria-label={t('hosts.connection')}
                   value={activeId ?? ''}
                   onChange={(event) => {
                     const id = Number(event.target.value);
@@ -154,28 +155,29 @@ export function HostPicker({
                   }}
                 >
                   {connections.map((connection) => (
-                    <option key={connection.id} value={connection.id}>
+                    <FormSelectOption key={connection.id} value={connection.id}>
                       {connection.name}
-                    </option>
+                    </FormSelectOption>
                   ))}
-                </NativeSelect>
+                </FormSelect>
               </Field>
             )}
             {inventory?.status === 'ready' && (
               <Field>
                 <FieldLabel htmlFor="host-node">{t('hosts.node')}</FieldLabel>
-                <NativeSelect
+                <FormSelect
                   id="host-node"
+                  aria-label={t('hosts.node')}
                   value={node}
                   onChange={(event) => setNode(event.target.value)}
                 >
-                  <option value="">{t('hosts.allNodes')}</option>
+                  <FormSelectOption value="">{t('hosts.allNodes')}</FormSelectOption>
                   {inventory.nodes.map((item) => (
-                    <option key={item.name} value={item.name}>
+                    <FormSelectOption key={item.name} value={item.name}>
                       {item.name}
-                    </option>
+                    </FormSelectOption>
                   ))}
-                </NativeSelect>
+                </FormSelect>
               </Field>
             )}
             <Field>

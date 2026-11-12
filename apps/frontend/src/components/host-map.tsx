@@ -214,9 +214,10 @@ export function HostMap({
     const selected = selection?.kind === 'service' && selection.id === item.service.id;
     const impact = impactText(impactOf(item.service));
     return (
-      <button
+      <Button
         key={item.service.id}
         type="button"
+        variant="outline"
         aria-pressed={selected}
         aria-label={t('map.tile', {
           name: item.service.name,
@@ -239,7 +240,7 @@ export function HostMap({
         }}
         style={{ left: item.x, top: item.y, width: item.w, height: item.h }}
         className={cn(
-          'absolute flex items-center justify-between gap-2 rounded-md border bg-card px-2 text-left text-xs outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
+          'absolute flex items-center justify-between gap-2 px-2 text-left text-xs',
           selected && 'border-primary ring-2 ring-primary',
         )}
       >
@@ -250,7 +251,7 @@ export function HostMap({
           label={status.label}
           className="shrink-0 text-[0.6875rem]"
         />
-      </button>
+      </Button>
     );
   };
   const renderGuest = (guest: MapGuest) => {
@@ -291,12 +292,13 @@ export function HostMap({
           dropOver === guest.group.key && 'border-2 border-dashed border-primary bg-accent',
         )}
       >
-        <button
+        <Button
           type="button"
+          variant="ghost"
           aria-pressed={selected}
           onClick={() => setSelection({ kind: 'guest', key: guest.group.key })}
           style={{ height: MAP.guestHeader - 6, width: guest.w - 8 }}
-          className="absolute top-1 left-1 flex flex-col items-start justify-center rounded-sm px-2 text-left text-xs outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute top-1 left-1 flex h-auto flex-col items-start justify-center rounded-sm px-2 text-left text-xs"
         >
           <span className="w-full truncate font-semibold">
             {guest.group.guest.name || t(`hosts.type.${guest.group.guest.type}`)}
@@ -305,7 +307,7 @@ export function HostMap({
             {guest.group.guest.vmid} · {t(`hosts.type.${guest.group.guest.type}`)} ·{' '}
             {guestState(guest.group.guest.status)}
           </span>
-        </button>
+        </Button>
         {guest.services.map(renderService)}
       </div>
     );

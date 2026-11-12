@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Ellipsis, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { navItems, primaryNavIds, type Tab } from '@/components/app-nav';
 import { Item, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
 import {
@@ -23,8 +24,6 @@ export function MobileTabs({ tab, onTabChange }: Props) {
   const primary = navItems.filter((item) => primaryNavIds.includes(item.id));
   const more = navItems.filter((item) => !primaryNavIds.includes(item.id));
   const moreActive = more.some((item) => item.id === tab);
-  const state = (active: boolean) =>
-    active ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground/80';
   return (
     <>
       <nav
@@ -32,27 +31,35 @@ export function MobileTabs({ tab, onTabChange }: Props) {
         className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground md:hidden"
       >
         {primary.map((item) => (
-          <button
+          <Button
             key={item.id}
             type="button"
+            variant={tab === item.id ? 'default' : 'ghost'}
             aria-current={tab === item.id ? 'page' : undefined}
             onClick={() => onTabChange(item.id)}
-            className={cn(tabClass, state(tab === item.id))}
+            className={cn(
+              tabClass,
+              'w-full rounded-none px-1 py-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
           >
             <item.icon aria-hidden="true" />
             {t(item.label)}
-          </button>
+          </Button>
         ))}
-        <button
+        <Button
           type="button"
+          variant={moreActive ? 'default' : 'ghost'}
           aria-haspopup="dialog"
           aria-current={moreActive ? 'page' : undefined}
           onClick={() => setMoreOpen(true)}
-          className={cn(tabClass, state(moreActive))}
+          className={cn(
+            tabClass,
+            'w-full rounded-none px-1 py-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          )}
         >
           <Ellipsis aria-hidden="true" />
           {t('nav.more')}
-        </button>
+        </Button>
       </nav>
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent side="bottom" className="pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -63,14 +70,15 @@ export function MobileTabs({ tab, onTabChange }: Props) {
           <div className="flex flex-col gap-2 px-4">
             {more.map((item) => (
               <Item key={item.id} asChild variant="outline" size="sm">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   aria-current={tab === item.id ? 'page' : undefined}
                   onClick={() => {
                     setMoreOpen(false);
                     onTabChange(item.id);
                   }}
-                  className="min-h-14 text-left"
+                  className="min-h-14 w-full justify-start text-left"
                 >
                   <ItemMedia variant="icon">
                     <item.icon aria-hidden="true" />
@@ -79,7 +87,7 @@ export function MobileTabs({ tab, onTabChange }: Props) {
                     <ItemTitle>{t(item.label)}</ItemTitle>
                   </ItemContent>
                   <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
-                </button>
+                </Button>
               </Item>
             ))}
           </div>

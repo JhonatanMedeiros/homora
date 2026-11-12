@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import type { Service } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { NativeSelect } from '@/components/native-select';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { t } from '@/i18n';
 
 type Props = {
@@ -50,8 +50,9 @@ export function DependencyPicker({ selfId, services, value, onChange }: Props) {
         <FieldDescription>{t('dependencies.none')}</FieldDescription>
       )}
       <div className="flex items-center gap-2">
-        <NativeSelect
+        <FormSelect
           id="service-dependency"
+          aria-label={t('dependencies.title')}
           value=""
           disabled={choices.length === 0}
           onChange={(event) => {
@@ -59,13 +60,13 @@ export function DependencyPicker({ selfId, services, value, onChange }: Props) {
             if (id) onChange([...value, id]);
           }}
         >
-          <option value="">{t('dependencies.choose')}</option>
+          <FormSelectOption value="">{t('dependencies.choose')}</FormSelectOption>
           {choices.map((service) => (
-            <option key={service.id} value={service.id}>
+            <FormSelectOption key={service.id} value={service.id}>
               {service.name}
-            </option>
+            </FormSelectOption>
           ))}
-        </NativeSelect>
+        </FormSelect>
       </div>
       <FieldDescription>{t('dependencies.hint')}</FieldDescription>
     </Field>

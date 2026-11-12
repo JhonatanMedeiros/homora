@@ -20,8 +20,8 @@ import {
   FieldSet,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { isWriteScope, PROFILES, scopeLabel, SCOPES, type Profile } from './agent-model';
-import { cn } from '@/lib/utils';
 import { SHEET_CLASS } from './sheet-class';
 import { t, type MessageKey } from '@/i18n';
 
@@ -89,28 +89,29 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
             </Field>
             <FieldSet>
               <FieldLegend variant="label">{t('agents.profile')}</FieldLegend>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                spacing={2}
+                value={profile}
+                aria-label={t('agents.profile')}
+                onValueChange={(value) => {
+                  const option = PROFILE_OPTIONS.find((item) => item.id === value);
+                  if (option) choose(option.id);
+                }}
+                className="grid w-full grid-cols-1 sm:grid-cols-3"
+              >
                 {PROFILE_OPTIONS.map((option) => (
-                  <label
+                  <ToggleGroupItem
                     key={option.id}
-                    className={cn(
-                      'flex cursor-pointer flex-col gap-0.5 rounded-md border p-3 text-sm transition-colors',
-                      'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
-                      profile === option.id && 'border-primary bg-primary/10',
-                    )}
+                    value={option.id}
+                    className="h-auto min-h-16 w-full max-w-none flex-col items-start gap-0.5 p-3 text-left text-sm whitespace-normal"
                   >
-                    <input
-                      type="radio"
-                      name="agent-profile"
-                      className="sr-only"
-                      checked={profile === option.id}
-                      onChange={() => choose(option.id)}
-                    />
                     <span className="font-medium">{t(option.label)}</span>
                     <span className="text-xs text-muted-foreground">{t(option.hint)}</span>
-                  </label>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </FieldSet>
             {profile === 'custom' ? (
               <FieldSet>

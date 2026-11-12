@@ -34,6 +34,22 @@ are documented in [architecture](arquitetura.md).
   (`StatusLight`, `ServiceCard`, `AppSidebar`...), pages in `src/pages`,
   and capability modules in `src/features`. State and API calls reside in
   `src/hooks`; pure business rules in `src/lib`.
+- Prefer an existing shadcn primitive for every interactive control and reusable
+  visual pattern before writing custom markup. Use `Button`, `Input`, `Textarea`,
+  `FormSelect` (composed from shadcn `Select`), `Checkbox`, `Switch`, `ToggleGroup`,
+  `RadioGroup`, `Label`, `Card`, `Badge`, `Alert`, `Empty`, `Separator`, and the
+  matching overlay primitives as appropriate. Product components should compose these
+  primitives and add only product behavior or layout. Do not introduce raw `<button>`,
+  `<input>`, `<select>`, or `<textarea>` in feature/page code when a project primitive
+  fits. Exceptions include semantic links, structural HTML, file inputs that cannot be
+  represented by the current primitive API, and cases where native behavior is a
+  documented accessibility or platform requirement. Keep raw elements inside
+  `src/components/ui` implementations; do not edit those files as product call sites.
+- For sets of a few mutually exclusive choices, compose shadcn `ToggleGroup` or
+  `RadioGroup`; do not build option cards from custom labels and hidden native inputs.
+  Form labels and descriptions use `Field`/`FieldLabel`/`FieldDescription` and controls
+  must have an accessible name (for composite controls, use `aria-label` or
+  `aria-labelledby`).
 - Styling must use semantic tokens (`bg-primary`, `text-muted-foreground`),
   defined in `src/style.css` and documented in `DESIGN.md`. Do not use hardcoded colors,
   `space-*` utilities, inline ad-hoc CSS per screen, or legacy generic utility classes.

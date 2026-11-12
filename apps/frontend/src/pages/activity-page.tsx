@@ -5,7 +5,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { ActivitySkeleton } from '@/components/skeletons';
 import { EmptyNote } from '@/components/empty-note';
 import { FormError } from '@/components/form-error';
-import { NativeSelect } from '@/components/native-select';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { PageHeader } from '@/components/page-header';
 import { ActivityFeed } from '@/features/activity/activity-feed';
 import type {
@@ -87,17 +87,18 @@ export function ActivityPage() {
         </ToggleGroup>
         <Field className="w-full sm:ml-auto sm:w-52">
           <FieldLabel htmlFor="activity-outcome">{t('activity.result')}</FieldLabel>
-          <NativeSelect
+          <FormSelect
             id="activity-outcome"
+            aria-label={t('activity.result')}
             value={outcome}
             onChange={(event) => setOutcome(event.target.value as 'all' | ActivityOutcome)}
           >
             {OUTCOMES.map((item) => (
-              <option key={item} value={item}>
+              <FormSelectOption key={item} value={item}>
                 {item === 'all' ? t('activity.result.all') : t(`activity.outcome.${item}`)}
-              </option>
+              </FormSelectOption>
             ))}
-          </NativeSelect>
+          </FormSelect>
         </Field>
       </div>
       <FormError>{failed ? t('activity.loadFailed') : ''}</FormError>
