@@ -21,6 +21,11 @@ FROM deps AS build
 COPY . .
 RUN pnpm build
 
+# Self-contained production tree for the API: compiled code, runtime dependencies only and the
+# workspace packages (@homora/db, @homora/shared) with their `dist` and migrations.
+FROM build AS prod
+RUN pnpm --filter @homora/backend deploy --prod --legacy /prod
+
 FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS backend
 LABEL org.opencontainers.image.title="Homora backend" \
       org.opencontainers.image.description="API, monitor and local MCP server for the Homora self-hosted dashboard" \
@@ -28,7 +33,8 @@ LABEL org.opencontainers.image.title="Homora backend" \
       org.opencontainers.image.licenses="MIT"
 WORKDIR /app
 ENV NODE_ENV=production HOMORA_BIND_HOST=0.0.0.0 HOMORA_DATABASE_PATH=/app/data/homora.sqlite
-COPY --from=build --chown=node:node /app /app
+# Kept under apps/backend so `root` in config.ts (three levels above dist) is still /app.
+COPY --from=prod --chown=node:node /prod /app/apps/backend
 # `ping` backs the optional ICMP check; the monitor runs it as the unprivileged `node` user.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends iputils-ping \
