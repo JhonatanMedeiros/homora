@@ -19,6 +19,7 @@ import { ConnectionList } from './connection-list';
 import { ConnectionPicker } from './connection-picker';
 import {
   emptyForm,
+  newForm,
   extraFields,
   request,
   type Connection,
@@ -284,7 +285,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
               counts={counts}
               onPick={(type) => {
                 setPicking(false);
-                setForm({ ...emptyForm, type });
+                setForm(newForm(type));
               }}
               onCancel={() => setPicking(false)}
             />

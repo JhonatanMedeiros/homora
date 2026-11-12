@@ -90,3 +90,25 @@ already enforce.
   form renders without a request; the endpoint exists for other clients.
 - Phase 3 integrations are evaluated against this vocabulary. A service that needs anything listed
   above is skipped and recorded in the pull request, not forced through by widening the transport.
+
+## Phase 3 additions
+
+Verifying the reference integrations against their official API sources needed four small
+extensions, none of which widens the transport:
+
+- `basic-key` authentication: HTTP Basic with the secret as the user name and an empty password
+  (the Tailscale API-key scheme). It still produces the whitelisted `authorization` header.
+- Count and sum operations accept an empty path, so a response that is a root array (NetBird, Portainer)
+  can be counted.
+- `maxBodyBytes` on a request is now passed to the transport, which still caps it at 2 MB (it was
+  declared but not forwarded in phase 2).
+- A field `defaultValue` prefills the new-connection form (a cloud API address, the default tailnet).
+  `brandIcon` is optional: Speedtest Tracker has no bundled SVG logo, so its mark is shown.
+
+Still outside the format, so these services were **skipped** (see `docs/integracoes.md`):
+
+- **Beszel:** its hub API is PocketBase's. A client must first log in with
+  `POST /api/collections/users/auth-with-password` and then send the returned token, which is a
+  login flow with POST. Not supported.
+- **TrueNAS:** the current API (25.04 and later) is JSON-RPC 2.0 over WebSocket. The REST `/api/v2.0`
+  API is deprecated by the vendor. Not supported (WebSocket-only).

@@ -19,6 +19,8 @@ export type ManifestField = {
   maxLength: number;
   /** Anchored regular expression the whole value must match. */
   pattern?: string;
+  /** Prefilled when a connection of this type is created (a cloud API address, a default tailnet). */
+  defaultValue?: string;
   /** url fields only */
   httpsOnly?: boolean;
   /** url fields only: keep a base path (for example a reverse proxy prefix). */
@@ -115,8 +117,8 @@ type Identity = {
   label: string;
   /** Two or three letters shown when no logo is available. */
   mark: string;
-  /** Name from BRAND_ICON_NAMES. */
-  brandIcon: string;
+  /** Name from BRAND_ICON_NAMES; omitted when no logo is bundled (the mark is shown instead). */
+  brandIcon?: string;
   capabilities: readonly string[];
   fields: readonly ManifestField[];
 };
@@ -125,6 +127,8 @@ export type AuthSpec =
   | { type: 'bearer' }
   | { type: 'token' }
   | { type: 'api-key' }
+  /** HTTP Basic with the secret as the user name and an empty password. */
+  | { type: 'basic-key' }
   | { type: 'basic'; usernameField: string };
 export type RequestSpec = {
   id: string;

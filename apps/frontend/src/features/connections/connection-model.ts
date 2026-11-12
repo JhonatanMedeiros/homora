@@ -55,6 +55,21 @@ export const extraFields = (type: Kind): readonly ManifestField[] =>
   integrationDefinition(type)?.fields.filter(
     ({ kind }) => kind === 'text' || kind === 'token-id',
   ) ?? [];
+/** A new form for a type, with the definition's default values filled in. */
+export function newForm(type: Kind): ConnectionFormState {
+  const fields = integrationDefinition(type)?.fields ?? [];
+  const url = fields.find(({ kind }) => kind === 'url')?.defaultValue ?? '';
+  return {
+    ...emptyForm,
+    type,
+    url,
+    values: Object.fromEntries(
+      fields
+        .filter(({ kind, defaultValue }) => kind !== 'url' && defaultValue !== undefined)
+        .map(({ key, defaultValue }) => [key, defaultValue!]),
+    ),
+  };
+}
 export const secretField = (type: Kind) =>
   integrationDefinition(type)?.fields.find(({ kind }) => kind === 'secret');
 /** Only public fields from an approved suggestion can prefill this form. */

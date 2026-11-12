@@ -216,6 +216,8 @@ function authorization(manifest: IntegrationManifest, config: ManifestConfig) {
       return { authorization: `Token ${secret}` };
     case 'api-key':
       return { apiKey: secret };
+    case 'basic-key':
+      return { authorization: `Basic ${Buffer.from(`${secret}:`, 'utf8').toString('base64')}` };
     case 'basic':
       return {
         authorization: `Basic ${Buffer.from(`${config[manifest.auth.usernameField] ?? ''}:${secret}`, 'utf8').toString('base64')}`,
@@ -262,6 +264,7 @@ export function createManifestAdapter(
             origin: url.origin,
             path: `${basePath}${buildPath(request.path, config)}${query ? `?${query}` : ''}`,
             ...authorization(manifest, config),
+            ...(request.maxBodyBytes ? { maxBodyBytes: request.maxBodyBytes } : {}),
           });
         } catch {
           throw new Error(`Could not connect to ${label}.`);

@@ -232,7 +232,11 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
             ...(request.apiKey ? { 'x-api-key': request.apiKey } : {}),
           },
           ca: keys.ca,
-          ...(type === 'proxmox' ? { maxBodyBytes: 2_000_000 } : {}),
+          ...(type === 'proxmox'
+            ? { maxBodyBytes: 2_000_000 }
+            : request.maxBodyBytes
+              ? { maxBodyBytes: request.maxBodyBytes }
+              : {}),
         },
       );
       let body: unknown = null;

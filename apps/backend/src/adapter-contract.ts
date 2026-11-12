@@ -22,6 +22,7 @@ export type FakeRequest = {
   path: string;
   authorization?: string;
   apiKey?: string;
+  maxBodyBytes?: number;
 };
 export type FakeResponse = { status: number; body: unknown };
 export type FakeTransport = (request: FakeRequest) => Promise<FakeResponse>;
@@ -100,7 +101,7 @@ export function assertBounded(value: unknown, depth = 0) {
 export function assertRequestIsSafe(request: FakeRequest, secrets: readonly string[]) {
   expect(
     Object.keys(request).every((key) =>
-      ['origin', 'path', 'authorization', 'apiKey'].includes(key),
+      ['origin', 'path', 'authorization', 'apiKey', 'maxBodyBytes'].includes(key),
     ),
   ).toBe(true);
   expect(new URL(request.origin).origin).toBe(request.origin);
@@ -114,6 +115,11 @@ export function assertRequestIsSafe(request: FakeRequest, secrets: readonly stri
   if (request.authorization !== undefined) {
     expect(request.authorization.length).toBeLessThanOrEqual(4096);
     expect(request.authorization).not.toMatch(/[\r\n]/);
+  }
+  if (request.maxBodyBytes !== undefined) {
+    expect(Number.isSafeInteger(request.maxBodyBytes)).toBe(true);
+    expect(request.maxBodyBytes).toBeGreaterThan(0);
+    expect(request.maxBodyBytes).toBeLessThanOrEqual(2_000_000);
   }
   if (request.apiKey !== undefined) {
     expect(request.apiKey.length).toBeLessThanOrEqual(4096);

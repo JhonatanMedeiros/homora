@@ -17,6 +17,8 @@ export type IntegrationTransport = (request: {
   authorization?: string;
   /** Sent as `x-api-key`, a header the shared transport already whitelists. */
   apiKey?: string;
+  /** Response size limit for this request; the transport caps it at 2 MB. */
+  maxBodyBytes?: number;
 }) => Promise<{ status: number; body: unknown }>;
 export type IntegrationContext = {
   publicConfig: Record<string, unknown>;

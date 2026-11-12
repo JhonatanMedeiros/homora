@@ -26,6 +26,8 @@ const segment = z
   .union([z.string().min(1).max(64), z.number().int().min(0).max(1000)])
   .refine((value) => !['__proto__', 'constructor', 'prototype'].includes(String(value)));
 const path = z.array(segment).min(1).max(8);
+/** An empty path addresses the whole body (a root array). */
+const collectionPath = z.array(segment).max(8);
 const literal = z.union([z.string().max(64), z.number().finite(), z.boolean()]);
 const states = z.record(z.string().regex(keyName), z.array(literal).min(1).max(16));
 const text = (max: number) => z.string().min(1).max(max);
@@ -56,6 +58,7 @@ const field = z
     httpsOnly: z.boolean().optional(),
     allowPath: z.boolean().optional(),
     identity: z.boolean().optional(),
+    defaultValue: z.string().max(2048).optional(),
     errorCode: z
       .string()
       .regex(/^[a-z][a-z-]{2,40}$/)
@@ -90,7 +93,7 @@ const extraction = z.discriminatedUnion('op', [
       op: z.literal('count'),
       out: z.string().regex(keyName),
       request: z.string().optional(),
-      path,
+      path: collectionPath,
       where: z.object({ path, equals: literal }).strict().optional(),
       max: z.number().int().min(1).max(100000).optional(),
     })
@@ -100,7 +103,7 @@ const extraction = z.discriminatedUnion('op', [
       op: z.literal('sum'),
       out: z.string().regex(keyName),
       request: z.string().optional(),
-      path,
+      path: collectionPath,
       field: path,
       max: z.number().finite().positive(),
     })
@@ -145,7 +148,7 @@ const manifestSchema = z
     type: z.string().regex(/^[a-z0-9-]{2,40}$/),
     label: text(60),
     mark: z.string().regex(/^[A-Za-z0-9]{1,3}$/),
-    brandIcon: z.string(),
+    brandIcon: z.string().optional(),
     capabilities: z
       .array(z.string().regex(/^[a-z-]{2,40}$/))
       .min(1)
@@ -156,6 +159,7 @@ const manifestSchema = z
       z.object({ type: z.literal('bearer') }).strict(),
       z.object({ type: z.literal('token') }).strict(),
       z.object({ type: z.literal('api-key') }).strict(),
+      z.object({ type: z.literal('basic-key') }).strict(),
       z.object({ type: z.literal('basic'), usernameField: z.string() }).strict(),
     ]),
     requests: z
@@ -248,7 +252,10 @@ export function assertValidDefinition(definition: IntegrationDefinition): void {
   const fail = (message: string): never => {
     throw new Error(`Invalid integration definition "${name}": ${message}`);
   };
-  if (!(BRAND_ICON_NAMES as readonly string[]).includes(definition.brandIcon))
+  if (
+    definition.brandIcon !== undefined &&
+    !(BRAND_ICON_NAMES as readonly string[]).includes(definition.brandIcon)
+  )
     fail(`unknown brand icon ${definition.brandIcon}`);
   const keys = new Set<string>();
   for (const item of definition.fields) {
