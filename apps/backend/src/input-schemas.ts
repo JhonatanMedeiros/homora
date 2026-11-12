@@ -168,3 +168,9 @@ export function parseId(value: string): number | null {
   const parsed = numericIdSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
+
+export const publicStatusSettingsSchema = z
+  .object({ enabled: z.boolean().optional(), title: z.string().trim().max(60).optional() })
+  .strict()
+  .refine((value) => value.enabled !== undefined || value.title !== undefined);
+export const servicePublicSchema = z.object({ isPublic: z.boolean() }).strict();

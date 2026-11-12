@@ -20,6 +20,14 @@ export const services = sqliteTable('services', {
   checkInterval: integer('check_interval'),
   expectedStatus: text('expected_status'),
   checkPath: text('check_path'),
+  // Opt-in to the read-only public status page. Never set by imports or agent proposals.
+  isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+});
+
+/** Small instance-wide settings (key/value). Values are plain text and never hold secrets. */
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
 });
 
 // Last observations are shared with the separate local MCP process. The service

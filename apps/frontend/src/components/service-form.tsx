@@ -27,6 +27,8 @@ type Props = {
   error: string;
   saving: boolean;
   nameRef: React.Ref<HTMLInputElement>;
+  isPublic: boolean;
+  onPublicChange: (value: boolean) => void;
   onChange: (value: ServiceInput) => void;
   onSubmit: (event: FormEvent) => void;
   onCancel: () => void;
@@ -39,6 +41,8 @@ export function ServiceForm({
   error,
   saving,
   nameRef,
+  isPublic,
+  onPublicChange,
   onChange,
   onSubmit,
   onCancel,
@@ -116,6 +120,17 @@ export function ServiceForm({
           <div className="flex flex-col gap-1">
             <FieldLabel htmlFor="service-private">{t('form.allowPrivate')}</FieldLabel>
             <FieldDescription>{t('form.allowPrivateHint')}</FieldDescription>
+          </div>
+        </Field>
+        <Field orientation="horizontal" className="items-start sm:col-span-2">
+          <Checkbox
+            id="service-public"
+            checked={isPublic}
+            onCheckedChange={(checked) => onPublicChange(checked === true)}
+          />
+          <div className="flex flex-col gap-1">
+            <FieldLabel htmlFor="service-public">{t('form.public')}</FieldLabel>
+            <FieldDescription>{t('form.publicHint')}</FieldDescription>
           </div>
         </Field>
       </FieldGroup>

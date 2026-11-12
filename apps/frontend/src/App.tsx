@@ -29,6 +29,7 @@ import { AccountPage } from '@/pages/account-page';
 import { ActivityPage } from '@/pages/activity-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
 import { ServicesPage } from '@/pages/services-page';
+import { StatusPage } from '@/pages/status-page';
 
 type DashboardRoute = { tab: Tab; managing: boolean; form: 'new' | number | null; valid: boolean };
 const validPaths = [
@@ -311,7 +312,11 @@ function AppRoutes() {
 export function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <Routes>
+        {/* Anonymous and outside the authenticated shell: AppRoutes (and its auth calls) never mount here. */}
+        <Route path="/status" element={<StatusPage />} />
+        <Route path="*" element={<AppRoutes />} />
+      </Routes>
     </BrowserRouter>
   );
 }

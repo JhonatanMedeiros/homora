@@ -60,6 +60,17 @@ Esta versão permite cadastrar serviços, criar uma conta de administrador local
 
 O acesso local usa HTTP em loopback. Para acesso remoto, ainda não há um perfil de rede privada validado. Um proxy reverso pode ser configurado com HTTPS e a origem pública declarada em `HOMORA_ALLOWED_ORIGINS` (lista separada por vírgulas); o proxy deve encaminhar `Host` e `X-Real-IP`, manter a API inacessível diretamente e não desativar a validação de origem. Esse modo exige configuração e validação operacional próprias e não torna a exposição pública segura por si só.
 
+## Página pública de status (opcional, somente leitura)
+
+O Homora pode publicar uma página mínima e somente leitura em `/status`, para que outras pessoas vejam o que está no ar sem entrar. Ela vem **fechada por padrão**: nada é público até um administrador ativá-la em **Configurações** e marcar cada serviço com "Mostrar na página pública de status" no formulário dele.
+
+- A página chama apenas `GET /api/public/status`, a única rota anônima da API (comparação exata do caminho, nunca por prefixo). O limite é de 60 requisições por minuto por endereço de cliente e a resposta fica em cache por 15 segundos.
+- Visitantes anônimos recebem somente: nome do serviço, grupo, estado no ar/fora do ar/desconhecido, horário da última verificação, 24 barras por hora e o percentual de disponibilidade em 24 horas. Nunca URLs, descrições, endereços, latência, códigos HTTP, motivos de falha ou ids internos.
+- Com a página desativada ou sem serviço público, o endpoint responde `404 not-found`, igual a uma rota inexistente.
+- Configurações mostra uma prévia exata do que os visitantes verão. Ativar/desativar a página, alterar o título e marcar um serviço ficam registrados na atividade. Importação de configuração e propostas de agentes nunca tornam um serviço público; o MCP só informa `publicStatusEnabled`.
+- O limite por cliente depende do endereço real do cliente: mantenha `HOMORA_TRUST_PROXY=true` atrás de um proxy que sobrescreve `X-Forwarded-For` (veja acima); caso contrário todos os visitantes dividem o mesmo limite.
+- Se o Homora estiver atrás do Cloudflare Access (ou similar), `/status` e `/api/public/status` precisam de um hostname separado ou de uma política de bypass; senão os visitantes continuam sendo enviados ao login. Expor à internet é decisão sua: revise antes o que está marcado como público.
+
 ## Importar e exportar
 
 Em **Configurações** você baixa grupos, cards e a ordem deles em YAML ou JSON (`GET /api/config/export`). O arquivo não contém senhas, tokens, conexões nem IDs, e pode ser versionado. Para importar, escolha o formato (Homora, Homepage ou Dashy) e o arquivo; o Homora mostra uma prévia com o que entra, o que já existe e o que foi ignorado, e só grava ao confirmar. A importação apenas adiciona: nada é sobrescrito nem removido. Cards importados não recebem permissão de rede privada, a menos que você marque essa opção para um arquivo do Homora em que confia.

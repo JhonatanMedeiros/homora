@@ -6,6 +6,7 @@ import { useTopBar } from '@/hooks/use-top-bar';
 import { PageHeader } from '@/components/page-header';
 import { Discovery } from '@/features/discovery/discovery';
 import { ConfigTransfer } from '@/features/transfer/config-transfer';
+import { PublicStatusSettings } from '@/features/public-status/public-status-settings';
 import { t } from '@/i18n';
 
 export function SettingsPage({ onImported }: { onImported: () => void | Promise<void> }) {
@@ -77,6 +78,7 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
           </NativeSelect>
         </Field>
       )}
+      <PublicStatusSettings />
       <ConfigTransfer onImported={onImported} />
       <Discovery onImported={onImported} />
     </section>

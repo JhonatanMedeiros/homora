@@ -51,6 +51,7 @@ export const ERROR_MESSAGES = {
   'invalid-new-password': 'Use a new password with at least 8 characters.',
   'invalid-profile': 'Provide a name with up to 80 characters.',
   'too-many-attempts': 'Too many attempts. Try again later.',
+  'too-many-requests': 'Too many requests. Try again later.',
   'session-not-found': 'Session not found.',
   'identity-invalid': 'Invalid identity or scopes.',
   'identity-not-found': 'Identity not found.',

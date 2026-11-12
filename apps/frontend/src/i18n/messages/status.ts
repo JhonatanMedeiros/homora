@@ -1,0 +1,89 @@
+/** Text for the public status page and its administration. */
+export const en = {
+  'publicStatus.title': 'Service status',
+  'publicStatus.loading': 'Loading status…',
+  'publicStatus.unavailable': 'This page is not available.',
+  'publicStatus.error': 'Could not load the status. Retrying…',
+  'publicStatus.updated': 'Updated {time}',
+  'publicStatus.checked': 'checked {ago}',
+  'publicStatus.neverChecked': 'not checked yet',
+  'publicStatus.allUp': 'All systems operational',
+  'publicStatus.someDown': 'Some services are down',
+  'publicStatus.someUnknown': 'Some services have no recent information',
+  'publicStatus.uptime': '{value}% in the last 24 hours',
+  'publicStatus.barsLabel': 'Last 24 hours, one bar per hour',
+  'publicStatus.barUp': 'online',
+  'publicStatus.barDown': 'had failures',
+  'publicStatus.barUnknown': 'no data',
+  'publicStatus.footer': 'Read-only page. Refreshes automatically.',
+  'form.public': 'Show on the public status page',
+  'form.publicHint':
+    'Only the name, group and online/offline state become visible to anyone with the link. The page must also be enabled in Settings.',
+  'error.savePublic': 'The service was saved, but its public visibility could not be changed.',
+  'settings.public.title': 'Public status page',
+  'settings.public.hint':
+    'A read-only page at /status that shows whether chosen services are online. It is closed until you enable it and mark each service.',
+  'settings.public.enable': 'Enable the public page',
+  'settings.public.enableHint':
+    'Anyone who can reach this address can open /status without signing in.',
+  'settings.public.titleLabel': 'Page title (optional)',
+  'settings.public.titlePlaceholder': 'My homelab',
+  'settings.public.save': 'Save title',
+  'settings.public.previewTitle': 'What visitors will see',
+  'settings.public.previewHint':
+    'Only this is exposed: name, group, online/offline state, last check time and hourly bars. Never addresses, descriptions, latency or internal details.',
+  'settings.public.previewEmpty':
+    'No service is marked as public. Until you mark at least one (in each service’s form), the page stays hidden.',
+  'settings.public.notice':
+    'Behind Cloudflare Access or similar, /status needs its own hostname or a bypass policy, or visitors will still be asked to sign in.',
+  'settings.public.error': 'Could not update the public status settings.',
+  'settings.public.saved': 'Public status settings saved.',
+  'apiError.too-many-requests': 'Too many requests. Try again later.',
+  'activity.event.public-status-update': 'Public status page changed',
+  'activity.event.service-public': 'Service public visibility changed',
+} as const;
+
+export const ptBR: Record<keyof typeof en, string> = {
+  'publicStatus.title': 'Status dos serviços',
+  'publicStatus.loading': 'Carregando status…',
+  'publicStatus.unavailable': 'Esta página não está disponível.',
+  'publicStatus.error': 'Não foi possível carregar o status. Tentando de novo…',
+  'publicStatus.updated': 'Atualizado {time}',
+  'publicStatus.checked': 'verificado {ago}',
+  'publicStatus.neverChecked': 'ainda não verificado',
+  'publicStatus.allUp': 'Todos os sistemas operacionais',
+  'publicStatus.someDown': 'Alguns serviços estão fora do ar',
+  'publicStatus.someUnknown': 'Alguns serviços estão sem informação recente',
+  'publicStatus.uptime': '{value}% nas últimas 24 horas',
+  'publicStatus.barsLabel': 'Últimas 24 horas, uma barra por hora',
+  'publicStatus.barUp': 'no ar',
+  'publicStatus.barDown': 'teve falhas',
+  'publicStatus.barUnknown': 'sem dados',
+  'publicStatus.footer': 'Página somente leitura. Atualiza sozinha.',
+  'form.public': 'Mostrar na página pública de status',
+  'form.publicHint':
+    'Somente o nome, o grupo e o estado no ar/fora do ar ficam visíveis para quem tiver o link. A página também precisa estar ativada em Configurações.',
+  'error.savePublic':
+    'O serviço foi salvo, mas não foi possível alterar a visibilidade pública dele.',
+  'settings.public.title': 'Página pública de status',
+  'settings.public.hint':
+    'Uma página somente leitura em /status que mostra se os serviços escolhidos estão no ar. Fica fechada até você ativar e marcar cada serviço.',
+  'settings.public.enable': 'Ativar a página pública',
+  'settings.public.enableHint':
+    'Qualquer pessoa que alcance este endereço poderá abrir /status sem entrar.',
+  'settings.public.titleLabel': 'Título da página (opcional)',
+  'settings.public.titlePlaceholder': 'Meu homelab',
+  'settings.public.save': 'Salvar título',
+  'settings.public.previewTitle': 'O que os visitantes verão',
+  'settings.public.previewHint':
+    'Somente isto é exposto: nome, grupo, estado no ar/fora do ar, horário da última verificação e barras por hora. Nunca endereços, descrições, latência ou detalhes internos.',
+  'settings.public.previewEmpty':
+    'Nenhum serviço está marcado como público. Enquanto você não marcar ao menos um (no formulário de cada serviço), a página fica oculta.',
+  'settings.public.notice':
+    'Atrás do Cloudflare Access ou similar, o /status precisa de um hostname próprio ou de uma política de bypass; senão os visitantes ainda serão enviados ao login.',
+  'settings.public.error': 'Não foi possível atualizar a página pública de status.',
+  'settings.public.saved': 'Configurações da página pública salvas.',
+  'apiError.too-many-requests': 'Muitas requisições. Tente novamente mais tarde.',
+  'activity.event.public-status-update': 'Página pública de status alterada',
+  'activity.event.service-public': 'Visibilidade pública de serviço alterada',
+};

@@ -77,6 +77,7 @@ export function ServicesPage({
   const list = view === 'list';
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
+  const [shared, setShared] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [formError, setFormError] = useState('');
@@ -143,6 +144,7 @@ export function ServicesPage({
     navigate(service ? `/manage/services/${service.id}/edit` : '/manage/services/new');
     setConfirming(null);
     setEditing(service?.id ?? null);
+    setShared(service?.isPublic === true);
     setForm(
       service
         ? {
@@ -208,6 +210,7 @@ export function ServicesPage({
     initializedRoute.current = formRoute;
     // Initialize the draft once per route after service data arrives.
     setEditing(service?.id ?? null);
+    setShared(service?.isPublic === true);
     setForm(
       service
         ? {
@@ -258,6 +261,17 @@ export function ServicesPage({
       );
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) throw new Error(apiError(body, t('error.save')));
+      const savedId = editing ?? (body as { id?: number } | null)?.id;
+      const wasShared =
+        editing !== null && services.find((s) => s.id === editing)?.isPublic === true;
+      if (savedId !== undefined && shared !== wasShared) {
+        const visibility = await fetch(`/api/services/${savedId}/public`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isPublic: shared }),
+        });
+        if (!visibility.ok) throw new Error(t('error.savePublic'));
+      }
       const wasNew = editing === null;
       closeForm();
       setSelected(null);
@@ -494,6 +508,8 @@ export function ServicesPage({
             categories={categories}
             error={formError}
             saving={saving}
+            isPublic={shared}
+            onPublicChange={setShared}
             onChange={setForm}
             onSubmit={(event) => void save(event)}
             onCancel={closeForm}

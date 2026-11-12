@@ -74,6 +74,17 @@ With a reverse proxy that terminates HTTPS in front of Homora:
 
 The `homora-data` volume is preserved and database migrations run on startup inside a transaction. There is no automated downgrade: if a migration fails, keep the original volume and restore a backup into a working copy before resuming. Try the upgrade on a copy of your data if the installation holds anything important.
 
+## Public status page (optional, read-only)
+
+Homora can publish a minimal, read-only page at `/status` so others can see what is up without signing in. It is **closed by default**: nothing is public until an administrator enables it in **Settings** and marks each service with "Show on the public status page" in its form.
+
+- The page calls only `GET /api/public/status`, the one anonymous API path (exact match, never a prefix). It is limited to 60 requests per minute per client address and is cached for 15 seconds.
+- Anonymous visitors receive only: service name, group, online/offline/unknown state, last check time, 24 hourly bars and the 24-hour uptime percentage. Never URLs, descriptions, addresses, latency, HTTP codes, failure reasons or internal ids.
+- With the page disabled or no public service, the endpoint answers `404 not-found`, the same as a route that does not exist.
+- Settings shows a preview of exactly what visitors will see. Enabling or disabling the page, changing its title and marking a service are recorded in the activity feed. Importing a configuration and agent proposals never make a service public; the MCP only reports `publicStatusEnabled`.
+- The per-client limit needs the real client address: keep `HOMORA_TRUST_PROXY=true` behind a proxy that overwrites `X-Forwarded-For` (see above), or every visitor shares one limit.
+- If Homora sits behind Cloudflare Access (or a similar gateway), `/status` and `/api/public/status` must use a separate hostname or a bypass policy, otherwise visitors are still asked to sign in. Exposing it to the internet is your decision: review what is marked public first.
+
 ## Import and export
 
 Open **Settings**. Download your groups, cards and their order as YAML or JSON (`GET /api/config/export`). The file never contains passwords, tokens, connections or IDs, so it is safe to keep in version control.

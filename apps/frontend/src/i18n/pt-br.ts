@@ -6,6 +6,7 @@ import { ptBR as connections } from './messages/connections';
 import { ptBR as transfer } from './messages/transfer';
 import { ptBR as account } from './messages/account';
 import { ptBR as apiErrors } from './messages/api-errors';
+import { ptBR as status } from './messages/status';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -15,4 +16,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...transfer,
   ...account,
   ...apiErrors,
+  ...status,
 };
