@@ -19,7 +19,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm lint && pnpm format:check && pnpm type-check && pnpm test",
+    "check": "node scripts/check.mjs",
     "prepare": "husky",
     "backup": "node scripts/backup.mjs",
     "auth:reset": "node scripts/auth-reset.mjs"
