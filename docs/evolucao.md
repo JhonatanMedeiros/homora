@@ -1019,3 +1019,10 @@ Services can optionally check a same-origin path independently of their card URL
 
 - Deleting an empty group through the API or an approved proposal renumbers the remaining groups in the same transaction, ordered by position and then ID. Existing gaps are normalized on the next successful deletion; no migration is needed.
 - Validated: `pnpm check` (410 application tests and 6 script tests) and `pnpm build`. Tests cover deletions at the beginning, middle and end, creation and reordering afterward, and existing gaps and duplicate positions in proposals. Existing tests cover rejection of non-empty groups.
+
+## Settings as a hub, a phone bottom bar and Agents tabs
+
+- Settings no longer stacks everything on one page. `/manage/settings` lists four subpages (`interface`, `public`, `backup`, `discovery`), each with its own route (`/manage/settings/:section`); an unknown subpage is "not found". On phones the list and a subpage take turns, with a back link; from `md` up they sit side by side. The section list lives in `features/settings/sections.ts`; the palette's "Import / Export" now opens `/manage/settings/backup`.
+- `MobileTabs` was dead code and is now mounted in the management area on phones: Services, Integrations, Agents and "More", which opens a bottom sheet with Activity and Settings. The sidebar buttons are desktop-only. The organize bar and the toaster were moved above the bottom bar.
+- Validated with `pnpm check` and `pnpm build` (the one failure on the first `pnpm check`, the 200-service uptime benchmark, passed on its own: it is load-sensitive). Tests cover the hub, direct links, the unknown subpage, the "More" sheet and the Agents tabs. Not checked in a browser or on a physical phone.
+- Agents now splits Proposals (with the pending count) and Agents into two tabs; Connect and New agent stay in the header. The tab is local state, not a route.

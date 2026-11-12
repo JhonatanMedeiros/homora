@@ -22,10 +22,11 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { PageHeader } from '@/components/page-header';
 import { SectionTitle } from '@/components/section-title';
+import { PageHeader } from '@/components/page-header';
 import { AgentList } from './agent-list';
 import { parseDiff, type Agent, type Proposal } from './agent-model';
 import { ConnectDialog } from './connect-dialog';
@@ -57,6 +58,7 @@ export function Agents({
   // Name shown in the token dialog; the token itself lives in the parent so it survives navigation.
   const [tokenFor, setTokenFor] = useState('');
   const [loadFailed, setLoadFailed] = useState(false);
+  const [view, setView] = useState<'proposals' | 'agents'>('proposals');
   const [now, setNow] = useState(() => Date.now());
   const [ttl, setTtl] = useState('15');
   const [recreating, setRecreating] = useState(false);
@@ -301,121 +303,139 @@ export function Agents({
         </Alert>
       )}
 
-      <form onSubmit={(event) => void saveTtl(event)} className="flex flex-wrap items-end gap-2">
-        <Field className="w-auto">
-          <FieldLabel htmlFor="proposal-ttl">{t('agents.ttl')}</FieldLabel>
-          <Input
-            id="proposal-ttl"
-            type="number"
-            min={1}
-            max={120}
-            required
-            value={ttl}
-            onChange={(event) => setTtl(event.target.value)}
-          />
-        </Field>
-        <Button type="submit" variant="outline">
-          {t('agents.ttlSave')}
-        </Button>
-      </form>
-      <section aria-labelledby="proposals-title" className="flex flex-col gap-3">
-        <SectionTitle id="proposals-title" count={pending.length || undefined}>
-          {t('agents.proposals')}
-        </SectionTitle>
-        {proposals === null ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Spinner />
-            {t('common.loading')}
-          </p>
-        ) : pending.length === 0 ? (
-          <Empty className="border border-dashed py-8">
-            <EmptyHeader>
-              <EmptyDescription>{t('agents.noProposals')}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {pending.map((proposal, index) => {
-              if (!proposal.batchId) return renderProposal(proposal);
-              if (pending.findIndex((p) => p.batchId === proposal.batchId) !== index) return null;
-              const batch = pending.filter((p) => p.batchId === proposal.batchId);
-              const id = proposal.batchId;
-              return (
-                <li key={id} className="flex flex-col gap-3">
-                  <ul className="flex flex-col gap-3">
-                    {batch.map((item) => renderProposal(item, true))}
-                  </ul>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => void review(id, false, true)}
-                    >
-                      {t('proposal.batchReject')}
-                    </Button>
-                    {batch.every((p) => p.state === 'pending') && (
-                      <Button type="button" onClick={() => void review(id, true, true)}>
-                        {t('proposal.batchApprove')}
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {expired.length > 0 && (
-          <section aria-label={t('proposal.state.expired')} className="flex flex-col gap-3">
-            <SectionTitle>{t('proposal.state.expired')}</SectionTitle>
-            <ul className="flex flex-col gap-3">
-              {expired.map((proposal) => renderProposal(proposal))}
-            </ul>
-          </section>
-        )}
-        {history.length > 0 && (
-          <Collapsible className="flex flex-col gap-3">
-            <CollapsibleTrigger asChild>
-              <Button type="button" variant="ghost" className="w-fit">
-                {t('agents.history', { count: history.length })}
-                <ChevronDown data-icon="inline-end" />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <ul className="flex flex-col gap-3">
-                {history.map((proposal) => renderProposal(proposal))}
-              </ul>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-      </section>
+      <Tabs
+        value={view}
+        onValueChange={(value) => setView(value === 'agents' ? 'agents' : 'proposals')}
+        className="gap-6"
+      >
+        <TabsList className="w-full sm:w-fit">
+          <TabsTrigger value="proposals" className="min-h-10">
+            {t('agents.proposals')}
+            {pending.length > 0 && (
+              <span className="font-mono text-xs tabular-nums">{pending.length}</span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="agents" className="min-h-10">
+            {t('agents.identities')}
+            {agents && agents.length > 0 && (
+              <span className="font-mono text-xs tabular-nums">{agents.length}</span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      <section aria-labelledby="identities-title" className="flex flex-col gap-3">
-        <SectionTitle id="identities-title" count={agents?.length || undefined}>
-          {t('agents.identities')}
-        </SectionTitle>
-        <p className="text-sm text-muted-foreground">{t('agents.identitiesHint')}</p>
-        {agents?.length === 0 ? (
-          <Empty className="border border-dashed py-8">
-            <EmptyHeader>
-              <EmptyTitle>{t('agents.noIdentities')}</EmptyTitle>
-              <EmptyDescription>{t('agents.noIdentitiesHint')}</EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <Button type="button" onClick={() => setCreating(true)}>
-                {t('agents.createFirst')}
-              </Button>
-            </EmptyContent>
-          </Empty>
-        ) : (
-          <AgentList
-            agents={agents ?? []}
-            pendingCount={(id) => pending.filter((proposal) => proposal.author === id).length}
-            onConnect={() => setConnecting(true)}
-            onRotate={setRotating}
-            onRevoke={setRevokingAgent}
-          />
-        )}
-      </section>
+        <TabsContent value="proposals" className="flex flex-col gap-3">
+          <form
+            onSubmit={(event) => void saveTtl(event)}
+            className="flex flex-wrap items-end gap-2"
+          >
+            <Field className="w-auto">
+              <FieldLabel htmlFor="proposal-ttl">{t('agents.ttl')}</FieldLabel>
+              <Input
+                id="proposal-ttl"
+                type="number"
+                min={1}
+                max={120}
+                required
+                value={ttl}
+                onChange={(event) => setTtl(event.target.value)}
+              />
+            </Field>
+            <Button type="submit" variant="outline">
+              {t('agents.ttlSave')}
+            </Button>
+          </form>
+          {proposals === null ? (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Spinner />
+              {t('common.loading')}
+            </p>
+          ) : pending.length === 0 ? (
+            <Empty className="border border-dashed py-8">
+              <EmptyHeader>
+                <EmptyDescription>{t('agents.noProposals')}</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {pending.map((proposal, index) => {
+                if (!proposal.batchId) return renderProposal(proposal);
+                if (pending.findIndex((p) => p.batchId === proposal.batchId) !== index) return null;
+                const batch = pending.filter((p) => p.batchId === proposal.batchId);
+                const id = proposal.batchId;
+                return (
+                  <li key={id} className="flex flex-col gap-3">
+                    <ul className="flex flex-col gap-3">
+                      {batch.map((item) => renderProposal(item, true))}
+                    </ul>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void review(id, false, true)}
+                      >
+                        {t('proposal.batchReject')}
+                      </Button>
+                      {batch.every((p) => p.state === 'pending') && (
+                        <Button type="button" onClick={() => void review(id, true, true)}>
+                          {t('proposal.batchApprove')}
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {expired.length > 0 && (
+            <section aria-label={t('proposal.state.expired')} className="flex flex-col gap-3">
+              <SectionTitle>{t('proposal.state.expired')}</SectionTitle>
+              <ul className="flex flex-col gap-3">
+                {expired.map((proposal) => renderProposal(proposal))}
+              </ul>
+            </section>
+          )}
+          {history.length > 0 && (
+            <Collapsible className="flex flex-col gap-3">
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="ghost" className="w-fit">
+                  {t('agents.history', { count: history.length })}
+                  <ChevronDown data-icon="inline-end" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ul className="flex flex-col gap-3">
+                  {history.map((proposal) => renderProposal(proposal))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </TabsContent>
+
+        <TabsContent value="agents" className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">{t('agents.identitiesHint')}</p>
+          {agents?.length === 0 ? (
+            <Empty className="border border-dashed py-8">
+              <EmptyHeader>
+                <EmptyTitle>{t('agents.noIdentities')}</EmptyTitle>
+                <EmptyDescription>{t('agents.noIdentitiesHint')}</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button type="button" onClick={() => setCreating(true)}>
+                  {t('agents.createFirst')}
+                </Button>
+              </EmptyContent>
+            </Empty>
+          ) : (
+            <AgentList
+              agents={agents ?? []}
+              pendingCount={(id) => pending.filter((proposal) => proposal.author === id).length}
+              onConnect={() => setConnecting(true)}
+              onRotate={setRotating}
+              onRevoke={setRevokingAgent}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       <NewAgentDialog open={creating} onOpenChange={setCreating} onCreate={create} />
       <ConnectDialog open={connecting} onOpenChange={setConnecting} />

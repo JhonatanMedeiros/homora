@@ -25,6 +25,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { navItems, type Tab } from '@/components/app-nav';
+import { MobileTabs } from '@/components/mobile-tabs';
 
 type Props = {
   tab: Tab;
@@ -123,7 +124,9 @@ export function AppShell({
           </Button>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8">
+      <main
+        className={`mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${managing ? 'pb-24 md:pb-8' : ''}`}
+      >
         {!managing && !standalone && (
           <>
             <h1 className="sr-only">{t('home.title')}</h1>
@@ -132,7 +135,7 @@ export function AppShell({
         )}
         {managing ? (
           <div className="flex flex-col gap-8 md:flex-row md:items-start">
-            <aside className="shrink-0 md:sticky md:top-8 md:w-52">
+            <aside className="hidden shrink-0 md:sticky md:top-8 md:block md:w-52">
               <div className="mb-3 px-3">
                 <p className="font-label text-xl font-semibold">{t('manage.title')}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{t('manage.description')}</p>
@@ -162,6 +165,7 @@ export function AppShell({
           children
         )}
       </main>
+      {managing && <MobileTabs tab={tab} onTabChange={onTabChange} />}
     </div>
   );
 }

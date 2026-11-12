@@ -76,7 +76,7 @@ it('filters by group and by the host in the text part', () => {
 it('navigates to a section and closes without writing anything', () => {
   const props = setup();
   fireEvent.click(screen.getByText('Importar / Exportar'));
-  expect(props.onNavigate).toHaveBeenCalledWith('/manage/settings');
+  expect(props.onNavigate).toHaveBeenCalledWith('/manage/settings/backup');
   expect(props.onOpenChange).toHaveBeenCalledWith(false);
   fireEvent.click(screen.getByText('Agentes'));
   expect(props.onNavigate).toHaveBeenCalledWith('/manage/agents');
