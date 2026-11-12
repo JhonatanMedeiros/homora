@@ -9,7 +9,7 @@ import {
   type HostLink,
   type ServiceInput,
 } from '@homora/shared';
-import { NativeSelect } from '@/components/native-select';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { IconPicker } from '@/components/icon-picker';
@@ -219,14 +219,15 @@ export function ServiceForm({
             </Field>
             <Field>
               <FieldLabel htmlFor="service-check">{t('form.checkType')}</FieldLabel>
-              <NativeSelect
+              <FormSelect
                 id="service-check"
+                aria-label={t('form.checkType')}
                 value={value.checkType ?? 'http'}
                 onChange={(e) => set({ checkType: e.target.value === 'ping' ? 'ping' : 'http' })}
               >
-                <option value="http">{t('form.checkHttp')}</option>
-                <option value="ping">{t('form.checkPing')}</option>
-              </NativeSelect>
+                <FormSelectOption value="http">{t('form.checkHttp')}</FormSelectOption>
+                <FormSelectOption value="ping">{t('form.checkPing')}</FormSelectOption>
+              </FormSelect>
               <FieldDescription>
                 {value.checkType === 'ping' ? t('form.checkPingHint') : t('form.checkHttpHint')}
               </FieldDescription>

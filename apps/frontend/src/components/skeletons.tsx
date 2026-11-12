@@ -166,13 +166,13 @@ export function PublicStatusSkeleton({ label }: { label: string }) {
 }
 
 /** Integration data inside a service card; keeps the stat layout so the card does not jump. */
-export function WidgetSkeleton({ label }: { label: string }) {
+export function WidgetSkeleton({ label, count = 3 }: { label: string; count?: number }) {
   return (
-    <LoadingRegion label={label} className="flex flex-wrap gap-x-4 gap-y-2">
-      {[0, 1, 2].map((index) => (
-        <div key={index} className="flex flex-col gap-1">
-          <Bone className="h-4 w-10" />
-          <Bone className="h-3 w-14" />
+    <LoadingRegion label={label} className="grid grid-cols-3 gap-x-3 gap-y-2">
+      {Array.from({ length: count }, (_, index) => (
+        <div key={index} className="flex min-w-0 flex-col gap-1">
+          <Bone className="h-3 w-3/4" />
+          <Bone className="h-4 w-1/2" />
         </div>
       ))}
     </LoadingRegion>

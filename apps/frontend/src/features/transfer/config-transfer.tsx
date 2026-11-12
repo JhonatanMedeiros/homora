@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, t } from '@/i18n';
 import { ImportPreview } from './import-preview';
-import { NativeSelect } from '@/components/native-select';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { MAX_FILE_BYTES, SOURCES, type Preview, type Source } from './transfer-model';
 
 const json = { 'Content-Type': 'application/json' };
@@ -151,18 +151,19 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
           <CardContent className="flex flex-col gap-4">
             <Field>
               <FieldLabel htmlFor="import-source">{t('transfer.source')}</FieldLabel>
-              <NativeSelect
+              <FormSelect
                 id="import-source"
+                aria-label={t('transfer.source')}
                 value={source}
                 disabled={busy}
                 onChange={(event) => changeSource(event.target.value as Source)}
               >
                 {SOURCES.map((item) => (
-                  <option key={item} value={item}>
+                  <FormSelectOption key={item} value={item}>
                     {t(`transfer.source.${item}` as const)}
-                  </option>
+                  </FormSelectOption>
                 ))}
-              </NativeSelect>
+              </FormSelect>
               {source !== 'homora' && (
                 <FieldDescription>{t(`transfer.sourceHint.${source}` as const)}</FieldDescription>
               )}

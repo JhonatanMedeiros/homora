@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { UPTIME_RANGES } from '@homora/shared';
 import { Clock } from '@/components/top-bar';
-import { NativeSelect } from '@/components/native-select';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useClockPreferences } from '@/hooks/use-clock-preferences';
@@ -87,8 +87,9 @@ export function InterfaceSettings() {
           label={t('settings.ui.language')}
           description={t('settings.ui.languageHint')}
         >
-          <NativeSelect
+          <FormSelect
             id="ui-language"
+            aria-label={t('settings.ui.language')}
             className="sm:w-56"
             value={locale}
             onChange={(event) => {
@@ -97,11 +98,11 @@ export function InterfaceSettings() {
             }}
           >
             {locales.map((item) => (
-              <option key={item.id} value={item.id} lang={item.id}>
+              <FormSelectOption key={item.id} value={item.id} lang={item.id}>
                 {item.label}
-              </option>
+              </FormSelectOption>
             ))}
-          </NativeSelect>
+          </FormSelect>
         </SettingRow>
       </SettingsGroup>
 
@@ -163,8 +164,9 @@ export function InterfaceSettings() {
         {search.enabled && (
           <>
             <SettingRow htmlFor="ui-web-search-engine" label={t('settings.ui.webSearchEngine')}>
-              <NativeSelect
+              <FormSelect
                 id="ui-web-search-engine"
+                aria-label={t('settings.ui.webSearchEngine')}
                 className="sm:w-56"
                 value={search.engine}
                 onChange={(event) => {
@@ -172,12 +174,14 @@ export function InterfaceSettings() {
                 }}
               >
                 {SEARCH_ENGINES.map((engine) => (
-                  <option key={engine.id} value={engine.id}>
+                  <FormSelectOption key={engine.id} value={engine.id}>
                     {engine.label}
-                  </option>
+                  </FormSelectOption>
                 ))}
-                <option value={CUSTOM_ENGINE}>{t('settings.ui.webSearchCustom')}</option>
-              </NativeSelect>
+                <FormSelectOption value={CUSTOM_ENGINE}>
+                  {t('settings.ui.webSearchCustom')}
+                </FormSelectOption>
+              </FormSelect>
             </SettingRow>
             {search.engine === CUSTOM_ENGINE && (
               <SettingRow
@@ -268,21 +272,22 @@ export function InterfaceSettings() {
               label={t('settings.ui.timeZone')}
               description={t('settings.ui.timeZoneHint')}
             >
-              <NativeSelect
+              <FormSelect
                 id="top-bar-zone"
+                aria-label={t('settings.ui.timeZone')}
                 className="sm:w-64"
                 value={clock.timeZone}
                 onChange={(event) => clock.setTimeZone(event.target.value)}
               >
-                <option value="">
+                <FormSelectOption value="">
                   {t('settings.ui.timeZoneBrowser', { zone: browserTimeZone() })}
-                </option>
+                </FormSelectOption>
                 {timeZones.map((zone) => (
-                  <option key={zone} value={zone}>
+                  <FormSelectOption key={zone} value={zone}>
                     {zone.replaceAll('_', ' ')}
-                  </option>
+                  </FormSelectOption>
                 ))}
-              </NativeSelect>
+              </FormSelect>
             </SettingRow>
             {(connections.length > 0 || source) && (
               <SettingRow
@@ -290,8 +295,9 @@ export function InterfaceSettings() {
                 label={t('settings.topBarSource')}
                 description={t('settings.ui.topBarSourceHint')}
               >
-                <NativeSelect
+                <FormSelect
                   id="top-bar-source"
+                  aria-label={t('settings.topBarSource')}
                   className="sm:w-64"
                   value={source}
                   onChange={(event) => {
@@ -303,17 +309,19 @@ export function InterfaceSettings() {
                     }
                   }}
                 >
-                  <option value="">{t('settings.topBarAutomatic')}</option>
+                  <FormSelectOption value="">{t('settings.topBarAutomatic')}</FormSelectOption>
                   {source &&
                     !connections.some((connection) => String(connection.id) === source) && (
-                      <option value={source}>{t('settings.topBarMissing')}</option>
+                      <FormSelectOption value={source}>
+                        {t('settings.topBarMissing')}
+                      </FormSelectOption>
                     )}
                   {connections.map((connection) => (
-                    <option key={connection.id} value={connection.id}>
+                    <FormSelectOption key={connection.id} value={connection.id}>
                       {connection.name}
-                    </option>
+                    </FormSelectOption>
                   ))}
-                </NativeSelect>
+                </FormSelect>
               </SettingRow>
             )}
           </>

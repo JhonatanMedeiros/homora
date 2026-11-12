@@ -33,6 +33,7 @@ not necessarily the existing implementation.
 ## Structure and Commands
 
 - `apps/frontend`: React, Vite, Tailwind v4, and shadcn/ui (use the `shadcn` skill and UI conventions in `docs/padroes.md`); `apps/backend`: Fastify API, Proxmox, and MCP.
+- In frontend work, prioritize existing shadcn components and compose product UI from them; avoid raw HTML controls where a shadcn primitive fits. Follow the component selection and exception rules in `docs/padroes.md`.
 - `packages/db`: SQLite schema and migrations; `packages/shared`: shared
   contracts and validation. `scripts/` contains backup utilities and tests.
 - Consult [engineering standards](docs/padroes.md) for module boundaries,

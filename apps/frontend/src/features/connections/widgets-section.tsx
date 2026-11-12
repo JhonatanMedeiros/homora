@@ -21,7 +21,7 @@ import {
   type IntegrationWidget,
 } from './connection-model';
 import { EmptyNote } from '@/components/empty-note';
-import { NativeSelect } from '@/components/native-select';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { t } from '@/i18n';
 
 type Props = {
@@ -68,18 +68,19 @@ export function WidgetsSection({
           <FieldGroup className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
             <Field>
               <FieldLabel htmlFor="widget-connection">{t('widgets.connection')}</FieldLabel>
-              <NativeSelect
+              <FormSelect
                 id="widget-connection"
+                aria-label={t('widgets.connection')}
                 required
                 value={widgetConnection}
                 onChange={(event) => onConnectionChange(event.target.value)}
               >
                 {(items ?? []).map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <FormSelectOption key={item.id} value={item.id}>
                     {item.name}
-                  </option>
+                  </FormSelectOption>
                 ))}
-              </NativeSelect>
+              </FormSelect>
             </Field>
             <Field>
               <FieldLabel htmlFor="widget-name">{t('widgets.name')}</FieldLabel>
@@ -93,18 +94,19 @@ export function WidgetsSection({
             </Field>
             <Field>
               <FieldLabel htmlFor="widget-card">{t('widgets.card')}</FieldLabel>
-              <NativeSelect
+              <FormSelect
                 id="widget-card"
+                aria-label={t('widgets.card')}
                 value={widgetCard}
                 onChange={(event) => onCardChange(event.target.value)}
               >
-                <option value="">{t('widgets.noCard')}</option>
+                <FormSelectOption value="">{t('widgets.noCard')}</FormSelectOption>
                 {cards.map((card) => (
-                  <option key={card.id} value={card.id}>
+                  <FormSelectOption key={card.id} value={card.id}>
                     {card.name}
-                  </option>
+                  </FormSelectOption>
                 ))}
-              </NativeSelect>
+              </FormSelect>
             </Field>
             <Button type="submit" disabled={busy}>
               {busy && <Spinner data-icon="inline-start" />}
@@ -132,19 +134,19 @@ export function WidgetsSection({
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions className="flex-wrap">
-                    <NativeSelect
+                    <FormSelect
                       aria-label={t('widgets.cardAria', { name: widget.name })}
                       value={widget.serviceId ?? ''}
                       disabled={busy}
                       onChange={(event) => onMoveWidget(widget, event.target.value)}
                     >
-                      <option value="">{t('widgets.noCard')}</option>
+                      <FormSelectOption value="">{t('widgets.noCard')}</FormSelectOption>
                       {cards.map((card) => (
-                        <option key={card.id} value={card.id}>
+                        <FormSelectOption key={card.id} value={card.id}>
                           {card.name}
-                        </option>
+                        </FormSelectOption>
                       ))}
-                    </NativeSelect>
+                    </FormSelect>
                     <RowMenu label={t('widgets.menu', { name: widget.name })} disabled={busy}>
                       <DropdownMenuItem disabled={!connection} onSelect={() => onQuery(widget)}>
                         {t('widgets.viewData')}

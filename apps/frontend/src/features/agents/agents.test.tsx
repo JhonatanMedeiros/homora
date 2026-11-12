@@ -116,7 +116,7 @@ it('lets a custom profile choose each permission', async () => {
   render(<Harness />);
   fireEvent.click(await screen.findByRole('button', { name: 'Novo agente' }));
   const form = await screen.findByRole('dialog', { name: 'Novo agente' });
-  fireEvent.click(within(form).getByLabelText(/Personalizado/));
+  fireEvent.click(within(form).getByRole('radio', { name: /Personalizado/ }));
   fireEvent.click(within(form).getByLabelText('Criar propostas'));
   fireEvent.click(within(form).getByLabelText('Ler recursos do Proxmox'));
   fireEvent.change(within(form).getByLabelText('Nome do agente'), { target: { value: 'X' } });

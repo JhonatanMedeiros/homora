@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Label } from '@/components/ui/label';
 import { t } from '@/i18n';
 
 export type Suggestion = {
@@ -42,9 +43,9 @@ export function SuggestionList({
             checked={all ? true : some ? 'indeterminate' : false}
             onCheckedChange={(checked) => onChange(new Set(checked === true ? pickable : []))}
           />
-          <label htmlFor={`${idPrefix}-all`} className="font-medium">
+          <Label htmlFor={`${idPrefix}-all`} className="font-medium">
             {t('discovery.selectAll')}
-          </label>
+          </Label>
           <span className="ml-auto font-mono text-xs text-muted-foreground tabular-nums">
             {t('discovery.selected', { count: selected.size })}
           </span>
@@ -70,7 +71,7 @@ export function SuggestionList({
                   onChange(next);
                 }}
               />
-              <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="break-words">
                   <b className="font-semibold">{item.name}</b>{' '}
                   <span className="text-muted-foreground">· {item.group}</span>
@@ -83,7 +84,7 @@ export function SuggestionList({
                     {t('discovery.container', { name: item.container })}
                   </small>
                 )}
-              </label>
+              </Label>
               <Badge variant={item.isNew ? 'success' : 'secondary'}>
                 {item.isNew ? t('transfer.statusNew') : t('transfer.statusDuplicate')}
               </Badge>

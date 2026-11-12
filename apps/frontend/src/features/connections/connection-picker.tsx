@@ -64,10 +64,11 @@ export function ConnectionPicker({ counts, onPick, onCancel }: Props) {
             .join(', ');
           return (
             <li key={type}>
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => onPick(type)}
-                className="flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-auto w-full justify-start gap-3 p-3 text-left"
               >
                 <ConnectionMark type={type} />
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -81,7 +82,7 @@ export function ConnectionPicker({ counts, onPick, onCancel }: Props) {
                     {t('connections.connectedCount', { count })}
                   </span>
                 )}
-              </button>
+              </Button>
             </li>
           );
         })}

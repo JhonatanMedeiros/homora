@@ -12,6 +12,7 @@ import {
 import type { Service } from '@homora/shared';
 import { HostMap } from './host-map';
 import { DependencyPicker } from './dependency-picker';
+import { chooseSelectOption } from '@/test-select';
 import { HostImpactBanner } from './host-impact-banner';
 import { setLocale } from '@/i18n';
 import { offlineNodes, type HostInventories } from '@/lib/hosts';
@@ -188,16 +189,13 @@ it('is read-only on a phone and without edit access, keeping the form-based alte
   expect(tile('notes').getAttribute('draggable')).toBe('false');
 });
 
-it('adds and removes dependencies in the form without a pointer', () => {
+it('adds and removes dependencies in the form without a pointer', async () => {
   const onChange = vi.fn();
   render(<DependencyPicker selfId={3} services={services} value={[1]} onChange={onChange} />);
   expect(screen.getByText('pihole')).toBeTruthy();
   // Self and already chosen services are not offered.
-  const options = within(screen.getByLabelText('Depends on'))
-    .getAllByRole('option')
-    .map((o) => o.textContent);
+  const options = await chooseSelectOption('Depends on', 'jellyfin');
   expect(options).toEqual(['Choose a service', 'jellyfin']);
-  fireEvent.change(screen.getByLabelText('Depends on'), { target: { value: '2' } });
   expect(onChange).toHaveBeenCalledWith([1, 2]);
   fireEvent.click(screen.getByRole('button', { name: 'Remove dependency on pihole' }));
   expect(onChange).toHaveBeenLastCalledWith([]);

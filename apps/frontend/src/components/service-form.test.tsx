@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ServiceInput } from '@homora/shared';
 import { ServiceForm } from './service-form';
 import { emptyService } from '@/lib/services';
+import { chooseSelectOption } from '@/test-select';
 
 afterEach(cleanup);
 
@@ -27,12 +28,12 @@ function setup(value: ServiceInput = emptyService) {
   return onChange;
 }
 
-it('allows selecting ping and interval, restoring default when empty', () => {
+it('allows selecting ping and interval, restoring default when empty', async () => {
   const onChange = setup();
   fireEvent.click(screen.getByRole('button', { name: 'Opções avançadas' }));
-  const method = screen.getByLabelText('Método de verificação') as HTMLSelectElement;
-  expect(method.value).toBe('http');
-  fireEvent.change(method, { target: { value: 'ping' } });
+  const method = screen.getByRole('combobox', { name: 'Método de verificação' });
+  expect(method.textContent).toBe('Requisição HTTP');
+  await chooseSelectOption('Método de verificação', 'Ping (ICMP)');
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ checkType: 'ping' }));
 
   const interval = screen.getByLabelText('Verificar a cada (segundos)') as HTMLInputElement;

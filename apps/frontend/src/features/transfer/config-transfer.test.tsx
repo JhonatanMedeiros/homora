@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ConfigTransfer } from './config-transfer';
 import type { Preview } from './transfer-model';
+import { chooseSelectOption } from '@/test-select';
 
 afterEach(() => {
   cleanup();
@@ -133,7 +134,7 @@ it('sends selected source, regenerates preview on format switch, and hides priva
   render(<ConfigTransfer onImported={() => {}} />);
   choose(screen.getByLabelText('Arquivo de configuração'), file('- Casa: []'));
   await screen.findByRole('checkbox', { name: /Manter as permissões/ });
-  fireEvent.change(screen.getByLabelText('Formato do arquivo'), { target: { value: 'homepage' } });
+  await chooseSelectOption('Formato do arquivo', /Homepage/);
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   const [, previewInit] = fetchMock.mock.calls[1] as unknown as [string, { body: string }];
   expect(JSON.parse(previewInit.body)).toEqual({ content: '- Casa: []', source: 'homepage' });
