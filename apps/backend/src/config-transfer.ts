@@ -14,6 +14,20 @@ export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
 export const MAX_GROUP_COLUMNS = 6;
 export const MAX_SERVICES = 1000;
+/**
+ * Flow collections (`[` and `{`) a document may open. Deeply nested garbage makes the YAML parser
+ * spend hundreds of milliseconds on the only thread; real exports use a small fraction of this.
+ */
+export const MAX_FLOW_OPENERS = 20_000;
+/** True when `content` is small enough in structure to hand to the YAML parser. */
+export function withinParseBudget(content: string): boolean {
+  let openers = 0;
+  for (let i = 0; i < content.length; i++) {
+    const c = content.charCodeAt(i);
+    if ((c === 91 || c === 123) && ++openers > MAX_FLOW_OPENERS) return false;
+  }
+  return true;
+}
 
 export type ImportedService = {
   name: string;
@@ -162,7 +176,8 @@ export function parseTransfer(content: string): ParsedImport {
     document,
     issues: [...issues, { path: '', code, severity: 'error' }],
   });
-  if (content.length > MAX_TRANSFER_CHARS) return fail('invalid-document');
+  if (content.length > MAX_TRANSFER_CHARS || !withinParseBudget(content))
+    return fail('invalid-document');
   let raw: unknown;
   try {
     // JSON is valid YAML. Aliases are limited to avoid excessive expansion.

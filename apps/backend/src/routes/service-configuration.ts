@@ -73,7 +73,8 @@ export function registerServiceConfigurationRoutes(
   app.get<{ Querystring: { range?: string } }>('/api/services/uptime', async (request, reply) => {
     const range = rangeOf(request.query.range);
     if (!range) return reply.code(400).send(errorBody('invalid-query'));
-    return observations.uptime(range);
+    // Pre-serialized and shared: a large inventory would otherwise be copied once per request.
+    return reply.type('application/json; charset=utf-8').send(await observations.uptimeBody(range));
   });
   app.get<{ Params: { id: string }; Querystring: { range?: string } }>(
     '/api/services/:id/uptime',
