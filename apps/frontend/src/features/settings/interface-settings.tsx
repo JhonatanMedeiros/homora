@@ -19,6 +19,7 @@ import {
   type TemplateProblem,
 } from '@/lib/web-search';
 import { AppearanceSettings } from './appearance-settings';
+import { CustomCssSettings } from './custom-css-settings';
 import { Segmented } from './segmented';
 import { SettingRow, SettingsGroup } from './setting-row';
 
@@ -108,6 +109,8 @@ export function InterfaceSettings() {
       </SettingsGroup>
 
       <AppearanceSettings />
+
+      <CustomCssSettings />
 
       <SettingsGroup id="ui-home" title={t('settings.ui.home')}>
         <SettingRow label={t('settings.ui.layout')} description={t('settings.ui.layoutHint')}>

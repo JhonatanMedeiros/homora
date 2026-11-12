@@ -30,6 +30,8 @@ const TITLES = new Set<string>([
   'service-public',
   'appearance-update',
   'appearance-reset',
+  'custom-css-update',
+  'custom-css-reset',
   'proposal',
   'review.success',
   'review.refused',

@@ -172,7 +172,11 @@ export function HostView({
   const nodeKeys = model.nodes.map((node) => node.key);
   const linked = services.some((service) => service.host);
   return (
-    <section aria-label={t('hosts.view.title')} className="flex flex-col gap-4">
+    <section
+      aria-label={t('hosts.view.title')}
+      data-homora="host-view"
+      className="flex flex-col gap-4"
+    >
       {nodeFilter && (
         <p className="flex flex-wrap items-center gap-2 text-sm">
           {t('hosts.view.filter', { node: nodeFilter.node })}

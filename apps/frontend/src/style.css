@@ -14,6 +14,8 @@
  */
 :root {
   --radius: 0.5rem;
+  /* Corner radius of service cards: a hook for custom CSS (same as the default `rounded-md`). */
+  --radius-card: var(--radius);
   --background: oklch(0.985 0.004 80);
   --foreground: oklch(0.2 0.01 60);
   --card-base: oklch(1 0 0);
@@ -130,6 +132,10 @@
    translucent card may blur what is behind it. */
 [data-appearance-background] [data-slot='sidebar-inset'] {
   background-color: transparent;
+}
+/* Unlayered on purpose: it must win over the utility class on the card. */
+.service-surface {
+  border-radius: var(--radius-card);
 }
 [data-slot='card'],
 .service-surface,

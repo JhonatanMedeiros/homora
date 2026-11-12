@@ -26,6 +26,8 @@ import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-
 import { createNotifications } from './notifications.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
 import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
+import { createCustomCss } from './custom-css.js';
+import { registerCustomCssRoutes } from './routes/custom-css.js';
 import { createAppearance } from './appearance.js';
 import { createBackgroundStore } from './background-image.js';
 import { registerAppearanceRoutes } from './routes/appearance.js';
@@ -51,6 +53,8 @@ export function createApp(
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
   const audit = createAuditLog(sqlite);
+  const appearance = createAppearance(sqlite);
+  const customCss = createCustomCss(sqlite);
   const proposals = createProposalService(sqlite, configuration);
   const observations = createObservationStore(sqlite);
   const notifications = createNotifications(sqlite, vault);
@@ -119,9 +123,10 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   const connections = registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
+  registerCustomCssRoutes(app, customCss, auth, audit);
   registerAppearanceRoutes(
     app,
-    createAppearance(sqlite),
+    appearance,
     auth,
     audit,
     options.backgroundPath ? createBackgroundStore(options.backgroundPath) : undefined,
@@ -139,7 +144,10 @@ export function createApp(
   );
   registerHostSuggestionRoutes(app, sqlite, connections, configuration);
   registerServiceDependencyRoutes(app, sqlite, auth, audit);
-  registerConfigTransferRoutes(app, configuration, serviceMonitor);
+  registerConfigTransferRoutes(app, configuration, serviceMonitor, {
+    appearance,
+    customCss,
+  });
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);
 

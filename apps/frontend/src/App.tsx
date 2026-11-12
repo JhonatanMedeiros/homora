@@ -14,7 +14,9 @@ import { CommandPalette } from '@/components/command-palette';
 import { ShortcutsDialog } from '@/components/shortcuts-dialog';
 import { useShortcuts } from '@/hooks/use-shortcuts';
 import { useShortcutsPreference } from '@/hooks/use-shortcuts-preference';
+import { SafeModeBanner } from '@/components/safe-mode-banner';
 import { useAppearance } from '@/hooks/use-appearance';
+import { useCustomCss } from '@/hooks/use-custom-css';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
@@ -87,6 +89,8 @@ function Dashboard({
   const viewPrefs = useViewPreferences();
   // Fetches the instance appearance and applies it to the page.
   useAppearance();
+  // Adds the custom stylesheet unless this tab is in safe mode (?safe=1).
+  useCustomCss();
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutsEnabled] = useShortcutsPreference();
@@ -115,6 +119,15 @@ function Dashboard({
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
     >
+      <SafeModeBanner
+        onEdit={() => {
+          navigate(settingsPath('interface'));
+          window.setTimeout(
+            () => document.getElementById('ui-css')?.scrollIntoView({ behavior: 'smooth' }),
+            150,
+          );
+        }}
+      />
       <ShortcutsDialog
         open={helpOpen}
         onOpenChange={setHelpOpen}

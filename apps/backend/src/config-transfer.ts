@@ -5,6 +5,7 @@ import {
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
   normalizeIcon,
+  type Appearance,
   type Service,
 } from '@homora/shared';
 
@@ -82,15 +83,30 @@ export type ImportPlan = {
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** Serializes groups and cards in current order. Never includes secrets, connections or IDs. */
+/** Instance look and feel that travels in an export. The background picture does not. */
+export type ExportedSettings = {
+  appearance?: Appearance;
+  customCss?: { enabled: boolean; css: string };
+};
+
+/**
+ * Serializes groups and cards in current order. Never includes secrets, connections or IDs.
+ * Appearance and custom CSS are included when given; the background picture is not (it is part of
+ * the database backup, see `pnpm backup`).
+ */
 export function serializeConfiguration(
   groups: { name: string; columns?: number | null }[],
   services: Service[],
   format: 'yaml' | 'json',
+  settings: ExportedSettings = {},
 ): string {
   const names = [...new Set([...groups.map((g) => g.name), ...services.map((s) => s.category)])];
   const document = {
     version: TRANSFER_VERSION,
+    ...(settings.appearance ? { appearance: { ...settings.appearance, image: null } } : {}),
+    ...(settings.customCss && settings.customCss.css.trim() !== ''
+      ? { customCss: settings.customCss }
+      : {}),
     groups: names.map((name) => ({
       name,
       ...(groups.find((group) => group.name === name)?.columns
@@ -188,6 +204,8 @@ export function parseTransfer(content: string): ParsedImport {
   if (!isRecord(raw) || !Array.isArray(raw.groups)) return fail('invalid-document');
   if (raw.version !== TRANSFER_VERSION) return fail('unsupported-version');
   if (raw.groups.length > MAX_GROUPS) return fail('too-many-groups');
+  // `appearance` and `customCss` are exported for backup and moving by hand, but import only adds
+  // cards and groups and never overwrites settings, so they are left unread on purpose.
   let total = 0;
   raw.groups.forEach((rawGroup: unknown, gi) => {
     const path = `groups[${gi}]`;

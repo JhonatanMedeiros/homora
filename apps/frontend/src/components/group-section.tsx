@@ -127,6 +127,7 @@ export function GroupSection({
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <h2
           id={titleId}
+          data-homora="group-title"
           className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground"
         >
           <span className="break-words">{category}</span>

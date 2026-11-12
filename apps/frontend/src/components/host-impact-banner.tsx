@@ -15,7 +15,7 @@ type Props = {
 export function HostImpactBanner({ nodes, onSeeImpact, indirect }: Props) {
   if (nodes.length === 0) return null;
   return (
-    <div role="status" className="flex flex-col gap-2">
+    <div role="status" data-homora="impact-banner" className="flex flex-col gap-2">
       {nodes.map((node) => (
         <Alert key={`${node.connectionId}:${node.node}`} variant="destructive">
           <TriangleAlert aria-hidden="true" />

@@ -124,3 +124,24 @@ describe('appearance API', () => {
     expect(update?.detail).toBe('accent:moss background:dusk opacity:80 blur:on');
   });
 });
+
+describe('export of settings', () => {
+  it('serves appearance and custom CSS in the export, never the picture', async () => {
+    const { app, headers, put } = await setup();
+    await put({ ...valid });
+    await app.inject({
+      method: 'PUT',
+      url: '/api/appearance/custom-css',
+      headers,
+      payload: { css: 'a { color: red }', enabled: true },
+    });
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/config/export?format=json',
+      headers,
+    });
+    const document = response.json();
+    expect(document.appearance).toMatchObject({ accent: 'moss', image: null });
+    expect(document.customCss).toEqual({ enabled: true, css: 'a { color: red }' });
+  });
+});

@@ -52,7 +52,7 @@ export function AppShell({
   const standalone = tab === 'account' && !managing;
   return (
     <div className="min-h-svh">
-      <header className="bg-sidebar text-sidebar-foreground">
+      <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8">
           <BrandMark compact className="text-sidebar-foreground" />
           <span className="mr-auto" />

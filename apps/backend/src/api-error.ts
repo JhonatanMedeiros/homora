@@ -15,6 +15,7 @@ export const ERROR_MESSAGES = {
   'image-animated': 'Animated images are not supported.',
   'image-invalid': 'The image could not be read.',
   'image-storage-unavailable': 'Background images are not available on this server.',
+  'custom-css-invalid': 'The CSS was not saved because it uses something that is not allowed.',
   'appearance-contrast': 'This appearance would make text or controls hard to read.',
   'invalid-decision': 'Invalid decision.',
   'invalid-card-order': 'Invalid card order.',

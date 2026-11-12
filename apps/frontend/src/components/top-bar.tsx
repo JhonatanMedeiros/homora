@@ -42,6 +42,7 @@ export function TopBar() {
   return (
     <div
       role="region"
+      data-homora="top-bar"
       aria-label={t('topBar.label')}
       className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-md border bg-card px-4 py-2"
     >

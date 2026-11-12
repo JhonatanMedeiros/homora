@@ -5,6 +5,8 @@ import type { createServiceMonitor } from '../service-monitor.js';
 import { MAX_TRANSFER_CHARS, serializeConfiguration } from '../config-transfer.js';
 import { IMPORT_SOURCES, parseBySource } from '../importers.js';
 import { errorBody } from '../api-error.js';
+import type { AppearanceStore } from '../appearance.js';
+import type { CustomCssStore } from '../custom-css.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
@@ -27,6 +29,7 @@ export function registerConfigTransferRoutes(
   app: FastifyInstance,
   configuration: Configuration,
   monitor: Monitor,
+  settings?: { appearance: AppearanceStore; customCss: CustomCssStore },
 ) {
   app.get<{ Querystring: { format?: string } }>('/api/config/export', async (request, reply) => {
     const format = request.query.format === 'json' ? 'json' : 'yaml';
@@ -34,7 +37,17 @@ export function registerConfigTransferRoutes(
     return reply
       .header('Content-Type', format === 'json' ? 'application/json' : 'application/yaml')
       .header('Content-Disposition', `attachment; filename="homora-config.${format}"`)
-      .send(serializeConfiguration(groups, services, format));
+      .send(
+        serializeConfiguration(
+          groups,
+          services,
+          format,
+          settings && {
+            appearance: settings.appearance.get(),
+            customCss: (({ enabled, css }) => ({ enabled, css }))(settings.customCss.get()),
+          },
+        ),
+      );
   });
 
   app.post(

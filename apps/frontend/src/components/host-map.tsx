@@ -367,6 +367,7 @@ export function HostMap({
   return (
     <section
       aria-label={t('map.title')}
+      data-homora="host-map"
       className="flex flex-col gap-3"
       onKeyDown={(event) => {
         if (event.key === 'Escape') setPicking(null);

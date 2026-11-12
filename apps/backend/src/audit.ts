@@ -19,6 +19,8 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'service-dependency-remove',
     'appearance-update',
     'appearance-reset',
+    'custom-css-update',
+    'custom-css-reset',
   ],
   proposal: [
     'proposal',
