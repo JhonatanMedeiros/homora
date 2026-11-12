@@ -95,6 +95,7 @@ export const en = {
   'hosts.evidence.docker-source': 'A Docker discovery source tied to this guest reports it',
   'hosts.arrange.map': 'Map',
   'map.title': 'Service map',
+  'map.controls': 'Map controls',
   'map.hint': 'Read-only. Scroll or drag to pan. The host list shows the same information.',
   'map.zoomIn': 'Zoom in',
   'map.zoomOut': 'Zoom out',
@@ -102,7 +103,7 @@ export const en = {
   'map.fit': 'Fit',
   'map.reset': 'Reset',
   'map.refresh': 'Refresh',
-  'map.listView': 'List view',
+  'map.hostList': 'Host list',
   'map.phoneNotice': 'The map is not optimized for phones yet. It works best on a larger screen.',
   'map.useList': 'Use the host list',
   'map.openAnyway': 'Open the map anyway',
@@ -257,6 +258,7 @@ export const ptBR: Record<keyof typeof en, string> = {
     'Uma fonte de descoberta Docker ligada a este convidado o informa',
   'hosts.arrange.map': 'Mapa',
   'map.title': 'Mapa de serviços',
+  'map.controls': 'Controles do mapa',
   'map.hint':
     'Somente leitura. Role ou arraste para navegar. A lista de hosts mostra as mesmas informações.',
   'map.zoomIn': 'Aumentar zoom',
@@ -265,7 +267,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'map.fit': 'Ajustar',
   'map.reset': 'Restaurar',
   'map.refresh': 'Atualizar',
-  'map.listView': 'Ver lista',
+  'map.hostList': 'Lista de hosts',
   'map.phoneNotice':
     'O mapa ainda não é otimizado para celulares. Funciona melhor em uma tela maior.',
   'map.useList': 'Usar a lista de hosts',

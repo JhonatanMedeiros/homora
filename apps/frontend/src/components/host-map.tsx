@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
 import type { HostLink, Service } from '@homora/shared';
-import { Minus, Plus, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, RefreshCw, RotateCcw, Scan, X } from 'lucide-react';
 import { HostPicker } from '@/components/host-picker';
 import { dependsOn, usedBy, type Dependency } from '@/lib/dependencies';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -209,7 +209,7 @@ export function HostMap({
       failure ?? t('dependencies.removed', { name: nameOf(serviceId), other: nameOf(dependsOnId) }),
     );
   }
-  const renderService = (item: MapService) => {
+  const renderService = (item: MapService, parentX = 0, parentY = 0) => {
     const status = describeStatus(statuses[item.service.id], blockedIds.has(item.service.id));
     const selected = selection?.kind === 'service' && selection.id === item.service.id;
     const impact = impactText(impactOf(item.service));
@@ -238,7 +238,7 @@ export function HostMap({
           if (target && target.id !== item.service.id) void pick(target, item.service.id);
           else setSelection({ kind: 'service', id: item.service.id });
         }}
-        style={{ left: item.x, top: item.y, width: item.w, height: item.h }}
+        style={{ left: item.x - parentX, top: item.y - parentY, width: item.w, height: item.h }}
         className={cn(
           'absolute flex items-center justify-between gap-2 px-2 text-left text-xs',
           selected && 'border-primary ring-2 ring-primary',
@@ -254,14 +254,19 @@ export function HostMap({
       </Button>
     );
   };
-  const renderGuest = (guest: MapGuest) => {
+  const renderGuest = (guest: MapGuest, guestContainerX: number, guestContainerY: number) => {
     const selected = selection?.kind === 'guest' && selection.key === guest.group.key;
     return (
       <div
         key={guest.group.key}
         role="group"
         aria-label={guest.group.guest.name || String(guest.group.guest.vmid)}
-        style={{ left: guest.x, top: guest.y, width: guest.w, height: guest.h }}
+        style={{
+          left: guest.x - guestContainerX,
+          top: guest.y - guestContainerY,
+          width: guest.w,
+          height: guest.h,
+        }}
         onDragOver={(event) => {
           if (dragging === null || !canEdit) return;
           event.preventDefault();
@@ -308,7 +313,7 @@ export function HostMap({
             {guestState(guest.group.guest.status)}
           </span>
         </Button>
-        {guest.services.map(renderService)}
+        {guest.services.map((item) => renderService(item, guest.x, guest.y))}
       </div>
     );
   };
@@ -341,8 +346,8 @@ export function HostMap({
               : t('hosts.view.services', { count })}
           </small>
         </h3>
-        {container.guests.map(renderGuest)}
-        {container.services.map(renderService)}
+        {container.guests.map((guest) => renderGuest(guest, container.x, container.y))}
+        {container.services.map((item) => renderService(item, container.x, container.y))}
       </section>
     );
   };
@@ -367,69 +372,6 @@ export function HostMap({
         if (event.key === 'Escape') setPicking(null);
       }}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={t('map.zoomOut')}
-          disabled={zoom <= ZOOM.min}
-          className="pointer-coarse:size-11"
-          onClick={() => setZoom((z) => clampZoom(z - ZOOM.step))}
-        >
-          <Minus />
-        </Button>
-        <span role="status" className="min-w-16 text-center font-mono text-sm tabular-nums">
-          {t('map.zoomLevel', { percent: Math.round(zoom * 100) })}
-        </span>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={t('map.zoomIn')}
-          disabled={zoom >= ZOOM.max}
-          className="pointer-coarse:size-11"
-          onClick={() => setZoom((z) => clampZoom(z + ZOOM.step))}
-        >
-          <Plus />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="pointer-coarse:h-11"
-          onClick={fit}
-        >
-          {t('map.fit')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="pointer-coarse:h-11"
-          onClick={reset}
-        >
-          {t('map.reset')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="pointer-coarse:h-11"
-          onClick={onRefresh}
-        >
-          <RefreshCw />
-          {t('map.refresh')}
-        </Button>
-        <Button
-          type="button"
-          variant="link"
-          className="ml-auto pointer-coarse:min-h-11"
-          onClick={onListView}
-        >
-          {t('map.listView')}
-        </Button>
-      </div>
       <p className="text-xs text-muted-foreground">{t('map.hint')}</p>
       {canEdit && <p className="text-xs text-muted-foreground">{t('map.dragHint')}</p>}
       {picking !== null && (
@@ -455,29 +397,83 @@ export function HostMap({
         <EmptyNote>{t('map.empty')}</EmptyNote>
       ) : (
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <div
-            ref={viewport}
-            role="region"
-            aria-label={t('map.canvas')}
-            tabIndex={0}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-            className="h-[70dvh] cursor-grab overflow-auto rounded-lg border bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <div style={{ width: layout.width * zoom + 24, height: layout.height * zoom + 24 }}>
+          <div className="flex h-[70dvh] min-h-96 flex-col overflow-hidden rounded-lg border bg-card">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-card p-2">
               <div
-                style={{
-                  width: layout.width,
-                  height: layout.height,
-                  transform: `scale(${zoom})`,
-                  transformOrigin: '0 0',
-                  margin: 12,
-                }}
-                className="relative"
+                role="group"
+                aria-label={t('map.controls')}
+                className="flex flex-wrap items-center gap-1 rounded-md border bg-background p-1"
               >
-                {layout.containers.map(renderContainer)}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('map.zoomOut')}
+                  disabled={zoom <= ZOOM.min}
+                  onClick={() => setZoom((z) => clampZoom(z - ZOOM.step))}
+                >
+                  <Minus />
+                </Button>
+                <span
+                  role="status"
+                  className="min-w-16 px-1 text-center font-mono text-xs tabular-nums text-muted-foreground"
+                >
+                  {t('map.zoomLevel', { percent: Math.round(zoom * 100) })}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('map.zoomIn')}
+                  disabled={zoom >= ZOOM.max}
+                  onClick={() => setZoom((z) => clampZoom(z + ZOOM.step))}
+                >
+                  <Plus />
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={fit}>
+                  <Scan data-icon="inline-start" />
+                  {t('map.fit')}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={reset}>
+                  <RotateCcw data-icon="inline-start" />
+                  {t('map.reset')}
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1">
+                <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
+                  <RefreshCw data-icon="inline-start" />
+                  {t('map.refresh')}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={onListView}>
+                  <ArrowLeft data-icon="inline-start" />
+                  {t('map.hostList')}
+                </Button>
+              </div>
+            </div>
+            <div
+              ref={viewport}
+              role="region"
+              aria-label={t('map.canvas')}
+              tabIndex={0}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              className="min-h-0 flex-1 cursor-grab overflow-auto bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <div style={{ width: layout.width * zoom + 24, height: layout.height * zoom + 24 }}>
+                <div
+                  style={{
+                    width: layout.width,
+                    height: layout.height,
+                    transform: `scale(${zoom})`,
+                    transformOrigin: '0 0',
+                    margin: 12,
+                  }}
+                  className="relative"
+                >
+                  {layout.containers.map(renderContainer)}
+                </div>
               </div>
             </div>
           </div>
