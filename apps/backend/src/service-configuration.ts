@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { validateService, type CheckType, type Service, type ServiceInput } from '@homora/shared';
+import { renumberGroups } from './group-order.js';
 import {
   MAX_GROUP_COLUMNS,
   planImport,
@@ -296,6 +297,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         if (sqlite.prepare('SELECT id FROM services WHERE category=? LIMIT 1').get(current.name))
           return 'not-empty' as const;
         sqlite.prepare('DELETE FROM service_groups WHERE id=?').run(id);
+        renumberGroups(sqlite);
         return 'deleted' as const;
       });
     },
