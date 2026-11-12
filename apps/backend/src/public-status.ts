@@ -4,8 +4,10 @@ import type { createObservationStore } from './service-observations.js';
 type Observations = ReturnType<typeof createObservationStore>;
 export type PublicState = 'up' | 'down' | 'unknown';
 export const PUBLIC_NAME_MAX = 60;
+export const PUBLIC_DESCRIPTION_MAX = 160;
 const ENABLED_KEY = 'public_status_enabled';
 const TITLE_KEY = 'public_status_title';
+const DESCRIPTION_KEY = 'public_status_description';
 const CACHE_MS = 15_000;
 const BAR_COUNT = 24;
 const BAR_MS = 60 * 60_000;
@@ -32,6 +34,7 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
   const settings = () => ({
     enabled: getSetting(ENABLED_KEY) === 'true',
     title: getSetting(TITLE_KEY) ?? '',
+    description: getSetting(DESCRIPTION_KEY) ?? '',
   });
   const stateOf = (status: string, stale: boolean): PublicState =>
     stale
@@ -68,6 +71,7 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
     }
     return {
       title: settings().title,
+      description: settings().description,
       updatedAt: new Date(now).toISOString(),
       services: rows.map((row) => {
         const observation = current.get(row.id);
@@ -97,6 +101,10 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
     },
     setTitle(title: string) {
       setSetting(TITLE_KEY, title.trim().slice(0, PUBLIC_NAME_MAX));
+      cache = null;
+    },
+    setDescription(description: string) {
+      setSetting(DESCRIPTION_KEY, description.trim().slice(0, PUBLIC_DESCRIPTION_MAX));
       cache = null;
     },
     publicIds() {

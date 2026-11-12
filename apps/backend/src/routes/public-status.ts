@@ -54,6 +54,7 @@ export function registerPublicStatusRoutes(
     const before = publicStatus.settings();
     const who = await actor(request.headers);
     if (parsed.data.title !== undefined) publicStatus.setTitle(parsed.data.title);
+    if (parsed.data.description !== undefined) publicStatus.setDescription(parsed.data.description);
     if (parsed.data.enabled !== undefined) publicStatus.setEnabled(parsed.data.enabled);
     const after = publicStatus.settings();
     if (before.enabled !== after.enabled)
@@ -70,6 +71,14 @@ export function registerPublicStatusRoutes(
         action: 'public-status-update',
         result: 'ok',
         detail: 'title',
+        ipAddress: request.ip,
+      });
+    if (before.description !== after.description)
+      audit.record({
+        actor: who,
+        action: 'public-status-update',
+        result: 'ok',
+        detail: 'description',
         ipAddress: request.ip,
       });
     return admin();

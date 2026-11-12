@@ -13,7 +13,12 @@ export type PublicService = {
   uptime: number | null;
   bars: PublicState[];
 };
-export type PublicStatus = { title: string; updatedAt: string; services: PublicService[] };
+export type PublicStatus = {
+  title: string;
+  description?: string;
+  updatedAt: string;
+  services: PublicService[];
+};
 
 const REFRESH_MS = 45_000;
 const availability: Record<PublicState, Availability> = {
@@ -152,6 +157,9 @@ export function StatusPage() {
     >
       <header>
         <h1 className="text-3xl leading-tight">{data?.title || t('publicStatus.title')}</h1>
+        {data?.description && (
+          <p className="mt-2 max-w-[65ch] text-muted-foreground">{data.description}</p>
+        )}
       </header>
       {state === 'loading' && <p className="text-muted-foreground">{t('publicStatus.loading')}</p>}
       {state === 'closed' && (

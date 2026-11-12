@@ -1,32 +1,43 @@
 import { useEffect, useState } from 'react';
 import { formatNumber, t, useI18n } from '@/i18n';
+import { useClockPreferences } from '@/hooks/use-clock-preferences';
 import { useSystemStats } from '@/hooks/use-system-stats';
+import { browserTimeZone, formatClock, type ClockPreferences } from '@/lib/clock';
 
-const dateFormat = (locale: string) =>
-  new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' });
-const timeFormat = (locale: string) =>
-  new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' });
-
-function useNow() {
+function useNow(seconds: boolean) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const tick = () => setNow(new Date());
-    // Updates at the start of each minute, without ticking every second.
-    const timer = window.setTimeout(
-      () => {
-        tick();
-      },
-      60_000 - (Date.now() % 60_000),
-    );
+    // Ticks on the next boundary (second or minute), not on a drifting interval.
+    const step = seconds ? 1_000 : 60_000;
+    const timer = window.setTimeout(() => setNow(new Date()), step - (Date.now() % step));
     return () => window.clearTimeout(timer);
-  }, [now]);
+  }, [now, seconds]);
   return now;
+}
+
+/** Time and date in the chosen format and time zone. */
+export function Clock({ preferences }: { preferences: ClockPreferences }) {
+  const { locale } = useI18n();
+  const now = useNow(preferences.seconds);
+  const { time, date, zone } = formatClock(locale, preferences, now);
+  const custom = preferences.timeZone && preferences.timeZone !== browserTimeZone();
+  return (
+    <div className="flex items-baseline gap-3">
+      <time dateTime={now.toISOString()} className="font-mono text-xl font-medium tabular-nums">
+        {time}
+      </time>
+      {(preferences.date || custom) && (
+        <span className="text-sm text-muted-foreground">
+          {[preferences.date && date, custom && zone].filter(Boolean).join(' · ')}
+        </span>
+      )}
+    </div>
+  );
 }
 
 /** Optional top bar showing date, time, and system resources from Proxmox. */
 export function TopBar() {
-  const { locale } = useI18n();
-  const now = useNow();
+  const preferences = useClockPreferences();
   const system = useSystemStats(true);
   return (
     <div
@@ -34,12 +45,7 @@ export function TopBar() {
       aria-label={t('topBar.label')}
       className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-md border bg-card px-4 py-2"
     >
-      <div className="flex items-baseline gap-3">
-        <time dateTime={now.toISOString()} className="font-mono text-xl font-medium">
-          {timeFormat(locale).format(now)}
-        </time>
-        <span className="text-sm text-muted-foreground">{dateFormat(locale).format(now)}</span>
-      </div>
+      <Clock preferences={preferences} />
       {system.status === 'ready' && (
         <dl className="flex flex-wrap gap-x-5 gap-y-1">
           {system.stats.map((stat) => (

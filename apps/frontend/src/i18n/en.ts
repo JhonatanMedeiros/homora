@@ -6,6 +6,7 @@ import { en as transfer } from './messages/transfer';
 import { en as account } from './messages/account';
 import { en as apiErrors } from './messages/api-errors';
 import { en as status } from './messages/status';
+import { en as settings } from './messages/settings';
 
 /** Source of truth for translation keys: every language must provide these exact keys. */
 export const en = {
@@ -17,5 +18,6 @@ export const en = {
   ...account,
   ...apiErrors,
   ...status,
+  ...settings,
 } as const;
 export type MessageKey = keyof typeof en;
