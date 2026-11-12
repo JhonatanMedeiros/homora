@@ -68,6 +68,10 @@ function StatusMeta({
 }
 
 /** A service: opens in a new tab, displays its status light, and has edit actions. */
+/** Stable id for "go to card"; `data-highlight` is set for a moment by the command palette. */
+const SERVICE_LI =
+  'group/service flex min-w-0 scroll-mt-24 rounded-lg data-[highlight=true]:ring-2 data-[highlight=true]:ring-primary data-[highlight=true]:ring-offset-2 data-[highlight=true]:ring-offset-background';
+
 export function ServiceCard({
   service: s,
   status,
@@ -89,7 +93,7 @@ export function ServiceCard({
   const inline = confirmingRemoval;
   if (list) {
     return (
-      <li className="group/service flex min-w-0">
+      <li id={`service-${s.id}`} className={SERVICE_LI}>
         <Item
           variant="outline"
           size="sm"
@@ -181,7 +185,7 @@ export function ServiceCard({
     );
   }
   return (
-    <li className="group/service flex min-w-0">
+    <li id={`service-${s.id}`} className={SERVICE_LI}>
       <Item
         variant="outline"
         className={cn(
