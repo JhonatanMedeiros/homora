@@ -1167,6 +1167,13 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Space reclaim: the `UPDATE` alone does **not** shrink the file (measured: still ~615 bytes/row). Freed pages are reused as 30-day retention deletes old rows, so growth stops. `VACUUM` is never run automatically; it is optional and needs free disk about equal to the database size (see README, Upgrade).
 - `service-uptime.test.ts` now benchmarks 25 services × 43,200 rows at 60 s (bounds: 24 h and 7 d under 300 ms, 30 d under 1 s). Local run: 12 ms, 80 ms, 358 ms.
 
+## Error recovery across the application
+
+- Unknown authenticated routes retain their existing not-found screen; the public status page and individual features retain their own error states. The sign-in screen can retry an initial connection failure without a full reload.
+- A root React error boundary displays a localized recovery screen for rendering failures, without exposing exception text. It cannot catch failed JavaScript downloads, event-handler errors, or a web server that is itself unavailable.
+- Unexpected backend errors use a generic JSON response while preserving their HTTP status. Expected 4xx handling and the public-status rate limiter remain in place. The nginx proxy and external gateways can still return their own errors when the backend or frontend is unavailable.
+- Validated with `pnpm check` (496 application tests and 9 script tests) and `pnpm build`. Tests exercise recovery after an initial connection failure, the render boundary, and safe unexpected API errors. The recovery screen was not visually reviewed in a browser; proxy and gateway failures were not tested end to end.
+
 ### Service-to-host map, phase 1: manual link and Host view (issue #96)
 
 - Migration `0020` adds `host_connection_id`, `host_node`, `host_vmid`, `host_type` (all nullable) to `services`; the connection id references `integration_instances` with `ON DELETE SET NULL`. `packages/db/src/migration.test.ts` starts from a database at migration `0019`, checks that existing cards keep their data with all four columns `NULL`, and that deleting the connection unlinks the card. Decisions are in [ADR 0008](decisoes/0008-service-to-host-map.md).

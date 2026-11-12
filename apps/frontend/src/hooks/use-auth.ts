@@ -10,15 +10,30 @@ export function useAuth() {
   const [status, setStatus] = useState<AuthStatus | null>(null);
   const [error, setError] = useState('');
 
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
+    let active = true;
     fetch('/api/auth/status')
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json() as Promise<AuthStatus>;
       })
-      .then(setStatus)
-      .catch(() => setError(t('auth.serverUnreachable')));
-  }, []);
+      .then((value: AuthStatus) => {
+        if (active) setStatus(value);
+      })
+      .catch(() => {
+        if (active) setError(t('auth.serverUnreachable'));
+      });
+    return () => {
+      active = false;
+    };
+  }, [attempt]);
+
+  function retry() {
+    setError('');
+    setAttempt((value) => value + 1);
+  }
 
   async function submit({ name, email, password }: Credentials) {
     setError('');
@@ -51,5 +66,5 @@ export function useAuth() {
     setStatus({ configured: true, authenticated: false });
   }
 
-  return { status, error, submit, logout };
+  return { status, error, submit, logout, retry };
 }
