@@ -5,8 +5,11 @@ import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { expect, it } from 'vitest';
+import type { z } from 'zod';
 import { createMcp } from './mcp.js';
 import { createVault } from './vault.js';
+import { serviceProposalSchema } from './input-schemas.js';
+import { cardOrderSchema, groupChangeSchema, widgetChangeSchema } from './managed-proposals.js';
 import { createProposalService } from './proposals.js';
 it('validates proposal inputs and lists services without secrets', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-'));
@@ -62,6 +65,31 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'propose_discovered_card',
       'list_proxmox_resources',
     ]);
+    for (const name of [
+      'propose_service_card',
+      'propose_group_change',
+      'propose_card_order',
+      'propose_widget_change',
+    ]) {
+      const tool = tools.tools.find((t) => t.name === name);
+      expect(Object.keys(tool?.inputSchema.properties ?? {})).toContain('op');
+    }
+    // The published discovery schema must list the same fields as the strict schema.
+    const strict = {
+      propose_service_card: serviceProposalSchema,
+      propose_group_change: groupChangeSchema,
+      propose_card_order: cardOrderSchema,
+      propose_widget_change: widgetChangeSchema,
+    };
+    for (const [name, schema] of Object.entries(strict)) {
+      const expected = new Set(
+        schema.options.flatMap((option) => Object.keys((option as z.ZodObject).shape)),
+      );
+      const published = tools.tools.find((t) => t.name === name)?.inputSchema.properties ?? {};
+      expect(new Set(Object.keys(published)), name).toEqual(expected);
+      const ops = schema.options.map((option) => (option as z.ZodObject).shape.op.value);
+      expect((published.op as { enum: string[] }).enum, name).toEqual(ops);
+    }
     const result = await client.callTool({ name: 'list_services', arguments: {} });
     expect(JSON.stringify(result)).toContain('Jellyfin');
     expect(JSON.stringify(result)).not.toContain('synthetic-secret');
@@ -113,6 +141,28 @@ it('validates proposal inputs and lists services without secrets', async () => {
       arguments: { op: 'create', integrationId: 1, name: 'Stats', serviceId: 1 },
     });
     expect(widget.isError, JSON.stringify(widget)).not.toBe(true);
+    const order = await client.callTool({
+      name: 'propose_card_order',
+      arguments: { op: 'reorder', category: 'Media', ids: [1] },
+    });
+    expect(order.isError, JSON.stringify(order)).not.toBe(true);
+    for (const [name, args] of [
+      ['propose_service_card', { op: 'create' }],
+      ['propose_service_card', { op: 'unknown' }],
+      ['propose_service_card', { op: 'delete', id: 1, extra: 1 }],
+      ['propose_group_change', { op: 'rename', name: 'x' }],
+      ['propose_group_change', { op: 'unknown' }],
+      ['propose_group_change', { op: 'create', name: 'x', extra: 1 }],
+      ['propose_card_order', { op: 'reorder', category: 'Media' }],
+      ['propose_card_order', { op: 'unknown' }],
+      ['propose_card_order', { op: 'reorder', category: 'Media', ids: [1], extra: 1 }],
+      ['propose_widget_change', { op: 'link', id: 1 }],
+      ['propose_widget_change', { op: 'unknown' }],
+      ['propose_widget_change', { op: 'delete', id: 1, extra: 1 }],
+    ] as const) {
+      const rejected = await client.callTool({ name, arguments: { ...args } });
+      expect(rejected.isError, `${name} ${JSON.stringify(args)}`).toBe(true);
+    }
     expect(
       JSON.stringify(await client.callTool({ name: 'list_integrations', arguments: {} })),
     ).not.toContain('sensitive-secret');
