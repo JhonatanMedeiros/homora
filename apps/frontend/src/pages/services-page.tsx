@@ -447,6 +447,11 @@ export function ServicesPage({
       setGroupDraft('');
       setSelected(null);
       await refresh();
+      announce(
+        t(wasEditing ? 'group.saved' : 'group.added', {
+          name: groupDraft.trim(),
+        }),
+      );
       if (wasEditing) document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
       setGroupError(error instanceof Error ? error.message : t('error.saveGroup'));
@@ -454,10 +459,12 @@ export function ServicesPage({
   }
   async function deleteGroup(id: number) {
     try {
+      const name = groupRows.find((group) => group.id === id)?.name;
       const response = await fetch(`/api/groups/${id}`, { method: 'DELETE' });
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) throw new Error(apiError(body, t('error.removeGroup')));
       await refresh();
+      if (name) announce(t('group.removed', { name }));
       document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
       setGroupError(error instanceof Error ? error.message : t('error.removeGroup'));

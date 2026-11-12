@@ -157,4 +157,4 @@ shadcn/ui new-york, Radix, Lucide, Tailwind v4, tokens in `@theme inline`. Primi
 
 ## Motion
 
-Motion is brief and tied to use: management content and tabs enter when navigating, palette results appear as it opens, and expanding a group reveals its contents. Buttons acknowledge a press; service surfaces and organize-mode drop targets transition as their state changes. A status light gives one short pulse when its state changes, never a continuous blink. Reduced-motion preferences suppress movement while the status text and color continue to communicate the state.
+Motion is brief and tied to use: management content and tabs enter when navigating, palette results appear as it opens, and expanding a group reveals its contents. Buttons acknowledge a press; service surfaces respond to pointer hover, and organize-mode drop targets transition as their state changes. Group creation, edits, and removal receive a visible confirmation. A status light gives one short pulse when its state changes, never a continuous blink. Reduced-motion preferences suppress movement while the status text and color continue to communicate the state.

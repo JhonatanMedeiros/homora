@@ -26,7 +26,7 @@ export function CategoryFilter({ categories, selected, counts, onSelect }: Props
           onClick={(event) =>
             event.currentTarget.scrollIntoView?.({ inline: 'nearest', block: 'nearest' })
           }
-          className="shrink-0 whitespace-nowrap text-sm font-medium pointer-coarse:h-11 pointer-coarse:min-w-11 text-muted-foreground data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
+          className="shrink-0 whitespace-nowrap text-sm font-medium pointer-coarse:h-11 pointer-coarse:min-w-11 text-muted-foreground transition-colors duration-150 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
         >
           {category ?? t('filter.all')}
           <small aria-hidden="true" className="font-mono text-xs opacity-80">

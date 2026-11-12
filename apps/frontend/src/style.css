@@ -166,7 +166,14 @@
     transition:
       background-color 180ms ease,
       border-color 180ms ease,
-      box-shadow 180ms ease;
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .service-surface:hover {
+      transform: translateY(-1px);
+    }
   }
 
   .status-light-dot {
@@ -183,7 +190,8 @@
     transition:
       background-color 160ms ease,
       border-color 160ms ease,
-      opacity 160ms ease;
+      opacity 160ms ease,
+      transform 160ms ease;
   }
 
   @media (prefers-reduced-motion: no-preference) {
