@@ -1,5 +1,7 @@
 # Optional: Docker label discovery. Use it on top of compose.yml:
 #   docker compose -f compose.yml -f compose.docker-discovery.yml up -d --build
+# Platforms that read one Compose file (such as Coolify) cannot apply this override;
+# see the manual proxy instructions in the README's Docker discovery section.
 #
 # Homora never gets the Docker socket. A restricted proxy (tecnativa/docker-socket-proxy)
 # holds it read-only and only answers "list containers": every other API group, and every

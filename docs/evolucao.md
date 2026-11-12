@@ -886,3 +886,11 @@ implementation because it changes a security default.
 - Added a 30-day observation history, atomic batches of up to 20 independently reviewed proposals and a limit of 100 unexpired pending proposals per identity. Existing stale checks can invalidate remaining batch items after an approval.
 - Agent identity changes require a proposal and human review; requested scopes must be a subset of the author's grants. New and rotated tokens appear only in the no-store review response. Auto-approval remains out of scope.
 - Validated with `pnpm check` (340 application tests and 6 script tests) and `pnpm build`. Tests cover migration with existing data, retained history and its window, batch atomicity and limits, scope escalation, authenticated review, one-time token delivery and recovery. The identity review interface was exercised in component tests; it was not manually checked in a browser. Live infrastructure is not needed for these flows.
+
+## Docker discovery documentation (issue #48)
+
+- Documented Compose, manual Coolify/PaaS proxy and direct socket options, verification,
+  limits, proxy contract and troubleshooting in both READMEs. The manual proxy remains
+  outside the app stack and requires separate maintenance.
+- Validated against the current implementation and Compose configuration; a live Coolify
+  deployment and proxy connectivity were not tested in this documentation change.
