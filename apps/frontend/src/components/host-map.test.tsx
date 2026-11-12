@@ -5,6 +5,7 @@ import type { Service } from '@homora/shared';
 import { HostMap } from './host-map';
 import { setLocale } from '@/i18n';
 import { buildHostView, type HostInventories } from '@/lib/hosts';
+import { MAP } from '@/lib/map-layout';
 
 let reduce = false;
 const scrollTo = vi.fn();
@@ -91,6 +92,20 @@ it('renders nodes, guests and services, with the offline node written out and an
   expect(within(canvas).getByRole('group', { name: 'dns' })).toBeTruthy();
 });
 
+it('positions guests and services relative to their containing node and guest', () => {
+  setup();
+  const node = screen.getByRole('region', { name: 'pve1' });
+  const guest = within(node).getByRole('group', { name: 'dns' });
+  const service = within(guest).getByRole('button', { name: /^pihole, / });
+
+  expect(guest.getAttribute('style')).toContain(`left: ${MAP.nodePad}px`);
+  expect(guest.getAttribute('style')).toContain(`top: ${MAP.nodeHeader}px`);
+  expect(service.getAttribute('style')).toContain(`left: ${MAP.guestPad}px`);
+  expect(service.getAttribute('style')).toContain(
+    `top: ${MAP.guestHeader + MAP.serviceH + MAP.serviceGap}px`,
+  );
+});
+
 it('visits services in the same order as the Host view, which is the DOM and focus order', () => {
   setup();
   const tiles = within(screen.getByRole('region', { name: 'Map of services by host' }))
@@ -162,7 +177,11 @@ it('does not animate recentering when the user prefers reduced motion', () => {
 it('refreshes and links to the list view', () => {
   const handlers = setup();
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-  fireEvent.click(screen.getByRole('button', { name: 'List view' }));
+  const canvas = screen.getByRole('region', { name: 'Map of services by host' });
+  const frame = canvas.parentElement;
+  const hostList = within(frame!).getByRole('button', { name: 'Host list' });
+  expect(hostList).toBeTruthy();
+  fireEvent.click(hostList);
   expect(handlers.onRefresh).toHaveBeenCalled();
   expect(handlers.onListView).toHaveBeenCalled();
 });
