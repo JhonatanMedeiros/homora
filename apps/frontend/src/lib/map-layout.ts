@@ -3,11 +3,11 @@ import type { HostGuestGroup, HostNodeGroup, HostViewModel } from '@/lib/hosts';
 
 /** Geometry in map units (CSS px at zoom 1). Everything is computed, nothing is stored. */
 export const MAP = {
-  serviceW: 188,
+  serviceW: 200,
   serviceH: 36,
   serviceGap: 6,
   guestPad: 10,
-  guestHeader: 44,
+  guestHeader: 52,
   guestGap: 12,
   nodePad: 14,
   nodeHeader: 52,
@@ -89,16 +89,28 @@ function layoutNode(node: HostNodeGroup): MapContainer {
   };
 }
 
+/** Loose services use a small grid so a long list is not one tall, narrow column. */
+export const looseColumns = (count: number) => (count <= 4 ? 1 : count <= 10 ? 2 : 3);
+
 function layoutLoose(kind: MapContainer['kind'], services: Service[]): MapContainer {
+  const columns = looseColumns(services.length);
+  const rows = Math.ceil(services.length / columns);
+  const items: MapService[] = services.map((service, index) => ({
+    service,
+    x: MAP.nodePad + (index % columns) * (MAP.serviceW + MAP.guestGap),
+    y: MAP.nodeHeader + Math.floor(index / columns) * (MAP.serviceH + MAP.serviceGap),
+    w: MAP.serviceW,
+    h: MAP.serviceH,
+  }));
   return {
     kind,
     id: kind,
     x: 0,
     y: 0,
-    w: guestWidth + MAP.nodePad * 2,
-    h: MAP.nodeHeader + servicesHeight(services.length) + MAP.nodePad,
+    w: MAP.nodePad * 2 + columns * MAP.serviceW + (columns - 1) * MAP.guestGap,
+    h: MAP.nodeHeader + servicesHeight(rows) + MAP.nodePad,
     guests: [],
-    services: layoutServices(services, MAP.nodePad + MAP.guestPad, MAP.nodeHeader),
+    services: items,
   };
 }
 

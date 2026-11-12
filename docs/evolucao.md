@@ -1232,3 +1232,20 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - **Phase 4:** a Proxmox connection can scope widgets and the top bar to one node (stored as public config `node`, picked from the inventory while editing). Whole cluster stays the default; a missing or offline node reports `unavailable` and never falls back to cluster totals.
 - Validated: `pnpm check` and `pnpm build`. Not verified: any integration against a live service, the new UI in a real browser, screen readers, and the Tailscale scope names and NetBird role needed for a read-only token.
 - Follow-ups: live validation of each integration; Beszel and TrueNAS need a login-flow or WebSocket decision; a ranked list of further integrations is in the pull request.
+
+## Map canvas layout fix (2026-11-12)
+
+- Fixed the clipped guest header: the guest button inherited the default button vertical padding, which left no room for its two text lines. Guest header height is now 52 and the button has no vertical padding.
+- Loose containers (not linked, host not found, host unavailable) lay their services out in a grid of up to three columns instead of one tall column.
+- Only one hint is shown: the drag hint when editing is allowed, the read-only hint otherwise.
+- Manual dependencies are drawn as dashed arrows between service tiles (decorative, `aria-hidden`; the side panel and Host view remain the accessible equivalent). The canvas gets a dotted background and no longer stretches to 70% of the viewport height when the map is small.
+- Not verified: rendering in a real browser (changes were checked only through tests, `pnpm check` and `pnpm build`).
+- Follow-up: the map now takes the whole window like the mockup (fixed layer above the page, top bar with "Host list" and refresh, full-bleed canvas, zoom toolbar floating at the bottom centre, details panel floating at the right and shown only while something is selected; a bottom sheet on narrow windows). The page behind does not scroll while the map is open. Not verified in a real browser.
+
+## Map polish: centred canvas, lighter details, breadcrumb header (2026-11-12)
+
+- The map content is centred in the canvas (both axes) and keeps room for the toolbar and, on wide windows, the details panel.
+- Clicking the empty canvas closes the details (not after a pan, not on a tile); Escape closes them when no dependency is being picked.
+- The service details panel was reduced to what is needed: name and status, address, "Runs on" with a Change host toggle (the host picker opens only then), the impact line only when there is one, dependencies with a dashed "Add dependency" button, "Used by" only when something depends on it, and one "Open card" button. Empty rows ("nothing known", "no dependencies") no longer take space.
+- The top bar follows the mockup: brand, Home › Service map breadcrumb, cluster name, refresh and host list. The mockup's "Beta" badge and "updated 40 s ago" were not added (the app has no beta flag and does not record the inventory time).
+- Not verified in a real browser.
