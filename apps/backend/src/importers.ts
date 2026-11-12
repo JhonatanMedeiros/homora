@@ -4,6 +4,7 @@ import {
   MAX_GROUPS,
   MAX_SERVICES,
   MAX_TRANSFER_CHARS,
+  withinParseBudget,
   isRecord,
   parseService,
   parseTransfer,
@@ -72,7 +73,7 @@ export const finish = (collector: Collector): ParsedImport => {
 };
 
 function load(content: string): unknown {
-  if (content.length > MAX_TRANSFER_CHARS) return undefined;
+  if (content.length > MAX_TRANSFER_CHARS || !withinParseBudget(content)) return undefined;
   try {
     return parse(content, { maxAliasCount: 10, prettyErrors: false });
   } catch {

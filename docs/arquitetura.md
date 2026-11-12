@@ -132,6 +132,13 @@ releases exist.
   Each result is tied to the service check settings; changed settings or stale results are
   reported as unknown. The backend clears old observations at startup and publishes completed
   cycles; an MCP status query does not start checks.
+- A configuration change probes only services that are new or whose check settings changed (the
+  monitor keeps the signature each result was measured under); it never re-probes the whole
+  inventory. Publication writes only rows that changed, and idle cycles write nothing. The
+  all-services uptime response is built in slices that yield to the event loop, cached for 10 s
+  per range and configuration version, and shared as one `Buffer`, because the body reaches tens
+  of MB on thousands of services. Import parsing refuses documents with more than 20,000 flow
+  collections before the YAML parser runs.
 - SQLite is the primary persistent store. Schema changes are versioned migrations; session
   sessions and the administrator account live in the database; sign-in rate-limit counters and
   certain observation caches are maintained in memory.

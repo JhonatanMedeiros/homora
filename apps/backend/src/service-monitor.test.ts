@@ -123,8 +123,36 @@ describe('service monitoring', () => {
     await monitor.run();
     expect(check).toHaveBeenCalledTimes(4);
     await monitor.invalidate();
-    expect(check).toHaveBeenCalledTimes(6);
-    expect(monitor.snapshot()[1].lastAttempt).toBe(new Date(time).toISOString());
+    // Nothing changed in the configuration, so nothing is probed again.
+    expect(check).toHaveBeenCalledTimes(4);
+  });
+
+  it('on invalidation probes only new or edited services and publishes only on change', async () => {
+    let list = [service(1, 'https://a.example'), service(2, 'https://b.example')];
+    const check = vi.fn<(url: string) => Promise<typeof ok>>(async () => ok);
+    const publish = vi.fn();
+    const monitor = createServiceMonitor(async () => list, check, Date.now, publish);
+    await monitor.run();
+    expect(check).toHaveBeenCalledTimes(2);
+    expect(publish).toHaveBeenCalledTimes(1);
+    // An idle cycle neither probes nor rewrites observations.
+    await monitor.run();
+    expect(check).toHaveBeenCalledTimes(2);
+    expect(publish).toHaveBeenCalledTimes(1);
+    list = [list[0]!, service(2, 'https://b2.example'), service(3, 'https://c.example')];
+    await monitor.invalidate();
+    expect(check.mock.calls.map(([url]) => url)).toEqual([
+      'https://a.example',
+      'https://b.example',
+      'https://b2.example',
+      'https://c.example',
+    ]);
+    expect(publish).toHaveBeenCalledTimes(2);
+    list = [list[0]!];
+    await monitor.invalidate();
+    expect(check).toHaveBeenCalledTimes(4);
+    expect(Object.keys(monitor.snapshot())).toEqual(['1']);
+    expect(publish).toHaveBeenCalledTimes(3);
   });
 
   it('isolates repository failures and prunes state for deleted services', async () => {

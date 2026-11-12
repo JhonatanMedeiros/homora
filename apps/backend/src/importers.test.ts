@@ -216,3 +216,28 @@ describe('parseBySource', () => {
     expect(parseBySource('homora', 'version: 1\ngroups: []').issues).toEqual([]);
   });
 });
+
+describe('parse budget', () => {
+  it('rejects documents with an absurd number of nested collections without parsing them', () => {
+    const started = performance.now();
+    const junk = 'a: ['.repeat(160_000).slice(0, 900_000);
+    for (const source of ['homora', 'homepage', 'dashy'] as const)
+      expect(parseBySource(source, junk).issues.some((i) => i.severity === 'error')).toBe(true);
+    expect(performance.now() - started).toBeLessThan(400);
+  });
+
+  it('still accepts a full-size export', () => {
+    const groups = [
+      {
+        name: 'G',
+        services: Array.from({ length: 1000 }, (_, i) => ({
+          name: `S${i}`,
+          url: `https://s${i}.test`,
+        })),
+      },
+    ];
+    const parsed = parseBySource('homora', JSON.stringify({ version: 1, groups }));
+    expect(parsed.issues.filter((i) => i.severity === 'error')).toEqual([]);
+    expect(parsed.document.groups[0]?.services).toHaveLength(1000);
+  });
+});

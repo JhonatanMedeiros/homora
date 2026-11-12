@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
+import { serviceSignature } from './service-signature.js';
 import { authorizeDestination } from './network-policy.js';
 import { getAuthorizedResponse } from './network-request.js';
 
@@ -134,13 +135,19 @@ export function createServiceMonitor(
   publish?: (services: Service[], states: Record<number, ServiceStatus>) => void,
 ) {
   const states = new Map<number, ServiceStatus>();
+  /** Configuration each state was measured under, so edited services are probed again and only those. */
+  const signatures = new Map<number, string>();
   let running: Promise<void> | undefined;
   let generation = 0;
   let rerunRequested = false;
+  let rerunForce = false;
 
   async function run(force = false) {
     if (running) {
-      if (force) rerunRequested = true;
+      if (force) {
+        rerunRequested = true;
+        rerunForce = true;
+      }
       return running;
     }
     const runGeneration = generation;
@@ -153,10 +160,28 @@ export function createServiceMonitor(
         return;
       }
       if (runGeneration !== generation) return;
+      // Publishing rewrites observation rows, so it only happens when something changed.
+      let changed = false;
       const currentIds = new Set(current.map(({ id }) => id));
-      for (const id of states.keys()) if (!currentIds.has(id)) states.delete(id);
-      for (const service of current)
-        if (!states.has(service.id)) states.set(service.id, unchecked());
+      for (const id of states.keys())
+        if (!currentIds.has(id)) {
+          states.delete(id);
+          signatures.delete(id);
+          changed = true;
+        }
+      for (const service of current) {
+        const signature = serviceSignature(service);
+        if (states.has(service.id) && signatures.get(service.id) !== signature) {
+          // Edited since the last probe: the old result no longer describes this service.
+          states.set(service.id, unchecked());
+          changed = true;
+        }
+        if (!states.has(service.id)) {
+          states.set(service.id, unchecked());
+          changed = true;
+        }
+        signatures.set(service.id, signature);
+      }
       // No fixed quantity limit: oldest (or never probed) run first, and cycle stops
       // initiating checks once time budget is exhausted. Remaining services retain previous
       // state and take precedence in the following cycle.
@@ -180,6 +205,7 @@ export function createServiceMonitor(
             now() - startedAt < cycleBudgetMs
           ) {
             const service = monitored[nextIndex++];
+            changed = true;
             const attemptedAt = new Date(now()).toISOString();
             try {
               const result = await check(
@@ -216,25 +242,34 @@ export function createServiceMonitor(
           }
         }),
       );
-      if (runGeneration === generation) publish?.(current, Object.fromEntries(states));
+      if (runGeneration === generation && changed) publish?.(current, Object.fromEntries(states));
     })();
     try {
       await running;
     } finally {
       const rerun = rerunRequested;
+      const rerunForced = rerunForce;
       rerunRequested = false;
+      rerunForce = false;
       running = undefined;
-      if (rerun) void run(true);
+      if (rerun) void run(rerunForced);
     }
   }
 
   return {
     run,
+    /**
+     * Configuration changed. Results of the cycle in progress are discarded and a new cycle
+     * starts at once; it probes only services that are new or whose monitoring configuration
+     * changed (see `signatures`), not the whole inventory, so one edit costs one check.
+     */
     invalidate() {
       generation++;
-      states.clear();
-      publish?.([], {});
-      return run(true);
+      if (running) {
+        rerunRequested = true;
+        return running;
+      }
+      return run();
     },
     snapshot() {
       return Object.fromEntries(states);

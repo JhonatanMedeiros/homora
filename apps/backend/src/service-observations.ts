@@ -37,6 +37,10 @@ const unchecked: ServiceStatus = {
   latencyMs: null,
 };
 const HISTORY_RETENTION = 30 * 24 * 60 * 60_000;
+/** How long the all-services uptime stays cached; checks arrive every few seconds at most. */
+const UPTIME_CACHE_MS = 10_000;
+/** Services summarized between two yields to the event loop (about 30 ms on a large inventory). */
+const UPTIME_SLICE = 100;
 const FAILURE_DETAIL_BARS = 24;
 /** Checks read to find where the current outage began (about 8 h at the default interval). */
 const FAILURE_DETAIL_LOOKBACK = 500;
@@ -57,39 +61,152 @@ type SignedService = Pick<
 >;
 const signature = serviceSignature;
 /** Writer is called by the web monitor only; failures must not affect service availability. */
+type UptimeService = SignedService & { id: number };
+/** Services whose uptime is reported: all of them, or just one. */
+function uptimeServicesOf(db: DatabaseSync, serviceId?: number): UptimeService[] {
+  return db
+    .prepare(
+      `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
+    )
+    .all(serviceId ?? null, serviceId ?? null) as unknown as UptimeService[];
+}
+
+/** Prepares the statements once and returns the summary of one service in the given window. */
+function uptimeSummarizerOf(db: DatabaseSync, range: UptimeRange, now: number, single: boolean) {
+  const { span, bucket } = UPTIME_WINDOWS[range];
+  const count = span / bucket;
+  const since = Math.max(now - span, now - HISTORY_RETENTION);
+  const start = now - span;
+  const grouped = db.prepare(
+    `SELECT CAST((observed_at-?)/? AS INTEGER) AS slot,${STATUS_SQL} AS status,COUNT(*) AS n
+         FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=?
+         GROUP BY slot,status`,
+  );
+  const other = db.prepare(
+    'SELECT 1 FROM service_observation_history WHERE service_id=? AND signature<>? AND observed_at>=? AND observed_at<=? LIMIT 1',
+  );
+  const last = db.prepare(
+    `SELECT ${LATENCY_SQL} AS latency FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? ORDER BY observed_at DESC LIMIT 1`,
+  );
+  const timed = db.prepare(
+    `SELECT COUNT(*) AS n FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL`,
+  );
+  const percentile = db.prepare(
+    `SELECT ${LATENCY_SQL} AS latency FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL ORDER BY latency LIMIT 1 OFFSET ?`,
+  );
+  return (row: UptimeService): UptimeSummary => {
+    const sig = signature(row);
+    const args = [row.id, sig, since, now] as const;
+    const slots = Array.from({ length: count }, () => ({ up: 0, down: 0, unknown: 0 }));
+    let up = 0;
+    let down = 0;
+    let unknown = 0;
+    for (const group of grouped.all(start, bucket, row.id, sig, since, now) as {
+      slot: number;
+      status: string;
+      n: number;
+    }[]) {
+      const slot = slots[Math.min(Math.max(group.slot, 0), count - 1)];
+      if (!slot) continue;
+      if (group.status === 'available') {
+        slot.up += group.n;
+        up += group.n;
+      } else if (group.status === 'unavailable') {
+        slot.down += group.n;
+        down += group.n;
+      } else {
+        slot.unknown += group.n;
+        unknown += group.n;
+      }
+    }
+    const counted = up + down;
+    // The percentile needs a sort of every latency, so only the single-service call pays for it.
+    let p95: number | null | undefined;
+    if (single) {
+      const timedCount = (timed.get(...args) as { n: number }).n;
+      p95 = timedCount
+        ? (percentile.get(...args, Math.ceil(timedCount * 0.95) - 1) as { latency: number }).latency
+        : null;
+    }
+    const latest = last.get(...args) as { latency: number | null } | undefined;
+    return {
+      range,
+      uptimePct: counted >= UPTIME_MIN_CHECKS ? Math.round((up / counted) * 10_000) / 100 : null,
+      checks: counted + unknown,
+      downChecks: down,
+      unknownChecks: unknown,
+      lastLatencyMs: latest?.latency ?? null,
+      ...(p95 === undefined ? {} : { p95LatencyMs: p95 }),
+      reconfigured: other.get(row.id, sig, since, now) !== undefined,
+      buckets: slots.map((slot, index) => ({
+        start: new Date(start + index * bucket).toISOString(),
+        status: slot.up && slot.down ? 'partial' : slot.down ? 'down' : slot.up ? 'up' : 'unknown',
+      })),
+    };
+  };
+}
+
 export function createObservationStore(db: DatabaseSync) {
+  /**
+   * What the table currently holds for each service (`signature|json`), so a publish only writes
+   * rows that changed. `null` means unknown (first publish, or after `clear()`): rewrite everything.
+   */
+  let published: Map<number, { state: ServiceStatus; sig: string; key: string }> | null = null;
+  /** Uptime is expensive on large inventories and moves slowly, so it is cached briefly. */
+  const uptimeCache = new Map<string, { at: number; version: number; body: Buffer }>();
+  const uptimeInFlight = new Map<string, Promise<Buffer>>();
+  const configVersion = () =>
+    (
+      db.prepare('SELECT version FROM config_version WHERE id=1').get() as
+        { version: number } | undefined
+    )?.version ?? 0;
   return {
     clear() {
       db.prepare('DELETE FROM service_observations').run();
+      published = null;
     },
     publish(services: Service[], states: Record<number, ServiceStatus>) {
       db.exec('BEGIN IMMEDIATE');
+      const next = new Map<number, { state: ServiceStatus; sig: string; key: string }>();
       try {
-        db.prepare('DELETE FROM service_observations').run();
         const insert = db.prepare(
-          'INSERT INTO service_observations(service_id,signature,observation) VALUES(?,?,?)',
+          'INSERT OR REPLACE INTO service_observations(service_id,signature,observation) VALUES(?,?,?)',
         );
+        const remove = db.prepare('DELETE FROM service_observations WHERE service_id=?');
         db.prepare('DELETE FROM service_observation_history WHERE observed_at < ?').run(
           Date.now() - HISTORY_RETENTION,
         );
         const history = db.prepare(
           'INSERT OR IGNORE INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
         );
+        if (published === null) db.prepare('DELETE FROM service_observations').run();
         for (const service of services) {
           const state = states[service.id];
-          if (state) {
-            const parsed = observationSchema.parse(state);
-            insert.run(service.id, signature(service), JSON.stringify(parsed));
-            if (parsed.lastAttempt) {
-              const observedAt = Date.parse(parsed.lastAttempt);
-              if (observedAt >= Date.now() - HISTORY_RETENTION && observedAt <= Date.now())
-                history.run(service.id, signature(service), observedAt, JSON.stringify(parsed));
-            }
+          if (!state) continue;
+          const sig = signature(service);
+          const before = published?.get(service.id);
+          // The monitor hands over the same state object until a service is probed again.
+          if (before && before.state === state && before.sig === sig) {
+            next.set(service.id, before);
+            continue;
+          }
+          const parsed = observationSchema.parse(state);
+          const json = JSON.stringify(parsed);
+          next.set(service.id, { state, sig, key: json });
+          if (before && before.sig === sig && before.key === json) continue;
+          insert.run(service.id, sig, json);
+          if (parsed.lastAttempt) {
+            const observedAt = Date.parse(parsed.lastAttempt);
+            if (observedAt >= Date.now() - HISTORY_RETENTION && observedAt <= Date.now())
+              history.run(service.id, sig, observedAt, json);
           }
         }
+        if (published) for (const id of published.keys()) if (!next.has(id)) remove.run(id);
         db.exec('COMMIT');
+        published = next;
       } catch (error) {
         db.exec('ROLLBACK');
+        published = null;
         throw error;
       }
     },
@@ -152,87 +269,40 @@ export function createObservationStore(db: DatabaseSync) {
      * 95th percentile (nearest rank) is only computed for a single service.
      */
     uptime(range: UptimeRange, now = Date.now(), serviceId?: number) {
-      const { span, bucket } = UPTIME_WINDOWS[range];
-      const count = span / bucket;
-      const since = Math.max(now - span, now - HISTORY_RETENTION);
-      const start = now - span;
-      const rows = db
-        .prepare(
-          `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
-        )
-        .all(serviceId ?? null, serviceId ?? null) as unknown as (SignedService & { id: number })[];
-      const grouped = db.prepare(
-        `SELECT CAST((observed_at-?)/? AS INTEGER) AS slot,${STATUS_SQL} AS status,COUNT(*) AS n
-         FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=?
-         GROUP BY slot,status`,
-      );
-      const other = db.prepare(
-        'SELECT 1 FROM service_observation_history WHERE service_id=? AND signature<>? AND observed_at>=? AND observed_at<=? LIMIT 1',
-      );
-      const last = db.prepare(
-        `SELECT ${LATENCY_SQL} AS latency FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? ORDER BY observed_at DESC LIMIT 1`,
-      );
-      const timed = db.prepare(
-        `SELECT COUNT(*) AS n FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL`,
-      );
-      const percentile = db.prepare(
-        `SELECT ${LATENCY_SQL} AS latency FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL ORDER BY latency LIMIT 1 OFFSET ?`,
-      );
+      const rows = uptimeServicesOf(db, serviceId);
       const result: Record<number, UptimeSummary> = {};
-      for (const row of rows) {
-        const sig = signature(row);
-        const args = [row.id, sig, since, now] as const;
-        const slots = Array.from({ length: count }, () => ({ up: 0, down: 0, unknown: 0 }));
-        let up = 0;
-        let down = 0;
-        let unknown = 0;
-        for (const group of grouped.all(start, bucket, row.id, sig, since, now) as {
-          slot: number;
-          status: string;
-          n: number;
-        }[]) {
-          const slot = slots[Math.min(Math.max(group.slot, 0), count - 1)];
-          if (!slot) continue;
-          if (group.status === 'available') {
-            slot.up += group.n;
-            up += group.n;
-          } else if (group.status === 'unavailable') {
-            slot.down += group.n;
-            down += group.n;
-          } else {
-            slot.unknown += group.n;
-            unknown += group.n;
-          }
-        }
-        const counted = up + down;
-        // The percentile needs a sort of every latency, so only the single-service call pays for it.
-        let p95: number | null | undefined;
-        if (serviceId !== undefined) {
-          const timedCount = (timed.get(...args) as { n: number }).n;
-          p95 = timedCount
-            ? (percentile.get(...args, Math.ceil(timedCount * 0.95) - 1) as { latency: number })
-                .latency
-            : null;
-        }
-        const latest = last.get(...args) as { latency: number | null } | undefined;
-        result[row.id] = {
-          range,
-          uptimePct:
-            counted >= UPTIME_MIN_CHECKS ? Math.round((up / counted) * 10_000) / 100 : null,
-          checks: counted + unknown,
-          downChecks: down,
-          unknownChecks: unknown,
-          lastLatencyMs: latest?.latency ?? null,
-          ...(p95 === undefined ? {} : { p95LatencyMs: p95 }),
-          reconfigured: other.get(row.id, sig, since, now) !== undefined,
-          buckets: slots.map((slot, index) => ({
-            start: new Date(start + index * bucket).toISOString(),
-            status:
-              slot.up && slot.down ? 'partial' : slot.down ? 'down' : slot.up ? 'up' : 'unknown',
-          })),
-        };
-      }
+      const summarize = uptimeSummarizerOf(db, range, now, serviceId !== undefined);
+      for (const row of rows) result[row.id] = summarize(row);
       return result;
+    },
+    /**
+     * JSON body of `uptime(range)` for every service, for the list endpoint. The result is cached for a few
+     * seconds (and dropped when the configuration changes), concurrent callers share one
+     * computation, and the work is done in slices so the API keeps answering meanwhile.
+     */
+    uptimeBody(range: UptimeRange, now = Date.now()): Promise<Buffer> {
+      const version = configVersion();
+      const cached = uptimeCache.get(range);
+      if (cached && cached.version === version && now - cached.at < UPTIME_CACHE_MS)
+        return Promise.resolve(cached.body);
+      const key = `${range}:${version}`;
+      const pending = uptimeInFlight.get(key);
+      if (pending) return pending;
+      const work = (async () => {
+        const rows = uptimeServicesOf(db);
+        const summarize = uptimeSummarizerOf(db, range, now, false);
+        const result: Record<number, UptimeSummary> = {};
+        for (let i = 0; i < rows.length; i += UPTIME_SLICE) {
+          for (const row of rows.slice(i, i + UPTIME_SLICE)) result[row.id] = summarize(row);
+          await new Promise<void>((resolve) => setImmediate(resolve));
+        }
+        // One shared Buffer: sending a string would copy tens of MB per connection.
+        const body = Buffer.from(JSON.stringify(result));
+        uptimeCache.set(range, { at: now, version, body });
+        return body;
+      })().finally(() => uptimeInFlight.delete(key));
+      uptimeInFlight.set(key, work);
+      return work;
     },
     list(now = Date.now()) {
       const rows = db
