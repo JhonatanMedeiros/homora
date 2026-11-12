@@ -1221,3 +1221,4 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Recorded the component priority and exceptions in `docs/padroes.md` and `AGENTS.md`; updated the map decision to name the shadcn Select.
 - Validation: `pnpm --filter @homora/frontend build` passes (TypeScript and Vite). Static source scan confirms no direct product `<button>`, `<input>`, `<select>`, `<textarea>` or `<label>` outside `src/components/ui`; the native category `<option>` remains inside its semantic `<datalist>`. Tests and browser/screen-reader behavior were not run.
 - Follow-up: integration data in service cards now uses a shared three-column grid with labels above tabular values. Widget loading placeholders use the same grid and reserve the expected row count for each integration type.
+- CI follow-up: validation tests now interact with shadcn Select and ToggleGroup controls through their combobox/radio roles and keyboard behavior instead of native select/label assumptions.

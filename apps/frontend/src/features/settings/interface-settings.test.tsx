@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { InterfaceSettings } from './interface-settings';
 import { setLocale } from '@/i18n';
+import { chooseSelectOption } from '@/test-select';
 
 beforeEach(() => {
   setLocale('en');
@@ -27,12 +28,12 @@ it('keeps the clock options hidden until the top bar is on', () => {
   expect(screen.getByLabelText('Time zone')).toBeTruthy();
 });
 
-it('saves the hour format, seconds and time zone in this browser', () => {
+it('saves the hour format, seconds and time zone in this browser', async () => {
   localStorage.setItem('homora-top-bar', 'on');
   render(<InterfaceSettings />);
   fireEvent.click(screen.getByRole('radio', { name: '24 h', checked: false }));
   fireEvent.click(screen.getByRole('switch', { name: 'Show seconds' }));
-  fireEvent.change(screen.getByLabelText('Time zone'), { target: { value: 'UTC' } });
+  await chooseSelectOption('Time zone', 'UTC');
   expect(localStorage.getItem('homora-clock-hours')).toBe('24h');
   expect(localStorage.getItem('homora-clock-seconds')).toBe('on');
   expect(localStorage.getItem('homora-clock-timezone')).toBe('UTC');
@@ -56,7 +57,7 @@ it('turns the single-key shortcuts off and on, on by default', () => {
   expect(screen.getByText(/Ctrl\/Cmd\+K and Ctrl\/Cmd\+B always work/)).toBeTruthy();
 });
 
-it('keeps web search off by default and warns that the text goes to a third party', () => {
+it('keeps web search off by default and warns that the text goes to a third party', async () => {
   render(<InterfaceSettings />);
   const toggle = screen.getByRole('switch', { name: 'Web search' });
   expect(toggle.getAttribute('aria-checked')).toBe('false');
@@ -66,7 +67,7 @@ it('keeps web search off by default and warns that the text goes to a third part
   expect(screen.queryByLabelText('Search engine')).toBeNull();
   fireEvent.click(toggle);
   expect(localStorage.getItem('homora-web-search')).toBe('on');
-  fireEvent.change(screen.getByLabelText('Search engine'), { target: { value: 'brave' } });
+  await chooseSelectOption('Search engine', 'Brave');
   expect(localStorage.getItem('homora-web-search-engine')).toBe('brave');
 });
 

@@ -260,8 +260,8 @@ it('offers Proxmox as widget source and queries aggregated numbers', async () =>
   render(<Connections />);
   await screen.findByRole('tab', { name: /Widgets/ });
   openWidgets();
-  const select = await screen.findByLabelText('Conexão');
-  await waitFor(() => expect((select as HTMLSelectElement).value).toBe('99'));
+  const select = await screen.findByRole('combobox', { name: 'Conexão' });
+  expect(select.textContent).toBe('Servidor Proxmox');
   fireEvent.change(screen.getByLabelText('Nome do widget'), { target: { value: 'Cluster' } });
   fireEvent.click(screen.getByRole('button', { name: 'Criar widget' }));
   await waitFor(() =>

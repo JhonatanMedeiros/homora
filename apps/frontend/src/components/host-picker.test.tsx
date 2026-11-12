@@ -6,6 +6,7 @@ import { HostPicker } from './host-picker';
 import { HostView } from './host-view';
 import { setLocale } from '@/i18n';
 import type { HostInventories } from '@/lib/hosts';
+import { chooseSelectOption } from '@/test-select';
 
 beforeEach(() => {
   setLocale('en');
@@ -67,11 +68,12 @@ it('searches guests by name or id and links the chosen one with the keyboard-rea
   });
 });
 
-it('filters by node and shows an empty note when nothing matches', () => {
+it('filters by node and shows an empty note when nothing matches', async () => {
   setup();
   fireEvent.click(screen.getByRole('button', { name: 'Choose host' }));
-  fireEvent.change(screen.getByLabelText('Node'), { target: { value: 'pve2' } });
-  expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(1);
+  await chooseSelectOption('Node', 'pve2');
+  const guests = screen.getByRole('list', { name: 'Guests' });
+  expect(within(guests).getAllByRole('button', { pressed: false })).toHaveLength(1);
   fireEvent.change(screen.getByLabelText('Search guests'), { target: { value: 'zzz' } });
   expect(screen.getByText('No guests match.')).toBeTruthy();
 });
