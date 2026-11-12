@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -162,6 +163,7 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
               {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={saving || !name.trim() || scopes.length === 0}>
+              {saving && <Spinner data-icon="inline-start" />}
               {t('agents.createAgent')}
             </Button>
           </DialogFooter>

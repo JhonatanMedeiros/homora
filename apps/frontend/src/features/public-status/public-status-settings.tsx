@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,7 @@ export function PublicStatusSettings() {
           />
         </Field>
         <Button type="submit" variant="secondary" disabled={saving || title === admin.title}>
+          {saving && <Spinner data-icon="inline-start" />}
           {t('settings.public.save')}
         </Button>
       </form>

@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Spinner } from '@/components/ui/spinner';
 import { ViewOptions } from '@/components/view-options';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
@@ -21,6 +20,7 @@ import { HealthSummary } from '@/components/health-summary';
 import { TopBar } from '@/components/top-bar';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { GroupSection } from '@/components/group-section';
+import { ServicesSkeleton } from '@/components/skeletons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -728,10 +728,7 @@ export function ServicesPage({
         </div>
       )}
       {!data.loaded && !data.loadError && (
-        <p role="status" className="flex items-center gap-2 text-muted-foreground">
-          <Spinner />
-          {t('common.loading')}
-        </p>
+        <ServicesSkeleton label={t('common.loading')} list={list} />
       )}
       {data.loaded && !data.loadError && !groups.length && (
         <ServicesEmpty

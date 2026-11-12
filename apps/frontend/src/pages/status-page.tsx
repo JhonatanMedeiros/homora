@@ -3,6 +3,7 @@ import { StatusLight } from '@/components/status-light';
 import { formatAgo, formatDateTime, t, useI18n } from '@/i18n';
 import type { Availability } from '@/lib/services';
 import { cn } from '@/lib/utils';
+import { PublicStatusSkeleton } from '@/components/skeletons';
 
 export type PublicState = 'up' | 'down' | 'unknown';
 export type PublicService = {
@@ -153,7 +154,7 @@ export function StatusPage() {
       <header>
         <h1 className="text-3xl leading-tight">{data?.title || t('publicStatus.title')}</h1>
       </header>
-      {state === 'loading' && <p className="text-muted-foreground">{t('publicStatus.loading')}</p>}
+      {state === 'loading' && <PublicStatusSkeleton label={t('publicStatus.loading')} />}
       {state === 'closed' && (
         <p className="text-muted-foreground">{t('publicStatus.unavailable')}</p>
       )}

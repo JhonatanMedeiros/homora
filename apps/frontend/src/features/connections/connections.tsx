@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Plus, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { Spinner } from '@/components/ui/spinner';
+import { RowListSkeleton } from '@/components/skeletons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -317,10 +317,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
               {t('connections.retryLoad')}
             </Button>
           ) : items === null ? (
-            <p className="flex items-center gap-2 text-muted-foreground">
-              <Spinner />
-              {t('connections.loading')}
-            </p>
+            <RowListSkeleton label={t('connections.loading')} />
           ) : items.length === 0 ? (
             <Empty className="border border-dashed">
               <EmptyHeader>

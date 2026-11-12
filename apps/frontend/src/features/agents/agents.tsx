@@ -21,7 +21,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { Spinner } from '@/components/ui/spinner';
+import { RowListSkeleton } from '@/components/skeletons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -345,10 +345,7 @@ export function Agents({
             </Button>
           </form>
           {proposals === null ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Spinner />
-              {t('common.loading')}
-            </p>
+            <RowListSkeleton label={t('common.loading')} rows={2} />
           ) : pending.length === 0 ? (
             <Empty className="border border-dashed py-8">
               <EmptyHeader>

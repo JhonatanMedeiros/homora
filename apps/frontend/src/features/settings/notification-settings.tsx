@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState } from 'react';
 import { Plus, Send, Webhook } from 'lucide-react';
 import { SectionTitle } from '@/components/section-title';
@@ -7,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { t, formatDateTime } from '@/i18n';
+import { SectionSkeleton } from '@/components/skeletons';
 
 type Channel = {
   id: number;
@@ -167,11 +169,7 @@ export function NotificationSettings() {
           </Alert>
         </div>
       )}
-      {!channels && !message?.error && (
-        <p role="status" className="text-sm text-muted-foreground">
-          {t('notifications.loading')}
-        </p>
-      )}
+      {!channels && !message?.error && <SectionSkeleton label={t('notifications.loading')} />}
       {channels &&
         groups.map((group) => {
           const items = channels.filter((channel) => channel.type === group.type);
@@ -375,6 +373,7 @@ export function NotificationSettings() {
                       ))}
                       <div className="flex flex-wrap gap-2">
                         <Button type="submit" disabled={busy}>
+                          {busy && <Spinner data-icon="inline-start" />}
                           {t('notifications.save')}
                         </Button>
                         {

@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertDialog,
@@ -135,6 +136,7 @@ export function PushSources({ onImported }: { onImported: () => void | Promise<v
                 />
               </Field>
               <Button disabled={busy || !name.trim()} type="submit">
+                {busy && <Spinner data-icon="inline-start" />}
                 {t('push.create')}
               </Button>
             </FieldGroup>

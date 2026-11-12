@@ -11,6 +11,7 @@ import { apiError, t } from '@/i18n';
 import { PushSources } from './push-sources';
 import { ImportPreview } from '@/features/transfer/import-preview';
 import type { Plan } from '@/features/transfer/transfer-model';
+import { SectionSkeleton } from '@/components/skeletons';
 
 type Entry = { id: string; container: string; group: string; url: string };
 type Found = {
@@ -122,11 +123,7 @@ export function Discovery({ onImported }: { onImported: () => void | Promise<voi
             <CardDescription>{t('discovery.hint')}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            {state.status === 'loading' && (
-              <p role="status" className="text-sm text-muted-foreground">
-                {t('discovery.loading')}
-              </p>
-            )}
+            {state.status === 'loading' && <SectionSkeleton label={t('discovery.loading')} />}
             {state.status === 'disabled' && (
               <p className="text-sm text-muted-foreground">{t('discovery.disabled')}</p>
             )}

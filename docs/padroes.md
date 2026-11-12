@@ -41,6 +41,23 @@ are documented in [architecture](arquitetura.md).
 - Forms use `FieldGroup`/`Field`; alerts use `Alert`; empty states use `Empty`;
   service status always uses `StatusLight` (light, text, and color). Theming is driven by
   the `dark` class on `<html>` (`useTheme`).
+- Loading and feedback follow one pattern:
+  - **Initial load of a list, page or card region**: render a skeleton that mirrors the
+    final layout, never a bare spinner or "Loading..." text. Reuse or add a composition in
+    `src/components/skeletons.tsx` (built on the shadcn `Skeleton`) and wrap it in
+    `LoadingRegion`, which announces the label once (`role="status"`, `aria-busy`) and
+    hides the placeholder shapes from assistive technology. Pass the existing `*.loading`
+    i18n text as the label. Skeletons honor `prefers-reduced-motion`.
+  - **Submit or action in progress**: disable the button and show
+    `<Spinner data-icon="inline-start" />` before its label. When several buttons share one
+    `busy` flag, put the spinner only on the one that was pressed.
+  - **Refreshing data already on screen** (polling): keep the current content; do not
+    swap it back to a skeleton.
+  - **Outcome**: errors use `Alert` or `FormError`; transient confirmations use the
+    `sonner` toast. Do not skeleton a region whose absence is a valid state for users
+    without Proxmox or integrations (for example the top bar telemetry), to avoid flicker.
+  - Keep the skeleton shape close to the real component so the page does not shift when
+    data arrives, and cover new compositions with a small test (see `skeletons.test.tsx`).
 - Files in `src/components/ui` mirror upstream shadcn; ESLint exempts them
   from Fast Refresh and pure-render checks.
 

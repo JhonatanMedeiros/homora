@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Spinner } from '@/components/ui/spinner';
+import { ActivitySkeleton } from '@/components/skeletons';
 import { EmptyNote } from '@/components/empty-note';
 import { FormError } from '@/components/form-error';
 import { NativeSelect } from '@/components/native-select';
@@ -102,7 +102,7 @@ export function ActivityPage() {
       </div>
       <FormError>{failed ? t('activity.loadFailed') : ''}</FormError>
       {events === null ? (
-        !failed && <Spinner aria-label={t('common.loading')} />
+        !failed && <ActivitySkeleton label={t('common.loading')} />
       ) : events.length === 0 ? (
         <EmptyNote>
           {kind === 'all' && outcome === 'all' ? t('activity.empty') : t('activity.emptyFiltered')}
