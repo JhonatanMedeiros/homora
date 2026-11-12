@@ -48,7 +48,7 @@ function AdvancedSettings() {
           className="h-auto justify-between px-4 py-3 text-left"
         >
           <span className="flex flex-col items-start gap-0.5">
-            <span className="font-medium">{t('settings.ui.advanced')}</span>
+            <span className="font-medium">{t('css.title')}</span>
             <span className="text-sm font-normal text-muted-foreground">
               {t('settings.ui.advancedHint')}
             </span>

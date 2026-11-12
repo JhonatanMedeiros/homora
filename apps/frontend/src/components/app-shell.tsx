@@ -25,6 +25,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { navGroups, navItems, type Tab } from '@/components/app-nav';
+import { usePendingProposals } from '@/hooks/use-pending-proposals';
 import { MobileTabs } from '@/components/mobile-tabs';
 
 type Props = {
@@ -50,6 +51,7 @@ export function AppShell({
 }: Props) {
   // The account is a page of its own: no sidebar and no search, just a way back.
   const standalone = tab === 'account' && !managing;
+  const pendingProposals = usePendingProposals(tab, managing);
   return (
     <div className="min-h-svh">
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
@@ -155,6 +157,15 @@ export function AppShell({
                         >
                           <item.icon />
                           {t(item.label)}
+                          {item.id === 'agents' && pendingProposals > 0 && (
+                            <span
+                              className="ml-auto rounded-full bg-primary px-2 font-mono text-xs text-primary-foreground tabular-nums"
+                              role="status"
+                            >
+                              {pendingProposals}
+                              <span className="sr-only"> {t('agents.proposals')}</span>
+                            </span>
+                          )}
                         </Button>
                       );
                     })}

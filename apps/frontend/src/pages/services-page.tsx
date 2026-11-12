@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -106,7 +107,8 @@ export function ServicesPage({
     setUptimeRange,
   } = useViewPreferences();
   const uptime = useUptime(uptimeRange);
-  const list = view === 'list';
+  const list = view === 'list' || managing;
+  const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [shared, setShared] = useState(false);
@@ -261,8 +263,11 @@ export function ServicesPage({
       ? pages.find((page) => page.id === pageIdOf(service.category))?.name
       : undefined;
   const onPage = (service: Service) => !paged || hostView || categories.includes(service.category);
+  const needle = managing ? query.trim().toLowerCase() : '';
+  const matches = (s: Service) =>
+    !needle || s.name.toLowerCase().includes(needle) || s.url.toLowerCase().includes(needle);
   const filtered = services.filter(
-    (s) => onPage(s) && (selected === null || s.category === selected),
+    (s) => onPage(s) && matches(s) && (selected === null || s.category === selected),
   );
   const isDown = (s: Service) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id);
   const groups = categories
@@ -273,7 +278,7 @@ export function ServicesPage({
         // Unavailable services rise to top within the group, except in Organize mode (user sets order).
         .sort((a, b) => (organizing ? 0 : Number(isDown(b)) - Number(isDown(a)))),
     }))
-    .filter((group) => group.items.length || selected === null);
+    .filter((group) => group.items.length || (selected === null && !needle));
 
   function focusEditTrigger(id: number | null) {
     if (id !== null)
@@ -802,6 +807,16 @@ export function ServicesPage({
             const onThis = services.filter((s) => pageIdOf(s.category) === pageId);
             return { total: onThis.length, down: onThis.filter(isDown).length };
           }}
+        />
+      )}
+      {managing && !organizing && services.length > 0 && (
+        <Input
+          type="search"
+          aria-label={t('manage.filter')}
+          placeholder={t('manage.filter')}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="max-w-sm"
         />
       )}
       {!organizing && !hostView && services.length > 0 && categories.length > 2 && (

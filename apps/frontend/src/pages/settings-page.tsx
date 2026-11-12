@@ -10,6 +10,7 @@ import {
   ItemTitle,
 } from '@/components/ui/item';
 import { PublicStatusSettings } from '@/features/public-status/public-status-settings';
+import { SettingsSearch } from '@/features/settings/settings-search';
 import { AlertsSettings } from '@/features/settings/alerts-settings';
 import {
   HomeSettings,
@@ -40,7 +41,11 @@ export function SettingsPage({ onImported }: { onImported: () => void | Promise<
   return (
     <section aria-label={t('settings.title')} className="flex flex-col gap-6">
       <div className={cn(open && 'hidden md:block')}>
-        <PageHeader title={t('settings.title')} description={t('settings.description')} />
+        <PageHeader
+          title={t('settings.title')}
+          description={t('settings.description')}
+          actions={<SettingsSearch />}
+        />
       </div>
       <nav aria-label={t('settings.title')} className="flex flex-col gap-6">
         <ItemGroup className={cn('gap-2 md:hidden', open && 'hidden')}>
