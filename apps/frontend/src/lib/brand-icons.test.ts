@@ -30,6 +30,7 @@ it('suggests logo based on service name and identifies icon type', () => {
   expect(suggestBrandIcon('Home Assistant')).toBe('home-assistant');
   expect(suggestBrandIcon('uptime kuma')).toBe('uptime-kuma');
   expect(suggestBrandIcon('Pi-hole')).toBe('pi-hole');
+  expect(suggestBrandIcon('Coolify')).toBe('coolify');
   expect(suggestBrandIcon('My Server')).toBeNull();
   expect(suggestBrandIcon('')).toBeNull();
   expect(iconKind('brand:plex')).toBe('brand');
