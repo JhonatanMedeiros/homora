@@ -3,12 +3,6 @@ import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
 import { createTestAuth } from './test-auth.js';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { rmSync } from 'node:fs';
-import { rootCertificates } from 'node:tls';
-import { createVault } from './vault.js';
 import { parseAllowedOrigins } from './config.js';
 const database = createDatabase(':memory:');
 const { auth, cookie } = await createTestAuth(database.db);
@@ -518,15 +512,6 @@ groups:
         })
       ).statusCode,
     ).toBe(404);
-    expect(
-      (
-        await app.inject({
-          method: 'GET',
-          url: '/api/proxmox/resources?refresh=perhaps',
-          headers: { cookie },
-        })
-      ).statusCode,
-    ).toBe(400);
   });
   it('appends cards after the highest position even when gaps exist', async () => {
     const headers = { origin: 'http://localhost:5173', cookie };
@@ -582,7 +567,6 @@ groups:
     for (const [method, url] of [
       ['POST', '/api/services'],
       ['POST', '/api/auth/sign-out'],
-      ['POST', '/api/proxmox/config'],
       ['POST', '/api/connections'],
       ['POST', '/api/widgets'],
     ] as const) {
@@ -780,72 +764,4 @@ describe('HOMORA_ALLOWED_ORIGINS', () => {
       expect(() => parseAllowedOrigins(value)).toThrow();
     expect(parseAllowedOrigins(undefined)).toEqual([]);
   });
-});
-
-it('updates and removes CA without erasing existing credentials', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'homora-api-vault-'));
-  const vault = createVault(join(dir, 'db'));
-  const localApp = createApp(database.db, 5173, auth, vault);
-  const headers = { origin: 'http://localhost:5173', cookie };
-  try {
-    await vault.save({
-      url: 'https://pve.example:8006',
-      tokenId: 'user@pve!homora',
-      secret: 'secret',
-    });
-    const ca = rootCertificates[0];
-    for (const payload of [{ url: 'https://other.example:8006' }, { tokenId: 'other@pve!token' }]) {
-      for (const route of ['/api/proxmox/config', '/api/proxmox/test']) {
-        const response = await localApp.inject({ method: 'POST', url: route, headers, payload });
-        expect(response.statusCode).toBe(400);
-        expect(response.json().code).toBe('secret-required');
-      }
-    }
-    expect(vault.load()?.secret).toBe('secret');
-    expect(
-      (
-        await localApp.inject({
-          method: 'POST',
-          url: '/api/proxmox/config',
-          headers,
-          payload: { ca },
-        })
-      ).statusCode,
-    ).toBe(200);
-    expect(vault.load()).toEqual({
-      url: 'https://pve.example:8006',
-      tokenId: 'user@pve!homora',
-      secret: 'secret',
-      ca,
-    });
-    expect(
-      (
-        await localApp.inject({
-          method: 'POST',
-          url: '/api/proxmox/config',
-          headers,
-          payload: { ca: 'invalid' },
-        })
-      ).statusCode,
-    ).toBe(400);
-    expect(vault.load()?.ca).toBe(ca);
-    expect(
-      (
-        await localApp.inject({
-          method: 'POST',
-          url: '/api/proxmox/config',
-          headers,
-          payload: { removeCa: true },
-        })
-      ).statusCode,
-    ).toBe(200);
-    expect(vault.load()).toEqual({
-      url: 'https://pve.example:8006',
-      tokenId: 'user@pve!homora',
-      secret: 'secret',
-    });
-  } finally {
-    await localApp.close();
-    rmSync(dir, { recursive: true, force: true });
-  }
 });

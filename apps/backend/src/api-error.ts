@@ -63,31 +63,6 @@ export const ERROR_MESSAGES = {
   'batch-conflict': 'The changes in this batch conflict. No changes were applied.',
   'config-changed': 'The configuration changed. Review it again.',
   'proxmox-not-configured': 'Proxmox is not configured.',
-  'proxmox-config-failed': 'Could not load the existing configuration.',
-  'proxmox-save-failed': 'Could not save the configuration.',
-  'proxmox-test-failed': 'Could not test the connection.',
-  'proxmox-load-failed':
-    'Could not load the Proxmox configuration. Check the integration files and the key.',
-  'proxmox-failed': 'Proxmox request failed.',
-  'proxmox-tls':
-    'The Proxmox TLS certificate is not trusted or does not match the address. Configure a trusted CA for the backend.',
-  'proxmox-dns': 'Could not resolve the Proxmox address. Check DNS and the configured URL.',
-  'proxmox-refused':
-    'Connection refused by Proxmox. Check the address, the port and that the service is running.',
-  'proxmox-unreachable':
-    'Could not reach Proxmox. Check the network, the firewall and the configured address.',
-  'proxmox-connection-failed':
-    'Connection to Proxmox failed. Check the network and the configured address.',
-  'proxmox-unauthorized':
-    'Proxmox rejected the authentication (HTTP 401). Check the token ID and secret.',
-  'proxmox-forbidden': 'Proxmox denied access (HTTP 403). Check the user and token permissions.',
-  'proxmox-http-error':
-    'Proxmox returned an unexpected HTTP status. Check the service and the configured address.',
-  'proxmox-invalid-response':
-    'Invalid response from Proxmox. Check that the URL points to a Proxmox server.',
-  'proxmox-incomplete-response': 'Incomplete response from Proxmox.',
-  'proxmox-response-too-large': 'The Proxmox response exceeded the allowed size.',
-  'proxmox-timeout': 'Timed out connecting to Proxmox. Check the network and firewall.',
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_MESSAGES;

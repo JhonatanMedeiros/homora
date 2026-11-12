@@ -113,15 +113,16 @@ releases exist.
   translate results into HTTP status and JSON responses.
 - `integration-registry.ts` registers metadata and execution handlers for Jellyfin, Home
   Assistant, Uptime Kuma, AdGuard Home, and Proxmox. All connection adapters use the shared
-  network transport with destination policy. Legacy Proxmox credentials are copied once into
-  encrypted connection storage; the bridge row and widget references are preserved.
+  network transport with destination policy. Legacy Proxmox credentials are copied once, at
+  backend startup, into encrypted connection storage; the bridge row and widget references are
+  preserved. Nothing outside the migrator reads the legacy file.
 - The stdio MCP runs in a separate process and accesses SQLite/vault directly. The stateless HTTP MCP runs in the backend at `/mcp`, authenticates a Bearer token on every request, validates host and origin, and applies a per-client request limit. Both use the same tools and proposal rules. It authenticates agent tokens
   with granular scopes, offering queries and proposal creation. It intentionally bypasses the HTTP
   stack and web cookies.
 - Group, card-order, and widget proposals capture a fingerprint of groups, cards, widgets,
   and connections, including encrypted references without displaying them. They validate the
-  operation in a savepoint and repeat validation inside the approval transaction. The legacy
-  vault is included when proposing a Proxmox widget. MCP returns proposals only to their author.
+  operation in a savepoint and repeat validation inside the approval transaction. A Proxmox
+  widget proposal requires an existing Proxmox connection. MCP returns proposals only to their author.
 - The observations migration shares the web monitor's latest results with the MCP process.
 - MCP agent identity and audit queries require separate `agents:read` and `audit:read` grants. Audit queries omit IP addresses and details and are bounded by the 365-day retention window. An agent may withdraw only its own unexpired pending proposal, atomically recording the withdrawal; this does not apply configuration changes.
 - Observations are appended with a settings signature and observation time, deduplicated and retained for 30 days; monitor publication cleans old rows. A batch creates at most 20 proposals in one transaction, subject to 100 unexpired pending proposals per identity. A human reviews and decides the complete batch together. Approval checks every original fingerprint before applying all changes in one transaction and increments the configuration version once; conflicts roll back the entire batch. Partially decided legacy batches cannot be approved and their remaining proposals can be discarded.
@@ -155,7 +156,7 @@ Key areas of attention focus on consistency and safe evolution:
 4. Extract large pages or hooks into smaller units when doing so reduces cognitive load and
    simplifies test boundaries.
 5. Legacy Proxmox files remain sensitive after migration. The migration marker prevents deleted
-   connections from being re-imported, and legacy HTTP routes are disabled after migration.
+   connections from being re-imported, and the legacy HTTP routes were removed.
 6. Integration kinds are currently declared across execution catalogs, backend schemas, and UI.
    Keep these types explicit; centralize this contract when future adapters make duplication
    tangible, rather than introducing complex generic code generators now.

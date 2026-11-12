@@ -21,7 +21,7 @@ it('reviews MCP group and widget proposals through authenticated HTTP across SQL
   const app = createApp(webDb.db, 5173, auth, vault);
   const client = new Client({ name: 'test', version: '1' });
   const [a, b] = InMemoryTransport.createLinkedPair();
-  const server = createMcp(getSqliteHandle(mcpDb.db), vault);
+  const server = createMcp(getSqliteHandle(mcpDb.db));
   try {
     const agent = await app.inject({
       method: 'POST',
@@ -185,7 +185,7 @@ it('reveals delegated tokens only to the authenticated reviewer and allows recov
   const app = createApp(db.db, 5173, auth, vault);
   const client = new Client({ name: 'test', version: '1' });
   const [a, b] = InMemoryTransport.createLinkedPair();
-  const server = createMcp(getSqliteHandle(db.db), vault);
+  const server = createMcp(getSqliteHandle(db.db));
   try {
     const parent = await app.inject({
       method: 'POST',
