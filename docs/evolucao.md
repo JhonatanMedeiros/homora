@@ -735,6 +735,24 @@ implementation because it changes a security default.
   (or accept the suggestion) to switch from the letter fallback.
 - Validation: `pnpm check` and `pnpm build`. **Not verified:** appearance on a real dashboard.
 
+### Integrations Page: Single List with a Type Picker (2026-11-12)
+
+- Background: the page stacked widgets, connections and a read-only "available integrations"
+  catalog; each connection row had four text buttons repeating its name.
+- Two tabs, **Connections** and **Widgets**. The catalog card is gone: **Add connection** first
+  shows the types (with what each one reads, taken from `/api/integrations/catalog`, and how many
+  connections of that type exist), then opens that type's form. The form no longer has a type
+  select. If the catalog cannot be loaded the picker still lists the known types.
+- Each connection and widget row has a "⋯" menu (Test connection, Refresh data, Edit, Remove for
+  connections; See data now and Remove for widgets). Removing asks in an alert dialog instead of
+  the inline two-step button. The widget's card is still changed with the select in its row.
+- Not done on purpose: a "connected" status per row. Connections have no stored health, only the
+  result of a manual test, so the list does not claim one.
+- Validation: `pnpm check` and `pnpm build`; component tests for the picker, the form, the menu
+  actions, the removal dialog and the widgets tab. Chromium with a mocked API at 1100 px and
+  390 px (list, open menu, picker, widgets tab): no horizontal overflow or console errors.
+  **Not verified:** real connections and the removal flow in a browser.
+
 ### Agents Tab Redesign (2026-11-11)
 
 - Creating an agent is now a dialog in two steps. Step 1 asks for a name and a profile (Read only,

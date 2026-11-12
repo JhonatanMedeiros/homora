@@ -1,11 +1,23 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Connections } from './connections';
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
+/** Opens the "⋯" menu of a row and picks one of its items. */
+async function choose(row: string, item: string) {
+  fireEvent.keyDown(await screen.findByRole('button', { name: `Ações de ${row}` }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: item }));
+}
+const openWidgets = () => fireEvent.mouseDown(screen.getByRole('tab', { name: /Widgets/ }));
+const pick = async (type: RegExp) => {
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
+  fireEvent.click(await screen.findByRole('button', { name: type }));
+};
 it('registers Home Assistant with explicit private network authorization', async () => {
   const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
     if (init?.method === 'POST') return { ok: true, json: async () => ({ ok: true }) };
@@ -13,10 +25,7 @@ it('registers Home Assistant with explicit private network authorization', async
   });
   vi.stubGlobal('fetch', fetchMock);
   render(<Connections />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
-  fireEvent.change(screen.getByLabelText('Tipo de serviço'), {
-    target: { value: 'home-assistant' },
-  });
+  await pick(/Home Assistant/);
   fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Casa' } });
   fireEvent.change(screen.getByLabelText('URL do serviço'), {
     target: { value: 'https://example.com' },
@@ -45,8 +54,7 @@ it('creates a named Proxmox connection with its own credentials', async () => {
   }));
   vi.stubGlobal('fetch', fetchMock);
   render(<Connections />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
-  fireEvent.change(screen.getByLabelText('Tipo de serviço'), { target: { value: 'proxmox' } });
+  await pick(/Proxmox/);
   fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Cluster principal' } });
   fireEvent.change(screen.getByLabelText('URL do serviço'), {
     target: { value: 'https://pve.example:8006' },
@@ -89,7 +97,7 @@ it('tests connection and displays sanitized API failure', async () => {
     }),
   );
   render(<Connections />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Testar Mídia' }));
+  await choose('Mídia', 'Testar conexão');
   expect(await screen.findByText('A conexão falhou.')).toBeTruthy();
 });
 
@@ -135,7 +143,7 @@ it.each([
     ),
   );
   render(<Connections />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar Teste' }));
+  await choose('Teste', 'Atualizar dados');
   expect(await screen.findByText((content) => content.includes(expected))).toBeTruthy();
 });
 
@@ -188,6 +196,8 @@ it('creates, queries, and removes named widgets using linked connection', async 
   });
   vi.stubGlobal('fetch', fetchMock);
   render(<Connections />);
+  await screen.findByRole('tab', { name: /Widgets/ });
+  openWidgets();
   fireEvent.change(await screen.findByLabelText('Nome do widget'), {
     target: { value: 'Mídia sala' },
   });
@@ -200,11 +210,13 @@ it('creates, queries, and removes named widgets using linked connection', async 
       body: JSON.stringify({ integrationId: 1, name: 'Mídia sala' }),
     }),
   );
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar Mídia sala' }));
+  await choose('Mídia sala', 'Ver dados agora');
   expect(await screen.findByText('Servidor: Servidor · Versão: 10.0')).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Remover widget Mídia sala' }));
+  await choose('Mídia sala', 'Remover');
+  const dialog = await screen.findByRole('alertdialog');
+  expect(within(dialog).getByText('Remover Mídia sala?')).toBeTruthy();
   expect(screen.queryByText('Widget removido.')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção do widget Mídia sala' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remover' }));
   expect(await screen.findByText('Widget removido.')).toBeTruthy();
 });
 
@@ -246,6 +258,8 @@ it('offers Proxmox as widget source and queries aggregated numbers', async () =>
   });
   vi.stubGlobal('fetch', fetchMock);
   render(<Connections />);
+  await screen.findByRole('tab', { name: /Widgets/ });
+  openWidgets();
   const select = await screen.findByLabelText('Conexão');
   await waitFor(() => expect((select as HTMLSelectElement).value).toBe('99'));
   fireEvent.change(screen.getByLabelText('Nome do widget'), { target: { value: 'Cluster' } });
@@ -259,6 +273,106 @@ it('offers Proxmox as widget source and queries aggregated numbers', async () =>
       }),
     ),
   );
-  fireEvent.click(await screen.findByRole('button', { name: 'Consultar Cluster' }));
+  await choose('Cluster', 'Ver dados agora');
   expect(await screen.findByText('VMs: 1 / 1 · LXC: 16 / 25 · CPU: 6%')).toBeTruthy();
+});
+
+it('lists the types to connect with what each one reads, then opens its form without a type select', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/integrations/catalog')
+        return {
+          ok: true,
+          json: async () => [
+            { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory', 'server-info'] },
+            { type: 'adguard-home', label: 'AdGuard Home', capabilities: ['dns-status'] },
+          ],
+        };
+      if (url === '/api/connections')
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, type: 'proxmox', name: 'Phobos', url: 'https://pve.test', allowPrivate: true },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<Connections />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
+  expect(await screen.findByText('O que você quer conectar?')).toBeTruthy();
+  expect(
+    await screen.findByText('Inventário da infraestrutura, Informações do servidor'),
+  ).toBeTruthy();
+  expect(screen.getByText('1 conectada')).toBeTruthy();
+  for (const name of ['Jellyfin', 'Home Assistant', 'Uptime Kuma', 'AdGuard Home', 'Proxmox VE'])
+    expect(screen.getByRole('button', { name: new RegExp(name) })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /AdGuard Home/ }));
+  expect(screen.getByText('Nova conexão AdGuard Home')).toBeTruthy();
+  expect(screen.queryByLabelText('Tipo de serviço')).toBeNull();
+  expect(screen.getByLabelText('Usuário')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  expect(screen.getByRole('button', { name: 'Adicionar conexão' })).toBeTruthy();
+});
+
+it('still lets you pick a type when the catalog cannot be loaded', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => ({
+      ok: url !== '/api/integrations/catalog',
+      json: async () => [],
+    })),
+  );
+  render(<Connections />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
+  expect(screen.getByRole('button', { name: /Jellyfin/ })).toBeTruthy();
+});
+
+it('asks before removing a connection and removes it once confirmed', async () => {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === '/api/connections/1' && init?.method === 'DELETE')
+      return { ok: true, json: async () => ({ ok: true }) };
+    if (url === '/api/connections')
+      return {
+        ok: true,
+        json: async () => [
+          { id: 1, type: 'jellyfin', name: 'Mídia', url: 'https://x.test', allowPrivate: false },
+        ],
+      };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<Connections />);
+  await choose('Mídia', 'Remover');
+  const dialog = await screen.findByRole('alertdialog');
+  expect(within(dialog).getByText('Remover Mídia?')).toBeTruthy();
+  expect(fetchMock).not.toHaveBeenCalledWith('/api/connections/1', expect.anything());
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+  expect(fetchMock).not.toHaveBeenCalledWith('/api/connections/1', expect.anything());
+  await choose('Mídia', 'Remover');
+  fireEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Remover' }),
+  );
+  await waitFor(() =>
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/connections/1',
+      expect.objectContaining({ method: 'DELETE' }),
+    ),
+  );
+  expect(await screen.findByText('Integração removida.')).toBeTruthy();
+});
+
+it('tells you to add a connection before creating widgets', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => [] })),
+  );
+  render(<Connections />);
+  await screen.findByText('Nenhuma conexão cadastrada.');
+  openWidgets();
+  expect(
+    await screen.findByText('Adicione uma conexão primeiro e crie os widgets a partir dela.'),
+  ).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Adicionar conexão' })).toBeNull();
 });

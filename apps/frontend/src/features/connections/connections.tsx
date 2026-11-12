@@ -3,15 +3,27 @@ import { Plus, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
-import { SectionTitle } from '@/components/section-title';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConnectionForm } from './connection-form';
 import { ConnectionList } from './connection-list';
+import { ConnectionPicker } from './connection-picker';
 import {
   emptyForm,
   request,
   type Connection,
   type ConnectionFormState,
   type IntegrationWidget,
+  type Kind,
 } from './connection-model';
 import { WidgetsSection } from './widgets-section';
 import { t } from '@/i18n';
@@ -28,7 +40,11 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
   const [form, setForm] = useState<ConnectionFormState | null>(initialDraft ?? null);
   const [editing, setEditing] = useState<number | null>(null);
   const [message, setMessage] = useState('');
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [tab, setTab] = useState<'connections' | 'widgets'>('connections');
+  const [picking, setPicking] = useState(false);
+  const [removing, setRemoving] = useState<
+    { kind: 'connection'; item: Connection } | { kind: 'widget'; item: IntegrationWidget } | null
+  >(null);
   const [result, setResult] = useState<{ id: number; data: unknown; checkedAt?: string } | null>(
     null,
   );
@@ -134,11 +150,6 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
     }
   }
   async function removeWidget(widget: IntegrationWidget) {
-    if (confirming !== `widget:${widget.id}`) {
-      setConfirming(`widget:${widget.id}`);
-      return;
-    }
-    setConfirming(null);
     setBusy(true);
     setMessage('');
     try {
@@ -202,13 +213,6 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
     }
   }
   async function action(item: Connection, operation: 'test' | 'data' | 'delete') {
-    if (operation === 'delete') {
-      if (confirming !== `connection:${item.id}`) {
-        setConfirming(`connection:${item.id}`);
-        return;
-      }
-      setConfirming(null);
-    }
     setBusy(true);
     setMessage('');
     setResult(null);
@@ -234,55 +238,68 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
     }
   }
   const editingItem = editing === null ? undefined : items?.find((item) => item.id === editing);
+  const counts = (items ?? []).reduce<Partial<Record<Kind, number>>>((acc, item) => {
+    acc[item.type] = (acc[item.type] ?? 0) + 1;
+    return acc;
+  }, {});
+  const browsing = !form && !picking;
   return (
-    <section aria-labelledby="connections-title" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <SectionTitle id="connections-title" count={items?.length}>
-          {t('connections.title')}
-        </SectionTitle>
-        <p className="text-sm text-muted-foreground">{t('connections.description')}</p>
-      </div>
-      {(Boolean(items?.length) || widgets.length > 0) && (
-        <WidgetsSection
-          items={items}
-          widgets={widgets}
-          busy={busy}
-          confirming={confirming}
-          widgetName={widgetName}
-          widgetConnection={selectedConnection}
-          cards={cards}
-          widgetCard={widgetCard}
-          onCardChange={setWidgetCard}
-          onMoveWidget={(widget, value) => void moveWidget(widget, value)}
-          widgetResult={widgetResult}
-          onNameChange={setWidgetName}
-          onConnectionChange={setWidgetConnection}
-          onCreate={(event) => void createWidget(event)}
-          onQuery={(widget) => void queryWidget(widget)}
-          onRemove={(widget) => void removeWidget(widget)}
-          onCancelRemoval={(widget) =>
-            setConfirming((key) => (key === `widget:${widget.id}` ? null : key))
-          }
-        />
-      )}
-      {form ? (
-        <ConnectionForm
-          form={form}
-          editing={editing !== null}
-          hasCa={Boolean(editingItem?.hasCa)}
-          busy={busy}
-          onChange={setForm}
-          onUpdate={(update) => setForm((current) => (current ? update(current) : current))}
-          onCaError={setMessage}
-          onSubmit={(event) => void save(event)}
-          onCancel={() => {
-            setForm(null);
-            setMessage('');
-          }}
-        />
-      ) : (
-        <>
-          {items === null && loadFailed ? (
+    <section aria-label={t('connections.title')} className="flex flex-col gap-4">
+      <Tabs value={tab} onValueChange={(value) => setTab(value as typeof tab)}>
+        {(tab === 'widgets' || browsing) && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TabsList variant="line">
+              <TabsTrigger value="connections">
+                {t('connections.tab')}
+                {items && <span className="font-mono text-xs opacity-70">{items.length}</span>}
+              </TabsTrigger>
+              <TabsTrigger value="widgets">
+                {t('widgets.tab')}
+                <span className="font-mono text-xs opacity-70">{widgets.length}</span>
+              </TabsTrigger>
+            </TabsList>
+            {tab === 'connections' && items !== null && (
+              <Button
+                type="button"
+                onClick={() => {
+                  setEditing(null);
+                  setMessage('');
+                  setPicking(true);
+                }}
+              >
+                <Plus data-icon="inline-start" />
+                {t('connections.add')}
+              </Button>
+            )}
+          </div>
+        )}
+        <TabsContent value="connections" className="flex flex-col gap-4">
+          {picking ? (
+            <ConnectionPicker
+              counts={counts}
+              onPick={(type) => {
+                setPicking(false);
+                setForm({ ...emptyForm, type });
+              }}
+              onCancel={() => setPicking(false)}
+            />
+          ) : form ? (
+            <ConnectionForm
+              form={form}
+              editing={editing !== null}
+              hasCa={Boolean(editingItem?.hasCa)}
+              busy={busy}
+              onChange={setForm}
+              onUpdate={(update) => setForm((current) => (current ? update(current) : current))}
+              onCaError={setMessage}
+              onSubmit={(event) => void save(event)}
+              onCancel={() => {
+                setForm(null);
+                setEditing(null);
+                setMessage('');
+              }}
+            />
+          ) : items === null && loadFailed ? (
             <Button
               type="button"
               variant="outline"
@@ -315,34 +332,66 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
             <ConnectionList
               items={items}
               busy={busy}
-              confirming={confirming}
               result={result}
               onEdit={edit}
               onAction={(item, operation) => void action(item, operation)}
-              onCancelRemoval={(item) =>
-                setConfirming((key) => (key === `connection:${item.id}` ? null : key))
-              }
+              onRemove={(item) => setRemoving({ kind: 'connection', item })}
             />
           )}
-          <Button
-            type="button"
-            className="w-fit"
-            onClick={() => {
-              setEditing(null);
-              setForm(emptyForm);
-              setMessage('');
-            }}
-          >
-            <Plus data-icon="inline-start" />
-            {t('connections.add')}
-          </Button>
-        </>
-      )}
+        </TabsContent>
+        <TabsContent value="widgets">
+          <WidgetsSection
+            items={items}
+            widgets={widgets}
+            busy={busy}
+            widgetName={widgetName}
+            widgetConnection={selectedConnection}
+            cards={cards}
+            widgetCard={widgetCard}
+            onCardChange={setWidgetCard}
+            onMoveWidget={(widget, value) => void moveWidget(widget, value)}
+            widgetResult={widgetResult}
+            onNameChange={setWidgetName}
+            onConnectionChange={setWidgetConnection}
+            onCreate={(event) => void createWidget(event)}
+            onQuery={(widget) => void queryWidget(widget)}
+            onRemove={(widget) => setRemoving({ kind: 'widget', item: widget })}
+          />
+        </TabsContent>
+      </Tabs>
       {message && (
         <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm font-medium">
           {message}
         </p>
       )}
+      <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {removing?.kind === 'widget'
+                ? t('widgets.removeTitle', { name: removing.item.name })
+                : t('connections.removeTitle', { name: removing?.item.name ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {removing?.kind === 'widget' ? t('widgets.removeBody') : t('connections.removeBody')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                const target = removing;
+                setRemoving(null);
+                if (target?.kind === 'widget') void removeWidget(target.item);
+                else if (target) void action(target.item, 'delete');
+              }}
+            >
+              {t('common.remove')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
