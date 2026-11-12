@@ -495,10 +495,14 @@ it('shows pending proposals in clear language and approves with a single click',
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Agentes' }));
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+      name: 'Agentes',
+    }),
+  );
   expect(await screen.findByText('Adicionar “Immich”')).toBeTruthy();
   expect(screen.getByText('Aguardando você')).toBeTruthy();
-  expect(screen.getAllByText('Ler serviços').length).toBeGreaterThan(0);
+  expect(screen.getByRole('tab', { name: /^Propostas\s*1$/ })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /Aprovar e aplicar/ }));
   await waitFor(() =>
     expect(fetchMock).toHaveBeenCalledWith(
@@ -506,6 +510,8 @@ it('shows pending proposals in clear language and approves with a single click',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ approve: true }) }),
     ),
   );
+  fireEvent.mouseDown(screen.getByRole('tab', { name: /^Agentes/ }));
+  expect((await screen.findAllByText('Ler serviços')).length).toBeGreaterThan(0);
 });
 
 it('does not treat unauthorized private network as service down', async () => {
@@ -598,7 +604,11 @@ it('shows before and after of an update proposal', async () => {
       name: 'Serviços',
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Agentes' }));
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+      name: 'Agentes',
+    }),
+  );
   expect(await screen.findByText('Alterar “Jellyfin”')).toBeTruthy();
   expect(screen.getByText('http://antigo.local:8096/')).toBeTruthy();
   expect(screen.getByText('http://novo.local:8096/')).toBeTruthy();
@@ -690,7 +700,11 @@ it('opens a management route directly and responds to browser history', async ()
   );
   render(<App />);
   expect(await screen.findByRole('heading', { name: 'Integrações' })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Agentes' }));
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+      name: 'Agentes',
+    }),
+  );
   expect(window.location.pathname).toBe('/manage/agents');
   window.history.replaceState(null, '', '/');
   fireEvent.popState(window);
@@ -1111,4 +1125,46 @@ it('does not list the account among the management sections', async () => {
   expect(within(nav).queryByRole('button', { name: 'Conta' })).toBeNull();
   for (const name of ['Serviços', 'Integrações', 'Agentes', 'Atividade', 'Configurações'])
     expect(within(nav).getByRole('button', { name })).toBeTruthy();
+});
+
+it('lists the settings subpages and opens one from its own URL', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/settings');
+  render(<App />);
+  const nav = await screen.findByRole('navigation', { name: 'Configurações' });
+  for (const name of [/Interface/, /Status público/, /Exportar e importar/, /Descoberta Docker/])
+    expect(within(nav).getByRole('link', { name })).toBeTruthy();
+  fireEvent.click(within(nav).getByRole('link', { name: /Exportar e importar/ }));
+  expect(window.location.pathname).toBe('/manage/settings/backup');
+  expect(await screen.findByRole('heading', { name: 'Exportar' })).toBeTruthy();
+  expect(
+    within(screen.getByRole('navigation', { name: 'Configurações' }))
+      .getByRole('link', { name: /Exportar e importar/ })
+      .getAttribute('aria-current'),
+  ).toBe('page');
+});
+
+it('shows not found for an unknown settings subpage', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/settings/nao-existe');
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeTruthy();
+});
+
+it('reaches Activity and Settings from "More" in the phone bottom bar', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/manage/services');
+  render(<App />);
+  const bar = await screen.findByRole('navigation', { name: 'Seções' });
+  expect(
+    within(bar)
+      .getAllByRole('button')
+      .map((button) => button.textContent),
+  ).toEqual(['Serviços', 'Integrações', 'Agentes', 'Mais']);
+  fireEvent.click(within(bar).getByRole('button', { name: 'Mais' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/settings'));
+  expect(within(bar).getByRole('button', { name: 'Mais' }).getAttribute('aria-current')).toBe(
+    'page',
+  );
 });

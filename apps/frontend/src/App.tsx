@@ -20,6 +20,7 @@ import { tabPath, type Tab } from '@/components/app-nav';
 import { lower, t, useI18n } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { SettingsPage } from '@/pages/settings-page';
+import { isSettingsSection, settingsPath, settingsSections } from '@/features/settings/sections';
 import { useAuth } from '@/hooks/use-auth';
 import { useServices } from '@/hooks/use-services';
 import { Agents } from '@/features/agents/agents';
@@ -44,6 +45,7 @@ const validPaths = [
   '/account',
   '/manage/account',
   '/manage/settings',
+  ...settingsSections.map((section) => settingsPath(section.id)),
 ].map((path) => ({ path }));
 function validDestination(path: string) {
   return (
@@ -225,7 +227,7 @@ function Dashboard({
         />
       )}
       {/* Above the fixed mobile bar of organize mode. */}
-      <Toaster position="bottom-center" mobileOffset={{ bottom: 80 }} />
+      <Toaster position="bottom-center" mobileOffset={{ bottom: 136 }} />
     </AppShell>
   );
 }
@@ -257,10 +259,15 @@ function DashboardForRoute({
         ? 'activity'
         : matchPath('/account', pathname)
           ? 'account'
-          : matchPath('/manage/settings', pathname)
+          : matchPath({ path: '/manage/settings', end: false }, pathname)
             ? 'settings'
             : 'services';
-  const valid = home || isList || isNew || isEdit || tab !== 'services';
+  const settingsSection = matchPath('/manage/settings/:section', pathname)?.params.section;
+  const unknownSettings =
+    Boolean(matchPath('/manage/settings/*', pathname)) &&
+    !matchPath('/manage/settings', pathname) &&
+    !isSettingsSection(settingsSection);
+  const valid = home || isList || isNew || isEdit || (tab !== 'services' && !unknownSettings);
   const account = tab === 'account';
   return (
     <Dashboard

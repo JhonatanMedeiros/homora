@@ -12,5 +12,8 @@ export const navItems: { id: Exclude<Tab, 'account'>; label: MessageKey; icon: L
   { id: 'settings', label: 'nav.settings', icon: Settings },
 ];
 
+/** Sections that get a slot in the phone's bottom bar; the rest go under "More". */
+export const primaryNavIds: Tab[] = ['services', 'integrations', 'agents'];
+
 /** Router path of a section; the account lives outside the management area. */
 export const tabPath = (tab: Tab) => (tab === 'account' ? '/account' : `/manage/${tab}`);

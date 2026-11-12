@@ -25,6 +25,7 @@ import { Kbd } from '@/components/ui/kbd';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StatusLight } from '@/components/status-light';
 import { navItems, tabPath } from '@/components/app-nav';
+import { settingsPath } from '@/features/settings/sections';
 import { t } from '@/i18n';
 import { useRecentServices } from '@/hooks/use-recent-services';
 import type { View } from '@/hooks/use-view-preferences';
@@ -247,7 +248,7 @@ export function CommandPalette({
                 ))}
               <CommandItem
                 value={t('palette.importExport')}
-                onSelect={() => run(() => onNavigate(tabPath('settings')))}
+                onSelect={() => run(() => onNavigate(settingsPath('backup')))}
               >
                 <FileDown />
                 {t('palette.importExport')}

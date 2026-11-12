@@ -59,9 +59,13 @@ const active = {
   createdAt: Date.UTC(2026, 10, 10),
 };
 
+const openAgents = async () =>
+  fireEvent.mouseDown(await screen.findByRole('tab', { name: /^Agentes/ }));
+
 it('creates an agent in a dialog, then shows the token with a setup guide that includes it', async () => {
   const calls = mockApi([]);
   render(<Harness />);
+  await openAgents();
   expect(await screen.findByText('Nenhum agente ainda.')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Novo agente' }));
   const form = await screen.findByRole('dialog', { name: 'Novo agente' });
@@ -94,6 +98,7 @@ it('creates an agent in a dialog, then shows the token with a setup guide that i
 it('asks before closing the token dialog without confirming the token was saved', async () => {
   mockApi([]);
   render(<Harness />);
+  await openAgents();
   fireEvent.click(await screen.findByRole('button', { name: 'Criar o primeiro agente' }));
   const form = await screen.findByRole('dialog', { name: 'Novo agente' });
   fireEvent.change(within(form).getByLabelText('Nome do agente'), { target: { value: 'Casa' } });
@@ -129,6 +134,7 @@ it('lets a custom profile choose each permission', async () => {
 it('shows each agent with pending proposals and confirms before rotating or revoking', async () => {
   const calls = mockApi([active]);
   render(<Harness />);
+  await openAgents();
   expect(await screen.findByText('1 pendentes')).toBeTruthy();
   expect(screen.getByText(/Criado em/)).toBeTruthy();
   const open = () =>
@@ -156,6 +162,7 @@ it('shows each agent with pending proposals and confirms before rotating or revo
 it('opens the setup guide any time, with a token placeholder and a remembered folder', async () => {
   mockApi([active]);
   render(<Harness />);
+  await openAgents();
   await screen.findByRole('button', { name: 'Opções de Assistente' });
   fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
   const dialog = await screen.findByRole('dialog', { name: 'Conectar um agente' });
