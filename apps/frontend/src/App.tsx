@@ -11,6 +11,9 @@ import {
 } from 'react-router';
 import { AppShell } from '@/components/app-shell';
 import { CommandPalette } from '@/components/command-palette';
+import { ShortcutsDialog } from '@/components/shortcuts-dialog';
+import { useShortcuts } from '@/hooks/use-shortcuts';
+import { useShortcutsPreference } from '@/hooks/use-shortcuts-preference';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
@@ -82,16 +85,18 @@ function Dashboard({
   const { profile, failed: profileFailed, setProfile } = useProfile();
   const viewPrefs = useViewPreferences();
 
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setPaletteOpen((open) => !open);
-      }
-    };
-    document.addEventListener('keydown', key);
-    return () => document.removeEventListener('keydown', key);
-  }, []);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [shortcutsEnabled] = useShortcutsPreference();
+  useShortcuts({
+    enabled: shortcutsEnabled,
+    // The services pages (home and manage list); the form is a dialog and blocks the keys itself.
+    canCreateService: tab === 'services' && route.valid,
+    onTogglePalette: () => setPaletteOpen((open) => !open),
+    onOpenPalette: () => setPaletteOpen(true),
+    onOpenHelp: () => setHelpOpen(true),
+    onGo: (target) => navigate(target === 'services' ? '/' : tabPath(target)),
+    onNewService: () => navigate('/manage/services/new'),
+  });
 
   return (
     <AppShell
@@ -107,7 +112,13 @@ function Dashboard({
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
     >
+      <ShortcutsDialog
+        open={helpOpen}
+        onOpenChange={setHelpOpen}
+        singleKeysEnabled={shortcutsEnabled}
+      />
       <CommandPalette
+        shortcutsEnabled={shortcutsEnabled}
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
         services={data.services}

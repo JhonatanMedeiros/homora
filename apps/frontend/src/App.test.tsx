@@ -1132,3 +1132,86 @@ it('reaches Activity and Settings from "More" in the phone bottom bar', async ()
     'page',
   );
 });
+
+function stubSession(authenticated = true) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated }) };
+      if (url === '/api/services') return { ok: true, json: async () => [] };
+      if (url === '/api/status') return { ok: false, status: 500, json: async () => ({}) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+}
+const SEARCH_BOX = 'Buscar serviços ou executar um comando';
+
+it('runs the single-key shortcuts in the authenticated shell', async () => {
+  localStorage.clear();
+  stubSession();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.keyDown(document.body, { key: 'g' });
+  fireEvent.keyDown(document.body, { key: 'i' });
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/integrations'));
+  fireEvent.keyDown(document.body, { key: 'g' });
+  fireEvent.keyDown(document.body, { key: 'h' });
+  await waitFor(() => expect(window.location.pathname).toBe('/'));
+  fireEvent.keyDown(document.body, { key: 'n' });
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/services/new'));
+  window.history.replaceState(null, '', '/');
+  fireEvent.popState(window);
+  fireEvent.keyDown(document.body, { key: '?', shiftKey: true });
+  expect(await screen.findByRole('dialog', { name: 'Atalhos de teclado' })).toBeTruthy();
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  fireEvent.keyDown(document.body, { key: '/' });
+  expect(await screen.findByPlaceholderText(SEARCH_BOX)).toBeTruthy();
+});
+
+it('does not run navigation shortcuts outside the services pages for n', async () => {
+  localStorage.clear();
+  stubSession();
+  window.history.replaceState(null, '', '/manage/agents');
+  render(<App />);
+  await screen.findByRole('heading', { name: /Agentes/ });
+  fireEvent.keyDown(document.body, { key: 'n' });
+  expect(window.location.pathname).toBe('/manage/agents');
+});
+
+it('turns the single keys off from Settings but keeps Ctrl K', async () => {
+  localStorage.setItem('homora-shortcuts', 'off');
+  stubSession();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.keyDown(document.body, { key: '/' });
+  fireEvent.keyDown(document.body, { key: 'n' });
+  expect(screen.queryByPlaceholderText(SEARCH_BOX)).toBeNull();
+  expect(window.location.pathname).toBe('/');
+  fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true });
+  expect(await screen.findByPlaceholderText(SEARCH_BOX)).toBeTruthy();
+  localStorage.clear();
+});
+
+it('keeps the shortcuts inert on the login screen and the public status page', async () => {
+  localStorage.clear();
+  stubSession(false);
+  render(<App />);
+  await screen.findByRole('button', { name: 'Entrar' });
+  fireEvent.keyDown(document.body, { key: 'g' });
+  fireEvent.keyDown(document.body, { key: 'i' });
+  fireEvent.keyDown(document.body, { key: '?', shiftKey: true });
+  expect(window.location.pathname).toBe('/login');
+  expect(screen.queryByRole('dialog')).toBeNull();
+  cleanup();
+  window.history.replaceState(null, '', '/status');
+  stubSession(true);
+  render(<App />);
+  await waitFor(() => expect(window.location.pathname).toBe('/status'));
+  fireEvent.keyDown(document.body, { key: '/' });
+  fireEvent.keyDown(document.body, { key: '?', shiftKey: true });
+  fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true });
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.queryByPlaceholderText(SEARCH_BOX)).toBeNull();
+});
