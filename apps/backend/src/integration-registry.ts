@@ -2,16 +2,11 @@ import { createAdGuardAdapter } from './adguard.js';
 import { createHomeAssistantAdapter } from './home-assistant.js';
 import { createJellyfinAdapter } from './jellyfin.js';
 import { createUptimeKumaAdapter } from './uptime-kuma.js';
-import {
-  createIntegrationRegistry,
-  proxmoxAdapter,
-  type IntegrationContext,
-} from './integrations.js';
+import { createIntegrationRegistry, type IntegrationContext } from './integrations.js';
 import type { AdGuardConfig } from './adguard.js';
 import type { HomeAssistantConfig } from './home-assistant.js';
 import type { JellyfinConfig } from './jellyfin.js';
 import type { UptimeKumaConfig } from './uptime-kuma.js';
-import type { ProxmoxConfig } from './vault.js';
 import { createProxmoxConnectionAdapter } from './proxmox-connection.js';
 
 function transportFrom(context: IntegrationContext) {
@@ -22,21 +17,17 @@ function transportFrom(context: IntegrationContext) {
 export const integrationRegistry = createIntegrationRegistry([
   {
     type: 'proxmox',
-    label: proxmoxAdapter.label,
-    capabilities: proxmoxAdapter.capabilities,
+    label: 'Proxmox VE',
+    capabilities: ['inventory'],
     prepare(context) {
-      if (!context.legacyConfig) {
-        const adapter = createProxmoxConnectionAdapter(transportFrom(context));
-        const config = adapter.validate({
-          url: String(context.publicConfig.url ?? ''),
-          tokenId: context.credentials.tokenId ?? '',
-          secret: context.credentials.secret ?? '',
-          ca: context.credentials.ca,
-        });
-        return () => adapter.collect(config);
-      }
-      const config = proxmoxAdapter.validate(context.legacyConfig as ProxmoxConfig);
-      return () => proxmoxAdapter.collect(config);
+      const adapter = createProxmoxConnectionAdapter(transportFrom(context));
+      const config = adapter.validate({
+        url: String(context.publicConfig.url ?? ''),
+        tokenId: context.credentials.tokenId ?? '',
+        secret: context.credentials.secret ?? '',
+        ca: context.credentials.ca,
+      });
+      return () => adapter.collect(config);
     },
   },
   {

@@ -8,7 +8,7 @@ import { createDockerSource } from './docker-discovery.js';
 const config = loadConfig();
 const storage = createDatabase(config.databasePath);
 const vault = createVault(config.databasePath);
-const server = createMcp(getSqliteHandle(storage.db), vault, {
+const server = createMcp(getSqliteHandle(storage.db), {
   connections: createIntegrationConnections(storage.db, vault),
   docker: config.dockerHost ? createDockerSource(config.dockerHost) : undefined,
 });

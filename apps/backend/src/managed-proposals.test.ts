@@ -1,10 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { createProposalService } from './proposals.js';
-import { createVault } from './vault.js';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 function fixture() {
   const db = new DatabaseSync(':memory:');
@@ -192,40 +188,38 @@ describe('managed proposals', () => {
       db.close();
     }
   });
-  it('creates the Proxmox bridge only on approval and rejects a changed vault', async () => {
-    const { db, agent } = fixture();
-    const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-proxmox-'));
-    const vault = createVault(join(dir, 'db'));
-    const api = createProposalService(db, undefined, vault);
+  it('applies a Proxmox widget only to an existing migrated connection', () => {
+    const { db, api, agent } = fixture();
+    const change = {
+      kind: 'widget',
+      change: { op: 'create', source: 'proxmox', name: 'Infra', serviceId: 1 },
+    } as const;
     try {
-      const change = {
-        kind: 'widget',
-        change: { op: 'create', source: 'proxmox', name: 'Infra', serviceId: 1 },
-      };
-      expect(() => api.proposeManaged(agent.id, change)).toThrow();
-      await vault.save({
-        url: 'https://pve.example:8006',
-        tokenId: 'reader@pve!token',
-        secret: 'synthetic',
-      });
-      const stale = api.proposeManaged(agent.id, change);
+      // No connection: fails clearly and never creates a hidden connection row.
+      expect(() => api.proposeManaged(agent.id, change)).toThrow('Proxmox not configured');
       expect(
         db.prepare("SELECT id FROM integration_instances WHERE type='proxmox'").get(),
       ).toBeUndefined();
-      await vault.save({
-        url: 'https://pve2.example:8006',
-        tokenId: 'reader@pve!token',
-        secret: 'synthetic',
-      });
-      expect(() => api.decide(stale.id, true, 'local-admin')).toThrow('Configuration has changed');
-      const next = api.proposeManaged(agent.id, change);
-      api.decide(next.id, true, 'local-admin');
-      expect(db.prepare("SELECT type FROM integration_widgets WHERE name='Infra'").get()).toEqual({
-        type: 'proxmox',
-      });
+      // A deleted migrated connection leaves only the tombstone marker.
+      db.exec("INSERT INTO integration_migrations VALUES('legacy-proxmox:deleted')");
+      expect(() => api.proposeManaged(agent.id, change)).toThrow('Proxmox not configured');
+      db.exec(
+        "DELETE FROM integration_migrations; INSERT INTO integration_migrations VALUES('legacy-proxmox:7')",
+      );
+      expect(() => api.proposeManaged(agent.id, change)).toThrow('Proxmox not configured');
+      db.exec(
+        `INSERT INTO integration_instances VALUES(7,'proxmox','Proxmox VE','{"url":"https://pve.example:8006","allowPrivate":true}','encrypted',NULL)`,
+      );
+      const proposal = api.proposeManaged(agent.id, change);
+      api.decide(proposal.id, true, 'local-admin');
+      expect(
+        db.prepare("SELECT type,integration_id FROM integration_widgets WHERE name='Infra'").get(),
+      ).toEqual({ type: 'proxmox', integration_id: 7 });
+      expect(
+        db.prepare("SELECT id FROM integration_instances WHERE type='proxmox'").all(),
+      ).toHaveLength(1);
     } finally {
       db.close();
-      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

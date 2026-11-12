@@ -67,11 +67,12 @@ secrets are never exposed to the frontend, MCP tools, or application logs. Exter
   configured. A connection addresses one Proxmox API endpoint; its cluster inventory can
   include multiple nodes. Widgets report aggregate counts and resource usage, not individual
   node selection. The top bar can select a connection in Settings, independently of widgets.
-- On first access to connections, a legacy Proxmox configuration is copied into the encrypted
+- At backend startup, a legacy Proxmox configuration is copied into the encrypted
   connection store. An existing bridge row keeps its ID and widget references. This migration
-  is transactional and recorded once, including when the connection is later deleted. The old
-  `.proxmox` file remains as a sensitive backup; after migration the legacy HTTP routes return
-  410 and cannot update it. Existing legacy connections retain private-network access, while
+  is automatic, transactional and recorded once, including when the connection is later deleted.
+  A missing key or unreadable file does not stop startup; it is logged without secrets and
+  retried on the next start. The old `.proxmox` file remains as a sensitive backup and the
+  legacy HTTP routes no longer exist. Existing legacy connections retain private-network access, while
   new connections require explicit opt-in. The shared destination policy can reject destinations
   previously allowed by the legacy transport. Jellyfin, Home Assistant, Uptime Kuma, and
   AdGuard Home also have read-only adapters; real-world validation remains incomplete.

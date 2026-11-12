@@ -288,6 +288,7 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
   }
 
   return {
+    migrateLegacy,
     async listConnections() {
       migrateLegacy();
       return (await db.select().from(integrationInstances))
@@ -394,4 +395,23 @@ export function createIntegrationConnections(db: Db, vault?: Vault) {
       return true;
     },
   };
+}
+
+/**
+ * Runs the idempotent legacy Proxmox migration once, before the server accepts requests.
+ * It never throws: a missing key or unreadable file leaves the legacy file untouched and is
+ * retried on the next start. Only a fixed message is logged, never the file or error contents.
+ */
+export function migrateLegacyProxmoxAtStartup(
+  db: Db,
+  vault: Vault,
+  log: (message: string) => void = console.warn,
+) {
+  try {
+    createIntegrationConnections(db, vault).migrateLegacy();
+  } catch {
+    log(
+      'Could not migrate the legacy Proxmox configuration (missing key or unreadable file). The legacy file was left untouched; it will be retried on the next start.',
+    );
+  }
 }

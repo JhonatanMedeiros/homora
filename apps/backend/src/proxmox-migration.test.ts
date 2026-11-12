@@ -1,9 +1,12 @@
-import { mkdtempSync, readFileSync, rmSync, unlinkSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { expect, it, vi } from 'vitest';
-import { createIntegrationConnections } from './integration-connections.js';
+import {
+  createIntegrationConnections,
+  migrateLegacyProxmoxAtStartup,
+} from './integration-connections.js';
 import { createVault } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
 
@@ -180,5 +183,92 @@ it('rolls back the migration if the legacy key is missing', async () => {
   } finally {
     database.close();
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+function startupFixture() {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-proxmox-startup-'));
+  const path = join(dir, 'data.sqlite');
+  const database = createDatabase(path);
+  return {
+    dir,
+    path,
+    database,
+    sqlite: getSqliteHandle(database.db),
+    vault: createVault(path),
+    cleanup() {
+      database.close();
+      rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+const legacy = { url: 'https://old.example:8006', tokenId: 'user@pve!id', secret: 'legacy-secret' };
+
+it('migrates at startup, keeps the file as backup and changes nothing on a second start', async () => {
+  const f = startupFixture();
+  try {
+    await f.vault.save(legacy);
+    const before = readFileSync(`${f.path}.proxmox`, 'utf8');
+    const log = vi.fn();
+    migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log);
+    const snapshot = () => ({
+      instances: f.sqlite.prepare('SELECT * FROM integration_instances').all(),
+      markers: f.sqlite.prepare('SELECT name FROM integration_migrations').all(),
+    });
+    const first = snapshot();
+    expect(first.instances).toHaveLength(1);
+    expect(first.markers).toEqual([
+      { name: `legacy-proxmox:${(first.instances[0] as { id: number }).id}` },
+    ]);
+    expect(first.instances[0]).toMatchObject({
+      public_config: JSON.stringify({ url: 'https://old.example:8006', allowPrivate: true }),
+      certificate_ref: 'secret',
+    });
+    expect(readFileSync(`${f.path}.proxmox`, 'utf8')).toBe(before);
+    migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log);
+    expect(snapshot()).toEqual(first);
+    expect(log).not.toHaveBeenCalled();
+  } finally {
+    f.cleanup();
+  }
+});
+
+it('does not recreate a deleted migrated connection on restart', async () => {
+  const f = startupFixture();
+  try {
+    await f.vault.save(legacy);
+    migrateLegacyProxmoxAtStartup(f.database.db, f.vault);
+    const connections = createIntegrationConnections(f.database.db, f.vault);
+    const [{ id }] = await connections.listConnections();
+    expect(await connections.deleteConnection(id)).toBe('deleted');
+    migrateLegacyProxmoxAtStartup(f.database.db, f.vault);
+    expect(f.sqlite.prepare('SELECT id FROM integration_instances').all()).toEqual([]);
+    expect(f.sqlite.prepare('SELECT name FROM integration_migrations').all()).toEqual([
+      { name: 'legacy-proxmox:deleted' },
+    ]);
+  } finally {
+    f.cleanup();
+  }
+});
+
+it('survives a missing key or a corrupt legacy file and leaves the file untouched', async () => {
+  const f = startupFixture();
+  try {
+    await f.vault.save(legacy);
+    const before = readFileSync(`${f.path}.proxmox`, 'utf8');
+    unlinkSync(`${f.path}.key`);
+    const log = vi.fn();
+    expect(() => migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log)).not.toThrow();
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(log.mock.calls[0][0]).not.toContain('legacy-secret');
+    expect(readFileSync(`${f.path}.proxmox`, 'utf8')).toBe(before);
+    writeFileSync(`${f.path}.proxmox`, 'not json');
+    expect(() => migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log)).not.toThrow();
+    expect(log).toHaveBeenCalledTimes(2);
+    expect(readFileSync(`${f.path}.proxmox`, 'utf8')).toBe('not json');
+    expect(f.sqlite.prepare('SELECT id FROM integration_instances').all()).toEqual([]);
+    expect(f.sqlite.prepare('SELECT name FROM integration_migrations').all()).toEqual([]);
+  } finally {
+    f.cleanup();
   }
 });

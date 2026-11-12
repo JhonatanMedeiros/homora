@@ -12,7 +12,6 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerAccountRoutes } from './routes/account.js';
 import { createAuditLog } from './audit.js';
 import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
-import { registerProxmoxRoutes } from './routes/proxmox.js';
 import type { DockerSource } from './docker-discovery.js';
 import { registerDiscoveryRoutes } from './routes/discovery.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
@@ -47,7 +46,7 @@ export function createApp(
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
   const audit = createAuditLog(sqlite);
-  const proposals = createProposalService(sqlite, configuration, vault);
+  const proposals = createProposalService(sqlite, configuration);
   const observations = createObservationStore(sqlite);
   const notifications = createNotifications(sqlite, vault);
   // An old backend process may have stopped without clearing its last observation.
@@ -115,7 +114,6 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.list());
   registerConnectionRoutes(app, db, vault);
   registerNotificationRoutes(app, notifications);
-  registerProxmoxRoutes(app, vault, db);
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceConfigurationRoutes(
