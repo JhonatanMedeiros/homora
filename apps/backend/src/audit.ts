@@ -78,6 +78,7 @@ type Row = {
   created_at: number;
   detail: string | null;
   ip_address: string | null;
+  proposal_id: string | null;
   user_name: string | null;
   agent_name: string | null;
 };
@@ -141,7 +142,7 @@ export function createAuditLog(sqlite: DatabaseSync, now: () => number = Date.no
       const size = Math.min(Math.max(limit, 1), 100);
       const rows = sqlite
         .prepare(
-          `SELECT e.id,e.actor,e.action,e.result,e.created_at,e.detail,e.ip_address,
+          `SELECT e.id,e.actor,e.action,e.result,e.created_at,e.detail,e.ip_address,e.proposal_id,
                   u.name AS user_name, a.name AS agent_name
            FROM audit_events e
            LEFT JOIN "user" u ON e.actor = 'user:' || u.id
@@ -165,6 +166,7 @@ export function createAuditLog(sqlite: DatabaseSync, now: () => number = Date.no
               : { type: 'agent' as const, name: row.agent_name },
           detail: row.detail,
           ipAddress: row.ip_address,
+          proposalId: row.proposal_id,
         })),
         nextBefore: rows.length > size ? (page.at(-1)?.id ?? null) : null,
       };

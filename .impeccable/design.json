@@ -205,7 +205,7 @@
       "kind": "input",
       "refersTo": "input-field",
       "description": "Text input with a 1px border and ember focus ring.",
-      "html": "<input class=\"ds-input\" placeholder=\"Search services\" />",
+      "html": "<input class=\"ds-input\" placeholder=\"Service name\" />",
       "css": ".ds-input{height:40px;width:240px;padding:4px 12px;border:1px solid oklch(0.4 0.008 60);border-radius:8px;background:oklch(0.2 0.006 60);color:oklch(0.95 0.006 80);font:400 14px 'Geist Variable', system-ui, sans-serif;outline:none}.ds-input::placeholder{color:oklch(0.7 0.01 70)}.ds-input:focus-visible{border-color:oklch(0.78 0.15 62);box-shadow:0 0 0 3px oklch(0.78 0.15 62 / 0.5)}"
     },
     {

@@ -9,7 +9,6 @@ const base = {
   category: 'Infra',
   count: 2,
   organizing: false,
-  searching: false,
   canEdit: true,
   canRemove: false,
   groupId: 1,

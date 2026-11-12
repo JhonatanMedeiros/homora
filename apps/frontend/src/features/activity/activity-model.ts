@@ -12,6 +12,7 @@ export type ActivityEvent = {
   actor: { type: 'user' | 'agent' | 'anonymous'; name: string | null };
   detail: string | null;
   ipAddress: string | null;
+  proposalId: string | null;
 };
 
 export type ActivityPage = { events: ActivityEvent[]; nextBefore: number | null };

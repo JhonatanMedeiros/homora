@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -10,14 +10,12 @@ import {
   matchRoutes,
 } from 'react-router';
 import { AppShell } from '@/components/app-shell';
-import { SearchField } from '@/components/search-field';
-import { QuickResults } from '@/components/quick-results';
 import { CommandPalette } from '@/components/command-palette';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { tabPath, type Tab } from '@/components/app-nav';
-import { lower, t, useI18n } from '@/i18n';
+import { t, useI18n } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { SettingsPage } from '@/pages/settings-page';
 import { isSettingsSection, settingsPath, settingsSections } from '@/features/settings/sections';
@@ -77,10 +75,7 @@ function Dashboard({
   const routerNavigate = useNavigate();
   const navigate = (path: string, replace = false) => routerNavigate(path, { replace });
   const route: DashboardRoute = { tab, managing, form, valid };
-  const [query, setQuery] = useState('');
   const data = useServices();
-  const search = useRef<HTMLInputElement>(null);
-  const openFirst = useRef<(() => void) | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const { toggleTheme } = useTheme();
@@ -89,16 +84,9 @@ function Dashboard({
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      const typing =
-        e.target instanceof HTMLElement &&
-        (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen((open) => !open);
-      } else if (e.key === '/' && !typing) {
-        e.preventDefault();
-        search.current?.focus();
-        search.current?.select();
       }
     };
     document.addEventListener('keydown', key);
@@ -118,45 +106,6 @@ function Dashboard({
       onLogout={onLogout}
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
-      toolbar={
-        <div className="relative">
-          <SearchField
-            ref={search}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const needle = lower(query.trim());
-                const first =
-                  needle &&
-                  data.services.find((service) =>
-                    lower(
-                      `${service.name} ${service.category} ${service.description} ${service.url}`,
-                    ).includes(needle),
-                  );
-                if (first) window.open(first.url, '_blank', 'noopener,noreferrer');
-              }
-              if (e.key === 'Escape') setQuery('');
-              if (e.key === 'ArrowDown' && query.trim()) {
-                e.preventDefault();
-                document.querySelector<HTMLAnchorElement>('[data-quick-result]')?.focus();
-              }
-            }}
-          />
-          <QuickResults
-            query={query}
-            services={data.services}
-            statuses={data.statuses}
-            blockedIds={data.blockedIds}
-            onClose={() => {
-              setQuery('');
-              search.current?.focus();
-            }}
-          />
-        </div>
-      }
     >
       <CommandPalette
         open={paletteOpen}
@@ -174,8 +123,7 @@ function Dashboard({
         onToggleTheme={toggleTheme}
         onNavigate={navigate}
         onGoToCard={(service) => {
-          // The card only exists on the dashboard, and a search filter could be hiding it.
-          setQuery('');
+          // The card only exists on the dashboard.
           if (managing || tab !== 'services') navigate('/');
           setFocusRequest((previous) => ({ id: service.id, nonce: (previous?.nonce ?? 0) + 1 }));
         }}
@@ -195,9 +143,7 @@ function Dashboard({
         tab === 'services' && (
           <ServicesPage
             key={String(managing)}
-            query={query}
             data={data}
-            openFirstRef={openFirst}
             focusRequest={focusRequest}
             onFocusHandled={() => setFocusRequest(null)}
             managing={managing}

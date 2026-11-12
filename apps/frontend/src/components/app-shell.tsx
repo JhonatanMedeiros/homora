@@ -35,7 +35,6 @@ type Props = {
   onLogout: () => void;
   onOpenPalette: () => void;
   profile: Profile | null;
-  toolbar: ReactNode;
   children: ReactNode;
 };
 
@@ -47,7 +46,6 @@ export function AppShell({
   onLogout,
   onOpenPalette,
   profile,
-  toolbar,
   children,
 }: Props) {
   // The account is a page of its own: no sidebar and no search, just a way back.
@@ -57,11 +55,6 @@ export function AppShell({
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8">
           <BrandMark compact className="text-sidebar-foreground" />
-          {!managing && !standalone && (
-            <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-md sm:flex-1">
-              {toolbar}
-            </div>
-          )}
           <span className="mr-auto" />
           <Button
             variant="ghost"

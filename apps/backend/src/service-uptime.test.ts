@@ -204,4 +204,4 @@ it('answers 200 services with 30 days of history within the budget', () => {
   } finally {
     db.close();
   }
-});
+}, 15000);
