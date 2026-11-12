@@ -19,6 +19,9 @@ export const en = {
   'agents.noProposals':
     'No proposals waiting for you. When an agent suggests a change, it shows up here.',
   'agents.history': 'History ({count})',
+  'agents.expired': 'Expired ({count})',
+  'agents.expiredHint': 'Not reviewed in time. Open one to see the change, or recreate it.',
+  'proposal.toggleDetails': 'Show or hide details: {name}',
   'agents.identities': 'Agents',
   'agents.identitiesHint':
     'Each agent signs in with its own token and sees only what you allow below.',
@@ -218,6 +221,9 @@ export const ptBR: Record<keyof typeof en, string> = {
   'agents.noProposals':
     'Nenhuma proposta esperando por você. Quando um agente sugerir uma mudança, ela aparece aqui.',
   'agents.history': 'Histórico ({count})',
+  'agents.expired': 'Expiradas ({count})',
+  'agents.expiredHint': 'Não revisadas a tempo. Abra uma para ver a alteração ou recrie-a.',
+  'proposal.toggleDetails': 'Mostrar ou ocultar detalhes: {name}',
   'agents.identities': 'Agentes',
   'agents.identitiesHint':
     'Cada agente entra com um token próprio e só enxerga o que você permitir abaixo.',

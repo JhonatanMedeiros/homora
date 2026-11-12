@@ -254,8 +254,9 @@ it('moves a pending proposal to expired at its deadline without reloading', asyn
   );
   render(<Harness />);
   expect(await screen.findByText(/Expira em 1 s/)).toBeTruthy();
-  expect(
-    await screen.findByText('O prazo de revisão terminou.', {}, { timeout: 2000 }),
-  ).toBeTruthy();
+  const toggle = await screen.findByRole('button', { name: 'Expiradas (1)' }, { timeout: 2000 });
+  // Expired proposals stay collapsed so a long backlog does not push the page down.
+  expect(screen.queryByRole('button', { name: 'Recriar' })).toBeNull();
+  fireEvent.click(toggle);
   expect(screen.getByRole('button', { name: 'Recriar' })).toBeTruthy();
 });
