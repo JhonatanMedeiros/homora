@@ -1,8 +1,9 @@
 # Delivery Plan
 
-This document outlines phase overviews (checklist updated on 2026-11-10; forward-looking direction is in [strategy](estrategia.md)). For prioritized sequencing,
+This document outlines phase overviews (checklist updated on 2026-11-12; forward-looking direction is in [strategy](estrategia.md)). For prioritized sequencing,
 current state, and completion criteria for each milestone, consult the
-[evolution plan](evolucao.md).
+[evolution plan](evolucao.md). Phases R0 to R4 (adoption, living homepage, integrations, access, governed agents)
+are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not repeated here.
 
 ## Phase 0 — Validation
 
@@ -17,32 +18,38 @@ current state, and completion criteria for each milestone, consult the
 
 - [x] Set up repository structure, local development, formatting, static analysis, and CI.
 - [x] Implement authentication, persistence, migrations, backup, and restore.
-- [ ] Model services and groups (done); responsive and accessible UI (done,
-      but pending validation with screen readers and real mobile hardware; see P1).
+- [x] Model services and groups; build a responsive, accessible UI.
+- [ ] Validate the UI with screen readers and real mobile hardware (see P1).
 - [x] Test operations, persistence, unauthorized access, and restoration.
 
 ## Phase 2 — Observability and Proxmox
 
 - [x] Implement periodic health checks with timeouts, caching, and refresh indicators.
-- [ ] Create Proxmox adapter with read token and TLS validation (implemented;
-      connection with imported CA succeeded in maintainer environment, reduced
-      permissions and failure scenarios pending validation).
-- [ ] Display inventory (done) and provide reviewable suggestions (pending), without modifying infrastructure.
-- [ ] Test unavailability, invalid credentials, reduced permissions, and destination policies
-      (destination protection tested; remainder depends on real Proxmox setup).
+- [x] Create Proxmox adapter with read token and TLS validation, as a named connection
+      (see [ADR 0001](decisoes/0001-proxmox-connections.md)).
+- [ ] Validate the Proxmox adapter against real environments: reduced permissions and failure
+      scenarios. A connection with an imported CA succeeded in the maintainer environment.
+- [x] Display inventory without modifying infrastructure.
+- [ ] Provide reviewable card suggestions from Proxmox (service-to-host map, R4).
+- [x] Test destination protection (network policy).
+- [ ] Test unavailability, invalid credentials, and reduced permissions against a real Proxmox.
 
 ## Phase 3 — MCP and Approval
 
-Implemented: agents have identity, scopes, and revocation; MCP offers
-queries and proposals; UI reviews proposals with diff and expiration; and
-application records audits under database transactions. Manual visual validation,
-high concurrency load testing, and injection tests against real responses remain pending;
-see [evolution plan](evolucao.md) for latest status.
+- [x] Agent identities with scopes and revocation.
+- [x] MCP (stdio and Streamable HTTP) with queries and proposals.
+- [x] UI review of proposals with diff and expiration; atomic batches.
+- [x] Audit records written under database transactions.
+- [ ] Manual visual validation, high concurrency load testing, and injection tests against real
+      responses (see P4 in [evolution plan](evolucao.md)).
 
 ## Phase 4 — Distribution and Validation
 
-- [ ] Document installation, configuration, recovery, upgrades, and limitations.
-- [ ] Create reproducible Docker image and verify clean install and upgrade data preservation.
+- [ ] Document installation, configuration, recovery, upgrades, and limitations (README and
+      architecture docs exist; review for completeness before release).
+- [x] Create a reproducible Docker image and verify clean install and upgrade data preservation
+      (validated locally on 2026-11-10).
+- [ ] Publish the first release: the multi-arch workflow (`release.yml`) has not run and no tag exists.
 - [ ] Validate MVP acceptance criteria in a real environment and log improvements.
 - [ ] Evaluate Proxmox helper install script and additional integrations based on user demand.
 
