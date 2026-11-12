@@ -1,6 +1,6 @@
 # Delivery Plan
 
-This document outlines phase overviews (checklist updated on 2026-11-12; forward-looking direction is in [strategy](estrategia.md)). For prioritized sequencing,
+This document outlines phase overviews (checklist updated on 2026-11-12, including the private-network default (#83), legacy Proxmox cleanup (#85), keyboard shortcuts (#86), ADRs 0004-0007 (#87) and the history size fix (#88); forward-looking direction is in [strategy](estrategia.md)). For prioritized sequencing,
 current state, and completion criteria for each milestone, consult the
 [evolution plan](evolucao.md). Phases R0 to R4 (adoption, living homepage, integrations, access, governed agents)
 are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not repeated here.
@@ -26,7 +26,8 @@ are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not 
 
 - [x] Implement periodic health checks with timeouts, caching, and refresh indicators.
 - [x] Create Proxmox adapter with read token and TLS validation, as a named connection
-      (see [ADR 0001](decisoes/0001-proxmox-connections.md)).
+      (see [ADR 0001](decisoes/0001-proxmox-connections.md)); the legacy single-endpoint code
+      was removed and only its startup migrator remains.
 - [ ] Validate the Proxmox adapter against real environments: reduced permissions and failure
       scenarios. A connection with an imported CA succeeded in the maintainer environment.
 - [x] Display inventory without modifying infrastructure.

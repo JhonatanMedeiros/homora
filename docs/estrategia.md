@@ -94,8 +94,9 @@ and no card appears monitored without being checked.
 - [ ] Reference case integrations: Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel,
       and Speedtest Tracker. Each is marked complete only with live validation.
 - [x] Extract Proxmox from legacy vault into unified connection architecture (see
-      [ADR 0001](decisoes/0001-proxmox-connections.md)). Compatibility code for the legacy
-      `.proxmox` file remains until installations have migrated.
+      [ADR 0001](decisoes/0001-proxmox-connections.md)). The legacy file is migrated at backend
+      startup and the legacy routes, transport and fallbacks are gone; only the migrator and the
+      `.proxmox` backup remain, to be removed once no unmigrated installation is left.
 - [ ] Proxmox node selection within a connection (widgets and top bar currently show cluster aggregates).
 - [ ] Contribution guide for new adapters with automated contract testing harnesses.
 
