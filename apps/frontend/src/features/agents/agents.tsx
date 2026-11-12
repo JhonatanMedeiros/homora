@@ -238,6 +238,8 @@ export function Agents({
   const pending = effective.filter(
     (proposal) => proposal.state === 'pending' || proposal.state === 'stale',
   );
+  const activeAgents = (agents ?? []).filter((agent) => !agent.revokedAt);
+  const revokedAgents = (agents ?? []).filter((agent) => agent.revokedAt);
   const expired = effective.filter((proposal) => proposal.state === 'expired');
   const history = effective.filter(
     (proposal) =>
@@ -337,8 +339,8 @@ export function Agents({
           </TabsTrigger>
           <TabsTrigger value="agents" className="min-h-10">
             {t('agents.identities')}
-            {agents && agents.length > 0 && (
-              <span className="font-mono text-xs tabular-nums">{agents.length}</span>
+            {activeAgents.length > 0 && (
+              <span className="font-mono text-xs tabular-nums">{activeAgents.length}</span>
             )}
           </TabsTrigger>
         </TabsList>
@@ -444,10 +446,14 @@ export function Agents({
 
         <TabsContent value="agents" className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">{t('agents.identitiesHint')}</p>
-          {agents?.length === 0 ? (
+          {agents === null ? (
+            <RowListSkeleton label={t('common.loading')} rows={2} />
+          ) : activeAgents.length === 0 ? (
             <Empty className="border border-dashed py-8">
               <EmptyHeader>
-                <EmptyTitle>{t('agents.noIdentities')}</EmptyTitle>
+                <EmptyTitle>
+                  {t(revokedAgents.length ? 'agents.noActive' : 'agents.noIdentities')}
+                </EmptyTitle>
                 <EmptyDescription>{t('agents.noIdentitiesHint')}</EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
@@ -458,12 +464,34 @@ export function Agents({
             </Empty>
           ) : (
             <AgentList
-              agents={agents ?? []}
+              agents={activeAgents}
               pendingCount={(id) => pending.filter((proposal) => proposal.author === id).length}
               onConnect={() => setConnecting(true)}
               onRotate={setRotating}
               onRevoke={setRevokingAgent}
             />
+          )}
+          {revokedAgents.length > 0 && (
+            <Collapsible className="flex flex-col gap-3">
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="ghost" className="group w-fit">
+                  {t('agents.revokedList', { count: revokedAgents.length })}
+                  <ChevronDown
+                    data-icon="inline-end"
+                    className="transition-transform group-data-[state=open]:rotate-180"
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <AgentList
+                  agents={revokedAgents}
+                  pendingCount={(id) => pending.filter((proposal) => proposal.author === id).length}
+                  onConnect={() => setConnecting(true)}
+                  onRotate={setRotating}
+                  onRevoke={setRevokingAgent}
+                />
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </TabsContent>
       </Tabs>
