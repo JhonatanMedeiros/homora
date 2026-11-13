@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
   frontend:
     environment:
-      # Address or network of an HTTPS reverse proxy in front of this container (see README).
+      # Address or network of an HTTPS reverse proxy in front of this container (see docs/user-guide/deployment.md).
       HOMORA_TRUSTED_PROXY: ${HOMORA_TRUSTED_PROXY:-127.0.0.1}
     build:
       context: .
