@@ -232,6 +232,13 @@
       "when": 1794579893456,
       "tag": "0032_slow_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1794585008538,
+      "tag": "0033_elite_ken_ellis",
+      "breakpoints": true
     }
   ]
 }

@@ -70,12 +70,14 @@ export function HostMapServicePanel({
         </div>
         <a
           href={service.url}
-          target="_blank"
+          target={service.openTarget === 'same-tab' ? undefined : '_blank'}
           rel="noopener noreferrer"
           className="w-fit rounded-sm font-mono text-xs break-all text-muted-foreground underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {hostOf(service.url)}
-          <span className="sr-only">{t('card.opensNewTab')}</span>
+          {service.openTarget !== 'same-tab' && (
+            <span className="sr-only">{t('card.opensNewTab')}</span>
+          )}
         </a>
       </div>
       {page && (

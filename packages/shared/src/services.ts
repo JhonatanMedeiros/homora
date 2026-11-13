@@ -39,7 +39,12 @@ export const CHECK_INTERVAL_MIN = 30;
 export const CHECK_INTERVAL_MAX = 3600;
 export const CHECK_INTERVAL_DEFAULT = 60;
 
+export const OPEN_TARGETS = ['new-tab', 'same-tab'] as const;
+export type OpenTarget = (typeof OPEN_TARGETS)[number];
+
 export type ServiceInput = {
+  /** Omitted preserves the current value, or opens a new tab for new services. */
+  openTarget?: OpenTarget;
   name: string;
   url: string;
   category: string;
@@ -229,6 +234,9 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
         ? Number(input.position)
         : 0,
     allowPrivate: input.allowPrivate === true,
+    ...(OPEN_TARGETS.some((target) => target === input.openTarget)
+      ? { openTarget: input.openTarget }
+      : {}),
     ...(isCheckType(input.checkType) ? { checkType: input.checkType } : {}),
     ...(input.expectedStatus === null || isExpectedStatus(input.expectedStatus)
       ? { expectedStatus: input.expectedStatus === null ? null : String(input.expectedStatus) }

@@ -1,0 +1,1 @@
+ALTER TABLE `services` ADD `open_target` text DEFAULT 'new-tab' NOT NULL;

@@ -1,6 +1,7 @@
 import { parse } from 'yaml';
 import { MAX_GROUP_COLUMNS } from '../group-limits.js';
 import {
+  OPEN_TARGETS,
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
   isCheckMatch,
@@ -59,6 +60,9 @@ export function parseService(
   const icon = normalizeIcon(raw.icon);
   if (typeof raw.icon === 'string' && raw.icon.trim() && !icon)
     issues.push({ path, code: 'icon-ignored', severity: 'warning' });
+  const openTarget = OPEN_TARGETS.find((target) => target === raw.openTarget);
+  if (raw.openTarget !== undefined && !openTarget)
+    issues.push({ path: `${path}.openTarget`, code: 'open-target-ignored', severity: 'warning' });
   let checkType: CheckType | undefined;
   if (isCheckType(raw.check)) checkType = raw.check;
   else if (raw.check !== undefined)
@@ -87,6 +91,7 @@ export function parseService(
     description: typeof raw.description === 'string' ? raw.description.trim().slice(0, 140) : '',
     icon,
     allowPrivate: raw.allowPrivate === true,
+    ...(openTarget ? { openTarget } : {}),
     ...(isExpectedStatus(expectedStatus) ? { expectedStatus: String(expectedStatus) } : {}),
     ...(isCheckPath(raw.checkPath) ? { checkPath: raw.checkPath } : {}),
     ...(isCheckMatch(raw.checkMatch) ? { checkMatch: raw.checkMatch } : {}),

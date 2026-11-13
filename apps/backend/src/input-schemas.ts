@@ -1,4 +1,5 @@
 import {
+  OPEN_TARGETS,
   CHECK_INTERVAL_MAX,
   CHECK_TYPES,
   CHECK_INTERVAL_MIN,
@@ -33,6 +34,7 @@ export const serviceInputSchema = z
     icon: z.string().trim().max(ICON_MAX_LENGTH).optional(),
     position: z.number().int().safe().min(0).optional(),
     allowPrivate: z.boolean().optional(),
+    openTarget: z.enum(OPEN_TARGETS).optional(),
     checkType: z.enum(CHECK_TYPES).optional(),
     expectedStatus: z
       .union([z.string().refine(isExpectedStatus), z.number().int().min(100).max(599)])
@@ -160,6 +162,7 @@ const connectionFields = z
     name: z.string().trim().min(1).max(80).optional(),
     url: z.string().trim().min(1).max(2048).optional(),
     allowPrivate: z.boolean().optional(),
+    openTarget: z.enum(OPEN_TARGETS).optional(),
     ...publicFieldShape(255),
     tokenId: boundedText(255).optional(),
     secret: boundedText(65536).optional(),
