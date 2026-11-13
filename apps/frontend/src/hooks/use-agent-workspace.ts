@@ -195,7 +195,7 @@ export function useAgentWorkspace(
     setRecreating(false);
   }
 
-  async function saveTtl(event: FormEvent) {
+  async function saveTtl(event: FormEvent): Promise<boolean> {
     event.preventDefault();
     const response = await fetch('/api/proposal-settings', {
       method: 'PUT',
@@ -205,10 +205,11 @@ export function useAgentWorkspace(
     if (!response?.ok) {
       setMessage(t('agents.ttlFailed'));
       toast.error(t('agents.ttlFailed'));
-    } else {
-      setMessage('');
-      toast.success(t('agents.ttlSaved'));
+      return false;
     }
+    setMessage('');
+    toast.success(t('agents.ttlSaved'));
+    return true;
   }
 
   const effective = (proposals ?? []).map((proposal) =>

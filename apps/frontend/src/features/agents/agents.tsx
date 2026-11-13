@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/page-header';
 import { parseDiff, type Proposal } from './agent-model';
-import { ProposalCard } from './proposal-card';
+import { BatchItem, ProposalCard } from './proposal-card';
 import { ProposalRow } from './proposal-row';
 import { ProposalWorkspace } from './proposal-workspace';
 import { AgentIdentityWorkspace } from './agent-identity-workspace';
+import { AgentsSummary } from './agents-summary';
+import { TtlDialog } from './ttl-dialog';
+import { useAgentActivity } from '@/hooks/use-agent-activity';
 import { t } from '@/i18n';
 import { useAgentWorkspace } from '@/hooks/use-agent-workspace';
 
@@ -30,6 +33,7 @@ export function Agents({
   const [connecting, setConnecting] = useState(false);
   // Name shown in the token dialog; the token itself lives in the parent so it survives navigation.
   const [tokenFor, setTokenFor] = useState('');
+  const [editingTtl, setEditingTtl] = useState(false);
   const [view, setView] = useState<'proposals' | 'agents'>('proposals');
   const sectionRef = useRef<HTMLElement>(null);
   const workspace = useAgentWorkspace(onApplied, (name, value) => {
@@ -45,7 +49,6 @@ export function Agents({
     ttl,
     setTtl,
     recreating,
-    load,
     create: createAgent,
     rotate: rotateAgent,
     revoke: revokeAgent,
@@ -63,10 +66,24 @@ export function Agents({
     await reviewProposal(id, approve, batch);
     sectionRef.current?.querySelector<HTMLElement>('[role="tabpanel"]')?.focus();
   };
+  const events = useAgentActivity(proposals);
   const agentName = (id: string) =>
     agents?.find((agent) => agent.id === id)?.name ?? t('agents.fallbackName');
 
-  const renderProposal = (proposal: Proposal, hideReview = false) => {
+  const renderBatchItem = (proposal: Proposal, open: boolean) => {
+    const diff = parseDiff(proposal.diff);
+    return (
+      <BatchItem
+        key={proposal.id}
+        proposal={proposal}
+        agentName={agentName(proposal.author)}
+        current={services.find((service) => service.id === diff?.id)}
+        defaultOpen={open}
+      />
+    );
+  };
+
+  const renderProposal = (proposal: Proposal, open = true) => {
     const diff = parseDiff(proposal.diff);
     return (
       <ProposalCard
@@ -81,7 +98,7 @@ export function Agents({
             ? () => void recreate(proposal.id)
             : undefined
         }
-        hideReview={hideReview}
+        defaultOpen={open}
         agentName={agentName(proposal.author)}
         current={services.find((service) => service.id === diff?.id)}
         onReview={(approve) => void review(proposal.id, approve)}
@@ -117,9 +134,6 @@ export function Agents({
         description={t('agents.description')}
         actions={
           <>
-            <Button type="button" variant="outline" onClick={() => void load()}>
-              {t('agents.refresh')}
-            </Button>
             <Button type="button" variant="outline" onClick={() => setConnecting(true)}>
               {t('agents.connect')}
             </Button>
@@ -129,6 +143,22 @@ export function Agents({
             </Button>
           </>
         }
+      />
+      <AgentsSummary
+        pending={proposals === null ? null : pending.length}
+        active={agents === null ? null : activeAgents.length}
+        approved={
+          proposals === null ? null : proposals.filter((p) => p.state === 'approved').length
+        }
+        ttl={ttl}
+        onChangeTtl={() => setEditingTtl(true)}
+      />
+      <TtlDialog
+        open={editingTtl}
+        onOpenChange={setEditingTtl}
+        ttl={ttl}
+        onTtlChange={setTtl}
+        onSave={saveTtl}
       />
       <div role="status" className="empty:hidden">
         {message && (
@@ -169,11 +199,9 @@ export function Agents({
             pending={pending}
             expired={expired}
             history={history}
-            ttl={ttl}
-            onTtlChange={setTtl}
-            onSaveTtl={(event) => void saveTtl(event)}
             onReview={(id, approve, batch) => void review(id, approve, batch)}
             renderProposal={renderProposal}
+            renderBatchItem={renderBatchItem}
             renderRow={renderRow}
           />
         </TabsContent>
@@ -183,6 +211,8 @@ export function Agents({
           activeAgents={activeAgents}
           revokedAgents={revokedAgents}
           pending={pending}
+          proposals={proposals ?? []}
+          events={events}
           token={token}
           tokenFor={tokenFor}
           creating={creating}

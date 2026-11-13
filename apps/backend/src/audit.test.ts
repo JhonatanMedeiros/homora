@@ -64,4 +64,11 @@ describe('audit log query', () => {
     expect(anonymous?.actor).toEqual({ type: 'anonymous', name: null });
     expect(user?.actor).toEqual({ type: 'user', name: null });
   });
+
+  it('gives the agent id so its events can be matched without the name', () => {
+    const audit = setup();
+    audit.record({ actor: 'agent-7', action: 'proposal', result: 'created', proposalId: 'p-1' });
+    const [event] = audit.list().events;
+    expect(event?.actor).toMatchObject({ type: 'agent', id: 'agent-7' });
+  });
 });

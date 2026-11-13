@@ -1,11 +1,21 @@
 import { ArrowRight } from 'lucide-react';
 import type { Service } from '@homora/shared';
 import { cn } from '@/lib/utils';
-import { FIELDS, type Diff } from './agent-model';
+import type { Diff } from './agent-model';
+import { diffRows } from './proposal-diff';
 import { t } from '@/i18n';
 
 /** Proposed change in clear language: operation title and field-by-field before and after. */
-export function ProposalChange({ diff, current }: { diff: Diff; current?: Service }) {
+export function ProposalChange({
+  diff,
+  current,
+  hideTitle = false,
+}: {
+  diff: Diff;
+  current?: Service;
+  /** The card above already names the change. */
+  hideTitle?: boolean;
+}) {
   const name = diff.service?.name ?? current?.name;
   const fallback = t('proposal.serviceNumber', { id: diff.id ?? '' });
   const title =
@@ -16,27 +26,10 @@ export function ProposalChange({ diff, current }: { diff: Diff; current?: Servic
         : diff.op === 'delete'
           ? t('proposal.remove', { name: current?.name ?? fallback })
           : t('proposal.unknown');
-  const after = diff.service;
-  const rows = FIELDS.map(([key, label]) => {
-    const before = current?.[key as keyof Service];
-    const next = after?.[key];
-    return {
-      key,
-      label: t(label),
-      before: before == null ? '' : String(before),
-      next: next == null ? '' : String(next),
-    };
-  });
-  if (diff.op === 'create' && diff.page)
-    rows.push({ key: 'page' as never, label: t('diff.page'), before: '', next: diff.page });
-  const changed = rows.filter((row) =>
-    diff.op === 'update' ? row.next !== row.before : diff.op === 'create' ? row.next : row.before,
-  );
-  const unchanged =
-    diff.op === 'update' ? rows.filter((row) => row.next === row.before && row.before).length : 0;
+  const { changed, unchanged } = diffRows(diff, current);
   return (
     <div className="flex flex-col gap-3">
-      <p className="font-label text-lg font-semibold">{title}</p>
+      {!hideTitle && <p className="font-label text-lg font-semibold">{title}</p>}
       {diff.op === 'delete' && !current && (
         <p className="text-sm text-muted-foreground">{t('proposal.gone')}</p>
       )}

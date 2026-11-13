@@ -9,7 +9,8 @@ export type ActivityEvent = {
   kind: ActivityKind;
   action: string;
   outcome: ActivityOutcome;
-  actor: { type: 'user' | 'agent' | 'anonymous'; name: string | null };
+  /** `id` is set for agents, so their events can be matched without relying on the name. */
+  actor: { type: 'user' | 'agent' | 'anonymous'; name: string | null; id?: string };
   detail: string | null;
   ipAddress: string | null;
   proposalId: string | null;

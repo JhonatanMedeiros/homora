@@ -32,7 +32,8 @@ it('shows security-relevant card settings for review', () => {
       onSetupConnection={() => {}}
     />,
   );
-  expect(screen.getByText('Permitir monitoramento em rede privada')).toBeTruthy();
+  // The field is named once as a tag and once in the changes, which start open.
+  expect(screen.getAllByText('Permitir monitoramento em rede privada')).toHaveLength(2);
   expect(screen.getByText('true')).toBeTruthy();
   expect(screen.getByText('ping')).toBeTruthy();
   expect(screen.getByText('30')).toBeTruthy();
@@ -118,7 +119,7 @@ it('shows the remaining seconds and an expired proposal with a recreate action',
       onSetupConnection={() => {}}
     />,
   );
-  expect(screen.getByText('Expira em 30 s')).toBeTruthy();
+  expect(screen.getByText(/Expira em 30 s/)).toBeTruthy();
   rerender(
     <ProposalCard
       proposal={{ ...proposal, state: 'expired' }}
