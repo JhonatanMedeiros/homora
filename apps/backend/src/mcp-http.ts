@@ -7,7 +7,7 @@ import { createMcp } from './mcp.js';
 import { createIntegrationConnections } from './integration-connections.js';
 import type { createProposalService } from './proposals.js';
 import type { createVault } from './vault.js';
-import type { DockerSource } from './docker-discovery.js';
+import type { DockerSource } from './discovery/index.js';
 
 export function registerMcpHttp(
   app: FastifyInstance,

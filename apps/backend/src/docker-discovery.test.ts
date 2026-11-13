@@ -12,7 +12,7 @@ import {
   parseDocker,
   type DockerContainer,
   type DockerSource,
-} from './docker-discovery.js';
+} from './discovery/index.js';
 import { InputError } from './api-error.js';
 
 const id = (n: number) => String(n).padStart(12, 'a');

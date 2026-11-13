@@ -1,8 +1,8 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { createProposalService } from './proposals.js';
 import type { createIntegrationConnections } from './integration-connections.js';
-import type { createDockerPush } from './docker-push.js';
-import type { DockerSource } from './docker-discovery.js';
+import type { createDockerPush } from './discovery/index.js';
+import type { DockerSource } from './discovery/index.js';
 import type { createServiceConfiguration } from './service-configuration.js';
 
 export type McpToolContext = {

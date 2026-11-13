@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
-import { createDockerSource } from './docker-discovery.js';
+import { createDockerSource } from './discovery/index.js';
 import { createAuth, loadSessionSecret } from './auth.js';
 import { createVault } from './vault.js';
 import { migrateLegacyConnectionsAtStartup } from './legacy-integrations.js';

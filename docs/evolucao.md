@@ -1643,3 +1643,13 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 
 - Added an opt-in persistent sign-in with a fixed 30-day lifetime; ordinary sign-in uses a browser-session cookie and expires after eight hours. Neither renews automatically. Existing session revocation remains available. Browser session restoration can retain session cookies.
 - API tests cover cookie attributes, server expiry and revocation. Real browser close and restore behavior has not been manually verified.
+
+### Docker discovery capability boundary (issue #138)
+
+- Grouped local source access, remote push storage and shared label parsing behind
+  `discovery/index.ts`; routes and MCP retain their separate authorization, review and version
+  checks. The parser continues to use the transfer collector. No separate package was added:
+  there is no independent consumer for the backend capability. See architecture for ownership.
+- Validation: targeted discovery, MCP and service-default suites (26 tests), `pnpm check`
+  (1,364 application tests and 18 script tests), and `pnpm build` passed. No real Docker host
+  was accessed; live validation was not performed.

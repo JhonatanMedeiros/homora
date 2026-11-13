@@ -4,7 +4,7 @@ import { createApp } from './app.js';
 import { createTestSession } from './test-auth.js';
 import { createProposalService } from './proposals.js';
 import { createServiceConfiguration } from './service-configuration.js';
-import type { DockerSource } from './docker-discovery.js';
+import type { DockerSource } from './discovery/index.js';
 
 const closers: (() => Promise<void> | void)[] = [];
 afterEach(async () => {

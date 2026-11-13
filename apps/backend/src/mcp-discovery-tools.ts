@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { parseDocker } from './docker-discovery.js';
+import { parseDocker } from './discovery/index.js';
 import type { McpRuntimeContext } from './mcp-tool-context.js';
 
 export function registerMcpDiscoveryTools(

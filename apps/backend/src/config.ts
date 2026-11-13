@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
-import { parseDockerHost } from './docker-discovery.js';
+import { parseDockerHost } from './discovery/index.js';
 export const root = fileURLToPath(new URL('../../../', import.meta.url));
 export function parseAllowedOrigins(value: string | undefined): string[] {
   if (value === undefined || value.trim() === '') return [];
