@@ -1,29 +1,11 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { Service } from '@homora/shared';
-import type { Locale } from '@homora/i18n';
 import { z } from 'zod';
 import { notificationText } from './notification-i18n.js';
 import { getAuthorizedResponse } from './network-request.js';
 import type { NotificationEvent } from './notification-transitions.js';
 
-/** Channels that send to one address (plus an optional token for ntfy). */
-export const CHANNEL_TYPES = ['webhook', 'telegram', 'ntfy', 'discord'] as const;
-export type ChannelType = (typeof CHANNEL_TYPES)[number];
-
-export type NotificationChannel = {
-  id: number;
-  name: string;
-  type: ChannelType;
-  secret: string;
-  enabled: number;
-  allow_private: number;
-  include_url: number;
-  locale: Locale;
-  created_at: string;
-  last_sent_at: string | null;
-  last_error: string | null;
-  failures: number;
-};
+import type { NotificationChannel } from './notification-channels.js';
 
 type NotificationCredentials = {
   destination?: string;
