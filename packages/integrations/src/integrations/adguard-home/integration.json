@@ -1,5 +1,6 @@
 {
   "type": "adguard-home",
   "order": 40,
-  "definition": "adguardManifest"
+  "definition": "adguardManifest",
+  "translations": true
 }

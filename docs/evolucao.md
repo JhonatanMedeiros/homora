@@ -1300,6 +1300,17 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
   (1,334 application tests and 17 script tests), as did `pnpm build`. No live service, browser or
   screen reader was tested.
 
+- Follow-up coverage: all eleven existing definitions are in the generated catalog. Nine use the
+  shared manifest interpreter; Coolify and Proxmox use code factories. Service-specific widget
+  translations have moved into their respective integrations. Tests exercise the catalog and
+  widget presentation for every existing type, in addition to each adapter's mocked contract suite.
+- Moved the existing 164 brand SVGs and catalog into `@homora/icons`, shared by service cards and
+  integration badges. Stable local URLs are retained in Vite development and production builds;
+  a frontend container build and a local HTTP request were checked against the source SVG. Logo
+  ownership and license notices remain in `THIRD_PARTY_NOTICES.md`. `pnpm check` passed with
+  1,336 application tests and 17 script tests; `pnpm build` and frontend/backend container builds
+  passed. Live services, browser interaction and screen readers were not tested.
+
 ## Extensible integrations (issue #98)
 
 - **Phase 1:** `adapter-contract.ts` (`runAdapterContract`) tests every adapter with a fake transport: validation, request shape and path safety, secrets, each response class, bounds and the observation cache. Fixtures carry a `_source` block. `docs/adapters.md` is the contribution guide. The harness found that Home Assistant, Uptime Kuma, AdGuard Home and the Proxmox validator accepted URLs over 2048 characters; all four now reject them.

@@ -1,5 +1,6 @@
 {
   "type": "uptime-kuma",
   "order": 30,
-  "definition": "uptimeKumaManifest"
+  "definition": "uptimeKumaManifest",
+  "translations": true
 }

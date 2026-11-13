@@ -42,11 +42,7 @@ export const en = {
   'connections.serviceSettingsHint':
     'These details let Homora request the right information from {name}.',
   'connections.urlPlaceholder': 'https://service.example:443',
-  'connections.entity': 'Entity',
-  'connections.entityPlaceholder': 'sensor.temperature',
-  'connections.slug': 'Public page identifier',
   'connections.username': 'Username',
-  'connections.tailnet': 'Tailnet',
   'connections.nodeAll': 'Whole cluster',
   'connections.nodeMissing': '{name} (not found)',
   'stat.node': 'Node',
@@ -62,15 +58,6 @@ export const en = {
   'connections.allowPrivate': 'Allow private network access for this service',
   'connections.allowPrivateHint':
     'Authorize the private network only for an address you trust. Credentials require HTTPS.',
-  'data.jellyfin': 'Server: {name} · Version: {version}',
-  'data.homeAssistant': 'Entity: {entity} · State: {state}',
-  'data.uptimeKuma':
-    'Up: {up} · Down: {down} · Pending: {pending} · Maintenance: {maintenance} · Unknown: {unknown}',
-  'data.adguard': 'Service: {service} · Protection: {protection} · Version: {version}',
-  'data.running': 'running',
-  'data.stopped': 'stopped',
-  'data.enabled': 'enabled',
-  'data.disabled': 'disabled',
   'widgets.title': 'Widgets',
   'widgets.description':
     'Shortcuts to important information from your connections. The data comes from the connected service.',
@@ -168,11 +155,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'connections.serviceSettingsHint':
     'Esses dados permitem que o Homora consulte as informações corretas no {name}.',
   'connections.urlPlaceholder': 'https://servico.exemplo:443',
-  'connections.entity': 'Entidade',
-  'connections.entityPlaceholder': 'sensor.temperatura',
-  'connections.slug': 'Identificador da página pública',
   'connections.username': 'Usuário',
-  'connections.tailnet': 'Tailnet',
   'connections.nodeAll': 'Cluster inteiro',
   'connections.nodeMissing': '{name} (não encontrado)',
   'stat.node': 'Nó',
@@ -188,15 +171,6 @@ export const ptBR: Record<keyof typeof en, string> = {
   'connections.allowPrivate': 'Permitir acesso à rede privada para este serviço',
   'connections.allowPrivateHint':
     'Autorize a rede privada somente para um endereço de sua confiança. Credenciais exigem HTTPS.',
-  'data.jellyfin': 'Servidor: {name} · Versão: {version}',
-  'data.homeAssistant': 'Entidade: {entity} · Estado: {state}',
-  'data.uptimeKuma':
-    'Ativos: {up} · Indisponíveis: {down} · Pendentes: {pending} · Manutenção: {maintenance} · Desconhecidos: {unknown}',
-  'data.adguard': 'Serviço: {service} · Proteção: {protection} · Versão: {version}',
-  'data.running': 'ativo',
-  'data.stopped': 'parado',
-  'data.enabled': 'ativa',
-  'data.disabled': 'desativada',
   'widgets.title': 'Widgets',
   'widgets.description':
     'Atalhos para informações importantes das suas conexões. Os dados são fornecidos pelo serviço conectado.',

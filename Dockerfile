@@ -13,6 +13,7 @@ COPY apps/frontend/package.json ./apps/frontend/package.json
 COPY packages/db/package.json ./packages/db/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
 COPY packages/integrations/package.json ./packages/integrations/package.json
+COPY packages/icons/package.json ./packages/icons/package.json
 # The pnpm store is a cache mount: it persists between builds of this host without
 # being copied into an image layer. `node_modules` still lives in the layer.
 RUN --mount=type=cache,id=homora-pnpm-store,target=/pnpm/store \

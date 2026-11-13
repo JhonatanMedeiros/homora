@@ -54,3 +54,37 @@ it('omits zero-valued optional metrics', () => {
     { label: 'Down', value: '0' },
   ]);
 });
+
+it('renders the existing widget data for every built-in integration', async () => {
+  const { integrationDefinitions } = await import('@homora/integrations');
+  const { widgetStats } = await import('../connection-model');
+  const data: Record<string, unknown> = {
+    jellyfin: { name: 'Server', version: '10.10.3' },
+    'home-assistant': { entityId: 'sensor.temperature', state: '21.5', lastUpdated: '2026-01-01' },
+    'uptime-kuma': { up: 1, down: 1, pending: 1, maintenance: 1, unknown: 1 },
+    'adguard-home': { running: true, protectionEnabled: true, version: 'v0.107.52' },
+    'speedtest-tracker': { download: '98.77 Mbps', upload: '18.77 Mbps', ping: 12.345 },
+    portainer: { environments: 3, up: 2, down: 1 },
+    netbird: { peers: 3, connected: 2 },
+    tailscale: { devices: 3, online: 2, updates: 1 },
+    cloudflare: { zones: 7, active: 7 },
+    coolify: { total: 4, running: 1, degraded: 1, stopped: 1, unknown: 1 },
+    proxmox: {
+      vms: { running: 1, total: 2 },
+      containers: { running: 2, total: 3 },
+      cpu: 20,
+      memory: 40,
+    },
+  };
+  for (const [type, value] of Object.entries(data)) {
+    expect(
+      integrationDefinitions.some((definition) => definition.type === type),
+      type,
+    ).toBe(true);
+    expect(widgetStats(type, value), type).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: expect.any(String), value: expect.any(String) }),
+      ]),
+    );
+  }
+});

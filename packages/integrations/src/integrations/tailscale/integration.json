@@ -1,5 +1,6 @@
 {
   "type": "tailscale",
   "order": 80,
-  "definition": "tailscaleManifest"
+  "definition": "tailscaleManifest",
+  "translations": true
 }

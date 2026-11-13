@@ -5,4 +5,4 @@ export * from './pages.js';
 export * from './services.js';
 export * from './uptime.js';
 export * from '@homora/integrations';
-export { BRAND_ICON_NAMES } from './brand-icons.js';
+export { BRAND_ICON_NAMES } from '@homora/icons';

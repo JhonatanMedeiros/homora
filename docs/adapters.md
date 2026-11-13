@@ -26,7 +26,7 @@ presentation contracts from `@homora/integrations/frontend`. It does not load pl
 | Purpose                 | File                                                                                                                                           |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Manifest                | Define the manifest (see `packages/integrations/src/integrations/jellyfin/definition.ts`) and add an integration descriptor                    |
-| Brand icon              | must already be in `packages/shared/src/brand-icons.ts` (`BRAND_ICON_NAMES`); add the logo there first if not                                  |
+| Brand icon              | must already be in `packages/icons/src/index.ts` (`BRAND_ICON_NAMES`); add the logo there first if not                                         |
 | Fixtures                | `packages/integrations/src/integrations/<type>/fixtures/*.json`                                                                                |
 | Contract and unit tests | a `runAdapterContract` call in `<type>/contract.test.ts` (use `createManifestAdapter`), and a data-mapping case in `manifest-adapters.test.ts` |
 | Translations (optional) | Add `messages.ts` exporting `en` and `ptBR` and set `translations: true` in the descriptor; otherwise the English fallback shows               |

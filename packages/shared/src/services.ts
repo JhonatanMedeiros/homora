@@ -1,4 +1,4 @@
-import { BRAND_ICON_NAMES } from './brand-icons.js';
+import { BRAND_ICON_NAMES } from '@homora/icons';
 import type { HostLink } from './hosts.js';
 
 /**

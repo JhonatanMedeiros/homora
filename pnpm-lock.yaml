@@ -282,6 +282,9 @@ importers:
       '@fontsource-variable/geist-mono':
         specifier: 5.3.0
         version: 5.3.0
+      '@homora/icons':
+        specifier: workspace:*
+        version: link:../../packages/icons
       '@homora/integrations':
         specifier: workspace:*
         version: link:../../packages/integrations
@@ -366,6 +369,12 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/icons:
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/integrations:
     devDependencies:
       '@types/node':
@@ -377,6 +386,9 @@ importers:
 
   packages/shared:
     dependencies:
+      '@homora/icons':
+        specifier: workspace:*
+        version: link:../icons
       '@homora/integrations':
         specifier: workspace:*
         version: link:../integrations

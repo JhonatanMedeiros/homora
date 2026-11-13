@@ -14,7 +14,8 @@
     "type-check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@homora/integrations": "workspace:*"
+    "@homora/integrations": "workspace:*",
+    "@homora/icons": "workspace:*"
   },
   "devDependencies": {
     "typescript": "6.0.3"
