@@ -4,7 +4,7 @@ import { loadConfig } from './config.js';
 import { createVault } from './vault.js';
 import { createMcp } from './mcp.js';
 import { createIntegrationConnections } from './integration-connections.js';
-import { createDockerSource } from './docker-discovery.js';
+import { createDockerSource } from './discovery/index.js';
 const config = loadConfig();
 const storage = createDatabase(config.databasePath);
 const vault = createVault(config.databasePath);

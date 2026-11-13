@@ -157,8 +157,20 @@ releases exist.
 - `apps/backend/src/transfer/` holds format contracts and parse budgets, the Homora parser, the
   Homepage and Dashy importers (icon mapping, YAML bounds and group collection in
   `importer-common.ts`), the additive planner and the serializer. It imports no routes, SQLite or
-  authorization; those stay in the application service. Local Docker discovery reuses the collector
+  authorization; those stay in the application service. Docker discovery reuses the collector
   through `transfer/index.ts`. `MAX_GROUP_COLUMNS` is owned by `group-limits.ts`.
+- `apps/backend/src/discovery/index.ts` exposes the Docker discovery capability. `local.ts`
+  validates the administrator-configured socket or proxy and performs a bounded read-only container
+  list; `push.ts` owns remote source tokens, revocation, bounded inventory validation, SQLite storage,
+  five-minute freshness and version checks. The separate remote agent reads its own Docker socket
+  and pushes supported labels; it does not share the local source's authorization. `labels.ts` is a
+  pure transformation shared by both sources and uses the transfer collector; the transfer planner
+  and application service still own preview and transactional import. HTTP routes retain explicit
+  review, configuration version and private-network opt-in checks; MCP requires discovery scope,
+  proposal scope for writes, and human review, with a current inventory guard for remote proposals.
+  Frontend discovery components and hooks own presentation and API interaction. A separate package
+  was deferred: no independent consumer needs these backend-specific source and storage boundaries.
+  No new socket or network access is introduced.
 - `proposals.ts` composes proposal creation and lifecycle operations. Managed proposal preparation
   lives in `managed-proposal-creator.ts`; approval and batch review live in `proposal-review.ts`.
   Atomic batch creation and recreation of expired batches live in `proposal-batches.ts`.
@@ -342,7 +354,31 @@ in an Architecture Decision Record (ADR) alongside documentation updates.
 
 Proposal review deadlines default to 15 minutes and are configurable from 1 to 120 minutes in SQLite. Changes affect new proposals only and are shared by the web API and both MCP transports. An authenticated administrator can recreate an expired proposal or its complete expired batch; the original diff is revalidated, no change is applied, and recreation and TTL changes are audited. Recreated proposals retain the original agent attribution; the audit records the human requester and source proposal.
 
-Notification channel configuration and transition persistence live in `notifications.ts`; outbound requests, bounded queueing, retries, and delivery shutdown live in `notification-delivery.ts`. Channel credentials and webhook URLs are encrypted with the integration vault key; saved credentials are not returned by the API. The shared destination policy resolves and pins an authorized address for each request, forbids redirects and validates TLS. Webhook private-network access is an explicit per-channel opt-in. Transition state is stored separately from the startup-cleared observation cache. Delivery is best effort: shutdown can discard queued messages and retries can duplicate them. See [ADR 0005](decisoes/0005-status-transition-notifications.md).
+Notification flow stays in the backend. `app.ts` wires the monitor publication callback to
+`notifications.ts`, which loads and validates persisted transition state and thresholds, runs
+`notification-transitions.ts`, commits the new state in a transaction, then publishes its events
+to delivery. The transition tracker is an in-memory rules engine; it consumes the monitoring
+public `ServiceStatus` and `serviceSignature` contract, ignores duplicate attempts and unknown
+checks, and applies thresholds and cooldown. An empty publication does not delete state. A
+storage failure in the callback is caught by `app.ts`; delivery is not queued if the state commit
+fails. State is separate from the startup-cleared observation cache.
+
+`notification-channels.ts` owns channel validation, CRUD, public DTOs and vault access;
+`notification-delivery.ts` loads enabled channels and credentials at attempt time, formats events
+with `notification-i18n.ts`, and sends through the authorized network transport. Routes expose the
+facade after the application session checks. Credentials and destinations are encrypted with the
+integration vault key and are never returned by the channel API. The transport resolves and pins
+an authorized address, forbids redirects and validates TLS; private webhook and ntfy access needs
+per-channel opt-in. Webhook events retain their structured contract; human messages use the
+channel locale.
+
+Delivery is best effort: the in-memory queue holds at most 100 waiting jobs, records overflow,
+and attempts each job up to three times without delay. Failures are sanitized and recorded per
+channel; retries can duplicate messages. The monitor is stopped before delivery shutdown, which
+discards queued jobs and waits for the active drain. A direct channel test is outside that queue.
+A separate package would have no independent consumer and would pull backend persistence, vault
+and transport across a boundary; a provider registry would add indirection to four concrete
+formats without a second consumer. Both are deferred. See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 ### Localization boundaries and helper audit
 

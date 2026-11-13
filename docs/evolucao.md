@@ -1644,6 +1644,24 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Added an opt-in persistent sign-in with a fixed 30-day lifetime; ordinary sign-in uses a browser-session cookie and expires after eight hours. Neither renews automatically. Existing session revocation remains available. Browser session restoration can retain session cookies.
 - API tests cover cookie attributes, server expiry and revocation. Real browser close and restore behavior has not been manually verified.
 
+### Notification responsibility boundary (issue #139)
+
+- Extracted channel configuration, vault access and public DTOs into `notification-channels.ts`;
+  transition persistence and delivery composition remain in the backend facade. Documented the
+  monitor contract, queue lifecycle and decision to defer a package and provider registry. No
+  notification policy or data migration was introduced.
+- Validation: targeted notification and monitoring suites (79 tests), `pnpm check` (1,364 application and 18 script tests) and `pnpm build` passed. Live provider delivery was not verified.
+
+### Docker discovery capability boundary (issue #138)
+
+- Grouped local source access, remote push storage and shared label parsing behind
+  `discovery/index.ts`; routes and MCP retain their separate authorization, review and version
+  checks. The parser continues to use the transfer collector. No separate package was added:
+  there is no independent consumer for the backend capability. See architecture for ownership.
+- Validation: targeted discovery, MCP and service-default suites (26 tests), `pnpm check`
+  (1,364 application tests and 18 script tests), and `pnpm build` passed. No real Docker host
+  was accessed; live validation was not performed.
+
 ### Two-step verification (issue #148)
 
 - Added optional TOTP two-step verification with ten one-time recovery codes ([ADR 0016](decisoes/0016-two-factor-authentication.md)): migration `0031`, five forwarded Better Auth routes, a sign-in challenge that is not recorded as a login until verified, password re-authentication, other sessions ended on enable/disable, attempt limits, an Account section (QR code, setup key, recovery codes) and a login step. `pnpm auth:reset` also clears the new tables and `--two-factor-only` removes only the second step. The session secret now also protects the authenticator secret and must be backed up with the database.
