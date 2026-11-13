@@ -178,7 +178,7 @@ export function AppShell({
             </div>
           </div>
         ) : standalone ? (
-          <div className="motion-panel mx-auto w-full max-w-3xl">{children}</div>
+          <div className="motion-panel mx-auto w-full max-w-5xl">{children}</div>
         ) : (
           children
         )}

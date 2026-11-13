@@ -10,8 +10,8 @@ import { initials, type Profile } from './account-model';
 /** Who is signed in, with the way to edit it. */
 export function IdentityCard({ profile, onEdit }: { profile: Profile; onEdit: () => void }) {
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-4">
+    <Card className="h-full">
+      <CardContent className="flex h-full flex-col justify-between gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <Avatar className="size-14 text-lg">
             <AvatarFallback className="bg-primary/15 font-semibold text-accent-text">
