@@ -115,6 +115,18 @@ Each widget has a **⋯** menu to edit it, move it earlier or later, move it to 
 can be dragged to reorder. Widgets can also be attached _inside_ a card. See
 [Integrations and widgets](integrations-and-widgets.md).
 
+## Other addresses (Links)
+
+A service can be reached more than one way, for example through its domain and through its LAN IP when the tunnel or
+DNS is down. In the service form, open **Other addresses** and add up to 10 extra addresses. Each can have a name, a
+type (a colored label such as _LAN_ or _Admin_ that you create on the spot, rename, recolor or delete) and its own
+**Open in** setting (new tab or same tab, otherwise the service's). Types are shared by all services and saved as soon
+as you change them.
+
+Services with extra addresses show a **Links** button on the card and in lists. It lists the main address first, then the
+others, with a copy button on each; on a phone it opens as a bottom sheet. The command palette shows the extra addresses
+under each service while you search. Only the main address is monitored.
+
 ## Service details
 
 Click the **Details** or **Incidents and charts** link on a card (or choose a service in the palette) to open its page

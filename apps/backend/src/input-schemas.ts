@@ -6,6 +6,11 @@ import {
   DEGRADED_LATENCY_MAX,
   DEGRADED_LATENCY_MIN,
   ICON_MAX_LENGTH,
+  LINK_NAME_MAX,
+  LINK_TYPE_NAME_MAX,
+  LINK_URL_MAX,
+  LINK_COLORS,
+  SERVICE_LINKS_MAX,
   isCheckMatch,
   isCheckPath,
   isExpectedStatus,
@@ -61,8 +66,33 @@ export const hostLinkSchema = z
   })
   .strict();
 /** Web UI only: agent proposals keep using `serviceInputSchema`, which rejects `host`. */
+export const serviceLinkSchema = z
+  .object({
+    url: z.string().trim().min(1).max(LINK_URL_MAX),
+    name: z
+      .string()
+      .max(LINK_NAME_MAX * 2)
+      .optional(),
+    typeId: z.number().int().safe().positive().nullable().optional(),
+    openTarget: z.enum(OPEN_TARGETS).nullable().optional(),
+  })
+  .strict();
+export const linkTypeCreateSchema = z
+  .object({ name: z.string().max(LINK_TYPE_NAME_MAX * 4), color: z.enum(LINK_COLORS) })
+  .strict();
+export const linkTypeUpdateSchema = z
+  .object({
+    name: z
+      .string()
+      .max(LINK_TYPE_NAME_MAX * 4)
+      .optional(),
+    color: z.enum(LINK_COLORS).optional(),
+  })
+  .strict();
+/** Web UI only. `links` omitted keeps the card's extra addresses; `[]` removes them all. */
 export const serviceFormSchema = serviceInputSchema.extend({
   host: hostLinkSchema.nullable().optional(),
+  links: z.array(serviceLinkSchema).max(SERVICE_LINKS_MAX).optional(),
 });
 export const dismissalBodySchema = z
   .object({ host: hostLinkSchema, dismissed: z.boolean() })

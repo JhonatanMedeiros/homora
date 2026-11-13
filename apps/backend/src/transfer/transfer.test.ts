@@ -58,7 +58,7 @@ describe('parsing', () => {
     ['invalid syntax', 'groups: [unclosed', 'invalid-syntax'],
     ['document without groups', 'version: 1\n', 'invalid-document'],
     ['root that is not an object', '- a\n- b', 'invalid-document'],
-    ['unsupported version', 'version: 4\ngroups: []', 'unsupported-version'],
+    ['unsupported version', 'version: 5\ngroups: []', 'unsupported-version'],
   ])('rejects %s', (_name, content, code) => {
     const parsed = parseTransfer(content);
     expect(parsed.issues).toEqual([{ path: '', code, severity: 'error' }]);

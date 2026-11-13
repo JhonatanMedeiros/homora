@@ -1710,6 +1710,23 @@ imports. Service links in the dashboard and host views and the command palette r
 Automated coverage checks the migration, form, card links, persistence and import/export;
 manual responsive and keyboard verification in a browser remains pending.
 
+### Multiple addresses per service: the Links menu (issue 162)
+
+- A service keeps its main URL and can have up to 10 extra addresses (LAN IP, admin, docs), each
+  with an optional name, a type and an "open in" override. Cards, list rows, host views and the
+  map panel show a Links button only when a service has extras; it opens a popover (a bottom sheet
+  on a phone) with open and copy actions. The command palette lists extras under each service
+  while searching. Duplicate addresses are allowed; extras are not monitored.
+- Types are shared and created from the form (combobox with create, rename, color and delete,
+  max 20, no red). Types are saved immediately through `/api/link-types`, not with the form.
+  Native export format is now version 4 (older versions still import); the import preview
+  reports ignored links as warnings only.
+- Validation: shared, migration, API, transfer and component tests, `pnpm check` and `pnpm build`;
+  a Chromium pass on a development database covered the card menu, the phone bottom sheet, the
+  command palette, the form and creating a type from the combobox (desktop 1280px and 390px).
+  Not verified: keyboard-only and screen-reader use, other browsers, importing a file with links
+  through the UI. Not done: managing types outside the form.
+
 ### Independent widgets (issue #159)
 
 - Created an internal contract, clock, and additive storage for per-page instances; legacy rows

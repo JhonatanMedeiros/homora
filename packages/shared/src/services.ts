@@ -1,5 +1,6 @@
 import { BRAND_ICON_NAMES } from '@homora/icons';
 import type { HostLink } from './hosts.js';
+import type { ServiceLink } from './service-links.js';
 
 /**
  * How a service is probed: HTTP GET (default), ICMP ping, a TCP connection, a DNS lookup of the
@@ -63,7 +64,13 @@ export type ServiceInput = {
 };
 
 /** `isPublic` comes only from the authenticated listing; it is not part of ServiceInput on purpose. */
-export type Service = ServiceInput & { id: number; isPublic?: boolean; host?: HostLink | null };
+export type Service = ServiceInput & {
+  id: number;
+  isPublic?: boolean;
+  host?: HostLink | null;
+  /** Extra addresses, in order; empty or absent when the card has none. */
+  links?: ServiceLink[];
+};
 
 /** Invalid service input; `code` is stable and message is in English. */
 export class ServiceValidationError extends Error {

@@ -10,9 +10,11 @@ import {
 } from '@homora/shared';
 import { useHostInventory } from '@/hooks/use-host-inventory';
 import { useDependencies } from '@/hooks/use-dependencies';
+import { useLinkTypes } from '@/hooks/use-link-types';
 import type { useServices } from '@/hooks/use-services';
 import { apiError, t } from '@/i18n';
 import { emptyService } from '@/lib/services';
+import { linkDrafts, linkInputs, sameLinks, type LinkDraft } from '@/lib/service-links';
 
 type ServicesData = ReturnType<typeof useServices>;
 type Dependencies = ReturnType<typeof useDependencies>;
@@ -77,6 +79,10 @@ export function useServiceEditor({
   // what the server reports (even when that arrives after the form opened) until a field changes.
   const [monitorDraft, setMonitorDraft] = useState<MonitorSettings | null>(null);
   const [tagDraft, setTagDraft] = useState<string[] | null>(null);
+  // Extra addresses are saved with the card. The request carries them only when they differ from
+  // what the form opened with, so an untouched list leaves the server's copy alone.
+  const [linkDraft, setLinkDraft] = useState<LinkDraft[]>([]);
+  const linkBase = useRef<LinkDraft[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [host, setHost] = useState<HostLink | null>(null);
   // Dependency edits are applied with the card when the form is saved.
@@ -95,6 +101,7 @@ export function useServiceEditor({
     [services],
   );
   const hostData = useHostInventory(hostView || formOpen, linkedConnections);
+  const linkTypes = useLinkTypes(formOpen, () => void refresh());
 
   useEffect(() => {
     if (!managing) return;
@@ -126,6 +133,8 @@ export function useServiceEditor({
     setShared(service?.isPublic === true);
     setMonitorDraft(null);
     setTagDraft(null);
+    linkBase.current = linkDrafts(service?.links);
+    setLinkDraft(linkBase.current);
     setForm(serviceDraft(service, privateDefaultRef.current));
     setFormError('');
     setFormOpen(true);
@@ -165,6 +174,8 @@ export function useServiceEditor({
     setShared(service?.isPublic === true);
     setMonitorDraft(null);
     setTagDraft(null);
+    linkBase.current = linkDrafts(service?.links);
+    setLinkDraft(linkBase.current);
     setForm(serviceDraft(service, privateDefaultRef.current));
     setFormError('');
     setFormOpen(true);
@@ -180,7 +191,11 @@ export function useServiceEditor({
         {
           method: editing === null ? 'POST' : 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...form, host }),
+          body: JSON.stringify({
+            ...form,
+            host,
+            ...(sameLinks(linkDraft, linkBase.current) ? {} : { links: linkInputs(linkDraft) }),
+          }),
         },
       );
       const body: unknown = await response.json().catch(() => null);
@@ -254,6 +269,11 @@ export function useServiceEditor({
     tags: {
       value: tagDraft ?? (editing === null ? [] : (tagMap[editing] ?? [])),
       onChange: setTagDraft,
+    },
+    links: {
+      value: linkDraft,
+      onChange: setLinkDraft,
+      types: linkTypes,
     },
     formOpen,
     host,

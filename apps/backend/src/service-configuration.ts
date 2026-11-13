@@ -3,6 +3,7 @@ import { createConfigurationTransfer } from './service-configuration-transfer.js
 import type { DatabaseSync } from 'node:sqlite';
 import { parseHostLink, type HostLink } from '@homora/shared';
 import { hasInventoryDomain } from '@homora/integrations';
+import { createServiceLinkConfiguration } from './service-link-configuration.js';
 import { createServiceGroupConfiguration } from './service-group-configuration.js';
 import {
   createServiceCardConfiguration,
@@ -11,6 +12,7 @@ import {
 } from './service-card-configuration.js';
 
 export { HostLinkError } from './service-card-configuration.js';
+export { ServiceLinkError } from './service-link-configuration.js';
 export type { ServiceChange } from './service-card-configuration.js';
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -103,6 +105,9 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   const { createGroup, setGroupColumns, renameGroup, deleteGroup, reorderGroups } =
     groupConfiguration;
 
+  const linkConfiguration = createServiceLinkConfiguration(sqlite, { transaction });
+  const { selectLinks, selectServiceLinks, writeLinks } = linkConfiguration;
+
   const NEW_SERVICES_PRIVATE_KEY = 'new_services_allow_private';
   const transferOperations = createConfigurationTransfer({
     sqlite,
@@ -112,6 +117,9 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     ensureGroup,
     nextServicePosition,
     bumpVersion,
+    selectLinks,
+    writeLinks,
+    ensureType: linkConfiguration.ensureType,
   });
   const serviceCardOperations = createServiceCardConfiguration({
     sqlite,
@@ -123,6 +131,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     ensureGroup,
     pageForNewService,
     bumpVersion,
+    writeLinks,
+    selectServiceLinks,
   });
 
   return {
@@ -146,12 +156,18 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     },
     listServices() {
       const hosts = selectHosts();
+      const links = selectLinks();
       return selectServices().map((row) => ({
         ...row,
         allowPrivate: Boolean(row.allowPrivate),
         host: hosts.get(row.id) ?? null,
+        links: links.get(row.id) ?? [],
       }));
     },
+    listLinkTypes: linkConfiguration.listTypes,
+    createLinkType: linkConfiguration.createType,
+    updateLinkType: linkConfiguration.updateType,
+    removeLinkType: linkConfiguration.removeType,
     /** Card-to-guest links by card id, for impact and suggestions. */
     listHosts: selectHosts,
     listMcpServices() {

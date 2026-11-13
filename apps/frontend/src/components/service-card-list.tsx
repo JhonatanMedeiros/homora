@@ -10,6 +10,7 @@ import { UptimePercent } from '@/components/service-uptime';
 import { cn } from '@/lib/utils';
 import { hostOf } from '@/lib/services';
 import { HostLine, StatusMeta } from '@/components/service-card-common';
+import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { SERVICE_CARD_LI } from '@/components/service-card-utils';
 import type { ServiceCardLayoutProps } from '@/components/service-card.types';
 
@@ -88,6 +89,9 @@ export function ServiceCardList({
         />
         <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
         <UptimePercent summary={uptime} />
+        <span className="relative z-10 shrink-0 empty:hidden">
+          <ServiceLinksMenu service={service} variant="icon" />
+        </span>
         {managing && (
           <ItemActions className="z-10 ml-auto shrink-0 gap-0.5">
             <Button

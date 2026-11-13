@@ -8,6 +8,7 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
 import type { FormMonitoring } from '@/components/service-form-monitoring';
+import { ServiceFormLinks, type FormLinks } from '@/components/service-form-links';
 import { ServiceFormSections } from '@/components/service-form-sections';
 import type { Section } from '@/components/service-form-summary';
 import { ServiceIcon } from '@/components/service-icon';
@@ -29,13 +30,15 @@ export type FormHosts = {
 /** Manual dependencies for the form; omitted when the form is used without them. */
 export type FormDependencies = React.ComponentProps<typeof DependencyPicker>;
 
-export type { FormMonitoring };
+export type { FormMonitoring, FormLinks };
 
 type Props = {
   hosts?: FormHosts;
   monitoring?: FormMonitoring;
   tags?: { value: string[]; onChange: (tags: string[]) => void };
   dependencies?: FormDependencies;
+  /** Extra addresses (the "Links" menu of the card); omitted when the form is used without them. */
+  links?: FormLinks;
   editing: boolean;
   value: ServiceInput;
   categories: string[];
@@ -54,6 +57,7 @@ export function ServiceForm({
   monitoring,
   tags,
   dependencies,
+  links,
   editing,
   value,
   categories,
@@ -143,6 +147,7 @@ export function ServiceForm({
                 ))}
               </datalist>
             </Field>
+            {links && <ServiceFormLinks {...links} />}
             {suggestion && (
               <Button
                 type="button"

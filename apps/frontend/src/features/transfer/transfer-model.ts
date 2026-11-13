@@ -13,6 +13,8 @@ export type IssueCode =
   | 'icon-unsupported'
   | 'columns-ignored'
   | 'open-target-ignored'
+  | 'link-ignored'
+  | 'link-limit'
   | 'check-ignored'
   | 'widget-ignored'
   | 'widget-source-unavailable'

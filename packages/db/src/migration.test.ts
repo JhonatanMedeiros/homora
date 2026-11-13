@@ -767,3 +767,48 @@ it('rolls back a failed page widget migration and can migrate a restored backup'
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('adds extra addresses and link types without touching cards; deleting cascades and unsets the type', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-links-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // Database created by the previous version: every migration except the last one.
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(7,'Existing','https://example.test','Home','')",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(check.prepare('SELECT name,url FROM services WHERE id=7').get()).toEqual({
+      name: 'Existing',
+      url: 'https://example.test',
+    });
+    expect(check.prepare('SELECT COUNT(*) AS n FROM service_links').get()).toEqual({ n: 0 });
+    check.exec(
+      "INSERT INTO link_types(id,name,color) VALUES(1,'LAN','green'); INSERT INTO service_links(id,service_id,type_id,url) VALUES(1,7,1,'http://192.168.1.5')",
+    );
+    expect(() => check.exec("INSERT INTO link_types(name,color) VALUES('lan','blue')")).toThrow();
+    check.exec('DELETE FROM link_types WHERE id=1');
+    expect(check.prepare('SELECT type_id,name,open_target FROM service_links').get()).toEqual({
+      type_id: null,
+      name: '',
+      open_target: null,
+    });
+    check.exec('DELETE FROM services WHERE id=7');
+    expect(check.prepare('SELECT COUNT(*) AS n FROM service_links').get()).toEqual({ n: 0 });
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

@@ -11,6 +11,11 @@ import {
   isCheckType,
   type CheckType,
   isExpectedStatus,
+  isLinkColor,
+  normalizeLinkName,
+  normalizeLinkTypeName,
+  normalizeLinkUrl,
+  SERVICE_LINKS_MAX,
   normalizeIcon,
   normalizePageName,
   samePageName,
@@ -23,6 +28,7 @@ import {
   READABLE_TRANSFER_VERSIONS,
   type ImportDocument,
   type ImportedGroup,
+  type ImportedLink,
   type ImportedService,
   type ImportIssue,
   type IssueCode,
@@ -41,6 +47,45 @@ export function withinParseBudget(content: string): boolean {
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** Reads the optional `links` of a service; invalid items are dropped with a warning. */
+function parseLinks(raw: unknown, path: string, issues: ImportIssue[]): ImportedLink[] {
+  if (raw === undefined) return [];
+  const warn = (at: string, code: IssueCode) =>
+    issues.push({ path: at, code, severity: 'warning' });
+  if (!Array.isArray(raw)) return (warn(`${path}.links`, 'link-ignored'), []);
+  const links: ImportedLink[] = [];
+  let limited = false;
+  raw.forEach((item: unknown, index) => {
+    const at = `${path}.links[${index}]`;
+    if (links.length >= SERVICE_LINKS_MAX) {
+      if (!limited) warn(`${path}.links`, 'link-limit');
+      limited = true;
+      return;
+    }
+    if (!isRecord(item)) return warn(at, 'link-ignored');
+    const url = normalizeLinkUrl(item.url);
+    const name = normalizeLinkName(item.name);
+    if (url === null || name === null) return warn(at, 'link-ignored');
+    const link: ImportedLink = { url, name };
+    if (item.openTarget !== undefined && item.openTarget !== null) {
+      const target = OPEN_TARGETS.find((candidate) => candidate === item.openTarget);
+      if (target) link.openTarget = target;
+      else warn(`${at}.openTarget`, 'open-target-ignored');
+    }
+    if (item.type !== undefined && item.type !== null) {
+      const typeName = isRecord(item.type) ? normalizeLinkTypeName(item.type.name) : null;
+      if (typeName && isRecord(item.type))
+        link.type = {
+          name: typeName,
+          color: isLinkColor(item.type.color) ? item.type.color : 'neutral',
+        };
+      else warn(`${at}.type`, 'link-ignored');
+    }
+    links.push(link);
+  });
+  return links;
+}
 
 export function parseService(
   raw: unknown,
@@ -87,6 +132,7 @@ export function parseService(
     issues.push({ path: `${path}.checkPath`, code: 'check-ignored', severity: 'warning' });
   if (raw.checkMatch !== undefined && !isCheckMatch(raw.checkMatch))
     issues.push({ path: `${path}.checkMatch`, code: 'check-ignored', severity: 'warning' });
+  const links = parseLinks(raw.links, path, issues);
   return {
     name,
     url: url.href,
@@ -99,6 +145,7 @@ export function parseService(
     ...(isCheckMatch(raw.checkMatch) ? { checkMatch: raw.checkMatch } : {}),
     ...(checkType ? { checkType } : {}),
     ...(checkInterval ? { checkInterval } : {}),
+    ...(links.length ? { links } : {}),
   };
 }
 

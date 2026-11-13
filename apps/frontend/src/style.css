@@ -41,6 +41,10 @@
   --warning-foreground: oklch(0.985 0.005 85);
   --info: oklch(0.48 0.13 250);
   --info-foreground: oklch(0.985 0.005 85);
+  /* Colors for address types (see LINK_COLORS); red is left out because it means "down". */
+  --link-violet: oklch(0.5 0.15 300);
+  --link-pink: oklch(0.5 0.17 355);
+  --link-teal: oklch(0.45 0.09 190);
   --border: oklch(0.9 0.006 80);
   --input: oklch(0.78 0.01 75);
   --ring: var(--ap-ring-light, oklch(0.62 0.16 55));
@@ -80,6 +84,9 @@
   --warning-foreground: oklch(0.2 0.03 90);
   --info: oklch(0.76 0.11 245);
   --info-foreground: oklch(0.18 0.03 245);
+  --link-violet: oklch(0.76 0.12 300);
+  --link-pink: oklch(0.78 0.12 355);
+  --link-teal: oklch(0.78 0.1 190);
   --border: oklch(0.29 0.006 60);
   --input: oklch(0.4 0.008 60);
   --ring: var(--ap-ring-dark, oklch(0.78 0.15 62));
@@ -126,6 +133,9 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-link-violet: var(--link-violet);
+  --color-link-pink: var(--link-pink);
+  --color-link-teal: var(--link-teal);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

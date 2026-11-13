@@ -19,6 +19,7 @@ import { ServiceUptime } from '@/components/service-uptime';
 import { cn } from '@/lib/utils';
 import { hostOf } from '@/lib/services';
 import { HostLine, StatusMeta } from '@/components/service-card-common';
+import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { repeatsName, SERVICE_CARD_LI } from '@/components/service-card-utils';
 import type { ServiceCardLayoutProps } from '@/components/service-card.types';
 
@@ -183,7 +184,10 @@ export function ServiceCardTile({
           )}
         >
           <StatusLight state={view.state} blocked={isBlocked} label={view.label} />
-          <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
+          <div className="relative z-10 -my-1 flex min-w-0 items-center gap-2">
+            <ServiceLinksMenu service={service} side="top" className="-mr-1" />
+            <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
+          </div>
         </div>
         {managing && (
           <ItemActions

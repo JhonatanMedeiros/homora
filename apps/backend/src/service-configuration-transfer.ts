@@ -1,7 +1,13 @@
 import { clockWidget } from '@homora/widgets/clock';
 import { integrationDefinition } from '@homora/integrations';
 import type { DatabaseSync } from 'node:sqlite';
-import { MAX_PAGES, validateService, type CheckType, type Service } from '@homora/shared';
+import {
+  MAX_PAGES,
+  validateService,
+  type CheckType,
+  type Service,
+  type ServiceLink,
+} from '@homora/shared';
 import {
   planImport,
   type ImportPlan,
@@ -32,6 +38,9 @@ export function createConfigurationTransfer({
   ensureGroup,
   nextServicePosition,
   bumpVersion,
+  selectLinks,
+  writeLinks,
+  ensureType,
 }: {
   sqlite: DatabaseSync;
   transaction: <T>(work: () => T) => T;
@@ -40,6 +49,9 @@ export function createConfigurationTransfer({
   ensureGroup: (name: string, columns?: number | null, pageId?: number) => void;
   nextServicePosition: (category: string) => number;
   bumpVersion: () => void;
+  selectLinks: () => Map<number, ServiceLink[]>;
+  writeLinks: (id: number, links: unknown) => void;
+  ensureType: (name: unknown, color: unknown) => number | null;
 }) {
   return {
     /** Groups and cards in current order, for export. */
@@ -92,10 +104,14 @@ export function createConfigurationTransfer({
           ...group,
           page: group.pageId === null ? undefined : pageNames.get(group.pageId),
         })),
-        services: selectServices().map((row) => ({
-          ...row,
-          allowPrivate: Boolean(row.allowPrivate),
-        })) as Service[],
+        services: (() => {
+          const links = selectLinks();
+          return selectServices().map((row) => ({
+            ...row,
+            allowPrivate: Boolean(row.allowPrivate),
+            links: links.get(row.id) ?? [],
+          })) as Service[];
+        })(),
       };
     },
     /** Previews an import without persisting anything. */
@@ -219,7 +235,7 @@ export function createConfigurationTransfer({
             allowPrivate:
               options.grantPrivate === true || (options.keepPrivate && service.allowPrivate),
           });
-          insert.run(
+          const inserted = insert.run(
             valid.name,
             valid.url,
             valid.category,
@@ -234,6 +250,16 @@ export function createConfigurationTransfer({
             valid.checkMatch ?? null,
             valid.openTarget ?? 'new-tab',
           );
+          if (service.links?.length)
+            writeLinks(
+              Number(inserted.lastInsertRowid),
+              service.links.map((link) => ({
+                url: link.url,
+                name: link.name,
+                openTarget: link.openTarget ?? null,
+                typeId: link.type ? ensureType(link.type.name, link.type.color) : null,
+              })),
+            );
           created += 1;
         });
         let widgetsCreated = 0;

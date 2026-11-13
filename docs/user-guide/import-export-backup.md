@@ -8,7 +8,7 @@ including the account and encrypted connections.
 
 ## Import and export
 
-Open **Settings**. Download your groups, cards and their order as YAML or JSON (`GET /api/config/export`). The file never contains passwords, tokens, connections or IDs. It can contain page widget names and connection names, so review it before sharing. Clock widgets are imported; connected widgets appear as skipped in the preview and must be recreated with a chosen connection.
+Open **Settings**. Download your groups, cards and their order as YAML or JSON (`GET /api/config/export`). The file never contains passwords, tokens, connections or IDs. It can contain page widget names and connection names, so review it before sharing. Extra addresses (Links) are exported with their type name and color (format version 4; older files still import). Clock widgets are imported; connected widgets appear as skipped in the preview and must be recreated with a chosen connection.
 
 To import, pick the file format (Homora, Homepage or Dashy) and a file. Homora shows a preview of what will be added, what already exists and what was ignored, and writes nothing until you confirm. Import only adds: nothing is overwritten or removed. Imported cards are not allowed to monitor your private network unless you tick that option for a Homora file you trust.
 

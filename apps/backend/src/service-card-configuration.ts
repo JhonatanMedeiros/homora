@@ -4,6 +4,7 @@ import {
   type CheckType,
   type HostLink,
   type Service,
+  type ServiceLink,
   type ServiceInput,
 } from '@homora/shared';
 
@@ -42,6 +43,8 @@ export function createServiceCardConfiguration({
   ensureGroup,
   pageForNewService,
   bumpVersion,
+  writeLinks,
+  selectServiceLinks,
 }: {
   sqlite: DatabaseSync;
   transaction: <T>(work: () => T) => T;
@@ -52,6 +55,9 @@ export function createServiceCardConfiguration({
   ensureGroup: (name: string, columns?: number | null, pageId?: number) => void;
   pageForNewService: (category: string, page?: string) => number | undefined;
   bumpVersion: () => void;
+  /** Replaces a card's extra addresses; throws on invalid input. Runs in the caller's transaction. */
+  writeLinks: (id: number, links: unknown) => void;
+  selectServiceLinks: (id: number) => ServiceLink[];
 }) {
   function applyProposal(change: ServiceChange) {
     if (change.op === 'create') {
@@ -118,7 +124,12 @@ export function createServiceCardConfiguration({
     return selectService(change.id);
   }
 
-  function createService(input: Partial<ServiceInput>, host: HostLink | null = null) {
+  /** `links` undefined keeps none (a new card); a list stores those extra addresses. */
+  function createService(
+    input: Partial<ServiceInput>,
+    host: HostLink | null = null,
+    links?: unknown,
+  ) {
     return transaction(() => {
       const service = validateService(input);
       ensureGroup(service.category);
@@ -145,13 +156,19 @@ export function createServiceCardConfiguration({
       const created = selectService(Number(result.lastInsertRowid));
       if (!created) throw new Error('Created service could not be loaded');
       if (host) writeHost(created.id, host);
+      if (links !== undefined) writeLinks(created.id, links);
       bumpVersion();
-      return { ...created, host };
+      return { ...created, host, links: selectServiceLinks(created.id) };
     });
   }
 
-  /** `host` undefined keeps the current link; null unlinks. */
-  function updateService(id: number, input: Partial<ServiceInput>, host?: HostLink | null) {
+  /** `host` undefined keeps the current link; null unlinks. `links` undefined keeps the addresses. */
+  function updateService(
+    id: number,
+    input: Partial<ServiceInput>,
+    host?: HostLink | null,
+    links?: unknown,
+  ) {
     return transaction(() => {
       const current = selectService(id);
       if (!current) return null;
@@ -184,9 +201,12 @@ export function createServiceCardConfiguration({
           id,
         );
       if (host !== undefined) writeHost(id, host);
+      if (links !== undefined) writeLinks(id, links);
       bumpVersion();
       const updated = selectService(id);
-      return updated ? { ...updated, host: selectHosts().get(id) ?? null } : updated;
+      return updated
+        ? { ...updated, host: selectHosts().get(id) ?? null, links: selectServiceLinks(id) }
+        : updated;
     });
   }
 

@@ -19,6 +19,7 @@ import {
   type Impact,
 } from '@/lib/hosts';
 import { hostOf, type ServiceStatus } from '@/lib/services';
+import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { describeStatus } from '@/lib/status-text';
 import { t } from '@/i18n';
 
@@ -95,6 +96,7 @@ function ServiceRow({
         )}
       </span>
       <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
+      <ServiceLinksMenu service={service} variant="icon" />
       {onEdit && (
         <Button
           type="button"

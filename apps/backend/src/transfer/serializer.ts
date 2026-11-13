@@ -47,6 +47,16 @@ export function serializeConfiguration(
           ...(service.checkPath ? { checkPath: service.checkPath } : {}),
           ...(service.checkMatch ? { checkMatch: service.checkMatch } : {}),
           ...(service.checkInterval ? { interval: service.checkInterval } : {}),
+          ...(service.links?.length
+            ? {
+                links: service.links.map((link) => ({
+                  url: link.url,
+                  ...(link.name ? { name: link.name } : {}),
+                  ...(link.openTarget ? { openTarget: link.openTarget } : {}),
+                  ...(link.type ? { type: { name: link.type.name, color: link.type.color } } : {}),
+                })),
+              }
+            : {}),
         })),
     })),
   };
