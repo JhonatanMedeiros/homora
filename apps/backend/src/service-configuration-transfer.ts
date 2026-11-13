@@ -1,6 +1,13 @@
+import { clockWidget } from '@homora/widgets/clock';
+import { integrationDefinition } from '@homora/integrations';
 import type { DatabaseSync } from 'node:sqlite';
 import { MAX_PAGES, validateService, type CheckType, type Service } from '@homora/shared';
-import { planImport, type ImportPlan, type ParsedImport } from './transfer/index.js';
+import {
+  planImport,
+  type ImportPlan,
+  type ParsedImport,
+  type PortableWidget,
+} from './transfer/index.js';
 
 type ServiceRow = Omit<Service, 'position' | 'allowPrivate' | 'checkType' | 'checkInterval'> & {
   position: number;
@@ -47,6 +54,40 @@ export function createConfigurationTransfer({
       );
       return {
         pages: [...pageNames.values()],
+        widgets: (
+          sqlite
+            .prepare(
+              `SELECT w.type,w.name,w.config,p.name AS page,c.name AS sourceName FROM page_widgets w JOIN pages p ON p.id=w.page_id LEFT JOIN integration_instances c ON c.id=w.connection_id WHERE w.version=1 ORDER BY p.position,w.position,w.id`,
+            )
+            .all() as {
+            type: string;
+            name: string;
+            config: string;
+            page: string;
+            sourceName: string | null;
+          }[]
+        ).flatMap<PortableWidget>((row) => {
+          let raw: unknown;
+          try {
+            raw = JSON.parse(row.config);
+          } catch {
+            return [];
+          }
+          if (row.type === 'clock') {
+            const config = clockWidget.parseConfig(raw);
+            return config ? [{ page: row.page, type: row.type, name: row.name, config }] : [];
+          }
+          if (!integrationDefinition(row.type) || row.sourceName === null) return [];
+          return [
+            {
+              page: row.page,
+              type: row.type,
+              name: row.name,
+              config: {},
+              source: { type: row.type, name: row.sourceName },
+            },
+          ];
+        }),
         groups: selectGroups().map((group) => ({
           ...group,
           page: group.pageId === null ? undefined : pageNames.get(group.pageId),
@@ -67,6 +108,9 @@ export function createConfigurationTransfer({
           }
         ).version,
         plan: planImport(parsed, {
+          widgetCount: (
+            sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number }
+          ).n,
           groups: selectGroups().map((group) => group.name),
           services: rows.map((row) => ({ category: row.category, url: row.url })),
           pages: (
@@ -94,7 +138,9 @@ export function createConfigurationTransfer({
         /** Put every new group on this page instead of the pages named in the file. */
         pageId?: number;
       },
-    ): { status: 'stale' } | { status: 'applied'; plan: ImportPlan; created: number } {
+    ):
+      | { status: 'stale' }
+      | { status: 'applied'; plan: ImportPlan; created: number; widgetsCreated: number } {
       return transaction(() => {
         const current = (
           sqlite.prepare('SELECT version FROM config_version WHERE id=1').get() as {
@@ -115,6 +161,9 @@ export function createConfigurationTransfer({
         )
           return { status: 'stale' as const };
         const plan = planImport(parsed, {
+          widgetCount: (
+            sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number }
+          ).n,
           groups: selectGroups().map((group) => group.name),
           services: selectServices().map((row) => ({ category: row.category, url: row.url })),
           pages: existingPages.map((page) => page.name),
@@ -187,8 +236,20 @@ export function createConfigurationTransfer({
           );
           created += 1;
         });
-        if (created) bumpVersion();
-        return { status: 'applied' as const, plan, created };
+        let widgetsCreated = 0;
+        for (const [index, widget] of (parsed.document.widgets ?? []).entries()) {
+          if (plan.widgets[index]?.status !== 'new') continue;
+          const pageId = options.pageId ?? pageIds.get(widget.page.toLocaleLowerCase());
+          if (!pageId) continue;
+          sqlite
+            .prepare(
+              'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position) VALUES(?,?,?,?,1,NULL,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
+            )
+            .run(pageId, widget.type, widget.name, JSON.stringify(widget.config), pageId);
+          widgetsCreated += 1;
+        }
+        if (created || widgetsCreated) bumpVersion();
+        return { status: 'applied' as const, plan, created, widgetsCreated };
       });
     },
   };

@@ -18,6 +18,7 @@ A self-hosted home page to organize your services and keep an eye on your homela
 - A check method per service (HTTP request or ping) and a check interval per service (30 to 3600 seconds), also kept in exports.
 - Optional Docker discovery: suggests cards from local or remote agent inventories using container labels (`homora.url`, or Homepage's `homepage.href`), with a review step. See [Docker discovery](#docker-discovery).
 - Local administrator account, SQLite storage with migrations, backup and restore scripts.
+- Page widgets: add multiple clocks or readings from configured connections to a Home page, edit, reorder, move or remove them. Clock settings on the optional top bar remain local to each browser.
 - Widgets inside cards: attach a widget (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare, Coolify or Pi-hole data) to a card on the Integrations page. Each widget shows its own loading or error state, and a failing connection does not affect the other cards.
 - An optional top bar (turn it on in Settings → Top bar and shortcuts) with the date, the time and CPU, memory and disk usage from a selected Proxmox connection. The clock can show seconds, use a 12 or 24 hour format and follow another time zone. Appearance and Home and pages hold the theme, language and home page layout; all of it is saved in the browser only.
 - Experimental read-only integrations (Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare, Coolify, Pi-hole) and an MCP server (local stdio or Streamable HTTP) where AI agents get scoped, revocable tokens and can propose card changes that you approve in the interface.
@@ -93,7 +94,7 @@ Homora can publish a minimal, read-only page at `/status` so others can see what
 
 ## Import and export
 
-Open **Settings**. Download your groups, cards and their order as YAML or JSON (`GET /api/config/export`). The file never contains passwords, tokens, connections or IDs, so it is safe to keep in version control.
+Open **Settings**. Download your groups, cards and their order as YAML or JSON (`GET /api/config/export`). The file never contains passwords, tokens, connections or IDs. It can contain page widget names and connection names, so review it before sharing. Clock widgets are imported; connected widgets appear as skipped in the preview and must be recreated with a chosen connection.
 
 To import, pick the file format (Homora, Homepage or Dashy) and a file. Homora shows a preview of what will be added, what already exists and what was ignored, and writes nothing until you confirm. Import only adds: nothing is overwritten or removed. Imported cards are not allowed to monitor your private network unless you tick that option for a Homora file you trust.
 

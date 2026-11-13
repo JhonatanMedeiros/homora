@@ -1,4 +1,5 @@
 import { renderManifestDisplay, type IntegrationPresentation, type Translate } from './frontend.js';
+import { integrationWidgetDefinition } from './widget-contract.js';
 import { integrationDefinition } from './integration-manifest.js';
 import { frontendFactories } from './generated/frontend.js';
 
@@ -11,6 +12,7 @@ export function createPresentationCatalog(translate: (key: string) => string) {
     }),
   );
   return {
+    definition: integrationWidgetDefinition,
     get(type: string): IntegrationPresentation | undefined {
       return entries.get(type);
     },
@@ -26,6 +28,7 @@ export function createPresentationCatalog(translate: (key: string) => string) {
 export function createWidgetRenderer(translate: Translate) {
   const catalog = createPresentationCatalog((key) => translate(key, key));
   function render(type: string, value: unknown) {
+    if (!integrationWidgetDefinition(type)) return null;
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const presentation = catalog.get(type);
     if (presentation) {

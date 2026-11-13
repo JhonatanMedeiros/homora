@@ -1,3 +1,4 @@
+import { registerPageWidgetRoutes } from './routes/page-widgets.js';
 import Fastify from 'fastify';
 import type { Service } from '@homora/shared';
 import { createDatabase, getSqliteHandle, services } from '@homora/db';
@@ -170,6 +171,7 @@ export function createApp(
   const connections = registerConnectionRoutes(app, db, vault, options.developmentMocks === true);
   registerNotificationRoutes(app, notifications);
   registerPageRoutes(app, createPages(sqlite), auth, audit);
+  registerPageWidgetRoutes(app, sqlite);
   registerCustomCssRoutes(app, customCss, auth, audit);
   registerAppearanceRoutes(
     app,

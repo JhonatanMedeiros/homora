@@ -202,3 +202,7 @@ Notes / deviations:
 - [ ] Required permissions documented (read-only token where supported)
 - [ ] Marked "implemented, unvalidated" in the docs
 - [ ] `pnpm check` and `pnpm build` pass
+
+## Contrato interno de widgets
+
+`@homora/widgets` contém definições, estados e contratos de fonte independentes do host; `clock.ts` é o exemplo de widget local sem rede. Para uma apresentação conectada, mantenha definição, dados validados, traduções, fixtures e apresentação sob a integração e registre-a pelo catálogo gerado como descrito acima. `integrationWidgetDefinition` declara o contrato específico da saída; apenas uma capacidade declarada pode oferecer uma fonte compartilhada. A apresentação recebe dados, nunca credenciais ou acesso direto à rede. Configuração, posicionamento, atualizações e persistência pertencem ao host. A versão atual não fornece armazenamento próprio mutável nem plugins externos. Consulte [ADR 0019](decisoes/0019-widget-sdk.md) e o [inventário](inventario-widgets-159.md).

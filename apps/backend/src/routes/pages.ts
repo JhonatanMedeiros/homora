@@ -44,7 +44,11 @@ export function registerPageRoutes(
   };
   const view = () => {
     const counts = pages.groupCounts();
-    return pages.list().map((page) => ({ ...page, groups: counts.get(page.id) ?? 0 }));
+    return pages.list().map((page) => ({
+      ...page,
+      groups: counts.get(page.id) ?? 0,
+      widgets: pages.widgetCount(page.id),
+    }));
   };
 
   app.get('/api/pages', async () => view());

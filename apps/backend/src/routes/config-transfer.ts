@@ -39,13 +39,14 @@ export function registerConfigTransferRoutes(
 ) {
   app.get<{ Querystring: { format?: string } }>('/api/config/export', async (request, reply) => {
     const format = request.query.format === 'json' ? 'json' : 'yaml';
-    const { groups, services, pages } = configuration.exportData();
+    const { groups, services, pages, widgets } = configuration.exportData();
     return reply
       .header('Content-Type', format === 'json' ? 'application/json' : 'application/yaml')
       .header('Content-Disposition', `attachment; filename="homora-config.${format}"`)
       .send(
         serializeConfiguration(groups, services, format, {
           pages,
+          widgets,
           ...(settings && {
             appearance: settings.appearance.get(),
             customCss: (({ enabled, css }) => ({ enabled, css }))(settings.customCss.get()),
@@ -82,7 +83,7 @@ export function registerConfigTransferRoutes(
       );
       if (result.status === 'stale') return reply.code(409).send(errorBody('config-changed'));
       void monitor.invalidate();
-      return { created: result.created, plan: result.plan };
+      return { created: result.created, widgetsCreated: result.widgetsCreated, plan: result.plan };
     },
   );
 }

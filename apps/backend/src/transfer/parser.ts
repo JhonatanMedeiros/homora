@@ -1,3 +1,5 @@
+import { clockWidget } from '@homora/widgets/clock';
+import { integrationDefinition } from '@homora/integrations';
 import { parse } from 'yaml';
 import { MAX_GROUP_COLUMNS } from '../group-limits.js';
 import {
@@ -134,6 +136,50 @@ export function parseTransfer(content: string): ParsedImport {
     if (!Array.isArray(raw.pages))
       issues.push({ path: 'pages', code: 'page-invalid', severity: 'warning' });
     if (listed.length) document.pages = listed;
+  }
+  if (raw.widgets !== undefined) {
+    if (!Array.isArray(raw.widgets) || raw.widgets.length > 200)
+      issues.push({ path: 'widgets', code: 'widget-invalid', severity: 'warning' });
+    else {
+      document.widgets = [];
+      raw.widgets.forEach((item: unknown, index: number) => {
+        const path = `widgets[${index}]`;
+        if (
+          !isRecord(item) ||
+          !normalizePageName(item.page) ||
+          typeof item.name !== 'string' ||
+          item.name.length > 80 ||
+          typeof item.type !== 'string'
+        ) {
+          issues.push({ path, code: 'widget-invalid', severity: 'warning' });
+          return;
+        }
+        const page = normalizePageName(item.page)!;
+        if (item.type === 'clock') {
+          const config = clockWidget.parseConfig(item.config);
+          if (config && item.source === undefined)
+            document.widgets!.push({ page, type: 'clock', name: item.name, config });
+          else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
+        } else if (
+          integrationDefinition(item.type) &&
+          isRecord(item.source) &&
+          item.source.type === item.type &&
+          typeof item.source.name === 'string' &&
+          item.source.name.length <= 80 &&
+          isRecord(item.config) &&
+          Object.keys(item.config).length === 0
+        ) {
+          document.widgets!.push({
+            page,
+            type: item.type,
+            name: item.name,
+            config: {},
+            source: { type: item.type, name: item.source.name },
+          });
+          issues.push({ path, code: 'widget-source-unavailable', severity: 'warning' });
+        } else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
+      });
+    }
   }
   let total = 0;
   raw.groups.forEach((rawGroup: unknown, gi) => {

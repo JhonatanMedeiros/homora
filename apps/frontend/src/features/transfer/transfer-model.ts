@@ -15,6 +15,9 @@ export type IssueCode =
   | 'open-target-ignored'
   | 'check-ignored'
   | 'widget-ignored'
+  | 'widget-source-unavailable'
+  | 'widget-invalid'
+  | 'widget-limit'
   | 'pages-ignored'
   | 'group-renamed'
   | 'page-invalid'
@@ -24,11 +27,13 @@ export type Plan = {
   pages?: { name: string; status: 'new' | 'existing' }[];
   groups: { name: string; status: 'new' | 'existing' }[];
   services: { group: string; name: string; url: string; status: 'new' | 'duplicate' }[];
+  widgets?: { page: string; name: string; type: string; status: 'new' | 'skipped' }[];
   issues: Issue[];
   summary: {
     newGroups: number;
     newPages?: number;
     newServices: number;
+    newWidgets?: number;
     duplicates: number;
     errors: number;
     warnings: number;

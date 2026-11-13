@@ -177,6 +177,10 @@ export const en = {
   'transfer.issue.icon-unsupported':
     'The icon is not available in Homora and was left empty. You can set one by name or URL later.',
   'transfer.issue.widget-ignored': 'Widgets are not imported; the card itself was.',
+  'transfer.issue.widget-source-unavailable':
+    'Connected widget skipped: recreate it with a connection after import. Connections and credentials are not transferred.',
+  'transfer.issue.widget-invalid': 'Invalid page widget skipped.',
+  'transfer.issue.widget-limit': 'Widget skipped: the limit of 200 page widgets was reached.',
   'transfer.issue.pages-ignored':
     'Other pages listed in "pages" were not read. Import each file separately.',
   'transfer.issue.group-renamed': 'The group name was shortened to 40 characters.',
@@ -379,6 +383,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'transfer.issue.icon-unsupported':
     'O ícone não existe no Homora e ficou vazio. Você pode definir um por nome ou URL depois.',
   'transfer.issue.widget-ignored': 'Widgets não são importados; o card em si foi.',
+  'transfer.issue.widget-source-unavailable':
+    'Widget conectado ignorado: crie-o novamente com uma conexão após a importação. Conexões e credenciais não são transferidas.',
+  'transfer.issue.widget-invalid': 'Widget de página inválido ignorado.',
+  'transfer.issue.widget-limit': 'Widget ignorado: o limite de 200 widgets de página foi atingido.',
   'transfer.issue.pages-ignored':
     'As outras páginas listadas em "pages" não foram lidas. Importe cada arquivo separadamente.',
   'transfer.issue.group-renamed': 'O nome do grupo foi encurtado para 40 caracteres.',

@@ -1,3 +1,4 @@
+import type { WidgetState } from '@homora/widgets';
 import { useEffect, useState } from 'react';
 import {
   widgetStats,
@@ -5,11 +6,10 @@ import {
   type WidgetStat,
 } from '@/features/connections/connection-model';
 
-export type CardWidgetState =
-  | { widget: IntegrationWidget; status: 'loading' }
-  | { widget: IntegrationWidget; status: 'error' }
-  | { widget: IntegrationWidget; status: 'invalid' }
-  | { widget: IntegrationWidget; status: 'ready'; stats: WidgetStat[]; checkedAt?: string };
+export type CardWidgetState = { widget: IntegrationWidget } & (
+  | Extract<WidgetState<never>, { status: 'loading' | 'error' | 'invalid' }>
+  | { status: 'ready'; stats: WidgetStat[]; checkedAt?: string }
+);
 
 const REFRESH_MS = 60_000;
 
@@ -78,7 +78,12 @@ export function useCardWidgets(reloadKey?: unknown): Record<number, CardWidgetSt
         grouped((widget): CardWidgetState => {
           const result = results.get(widget.integrationId);
           if (!result) return { widget, status: 'error' };
-          const stats = widgetStats(widget.type, result.data);
+          let stats: ReturnType<typeof widgetStats>;
+          try {
+            stats = widgetStats(widget.type, result.data);
+          } catch {
+            return { widget, status: 'error' };
+          }
           return stats
             ? { widget, status: 'ready', stats, checkedAt: result.checkedAt }
             : { widget, status: 'invalid' };
