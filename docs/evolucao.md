@@ -526,6 +526,66 @@ appears monitored without being checked, and reference migration benchmark can b
 - Not validated: physical Proxmox clusters (root filesystem disk vs all storage pools); multi-node
   clusters with drastically differing disk capacities.
 
+## R4 — Governed Agent Completion Plan (issue #124)
+
+Execution tracker for R4. Existing functionality is not assumed to have passed
+outstanding validation; an item is checked only with evidence recorded here.
+Live-only criteria are validated with authorization or recorded as blocked.
+
+### 1. Capability inventory and proposal coverage
+
+- [x] Audit scopes/tools and document read, propose and administrator-only actions:
+      [agent-capabilities.md](agent-capabilities.md) (code audit of 2026-11-12).
+- [x] Enumerate supported proposal types and apply semantics, including connection
+      suggestions as form prefill only (same document).
+- [x] Decision on additional integration proposals: none added for now; criteria for
+      any future addition are recorded in the document.
+- [x] Credential submission and external infrastructure write tools remain out of scope.
+- [x] Align docs and UI language with actual capabilities: README scope table now lists
+      the Docker push tools and the proposal expiry sentence reflects the configurable
+      review period and all proposal kinds (verified: the TTL is applied to service,
+      managed and agent proposals in `proposals.ts`). Agent UI strings were reviewed and
+      make no claim beyond the inventory ("can only do what you tick", "without credentials").
+
+Evidence limits: this stage is an audit of the implementation plus documentation edits.
+No tests were added and no behaviour changed.
+
+### 2. End-to-end proposal review UX
+
+- [ ] Browser verification of create, inspect, approve, reject, expired, recreated, stale
+      and failed paths; attribution, exact diff, audit, keyboard/focus, desktop and mobile.
+      Known open item from P4: the review screen does not warn that a destination will be
+      blocked by the network policy.
+
+### 3. Authorization, concurrency and hostile input (partial, 2026-11-12)
+
+- Added `apps/backend/src/proposal-governance.test.ts` (7 tests, two SQLite connections on one
+  file): approve versus reject leaves one terminal decision (the losing attempt is audited as
+  `failed`); five proposals built on the same state allow exactly one approval and four audited
+  failures; revocation takes effect on every connection while the saved diff stays reviewable
+  (ADR 0002); proposals are isolated between agents (read, list, foreign withdrawal, self
+  approval); 100 pending proposals per identity is enforced per identity; oversized, `javascript:`,
+  credential-bearing URLs and unknown fields are refused; a canary secret and the raw token never
+  appear in proposals, audit or identity rows, and an injected instruction stays plain card data.
+- Bounded load: 100 proposals created and rejected across two connections in about one second
+  on the development machine (asserted only to stay under 10 s).
+- [ ] Still open: truly parallel processes (the tests interleave calls in one process, so they
+      prove serialization and the state checks, not OS-level races); expiry racing approval;
+      scope isolation and revocation over stdio and Streamable HTTP with a hostile client
+      (existing `mcp-http.test.ts` covers scopes and revocation for HTTP only); malformed and
+      oversized responses from external services; log inspection for credentials; live hostile
+      content from a real agent.
+
+### 4. Service-to-host map
+
+- [ ] Validation against a real read-only Proxmox. **Blocked** until an environment and
+      explicit authorization exist; phase 1–5 results above are simulated only.
+
+### 5. Demonstration and claims
+
+- [ ] Walkthrough with synthetic data (mocked versus live labelled) and reconciliation of
+      README and public claims with evidence.
+
 ## Upgrade and Clean Installation Validation (2026-11-10)
 
 - Upgrade: version at `0abf05a` (migrations 0000 to 0005, six applied) was built and started
