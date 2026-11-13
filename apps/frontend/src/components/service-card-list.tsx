@@ -10,7 +10,7 @@ import { UptimePercent } from '@/components/service-uptime';
 import { cn } from '@/lib/utils';
 import { hostOf } from '@/lib/services';
 import { HostLine, StatusMeta } from '@/components/service-card-common';
-import { SERVICE_LI } from '@/components/service-card-utils';
+import { SERVICE_CARD_LI } from '@/components/service-card-utils';
 import type { ServiceCardLayoutProps } from '@/components/service-card.types';
 
 export function ServiceCardList({
@@ -31,13 +31,13 @@ export function ServiceCardList({
 }: ServiceCardLayoutProps) {
   const isBlocked = view.blocked;
   return (
-    <li id={`service-${service.id}`} className={SERVICE_LI}>
+    <li id={`service-${service.id}`} className={SERVICE_CARD_LI}>
       <Item
         data-homora="service-card"
         variant="outline"
         size="sm"
         className={cn(
-          'service-surface relative w-full flex-row flex-wrap items-center gap-x-3 gap-y-2 bg-card px-3 py-2 hover:bg-accent/60 focus-within:bg-accent/60',
+          'service-surface relative h-full w-full flex-row flex-wrap items-center gap-x-3 gap-y-2 bg-card px-3 py-2 hover:bg-accent/60 focus-within:bg-accent/60',
           view.state === 'available' &&
             !isBlocked &&
             'shadow-[inset_0_1px_0_color-mix(in_oklch,var(--primary)_16%,transparent)]',

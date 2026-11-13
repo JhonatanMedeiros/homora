@@ -9,10 +9,7 @@ import { Input } from '@/components/ui/input';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { t, formatDateTime } from '@/i18n';
 import { SectionSkeleton } from '@/components/skeletons';
-import {
-  notificationErrorMessage,
-  useNotificationSettings,
-} from '@/hooks/use-notification-settings';
+import { notificationErrorMessage, useNotificationSettings } from './use-notification-settings';
 
 export function NotificationSettings() {
   const {

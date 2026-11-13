@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, expect, it, vi } from 'vitest';
 import { NotificationSettings } from './notification-settings';
 import { setLocale } from '@/i18n';
-import { notificationErrorMessage } from '@/hooks/use-notification-settings';
+import { notificationErrorMessage } from './use-notification-settings';
 
 it('creates a webhook without displaying its saved destination', async () => {
   setLocale('en');

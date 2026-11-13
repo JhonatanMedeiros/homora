@@ -38,8 +38,9 @@ flowchart LR
 ## Components and Direction
 
 - Web interface: dashboard, settings, proposal review, and agent management.
-- Frontend feature boundaries: pages and feature components compose views; API-backed
-  lifecycle state belongs in focused hooks under `apps/frontend/src/hooks`, while proposal
+- Frontend feature boundaries: pages and feature components compose views; focused hooks
+  used only by a feature can live with it, while shared lifecycle state stays in
+  `apps/frontend/src/hooks`. Proposal
   lists/dialogs and other substantial presentation areas stay in dedicated components. Agent API
   state and proposal lifecycle are coordinated by `use-agent-workspace.ts`; identity list and
   lifecycle dialogs live in `agent-identity-workspace.tsx`. Service page
@@ -49,6 +50,26 @@ flowchart LR
   including host inventory and dependency edits. `service-form.tsx` presents essential service
   fields, while `service-form-advanced.tsx` owns optional metadata, icon selection, and monitoring
   settings. Host and Map presentations load on demand when selected.
+- Frontend ownership inventory (issue #140): account, activity, agents, connections,
+  discovery, public status, settings and transfer already own presentation and some
+  models/tests under `features`; their route composers remain in `pages`. The service
+  dashboard, uptime and host views span pages, components, hooks and `lib` and need a
+  separate dependency review before moving. UI primitives, shell, navigation, browser
+  preferences and utilities shared across capabilities remain outside features. Application
+  translations are feature-grouped in `packages/i18n`; integration translations and
+  widgets belong to the integration SDK. Tests follow the code they exercise, while App
+  journey tests remain at the application boundary.
+- As a first slice, settings owns its notification, monitoring-default and appearance-draft
+  hooks alongside their consuming components and tests. Its `sections.ts` is the lightweight
+  navigation entry used by App, the shell and command palette; individual view modules are
+  the settings page's entry points. Public status currently reuses settings' `setting-row`
+  presentation, and settings composes public status and transfer views. These existing
+  cross-feature edges merit review before further moves; do not route them through a single
+  eager barrel. Shared appearance and custom CSS stores are also consumed by the shell and
+  stay in shared hooks. Other feature hooks have not yet been audited for relocation.
+- No frontend workspace package is warranted by this slice: these views and hooks have only
+  the frontend as a consumer. Existing shared contracts, catalogs, icons and integration SDK
+  already have independent consumers; a new package requires a concrete consumer and boundary.
 - `App.tsx` owns authentication and URL routing; `dashboard-page.tsx` owns the authenticated
   shell, dashboard-wide preferences, shortcuts, and command palette composition. Integrations,
   agents, activity, account, and settings pages are loaded on demand with a shared skeleton fallback.

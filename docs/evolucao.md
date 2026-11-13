@@ -1662,6 +1662,18 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
   (1,364 application tests and 18 script tests), and `pnpm build` passed. No real Docker host
   was accessed; live validation was not performed.
 
+### Frontend feature boundaries (issue #140)
+
+- Inventoried ownership and cross-feature edges in architecture, revised the hook convention,
+  and colocated three settings-only hooks with their consumers. Navigation metadata remains
+  separate from view entry points to preserve lazy loading. Shared stores and UI stay shared;
+  no independent consumer justifies another frontend package. Further feature moves remain
+  subject to dependency review, especially service/uptime and the settings/public-status edge.
+- Validation: 38 focused settings and navigation tests, `pnpm check` (1,364 application
+  and 18 script tests), and `pnpm build` passed. The build retains a separate settings chunk;
+  desktop and mobile browser flows were not manually verified because rendered behavior did
+  not change.
+
 ### Two-step verification (issue #148)
 
 - Added optional TOTP two-step verification with ten one-time recovery codes ([ADR 0016](decisoes/0016-two-factor-authentication.md)): migration `0031`, five forwarded Better Auth routes, a sign-in challenge that is not recorded as a login until verified, password re-authentication, other sessions ended on enable/disable, attempt limits, an Account section (QR code, setup key, recovery codes) and a login step. `pnpm auth:reset` also clears the new tables and `--two-factor-only` removes only the second step. The session secret now also protects the authenticator secret and must be backed up with the database.
