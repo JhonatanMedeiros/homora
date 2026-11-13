@@ -10,7 +10,14 @@ import { SectionTitle } from '@/components/section-title';
 import { t } from '@/i18n';
 import { useAccountMutations } from '@/hooks/use-account-mutations';
 
-export function PasswordForm({ onChanged }: { onChanged: () => void }) {
+export function PasswordForm({
+  onChanged,
+  embedded = false,
+}: {
+  onChanged: () => void;
+  /** Inside a dialog that already shows the title. */
+  embedded?: boolean;
+}) {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -46,8 +53,11 @@ export function PasswordForm({ onChanged }: { onChanged: () => void }) {
   }
 
   return (
-    <section aria-labelledby="account-password" className="flex flex-col gap-4">
-      <SectionTitle id="account-password">{t('account.password')}</SectionTitle>
+    <section
+      aria-labelledby={embedded ? undefined : 'account-password'}
+      className="flex flex-col gap-4"
+    >
+      {!embedded && <SectionTitle id="account-password">{t('account.password')}</SectionTitle>}
       <form onSubmit={submit} className="max-w-md">
         <FieldGroup>
           <Field>

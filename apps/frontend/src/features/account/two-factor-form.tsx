@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,17 +27,33 @@ const secretOf = (uri: string) => new URL(uri).searchParams.get('secret') ?? '';
 export function TwoFactorForm({
   enabled,
   onChanged,
+  onLockedChange,
+  embedded = false,
+  startEnabling = false,
 }: {
   enabled: boolean;
   /** The state changed; other devices were signed out by the server. */
   onChanged: (enabled: boolean) => void;
+  /** True while the QR code or the recovery codes are shown, which appear only once. */
+  onLockedChange?: (locked: boolean) => void;
+  /** Inside a dialog that already shows the title. */
+  embedded?: boolean;
+  /** Opens straight at the password step to turn it on, for a button that already said so. */
+  startEnabling?: boolean;
 }) {
-  const [stage, setStage] = useState<Stage>({ name: 'idle' });
+  const [stage, setStage] = useState<Stage>(
+    startEnabling && !enabled ? { name: 'password', action: 'enable' } : { name: 'idle' },
+  );
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const api = useTwoFactor();
+  const locked = stage.name === 'setup' || stage.name === 'codes';
+  useEffect(() => {
+    onLockedChange?.(locked);
+    return () => onLockedChange?.(false);
+  }, [locked, onLockedChange]);
 
   const reset = (next: Stage = { name: 'idle' }) => {
     setStage(next);
@@ -100,17 +116,22 @@ export function TwoFactorForm({
         : t('account.recoveryRegenerate');
 
   return (
-    <section aria-labelledby="account-two-factor" className="flex flex-col gap-4">
-      <SectionTitle
-        id="account-two-factor"
-        actions={
-          <Badge variant={enabled ? 'default' : 'secondary'}>
-            {enabled ? t('account.twoFactorOn') : t('account.twoFactorOff')}
-          </Badge>
-        }
-      >
-        {t('account.twoFactor')}
-      </SectionTitle>
+    <section
+      aria-labelledby={embedded ? undefined : 'account-two-factor'}
+      className="flex flex-col gap-4"
+    >
+      {!embedded && (
+        <SectionTitle
+          id="account-two-factor"
+          actions={
+            <Badge variant={enabled ? 'default' : 'secondary'}>
+              {enabled ? t('account.twoFactorOn') : t('account.twoFactorOff')}
+            </Badge>
+          }
+        >
+          {t('account.twoFactor')}
+        </SectionTitle>
+      )}
       <div className="flex max-w-md flex-col gap-4">
         <p className="text-sm text-muted-foreground">{t('account.twoFactorDescription')}</p>
 

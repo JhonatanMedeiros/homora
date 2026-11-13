@@ -13,9 +13,12 @@ import type { Profile } from './account-model';
 export function ProfileForm({
   profile,
   onChange,
+  embedded = false,
 }: {
   profile: Profile;
   onChange: (profile: Profile) => void;
+  /** Inside a dialog that already shows the title. */
+  embedded?: boolean;
 }) {
   const [name, setName] = useState(profile.name);
   const [error, setError] = useState('');
@@ -42,8 +45,11 @@ export function ProfileForm({
   }
 
   return (
-    <section aria-labelledby="account-profile" className="flex flex-col gap-4">
-      <SectionTitle id="account-profile">{t('account.profile')}</SectionTitle>
+    <section
+      aria-labelledby={embedded ? undefined : 'account-profile'}
+      className="flex flex-col gap-4"
+    >
+      {!embedded && <SectionTitle id="account-profile">{t('account.profile')}</SectionTitle>}
       <form onSubmit={submit} className="max-w-md">
         <FieldGroup>
           <Field>

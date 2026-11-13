@@ -44,13 +44,22 @@ const label = (passkey: Passkey, index: number) =>
 export function PasskeysForm({
   twoFactorEnabled,
   onChanged,
+  onCountChange,
+  embedded = false,
+  startAdding = false,
 }: {
   twoFactorEnabled: boolean;
   /** A passkey was removed; the server ended the other sessions. */
   onChanged?: () => void;
+  /** The number of passkeys, once known and after every change. */
+  onCountChange?: (count: number) => void;
+  /** Inside a dialog that already shows the title. */
+  embedded?: boolean;
+  /** Opens straight at the add step, for a button that already said so. */
+  startAdding?: boolean;
 }) {
   const [passkeys, setPasskeys] = useState<Passkey[] | null>(null);
-  const [stage, setStage] = useState<Stage>({ name: 'idle' });
+  const [stage, setStage] = useState<Stage>(startAdding ? { name: 'add' } : { name: 'idle' });
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -72,6 +81,11 @@ export function PasskeysForm({
     // The calls are stable; the list loads once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const count = passkeys?.length;
+  useEffect(() => {
+    if (count !== undefined) onCountChange?.(count);
+  }, [count, onCountChange]);
 
   const reset = (next: Stage = { name: 'idle' }) => {
     setStage(next);
@@ -123,10 +137,15 @@ export function PasskeysForm({
   const targetName = passkeys && targetIndex >= 0 ? label(passkeys[targetIndex]!, targetIndex) : '';
 
   return (
-    <section aria-labelledby="account-passkeys" className="flex flex-col gap-4">
-      <SectionTitle id="account-passkeys" count={passkeys?.length}>
-        {t('account.passkeys')}
-      </SectionTitle>
+    <section
+      aria-labelledby={embedded ? undefined : 'account-passkeys'}
+      className="flex flex-col gap-4"
+    >
+      {!embedded && (
+        <SectionTitle id="account-passkeys" count={passkeys?.length}>
+          {t('account.passkeys')}
+        </SectionTitle>
+      )}
       <div className="flex max-w-md flex-col gap-4">
         <p className="text-sm text-muted-foreground">{t('account.passkeysDescription')}</p>
         {availability === 'no-browser' && (
