@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { createObservationStore } from './service-observations.js';
+import type { createObservationStore } from './monitoring/index.js';
 
 type Observations = ReturnType<typeof createObservationStore>;
 export type PublicState = 'up' | 'down' | 'unknown';

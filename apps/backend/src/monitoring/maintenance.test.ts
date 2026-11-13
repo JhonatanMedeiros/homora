@@ -1,8 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it, vi } from 'vitest';
 import type { Service } from '@homora/shared';
-import { createMaintenanceStore, MaintenanceError } from './service-maintenance.js';
-import { createServiceMonitor } from './service-monitor.js';
+import { createMaintenanceStore, MaintenanceError } from './maintenance.js';
+import { createServiceMonitor } from './monitor.js';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;

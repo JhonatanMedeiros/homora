@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { serviceSignature } from '../src/service-signature.js';
+import { serviceSignature } from '../src/monitoring/index.js';
 
 /* ---------------------------------------------------------------- bulk seeding */
 

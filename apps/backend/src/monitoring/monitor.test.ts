@@ -1,19 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { execFile } from 'node:child_process';
-import { getAuthorizedResponse } from './network-request.js';
-import { authorizeDestination } from './network-policy.js';
-import {
-  checkService,
-  classify,
-  createServiceMonitor,
-  PingUnavailableError,
-} from './service-monitor.js';
+import { getAuthorizedResponse } from '../network-request.js';
+import { authorizeDestination } from '../network-policy.js';
+import { checkService, classify, createServiceMonitor, PingUnavailableError } from './monitor.js';
 import type { Service } from '@homora/shared';
 
-vi.mock('./network-request.js', () => ({
+vi.mock('../network-request.js', () => ({
   getAuthorizedResponse: vi.fn(),
 }));
-vi.mock('./network-policy.js', () => ({ authorizeDestination: vi.fn() }));
+vi.mock('../network-policy.js', () => ({ authorizeDestination: vi.fn() }));
 vi.mock('node:child_process', () => ({ execFile: vi.fn() }));
 
 const service = (id: number, url: string): Service => ({

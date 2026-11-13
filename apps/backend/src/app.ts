@@ -3,7 +3,14 @@ import type { Service } from '@homora/shared';
 import { createDatabase, getSqliteHandle, services } from '@homora/db';
 import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
-import { createServiceMonitor, startServiceMonitor } from './service-monitor.js';
+import {
+  createServiceMonitor,
+  startServiceMonitor,
+  createObservationStore,
+  createIncidentStore,
+  createRollupStore,
+  createMaintenanceStore,
+} from './monitoring/index.js';
 import { registerConnectionRoutes } from './routes/connections.js';
 import { createProposalService } from './proposals.js';
 import { integrationRegistry } from './integration-registry.js';
@@ -17,10 +24,6 @@ import { registerDiscoveryRoutes } from './routes/discovery.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
-import { createObservationStore } from './service-observations.js';
-import { createIncidentStore } from './service-incidents.js';
-import { createRollupStore } from './service-rollup.js';
-import { createMaintenanceStore } from './service-maintenance.js';
 import { createTagStore } from './service-tags.js';
 import { registerServiceTagRoutes } from './routes/service-tags.js';
 import { registerServiceMaintenanceRoutes } from './routes/service-maintenance.js';

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { createServiceConfiguration } from '../service-configuration.js';
-import type { createServiceMonitor } from '../service-monitor.js';
+import type { createServiceMonitor } from '../monitoring/index.js';
 import {
   IMPORT_SOURCES,
   MAX_TRANSFER_CHARS,

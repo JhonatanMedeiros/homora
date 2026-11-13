@@ -2,8 +2,8 @@ import { execFile } from 'node:child_process';
 import { BODY_CHECK_TYPES, CERT_WARNING_DAYS, type CheckType } from '@homora/shared';
 import { CONTENT_CHECK_MAX_BYTES, matchesJson, matchesKeyword } from './check-body.js';
 import { readCertificate, tcpConnect } from './network-checks.js';
-import { authorizeDestination } from './network-policy.js';
-import { getAuthorizedResponse } from './network-request.js';
+import { authorizeDestination } from '../network-policy.js';
+import { getAuthorizedResponse } from '../network-request.js';
 
 /** Explains probe details beneath the monitor's high-level availability state. */
 export type StatusReason =

@@ -7,8 +7,8 @@ import {
   type UptimeSummary,
 } from '@homora/shared';
 import { z } from 'zod';
-import type { ServiceStatus } from './service-monitor.js';
-import type { RollupStore } from './service-rollup.js';
+import type { ServiceStatus } from './monitor.js';
+import type { RollupStore } from './rollup.js';
 import {
   HISTORY_RETENTION,
   LATENCY_SQL,
@@ -17,7 +17,7 @@ import {
   UPTIME_WINDOWS,
   uptimeServicesOf,
   uptimeSummarizerOf,
-} from './service-uptime.js';
+} from './uptime.js';
 
 const observationSchema = z
   .object({

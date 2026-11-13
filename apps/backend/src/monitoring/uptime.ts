@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { type Service, type UptimeRange, type UptimeSummary } from '@homora/shared';
-import { serviceSignature } from './service-signature.js';
+import { serviceSignature } from './signature.js';
 
 /** History is retained for 30 days, shared with observation publishing and history reads. */
 export const HISTORY_RETENTION = 30 * 24 * 60 * 60_000;

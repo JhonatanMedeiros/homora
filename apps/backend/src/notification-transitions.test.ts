@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Service } from '@homora/shared';
-import type { ServiceStatus } from './service-monitor.js';
+import type { ServiceStatus } from './monitoring/index.js';
 import { createNotificationTransitions } from './notification-transitions.js';
-import { serviceSignature } from './service-signature.js';
+import { serviceSignature } from './monitoring/index.js';
 
 const service = {
   id: 1,

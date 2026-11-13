@@ -4,8 +4,11 @@ import { createDatabase, getSqliteHandle } from '@homora/db';
 import { CHECK_INTERVAL_DEFAULT, type Service } from '@homora/shared';
 import { serializeConfiguration } from '../src/transfer/index.js';
 import { createServiceConfiguration } from '../src/service-configuration.js';
-import { createObservationStore } from '../src/service-observations.js';
-import { createServiceMonitor, type ServiceStatus } from '../src/service-monitor.js';
+import {
+  createObservationStore,
+  createServiceMonitor,
+  type ServiceStatus,
+} from '../src/monitoring/index.js';
 import {
   loopLagMonitor,
   log,

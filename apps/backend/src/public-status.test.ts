@@ -3,12 +3,11 @@ import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { createTestSession } from './test-auth.js';
 import { createServiceConfiguration } from './service-configuration.js';
-import { createObservationStore } from './service-observations.js';
-import type { ServiceStatus } from './service-monitor.js';
+import { createObservationStore, type ServiceStatus } from './monitoring/index.js';
 import type { Service } from '@homora/shared';
 
 // The real monitor would probe the fake URLs and overwrite the observations set up below.
-vi.mock('./service-monitor.js', () => ({
+vi.mock('./monitoring/monitor.js', () => ({
   createServiceMonitor: () => ({
     run: async () => {},
     invalidate: async () => {},

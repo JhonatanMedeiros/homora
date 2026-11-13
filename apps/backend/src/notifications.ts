@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { supportedLocales } from '@homora/i18n';
 import type { createVault } from './vault.js';
 import type { Service } from '@homora/shared';
-import type { ServiceStatus } from './service-monitor.js';
+import type { ServiceStatus } from './monitoring/index.js';
 import { createNotificationTransitions } from './notification-transitions.js';
 import {
   CHANNEL_TYPES,
