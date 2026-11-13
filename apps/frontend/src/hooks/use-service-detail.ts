@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type {
   Incident,
   LatencySeries,
+  Maintenance,
   ServiceInsights,
   UptimeRange,
   UptimeSummary,
@@ -57,8 +58,11 @@ const isIncidents = (
 ): value is { incidents: Incident[]; nextBefore: number | null } =>
   isObject(value) && Array.isArray(value.incidents);
 
-/** Everything the detail page shows for one service. */
-export function useServiceDetail(id: number, latencyRange: UptimeRange) {
+const isWindows = (value: unknown): value is { windows: Maintenance[] } =>
+  isObject(value) && Array.isArray(value.windows);
+
+/** Everything the detail page shows for one service. `version` reloads the maintenance windows. */
+export function useServiceDetail(id: number, latencyRange: UptimeRange, version = 0) {
   const base = `/api/services/${id}`;
   const day = useJson(`${base}/uptime?range=24h`, isSummary);
   const week = useJson(`${base}/uptime?range=7d`, isSummary);
@@ -66,11 +70,14 @@ export function useServiceDetail(id: number, latencyRange: UptimeRange) {
   const latency = useJson(`${base}/latency?range=${latencyRange}`, isSeries);
   const insights = useJson(`${base}/insights`, isInsights);
   const incidents = useJson(`${base}/incidents?limit=100`, isIncidents);
+  const windows = useJson(`${base}/maintenance?v=${version}`, isWindows);
   return {
     uptime: { '24h': day.data, '7d': week.data, '30d': month.data },
     latency: latency.data,
     insights: insights.data,
     incidents: incidents.data?.incidents,
+    maintenance: windows.data?.windows,
+    maintenanceFailed: windows.failed,
     failed: day.failed && insights.failed && incidents.failed,
     insightsFailed: insights.failed,
     incidentsFailed: incidents.failed,

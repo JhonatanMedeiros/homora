@@ -16,6 +16,11 @@ const view = {
     text: 'text-warning',
     dot: 'bg-warning shadow-[0_0_8px_1px_color-mix(in_oklch,var(--warning)_55%,transparent)]',
   },
+  maintenance: {
+    label: 'status.maintenance',
+    text: 'text-info',
+    dot: 'bg-info shadow-[0_0_8px_1px_color-mix(in_oklch,var(--info)_55%,transparent)]',
+  },
   unavailable: {
     label: 'status.unavailable',
     text: 'text-destructive',

@@ -41,6 +41,8 @@ type Props = {
   /** Alert settings (degraded limit) and the incident the service is in right now, if any. */
   monitor?: MonitorSettings;
   incident?: Incident;
+  /** End of the maintenance window the service is in right now. */
+  maintenanceUntil?: number | null;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
   /** Where the card runs, resolved from the live Proxmox inventory (null when not linked). */
@@ -139,6 +141,7 @@ export function ServiceCard({
   uptime,
   monitor,
   incident,
+  maintenanceUntil,
   uptimeRange = '24h',
   onUptimeRangeChange = () => {},
   host = null,
@@ -154,7 +157,12 @@ export function ServiceCard({
   onCancelRemoval,
 }: Props) {
   const state = status?.status ?? 'unknown';
-  const view = describeStatus(status, blocked, { monitor, downSince: incident?.startedAt });
+  const view = describeStatus(status, blocked, {
+    monitor,
+    downSince: incident?.startedAt,
+    checkType: s.checkType,
+    maintenanceUntil,
+  });
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
   const isBlocked = view.blocked;

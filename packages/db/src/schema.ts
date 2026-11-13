@@ -43,6 +43,7 @@ export const services = sqliteTable('services', {
   checkInterval: integer('check_interval'),
   expectedStatus: text('expected_status'),
   checkPath: text('check_path'),
+  checkMatch: text('check_match'),
   // Opt-in to the read-only public status page. Never set by imports or agent proposals.
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
   // Optional "runs on" link to a Proxmox guest. Ids only: names are resolved from the live
@@ -167,6 +168,24 @@ export const serviceIncidents = sqliteTable(
     index('service_incidents_service_idx').on(table.serviceId, table.startedAt),
     index('service_incidents_started_idx').on(table.startedAt),
   ],
+);
+
+/**
+ * Scheduled maintenance of one service. While a window is open the service is not probed and its
+ * checks are recorded as unknown, so they count neither as downtime nor as uptime and raise no alert.
+ */
+export const serviceMaintenance = sqliteTable(
+  'service_maintenance',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    startsAt: integer('starts_at').notNull(),
+    endsAt: integer('ends_at').notNull(),
+    note: text('note').notNull().default(''),
+  },
+  (table) => [index('service_maintenance_service_idx').on(table.serviceId, table.startsAt)],
 );
 
 /**

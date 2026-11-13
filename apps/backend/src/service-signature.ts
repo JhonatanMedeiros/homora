@@ -11,7 +11,13 @@ export const SIGNATURE_LENGTH = 16;
 export function serviceSignature(
   service: Pick<
     Service,
-    'url' | 'allowPrivate' | 'checkType' | 'checkInterval' | 'expectedStatus' | 'checkPath'
+    | 'url'
+    | 'allowPrivate'
+    | 'checkType'
+    | 'checkInterval'
+    | 'expectedStatus'
+    | 'checkPath'
+    | 'checkMatch'
   >,
 ) {
   return createHash('sha256')
@@ -23,6 +29,8 @@ export function serviceSignature(
         service.checkInterval ?? null,
         service.expectedStatus ?? null,
         service.checkPath ?? null,
+        // Appended only when set, so services without it keep the signature (and history) they had.
+        ...(service.checkMatch ? [service.checkMatch] : []),
       ]),
     )
     .digest('hex')

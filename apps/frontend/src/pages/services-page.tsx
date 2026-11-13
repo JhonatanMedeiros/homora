@@ -43,6 +43,8 @@ import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
 import { StatusBanner } from '@/components/status-banner';
 import { useStatusOverview } from '@/hooks/use-status-overview';
+import { activeWindows, useMaintenance } from '@/hooks/use-maintenance';
+import { useNow } from '@/hooks/use-now';
 import { TopBar } from '@/components/top-bar';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { GroupSection } from '@/components/group-section';
@@ -120,6 +122,9 @@ export function ServicesPage({
   const uptime = useUptime(uptimeRange);
   const [overviewVersion, setOverviewVersion] = useState(0);
   const overview = useStatusOverview(overviewVersion);
+  const maintenance = useMaintenance();
+  const clock = useNow();
+  const inMaintenance = activeWindows(maintenance.windows, clock);
   const list = view === 'list' || managing;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
@@ -324,6 +329,7 @@ export function ServicesPage({
             checkInterval: service.checkInterval ?? null,
             expectedStatus: service.expectedStatus ?? null,
             checkPath: service.checkPath ?? null,
+            checkMatch: service.checkMatch ?? null,
           }
         : { ...emptyService, allowPrivate: privateDefaultRef.current },
     );
@@ -394,6 +400,7 @@ export function ServicesPage({
             checkInterval: service.checkInterval ?? null,
             expectedStatus: service.expectedStatus ?? null,
             checkPath: service.checkPath ?? null,
+            checkMatch: service.checkMatch ?? null,
           }
         : { ...emptyService, allowPrivate: privateDefaultRef.current },
     );
@@ -608,6 +615,7 @@ export function ServicesPage({
           statuses={statuses}
           blockedIds={blockedIds}
           overview={overview}
+          maintenance={maintenance.windows}
           uptime={uptime}
           range={uptimeRange}
         />
@@ -1030,6 +1038,7 @@ export function ServicesPage({
                   uptime={uptime[s.id]}
                   monitor={overview?.settings[s.id]}
                   incident={overview?.open[s.id]}
+                  maintenanceUntil={inMaintenance[s.id]?.endsAt}
                   uptimeRange={uptimeRange}
                   onUptimeRangeChange={setUptimeRange}
                   host={hostLabel(s, hostData.connections, hostData.inventories)}

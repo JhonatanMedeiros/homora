@@ -47,6 +47,12 @@ export function reasonText(reason: string | undefined, httpStatus?: number | nul
       return code === null
         ? t('uptime.reason.unexpected-status-generic')
         : t('uptime.reason.unexpected-status', { code });
+    case 'content-mismatch':
+    case 'cert-expired':
+    case 'cert-invalid':
+    case 'cert-expiring':
+    case 'maintenance':
+      return t(`uptime.reason.${reason}`);
     default:
       return t('uptime.reason.other');
   }

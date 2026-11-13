@@ -1,15 +1,18 @@
 import {
+  CERT_WARNING_DAYS,
   isDegraded,
+  type Maintenance,
   type StatusOverview,
   type UptimeRange,
   type UptimeSummary,
 } from '@homora/shared';
 import { CircleCheck, TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNow } from '@/hooks/use-now';
 import { Progress } from '@/components/ui/progress';
-import { formatNumber, t } from '@/i18n';
+import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
 import type { ServiceStatus } from '@/lib/services';
 import { formatDuration } from '@/lib/uptime-view';
 import { cn } from '@/lib/utils';
@@ -20,6 +23,8 @@ type Props = {
   /** Services the network policy keeps from being checked; they are not "down". */
   blockedIds: Set<number>;
   overview?: StatusOverview;
+  /** Maintenance windows open now or still ahead, soonest first. */
+  maintenance?: Maintenance[];
   /** Uptime of every service over `range`. */
   uptime: Record<number, UptimeSummary>;
   range: UptimeRange;
@@ -39,6 +44,41 @@ function Stat({ label, value, note }: { label: string; value: ReactNode; note: R
   );
 }
 
+/** Soonest certificate expiry; says which one when it is close or already past. */
+function CertStat({ certs }: { certs: { name: string; days: number }[] }) {
+  const soonest = certs.reduce((a, b) => (b.days < a.days ? b : a));
+  const warn = soonest.days <= CERT_WARNING_DAYS;
+  return (
+    <Stat
+      label={t('banner.stat.certs')}
+      value={
+        <span className={cn(warn && (soonest.days < 0 ? 'text-destructive' : 'text-warning'))}>
+          {soonest.days < 0 ? t('uptime.none') : t('duration.d', { n: soonest.days })}
+        </span>
+      }
+      note={
+        soonest.days < 0
+          ? t('banner.certs.expired', { name: soonest.name })
+          : warn
+            ? t('banner.certs.soon', { name: soonest.name, days: soonest.days })
+            : certs.length === 1
+              ? t('banner.certs.ok.one')
+              : t('banner.certs.ok.other', { count: certs.length })
+      }
+    />
+  );
+}
+
+/** "today 23:00 – 23:30" style range of a window, with the date only when it is not today. */
+function whenText(item: Maintenance) {
+  const today = new Date().toDateString() === new Date(item.startsAt).toDateString();
+  const sameDay = new Date(item.startsAt).toDateString() === new Date(item.endsAt).toDateString();
+  return t('maint.range', {
+    start: today ? formatTime(item.startsAt) : formatShortDateTime(item.startsAt),
+    end: sameDay ? formatTime(item.endsAt) : formatDateTime(item.endsAt),
+  });
+}
+
 /**
  * The first thing the Home says: is everything fine, and if not, what and for how long. Below it,
  * the week in numbers (incidents, recovery time) and the availability target for the month.
@@ -48,6 +88,7 @@ export function StatusBanner({
   statuses,
   blockedIds,
   overview,
+  maintenance = [],
   uptime,
   range,
   now: fixedNow,
@@ -59,8 +100,16 @@ export function StatusBanner({
   const slow: string[] = [];
   let unknown = 0;
   let blocked = 0;
+  const certs: { name: string; days: number }[] = [];
   for (const service of services) {
     const status = statuses[service.id];
+    if (typeof status?.certExpiresAt === 'number')
+      certs.push({
+        name: service.name,
+        days: Math.floor((status.certExpiresAt - now) / 86_400_000),
+      });
+    // Maintenance is planned: neither a problem nor missing information.
+    if (status?.reason === 'maintenance') continue;
     const isBlocked = blockedIds.has(service.id) && status?.status !== 'available';
     if (isBlocked) blocked++;
     else if (status?.status === 'unavailable') {
@@ -122,6 +171,7 @@ export function StatusBanner({
           ? t('banner.incidents.fewer', { count: -delta })
           : t('banner.incidents.more', { count: delta });
 
+  const upcoming = maintenance.find((item) => item.endsAt > now);
   const sla = overview?.sla;
   const budget = sla && sla.actualPct !== null ? 100 - sla.targetPct : null;
   const left =
@@ -133,7 +183,7 @@ export function StatusBanner({
     <Card aria-label={t('banner.label')} role="region" className="gap-5 py-5">
       <CardContent className="flex flex-col gap-5 px-5">
         <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
-          <div className="flex min-w-64 flex-[1_1_22rem] items-start gap-3.5">
+          <div className="flex min-w-64 flex-[1_1_18rem] items-start gap-3.5">
             <span
               aria-hidden="true"
               className={cn(
@@ -156,7 +206,7 @@ export function StatusBanner({
               {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
             </div>
           </div>
-          <dl className="m-0 grid min-w-0 flex-[2_1_28rem] grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
+          <dl className="m-0 grid min-w-0 flex-[3_1_32rem] grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
             <Stat
               label={t('banner.stat.uptime', { range: t(`uptime.range.${range}`) })}
               value={average === null ? t('uptime.none') : `${pct(average)}%`}
@@ -188,8 +238,21 @@ export function StatusBanner({
                 />
               </>
             )}
+            {certs.length > 0 && <CertStat certs={certs} />}
           </dl>
         </div>
+        {upcoming && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-4 text-sm">
+            <span className="text-muted-foreground">
+              {t(upcoming.startsAt <= now ? 'banner.maintenance.now' : 'banner.maintenance.next')}
+            </span>
+            <Badge variant="outline" className="border-info/50 bg-info/10 text-info">
+              {whenText(upcoming)}
+            </Badge>
+            <span>{services.find((item) => item.id === upcoming.serviceId)?.name}</span>
+            {upcoming.note && <span className="text-muted-foreground">{upcoming.note}</span>}
+          </div>
+        )}
         {sla && (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-4 text-sm">
             <span className="text-muted-foreground">

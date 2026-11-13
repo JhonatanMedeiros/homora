@@ -7,7 +7,7 @@ import type { ServiceStatus } from './service-monitor.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
-const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT);
+const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT);
   CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER);
   INSERT INTO config_version VALUES(1,1);
   CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
@@ -96,7 +96,7 @@ describe('uptime rollup', () => {
 describe('latency and insights', () => {
   it('gives the median and 95th percentile of each slot and of the whole range', () => {
     const { store } = open();
-    const now = hourStart + 10 * 60_000;
+    const now = Date.now();
     // Ten successful checks inside one 30-minute slot: 10, 20 … 100 ms.
     for (let i = 1; i <= 10; i++)
       store.publish([service], { 1: state(now - 60_000 * (11 - i), 'available', i * 10) });

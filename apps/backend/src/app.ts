@@ -20,6 +20,8 @@ import { errorBody } from './api-error.js';
 import { createObservationStore } from './service-observations.js';
 import { createIncidentStore } from './service-incidents.js';
 import { createRollupStore } from './service-rollup.js';
+import { createMaintenanceStore } from './service-maintenance.js';
+import { registerServiceMaintenanceRoutes } from './routes/service-maintenance.js';
 import { createDockerPush } from './docker-push.js';
 import { registerDockerPushRoutes } from './routes/docker-push.js';
 import { registerMcpHttp } from './mcp-http.js';
@@ -71,6 +73,7 @@ export function createApp(
   const observations = createObservationStore(sqlite, rollup);
   const notifications = createNotifications(sqlite, vault);
   const incidents = createIncidentStore(sqlite);
+  const maintenance = createMaintenanceStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
   observations.clear();
   const serviceMonitor = createServiceMonitor(
@@ -86,6 +89,13 @@ export function createApp(
         /* Keep the dashboard usable on storage errors. */
       }
     },
+    (at) => {
+      try {
+        return new Set(maintenance.active(at).keys());
+      } catch {
+        return new Set<number>();
+      }
+    },
   );
   try {
     rollup.backfill();
@@ -97,7 +107,7 @@ export function createApp(
     incidents.rebuildFromHistory(
       sqlite
         .prepare(
-          'SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath FROM services',
+          'SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_match AS checkMatch FROM services',
         )
         .all() as unknown as Service[],
     );
@@ -165,6 +175,7 @@ export function createApp(
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceIncidentRoutes(app, incidents, observations, auth, audit);
+  registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
   registerServiceConfigurationRoutes(
     app,
     configuration,

@@ -24,11 +24,17 @@ const observationSchema = z
       'error-status',
       'reachable',
       'no-response',
+      'content-mismatch',
+      'cert-expired',
+      'cert-invalid',
+      'cert-expiring',
+      'maintenance',
       'unchecked',
     ]),
     httpStatus: z.number().int().min(100).max(599).nullable(),
     latencyMs: z.number().nonnegative().nullable(),
     expectedStatus: z.string().nullable().optional(),
+    certExpiresAt: z.number().int().positive().optional(),
   })
   .strict();
 const unchecked: ServiceStatus = {
@@ -59,7 +65,13 @@ const STATUS_SQL = 'status';
 const LATENCY_SQL = 'latency_ms';
 type SignedService = Pick<
   Service,
-  'url' | 'allowPrivate' | 'checkType' | 'checkInterval' | 'expectedStatus' | 'checkPath'
+  | 'url'
+  | 'allowPrivate'
+  | 'checkType'
+  | 'checkInterval'
+  | 'expectedStatus'
+  | 'checkPath'
+  | 'checkMatch'
 >;
 const signature = serviceSignature;
 /** Writer is called by the web monitor only; failures must not affect service availability. */
@@ -68,7 +80,7 @@ type UptimeService = SignedService & { id: number };
 function uptimeServicesOf(db: DatabaseSync, serviceId?: number): UptimeService[] {
   return db
     .prepare(
-      `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
+      `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_match AS checkMatch FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
     )
     .all(serviceId ?? null, serviceId ?? null) as unknown as UptimeService[];
 }
@@ -454,7 +466,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
     list(now = Date.now()) {
       const rows = db
         .prepare(
-          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,o.signature,o.observation
+          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,check_match AS checkMatch,o.signature,o.observation
         FROM services s LEFT JOIN service_observations o ON o.service_id=s.id ORDER BY s.id`,
         )
         .all() as unknown as Array<
@@ -467,6 +479,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
           | 'checkInterval'
           | 'expectedStatus'
           | 'checkPath'
+          | 'checkMatch'
         > & {
           signature: string | null;
           observation: string | null;

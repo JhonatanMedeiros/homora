@@ -1,4 +1,4 @@
-import type { Service } from '@homora/shared';
+import type { CheckType, Service } from '@homora/shared';
 import { formatDateTime, t, type MessageKey } from '@/i18n';
 
 export type Agent = {
@@ -25,10 +25,11 @@ export type ServiceFields = {
   icon?: string;
   position?: number;
   allowPrivate?: boolean;
-  checkType?: 'http' | 'ping';
+  checkType?: CheckType;
   checkInterval?: number | null;
   expectedStatus?: string | null;
   checkPath?: string | null;
+  checkMatch?: string | null;
 };
 export type Diff = {
   op?: string;
@@ -127,6 +128,7 @@ export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['checkInterval', 'field.checkInterval'],
   ['expectedStatus', 'form.expectedStatus'],
   ['checkPath', 'form.checkPath'],
+  ['checkMatch', 'check.match.keyword'],
 ];
 
 /** One-line description of what a proposal changes, used by the compact rows. */

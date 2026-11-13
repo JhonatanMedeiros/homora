@@ -1295,7 +1295,7 @@ Phase 1 of the uptime redesign (see [ADR 0011](decisoes/0011-incidents-and-alert
 - [x] Degraded state (amber) on cards and bars; failure reason and "down since" on the card.
 - [x] History bars with tooltip, selectable detail (click, tap, arrow keys), latency line and axis; recent incidents in the history panel.
 - [x] Phase 2: service detail page (`/services/:id`), p50/p95 latency chart, 90-day heatmap, failure reasons, incident table, latest checks and previous-period comparison on the cards. Backed by an hourly rollup table (`service_uptime_rollup`, migration 0026, about 100 days) filled from every new check and backfilled from the raw history once. Not done from the mockup: pause, schedule maintenance and check-now buttons, CSV export, the alert column and the TLS block (they depend on features of Phases 3 and 4).
-- [ ] Phase 3: TCP, DNS, keyword/JSON, heartbeat and TLS checks; scheduled maintenance.
+- [x] Phase 3: TCP, DNS, TLS certificate, keyword and JSON checks (check-type tiles in the service form), scheduled maintenance per service (dashboard blue state, banner line, detail page panel and dialog), TLS certificate stat in the banner ([ADR 0012](decisoes/0012-check-types-and-maintenance.md)). Not done from the mockup: heartbeat (push) checks, recurring windows and windows for a whole group, DNS server/record type/expected answer, ICMP packet count, and the redirect-following/TLS-warning toggles.
 - [ ] Phase 4: tags, ntfy/Discord/e-mail, wider public page, filters and sorting by problem.
 
 Verification: `pnpm check` (1266 tests) and `pnpm build` pass. The uptime performance budget in

@@ -2,19 +2,21 @@ import { Spinner } from '@/components/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
+  CERT_WARNING_DAYS,
   CHECK_INTERVAL_DEFAULT,
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
   DEFAULT_MONITOR_SETTINGS,
   DEGRADED_LATENCY_MAX,
   DEGRADED_LATENCY_MIN,
+  CHECK_MATCH_MAX,
   ICON_MAX_LENGTH,
   THRESHOLD_MAX,
   type HostLink,
   type MonitorSettings,
   type ServiceInput,
 } from '@homora/shared';
-import { FormSelect, FormSelectOption } from '@/components/form-select';
+import { CheckTypePicker } from '@/components/check-type-picker';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { IconPicker } from '@/components/icon-picker';
@@ -89,13 +91,16 @@ export function ServiceForm({
   onCancel,
 }: Props) {
   const set = (patch: Partial<ServiceInput>) => onChange({ ...value, ...patch });
+  const checkType = value.checkType ?? 'http';
+  const bodyCheck = checkType === 'keyword' || checkType === 'json';
+  const usesHttp = checkType === 'http' || bodyCheck;
   const suggestion = suggestBrandIcon(value.name);
   // Starts with the essentials; opens by itself when the service already has advanced values.
   const [advanced, setAdvanced] = useState(() =>
     Boolean(
       value.description ||
       value.icon ||
-      value.checkType === 'ping' ||
+      (value.checkType && value.checkType !== 'http') ||
       value.checkInterval ||
       value.expectedStatus ||
       value.checkPath ||
@@ -240,46 +245,75 @@ export function ServiceForm({
                 </div>
               )}
             </Field>
-            <Field>
+            <Field className="sm:col-span-2">
               <FieldLabel htmlFor="service-check">{t('form.checkType')}</FieldLabel>
-              <FormSelect
+              <CheckTypePicker
                 id="service-check"
-                aria-label={t('form.checkType')}
-                value={value.checkType ?? 'http'}
-                onChange={(e) => set({ checkType: e.target.value === 'ping' ? 'ping' : 'http' })}
-              >
-                <FormSelectOption value="http">{t('form.checkHttp')}</FormSelectOption>
-                <FormSelectOption value="ping">{t('form.checkPing')}</FormSelectOption>
-              </FormSelect>
+                value={checkType}
+                onChange={(next) =>
+                  set({
+                    checkType: next,
+                    // What a type does not use must not linger invisibly in the saved service.
+                    ...(next === 'http' || next === 'keyword' || next === 'json'
+                      ? {}
+                      : { checkPath: null, expectedStatus: null }),
+                    ...(next === 'keyword' || next === 'json' ? {} : { checkMatch: null }),
+                  })
+                }
+              />
               <FieldDescription>
-                {value.checkType === 'ping' ? t('form.checkPingHint') : t('form.checkHttpHint')}
+                {t(`check.hint.${checkType}`, { days: CERT_WARNING_DAYS })}
               </FieldDescription>
             </Field>
-            <Field>
-              <FieldLabel htmlFor="service-check-path">{t('form.checkPath')}</FieldLabel>
-              <Input
-                id="service-check-path"
-                disabled={value.checkType === 'ping'}
-                value={value.checkPath ?? ''}
-                onChange={(e) => set({ checkPath: e.target.value || null })}
-                placeholder="/health"
-                pattern="/[^\s\\#]*"
-                maxLength={2048}
-              />
-              <FieldDescription>{t('form.checkPathHint')}</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="service-expected-status">{t('form.expectedStatus')}</FieldLabel>
-              <Input
-                id="service-expected-status"
-                disabled={value.checkType === 'ping'}
-                value={value.expectedStatus ?? ''}
-                onChange={(e) => set({ expectedStatus: e.target.value || null })}
-                placeholder="200, 2xx"
-                pattern="([1-5][0-9]{2}|2xx|3xx)"
-              />
-              <FieldDescription>{t('form.expectedStatusHint')}</FieldDescription>
-            </Field>
+            {bodyCheck && (
+              <Field className="sm:col-span-2">
+                <FieldLabel htmlFor="service-check-match">
+                  {t(checkType === 'json' ? 'check.match.json' : 'check.match.keyword')}
+                </FieldLabel>
+                <Input
+                  id="service-check-match"
+                  required
+                  maxLength={CHECK_MATCH_MAX}
+                  autoComplete="off"
+                  value={value.checkMatch ?? ''}
+                  onChange={(e) => set({ checkMatch: e.target.value || null })}
+                  placeholder={t(
+                    checkType === 'json'
+                      ? 'check.match.jsonPlaceholder'
+                      : 'check.match.keywordPlaceholder',
+                  )}
+                />
+              </Field>
+            )}
+            {usesHttp && (
+              <>
+                <Field>
+                  <FieldLabel htmlFor="service-check-path">{t('form.checkPath')}</FieldLabel>
+                  <Input
+                    id="service-check-path"
+                    value={value.checkPath ?? ''}
+                    onChange={(e) => set({ checkPath: e.target.value || null })}
+                    placeholder="/health"
+                    pattern="/[^\s\\#]*"
+                    maxLength={2048}
+                  />
+                  <FieldDescription>{t('form.checkPathHint')}</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="service-expected-status">
+                    {t('form.expectedStatus')}
+                  </FieldLabel>
+                  <Input
+                    id="service-expected-status"
+                    value={value.expectedStatus ?? ''}
+                    onChange={(e) => set({ expectedStatus: e.target.value || null })}
+                    placeholder="200, 2xx"
+                    pattern="([1-5][0-9]{2}|2xx|3xx)"
+                  />
+                  <FieldDescription>{t('form.expectedStatusHint')}</FieldDescription>
+                </Field>
+              </>
+            )}
             <Field>
               <FieldLabel htmlFor="service-interval">{t('form.interval')}</FieldLabel>
               <Input

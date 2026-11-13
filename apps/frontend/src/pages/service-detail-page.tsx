@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import {
+  CERT_WARNING_DAYS,
   isDegraded,
   UPTIME_RANGES,
   type Incident,
@@ -9,6 +10,8 @@ import {
   type UptimeRange,
 } from '@homora/shared';
 import { ArrowLeft } from 'lucide-react';
+import { MaintenanceDialog } from '@/components/maintenance-dialog';
+import { MaintenancePanel } from '@/components/maintenance-panel';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
 import { LoadingRegion } from '@/components/skeletons';
@@ -27,7 +30,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useNow } from '@/hooks/use-now';
 import { useStatusOverview } from '@/hooks/use-status-overview';
 import { useServiceDetail } from '@/hooks/use-service-detail';
-import { formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
+import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
 import {
   CHART,
   deltaPoints,
@@ -216,6 +219,7 @@ function LatencyChart({
             className="stroke-info"
             strokeWidth="1.8"
             strokeLinejoin="round"
+            strokeLinecap="round"
           />
         ))}
         {geometry.p50.map((d) => (
@@ -226,6 +230,7 @@ function LatencyChart({
             className="stroke-primary"
             strokeWidth="2"
             strokeLinejoin="round"
+            strokeLinecap="round"
           />
         ))}
       </svg>
@@ -311,7 +316,9 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
   const [range, setRange] = useState<UptimeRange>('24h');
   const [allIncidents, setAllIncidents] = useState(false);
   const now = useNow();
-  const detail = useServiceDetail(id, range);
+  const [maintenanceVersion, setMaintenanceVersion] = useState(0);
+  const [scheduling, setScheduling] = useState(false);
+  const detail = useServiceDetail(id, range, maintenanceVersion);
   if (!loaded) return <Skeletons />;
   if (!service)
     return (
@@ -328,6 +335,9 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
     monitor,
     downSince: incident?.startedAt ?? null,
     now,
+    checkType: service.checkType,
+    maintenanceUntil: detail.maintenance?.find((item) => item.startsAt <= now && item.endsAt > now)
+      ?.endsAt,
   });
   const incidents = detail.incidents;
   const recentIncidents = incidents?.filter((item) => item.startedAt >= now - 30 * DAY) ?? [];
@@ -396,7 +406,19 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
           </p>
         </div>
         <StatusLight state={state} blocked={view.blocked} label={view.label} />
+        <Button variant="outline" className="ml-auto" onClick={() => setScheduling(true)}>
+          {t('maint.schedule')}
+        </Button>
       </header>
+      {scheduling && (
+        <MaintenanceDialog
+          open
+          serviceId={id}
+          serviceName={service.name}
+          onOpenChange={setScheduling}
+          onScheduled={() => setMaintenanceVersion((value) => value + 1)}
+        />
+      )}
 
       {incident && (
         <section
@@ -593,6 +615,41 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
               ))}
             </ul>
           )}
+          {typeof status?.certExpiresAt === 'number' && (
+            <dl className="m-0 mt-2 grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 border-t pt-3.5 text-sm">
+              <dt className="text-muted-foreground">{t('detail.cert.title')}</dt>
+              <dd className="m-0 flex flex-wrap items-center gap-2">
+                {(() => {
+                  const days = Math.ceil((status.certExpiresAt - now) / DAY);
+                  const expired = days < 0;
+                  const soon = !expired && days <= CERT_WARNING_DAYS;
+                  return (
+                    <>
+                      <Badge variant={expired ? 'destructive' : soon ? 'warning' : 'success'}>
+                        {t(
+                          expired
+                            ? 'detail.cert.expired'
+                            : soon
+                              ? 'detail.cert.expiring'
+                              : 'detail.cert.valid',
+                        )}
+                      </Badge>
+                      <span className="font-mono text-[0.8125rem]">
+                        {expired
+                          ? t('detail.cert.expiredOn', {
+                              date: formatDateTime(status.certExpiresAt),
+                            })
+                          : t('detail.cert.expires', {
+                              days,
+                              date: formatDateTime(status.certExpiresAt),
+                            })}
+                      </span>
+                    </>
+                  );
+                })()}
+              </dd>
+            </dl>
+          )}
         </Panel>
       </div>
 
@@ -668,6 +725,13 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
           </>
         )}
       </Panel>
+
+      <MaintenancePanel
+        windows={detail.maintenance}
+        failed={detail.maintenanceFailed}
+        now={now}
+        onChanged={() => setMaintenanceVersion((value) => value + 1)}
+      />
 
       <Panel title={t('detail.checks.title')}>
         {!detail.insights && !detail.insightsFailed && <Skeleton className="h-28 w-full" />}

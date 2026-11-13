@@ -1,7 +1,8 @@
 import { isDegraded, type MonitorSettings } from '@homora/shared';
-import { formatTime, t } from '@/i18n';
+import type { CheckType } from '@homora/shared';
+import { formatDateTime, formatTime, t } from '@/i18n';
 import type { LightState, ServiceStatus } from '@/lib/services';
-import { formatDuration } from '@/lib/uptime-view';
+import { formatDuration, reasonText } from '@/lib/uptime-view';
 
 /** What a service card or list row says about a service's health. */
 export type StatusView = {
@@ -41,12 +42,31 @@ export function describeStatus(
     /** When the open incident began, so a failure says how long it has lasted. */
     downSince?: number | null;
     now?: number;
+    /** How the service is checked, so a reachable answer says tcp, dns, tls or ping. */
+    checkType?: CheckType;
+    /** End of the maintenance window the service is in, when it is in one. */
+    maintenanceUntil?: number | null;
   } = {},
 ): StatusView {
   const state = status?.status ?? 'unknown';
   const reason = status?.reason;
   const code = typeof status?.httpStatus === 'number' ? status.httpStatus : null;
   const title = code === null ? null : `HTTP ${code}`;
+  if (reason === 'maintenance') {
+    return {
+      state: 'maintenance',
+      blocked: false,
+      label: t('status.maintenance'),
+      tag: null,
+      meta: null,
+      note:
+        typeof options.maintenanceUntil === 'number'
+          ? t('card.note.maintenance', { time: formatDateTime(options.maintenanceUntil) })
+          : t('card.note.maintenance', { time: '…' }),
+      title: null,
+      failing: false,
+    };
+  }
   if (blocked && state !== 'available') {
     return {
       state: 'unknown',
@@ -70,16 +90,28 @@ export function describeStatus(
         reason === 'login-required'
           ? t('card.tag.login')
           : reason === 'reachable'
-            ? t('card.tag.ping')
+            ? options.checkType === 'tcp' ||
+              options.checkType === 'dns' ||
+              options.checkType === 'tls'
+              ? t(`check.tag.${options.checkType}`)
+              : t('card.tag.ping')
             : null,
       meta: latency(status),
       note:
-        slow && typeof status?.latencyMs === 'number' && typeof limit === 'number'
-          ? t('card.note.degraded', { latency: Math.round(status.latencyMs), limit })
-          : null,
+        reason === 'cert-expiring' && typeof status?.certExpiresAt === 'number'
+          ? t('card.note.certExpiring', {
+              days: Math.max(
+                0,
+                Math.ceil((status.certExpiresAt - (options.now ?? Date.now())) / 86_400_000),
+              ),
+              date: formatDateTime(status.certExpiresAt),
+            })
+          : slow && typeof status?.latencyMs === 'number' && typeof limit === 'number'
+            ? t('card.note.degraded', { latency: Math.round(status.latencyMs), limit })
+            : null,
       title,
       failing: false,
-      degraded: slow,
+      degraded: slow || reason === 'cert-expiring',
     };
   }
   if (state === 'unavailable') {
@@ -92,13 +124,19 @@ export function describeStatus(
             ? code === null
               ? t('card.note.errorGeneric')
               : t('card.note.error', { code })
-            : reason === 'no-response'
-              ? status?.lastAttempt
-                ? t('card.note.noResponseAt', { time: formatTime(status.lastAttempt) })
-                : t('card.note.noResponse')
-              : status?.lastAttempt
-                ? t('card.lastAttempt', { time: formatTime(status.lastAttempt) })
-                : null;
+            : reason === 'content-mismatch' || reason === 'cert-invalid'
+              ? reasonText(reason)
+              : reason === 'cert-expired'
+                ? typeof status?.certExpiresAt === 'number'
+                  ? t('card.note.certExpired', { date: formatDateTime(status.certExpiresAt) })
+                  : reasonText(reason)
+                : reason === 'no-response'
+                  ? status?.lastAttempt
+                    ? t('card.note.noResponseAt', { time: formatTime(status.lastAttempt) })
+                    : t('card.note.noResponse')
+                  : status?.lastAttempt
+                    ? t('card.lastAttempt', { time: formatTime(status.lastAttempt) })
+                    : null;
     const since =
       typeof options.downSince === 'number'
         ? t('card.note.downSince', {
@@ -110,6 +148,9 @@ export function describeStatus(
       reason === 'unexpected-status' ||
       reason === 'not-found' ||
       reason === 'error-status' ||
+      reason === 'content-mismatch' ||
+      reason === 'cert-expired' ||
+      reason === 'cert-invalid' ||
       reason === 'no-response';
     return {
       state,

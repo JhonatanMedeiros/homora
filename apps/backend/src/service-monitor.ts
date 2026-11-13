@@ -1,5 +1,13 @@
 import { execFile } from 'node:child_process';
-import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
+import {
+  BODY_CHECK_TYPES,
+  CERT_WARNING_DAYS,
+  CHECK_INTERVAL_DEFAULT,
+  type CheckType,
+  type Service,
+} from '@homora/shared';
+import { CONTENT_CHECK_MAX_BYTES, matchesJson, matchesKeyword } from './check-body.js';
+import { readCertificate, tcpConnect } from './network-checks.js';
 import { serviceSignature } from './service-signature.js';
 import { authorizeDestination } from './network-policy.js';
 import { getAuthorizedResponse } from './network-request.js';
@@ -17,6 +25,11 @@ export type StatusReason =
   | 'error-status' // other 4xx and 5xx
   | 'reachable' // successful ICMP ping
   | 'no-response' // network, DNS, TLS failure, unanswered ping, or timeout
+  | 'content-mismatch' // answered, but the expected keyword or JSON value is missing
+  | 'cert-expired' // the TLS certificate is past its expiry
+  | 'cert-invalid' // the TLS certificate is not trusted or does not match the host
+  | 'cert-expiring' // valid, but expires within the warning period
+  | 'maintenance' // inside a scheduled maintenance window: not probed, not counted
   | 'unchecked'; // not yet probed
 
 export type ServiceStatus = {
@@ -28,10 +41,22 @@ export type ServiceStatus = {
   /** Latency in milliseconds; null when no response. */
   latencyMs: number | null;
   expectedStatus?: string | null;
+  /** TLS checks: when the certificate the server presents expires (epoch milliseconds). */
+  certExpiresAt?: number;
 };
 
-/** `httpStatus` is null when check was a successful ICMP ping. */
-export type CheckResult = { httpStatus: number | null; latencyMs: number };
+export { CERT_WARNING_DAYS };
+
+/**
+ * `httpStatus` is null for checks that are not HTTP (ping, TCP, DNS, TLS). `outcome` is set when
+ * the check itself decides the state, such as a missing keyword or an expired certificate.
+ */
+export type CheckResult = {
+  httpStatus: number | null;
+  latencyMs: number;
+  outcome?: Pick<ServiceStatus, 'status' | 'reason'>;
+  certExpiresAt?: number;
+};
 
 /** The `ping` binary is missing or cannot be used: this is not a service failure. */
 export class PingUnavailableError extends Error {}
@@ -104,24 +129,68 @@ function ping(address: string, family: number): Promise<CheckResult> {
   });
 }
 
+/** Types that connect to the host instead of requesting a page, so a check path means nothing. */
+const isNonHttp = (type?: CheckType) =>
+  type === 'ping' || type === 'tcp' || type === 'dns' || type === 'tls';
+
+/** Port of a URL, with the scheme's default when it is left out. */
+const portOf = (url: URL) => Number(url.port) || (url.protocol === 'https:' ? 443 : 80);
+
 /** Uses the shared pinned-DNS destination policy; private ranges require the
- * per-service opt-in and special ranges remain forbidden. */
+ * per-service opt-in and special ranges remain forbidden. Every check type goes through it. */
 export async function checkService(
   url: string,
   allowPrivate = false,
   type: CheckType = 'http',
+  match: string | null = null,
+  now: () => number = Date.now,
 ): Promise<CheckResult> {
   const policy = { origins: [new URL(url).origin], allowPrivate };
-  if (type === 'ping') {
-    const { address } = await authorizeDestination(url, policy);
-    return ping(address.address, address.family);
+  if (type === 'ping' || type === 'tcp' || type === 'dns' || type === 'tls') {
+    const startedAt = Date.now();
+    const { address, url: target } = await authorizeDestination(url, policy);
+    // The lookup above is the whole DNS check: it fails when the name does not resolve or points
+    // somewhere the policy refuses.
+    if (type === 'dns') return { httpStatus: null, latencyMs: Date.now() - startedAt };
+    if (type === 'ping') return ping(address.address, address.family);
+    const port = portOf(target);
+    if (type === 'tcp')
+      return { httpStatus: null, latencyMs: await tcpConnect(address.address, port) };
+    const certificate = await readCertificate(
+      address.address,
+      target.hostname.replace(/^\[|\]$/g, ''),
+      port,
+    );
+    const daysLeft = (certificate.validTo - now()) / 86_400_000;
+    const outcome: CheckResult['outcome'] =
+      certificate.validTo <= now() || certificate.error === 'CERT_HAS_EXPIRED'
+        ? { status: 'unavailable', reason: 'cert-expired' }
+        : !certificate.authorized
+          ? { status: 'unavailable', reason: 'cert-invalid' }
+          : daysLeft <= CERT_WARNING_DAYS
+            ? { status: 'available', reason: 'cert-expiring' }
+            : { status: 'available', reason: 'reachable' };
+    return {
+      httpStatus: null,
+      latencyMs: certificate.latencyMs,
+      outcome,
+      certExpiresAt: certificate.validTo,
+    };
   }
   const startedAt = Date.now();
+  const body = BODY_CHECK_TYPES.includes(type) && Boolean(match);
   const response = await getAuthorizedResponse(url, policy, {
     timeoutMs: 8000,
     reportRedirect: true,
+    ...(body ? { maxBodyBytes: CONTENT_CHECK_MAX_BYTES } : {}),
   });
-  return { httpStatus: response.status, latencyMs: Date.now() - startedAt };
+  const result: CheckResult = { httpStatus: response.status, latencyMs: Date.now() - startedAt };
+  if (body && match && response.status >= 200 && response.status < 300) {
+    const found =
+      type === 'json' ? matchesJson(response.body, match) : matchesKeyword(response.body, match);
+    if (!found) result.outcome = { status: 'unavailable', reason: 'content-mismatch' };
+  }
+  return result;
 }
 
 export function createServiceMonitor(
@@ -130,9 +199,12 @@ export function createServiceMonitor(
     url: string,
     allowPrivate?: boolean,
     type?: CheckType,
+    match?: string | null,
   ) => Promise<CheckResult> = checkService,
   now: () => number = Date.now,
   publish?: (services: Service[], states: Record<number, ServiceStatus>) => void,
+  /** Services in a scheduled maintenance window at the given time; they are not probed. */
+  inMaintenance: (at: number) => ReadonlySet<number> = () => new Set(),
 ) {
   const states = new Map<number, ServiceStatus>();
   /** Configuration each state was measured under, so edited services are probed again and only those. */
@@ -187,9 +259,13 @@ export function createServiceMonitor(
       // state and take precedence in the following cycle.
       const lastOf = (id: number) => states.get(id)?.lastAttempt ?? '';
       const startedAt = now();
+      const paused = inMaintenance(startedAt);
       const isDue = (service: Service) => {
         const last = lastOf(service.id);
         if (!last) return true;
+        // Entering or leaving a maintenance window shows at once, not at the next interval.
+        if (paused.has(service.id) !== (states.get(service.id)?.reason === 'maintenance'))
+          return true;
         const interval = (service.checkInterval ?? CHECK_INTERVAL_DEFAULT) * 1000;
         return startedAt - Date.parse(last) >= interval - dueSlackMs;
       };
@@ -207,19 +283,32 @@ export function createServiceMonitor(
             const service = monitored[nextIndex++];
             changed = true;
             const attemptedAt = new Date(now()).toISOString();
+            if (paused.has(service.id)) {
+              states.set(service.id, {
+                status: 'unknown',
+                lastAttempt: attemptedAt,
+                reason: 'maintenance',
+                httpStatus: null,
+                latencyMs: null,
+              });
+              continue;
+            }
             try {
               const result = await check(
-                service.checkType !== 'ping' && service.checkPath
+                !isNonHttp(service.checkType) && service.checkPath
                   ? new URL(service.checkPath, new URL(service.url).origin).href
                   : service.url,
                 service.allowPrivate === true,
                 service.checkType ?? 'http',
+                service.checkMatch ?? null,
               );
               if (runGeneration === generation)
                 states.set(service.id, {
-                  ...(result.httpStatus === null
-                    ? { status: 'available' as const, reason: 'reachable' as const }
-                    : classify(result.httpStatus, service.expectedStatus)),
+                  ...(result.outcome ??
+                    (result.httpStatus === null
+                      ? { status: 'available' as const, reason: 'reachable' as const }
+                      : classify(result.httpStatus, service.expectedStatus))),
+                  ...(result.certExpiresAt ? { certExpiresAt: result.certExpiresAt } : {}),
                   lastAttempt: attemptedAt,
                   httpStatus: result.httpStatus,
                   ...(result.httpStatus !== null && service.expectedStatus

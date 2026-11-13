@@ -1,11 +1,14 @@
 import {
   CHECK_INTERVAL_MAX,
+  CHECK_TYPES,
   CHECK_INTERVAL_MIN,
   DEGRADED_LATENCY_MAX,
   DEGRADED_LATENCY_MIN,
   ICON_MAX_LENGTH,
+  isCheckMatch,
   isCheckPath,
   isExpectedStatus,
+  MAINTENANCE_NOTE_MAX,
   isNodeName,
   isVmid,
   THRESHOLD_MAX,
@@ -28,12 +31,13 @@ export const serviceInputSchema = z
     icon: z.string().trim().max(ICON_MAX_LENGTH).optional(),
     position: z.number().int().safe().min(0).optional(),
     allowPrivate: z.boolean().optional(),
-    checkType: z.enum(['http', 'ping']).optional(),
+    checkType: z.enum(CHECK_TYPES).optional(),
     expectedStatus: z
       .union([z.string().refine(isExpectedStatus), z.number().int().min(100).max(599)])
       .nullable()
       .optional(),
     checkPath: z.string().refine(isCheckPath).nullable().optional(),
+    checkMatch: z.string().refine(isCheckMatch).nullable().optional(),
     checkInterval: z
       .number()
       .int()
@@ -223,6 +227,13 @@ export const monitorSettingsSchema = z
   .strict();
 export const latencyQuerySchema = z
   .object({ range: z.enum(['24h', '7d', '30d']).optional() })
+  .strict();
+export const maintenanceSchema = z
+  .object({
+    startsAt: z.number().int().positive(),
+    endsAt: z.number().int().positive(),
+    note: z.string().trim().max(MAINTENANCE_NOTE_MAX).default(''),
+  })
   .strict();
 export const incidentQuerySchema = z
   .object({

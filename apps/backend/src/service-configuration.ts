@@ -62,13 +62,13 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   const selectServices = (order = 'category, position, name') =>
     sqlite
       .prepare(
-        `SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath FROM services ORDER BY ${order}`,
+        `SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch FROM services ORDER BY ${order}`,
       )
       .all() as unknown as ServiceRow[];
   const selectService = (id: number) =>
     sqlite
       .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath FROM services WHERE id=?',
+        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch FROM services WHERE id=?',
       )
       .get(id) as ServiceRow | undefined;
   type HostRow = {
@@ -183,7 +183,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
       ensureGroup(service.category, null, pageForNewService(service.category, change.page));
       const created = sqlite
         .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
         )
         .run(
           service.name,
@@ -197,6 +197,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           service.checkInterval ?? null,
           service.expectedStatus ?? null,
           service.checkPath ?? null,
+          service.checkMatch ?? null,
         );
       bumpVersion();
       const row = selectService(Number(created.lastInsertRowid));
@@ -216,7 +217,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     const position = change.service.position ?? current.position;
     sqlite
       .prepare(
-        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=? WHERE id=?',
+        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_match=? WHERE id=?',
       )
       .run(
         service.name,
@@ -232,6 +233,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           ? (current.expectedStatus ?? null)
           : service.expectedStatus,
         service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
+        service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
         change.id,
       );
     bumpVersion();
@@ -412,7 +414,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
           }
         }
         const insert = sqlite.prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
         );
         const queue = parsed.document.groups.flatMap((group) =>
           group.services.map((service) => ({ group: group.name, service })),
@@ -448,6 +450,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             valid.checkInterval ?? null,
             valid.expectedStatus ?? null,
             valid.checkPath ?? null,
+            valid.checkMatch ?? null,
           );
           created += 1;
         });
@@ -543,7 +546,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         service.position = nextServicePosition(service.category);
         const result = sqlite
           .prepare(
-            'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
           )
           .run(
             service.name,
@@ -557,6 +560,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             service.checkInterval ?? null,
             service.expectedStatus ?? null,
             service.checkPath ?? null,
+            service.checkMatch ?? null,
           );
         const created = selectService(Number(result.lastInsertRowid));
         if (!created) throw new Error('Created service could not be loaded');
@@ -578,7 +582,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
             : nextServicePosition(service.category);
         sqlite
           .prepare(
-            'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=? WHERE id=?',
+            'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_match=? WHERE id=?',
           )
           .run(
             service.name,
@@ -594,6 +598,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
               ? (current.expectedStatus ?? null)
               : service.expectedStatus,
             service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
+            service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
             id,
           );
         if (host !== undefined) writeHost(id, host);

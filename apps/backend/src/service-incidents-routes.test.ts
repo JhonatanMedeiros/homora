@@ -183,4 +183,42 @@ describe('incident routes', () => {
       ).toBe(404);
     await app.close();
   });
+
+  it('schedules, lists and cancels maintenance, and audits it', async () => {
+    const { app, headers, id } = await setup();
+    const url = `/api/services/${id}/maintenance`;
+    expect((await app.inject({ method: 'GET', url: '/api/maintenance' })).statusCode).toBe(401);
+    const startsAt = Date.now() + 3_600_000;
+    const body = { startsAt, endsAt: startsAt + 3_600_000, note: 'Disk swap' };
+    const created = await app.inject({ method: 'POST', url, headers, payload: body });
+    expect(created.statusCode).toBe(201);
+    const window = created.json<{ id: number }>();
+    expect(
+      (await app.inject({ method: 'POST', url, headers, payload: body })).json(),
+    ).toMatchObject({ code: 'maintenance-overlap' });
+    for (const payload of [{ ...body, endsAt: startsAt }, { ...body, extra: 1 }, {}])
+      expect((await app.inject({ method: 'POST', url, headers, payload })).statusCode).toBe(400);
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/maintenance', headers })).json(),
+    ).toMatchObject({ windows: [{ id: window.id, serviceId: id, note: 'Disk swap' }] });
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/api/services/9999/maintenance',
+          headers,
+          payload: body,
+        })
+      ).statusCode,
+    ).toBe(404);
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/api/maintenance/${window.id}`, headers }))
+        .statusCode,
+    ).toBe(204);
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/api/maintenance/${window.id}`, headers }))
+        .statusCode,
+    ).toBe(404);
+    await app.close();
+  });
 });
