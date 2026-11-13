@@ -3,6 +3,18 @@ import { useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 import { failed, signInWithPasskey } from '@/hooks/use-passkeys';
 
+/** "Try again in 40 s" for a rate-limited response, or null when the wait is unknown. */
+function throttleMessage(response: Response): string | null {
+  if (response.status !== 429) return null;
+  const seconds = Math.ceil(Number(response.headers?.get('x-retry-after')));
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+  const wait =
+    seconds < 60
+      ? t('auth.waitSeconds', { seconds })
+      : t('auth.waitMinutes', { minutes: Math.ceil(seconds / 60) });
+  return t('auth.tooManyAttempts', { wait });
+}
+
 export type AuthStatus = {
   configured: boolean;
   authenticated: boolean;
@@ -61,7 +73,7 @@ export function useAuth() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, rememberMe }),
       });
-      if (!login.ok) throw new Error(t('auth.loginFailed'));
+      if (!login.ok) throw new Error(throttleMessage(login) ?? t('auth.loginFailed'));
       // A successful response is not a session yet when the account asks for a second step.
       const result = await Promise.resolve()
         .then(() => login.json() as Promise<{ twoFactorRedirect?: boolean } | null>)
@@ -96,7 +108,7 @@ export function useAuth() {
         const body = (await response.json().catch(() => null)) as { code?: unknown } | null;
         // An expired or exhausted challenge cannot be retried: start again from the password.
         if (body?.code === 'two-factor-challenge-expired') setChallenge(false);
-        throw new Error(apiError(body, t('auth.twoFactorFailed')));
+        throw new Error(throttleMessage(response) ?? apiError(body, t('auth.twoFactorFailed')));
       }
       setChallenge(false);
       setStatus({ configured: true, authenticated: true });

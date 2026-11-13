@@ -13,6 +13,7 @@ import type { Tab } from '@/components/app-nav';
 import { isSettingsSection, settingsPath, settingsSections } from '@/features/settings/sections';
 import { useAuth } from '@/hooks/use-auth';
 import { AuthPage } from '@/pages/auth-page';
+import { AuthLoading } from '@/features/auth/auth-loading';
 import { StatusPage } from '@/pages/status-page';
 import { Toaster } from '@/components/ui/sonner';
 import { DashboardPage } from '@/pages/dashboard-page';
@@ -151,7 +152,8 @@ function AppRoutes() {
       onRetry={retry}
     />
   );
-  if (!status) return authPage;
+  // The sign-in page only appears once the server answered, or failed and needs a retry.
+  if (!status) return error ? authPage : <AuthLoading />;
   if (!status.authenticated) {
     if (location.pathname !== '/login')
       return (
