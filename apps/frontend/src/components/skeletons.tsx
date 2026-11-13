@@ -110,6 +110,37 @@ export function RowListSkeleton({
   );
 }
 
+/** Grid of connection cards: media, name and address, then a status line. */
+export function CardGridSkeleton({
+  label,
+  cards = 3,
+  className,
+}: {
+  label: string;
+  cards?: number;
+  className?: string;
+}) {
+  return (
+    <LoadingRegion
+      label={label}
+      className={cn('grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3', className)}
+    >
+      {Array.from({ length: cards }, (_, index) => (
+        <div key={index} className="flex flex-col gap-3 rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-3">
+            <Bone className="size-10 shrink-0" />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <Bone className="h-4 w-1/2" />
+              <Bone className="h-3 w-2/3" />
+            </div>
+          </div>
+          <Bone className="h-3 w-1/3" />
+        </div>
+      ))}
+    </LoadingRegion>
+  );
+}
+
 /** Activity feed: a day heading followed by a bordered list of events. */
 export function ActivitySkeleton({ label }: { label: string }) {
   return (

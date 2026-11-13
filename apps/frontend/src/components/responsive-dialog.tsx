@@ -14,6 +14,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 type Props = {
   open: boolean;
@@ -22,6 +23,8 @@ type Props = {
   description?: string;
   /** Keeps it open until the content closes it, for steps that show something only once. */
   locked?: boolean;
+  /** A wider dialog, for content laid out in columns. */
+  wide?: boolean;
   children: ReactNode;
 };
 
@@ -32,6 +35,7 @@ export function ResponsiveDialog({
   title,
   description,
   locked = false,
+  wide = false,
   children,
 }: Props) {
   const mobile = useIsMobile();
@@ -66,7 +70,7 @@ export function ResponsiveDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={!locked}
-        className="max-h-[calc(100svh-2rem)] overflow-y-auto"
+        className={cn('max-h-[calc(100svh-2rem)] overflow-y-auto', wide && 'sm:max-w-2xl')}
         {...guard}
       >
         <DialogHeader>

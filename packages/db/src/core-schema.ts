@@ -66,6 +66,10 @@ export const integrationInstances = sqliteTable('integration_instances', {
   publicConfig: text('public_config').notNull().default('{}'),
   secretRef: text('secret_ref'),
   certificateRef: text('certificate_ref'),
+  /** When the last explicit test ran (epoch ms); cleared when the connection is edited. */
+  lastTestAt: integer('last_test_at'),
+  /** `ok` or a short reason code for the last explicit test. Never the service's own message. */
+  lastTestResult: text('last_test_result'),
 });
 
 /** Records application-level migrations that require decrypting legacy files. */

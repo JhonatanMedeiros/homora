@@ -290,6 +290,7 @@ releases exist.
   and connections, including encrypted references without displaying them. They validate the
   operation in a savepoint and repeat validation inside the approval transaction. A Proxmox
   widget proposal requires an existing Proxmox connection. MCP returns proposals only to their author.
+- `integration_instances` keeps the result of the last explicit test (`last_test_at`, `last_test_result`): `ok` or a short reason code (`rejected`, `http-error`, `timeout`, `unavailable`, `invalid-response`, `failed`). The service's own message is never stored. `POST /api/connections/:id/test` records it, editing a connection clears it, and `GET /api/connections` returns it as `lastTest`. Automatic reads do not write it.
 - Cards may link to a Proxmox guest (`host_*` columns on `services`, ids only); `proxmox-inventory.ts` and `GET /api/connections/:id/guests` expose guest names to authenticated sessions only. Neither the public status page nor MCP returns them. See [ADR 0008](decisoes/0008-service-to-host-map.md).
 - Host suggestions (`host-suggestions.ts`) and the `hosts:read` / `hosts:propose` MCP scopes are described in ADR 0008. A `host-link` managed proposal sets only Homora's link; its evidence is computed by the server at proposal time.
 - Manual dependencies between cards (`service_dependencies`, acyclic, audited) feed the impact hints; MCP reads them with `list_service_dependencies` under `services:read`. See ADR 0008.

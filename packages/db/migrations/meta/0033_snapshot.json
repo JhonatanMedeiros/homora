@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e863028c-6870-4990-a49f-137b8b938dd1",
+  "id": "caf9332f-a92d-450e-b7ee-10b622c08019",
   "prevId": "68478e7c-f599-4266-87de-1421a98896cb",
   "tables": {
     "app_settings": {
@@ -69,6 +69,20 @@
         },
         "certificate_ref": {
           "name": "certificate_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_test_at": {
+          "name": "last_test_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_test_result": {
+          "name": "last_test_result",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -456,14 +470,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": false
-        },
-        "open_target": {
-          "name": "open_target",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'new-tab'"
         },
         "check_type": {
           "name": "check_type",

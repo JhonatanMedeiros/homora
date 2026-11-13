@@ -54,17 +54,21 @@ test('restores database (with its administrator account), key and integration to
     const sourceDb = new DatabaseSync(source);
     const credentials = JSON.stringify({ secret: 'dummy-ha-secret', ca: rootCertificates[0] });
     const encrypted = createVault(source).seal(credentials, false);
-    sourceDb.prepare('INSERT INTO integration_instances VALUES (1, ?, ?, ?, ?, ?)').run(
-      'home-assistant',
-      'Home',
-      JSON.stringify({
-        url: 'https://ha.example',
-        entityId: 'sensor.temperature',
-        allowPrivate: true,
-      }),
-      encrypted,
-      'both',
-    );
+    sourceDb
+      .prepare(
+        'INSERT INTO integration_instances (id, type, name, public_config, secret_ref, certificate_ref) VALUES (1, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        'home-assistant',
+        'Home',
+        JSON.stringify({
+          url: 'https://ha.example',
+          entityId: 'sensor.temperature',
+          allowPrivate: true,
+        }),
+        encrypted,
+        'both',
+      );
     sourceDb.close();
     const runBackup = (from, to) => {
       const result = spawnSync(process.execPath, ['scripts/backup.mjs', from, to], {
