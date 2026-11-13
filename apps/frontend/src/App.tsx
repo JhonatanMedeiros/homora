@@ -116,6 +116,7 @@ function AppRoutes() {
   const {
     status,
     error,
+    expired,
     challenge,
     submit,
     submitPasskey,
@@ -144,6 +145,7 @@ function AppRoutes() {
     <AuthPage
       status={status}
       error={error}
+      notice={expired ? t('auth.sessionExpired') : undefined}
       challenge={challenge}
       onSubmit={submit}
       onPasskey={submitPasskey}

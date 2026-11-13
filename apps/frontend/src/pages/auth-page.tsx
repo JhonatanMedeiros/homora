@@ -21,6 +21,8 @@ import { t } from '@/i18n';
 type Props = {
   status: AuthStatus | null;
   error: string;
+  /** Shown above the form, for example when the session ended. */
+  notice?: string;
   /** The password was accepted and the second step is pending. */
   challenge?: boolean;
   onSubmit: (credentials: Credentials) => Promise<boolean>;
@@ -35,6 +37,7 @@ type Props = {
 export function AuthPage({
   status,
   error,
+  notice,
   challenge = false,
   onSubmit,
   onPasskey,
@@ -122,6 +125,11 @@ export function AuthPage({
                 <CardContent>
                   <form onSubmit={(e) => void submit(e)}>
                     <FieldGroup>
+                      {notice && (
+                        <p role="status" className="rounded-lg border bg-muted px-3 py-2 text-sm">
+                          {notice}
+                        </p>
+                      )}
                       {!status.configured && (
                         <Field>
                           <FieldLabel htmlFor="name">{t('auth.name')}</FieldLabel>

@@ -7,6 +7,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
   access: ['login', 'logout', 'two-factor-recovery-used'],
   account: [
     'password-change',
+    'email-change',
     'two-factor-enable',
     'two-factor-disable',
     'two-factor-codes-regenerate',

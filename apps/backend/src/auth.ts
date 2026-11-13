@@ -47,6 +47,12 @@ export class InvalidPasswordError extends Error {
   }
 }
 
+export class EmailUnchangedError extends Error {
+  constructor() {
+    super('The new e-mail is the same as the current one.');
+  }
+}
+
 export class SessionNotFoundError extends Error {
   constructor() {
     super('Session not found.');
@@ -284,6 +290,32 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
           throw new InvalidPasswordError();
         throw error;
       }
+    },
+    /**
+     * Changes the sign-in e-mail after the password is confirmed. It shares the password-guess limit
+     * and ends no session: whoever holds one already needed the password to get here.
+     */
+    async changeEmail(
+      headers: IncomingHttpHeaders,
+      input: { email: string; currentPassword: string },
+    ) {
+      const nodeHeaders = fromNodeHeaders(headers);
+      const found = await instance.api.getSession({ headers: nodeHeaders });
+      if (!found) throw new SessionNotFoundError();
+      await consumePasswordAttempt(found.user.id);
+      try {
+        await instance.api.verifyPassword({
+          headers: nodeHeaders,
+          body: { password: input.currentPassword },
+        });
+      } catch (error) {
+        if (error instanceof APIError && error.body?.code === 'INVALID_PASSWORD')
+          throw new InvalidPasswordError();
+        throw error;
+      }
+      if (input.email === found.user.email.toLowerCase()) throw new EmailUnchangedError();
+      const context = await instance.$context;
+      await context.internalAdapter.updateUser(found.user.id, { email: input.email });
     },
     async changePassword(
       headers: IncomingHttpHeaders,

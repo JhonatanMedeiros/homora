@@ -78,6 +78,8 @@ export const ERROR_MESSAGES = {
   'invalid-current-password': 'The current password is incorrect.',
   'invalid-new-password': 'Use a new password with at least 8 characters.',
   'invalid-profile': 'Provide a name with up to 80 characters.',
+  'invalid-email': 'Enter a valid email address.',
+  'email-unchanged': 'This is already your email address.',
   'too-many-attempts': 'Too many attempts. Try again later.',
   'two-factor-invalid-code': 'The code is not valid.',
   'two-factor-challenge-expired': 'The sign-in step expired. Enter your password again.',

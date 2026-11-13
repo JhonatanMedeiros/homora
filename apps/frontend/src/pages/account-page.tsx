@@ -14,6 +14,7 @@ import { PasswordForm } from '@/features/account/password-form';
 import { ProfileForm } from '@/features/account/profile-form';
 import { PasskeysForm } from '@/features/account/passkeys-form';
 import { TwoFactorForm } from '@/features/account/two-factor-form';
+import { SignInActivity } from '@/features/account/sign-in-activity';
 import { SessionsList } from '@/features/account/sessions-list';
 import type { Profile } from '@/features/account/account-model';
 import { failed, passkeyAvailability, usePasskeyOrigins, usePasskeys } from '@/hooks/use-passkeys';
@@ -148,6 +149,7 @@ export function AccountPage({
       ) : (
         <FormError>{loadFailed ? t('account.loadFailed') : ''}</FormError>
       )}
+      <SignInActivity refreshKey={sessionsVersion} />
       <SessionsList refreshKey={sessionsVersion} />
 
       {profile && (
@@ -157,15 +159,7 @@ export function AccountPage({
             onOpenChange={(open) => !open && close()}
             title={t('account.profile')}
           >
-            <ProfileForm
-              embedded
-              key={profile.name}
-              profile={profile}
-              onChange={(saved) => {
-                onProfileChange(saved);
-                close();
-              }}
-            />
+            <ProfileForm embedded profile={profile} onChange={onProfileChange} onDone={close} />
           </ResponsiveDialog>
           <ResponsiveDialog
             open={panel === 'password'}

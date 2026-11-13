@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/password-input';
 import { FormError } from '@/components/form-error';
 import { SectionTitle } from '@/components/section-title';
 import { t } from '@/i18n';
@@ -13,35 +14,63 @@ import type { Profile } from './account-model';
 export function ProfileForm({
   profile,
   onChange,
+  onDone,
   embedded = false,
 }: {
   profile: Profile;
   onChange: (profile: Profile) => void;
+  /** Everything asked for was saved. */
+  onDone?: () => void;
   /** Inside a dialog that already shows the title. */
   embedded?: boolean;
 }) {
+  const [current, setCurrent] = useState(profile);
   const [name, setName] = useState(profile.name);
+  const [email, setEmail] = useState(profile.email);
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const { saveProfile } = useAccountMutations();
-  const unchanged = name.trim() === profile.name;
+  const { saveProfile, changeEmail } = useAccountMutations();
+  const nameChanged = name.trim() !== current.name;
+  const emailChanged = email.trim().toLowerCase() !== current.email;
+  const ready =
+    !saving &&
+    !!name.trim() &&
+    !!email.trim() &&
+    (nameChanged || emailChanged) &&
+    (!emailChanged || password.length > 0);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError('');
     setSaving(true);
-    const result = await saveProfile(name);
+    let latest = current;
+    let failure: string | undefined;
+    if (nameChanged) {
+      const result = await saveProfile(name);
+      if (result.profile) latest = result.profile;
+      else failure = result.error ?? t('account.profileFailed');
+    }
+    if (!failure && emailChanged) {
+      const result = await changeEmail(email, password);
+      if (result.profile) latest = result.profile;
+      else failure = result.error ?? t('account.profileFailed');
+    }
     setSaving(false);
-    if (!result.profile) {
-      const message = result.error ?? t('account.profileFailed');
-      setError(message);
-      toast.error(message);
+    if (latest !== current) {
+      setCurrent(latest);
+      setName(latest.name);
+      setEmail(latest.email);
+      onChange(latest);
+    }
+    if (failure) {
+      setError(failure);
+      toast.error(failure);
       return;
     }
-    const saved = result.profile;
-    onChange(saved);
-    setName(saved.name);
-    toast.success(t('account.profileSaved'));
+    setPassword('');
+    toast.success(emailChanged ? t('account.emailChanged') : t('account.profileSaved'));
+    onDone?.();
   }
 
   return (
@@ -65,12 +94,35 @@ export function ProfileForm({
           </Field>
           <Field>
             <FieldLabel htmlFor="account-email">{t('account.email')}</FieldLabel>
-            <Input id="account-email" type="email" value={profile.email} readOnly />
+            <Input
+              id="account-email"
+              type="email"
+              required
+              maxLength={254}
+              autoComplete="username"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
             <FieldDescription>{t('account.emailHint')}</FieldDescription>
           </Field>
+          {emailChanged && (
+            <Field>
+              <FieldLabel htmlFor="account-email-password">
+                {t('account.currentPassword')}
+              </FieldLabel>
+              <PasswordInput
+                id="account-email-password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <FieldDescription>{t('account.emailChangeHint')}</FieldDescription>
+            </Field>
+          )}
           <FormError>{error}</FormError>
           <div>
-            <Button type="submit" disabled={saving || unchanged || !name.trim()}>
+            <Button type="submit" disabled={!ready}>
               {saving && <Spinner data-icon="inline-start" />}
               {t('account.saveProfile')}
             </Button>

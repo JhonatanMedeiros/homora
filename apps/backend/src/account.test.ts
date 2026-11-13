@@ -131,6 +131,92 @@ describe('account and activity API', () => {
     expect(last).toBe(429);
   });
 
+  it('changes the sign-in e-mail only after the password, without ending sessions', async () => {
+    open = await setup();
+    const other = await open.auth.createSessionCookie(TEST_EMAIL, TEST_PASSWORD);
+    const change = (payload: object) => open!.call('PATCH', '/api/account/email', payload);
+
+    const wrong = await change({ email: 'ana@homora.test', currentPassword: 'not-the-password' });
+    expect(wrong.statusCode).toBe(400);
+    expect(wrong.json().code).toBe('invalid-current-password');
+    for (const email of ['not-an-email', '', 'a'.repeat(250) + '@x.test'])
+      expect((await change({ email, currentPassword: TEST_PASSWORD })).json().code).toBe(
+        'invalid-email',
+      );
+    expect((await change({ email: TEST_EMAIL, currentPassword: TEST_PASSWORD })).json().code).toBe(
+      'email-unchanged',
+    );
+    // Extra fields are rejected, so a name cannot ride along.
+    expect(
+      (await change({ email: 'x@y.test', currentPassword: TEST_PASSWORD, name: 'x' })).statusCode,
+    ).toBe(400);
+
+    const ok = await change({ email: '  Ana@Homora.Test ', currentPassword: TEST_PASSWORD });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toEqual({
+      name: 'Administrator',
+      email: 'ana@homora.test',
+      twoFactorEnabled: false,
+    });
+    expect((await open.call('GET', '/api/account')).json().email).toBe('ana@homora.test');
+    // Neither this session nor the other one ended.
+    expect((await open.call('GET', '/api/account', undefined, { cookie: other })).statusCode).toBe(
+      200,
+    );
+    // The new address signs in and the old one no longer does.
+    await expect(
+      open.auth.createSessionCookie('ana@homora.test', TEST_PASSWORD),
+    ).resolves.toContain('=');
+    await expect(open.auth.createSessionCookie(TEST_EMAIL, TEST_PASSWORD)).rejects.toThrow();
+  });
+
+  it('requires a session to change the e-mail and throttles password guesses', async () => {
+    open = await setup(true);
+    expect(
+      (
+        await open.call(
+          'PATCH',
+          '/api/account/email',
+          { email: 'a@b.test', currentPassword: 'x' },
+          {},
+        )
+      ).statusCode,
+    ).toBe(401);
+    await open.app.close();
+    open.database.close();
+    open = await setup();
+    let last = 0;
+    for (let i = 0; i < 11; i++)
+      last = (
+        await open.call('PATCH', '/api/account/email', {
+          email: 'a@b.test',
+          currentPassword: 'wrong-password',
+        })
+      ).statusCode;
+    expect(last).toBe(429);
+  });
+
+  it('logs an e-mail change without writing the address', async () => {
+    open = await setup();
+    await open.call('PATCH', '/api/account/email', {
+      email: 'private-address@homora.test',
+      currentPassword: 'wrong-password',
+    });
+    await open.call('PATCH', '/api/account/email', {
+      email: 'private-address@homora.test',
+      currentPassword: TEST_PASSWORD,
+    });
+    const feed = (await open.call('GET', '/api/activity?kind=account')).json();
+    const changes = feed.events.filter(
+      (event: { action: string }) => event.action === 'email-change',
+    );
+    expect(changes.map((event: { outcome: string }) => event.outcome).sort()).toEqual([
+      'failure',
+      'success',
+    ]);
+    expect(JSON.stringify(feed)).not.toContain('private-address');
+  });
+
   it('records the activity feed without the typed e-mail or password', async () => {
     open = await setup();
     const ua = { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) Chrome/130.0 Safari/537.36' };

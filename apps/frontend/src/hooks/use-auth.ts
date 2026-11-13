@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 import { failed, signInWithPasskey } from '@/hooks/use-passkeys';
+import { watchSession } from '@/lib/session-guard';
 
 /** "Try again in 40 s" for a rate-limited response, or null when the wait is unknown. */
 function throttleMessage(response: Response): string | null {
@@ -32,6 +33,37 @@ export function useAuth() {
   const [challenge, setChallenge] = useState(false);
 
   const [attempt, setAttempt] = useState(0);
+  /** The session ended while the app was open (not a sign-out the person asked for). */
+  const [expired, setExpired] = useState(false);
+  const authenticated = status?.authenticated === true;
+
+  useEffect(() => {
+    if (!authenticated) return;
+    let active = true;
+    const expire = () => {
+      if (!active) return;
+      active = false;
+      setExpired(true);
+      setStatus((value) => (value ? { ...value, authenticated: false } : value));
+    };
+    const stop = watchSession(expire);
+    // A tab left in the background may have outlived its session: check when it comes back.
+    const recheck = () => {
+      if (document.visibilityState !== 'visible') return;
+      fetch('/api/auth/status')
+        .then((response) => (response.ok ? (response.json() as Promise<AuthStatus>) : null))
+        .then((value) => {
+          if (value && !value.authenticated) expire();
+        })
+        .catch(() => undefined);
+    };
+    document.addEventListener('visibilitychange', recheck);
+    return () => {
+      active = false;
+      stop();
+      document.removeEventListener('visibilitychange', recheck);
+    };
+  }, [authenticated]);
 
   useEffect(() => {
     let active = true;
@@ -82,6 +114,7 @@ export function useAuth() {
         setChallenge(true);
         return true;
       }
+      setExpired(false);
       setStatus({ configured: true, authenticated: true });
       return true;
     } catch (err) {
@@ -111,6 +144,7 @@ export function useAuth() {
         throw new Error(throttleMessage(response) ?? apiError(body, t('auth.twoFactorFailed')));
       }
       setChallenge(false);
+      setExpired(false);
       setStatus({ configured: true, authenticated: true });
       return true;
     } catch (err) {
@@ -128,6 +162,7 @@ export function useAuth() {
       setError(result.error);
       return false;
     }
+    setExpired(false);
     setStatus((value) => ({
       ...(value ?? { configured: true }),
       configured: true,
@@ -154,6 +189,7 @@ export function useAuth() {
   return {
     status,
     error,
+    expired,
     challenge,
     submit,
     submitPasskey,

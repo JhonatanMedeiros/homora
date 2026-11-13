@@ -16,6 +16,23 @@ export function useAccountMutations() {
     return { profile: (await response.json()) as Profile };
   }
 
+  async function changeEmail(
+    email: string,
+    currentPassword: string,
+  ): Promise<{ profile?: Profile; error?: string }> {
+    const response = await fetch('/api/account/email', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, currentPassword }),
+    }).catch(() => null);
+    if (!response?.ok) {
+      return {
+        error: apiError(await response?.json().catch(() => null), t('account.profileFailed')),
+      };
+    }
+    return { profile: (await response.json()) as Profile };
+  }
+
   async function changePassword(input: {
     currentPassword: string;
     newPassword: string;
@@ -30,5 +47,5 @@ export function useAccountMutations() {
     return apiError(await response?.json().catch(() => null), t('account.passwordFailed'));
   }
 
-  return { saveProfile, changePassword };
+  return { saveProfile, changeEmail, changePassword };
 }

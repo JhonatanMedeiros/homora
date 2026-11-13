@@ -23,6 +23,8 @@ const TITLES = new Set<string>([
   'logout',
   'password-change.success',
   'password-change.failure',
+  'email-change.success',
+  'email-change.failure',
   'two-factor-enable.success',
   'two-factor-enable.failure',
   'two-factor-disable.success',
