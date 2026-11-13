@@ -1,6 +1,6 @@
 import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState } from 'react';
-import { Plus, Send, Webhook } from 'lucide-react';
+import { Bell, MessageSquare, Plus, Send, Webhook } from 'lucide-react';
 import { SectionTitle } from '@/components/section-title';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { SectionSkeleton } from '@/components/skeletons';
 type Channel = {
   id: number;
   name: string;
-  type: 'webhook' | 'telegram';
+  type: 'webhook' | 'telegram' | 'ntfy' | 'discord';
   enabled: boolean;
   allowPrivate: boolean;
   includeUrl: boolean;
@@ -153,6 +153,22 @@ export function NotificationSettings() {
       empty: 'notifications.noTelegram' as const,
       icon: Send,
     },
+    {
+      type: 'ntfy' as const,
+      title: 'notifications.ntfy' as const,
+      hint: 'notifications.ntfyHint' as const,
+      add: 'notifications.addNtfy' as const,
+      empty: 'notifications.noNtfy' as const,
+      icon: Bell,
+    },
+    {
+      type: 'discord' as const,
+      title: 'notifications.discord' as const,
+      hint: 'notifications.discordHint' as const,
+      add: 'notifications.addDiscord' as const,
+      empty: 'notifications.noDiscord' as const,
+      icon: MessageSquare,
+    },
   ];
   return (
     <section aria-labelledby="notifications-title" className="flex flex-col gap-8">
@@ -269,7 +285,11 @@ export function NotificationSettings() {
                       ? t(
                           group.type === 'webhook'
                             ? 'notifications.newWebhook'
-                            : 'notifications.newTelegram',
+                            : group.type === 'ntfy'
+                              ? 'notifications.newNtfy'
+                              : group.type === 'discord'
+                                ? 'notifications.newDiscord'
+                                : 'notifications.newTelegram',
                         )
                       : t('notifications.editChannel', { name: form.name })}
                   </h3>
@@ -292,25 +312,52 @@ export function NotificationSettings() {
                           onChange={(event) => setForm({ ...form, name: event.target.value })}
                         />
                       </Field>
-                      {form.type === 'webhook' ? (
-                        <Field>
-                          <FieldLabel htmlFor="notification-destination">
-                            {t('notifications.url')}
-                          </FieldLabel>
-                          <Input
-                            id="notification-destination"
-                            type="password"
-                            autoComplete="off"
-                            required={editing === null}
-                            value={form.destination}
-                            onChange={(event) =>
-                              setForm({ ...form, destination: event.target.value })
-                            }
-                          />
-                          {editing !== null && (
-                            <FieldDescription>{t('notifications.keep')}</FieldDescription>
+                      {form.type !== 'telegram' ? (
+                        <>
+                          <Field>
+                            <FieldLabel htmlFor="notification-destination">
+                              {t(
+                                form.type === 'ntfy'
+                                  ? 'notifications.urlNtfy'
+                                  : form.type === 'discord'
+                                    ? 'notifications.urlDiscord'
+                                    : 'notifications.url',
+                              )}
+                            </FieldLabel>
+                            <Input
+                              id="notification-destination"
+                              type="password"
+                              autoComplete="off"
+                              required={editing === null}
+                              value={form.destination}
+                              onChange={(event) =>
+                                setForm({ ...form, destination: event.target.value })
+                              }
+                            />
+                            {editing !== null && (
+                              <FieldDescription>{t('notifications.keep')}</FieldDescription>
+                            )}
+                          </Field>
+                          {form.type === 'ntfy' && (
+                            <Field>
+                              <FieldLabel htmlFor="notification-token">
+                                {t('notifications.ntfyToken')}
+                              </FieldLabel>
+                              <Input
+                                id="notification-token"
+                                type="password"
+                                autoComplete="off"
+                                value={form.token}
+                                onChange={(event) =>
+                                  setForm({ ...form, token: event.target.value })
+                                }
+                              />
+                              {editing !== null && (
+                                <FieldDescription>{t('notifications.keep')}</FieldDescription>
+                              )}
+                            </Field>
                           )}
-                        </Field>
+                        </>
                       ) : (
                         <>
                           <Field>
@@ -350,7 +397,9 @@ export function NotificationSettings() {
                       {(
                         [
                           'enabled',
-                          ...(form.type === 'webhook' ? ['allowPrivate' as const] : []),
+                          ...(form.type === 'webhook' || form.type === 'ntfy'
+                            ? ['allowPrivate' as const]
+                            : []),
                           'includeUrl',
                         ] as const
                       ).map((key) => (

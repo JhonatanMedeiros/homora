@@ -31,6 +31,7 @@ import {
   FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { TagInput } from '@/components/tag-input';
 import { FormError } from '@/components/form-error';
 import { ServiceIcon } from '@/components/service-icon';
 import { HostPicker } from '@/components/host-picker';
@@ -60,6 +61,7 @@ export type FormMonitoring = {
 type Props = {
   hosts?: FormHosts;
   monitoring?: FormMonitoring;
+  tags?: { value: string[]; onChange: (tags: string[]) => void };
   dependencies?: FormDependencies;
   editing: boolean;
   value: ServiceInput;
@@ -77,6 +79,7 @@ type Props = {
 export function ServiceForm({
   hosts,
   monitoring,
+  tags,
   dependencies,
   editing,
   value,
@@ -99,6 +102,7 @@ export function ServiceForm({
   const [advanced, setAdvanced] = useState(() =>
     Boolean(
       value.description ||
+      (tags && tags.value.length > 0) ||
       value.icon ||
       (value.checkType && value.checkType !== 'http') ||
       value.checkInterval ||
@@ -209,6 +213,15 @@ export function ServiceForm({
                 placeholder={t('form.descriptionPlaceholder')}
               />
             </Field>
+            {tags && (
+              <Field>
+                <FieldLabel htmlFor="service-tags">
+                  {t('form.tags')}{' '}
+                  <small className="font-normal text-muted-foreground">{t('form.tagsHint')}</small>
+                </FieldLabel>
+                <TagInput id="service-tags" value={tags.value} onChange={tags.onChange} />
+              </Field>
+            )}
             <Field>
               <FieldLabel htmlFor="service-icon">
                 {t('form.icon')}{' '}

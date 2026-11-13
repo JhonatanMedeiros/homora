@@ -31,6 +31,7 @@ import { HostView } from '@/components/host-view';
 import { HostMap } from '@/components/host-map';
 import { useDependencies } from '@/hooks/use-dependencies';
 import { dependsOn, dependentsOf, impairedUpstream, isImpaired } from '@/lib/dependencies';
+import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useHostInventory } from '@/hooks/use-host-inventory';
 import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
@@ -40,6 +41,14 @@ import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
 import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
+import { useTags } from '@/hooks/use-tags';
+import { StatusFilter } from '@/components/status-filter';
+import {
+  matchesStatusFilter,
+  statusBucket,
+  STATUS_FILTERS,
+  type StatusFilter as StatusFilterValue,
+} from '@/lib/status-filter';
 import { FormError } from '@/components/form-error';
 import { StatusBanner } from '@/components/status-banner';
 import { useStatusOverview } from '@/hooks/use-status-overview';
@@ -128,6 +137,10 @@ export function ServicesPage({
   const list = view === 'list' || managing;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const { tags: tagMap, reload: reloadTags } = useTags();
+  const [tagDraft, setTagDraft] = useState<string[] | null>(null);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>('all');
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [shared, setShared] = useState(false);
   // Alert settings live apart from the card. `null` means untouched, so the form shows what the
@@ -287,19 +300,42 @@ export function ServicesPage({
   const needle = managing ? query.trim().toLowerCase() : '';
   const matches = (s: Service) =>
     !needle || s.name.toLowerCase().includes(needle) || s.url.toLowerCase().includes(needle);
+  const allTags = [...new Set(Object.values(tagMap).flat())].sort();
+  const activeTag = managing || organizing || hostView ? null : tagFilter;
+  const bucketOf = (s: Service) =>
+    statusBucket(statuses[s.id], overview?.settings[s.id], blockedIds.has(s.id));
+  const activeStatusFilter = managing || organizing || hostView ? 'all' : statusFilter;
   const filtered = services.filter(
-    (s) => onPage(s) && matches(s) && (selected === null || s.category === selected),
+    (s) =>
+      onPage(s) &&
+      matches(s) &&
+      (selected === null || s.category === selected) &&
+      (activeTag === null || (tagMap[s.id] ?? []).includes(activeTag)) &&
+      matchesStatusFilter(activeStatusFilter, bucketOf(s)),
   );
+  const statusCounts = Object.fromEntries(
+    STATUS_FILTERS.map((filter) => [
+      filter,
+      services.filter((s) => onPage(s) && matchesStatusFilter(filter, bucketOf(s))).length,
+    ]),
+  ) as Record<StatusFilterValue, number>;
+  const problemRank = (bucket: ReturnType<typeof statusBucket>) =>
+    bucket === 'down' ? 2 : bucket === 'degraded' ? 1 : 0;
   const isDown = (s: Service) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id);
   const groups = categories
     .map((category) => ({
       category,
       items: sortedIn(category)
         .filter((s) => filtered.some((f) => f.id === s.id))
-        // Unavailable services rise to top within the group, except in Organize mode (user sets order).
-        .sort((a, b) => (organizing ? 0 : Number(isDown(b)) - Number(isDown(a)))),
+        // Problems rise to the top of the group (offline, then degraded), except in Organize mode,
+        // where the user sets the order. The sort is stable, so the rest keeps its own order.
+        .sort((a, b) => (organizing ? 0 : problemRank(bucketOf(b)) - problemRank(bucketOf(a)))),
     }))
-    .filter((group) => group.items.length || (selected === null && !needle));
+    .filter(
+      (group) =>
+        group.items.length ||
+        (selected === null && !needle && activeStatusFilter === 'all' && activeTag === null),
+    );
 
   function focusEditTrigger(id: number | null) {
     if (id !== null)
@@ -315,6 +351,7 @@ export function ServicesPage({
     setDepRemoved([]);
     setShared(service?.isPublic === true);
     setMonitorDraft(null);
+    setTagDraft(null);
     setForm(
       service
         ? {
@@ -386,6 +423,7 @@ export function ServicesPage({
     setDepRemoved([]);
     setShared(service?.isPublic === true);
     setMonitorDraft(null);
+    setTagDraft(null);
     setForm(
       service
         ? {
@@ -459,6 +497,15 @@ export function ServicesPage({
           });
           if (!alerts.ok) throw new Error(t('error.saveMonitoring'));
           setOverviewVersion((version) => version + 1);
+        }
+        if (tagDraft && JSON.stringify(tagDraft) !== JSON.stringify(tagMap[savedId] ?? [])) {
+          const saved = await fetch(`/api/services/${savedId}/tags`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tags: tagDraft }),
+          });
+          if (!saved.ok) throw new Error(t('error.saveTags'));
+          reloadTags();
         }
         for (const id of depAdded) {
           const failure = await deps.add(savedId, id);
@@ -792,6 +839,10 @@ export function ServicesPage({
             }}
             isPublic={shared}
             onPublicChange={setShared}
+            tags={{
+              value: tagDraft ?? (editing === null ? [] : (tagMap[editing] ?? [])),
+              onChange: setTagDraft,
+            }}
             monitoring={{
               value:
                 monitorDraft ??
@@ -854,6 +905,24 @@ export function ServicesPage({
           onChange={(event) => setQuery(event.target.value)}
           className="max-w-sm"
         />
+      )}
+      {!managing && !organizing && !hostView && services.length > 0 && (
+        <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
+      )}
+      {!managing && !organizing && !hostView && allTags.length > 0 && (
+        <div role="group" aria-label={t('filter.byTag')} className="flex flex-wrap gap-1">
+          {allTags.map((tag) => (
+            <Toggle
+              key={tag}
+              size="sm"
+              pressed={tagFilter === tag}
+              onPressedChange={(on) => setTagFilter(on ? tag : null)}
+              className="text-sm text-muted-foreground data-[state=on]:bg-accent data-[state=on]:text-accent-foreground pointer-coarse:h-11"
+            >
+              #{tag}
+            </Toggle>
+          ))}
+        </div>
       )}
       {!organizing && !hostView && services.length > 0 && categories.length > 2 && (
         <CategoryFilter
@@ -923,6 +992,16 @@ export function ServicesPage({
           onClearFilter={() => setNodeFilter(null)}
         />
       )}
+      {!managing &&
+        !organizing &&
+        !hostView &&
+        services.length > 0 &&
+        (activeStatusFilter !== 'all' || activeTag !== null) &&
+        filtered.length === 0 && (
+          <p role="status" className="py-8 text-center text-sm text-muted-foreground">
+            {t('filter.empty')}
+          </p>
+        )}
       {(hostView ? [] : groups).map(({ category, items }) => {
         const row = groupRows.find((group) => group.name === category);
         return (
@@ -1037,6 +1116,8 @@ export function ServicesPage({
                   onCoolify={() => setCoolifyReview(s.id)}
                   uptime={uptime[s.id]}
                   monitor={overview?.settings[s.id]}
+                  tags={tagMap[s.id]}
+                  onTag={setTagFilter}
                   incident={overview?.open[s.id]}
                   maintenanceUntil={inMaintenance[s.id]?.endsAt}
                   uptimeRange={uptimeRange}

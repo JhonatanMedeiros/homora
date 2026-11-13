@@ -423,3 +423,15 @@ export const serviceDependencies = sqliteTable(
     check('service_dependencies_no_self', sql`${table.serviceId} <> ${table.dependsOnId}`),
   ],
 );
+
+/** Free-form labels on a service ("prod", "media"). Display and filtering only: they never affect checks. */
+export const serviceTags = sqliteTable(
+  'service_tags',
+  {
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    tag: text('tag').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.serviceId, table.tag] })],
+);

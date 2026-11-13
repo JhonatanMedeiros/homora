@@ -71,6 +71,7 @@ export const en = {
   'form.monitoring.degradedHint':
     'An online service slower than this shows as Degraded. Leave empty to turn this state off.',
   'error.saveMonitoring': 'The service was saved, but its alert settings could not be changed.',
+  'error.saveTags': 'The service was saved, but its tags could not be changed.',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -144,6 +145,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'form.monitoring.degraded': 'Degradado quando mais lento que (ms)',
   'form.monitoring.degradedHint':
     'Um serviço online mais lento que isso aparece como Degradado. Deixe vazio para desligar este estado.',
+  'error.saveTags': 'O serviço foi salvo, mas não foi possível alterar as tags.',
   'error.saveMonitoring':
     'O serviço foi salvo, mas os ajustes de alerta não puderam ser alterados.',
 };

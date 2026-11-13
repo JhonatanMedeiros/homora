@@ -433,3 +433,17 @@ export function parseHostLink(value: unknown): HostLink | null {
 }
 export * from './integration-manifest.js';
 export * from './coolify.js';
+
+export const TAG_MAX_LENGTH = 24;
+export const TAGS_MAX_PER_SERVICE = 6;
+/** Lower-case, trimmed, inner whitespace collapsed to "-"; `null` when nothing usable is left. */
+export function normalizeTag(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const tag = value.trim().toLowerCase().replace(/\s+/g, '-');
+  return tag.length > 0 &&
+    tag.length <= TAG_MAX_LENGTH &&
+    ![...tag].some((char) => char.charCodeAt(0) < 32 || char === '<' || char === '>')
+    ? tag
+    : null;
+}
+export type TagsOverview = { tags: Record<number, string[]> };

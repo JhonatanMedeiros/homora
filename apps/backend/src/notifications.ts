@@ -9,10 +9,15 @@ import {
 } from './notification-transitions.js';
 import { getAuthorizedResponse } from './network-request.js';
 
+/** Channels that send to one address (plus an optional token for ntfy). */
+const CHANNEL_TYPES = ['webhook', 'telegram', 'ntfy', 'discord'] as const;
+type ChannelType = (typeof CHANNEL_TYPES)[number];
+const DISCORD_HOSTS = /^(?:(?:ptb|canary)\.)?discord(?:app)?\.com$/;
+
 const channelSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
-    type: z.enum(['webhook', 'telegram']),
+    type: z.enum(CHANNEL_TYPES),
     enabled: z.boolean(),
     allowPrivate: z.boolean().default(false),
     includeUrl: z.boolean().default(false),
@@ -42,7 +47,7 @@ const stateSchema = z
 type Channel = {
   id: number;
   name: string;
-  type: 'webhook' | 'telegram';
+  type: ChannelType;
   secret: string;
   enabled: number;
   allow_private: number;
@@ -87,13 +92,36 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
     if (id !== undefined && !old) return null;
     const previous = old && old.type === data.type ? credentials(old) : {};
     const secret =
-      data.type === 'webhook'
-        ? { destination: data.destination || previous.destination }
-        : { token: data.token || previous.token, chatId: data.chatId || previous.chatId };
-    if (data.type === 'webhook') {
+      data.type === 'telegram'
+        ? { token: data.token || previous.token, chatId: data.chatId || previous.chatId }
+        : data.type === 'ntfy'
+          ? {
+              destination: data.destination || previous.destination,
+              // An empty token on edit keeps the stored one; there is no way to clear it but replacing the channel.
+              token: data.token || previous.token,
+            }
+          : { destination: data.destination || previous.destination };
+    if (data.type !== 'telegram') {
       if (!secret.destination) throw new Error('Destination required');
       const url = new URL(secret.destination);
-      if (url.protocol !== 'https:' || url.username || url.password || url.hash)
+      const secure = url.protocol === 'https:';
+      // ntfy on the LAN is usually plain HTTP; that is only accepted for a private address without a token.
+      const lan = data.type === 'ntfy' && data.allowPrivate && !('token' in secret && secret.token);
+      if (
+        (!secure && !(lan && url.protocol === 'http:')) ||
+        url.username ||
+        url.password ||
+        url.hash
+      )
+        throw new Error('Invalid destination');
+      if (
+        data.type === 'discord' &&
+        !(
+          DISCORD_HOSTS.test(url.hostname) && /^\/api\/webhooks\/\d+\/[\w-]+\/?$/.test(url.pathname)
+        )
+      )
+        throw new Error('Invalid destination');
+      if (data.type === 'ntfy' && (url.pathname.replace(/\/+$/, '') === '' || url.search))
         throw new Error('Invalid destination');
     } else if (
       !secret.token ||
@@ -139,27 +167,46 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
   }
   async function deliver(c: Channel, event: NotificationEvent, serviceUrl: string) {
     const secret = credentials(c);
-    const destination =
-      c.type === 'telegram'
-        ? `https://api.telegram.org/bot${secret.token}/sendMessage`
-        : secret.destination!;
-    const payload =
-      c.type === 'telegram'
-        ? {
-            chat_id: secret.chatId,
-            text: `Homora: ${event.service.name} — ${event.event.toUpperCase()} (${event.reason})${c.include_url ? `\n${serviceUrl}` : ''}`,
-          }
-        : {
-            ...event,
-            service: { ...event.service, ...(c.include_url ? { url: serviceUrl } : {}) },
-          };
+    const text = `Homora: ${event.service.name} — ${event.event.toUpperCase()} (${event.reason})${c.include_url ? `\n${serviceUrl}` : ''}`;
+    let destination = secret.destination!;
+    let headers: Record<string, string> | undefined;
+    let payload: unknown;
+    if (c.type === 'telegram') {
+      destination = `https://api.telegram.org/bot${secret.token}/sendMessage`;
+      payload = { chat_id: secret.chatId, text };
+    } else if (c.type === 'discord') {
+      payload = { content: text.slice(0, 2000), allowed_mentions: { parse: [] } };
+    } else if (c.type === 'ntfy') {
+      // ntfy's JSON publishing: the topic is the path of the address, the request goes to the server root.
+      const url = new URL(secret.destination!);
+      const topic = decodeURIComponent(url.pathname.replace(/^\/+|\/+$/g, ''));
+      destination = `${url.origin}/`;
+      payload = {
+        topic,
+        title: event.service.name,
+        message: `${event.event.toUpperCase()} (${event.reason})${c.include_url && serviceUrl ? `\n${serviceUrl}` : ''}`,
+        priority: event.event === 'down' ? 4 : 3,
+        tags: [event.event === 'down' ? 'rotating_light' : 'white_check_mark'],
+      };
+      if (secret.token) headers = { authorization: `Bearer ${secret.token}` };
+    } else {
+      payload = {
+        ...event,
+        service: { ...event.service, ...(c.include_url ? { url: serviceUrl } : {}) },
+      };
+    }
     const response = await getAuthorizedResponse(
       destination,
       {
         origins: [new URL(destination).origin],
-        allowPrivate: !!c.allow_private && c.type === 'webhook',
+        allowPrivate: !!c.allow_private && (c.type === 'webhook' || c.type === 'ntfy'),
       },
-      { timeoutMs: 5000, maxBodyBytes: 16384, jsonBody: JSON.stringify(payload) },
+      {
+        timeoutMs: 5000,
+        maxBodyBytes: 16384,
+        jsonBody: JSON.stringify(payload),
+        ...(headers ? { headers } : {}),
+      },
     );
     if (response.status < 200 || response.status >= 300) throw new Error(`HTTP ${response.status}`);
     if (c.type === 'telegram') {

@@ -21,6 +21,8 @@ import { createObservationStore } from './service-observations.js';
 import { createIncidentStore } from './service-incidents.js';
 import { createRollupStore } from './service-rollup.js';
 import { createMaintenanceStore } from './service-maintenance.js';
+import { createTagStore } from './service-tags.js';
+import { registerServiceTagRoutes } from './routes/service-tags.js';
 import { registerServiceMaintenanceRoutes } from './routes/service-maintenance.js';
 import { createDockerPush } from './docker-push.js';
 import { registerDockerPushRoutes } from './routes/docker-push.js';
@@ -74,6 +76,7 @@ export function createApp(
   const notifications = createNotifications(sqlite, vault);
   const incidents = createIncidentStore(sqlite);
   const maintenance = createMaintenanceStore(sqlite);
+  const tagStore = createTagStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
   observations.clear();
   const serviceMonitor = createServiceMonitor(
@@ -176,6 +179,7 @@ export function createApp(
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceIncidentRoutes(app, incidents, observations, auth, audit);
   registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
+  registerServiceTagRoutes(app, tagStore);
   registerServiceConfigurationRoutes(
     app,
     configuration,
