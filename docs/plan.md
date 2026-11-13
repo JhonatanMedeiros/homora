@@ -1,14 +1,14 @@
 # Delivery Plan
 
-This document outlines phase overviews (checklist updated on 2026-11-12, including the private-network default (#83), legacy Proxmox cleanup (#85), keyboard shortcuts (#86), ADRs 0004-0007 (#87) and the history size fix (#88); forward-looking direction is in [strategy](estrategia.md)). For prioritized sequencing,
+This document outlines phase overviews (checklist updated on 2026-11-12, including the private-network default (#83), legacy Proxmox cleanup (#85), keyboard shortcuts (#86), ADRs 0004-0007 (#87) and the history size fix (#88); forward-looking direction is in [strategy](strategy.md)). For prioritized sequencing,
 current state, and completion criteria for each milestone, consult the
-[evolution plan](evolucao.md). Phases R0 to R4 (adoption, living homepage, integrations, access, governed agents)
-are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not repeated here.
+[evolution plan](evolution.md). Phases R0 to R4 (adoption, living homepage, integrations, access, governed agents)
+are tracked in [strategy](strategy.md) and [evolution plan](evolution.md), not repeated here.
 
 ## Phase 0 — Validation
 
 - [x] Evaluate existing dashboards and document real gaps in
-      [product and competitor evaluation](avaliacao-produto.md); positioning hypothesis
+      [product and competitor evaluation](product-evaluation.md); positioning hypothesis
       still needs validation with users.
 - [ ] Finalize name, target audience, and usage examples; verify name and trademark availability.
 - [x] Choose tech stack (Fastify, React, SQLite), distribution format (Docker
@@ -26,17 +26,17 @@ are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not 
 
 - [x] Implement periodic health checks with timeouts, caching, and refresh indicators.
 - [x] Create Proxmox adapter with read token and TLS validation, as a named connection
-      (see [ADR 0001](decisoes/0001-proxmox-connections.md)); the legacy single-endpoint code
+      (see [ADR 0001](decisions/0001-proxmox-connections.md)); the legacy single-endpoint code
       was removed and only its startup migrator remains.
 - [ ] Validate the Proxmox adapter against real environments: reduced permissions and failure
       scenarios. A connection with an imported CA succeeded in the maintainer environment.
 - [x] Display inventory without modifying infrastructure.
 - [x] Provide reviewable card suggestions from Proxmox (service-to-host map, R4). Delivered in
-      five phases (issue #96, [ADR 0008](decisoes/0008-service-to-host-map.md)); validated only
+      five phases (issue #96, [ADR 0008](decisions/0008-service-to-host-map.md)); validated only
       against simulated Proxmox responses, so the real-environment item below stays open.
 - [x] Personalization (R3): accent, gradients, translucent cards, background image, custom CSS
       with safe mode, and pages on the Home (issue #97,
-      [ADR 0009](decisoes/0009-appearance-and-pages.md)).
+      [ADR 0009](decisions/0009-appearance-and-pages.md)).
 - [x] Test destination protection (network policy).
 - [ ] Test unavailability, invalid credentials, and reduced permissions against a real Proxmox.
 
@@ -47,7 +47,7 @@ are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not 
 - [x] UI review of proposals with diff and expiration; atomic batches.
 - [x] Audit records written under database transactions.
 - [ ] Manual visual validation, high concurrency load testing, and injection tests against real
-      responses (see P4 in [evolution plan](evolucao.md)).
+      responses (see P4 in [evolution plan](evolution.md)).
 
 ## Phase 4 — Distribution and Validation
 
@@ -60,7 +60,7 @@ are tracked in [strategy](estrategia.md) and [evolution plan](evolucao.md), not 
 - [ ] Evaluate Proxmox helper install script and additional integrations based on user demand.
       (Declarative adapters, the contract harness, five reference integrations and Proxmox node
       selection are done and unvalidated; live validation is still pending. Beszel and TrueNAS were
-      skipped for transport reasons, see `integracoes.md`.)
+      skipped for transport reasons, see `integrations.md`.)
 
 ## Risks and Open Decisions
 

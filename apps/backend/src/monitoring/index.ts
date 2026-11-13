@@ -6,7 +6,7 @@
  * checks, response-body matching, uptime SQL) stay private to the folder. The server composition
  * (`app.ts`), the SQLite schema/migrations and the destination policy (`network-policy.ts`,
  * `network-request.ts`) deliberately remain outside this folder as trusted boundaries.
- * See docs/arquitetura.md ("Monitoring capability").
+ * See docs/architecture.md ("Monitoring capability").
  */
 export { createServiceMonitor, startServiceMonitor } from './monitor.js';
 export type { CheckResult, ServiceStatus, StatusReason } from './monitor.js';

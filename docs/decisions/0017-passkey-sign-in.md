@@ -79,5 +79,5 @@ Automated: API tests with a software authenticator (registration, listing, renam
 tampering, wrong origin/RP ID, missing user verification, expired challenge, unknown credential, rate
 limit, session lifetimes and cookies, second-step policy, closed routes, header-forged origin), RP ID and
 config tests, interface tests, migration data-preservation test and script tests (backup/restore with a
-different session secret, both resets, legacy databases). See `docs/evolucao.md` for the browser pass that
+different session secret, both resets, legacy databases). See `docs/evolution.md` for the browser pass that
 was and was not done.

@@ -2,7 +2,7 @@
 
 Private SDK for built-in, read-only integrations and their widgets. The complete contributor and
 agent workflow is in [docs/adapters.md](../../docs/adapters.md); current support and live-validation
-status are in [docs/integracoes.md](../../docs/integracoes.md).
+status are in [docs/integrations.md](../../docs/integrations.md).
 
 Each integration owns its definition, descriptor, fixtures, tests and optional backend, frontend,
 translations, MCP tools and development fixture under `src/integrations/<type>`. Start with
