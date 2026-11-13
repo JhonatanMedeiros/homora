@@ -196,6 +196,13 @@
   }
 }
 
+.auth-loading {
+  opacity: 0;
+  animation:
+    auth-loading-in 200ms ease 400ms forwards,
+    auth-loading-spin 900ms linear infinite;
+}
+
 .auth-glow {
   left: 50%;
   top: 50%;
@@ -292,6 +299,18 @@
   from {
     opacity: 0;
     transform: translateY(-4px);
+  }
+}
+
+@keyframes auth-loading-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes auth-loading-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

@@ -38,6 +38,20 @@ export const en = {
   'auth.setupFailed':
     'Could not create the account. Check the email and use a password of at least 8 characters.',
   'auth.loginFailed': 'Invalid email or password, or too many attempts. Try again later.',
+  'auth.capsLock': 'Caps Lock is on.',
+  'auth.tooManyAttempts': 'Too many attempts. Try again in {wait}.',
+  'auth.waitSeconds': '{seconds} s',
+  'auth.waitMinutes': '{minutes} min',
+  'auth.forgotPassword': 'Forgot your password?',
+  'auth.forgotIntro':
+    'Recovery runs on the server where Homora is installed. It removes the account so you can create a new one. Services and connections are kept.',
+  'auth.forgotCompose': 'With Docker Compose',
+  'auth.forgotSource': 'From the source code',
+  'auth.forgotConfirm':
+    'Each command first shows the account it will remove. Add --yes to confirm, then open Homora to create a new account.',
+  'auth.forgotCopy': 'Copy',
+  'auth.forgotCopied': 'Copied',
+  'auth.passwordRequirement': 'Use at least 8 characters.',
   'auth.logoutFailed': 'Could not sign out. Try again.',
   'auth.connectionFailed': 'Connection failed.',
   'auth.twoFactorTitle': 'Two-step verification',
@@ -111,6 +125,20 @@ export const ptBR: Record<keyof typeof en, string> = {
     'Não foi possível criar a conta. Verifique o e-mail e use uma senha de pelo menos 8 caracteres.',
   'auth.loginFailed':
     'E-mail ou senha inválidos, ou muitas tentativas. Tente novamente mais tarde.',
+  'auth.capsLock': 'Caps Lock está ativado.',
+  'auth.tooManyAttempts': 'Muitas tentativas. Tente novamente em {wait}.',
+  'auth.waitSeconds': '{seconds} s',
+  'auth.waitMinutes': '{minutes} min',
+  'auth.forgotPassword': 'Esqueceu a senha?',
+  'auth.forgotIntro':
+    'A recuperação roda no servidor onde o Homora está instalado. Ela remove a conta para você criar outra. Serviços e conexões são mantidos.',
+  'auth.forgotCompose': 'Com Docker Compose',
+  'auth.forgotSource': 'A partir do código-fonte',
+  'auth.forgotConfirm':
+    'Cada comando mostra antes a conta que será removida. Acrescente --yes para confirmar e depois abra o Homora para criar uma nova conta.',
+  'auth.forgotCopy': 'Copiar',
+  'auth.forgotCopied': 'Copiado',
+  'auth.passwordRequirement': 'Use pelo menos 8 caracteres.',
   'auth.logoutFailed': 'Não foi possível sair. Tente novamente.',
   'auth.connectionFailed': 'Falha de conexão.',
   'auth.twoFactorTitle': 'Verificação em duas etapas',

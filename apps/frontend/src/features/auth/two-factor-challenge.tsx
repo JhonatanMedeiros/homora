@@ -4,6 +4,7 @@ import { CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { OtpInput } from '@/features/auth/otp-input';
 import { FormError } from '@/components/form-error';
 import { t } from '@/i18n';
 
@@ -20,13 +21,12 @@ export function TwoFactorChallenge({ error, onVerify, onCancel }: Props) {
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function verify(value: string) {
     if (pending.current) return;
     pending.current = true;
     setBusy(true);
     try {
-      if (!(await onVerify(code.replace(/\s+/g, ''), recovery))) setCode('');
+      if (!(await onVerify(value.replace(/\s+/g, ''), recovery))) setCode('');
     } finally {
       pending.current = false;
       setBusy(false);
@@ -42,24 +42,39 @@ export function TwoFactorChallenge({ error, onVerify, onCancel }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(event) => void submit(event)}>
+        <form
+          onSubmit={(event: FormEvent) => {
+            event.preventDefault();
+            void verify(code);
+          }}
+        >
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="two-factor-code">
                 {recovery ? t('auth.recoveryCode') : t('auth.twoFactorCode')}
               </FieldLabel>
-              <Input
-                key={recovery ? 'recovery' : 'totp'}
-                id="two-factor-code"
-                autoFocus
-                required
-                autoComplete="one-time-code"
-                inputMode={recovery ? 'text' : 'numeric'}
-                maxLength={recovery ? 16 : 8}
-                spellCheck={false}
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-              />
+              {recovery ? (
+                <Input
+                  key="recovery"
+                  id="two-factor-code"
+                  autoFocus
+                  required
+                  autoComplete="one-time-code"
+                  maxLength={16}
+                  spellCheck={false}
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                />
+              ) : (
+                <OtpInput
+                  key="totp"
+                  id="two-factor-code"
+                  value={code}
+                  onChange={setCode}
+                  onComplete={(value) => void verify(value)}
+                  disabled={busy}
+                />
+              )}
             </Field>
             <FormError>{error}</FormError>
             <Button type="submit" disabled={busy}>

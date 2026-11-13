@@ -3,15 +3,17 @@ import { KeyRound } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import type { AuthStatus, Credentials } from '@/hooks/use-auth';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { BrandMark } from '@/components/brand-mark';
 import { FormError } from '@/components/form-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
-import { AuthShowcase } from '@/features/auth/auth-showcase';
+import { AuthPreviewStrip, AuthShowcase } from '@/features/auth/auth-showcase';
+import { ForgotPassword } from '@/features/auth/forgot-password';
 import { TwoFactorChallenge } from '@/features/auth/two-factor-challenge';
 import { passkeyAvailability } from '@/hooks/use-passkeys';
 import { t } from '@/i18n';
@@ -45,9 +47,12 @@ export function AuthPage({
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [mismatch, setMismatch] = useState(false);
+  const [confirmTouched, setConfirmTouched] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
+  const creating = status ? !status.configured : false;
+  const showMismatch = creating && confirmation !== password && (confirmTouched || mismatch);
   const passkey = status?.configured ? passkeyAvailability(status.passkey?.origins) : null;
 
   async function startPasskey() {
@@ -88,9 +93,16 @@ export function AuthPage({
         <div className="flex w-full max-w-sm flex-col gap-6 2xl:max-w-md">
           <div className="flex items-center justify-between">
             <BrandMark className="text-2xl" />
-            <LocaleSwitcher />
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <LocaleSwitcher />
+            </div>
           </div>
-          <Card>
+          {status && !challenge && <AuthPreviewStrip />}
+          <Card
+            key={status && challenge && onVerify ? 'challenge' : 'form'}
+            className="motion-panel"
+          >
             {status && challenge && onVerify ? (
               <TwoFactorChallenge
                 error={error}
@@ -148,6 +160,9 @@ export function AuthPage({
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                         />
+                        {!status.configured && (
+                          <FieldDescription>{t('auth.passwordRequirement')}</FieldDescription>
+                        )}
                       </Field>
                       {!status.configured && (
                         <Field>
@@ -161,8 +176,11 @@ export function AuthPage({
                             maxLength={1024}
                             autoComplete="new-password"
                             value={confirmation}
+                            aria-invalid={showMismatch || undefined}
+                            onBlur={() => setConfirmTouched(true)}
                             onChange={(e) => setConfirmation(e.target.value)}
                           />
+                          {showMismatch && <FormError>{t('auth.passwordMismatch')}</FormError>}
                         </Field>
                       )}
                       {status.configured && (
@@ -175,7 +193,7 @@ export function AuthPage({
                           <FieldLabel htmlFor="remember-me">{t('auth.rememberMe')}</FieldLabel>
                         </Field>
                       )}
-                      <FormError>{mismatch ? t('auth.passwordMismatch') : error}</FormError>
+                      {error && <FormError>{error}</FormError>}
                       <Button type="submit" disabled={busy}>
                         {busy && <Spinner data-icon="inline-start" />}
                         {busy
@@ -206,6 +224,7 @@ export function AuthPage({
                       )}
                     </FieldGroup>
                   </form>
+                  {status.configured && <ForgotPassword />}
                 </CardContent>
               </>
             ) : (

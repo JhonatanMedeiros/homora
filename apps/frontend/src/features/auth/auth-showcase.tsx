@@ -93,3 +93,28 @@ export function AuthShowcase() {
     </aside>
   );
 }
+
+/** Phone-sized counterpart of the showcase: three of the same example services in one slim row. */
+export function AuthPreviewStrip() {
+  const states = useDemoStates();
+  return (
+    <ul
+      data-slot="auth-preview-strip"
+      aria-hidden="true"
+      className="auth-row grid grid-cols-3 gap-2 lg:hidden"
+    >
+      {rows.slice(0, 3).map((row, index) => (
+        <li
+          key={row.name}
+          className="flex min-w-0 items-center gap-1.5 rounded-full border bg-card py-1 pr-2.5 pl-1.5 text-xs"
+        >
+          <span className="grid size-5 shrink-0 place-items-center [&_img]:size-4">
+            <ServiceIcon icon={row.icon} name={row.name} />
+          </span>
+          <span className="truncate font-medium">{row.name}</span>
+          <StatusLight state={states[index]} className="[&>span:last-child]:sr-only" />
+        </li>
+      ))}
+    </ul>
+  );
+}
