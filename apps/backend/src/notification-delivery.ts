@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { Service } from '@homora/shared';
+import type { Locale } from '@homora/i18n';
 import { z } from 'zod';
 import { notificationText } from './notification-i18n.js';
 import { getAuthorizedResponse } from './network-request.js';
@@ -17,7 +18,7 @@ export type NotificationChannel = {
   enabled: number;
   allow_private: number;
   include_url: number;
-  locale: 'en' | 'pt-BR';
+  locale: Locale;
   created_at: string;
   last_sent_at: string | null;
   last_error: string | null;
