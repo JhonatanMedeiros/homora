@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { isLegacyConnectionType, legacyConnectionCapabilities } from '@homora/integrations';
 import { integrationRegistry } from './integration-registry.js';
-import { widgetChangeDiscoverySchema } from './mcp-proposal-tools.js';
+import { widgetChangeDiscoverySchema } from './mcp-proposal-schemas.js';
 import type { McpRuntimeContext } from './mcp-tool-context.js';
 
 export function registerMcpIntegrationTools(

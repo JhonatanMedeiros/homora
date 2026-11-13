@@ -74,7 +74,7 @@ flowchart LR
 - Current MCP: local stdio process and stateless Streamable HTTP endpoint with scoped token authentication. The stdio process accesses SQLite
   and the credential vault directly. MCP tool registration is composed by capability in `mcp.ts`;
   the `mcp-*-tools.ts` modules own tool groups, while shared authorization and response helpers
-  are passed through `mcp-tool-context.ts`. MCP tools validate inputs with Zod and provide queries
+  are passed through `mcp-tool-context.ts`. Scope binding (`mcp-identity.ts`), response filtering (`mcp-responses.ts`) and discovery schemas (`mcp-proposal-schemas.ts`) are separate from transports and from the proposal domain; see [ADR 0013](decisoes/0013-mcp-agent-proposal-boundaries.md). MCP tools validate inputs with Zod and provide queries
   and proposal creation without going through HTTP routes or web session cookies. They never
   persist card, group, or widget changes without human approval. Connection suggestions open a human-completed form and do not create a connection; integration queries do not return credentials.
 - Persistence: SQLite, migrations, and database restore scripts are implemented.

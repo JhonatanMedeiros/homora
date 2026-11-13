@@ -4,8 +4,6 @@ import type { DatabaseSync } from 'node:sqlite';
 import { validateService } from '@homora/shared';
 import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
 import { serviceProposalSchema } from './input-schemas.js';
-import { AGENT_SCOPES } from './agent-scopes.js';
-import { z } from 'zod';
 import { createManagedProposalCreator } from './managed-proposal-creator.js';
 import { createProposalReviewService } from './proposal-review.js';
 import { managedHash } from './managed-proposals.js';
@@ -13,26 +11,11 @@ import { createProposalQueries } from './proposal-queries.js';
 import { createProposalBatches } from './proposal-batches.js';
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-export { AGENT_SCOPES } from './agent-scopes.js';
 type Diff = ServiceChange;
-const identityId = z.string().regex(/^[0-9a-f]{32}$/);
-const identityScopes = z
-  .array(z.enum(AGENT_SCOPES))
-  .min(1)
-  .max(AGENT_SCOPES.length)
-  .refine((items) => new Set(items).size === items.length);
-export const agentChangeSchema = z.discriminatedUnion('op', [
-  z
-    .object({
-      op: z.literal('create'),
-      name: z.string().trim().min(1).max(80),
-      scopes: identityScopes,
-    })
-    .strict(),
-  z.object({ op: z.literal('update-scopes'), id: identityId, scopes: identityScopes }).strict(),
-  z.object({ op: z.literal('revoke'), id: identityId }).strict(),
-  z.object({ op: z.literal('rotate'), id: identityId }).strict(),
-]);
+import { agentChangeSchema } from './agent-changes.js';
+import { AGENT_SCOPES } from './agent-scopes.js';
+import { z } from 'zod';
+export { agentChangeSchema, AGENT_SCOPES };
 export function createProposalService(
   sqlite: DatabaseSync,
   configuration = createServiceConfiguration(sqlite),

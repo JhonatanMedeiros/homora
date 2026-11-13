@@ -1614,3 +1614,13 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Reviewed backend error boundaries and frontend translation helpers. Existing notification delivery diagnostics are translated at display time, with unknown values reduced to a generic message and HTTP status codes retained. MCP and upstream authentication errors remain separate protocol/client boundaries; not all runtime dependency errors have a localized code.
 - Kept typed application and integration adapters because they serve existing non-React call sites, dynamic fallback contracts and locale-aware formatting. The dynamic fallback now uses the public i18next translation API instead of its interpolator service.
 - Validation: `pnpm check` (1,357 application tests and 18 script tests) and `pnpm build` passed. Browser layout and live notification delivery remain unverified.
+
+### MCP, agent and proposal boundaries (issue #136)
+
+- Mapped transports, scope enforcement, tools, identities and the proposal domain
+  ([ADR 0013](decisoes/0013-mcp-agent-proposal-boundaries.md)). Extracted `mcp-identity.ts`,
+  `mcp-responses.ts`, `mcp-proposal-schemas.ts` and `agent-changes.ts`, removing the tool-to-tool
+  import and the `proposals` ↔ `proposal-review` cycle. A separate package was evaluated and deferred.
+- Behavior is unchanged; this does not complete R4 (issue #124), whose criteria stay open.
+- Validated with `pnpm check` (includes the MCP, governance, lifecycle and concurrency suites) and
+  `pnpm build`. No live-infrastructure validation was performed.

@@ -1,25 +1,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
-import { serviceProposalSchema } from './input-schemas.js';
-import { discoverySchema } from './mcp-discovery-schema.js';
-import { cardOrderSchema, groupChangeSchema, widgetChangeSchema } from './managed-proposals.js';
+import {
+  cardOrderDiscoverySchema,
+  groupChangeDiscoverySchema,
+  serviceProposalDiscoverySchema,
+} from './mcp-proposal-schemas.js';
 import type { McpToolContext } from './mcp-tool-context.js';
-
-// The MCP SDK publishes an empty inputSchema for z.discriminatedUnion, so tools
-// advertise these flat object schemas for discovery. The strict discriminated
-// unions in proposals.ts / managed-proposals.ts remain the source of truth and
-// re-validate every call.
-const serviceProposalDiscoverySchema = discoverySchema(
-  'propose_service_card',
-  serviceProposalSchema,
-);
-const groupChangeDiscoverySchema = discoverySchema('propose_group_change', groupChangeSchema);
-const cardOrderDiscoverySchema = discoverySchema('propose_card_order', cardOrderSchema);
-export const widgetChangeDiscoverySchema = discoverySchema(
-  'propose_widget_change',
-  widgetChangeSchema,
-);
 
 export function registerMcpProposalTools(
   server: McpServer,
