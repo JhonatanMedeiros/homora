@@ -180,7 +180,7 @@ export function createAuditLog(sqlite: DatabaseSync, now: () => number = Date.no
             ? { type: 'user' as const, name: row.user_name }
             : row.actor === ANONYMOUS_ACTOR
               ? { type: 'anonymous' as const, name: null }
-              : { type: 'agent' as const, name: row.agent_name },
+              : { type: 'agent' as const, name: row.agent_name, id: row.actor },
           detail: row.detail,
           ipAddress: row.ip_address,
           proposalId: row.proposal_id,

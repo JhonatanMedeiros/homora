@@ -164,3 +164,10 @@ export function proposalSummary(diff: Diff | null, current?: Service): string {
 export const formatDate = formatDateTime;
 
 export type { Service };
+
+/** Counts of what an agent can read and suggest, from its scopes. */
+export function permissionCounts(agent: Agent) {
+  const scopes = parseScopes(agent.scopes);
+  const write = scopes.filter(isWriteScope).length;
+  return { read: scopes.length - write, write };
+}

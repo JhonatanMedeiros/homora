@@ -3,6 +3,7 @@ import { Toaster, toast } from 'sonner';
 import { useState } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { Agents } from './agents';
 
 beforeEach(() => {
@@ -19,13 +20,15 @@ afterEach(() => {
 function Harness() {
   const [token, setToken] = useState('');
   return (
-    <Agents
-      services={[]}
-      onApplied={() => {}}
-      token={token}
-      setToken={setToken}
-      onSetupConnection={() => {}}
-    />
+    <MemoryRouter>
+      <Agents
+        services={[]}
+        onApplied={() => {}}
+        token={token}
+        setToken={setToken}
+        onSetupConnection={() => {}}
+      />
+    </MemoryRouter>
   );
 }
 
@@ -146,31 +149,57 @@ it('lets a custom profile choose each permission', async () => {
   });
 });
 
-it('shows each agent with pending proposals and confirms before rotating or revoking', async () => {
+it('shows each agent as a card and confirms inside its dialog before rotating or revoking', async () => {
   const calls = mockApi([active]);
   render(<Harness />);
   await openAgents();
   expect(await screen.findByText('1 pendentes')).toBeTruthy();
-  expect(screen.getByText(/Criado em/)).toBeTruthy();
-  const open = () =>
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Opções de Assistente' }), {
-      key: 'Enter',
-    });
-  open();
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerar novo token' }));
-  const rotate = await screen.findByRole('alertdialog');
+  expect(screen.getByText('Lê e sugere mudanças')).toBeTruthy();
+  expect(screen.getByText('Lê: 1 · Sugere: 1')).toBeTruthy();
+  const open = async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Assistente' }));
+    return screen.findByRole('dialog', { name: 'Assistente' });
+  };
+  const dialog = await open();
+  expect(within(dialog).getByText('Pode ler')).toBeTruthy();
+  expect(within(dialog).getByText('Pode sugerir (você sempre revisa)')).toBeTruthy();
+  expect(
+    within(dialog).getByRole('link', { name: 'Ver toda a atividade' }).getAttribute('href'),
+  ).toBe('/manage/activity');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Gerar novo token' }));
+  const rotate = within(dialog).getByRole('alertdialog');
   expect(within(rotate).getByText(/para de funcionar na hora/)).toBeTruthy();
   fireEvent.click(within(rotate).getByRole('button', { name: 'Cancelar' }));
-  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+  expect(within(dialog).queryByRole('alertdialog')).toBeNull();
   expect(calls.some((call) => call.url.endsWith('/rotate'))).toBe(false);
-  open();
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Revogar' }));
-  const revoke = await screen.findByRole('alertdialog');
-  fireEvent.click(within(revoke).getByRole('button', { name: 'Revogar' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Revogar' }));
+  fireEvent.click(
+    within(within(dialog).getByRole('alertdialog')).getByRole('button', { name: 'Revogar agente' }),
+  );
   await waitFor(() =>
     expect(
       calls.some((call) => call.url === '/api/agents/a1/revoke' && call.method === 'POST'),
     ).toBe(true),
+  );
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Assistente' })).toBeNull());
+});
+
+it('summarises what waits, who is active and lets the review period change in a dialog', async () => {
+  const calls = mockApi([active]);
+  render(<Harness />);
+  const waiting = (await screen.findByText('Aguardando você')).closest('[data-slot="card"]');
+  await waitFor(() => expect(waiting?.textContent).toContain('1'));
+  fireEvent.click(screen.getByRole('button', { name: 'Alterar' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Prazo de revisão' });
+  fireEvent.change(within(dialog).getByLabelText('Minutos (1–120)'), { target: { value: '30' } });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Salvar prazo' }));
+  await waitFor(() =>
+    expect(
+      calls.some((call) => call.url === '/api/proposal-settings' && call.method === 'PUT'),
+    ).toBe(true),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog', { name: 'Prazo de revisão' })).toBeNull(),
   );
 });
 
@@ -178,7 +207,7 @@ it('opens the setup guide any time, with a token placeholder and a remembered fo
   mockApi([active]);
   render(<Harness />);
   await openAgents();
-  await screen.findByRole('button', { name: 'Opções de Assistente' });
+  await screen.findByRole('button', { name: 'Abrir Assistente' });
   fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
   const dialog = await screen.findByRole('dialog', { name: 'Conectar um agente' });
   expect(dialog.textContent).toContain('COLE_O_TOKEN_AQUI');
@@ -242,7 +271,8 @@ it('reviews a batch together and explains conflicting changes', async () => {
   });
   vi.stubGlobal('fetch', fetchMock);
   render(<Harness />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Aprovar lote' }));
+  fireEvent.click(await screen.findByRole('button', { name: /^Aprovar lote/ }));
+  expect(screen.getByText('Lote de 3 alterações')).toBeTruthy();
   expect(await screen.findByText(/As alterações do lote entram em conflito/)).toBeTruthy();
   expect(fetchMock).toHaveBeenCalledWith(
     '/api/proposal-batches/batch/review',

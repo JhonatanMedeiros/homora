@@ -56,7 +56,7 @@ it('shows pending proposals in clear language and approves with a single click',
     }),
   );
   expect(await screen.findByText('Adicionar “Immich”')).toBeTruthy();
-  expect(screen.getByText('Aguardando você')).toBeTruthy();
+  expect(screen.getAllByText('Aguardando você').length).toBeGreaterThan(0);
   expect(screen.getByRole('tab', { name: /^Propostas\s*1$/ })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /Aprovar e aplicar/ }));
   await waitFor(() =>
@@ -66,7 +66,7 @@ it('shows pending proposals in clear language and approves with a single click',
     ),
   );
   fireEvent.mouseDown(screen.getByRole('tab', { name: /^Agentes/ }));
-  expect((await screen.findAllByText('Ler serviços')).length).toBeGreaterThan(0);
+  expect(await screen.findByRole('button', { name: /^Abrir / })).toBeTruthy();
 });
 
 it('does not treat unauthorized private network as service down', async () => {

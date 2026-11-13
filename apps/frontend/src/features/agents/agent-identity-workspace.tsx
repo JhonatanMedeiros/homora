@@ -1,20 +1,13 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
 import type { Agent, Proposal } from './agent-model';
-import { AgentList } from './agent-list';
+import { AgentCard } from './agent-card';
+import { AgentDialog } from './agent-dialog';
+import { agentEvents } from './agent-activity';
+import type { ActivityEvent } from '@/features/activity/activity-model';
 import { ConnectDialog } from './connect-dialog';
 import { NewAgentDialog } from './new-agent-dialog';
 import { TokenDialog } from './token-dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -24,7 +17,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { RowListSkeleton } from '@/components/skeletons';
+import { CardGridSkeleton } from '@/components/skeletons';
 import { TabsContent } from '@/components/ui/tabs';
 import { t } from '@/i18n';
 
@@ -33,6 +26,9 @@ type Props = {
   activeAgents: Agent[];
   revokedAgents: Agent[];
   pending: Proposal[];
+  proposals: Proposal[];
+  /** Audited proposal events, or `null` while they load. */
+  events: ActivityEvent[] | null;
   token: string;
   tokenFor: string;
   creating: boolean;
@@ -52,6 +48,8 @@ export function AgentIdentityWorkspace({
   activeAgents,
   revokedAgents,
   pending,
+  proposals,
+  events,
   token,
   tokenFor,
   creating,
@@ -64,21 +62,30 @@ export function AgentIdentityWorkspace({
   onRotate,
   onRevoke,
 }: Props) {
-  const [rotating, setRotating] = useState<Agent | null>(null);
-  const [revokingAgent, setRevokingAgent] = useState<Agent | null>(null);
+  const [opened, setOpened] = useState<Agent | null>(null);
 
   const create = async (name: string, scopes: string[]) => {
     const created = await onCreate(name, scopes);
     if (created) setCreating(false);
     return created;
   };
-  const rotate = (agent: Agent) => {
-    setRotating(null);
-    return onRotate(agent);
-  };
-  const revoke = (agent: Agent) => {
-    setRevokingAgent(null);
-    return onRevoke(agent);
+  const cardFor = (agent: Agent) => {
+    const mine = agentEvents(agent, events ?? [], proposals);
+    return (
+      <li key={agent.id} className="flex">
+        <AgentCard
+          agent={agent}
+          pending={pending.filter((proposal) => proposal.author === agent.id).length}
+          approved={
+            proposals.filter(
+              (proposal) => proposal.author === agent.id && proposal.state === 'approved',
+            ).length
+          }
+          lastActivity={mine[0]?.createdAt ?? null}
+          onOpen={setOpened}
+        />
+      </li>
+    );
   };
 
   return (
@@ -86,7 +93,7 @@ export function AgentIdentityWorkspace({
       <TabsContent value="agents" className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground">{t('agents.identitiesHint')}</p>
         {!agentsLoaded ? (
-          <RowListSkeleton label={t('common.loading')} rows={2} />
+          <CardGridSkeleton label={t('common.loading')} />
         ) : activeAgents.length === 0 ? (
           <Empty className="border border-dashed py-8">
             <EmptyHeader>
@@ -102,13 +109,22 @@ export function AgentIdentityWorkspace({
             </EmptyContent>
           </Empty>
         ) : (
-          <AgentList
-            agents={activeAgents}
-            pendingCount={(id) => pending.filter((proposal) => proposal.author === id).length}
-            onConnect={() => setConnecting(true)}
-            onRotate={setRotating}
-            onRevoke={setRevokingAgent}
-          />
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {activeAgents.map(cardFor)}
+            <li className="flex">
+              <button
+                type="button"
+                onClick={() => setCreating(true)}
+                className="flex w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed p-4 text-center text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <Plus className="size-4" />
+                  {t('agents.newAgent')}
+                </span>
+                <span className="text-sm">{t('agents.addCardHint')}</span>
+              </button>
+            </li>
+          </ul>
         )}
         {revokedAgents.length > 0 && (
           <Collapsible className="flex flex-col gap-3">
@@ -122,13 +138,9 @@ export function AgentIdentityWorkspace({
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <AgentList
-                agents={revokedAgents}
-                pendingCount={(id) => pending.filter((proposal) => proposal.author === id).length}
-                onConnect={() => setConnecting(true)}
-                onRotate={setRotating}
-                onRevoke={setRevokingAgent}
-              />
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {revokedAgents.map(cardFor)}
+              </ul>
             </CollapsibleContent>
           </Collapsible>
         )}
@@ -145,44 +157,17 @@ export function AgentIdentityWorkspace({
           }}
         />
       )}
-      <AlertDialog open={rotating !== null} onOpenChange={(open) => !open && setRotating(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('agents.rotateTitle', { name: rotating?.name ?? '' })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>{t('agents.rotateBody')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => rotating && void rotate(rotating)}>
-              {t('agents.newToken')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog
-        open={revokingAgent !== null}
-        onOpenChange={(open) => !open && setRevokingAgent(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('agents.revokeTitle', { name: revokingAgent?.name ?? '' })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>{t('agents.revokeBody')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => revokingAgent && void revoke(revokingAgent)}
-            >
-              {t('agents.revoke')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AgentDialog
+        agent={opened}
+        events={opened ? agentEvents(opened, events ?? [], proposals) : []}
+        onClose={() => setOpened(null)}
+        onConnect={() => {
+          setOpened(null);
+          setConnecting(true);
+        }}
+        onRotate={onRotate}
+        onRevoke={onRevoke}
+      />
     </>
   );
 }
