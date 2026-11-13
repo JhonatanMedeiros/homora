@@ -42,14 +42,12 @@ it('shows a clock without querying a connection and opens a prefilled creation f
   expect(screen.queryByText('Widgets da página')).toBeNull();
 });
 
-it('adds a widget from the gallery in organize mode, with a prefilled form', async () => {
+it('adds a widget from the gallery, with a prefilled form', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => new Response('[]')),
   );
-  render(
-    <PageWidgets pageId={1} organizing pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />,
-  );
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
   fireEvent.click(await screen.findByRole('button', { name: 'Adicionar widget' }));
   fireEvent.click(await screen.findByRole('button', { name: /Relógio/ }));
   expect(await screen.findByText('Será adicionado em Home.')).toBeTruthy();
@@ -76,9 +74,12 @@ it('reorders widgets from the keyboard handle in organize mode', async () => {
       ),
   );
   vi.stubGlobal('fetch', fetcher);
-  render(
-    <PageWidgets pageId={1} organizing pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />,
-  );
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  fireEvent.pointerDown(await screen.findByRole('button', { name: 'Ações: A' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Organizar widgets' }));
   const grip = await screen.findByRole('button', { name: /Arrastar A/ });
   fireEvent.keyDown(grip, { key: 'ArrowRight' });
   await waitFor(() =>

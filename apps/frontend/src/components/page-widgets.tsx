@@ -54,16 +54,11 @@ function newWidgetDraft(pageId: number): WidgetDraft {
   };
 }
 
-type Props = {
-  pageId: number;
-  pages: PageRow[];
-  /** Organize mode of the page: widgets can be dragged, added and removed in place. */
-  organizing?: boolean;
-  onOrganize?: () => void;
-};
+type Props = { pageId: number; pages: PageRow[] };
 
 /** Widgets of a page. Plain information by default; the controls appear in the card menu and organize mode. */
-export function PageWidgets({ pageId, pages, organizing = false, onOrganize }: Props) {
+export function PageWidgets({ pageId, pages }: Props) {
+  const [organizing, setOrganizing] = useState(false);
   const [widgets, setWidgets] = useState<PageWidget[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [readings, setReadings] = useState<Record<number, CardWidgetState>>({});
@@ -204,7 +199,20 @@ export function PageWidgets({ pageId, pages, organizing = false, onOrganize }: P
         </p>
       )}
       {organizing && (
-        <p className="text-sm text-muted-foreground">{t('pageWidgets.organizeHelp')}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-dashed px-3 py-2">
+          <p className="text-sm text-muted-foreground">{t('pageWidgets.organizeHelp')}</p>
+          <Button type="button" size="sm" onClick={() => setOrganizing(false)}>
+            {t('page.done')}
+          </Button>
+        </div>
+      )}
+      {!organizing && !loading && current.length === 0 && (
+        <div>
+          <Button type="button" variant="ghost" size="sm" onClick={openAdd}>
+            <Plus />
+            {t('pageWidgets.add')}
+          </Button>
+        </div>
       )}
       {(current.length > 0 || organizing) && (
         <div
@@ -382,11 +390,9 @@ export function PageWidgets({ pageId, pages, organizing = false, onOrganize }: P
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       )}
-                      {onOrganize && current.length > 1 && (
-                        <DropdownMenuItem onSelect={onOrganize}>
-                          {t('pageWidgets.reorder')}
-                        </DropdownMenuItem>
-                      )}
+                      <DropdownMenuItem onSelect={() => setOrganizing(true)}>
+                        {t('pageWidgets.reorder')}
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(item)}>
                         {t('common.remove')}
