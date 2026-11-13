@@ -47,6 +47,12 @@ export const en = {
   'auth.verify': 'Verify',
   'auth.backToSignIn': 'Back to sign in',
   'auth.twoFactorFailed': 'The code was not accepted. Try again.',
+  'auth.passkeySignIn': 'Sign in with a passkey',
+  'auth.passkeyFailed': 'The passkey was not accepted. Try again or use your password.',
+  'auth.passkeyCancelled': 'The request was cancelled or timed out. Try again.',
+  'auth.passkeyNoBrowser': 'This browser does not support passkeys.',
+  'auth.passkeyWrongOrigin':
+    'Passkeys are not available at this address. Open Homora at {origins} to use one.',
   'integrations.title': 'Integrations',
   'integrations.description':
     'Connect Proxmox and other services to see the state of your homelab here.',
@@ -111,6 +117,12 @@ export const ptBR: Record<keyof typeof en, string> = {
   'auth.verify': 'Verificar',
   'auth.backToSignIn': 'Voltar ao login',
   'auth.twoFactorFailed': 'O código não foi aceito. Tente novamente.',
+  'auth.passkeySignIn': 'Entrar com passkey',
+  'auth.passkeyFailed': 'A passkey não foi aceita. Tente novamente ou use a senha.',
+  'auth.passkeyCancelled': 'A solicitação foi cancelada ou expirou. Tente novamente.',
+  'auth.passkeyNoBrowser': 'Este navegador não oferece suporte a passkeys.',
+  'auth.passkeyWrongOrigin':
+    'Passkeys não estão disponíveis neste endereço. Abra o Homora em {origins} para usar uma.',
   'integrations.title': 'Integrações',
   'integrations.description':
     'Conecte o Proxmox e outros serviços para ver o estado do seu homelab aqui.',

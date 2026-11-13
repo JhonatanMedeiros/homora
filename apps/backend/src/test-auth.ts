@@ -9,6 +9,7 @@ export const TEST_SESSION_COOKIE = 'homora.session_token=test-session';
 export function createTestSession() {
   const auth = {
     configured: () => true,
+    passkey: { rpId: 'localhost', origins: [] as string[] },
     session: async (headers: { cookie?: string }) =>
       headers.cookie?.split(';').some((cookie) => cookie.trim() === TEST_SESSION_COOKIE)
         ? { userId: 'test-user' }

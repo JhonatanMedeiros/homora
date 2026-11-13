@@ -15,6 +15,7 @@
     "@homora/icons": "workspace:*",
     "@homora/integrations": "workspace:*",
     "@homora/shared": "workspace:*",
+    "@simplewebauthn/browser": "13.3.0",
     "@tailwindcss/vite": "4.3.5",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",

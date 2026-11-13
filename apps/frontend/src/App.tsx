@@ -112,8 +112,17 @@ function DashboardForRoute({
 }
 
 function AppRoutes() {
-  const { status, error, challenge, submit, verifyTwoFactor, cancelChallenge, logout, retry } =
-    useAuth();
+  const {
+    status,
+    error,
+    challenge,
+    submit,
+    submitPasskey,
+    verifyTwoFactor,
+    cancelChallenge,
+    logout,
+    retry,
+  } = useAuth();
   const [token, setToken] = useState('');
   useEffect(() => {
     if (!token) return;
@@ -136,6 +145,7 @@ function AppRoutes() {
       error={error}
       challenge={challenge}
       onSubmit={submit}
+      onPasskey={submitPasskey}
       onVerify={verifyTwoFactor}
       onCancelChallenge={cancelChallenge}
       onRetry={retry}

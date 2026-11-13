@@ -4,6 +4,8 @@ import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { fromNodeHeaders } from 'better-auth/node';
 import { twoFactor } from 'better-auth/plugins/two-factor';
+import { passkey } from '@better-auth/passkey';
+import { resolvePasskeyConfig } from './passkey-config.js';
 import {
   createRateLimitStorage,
   SIGN_IN_MAX_ATTEMPTS,
@@ -21,6 +23,10 @@ const SESSION_SECONDS = 8 * 60 * 60;
 const REMEMBERED_SESSION_SECONDS = 30 * 24 * 60 * 60;
 /** Better Auth routes that only exist for two-factor authentication, relative to the base path. */
 const TWO_FACTOR_PATH_PREFIX = '/two-factor/';
+/** Header the API sets from the sign-in form's choice; the hook below reads it, clients cannot. */
+export const REMEMBER_ME_HEADER = 'x-homora-remember-me';
+/** Better Auth routes that only exist for passkeys, relative to the base path. */
+const PASSKEY_PATH_PREFIX = '/passkey/';
 /** Seconds the password step stays valid while the authenticator code is typed. */
 const TWO_FACTOR_CHALLENGE_SECONDS = 5 * 60;
 export class AccountExistsError extends Error {
@@ -54,13 +60,16 @@ type Options = {
   secret: string;
   webPort: number;
   allowedOrigins?: readonly string[];
+  /** Domain the passkeys are bound to (`HOMORA_PASSKEY_RP_ID`); defaults to `localhost`. */
+  passkeyRpId?: string;
 };
 
 /**
  * Web authentication for the single administrator account, backed by Better Auth. Accounts
  * and sessions live in the application database (see the `user`, `session` and `account` tables).
  */
-export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Options) {
+export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passkeyRpId }: Options) {
+  const passkeyConfig = resolvePasskeyConfig({ webPort, allowedOrigins, rpId: passkeyRpId });
   const countUsers = () =>
     (sqlite.prepare('SELECT COUNT(*) AS count FROM "user"').get() as { count: number }).count;
   const instance = betterAuth({
@@ -76,6 +85,15 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
     ],
     telemetry: { enabled: false },
     plugins: [
+      passkey({
+        rpID: passkeyConfig.rpId,
+        rpName: 'Homora',
+        // Explicit server-side origins: the request (Host, Origin, X-Forwarded-*) never picks them.
+        origin: passkeyConfig.origins,
+        // Discoverable credentials with biometrics or PIN: the passkey alone is possession plus
+        // user verification, so the sign-in is complete without a password.
+        authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+      }),
       twoFactor({
         issuer: 'Homora',
         twoFactorCookieMaxAge: TWO_FACTOR_CHALLENGE_SECONDS,
@@ -114,6 +132,22 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
           window: SIGN_IN_WINDOW_SECONDS,
           max: SIGN_IN_MAX_ATTEMPTS,
         },
+        // Signing in with a passkey is limited like the password; the challenge request that
+        // precedes it only needs a looser limit because it writes a short-lived row.
+        '/passkey/verify-authentication': {
+          window: SIGN_IN_WINDOW_SECONDS,
+          max: SIGN_IN_MAX_ATTEMPTS,
+        },
+        '/passkey/generate-authenticate-options': { window: 60, max: 30 },
+        '/passkey/generate-register-options': {
+          window: SIGN_IN_WINDOW_SECONDS,
+          max: SIGN_IN_MAX_ATTEMPTS,
+        },
+        '/passkey/verify-registration': {
+          window: SIGN_IN_WINDOW_SECONDS,
+          max: SIGN_IN_MAX_ATTEMPTS,
+        },
+        '/passkey/delete-passkey': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
       },
     },
     advanced: {
@@ -133,6 +167,11 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
                 return context.body?.rememberMe === false
                   ? new Date(Date.now() + SESSION_SECONDS * 1000)
                   : null;
+              // A passkey sign-in has no "forget me" cookie: the form's choice arrives in a header.
+              if (context?.path === `${PASSKEY_PATH_PREFIX}verify-authentication`)
+                return context.request?.headers.get(REMEMBER_ME_HEADER) === '1'
+                  ? null
+                  : new Date(Date.now() + SESSION_SECONDS * 1000);
               if (!context?.path?.startsWith(TWO_FACTOR_PATH_PREFIX)) return null;
               // Enabling or disabling the second step replaces the current session: keep its end.
               const active = context.context.session?.session;
@@ -164,10 +203,20 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
   const passwordLimiter = createRateLimitStorage();
   const toIso = (value: Date | string) => new Date(value).toISOString();
 
+  const consumePasswordAttempt = async (userId: string) => {
+    const limit = await passwordLimiter.consume(`change-password:${userId}`, {
+      window: SIGN_IN_WINDOW_SECONDS,
+      max: SIGN_IN_MAX_ATTEMPTS,
+    });
+    if (!limit.allowed) throw new RateLimitedError();
+  };
+
   // First-run setups are serialized so two simultaneous requests cannot both pass the check.
   let setupQueue: Promise<unknown> = Promise.resolve();
 
   return {
+    /** Relying party and origins the passkeys are bound to. */
+    passkey: passkeyConfig,
     /** Resolved Better Auth options, used to verify the database schema. */
     options: instance.options,
     configured: () => countUsers() > 0,
@@ -222,6 +271,20 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
     async revokeOtherSessions(headers: IncomingHttpHeaders) {
       await instance.api.revokeOtherSessions({ headers: fromNodeHeaders(headers) });
     },
+    /** Re-authentication for sensitive actions; shares the per-account password-guess limit. */
+    async confirmPassword(headers: IncomingHttpHeaders, password: string) {
+      const nodeHeaders = fromNodeHeaders(headers);
+      const found = await instance.api.getSession({ headers: nodeHeaders });
+      if (!found) throw new SessionNotFoundError();
+      await consumePasswordAttempt(found.user.id);
+      try {
+        await instance.api.verifyPassword({ headers: nodeHeaders, body: { password } });
+      } catch (error) {
+        if (error instanceof APIError && error.body?.code === 'INVALID_PASSWORD')
+          throw new InvalidPasswordError();
+        throw error;
+      }
+    },
     async changePassword(
       headers: IncomingHttpHeaders,
       input: { currentPassword: string; newPassword: string; revokeOthers: boolean },
@@ -229,11 +292,7 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
       const nodeHeaders = fromNodeHeaders(headers);
       const found = await instance.api.getSession({ headers: nodeHeaders });
       if (!found) throw new SessionNotFoundError();
-      const limit = await passwordLimiter.consume(`change-password:${found.user.id}`, {
-        window: SIGN_IN_WINDOW_SECONDS,
-        max: SIGN_IN_MAX_ATTEMPTS,
-      });
-      if (!limit.allowed) throw new RateLimitedError();
+      await consumePasswordAttempt(found.user.id);
       try {
         // Not `revokeOtherSessions`: that option also ends the current session.
         await instance.api.changePassword({

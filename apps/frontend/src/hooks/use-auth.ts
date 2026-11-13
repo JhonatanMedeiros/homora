@@ -1,8 +1,14 @@
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
+import { failed, signInWithPasskey } from '@/hooks/use-passkeys';
 
-export type AuthStatus = { configured: boolean; authenticated: boolean };
+export type AuthStatus = {
+  configured: boolean;
+  authenticated: boolean;
+  /** Origins where passkeys work; absent on servers that predate them. */
+  passkey?: { origins: string[] };
+};
 /** `name` is only needed to create the first account. */
 export type Credentials = { email: string; password: string; name?: string; rememberMe?: boolean };
 
@@ -102,6 +108,22 @@ export function useAuth() {
     }
   }
 
+  /** Signs in with a passkey. A verified passkey is a complete sign-in: no second step follows. */
+  async function submitPasskey(rememberMe: boolean) {
+    setError('');
+    const result = await signInWithPasskey(rememberMe);
+    if (failed(result)) {
+      setError(result.error);
+      return false;
+    }
+    setStatus((value) => ({
+      ...(value ?? { configured: true }),
+      configured: true,
+      authenticated: true,
+    }));
+    return true;
+  }
+
   function cancelChallenge() {
     setChallenge(false);
     setError('');
@@ -117,5 +139,15 @@ export function useAuth() {
     }
   }
 
-  return { status, error, challenge, submit, verifyTwoFactor, cancelChallenge, logout, retry };
+  return {
+    status,
+    error,
+    challenge,
+    submit,
+    submitPasskey,
+    verifyTwoFactor,
+    cancelChallenge,
+    logout,
+    retry,
+  };
 }

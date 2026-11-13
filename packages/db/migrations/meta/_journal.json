@@ -225,6 +225,13 @@
       "when": 1794578353997,
       "tag": "0031_smiling_nekra",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1794579893456,
+      "tag": "0032_slow_sprite",
+      "breakpoints": true
     }
   ]
 }
