@@ -302,9 +302,18 @@ it('lists the types to connect with what each one reads, then opens its form wit
   expect(await screen.findByText('O que você quer conectar?')).toBeTruthy();
   // Descriptions come from the built-in definitions, not from a request.
   expect(await screen.findByText('Inventário da infraestrutura')).toBeTruthy();
-  expect(screen.getByText('Estado do DNS')).toBeTruthy();
+  expect(
+    within(screen.getByRole('button', { name: /Pi-hole/ })).getByText('Estado do DNS'),
+  ).toBeTruthy();
   expect(screen.getByText('1 conectada')).toBeTruthy();
-  for (const name of ['Jellyfin', 'Home Assistant', 'Uptime Kuma', 'AdGuard Home', 'Proxmox VE'])
+  for (const name of [
+    'Jellyfin',
+    'Home Assistant',
+    'Uptime Kuma',
+    'AdGuard Home',
+    'Proxmox VE',
+    'Pi-hole',
+  ])
     expect(screen.getByRole('button', { name: new RegExp(name) })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /AdGuard Home/ }));
   expect(screen.getByText('Nova conexão AdGuard Home')).toBeTruthy();

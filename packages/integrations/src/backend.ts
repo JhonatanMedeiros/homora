@@ -10,6 +10,21 @@ export interface IntegrationAdapter<Config, Data> {
 }
 
 export type IntegrationMetadata = { type: string; label: string; capabilities: readonly string[] };
+/** A reviewed, built-in login exchange; service-specific wire formats stay with the integration. */
+export type SessionAuthProfile = {
+  loginPath: string;
+  body: Readonly<
+    Record<string, { source: 'secret' | 'tokenId' } | { source: 'config'; key: string }>
+  >;
+  tokenPath: readonly string[];
+  validityPath?: readonly string[];
+  validPath?: readonly string[];
+  /** Used when the API does not return a lifetime. */
+  defaultValiditySeconds?: number;
+  tokenFormat: 'base64' | 'printable';
+  sendAs: { type: 'header'; name: 'x-ftl-sid' | 'x-api-key' } | { type: 'bearer' };
+  refreshOnSuccess: boolean;
+};
 export type IntegrationTransport = (request: {
   origin: string;
   path: string;
@@ -31,6 +46,8 @@ export function transportFrom(context: IntegrationContext): IntegrationTransport
   return context.transport;
 }
 export type IntegrationRegistration = IntegrationMetadata & {
+  /** Reviewed built-in session login profile; it does not authorize arbitrary POST requests. */
+  sessionAuth?: SessionAuthProfile;
   definition?: IntegrationDefinition;
   prepare?: (context: IntegrationContext) => () => Promise<unknown>;
   prepareInventory?: (context: IntegrationContext) => () => Promise<unknown>;
@@ -48,7 +65,7 @@ export function defineBackendIntegration(
   definition: IntegrationDefinition,
   hooks: Pick<
     IntegrationRegistration,
-    'prepare' | 'prepareInventory' | 'prepareAddresses' | 'retryDelaySeconds'
+    'prepare' | 'prepareInventory' | 'prepareAddresses' | 'retryDelaySeconds' | 'sessionAuth'
   >,
 ): IntegrationRegistration {
   if (definition.inventoryDomain && !hooks.prepareInventory)

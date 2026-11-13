@@ -39,6 +39,10 @@ export function createIntegrationConnections(
    * success: this is the one deliberate exception to "retry on every request".
    */
   const backoffs = new Map<number, number>();
+  const sessionTransports = new Map<
+    number,
+    { revision: string; transport: ReturnType<typeof createIntegrationTransport> }
+  >();
   async function guarded<T>(row: Row, run: () => Promise<T>, bypass = false): Promise<T> {
     const retryDelaySeconds = integrationRegistry.get(row.type)?.retryDelaySeconds;
     if (!retryDelaySeconds) return run();
@@ -73,8 +77,22 @@ export function createIntegrationConnections(
   async function find(id: number) {
     return (await db.select().from(integrationInstances).where(eq(integrationInstances.id, id)))[0];
   }
-  function prepareAdapter(type: string, data: ConnectionData, keys: Credentials, detail = false) {
-    const transport = createIntegrationTransport(data, keys);
+  function prepareAdapter(
+    type: string,
+    data: ConnectionData,
+    keys: Credentials,
+    detail = false,
+    id?: number,
+    revision?: string,
+  ) {
+    const auth = integrationRegistry.get(type)?.sessionAuth;
+    const cached = id !== undefined && auth ? sessionTransports.get(id) : undefined;
+    let transport = cached?.revision === revision ? cached?.transport : undefined;
+    if (!transport) {
+      transport = createIntegrationTransport(data, keys, 'error', undefined, auth);
+      if (id !== undefined && auth && revision !== undefined)
+        sessionTransports.set(id, { revision, transport });
+    }
     const context = { publicConfig: data, credentials: keys, transport };
     return detail
       ? integrationRegistry.prepareInventory(type, context)
@@ -119,6 +137,7 @@ export function createIntegrationConnections(
       inventoryCaches.get(current.id)?.invalidate();
       addressCaches.get(current.id)?.invalidate();
       backoffs.delete(current.id);
+      sessionTransports.delete(current.id);
     }
     return publicRow(result);
   }
@@ -127,7 +146,17 @@ export function createIntegrationConnections(
     if (!row) return null;
     const data = parseData(row);
     const keys = credentials(row);
-    return guarded(row, () => prepareAdapter(row.type, data, keys)(), bypass);
+    const revision = JSON.stringify([
+      row.type,
+      row.publicConfig,
+      row.secretRef,
+      row.certificateRef,
+    ]);
+    return guarded(
+      row,
+      () => prepareAdapter(row.type, data, keys, false, row.id, revision)(),
+      bypass,
+    );
   }
 
   const widgets = createIntegrationWidgets(db, find, migrateLegacy);
@@ -172,6 +201,7 @@ export function createIntegrationConnections(
         sqlite.exec('COMMIT');
         caches.delete(id);
         backoffs.delete(id);
+        sessionTransports.delete(id);
         inventoryCaches.delete(id);
         addressCaches.delete(id);
         return 'deleted' as const;

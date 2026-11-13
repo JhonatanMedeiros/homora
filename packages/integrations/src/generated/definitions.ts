@@ -11,6 +11,7 @@ import { tailscaleManifest } from '../integrations/tailscale/definition.js';
 import { cloudflareManifest } from '../integrations/cloudflare/definition.js';
 import { coolifyDefinition } from '../integrations/coolify/definition.js';
 import { proxmoxDefinition } from '../integrations/proxmox/definition.js';
+import { piHoleDefinition } from '../integrations/pi-hole/definition.js';
 export { jellyfinManifest };
 export { homeAssistantManifest };
 export { uptimeKumaManifest };
@@ -22,6 +23,7 @@ export { tailscaleManifest };
 export { cloudflareManifest };
 export { coolifyDefinition };
 export { proxmoxDefinition };
+export { piHoleDefinition };
 const entries: readonly { type: string; definition: IntegrationDefinition }[] = [
   { type: 'jellyfin', definition: jellyfinManifest },
   { type: 'home-assistant', definition: homeAssistantManifest },
@@ -34,6 +36,7 @@ const entries: readonly { type: string; definition: IntegrationDefinition }[] = 
   { type: 'cloudflare', definition: cloudflareManifest },
   { type: 'coolify', definition: coolifyDefinition },
   { type: 'proxmox', definition: proxmoxDefinition },
+  { type: 'pi-hole', definition: piHoleDefinition },
 ];
 for (const entry of entries) {
   if (entry.type !== entry.definition.type)

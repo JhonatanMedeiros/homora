@@ -12,8 +12,10 @@ export type RequestOptions = {
   maxBodyBytes?: number;
   /** Returns 3xx status code instead of failing. Redirect is not followed. */
   reportRedirect?: boolean;
-  /** Only notification delivery uses POST. */
+  /** Used for notification delivery and reviewed integration authentication exchanges. */
   jsonBody?: string;
+  /** The request body contains credentials and must never travel over HTTP. */
+  sensitiveBody?: boolean;
 };
 export type AuthorizedResponse = {
   status: number;
@@ -28,7 +30,7 @@ export function parseRetryAfter(value: string | string[] | undefined): number | 
   return Math.min(3600, Math.max(1, Number(value.trim())));
 }
 
-/** Read-only query, pinning DNS and not following redirects. */
+/** Authorized request with pinned DNS, bounded responses and no redirects. */
 export async function getAuthorizedResponse(
   destination: string,
   policy: DestinationPolicy,
@@ -45,7 +47,7 @@ export async function getAuthorizedResponse(
   for (const [key, value] of Object.entries(options.headers ?? {})) {
     const name = key.toLowerCase();
     if (
-      !['authorization', 'x-api-key', 'accept'].includes(name) ||
+      !['authorization', 'x-api-key', 'x-ftl-sid', 'accept'].includes(name) ||
       typeof value !== 'string' ||
       value.length > 4096 ||
       /[\r\n]/.test(value) ||
@@ -65,7 +67,10 @@ export async function getAuthorizedResponse(
   ]);
   const remainingMs = timeoutMs - (Date.now() - startedAt);
   if (remainingMs <= 0) throw new Error('Timeout exceeded.');
-  if (url.protocol !== 'https:' && (headers.authorization || headers['x-api-key']))
+  if (
+    url.protocol !== 'https:' &&
+    (headers.authorization || headers['x-api-key'] || headers['x-ftl-sid'] || options.sensitiveBody)
+  )
     throw new Error('Credentials require an HTTPS connection.');
   const pinnedLookup: LookupFunction = (_host, lookupOptions, callback) => {
     if (lookupOptions.all) callback(null, [{ address: address.address, family: address.family }]);

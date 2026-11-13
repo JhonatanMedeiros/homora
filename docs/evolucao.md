@@ -1683,3 +1683,21 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 
 - Added optional passkey (WebAuthn) sign-in for the single administrator ([ADR 0017](decisoes/0017-passkey-sign-in.md)): `@better-auth/passkey` 1.7.21, migration `0032` (`passkey`, unique credential ID, cascade with the user), seven forwarded routes with validated and reduced bodies and responses, required user verification with discoverable credentials, RP ID/origins from configuration (`HOMORA_PASSKEY_RP_ID`, default `localhost`) and never from request headers, password re-authentication to add or remove, other sessions ended on removal, the password session lifetime (8 hours, or 30 days with “Keep me signed in”), a passkey sign-in that does not trigger the authenticator code (policy stated, tested and shown in the interface), attempt limits, audit events, an Account section (add, rename, remove, several passkeys) and a sign-in button that explains itself when the browser or address cannot use passkeys. `pnpm auth:reset` also deletes passkeys and `--passkeys-only` removes just them.
 - Validation: API tests with a software authenticator (replay, tampering, wrong origin/RP ID, missing user verification, expired challenge, unknown credential, rate limit, sessions, second-step policy, closed routes, forged headers), config, interface, migration and script tests (backup/restore with a different session secret, both resets, legacy database). A manual browser pass on `localhost` with headless Chromium and its virtual authenticator (CTAP2, internal, resident keys, user verification): account creation, wrong password refused, adding a passkey, passkey sign-in with a browser-session cookie (`HttpOnly`, `SameSite=Strict`), the explanation on `127.0.0.1`, removal and refusal afterwards. **Not verified:** a real hardware or platform authenticator, other browsers (Firefox, Safari), the HTTPS reverse-proxy scenario with `HOMORA_PASSKEY_RP_ID` in a browser (covered only by configuration and API tests), and OIDC (#147) interaction (not implemented; it must choose its own second-step policy).
+
+### Pi-hole v6 and session authentication
+
+- Added a built-in read-only Pi-hole summary and a host-owned session login capability
+  ([ADR 0018](decisoes/0018-integration-session-auth.md)); session login is the only POST allowed
+  for the integration and does not grant service writes.
+- Contract, network, session and connection tests cover mock responses. Live Pi-hole validation,
+  including app-password privileges and real payload compatibility, remains pending.
+
+### Reusable integration session profiles
+
+- Moved Pi-hole's login body, response paths and session header into its built-in registration.
+  The shared transport validates a bounded profile and manages the session and network policy;
+  a synthetic username/password and Bearer-token profile exercises a different contract.
+  Other methods, encodings and headers still need review; no new external integration is claimed.
+- Validation: `pnpm check` (1,481 application tests and 25 script tests) and `pnpm build` passed.
+  A user reported that Pi-hole worked in a live test on 2026-11-13; version and individual checks
+  were not provided, so detailed live validation remains pending.
