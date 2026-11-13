@@ -22,6 +22,8 @@ export type IntegrationWidget = {
   name: string;
   serviceId: number | null;
 };
+export type CardRef = { id: number; name: string; url: string };
+export type GroupRef = { id: number; name: string };
 export type WidgetStat = { label: string; value: string; id?: 'cpu' | 'memory' | 'disk' };
 export type ConnectionFormState = {
   type: Kind;

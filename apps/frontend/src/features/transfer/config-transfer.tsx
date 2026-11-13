@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,11 @@ import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, t } from '@/i18n';
+import { useConfigTransferApi } from '@/hooks/use-config-transfer-api';
 import { ImportPreview } from './import-preview';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { MAX_FILE_BYTES, SOURCES, type Preview, type Source } from './transfer-model';
 
-const json = { 'Content-Type': 'application/json' };
-type PageRow = { id: number; name: string };
 const FROM_FILE = 'file';
 
 /** Export and import of groups and cards, with mandatory preview before saving. */
@@ -25,18 +24,8 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
   const [busy, setBusy] = useState(false);
   const [fileKey, setFileKey] = useState(0);
   const [source, setSource] = useState<Source>('homora');
-  const [pages, setPages] = useState<PageRow[]>([]);
   const [target, setTarget] = useState(FROM_FILE);
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/pages', { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : []))
-      .then((data: unknown) => {
-        if (Array.isArray(data)) setPages(data as PageRow[]);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
+  const { pages, preview: requestPreview, apply: requestApply } = useConfigTransferApi();
 
   function reset() {
     setContent('');
@@ -70,11 +59,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch('/api/config/import/preview', {
-        method: 'POST',
-        headers: json,
-        body: JSON.stringify({ content: text, source: from }),
-      });
+      const response = await requestPreview(text, from);
       if (!response.ok) throw new Error();
       setPreview((await response.json()) as Preview);
     } catch {
@@ -96,16 +81,12 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch('/api/config/import/apply', {
-        method: 'POST',
-        headers: json,
-        body: JSON.stringify({
-          content,
-          source,
-          keepPrivate: source === 'homora' && keepPrivate,
-          ...(target !== FROM_FILE && { pageId: Number(target) }),
-          expectedVersion: preview.version,
-        }),
+      const response = await requestApply({
+        content,
+        source,
+        keepPrivate: source === 'homora' && keepPrivate,
+        ...(target !== FROM_FILE && { pageId: Number(target) }),
+        expectedVersion: preview.version,
       });
       const body = (await response.json().catch(() => null)) as {
         created?: number;

@@ -1,4 +1,8 @@
-import { appearanceTokens, type Appearance, type ThemeName } from '@homora/shared';
+import { type Appearance, type ThemeName } from '@homora/shared';
+import { appearanceTokens } from './appearance-tokens.js';
+
+export const sameAppearance = (a: Appearance, b: Appearance) =>
+  JSON.stringify(a) === JSON.stringify(b);
 
 const PREFIX = '--ap-';
 const KNOWN = [

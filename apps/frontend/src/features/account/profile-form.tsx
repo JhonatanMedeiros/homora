@@ -6,7 +6,8 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
 import { SectionTitle } from '@/components/section-title';
-import { apiError, t } from '@/i18n';
+import { t } from '@/i18n';
+import { useAccountMutations } from '@/hooks/use-account-mutations';
 import type { Profile } from './account-model';
 
 export function ProfileForm({
@@ -19,23 +20,20 @@ export function ProfileForm({
   const [name, setName] = useState(profile.name);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const { saveProfile } = useAccountMutations();
   const unchanged = name.trim() === profile.name;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError('');
     setSaving(true);
-    const response = await fetch('/api/account', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    }).catch(() => null);
+    const result = await saveProfile(name);
     setSaving(false);
-    if (!response?.ok) {
-      setError(apiError(await response?.json().catch(() => null), t('account.profileFailed')));
+    if (!result.profile) {
+      setError(result.error ?? t('account.profileFailed'));
       return;
     }
-    const saved = (await response.json()) as Profile;
+    const saved = result.profile;
     onChange(saved);
     setName(saved.name);
     toast.success(t('account.profileSaved'));

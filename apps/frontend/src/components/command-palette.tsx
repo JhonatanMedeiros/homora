@@ -1,16 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Service } from '@homora/shared';
-import {
-  ArrowRight,
-  FileDown,
-  House,
-  LayoutGrid,
-  LayoutList,
-  Moon,
-  Plus,
-  Search,
-  Settings2,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   CommandDialog,
@@ -19,17 +9,12 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
-  CommandShortcut,
 } from '@/components/ui/command';
 import { Kbd } from '@/components/ui/kbd';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StatusLight } from '@/components/status-light';
-import { navItems, tabPath } from '@/components/app-nav';
 import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
-import { chordFor } from '@/lib/shortcuts';
 import { buildSearchUrl } from '@/lib/web-search';
-import { settingsPath } from '@/features/settings/sections';
 import { t } from '@/i18n';
 import { useRecentServices } from '@/hooks/use-recent-services';
 import type { View } from '@/hooks/use-view-preferences';
@@ -42,6 +27,7 @@ import {
   type PaletteSort,
 } from '@/lib/palette-search';
 import { hostOf, type ServiceStatus } from '@/lib/services';
+import { CommandPaletteCommands } from './command-palette-commands';
 
 type Props = {
   open: boolean;
@@ -75,17 +61,6 @@ const SORTS: {
   { id: 'name', label: 'palette.sortName' },
   { id: 'status', label: 'palette.sortStatus' },
 ];
-
-function ShortcutHint({ keys }: { keys?: string[] }) {
-  if (!keys) return null;
-  return (
-    <span className="ml-auto hidden items-center gap-1 md:flex" aria-hidden="true">
-      {keys.map((key) => (
-        <Kbd key={key}>{key}</Kbd>
-      ))}
-    </span>
-  );
-}
 
 const itemService = (value: string) => /^(?:service|recent)-(\d+)$/.exec(value)?.[1];
 
@@ -256,87 +231,26 @@ export function CommandPalette({
             {visible.map((service) => renderService(service, 'service'))}
           </CommandGroup>
         )}
-        {showCommands && (
-          <>
-            <CommandSeparator />
-            <CommandGroup heading={t('palette.navigate')}>
-              {navItems
-                .filter((item) => item.id !== 'services')
-                .map((item) => (
-                  <CommandItem
-                    key={item.id}
-                    value={t(item.label)}
-                    onSelect={() => run(() => onNavigate(tabPath(item.id)))}
-                  >
-                    <item.icon />
-                    {t(item.label)}
-                    {shortcutsEnabled && <ShortcutHint keys={chordFor(item.id)} />}
-                  </CommandItem>
-                ))}
-              <CommandItem
-                value={t('palette.importExport')}
-                onSelect={() => run(() => onNavigate(settingsPath('backup')))}
-              >
-                <FileDown />
-                {t('palette.importExport')}
-              </CommandItem>
-              <CommandItem
-                value={t('nav.account')}
-                onSelect={() => run(() => onNavigate(tabPath('account')))}
-              >
-                <Settings2 />
-                {t('nav.account')}
-              </CommandItem>
-            </CommandGroup>
-            <CommandGroup heading={t('palette.actions')}>
-              <CommandItem onSelect={() => run(onAddService)}>
-                <Plus />
-                {t('page.add')}
-              </CommandItem>
-              <CommandItem onSelect={() => run(() => onManageChange(!managing))}>
-                {managing ? <House /> : <Settings2 />}
-                {managing ? t('palette.home') : t('palette.manage')}
-              </CommandItem>
-              <CommandItem onSelect={() => run(() => onViewChange('list'))}>
-                <LayoutList />
-                {t('palette.viewList')}
-                {view === 'list' && <CommandShortcut>{t('palette.current')}</CommandShortcut>}
-              </CommandItem>
-              <CommandItem onSelect={() => run(() => onViewChange('cards'))}>
-                <LayoutGrid />
-                {t('palette.viewCards')}
-                {view === 'cards' && <CommandShortcut>{t('palette.current')}</CommandShortcut>}
-              </CommandItem>
-              {view === 'cards' && (
-                <CommandItem
-                  onSelect={() => run(() => onShowDescriptionsChange(!showDescriptions))}
-                >
-                  <LayoutGrid />
-                  {showDescriptions ? t('view.hideDescriptions') : t('view.showDescriptions')}
-                </CommandItem>
-              )}
-              <CommandItem onSelect={() => run(onToggleTheme)}>
-                <Moon />
-                {t('palette.theme')}
-              </CommandItem>
-            </CommandGroup>
-          </>
-        )}
-        {searchUrl && (
-          <CommandGroup>
-            {/* Always listed: it is not a match for the text, it is what to do when nothing is. */}
-            <CommandItem
-              forceMount
-              value="web-search"
-              onSelect={() => run(() => window.open(searchUrl, '_blank', 'noopener,noreferrer'))}
-            >
-              <Search />
-              <span className="min-w-0 flex-1 truncate">
-                {t('palette.webSearch', { text: parsed.text })}
-              </span>
-            </CommandItem>
-          </CommandGroup>
-        )}
+        <CommandPaletteCommands
+          state={{
+            showCommands,
+            shortcutsEnabled,
+            managing,
+            view,
+            showDescriptions,
+            searchUrl,
+            searchText: parsed.text,
+          }}
+          actions={{
+            run,
+            onNavigate,
+            onAddService,
+            onManageChange,
+            onViewChange,
+            onShowDescriptionsChange,
+            onToggleTheme,
+          }}
+        />
       </CommandList>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t px-3 py-2 text-xs text-muted-foreground">
         <span className="font-mono">{t('palette.filters')}</span>

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { isNodeName, isVmid } from '@homora/shared';
 import { renumberGroups } from './group-order.js';
 import { definitionOf, integrationTypeSchema, publicFieldShape } from './integration-fields.js';
+import { legacyProxmoxConnectionId } from './legacy-proxmox.js';
 
 const id = z.number().int().safe().positive();
 const name = z.string().trim().min(1).max(40);
@@ -133,11 +134,7 @@ function exactMembers(current: (string | number)[], requested: (string | number)
   );
 }
 /** Called inside an existing write transaction. All validation is repeated at approval. */
-export function applyManagedChange(
-  db: DatabaseSync,
-  input: ManagedChange,
-  proxmoxConfigured: () => boolean = () => false,
-) {
+export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
   const { kind, change } = managedChangeSchema.parse(input);
   if (kind === 'group') {
     if (change.op === 'create') {
@@ -216,12 +213,9 @@ export function applyManagedChange(
     if (change.op === 'create') {
       let connectionId = change.integrationId;
       if (change.source === 'proxmox') {
-        if (!proxmoxConfigured()) throw new Error('Proxmox not configured');
-        // The legacy file is migrated at startup; the migration marker names the connection.
-        const marker = db
-          .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
-          .get() as { name: string } | undefined;
-        connectionId = Number(marker?.name.slice('legacy-proxmox:'.length));
+        const legacyId = legacyProxmoxConnectionId(db);
+        if (legacyId === null) throw new Error('Proxmox not configured');
+        connectionId = legacyId;
       }
       const connection = db
         .prepare('SELECT type FROM integration_instances WHERE id=?')
