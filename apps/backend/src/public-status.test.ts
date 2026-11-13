@@ -63,6 +63,54 @@ const get = (app: Awaited<ReturnType<typeof setup>>['app']) =>
   app.inject({ method: 'GET', url: '/api/public/status' });
 
 describe('public status', () => {
+  it('adds 90 daily bars, incidents and maintenance for shared services only, without notes', async () => {
+    const { app, sqlite, create, observe, configure, share } = await setup();
+    const shown = await create('Jellyfin');
+    const hidden = await create('Hidden-one');
+    observe(shown, 'available');
+    await share(shown, true);
+    await configure({ enabled: true });
+    const now = Date.now();
+    const hour = Math.floor(now / 3_600_000) * 3_600_000;
+    sqlite
+      .prepare(
+        'INSERT INTO service_uptime_rollup(service_id,hour,up,down,unknown) VALUES(?,?,?,?,0)',
+      )
+      .run(shown, hour - 2 * 86_400_000, 10, 2);
+    sqlite
+      .prepare(
+        'INSERT INTO service_incidents(service_id,started_at,ended_at,reason,failed_checks) VALUES(?,?,?,?,?)',
+      )
+      .run(shown, now - 3_600_000, now - 1_800_000, 'no-response', 3);
+    sqlite
+      .prepare(
+        'INSERT INTO service_incidents(service_id,started_at,ended_at,reason,failed_checks) VALUES(?,?,?,?,?)',
+      )
+      .run(hidden, now - 3_600_000, now - 1_800_000, 'no-response', 3);
+    sqlite
+      .prepare('INSERT INTO service_maintenance(service_id,starts_at,ends_at,note) VALUES(?,?,?,?)')
+      .run(shown, now + 3_600_000, now + 7_200_000, 'secret-note-marker');
+    sqlite
+      .prepare('INSERT INTO service_maintenance(service_id,starts_at,ends_at,note) VALUES(?,?,?,?)')
+      .run(hidden, now + 3_600_000, now + 7_200_000, 'x');
+    const response = await get(app);
+    const body = response.json<{
+      services: { days: string[]; uptime90: number | null }[];
+      incidents: { name: string; endedAt: string | null }[];
+      maintenance: { name: string; active: boolean }[];
+    }>();
+    expect(body.services[0].days).toHaveLength(90);
+    expect(body.services[0].days).toContain('down');
+    expect(body.services[0].uptime90).toBeCloseTo(83.3, 1);
+    expect(body.incidents).toEqual([expect.objectContaining({ name: 'Jellyfin' })]);
+    expect(body.maintenance).toEqual([
+      expect.objectContaining({ name: 'Jellyfin', active: false }),
+    ]);
+    for (const leak of ['secret-note-marker', 'Hidden-one', 'no-response'])
+      expect(response.body).not.toContain(leak);
+    await app.close();
+  });
+
   it('is closed by default and hides that the feature exists', async () => {
     const { app, create, share } = await setup();
     const id = await create('Jellyfin');
@@ -101,7 +149,7 @@ describe('public status', () => {
     expect(body.services).toHaveLength(1);
     expect(body.services[0]).toMatchObject({ name: 'Jellyfin', category: 'Media', status: 'up' });
     expect(Object.keys(body.services[0]).sort()).toEqual(
-      ['bars', 'category', 'checkedAt', 'name', 'status', 'uptime'].sort(),
+      ['bars', 'category', 'checkedAt', 'days', 'name', 'status', 'uptime', 'uptime90'].sort(),
     );
     const raw = response.body;
     for (const leak of [

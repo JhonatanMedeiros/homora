@@ -42,6 +42,7 @@ export function ServiceCardList({
             !isBlocked &&
             'shadow-[inset_0_1px_0_color-mix(in_oklch,var(--primary)_16%,transparent)]',
           view.state === 'unavailable' && !isBlocked && 'border-destructive bg-destructive/10',
+          view.degraded && !isBlocked && 'border-warning/60',
         )}
       >
         <ItemMedia
@@ -116,7 +117,11 @@ export function ServiceCardList({
           <p
             className={cn(
               'basis-full pl-11 text-xs',
-              view.failing ? 'text-destructive' : 'text-muted-foreground',
+              view.failing
+                ? 'text-destructive'
+                : view.degraded
+                  ? 'text-warning'
+                  : 'text-muted-foreground',
             )}
           >
             {view.note}

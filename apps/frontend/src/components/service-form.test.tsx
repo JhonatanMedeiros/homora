@@ -1,10 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ServiceInput } from '@homora/shared';
 import { ServiceForm } from './service-form';
 import { emptyService } from '@/lib/services';
-import { chooseSelectOption } from '@/test-select';
 
 afterEach(cleanup);
 
@@ -31,9 +30,13 @@ function setup(value: ServiceInput = emptyService) {
 it('allows selecting ping and interval, restoring default when empty', async () => {
   const onChange = setup();
   fireEvent.click(screen.getByRole('button', { name: 'Opções avançadas' }));
-  const method = screen.getByRole('combobox', { name: 'Método de verificação' });
-  expect(method.textContent).toBe('Requisição HTTP');
-  await chooseSelectOption('Método de verificação', 'Ping (ICMP)');
+  const method = screen.getByRole('radiogroup', { name: 'Método de verificação' });
+  expect(
+    within(method)
+      .getByRole('radio', { name: /HTTP\(S\)/ })
+      .getAttribute('aria-checked'),
+  ).toBe('true');
+  fireEvent.click(within(method).getByRole('radio', { name: /Ping/ }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ checkType: 'ping' }));
 
   const interval = screen.getByLabelText('Verificar a cada (segundos)') as HTMLInputElement;
@@ -58,4 +61,41 @@ it('keeps advanced options collapsed for a new service and open when values exis
   cleanup();
   setup({ ...emptyService, description: 'Filmes' });
   expect(screen.getByLabelText('Método de verificação')).toBeTruthy();
+});
+
+it('shows only the fields a check type uses and clears the ones it does not', () => {
+  const onChange = setup({
+    ...emptyService,
+    checkType: 'http',
+    checkPath: '/health',
+    expectedStatus: '200',
+  });
+  expect(screen.getByLabelText(/Caminho de verificação/)).toBeTruthy();
+  expect(screen.queryByLabelText('Texto que deve estar na página')).toBeNull();
+  const group = screen.getByRole('radiogroup', { name: 'Método de verificação' });
+  fireEvent.click(within(group).getByRole('radio', { name: /TCP/ }));
+  expect(onChange).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      checkType: 'tcp',
+      checkPath: null,
+      expectedStatus: null,
+      checkMatch: null,
+    }),
+  );
+  fireEvent.click(within(group).getByRole('radio', { name: /Palavra-chave/ }));
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ checkType: 'keyword' }));
+});
+
+it('asks what a keyword or JSON check looks for, and reads the tiles with the arrow keys', () => {
+  const onChange = setup({ ...emptyService, checkType: 'json', checkMatch: 'status=ok' });
+  const match = screen.getByLabelText('Valor JSON esperado') as HTMLInputElement;
+  expect(match.required).toBe(true);
+  expect(match.value).toBe('status=ok');
+  fireEvent.change(match, { target: { value: 'data.up=true' } });
+  expect(onChange).toHaveBeenLastCalledWith(
+    expect.objectContaining({ checkMatch: 'data.up=true' }),
+  );
+  const group = screen.getByRole('radiogroup', { name: 'Método de verificação' });
+  fireEvent.keyDown(group, { key: 'ArrowRight' });
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ checkType: 'http' }));
 });

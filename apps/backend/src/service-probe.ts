@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process';
-import { type CheckType } from '@homora/shared';
+import { BODY_CHECK_TYPES, CERT_WARNING_DAYS, type CheckType } from '@homora/shared';
+import { CONTENT_CHECK_MAX_BYTES, matchesJson, matchesKeyword } from './check-body.js';
+import { readCertificate, tcpConnect } from './network-checks.js';
 import { authorizeDestination } from './network-policy.js';
 import { getAuthorizedResponse } from './network-request.js';
 
@@ -13,6 +15,11 @@ export type StatusReason =
   | 'error-status'
   | 'reachable'
   | 'no-response'
+  | 'content-mismatch' // answered, but the expected keyword or JSON value is missing
+  | 'cert-expired' // the TLS certificate is past its expiry
+  | 'cert-invalid' // the TLS certificate is not trusted or does not match the host
+  | 'cert-expiring' // valid, but expires within the warning period
+  | 'maintenance' // inside a scheduled maintenance window: not probed, not counted
   | 'unchecked';
 
 export type ServiceStatus = {
@@ -22,9 +29,22 @@ export type ServiceStatus = {
   httpStatus: number | null;
   latencyMs: number | null;
   expectedStatus?: string | null;
+  /** TLS checks: when the certificate the server presents expires (epoch milliseconds). */
+  certExpiresAt?: number;
 };
 
-export type CheckResult = { httpStatus: number | null; latencyMs: number };
+export { CERT_WARNING_DAYS };
+
+/**
+ * `httpStatus` is null for checks that are not HTTP (ping, TCP, DNS, TLS). `outcome` is set when
+ * the check itself decides the state, such as a missing keyword or an expired certificate.
+ */
+export type CheckResult = {
+  httpStatus: number | null;
+  latencyMs: number;
+  outcome?: Pick<ServiceStatus, 'status' | 'reason'>;
+  certExpiresAt?: number;
+};
 
 /** The `ping` binary is missing or cannot be used: this is not a service failure. */
 export class PingUnavailableError extends Error {}
@@ -81,21 +101,66 @@ function ping(address: string, family: number): Promise<CheckResult> {
   });
 }
 
-/** Uses pinned DNS and an explicit per-service private-network opt-in. */
+/** Types that connect to the host instead of requesting a page, so a check path means nothing. */
+export const isNonHttp = (type?: CheckType) =>
+  type === 'ping' || type === 'tcp' || type === 'dns' || type === 'tls';
+
+/** Port of a URL, with the scheme's default when it is left out. */
+const portOf = (url: URL) => Number(url.port) || (url.protocol === 'https:' ? 443 : 80);
+
+/** Uses the shared pinned-DNS destination policy; private ranges require the
+ * per-service opt-in and special ranges remain forbidden. Every check type goes through it. */
 export async function checkService(
   url: string,
   allowPrivate = false,
   type: CheckType = 'http',
+  match: string | null = null,
+  now: () => number = Date.now,
 ): Promise<CheckResult> {
   const policy = { origins: [new URL(url).origin], allowPrivate };
-  if (type === 'ping') {
-    const { address } = await authorizeDestination(url, policy);
-    return ping(address.address, address.family);
+  if (isNonHttp(type)) {
+    const startedAt = Date.now();
+    const { address, url: target } = await authorizeDestination(url, policy);
+    // The lookup above is the whole DNS check: it fails when the name does not resolve or points
+    // somewhere the policy refuses.
+    if (type === 'dns') return { httpStatus: null, latencyMs: Date.now() - startedAt };
+    if (type === 'ping') return ping(address.address, address.family);
+    const port = portOf(target);
+    if (type === 'tcp')
+      return { httpStatus: null, latencyMs: await tcpConnect(address.address, port) };
+    const certificate = await readCertificate(
+      address.address,
+      target.hostname.replace(/^\[|\]$/g, ''),
+      port,
+    );
+    const daysLeft = (certificate.validTo - now()) / 86_400_000;
+    const outcome: CheckResult['outcome'] =
+      certificate.validTo <= now() || certificate.error === 'CERT_HAS_EXPIRED'
+        ? { status: 'unavailable', reason: 'cert-expired' }
+        : !certificate.authorized
+          ? { status: 'unavailable', reason: 'cert-invalid' }
+          : daysLeft <= CERT_WARNING_DAYS
+            ? { status: 'available', reason: 'cert-expiring' }
+            : { status: 'available', reason: 'reachable' };
+    return {
+      httpStatus: null,
+      latencyMs: certificate.latencyMs,
+      outcome,
+      certExpiresAt: certificate.validTo,
+    };
   }
   const startedAt = Date.now();
+  const body = BODY_CHECK_TYPES.includes(type) && Boolean(match);
   const response = await getAuthorizedResponse(url, policy, {
     timeoutMs: 8000,
     reportRedirect: true,
+    ...(body ? { maxBodyBytes: CONTENT_CHECK_MAX_BYTES } : {}),
   });
-  return { httpStatus: response.status, latencyMs: Date.now() - startedAt };
+  const result: CheckResult = { httpStatus: response.status, latencyMs: Date.now() - startedAt };
+  if (body && match && response.status >= 200 && response.status < 300) {
+    const found =
+      type === 'json' ? matchesJson(response.body, match) : matchesKeyword(response.body, match);
+    if (!found) result.outcome = { status: 'unavailable', reason: 'content-mismatch' };
+  }
+  return result;
 }

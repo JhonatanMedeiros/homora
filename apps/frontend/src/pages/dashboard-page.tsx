@@ -18,6 +18,7 @@ import { settingsPath } from '@/features/settings/sections';
 import { useServices } from '@/hooks/use-services';
 import { Toaster } from '@/components/ui/sonner';
 import { ServicesPage, type FocusRequest } from '@/pages/services-page';
+import { ServiceDetailPage } from '@/pages/service-detail-page';
 import { SectionSkeleton } from '@/components/skeletons';
 
 const SettingsPage = lazy(() =>
@@ -36,7 +37,13 @@ const IntegrationsPage = lazy(() =>
   import('@/pages/integrations-page').then((module) => ({ default: module.IntegrationsPage })),
 );
 
-type DashboardRoute = { tab: Tab; managing: boolean; form: 'new' | number | null; valid: boolean };
+type DashboardRoute = {
+  tab: Tab;
+  managing: boolean;
+  form: 'new' | number | null;
+  valid: boolean;
+  detail: number | null;
+};
 
 export function DashboardPage({
   onLogout,
@@ -44,6 +51,7 @@ export function DashboardPage({
   managing,
   form = null,
   valid = true,
+  detail = null,
   token,
   setToken,
 }: {
@@ -54,10 +62,11 @@ export function DashboardPage({
   managing: boolean;
   form?: 'new' | number | null;
   valid?: boolean;
+  detail?: number | null;
 }) {
   const routerNavigate = useNavigate();
   const navigate = (path: string, replace = false) => routerNavigate(path, { replace });
-  const route: DashboardRoute = { tab, managing, form, valid };
+  const route: DashboardRoute = { tab, managing, form, valid, detail };
   const data = useServices();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
@@ -157,7 +166,18 @@ export function DashboardPage({
           </Button>
         </section>
       ) : (
-        tab === 'services' && (
+        tab === 'services' &&
+        (detail !== null ? (
+          <ServiceDetailPage
+            key={detail}
+            id={detail}
+            services={data.services}
+            loaded={data.loaded}
+            statuses={data.statuses}
+            blockedIds={data.blockedIds}
+            navigate={navigate}
+          />
+        ) : (
           <ServicesPage
             key={String(managing)}
             data={data}
@@ -170,7 +190,7 @@ export function DashboardPage({
               navigate('/manage/services/new');
             }}
           />
-        )
+        ))
       )}
       {managing && tab === 'integrations' && (
         <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>

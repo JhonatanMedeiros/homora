@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { HostLink, Service, ServiceInput } from '@homora/shared';
+import {
+  DEFAULT_MONITOR_SETTINGS,
+  type HostLink,
+  type MonitorSettings,
+  type Service,
+  type ServiceInput,
+} from '@homora/shared';
 import { useHostInventory } from '@/hooks/use-host-inventory';
 import { useDependencies } from '@/hooks/use-dependencies';
 import type { useServices } from '@/hooks/use-services';
@@ -24,6 +30,7 @@ function serviceDraft(service: Service | undefined, allowPrivateDefault: boolean
         checkInterval: service.checkInterval ?? null,
         expectedStatus: service.expectedStatus ?? null,
         checkPath: service.checkPath ?? null,
+        checkMatch: service.checkMatch ?? null,
       }
     : { ...emptyService, allowPrivate: allowPrivateDefault };
 }
@@ -38,6 +45,12 @@ type Options = {
   announce: (text: string) => void;
   onOpenForm: () => void;
   onSaved: () => void;
+  /** Alert settings and tags of every service, as the server reports them. */
+  monitorSettings?: Record<number, MonitorSettings>;
+  tagMap?: Record<number, string[]>;
+  /** Called after the alert settings or the tags of a service were saved, so the page reloads them. */
+  onMonitoringSaved?: () => void;
+  onTagsSaved?: () => void;
 };
 
 export function useServiceEditor({
@@ -50,10 +63,18 @@ export function useServiceEditor({
   announce,
   onOpenForm,
   onSaved,
+  monitorSettings,
+  tagMap = {},
+  onMonitoringSaved,
+  onTagsSaved,
 }: Options) {
   const { services, refresh } = data;
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [shared, setShared] = useState(false);
+  // Alert settings and tags live apart from the card. `null` means untouched, so the form shows
+  // what the server reports (even when that arrives after the form opened) until a field changes.
+  const [monitorDraft, setMonitorDraft] = useState<MonitorSettings | null>(null);
+  const [tagDraft, setTagDraft] = useState<string[] | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [host, setHost] = useState<HostLink | null>(null);
   // Dependency edits are applied with the card when the form is saved.
@@ -101,6 +122,8 @@ export function useServiceEditor({
     setDepAdded([]);
     setDepRemoved([]);
     setShared(service?.isPublic === true);
+    setMonitorDraft(null);
+    setTagDraft(null);
     setForm(serviceDraft(service, privateDefaultRef.current));
     setFormError('');
     setFormOpen(true);
@@ -138,6 +161,8 @@ export function useServiceEditor({
     setDepAdded([]);
     setDepRemoved([]);
     setShared(service?.isPublic === true);
+    setMonitorDraft(null);
+    setTagDraft(null);
     setForm(serviceDraft(service, privateDefaultRef.current));
     setFormError('');
     setFormOpen(true);
@@ -170,6 +195,25 @@ export function useServiceEditor({
         if (!visibility.ok) throw new Error(t('error.savePublic'));
       }
       if (savedId !== undefined) {
+        const before = (editing !== null && monitorSettings?.[editing]) || DEFAULT_MONITOR_SETTINGS;
+        if (monitorDraft && JSON.stringify(before) !== JSON.stringify(monitorDraft)) {
+          const alerts = await fetch(`/api/services/${savedId}/monitoring`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(monitorDraft),
+          });
+          if (!alerts.ok) throw new Error(t('error.saveMonitoring'));
+          onMonitoringSaved?.();
+        }
+        if (tagDraft && JSON.stringify(tagDraft) !== JSON.stringify(tagMap[savedId] ?? [])) {
+          const saved = await fetch(`/api/services/${savedId}/tags`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tags: tagDraft }),
+          });
+          if (!saved.ok) throw new Error(t('error.saveTags'));
+          onTagsSaved?.();
+        }
         for (const id of depAdded) {
           const failure = await deps.add(savedId, id);
           if (failure) throw new Error(failure);
@@ -196,6 +240,17 @@ export function useServiceEditor({
     setForm,
     shared,
     setShared,
+    monitoring: {
+      value:
+        monitorDraft ??
+        (editing === null ? undefined : monitorSettings?.[editing]) ??
+        DEFAULT_MONITOR_SETTINGS,
+      onChange: setMonitorDraft,
+    },
+    tags: {
+      value: tagDraft ?? (editing === null ? [] : (tagMap[editing] ?? [])),
+      onChange: setTagDraft,
+    },
     formOpen,
     host,
     setHost,

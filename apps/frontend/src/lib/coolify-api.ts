@@ -64,6 +64,7 @@ export function updateCard(service: Service, change: { name: string; url: string
     'checkType',
     'expectedStatus',
     'checkPath',
+    'checkMatch',
     'checkInterval',
   ] as const;
   const body: Record<string, unknown> = { ...change };

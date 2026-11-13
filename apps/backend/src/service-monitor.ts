@@ -1,4 +1,5 @@
 import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
+import { isNonHttp } from './service-probe.js';
 import { serviceSignature } from './service-signature.js';
 import {
   classify,
@@ -8,7 +9,12 @@ import {
   type ServiceStatus,
 } from './service-probe.js';
 
-export { classify, checkService, PingUnavailableError } from './service-probe.js';
+export {
+  classify,
+  checkService,
+  PingUnavailableError,
+  CERT_WARNING_DAYS,
+} from './service-probe.js';
 export type { CheckResult, ServiceStatus, StatusReason } from './service-probe.js';
 
 const unchecked = (): ServiceStatus => ({
@@ -33,9 +39,12 @@ export function createServiceMonitor(
     url: string,
     allowPrivate?: boolean,
     type?: CheckType,
+    match?: string | null,
   ) => Promise<CheckResult> = checkService,
   now: () => number = Date.now,
   publish?: (services: Service[], states: Record<number, ServiceStatus>) => void,
+  /** Services in a scheduled maintenance window at the given time; they are not probed. */
+  inMaintenance: (at: number) => ReadonlySet<number> = () => new Set(),
 ) {
   const states = new Map<number, ServiceStatus>();
   /** Configuration each state was measured under, so edited services are probed again and only those. */
@@ -90,9 +99,13 @@ export function createServiceMonitor(
       // state and take precedence in the following cycle.
       const lastOf = (id: number) => states.get(id)?.lastAttempt ?? '';
       const startedAt = now();
+      const paused = inMaintenance(startedAt);
       const isDue = (service: Service) => {
         const last = lastOf(service.id);
         if (!last) return true;
+        // Entering or leaving a maintenance window shows at once, not at the next interval.
+        if (paused.has(service.id) !== (states.get(service.id)?.reason === 'maintenance'))
+          return true;
         const interval = (service.checkInterval ?? CHECK_INTERVAL_DEFAULT) * 1000;
         return startedAt - Date.parse(last) >= interval - dueSlackMs;
       };
@@ -110,19 +123,32 @@ export function createServiceMonitor(
             const service = monitored[nextIndex++];
             changed = true;
             const attemptedAt = new Date(now()).toISOString();
+            if (paused.has(service.id)) {
+              states.set(service.id, {
+                status: 'unknown',
+                lastAttempt: attemptedAt,
+                reason: 'maintenance',
+                httpStatus: null,
+                latencyMs: null,
+              });
+              continue;
+            }
             try {
               const result = await check(
-                service.checkType !== 'ping' && service.checkPath
+                !isNonHttp(service.checkType) && service.checkPath
                   ? new URL(service.checkPath, new URL(service.url).origin).href
                   : service.url,
                 service.allowPrivate === true,
                 service.checkType ?? 'http',
+                service.checkMatch ?? null,
               );
               if (runGeneration === generation)
                 states.set(service.id, {
-                  ...(result.httpStatus === null
-                    ? { status: 'available' as const, reason: 'reachable' as const }
-                    : classify(result.httpStatus, service.expectedStatus)),
+                  ...(result.outcome ??
+                    (result.httpStatus === null
+                      ? { status: 'available' as const, reason: 'reachable' as const }
+                      : classify(result.httpStatus, service.expectedStatus))),
+                  ...(result.certExpiresAt ? { certExpiresAt: result.certExpiresAt } : {}),
                   lastAttempt: attemptedAt,
                   httpStatus: result.httpStatus,
                   ...(result.httpStatus !== null && service.expectedStatus

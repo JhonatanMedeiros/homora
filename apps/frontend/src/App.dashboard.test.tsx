@@ -110,7 +110,8 @@ it('keeps global filter separate from a category named All', async () => {
   );
   render(<App />);
   await screen.findByRole('link', { name: /Dois/ });
-  fireEvent.click(screen.getAllByRole('button', { name: 'Todos' })[1]);
+  // Buttons named "Todos": the status chip, the global category chip, then the category called Todos.
+  fireEvent.click(screen.getAllByRole('button', { name: 'Todos' })[2]);
   expect(screen.getByRole('link', { name: /Um/ })).toBeTruthy();
   expect(screen.queryByRole('link', { name: /Dois/ })).toBeNull();
 });

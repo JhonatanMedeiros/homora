@@ -21,6 +21,8 @@ export type ServiceGroup = {
   columns?: number | null;
 };
 export type Availability = 'available' | 'unavailable' | 'unknown';
+/** What the status light shows: an online service that is slower than its limit reads `degraded`. */
+export type LightState = Availability | 'degraded' | 'maintenance';
 /** Health probe status reason from monitor; absent in responses from older versions. */
 export type StatusReason =
   | 'responding'
@@ -31,6 +33,11 @@ export type StatusReason =
   | 'error-status'
   | 'reachable'
   | 'no-response'
+  | 'content-mismatch'
+  | 'cert-expired'
+  | 'cert-invalid'
+  | 'cert-expiring'
+  | 'maintenance'
   | 'unchecked';
 export type ServiceStatus = {
   status: Availability;
@@ -39,6 +46,8 @@ export type ServiceStatus = {
   httpStatus?: number | null;
   latencyMs?: number | null;
   expectedStatus?: string | null;
+  /** TLS checks: when the certificate expires (epoch milliseconds). */
+  certExpiresAt?: number;
 };
 
 export function hostOf(url: string) {

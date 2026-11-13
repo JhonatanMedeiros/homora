@@ -1,17 +1,5 @@
 /** Service cards, availability, and dependency text. */
 export const en = {
-  'health.headline': '{online} of {total} online',
-  'health.availableCount': '{count} available',
-  'health.unavailableCount': '{count} unavailable',
-  'health.unknownCount': '{count} unknown',
-  'health.blockedCount': '{count} not monitored',
-  'health.label': 'Availability summary',
-  'health.down': '{count} down',
-  'health.allUp': 'All up here',
-  'health.up': '{count} up',
-  'health.blocked': '{count} not monitored (private network not authorized)',
-  'health.hint':
-    'Authorize the private network in Edit, or turn on “New services allow private network” in Settings.',
   'card.opensNewTab': ' (opens in a new tab)',
   'card.lastAttempt': 'last attempt {time}',
   'status.waiting': 'Waiting',
@@ -88,18 +76,6 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
-  'health.headline': '{online} de {total} no ar',
-  'health.availableCount': '{count} disponíveis',
-  'health.unavailableCount': '{count} indisponíveis',
-  'health.unknownCount': '{count} sem informação',
-  'health.blockedCount': '{count} sem monitoramento',
-  'health.label': 'Resumo de disponibilidade',
-  'health.down': '{count} fora do ar',
-  'health.allUp': 'Tudo no ar por aqui',
-  'health.up': '{count} no ar',
-  'health.blocked': '{count} sem monitoramento (rede privada não autorizada)',
-  'health.hint':
-    'Autorize a rede privada em Editar, ou ative “Novos serviços permitem rede privada” em Configurações.',
   'card.opensNewTab': ' (abre em nova aba)',
   'card.lastAttempt': 'última tentativa {time}',
   'status.waiting': 'Aguardando',

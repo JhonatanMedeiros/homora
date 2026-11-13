@@ -1371,3 +1371,22 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Validation after on-demand page and host-view loading: the focused application suites passed (38 tests), service/map/navigation suites passed (28 tests), `pnpm check` passed (118 Vitest files, 1,234 tests, 14 script tests), and `pnpm build` passed across all packages. The main JavaScript chunk is 498.59 kB (148.99 kB gzip); `git diff --check` passed. The i18n navigation test now waits for the lazy Settings heading.
 - Final organization review: remaining source files above 300 lines are page composers, cohesive domain validation/policy modules, message catalogs, or test contract/scenario suites. Their responsibilities are already explicit; further splitting solely to lower LOC would fragment those units. The current architectural cleanup scope is complete and validated locally; no commit or PR was created.
 - No API, MCP tool names, scopes, or user-visible responses were intentionally changed.
+
+## Uptime status: incidents, banner and degraded state (2026-11-12)
+
+Phase 1 of the uptime redesign (see [ADR 0011](decisoes/0011-incidents-and-alert-thresholds.md)).
+
+- [x] Incident log derived from checks, rebuilt from history on first start; `GET /api/services/:id/incidents`.
+- [x] Per-service failure/recovery thresholds and degraded latency, applied to incidents and alerts (anti-flapping).
+- [x] Health banner (problems with duration, uptime, incidents per week, recovery time, 30-day target and error budget).
+- [x] Degraded state (amber) on cards and bars; failure reason and "down since" on the card.
+- [x] History bars with tooltip, selectable detail (click, tap, arrow keys), latency line and axis; recent incidents in the history panel.
+- [x] Phase 2: service detail page (`/services/:id`), p50/p95 latency chart, 90-day heatmap, failure reasons, incident table, latest checks and previous-period comparison on the cards. Backed by an hourly rollup table (`service_uptime_rollup`, migration 0026, about 100 days) filled from every new check and backfilled from the raw history once. Not done from the mockup: pause, schedule maintenance and check-now buttons, CSV export, the alert column and the TLS block (they depend on features of Phases 3 and 4).
+- [x] Phase 3: TCP, DNS, TLS certificate, keyword and JSON checks (check-type tiles in the service form), scheduled maintenance per service (dashboard blue state, banner line, detail page panel and dialog), TLS certificate stat in the banner ([ADR 0012](decisoes/0012-check-types-and-maintenance.md)). Not done from the mockup: heartbeat (push) checks, recurring windows and windows for a whole group, DNS server/record type/expected answer, ICMP packet count, and the redirect-following/TLS-warning toggles.
+- [x] Phase 4: free-form tags per service (own table `service_tags`, migration 0029, kept out of the check signature; editor in the service form, chips on the card, tag filter on the Home), ntfy and Discord notification channels (secrets encrypted like the others; ntfy token optional, private ntfy servers need the per-channel "allow private" opt-in), status chips on the Home (All / Offline / Degraded / In maintenance, with counts) and problems-first ordering (offline, then degraded) inside each group, and a wider public status page (90 daily bars with 90-day availability, last-30-day incident list and upcoming/active maintenance; still opt-in per service and without reasons, notes, URLs or ids). Not done from the mockup: the e-mail channel (needs SMTP settings), the per-event toggle panel for channels, and a configurable SLA target (the endpoint exists, there is no UI).
+
+Verification: `pnpm check` (1266 tests) and `pnpm build` pass. The uptime performance budget in
+`service-uptime.test.ts` was raised (7 d 300 → 450 ms, 30 d 1000 → 1500 ms): the bars now read the mean
+latency and failure reason of each period, and the original code already reached ~940 ms under the
+parallel suite. Checked in Chromium against the mockup at 1440 px and 390 px (dark): banner, degraded
+and failing cards, bar tooltip and detail, expanded history with incidents.

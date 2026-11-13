@@ -59,7 +59,7 @@ export function createServiceCardConfiguration({
       ensureGroup(service.category, null, pageForNewService(service.category, change.page));
       const created = sqlite
         .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
         )
         .run(
           service.name,
@@ -73,6 +73,7 @@ export function createServiceCardConfiguration({
           service.checkInterval ?? null,
           service.expectedStatus ?? null,
           service.checkPath ?? null,
+          service.checkMatch ?? null,
         );
       bumpVersion();
       const row = selectService(Number(created.lastInsertRowid));
@@ -92,7 +93,7 @@ export function createServiceCardConfiguration({
     const position = change.service.position ?? current.position;
     sqlite
       .prepare(
-        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=? WHERE id=?',
+        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_match=? WHERE id=?',
       )
       .run(
         service.name,
@@ -108,6 +109,7 @@ export function createServiceCardConfiguration({
           ? (current.expectedStatus ?? null)
           : service.expectedStatus,
         service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
+        service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
         change.id,
       );
     bumpVersion();
@@ -121,7 +123,7 @@ export function createServiceCardConfiguration({
       service.position = nextServicePosition(service.category);
       const result = sqlite
         .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
         )
         .run(
           service.name,
@@ -135,6 +137,7 @@ export function createServiceCardConfiguration({
           service.checkInterval ?? null,
           service.expectedStatus ?? null,
           service.checkPath ?? null,
+          service.checkMatch ?? null,
         );
       const created = selectService(Number(result.lastInsertRowid));
       if (!created) throw new Error('Created service could not be loaded');
@@ -157,7 +160,7 @@ export function createServiceCardConfiguration({
           : nextServicePosition(service.category);
       sqlite
         .prepare(
-          'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=? WHERE id=?',
+          'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_match=? WHERE id=?',
         )
         .run(
           service.name,
@@ -173,6 +176,7 @@ export function createServiceCardConfiguration({
             ? (current.expectedStatus ?? null)
             : service.expectedStatus,
           service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
+          service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
           id,
         );
       if (host !== undefined) writeHost(id, host);

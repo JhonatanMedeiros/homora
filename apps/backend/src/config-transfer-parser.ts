@@ -2,7 +2,10 @@ import { parse } from 'yaml';
 import {
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
+  isCheckMatch,
   isCheckPath,
+  isCheckType,
+  type CheckType,
   isExpectedStatus,
   normalizeIcon,
   normalizePageName,
@@ -56,8 +59,8 @@ export function parseService(
   const icon = normalizeIcon(raw.icon);
   if (typeof raw.icon === 'string' && raw.icon.trim() && !icon)
     issues.push({ path, code: 'icon-ignored', severity: 'warning' });
-  let checkType: 'http' | 'ping' | undefined;
-  if (raw.check === 'http' || raw.check === 'ping') checkType = raw.check;
+  let checkType: CheckType | undefined;
+  if (isCheckType(raw.check)) checkType = raw.check;
   else if (raw.check !== undefined)
     issues.push({ path: `${path}.check`, code: 'check-ignored', severity: 'warning' });
   let checkInterval: number | undefined;
@@ -76,6 +79,8 @@ export function parseService(
     issues.push({ path: `${path}.expectedStatus`, code: 'check-ignored', severity: 'warning' });
   if (raw.checkPath !== undefined && !isCheckPath(raw.checkPath))
     issues.push({ path: `${path}.checkPath`, code: 'check-ignored', severity: 'warning' });
+  if (raw.checkMatch !== undefined && !isCheckMatch(raw.checkMatch))
+    issues.push({ path: `${path}.checkMatch`, code: 'check-ignored', severity: 'warning' });
   return {
     name,
     url: url.href,
@@ -84,6 +89,7 @@ export function parseService(
     allowPrivate: raw.allowPrivate === true,
     ...(isExpectedStatus(expectedStatus) ? { expectedStatus: String(expectedStatus) } : {}),
     ...(isCheckPath(raw.checkPath) ? { checkPath: raw.checkPath } : {}),
+    ...(isCheckMatch(raw.checkMatch) ? { checkMatch: raw.checkMatch } : {}),
     ...(checkType ? { checkType } : {}),
     ...(checkInterval ? { checkInterval } : {}),
   };

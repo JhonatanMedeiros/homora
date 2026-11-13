@@ -1,8 +1,7 @@
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HostImpactBanner } from '@/components/host-impact-banner';
-import { HealthSummary } from '@/components/health-summary';
 import { OrganizePanel } from '@/components/organize-panel';
 import { PageHeader } from '@/components/page-header';
 import { TopBar } from '@/components/top-bar';
@@ -19,7 +18,8 @@ type Props = {
   managing: boolean;
   organizing: boolean;
   topBar: boolean;
-  summary: ComponentProps<typeof HealthSummary>;
+  /** Health banner: the first thing the Home says. */
+  banner?: ReactNode;
   serviceCount: number;
   groupCount: number;
   toolbar: ToolbarProps;
@@ -36,7 +36,7 @@ export function ServiceDashboardHeader({
   managing,
   organizing,
   topBar,
-  summary,
+  banner,
   serviceCount,
   groupCount,
   toolbar,
@@ -77,9 +77,10 @@ export function ServiceDashboardHeader({
         />
       )}
       {!managing && !organizing && topBar && <TopBar />}
+      {!managing && !organizing && banner}
       {!managing && (
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          {!organizing ? <HealthSummary {...summary} /> : <span />}
+          <span />
           {serviceCount > 0 && <ServiceViewToolbar {...toolbar} />}
         </div>
       )}

@@ -9,6 +9,8 @@ colors:
   muted-ink-dark: 'oklch(0.7 0.01 70)'
   ember-dark: 'oklch(0.78 0.15 62)'
   ok-dark: 'oklch(0.77 0.15 155)'
+  warning-dark: 'oklch(0.85 0.15 95)'
+  info-dark: 'oklch(0.76 0.11 245)'
   down-dark: 'oklch(0.7 0.19 25)'
   background-light: 'oklch(0.985 0.004 80)'
   card-light: 'oklch(1 0 0)'
@@ -18,6 +20,8 @@ colors:
   ember-light: 'oklch(0.72 0.16 58)'
   ember-text-light: 'oklch(0.55 0.15 50)'
   ok-light: 'oklch(0.45 0.13 155)'
+  warning-light: 'oklch(0.5 0.12 75)'
+  info-light: 'oklch(0.48 0.13 250)'
   down-light: 'oklch(0.5 0.19 25)'
 typography:
   headline:

@@ -8,7 +8,7 @@ const now = Date.parse('2026-11-12T12:00:00.000Z');
 
 function setup() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT);
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
     CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,
       status TEXT GENERATED ALWAYS AS (json_extract(observation,'$.status')) VIRTUAL,
@@ -89,6 +89,42 @@ it('computes uptime, latency and buckets that match a manual count', () => {
     expect(summary.buckets).toHaveLength(48);
     expect(summary.buckets.at(-1)?.status).toBe('partial');
     expect(summary.buckets[0]?.status).toBe('unknown');
+  } finally {
+    db.close();
+  }
+});
+
+it('gives every bucket its mean latency and the reason of its last failure', () => {
+  const { db, store, add } = setup();
+  try {
+    const failure = (ago: number, reason: string, httpStatus: number | null) =>
+      db
+        .prepare(
+          'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(1,(SELECT signature FROM service_observations WHERE service_id=1),?,?)',
+        )
+        .run(
+          now - ago,
+          JSON.stringify({ status: 'unavailable', latencyMs: null, reason, httpStatus }),
+        );
+    // Same 30-minute bucket: two successes (100 and 300 ms), then two failures; the later one wins.
+    add(1, 4 * 60_000, 'available', 100);
+    add(1, 3 * 60_000, 'available', 300);
+    failure(2 * 60_000, 'no-response', null);
+    failure(1 * 60_000, 'error-status', 502);
+    // An older, healthy bucket carries no failure detail.
+    add(1, 3 * 3_600_000, 'available', 50);
+    const { buckets } = store.uptime('24h', now, 1)[1]!;
+    expect(buckets.at(-1)).toMatchObject({
+      status: 'partial',
+      checks: 4,
+      avgLatencyMs: 200,
+      reason: 'error-status',
+      httpStatus: 502,
+    });
+    const healthy = buckets.find((bucket) => bucket.status === 'up');
+    expect(healthy).toMatchObject({ checks: 1, avgLatencyMs: 50 });
+    expect(healthy).not.toHaveProperty('reason');
+    expect(buckets[0]).toMatchObject({ status: 'unknown', checks: 0, avgLatencyMs: null });
   } finally {
     db.close();
   }
@@ -207,8 +243,10 @@ it('answers 25 services with 30 days of history at the default 60 s interval wit
     console.info(`uptime for ${SERVICES} services x 30d at 60 s (ms): ${JSON.stringify(timings)}`);
     // The default period meets the 300 ms goal with margin; the longer ones scan more rows.
     expect(timings['24h']).toBeLessThan(300);
-    expect(timings['7d']).toBeLessThan(300);
-    expect(timings['30d']).toBeLessThan(1000);
+    // Budgets include the per-period latency and failure reason behind the history bars (about
+    // 25% over the bare counts) and leave room for the load of the whole suite running in parallel.
+    expect(timings['7d']).toBeLessThan(450);
+    expect(timings['30d']).toBeLessThan(1500);
   } finally {
     db.close();
   }

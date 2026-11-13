@@ -1,8 +1,26 @@
 import { BRAND_ICON_NAMES } from './brand-icons.js';
 import type { HostLink } from './hosts.js';
 
-/** Service monitor probe method: HTTP GET (default) or ICMP ping. */
-export type CheckType = 'http' | 'ping';
+/**
+ * How a service is probed: HTTP GET (default), ICMP ping, a TCP connection, a DNS lookup of the
+ * host, the TLS certificate of the host, or an HTTP GET whose body must contain a text (`keyword`)
+ * or whose JSON must hold a value (`json`).
+ */
+export const CHECK_TYPES = ['http', 'ping', 'tcp', 'dns', 'tls', 'keyword', 'json'] as const;
+export type CheckType = (typeof CHECK_TYPES)[number];
+export const isCheckType = (value: unknown): value is CheckType =>
+  typeof value === 'string' && (CHECK_TYPES as readonly string[]).includes(value);
+/** Types that read the response body and therefore need `checkMatch`. */
+export const BODY_CHECK_TYPES: readonly CheckType[] = ['keyword', 'json'];
+export const CHECK_MATCH_MAX = 200;
+/** Days before expiry at which a certificate starts to read as "expiring". */
+export const CERT_WARNING_DAYS = 14;
+/** A keyword, or `path=value` for the JSON check; printable text only. */
+export const isCheckMatch = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  value.length >= 1 &&
+  value.length <= CHECK_MATCH_MAX &&
+  !Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127);
 export type ExpectedStatus = string | number;
 
 export const isExpectedStatus = (value: unknown): value is ExpectedStatus =>
@@ -35,6 +53,8 @@ export type ServiceInput = {
   checkInterval?: number | null;
   expectedStatus?: ExpectedStatus | null;
   checkPath?: string | null;
+  /** What `keyword` and `json` checks look for in the response; null clears it. */
+  checkMatch?: string | null;
 };
 
 /** `isPublic` comes only from the authenticated listing; it is not part of ServiceInput on purpose. */
@@ -209,14 +229,15 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
         ? Number(input.position)
         : 0,
     allowPrivate: input.allowPrivate === true,
-    ...(input.checkType === 'http' || input.checkType === 'ping'
-      ? { checkType: input.checkType }
-      : {}),
+    ...(isCheckType(input.checkType) ? { checkType: input.checkType } : {}),
     ...(input.expectedStatus === null || isExpectedStatus(input.expectedStatus)
       ? { expectedStatus: input.expectedStatus === null ? null : String(input.expectedStatus) }
       : {}),
     ...(input.checkPath === null || isCheckPath(input.checkPath)
       ? { checkPath: input.checkPath }
+      : {}),
+    ...(input.checkMatch === null || isCheckMatch(input.checkMatch)
+      ? { checkMatch: input.checkMatch }
       : {}),
     ...(input.checkInterval === null
       ? { checkInterval: null }

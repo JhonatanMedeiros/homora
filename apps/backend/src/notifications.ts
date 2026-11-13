@@ -4,12 +4,18 @@ import type { createVault } from './vault.js';
 import type { Service } from '@homora/shared';
 import type { ServiceStatus } from './service-monitor.js';
 import { createNotificationTransitions } from './notification-transitions.js';
-import { createNotificationDelivery, type NotificationChannel } from './notification-delivery.js';
+import {
+  CHANNEL_TYPES,
+  createNotificationDelivery,
+  type NotificationChannel,
+} from './notification-delivery.js';
+
+const DISCORD_HOSTS = /^(?:(?:ptb|canary)\.)?discord(?:app)?\.com$/;
 
 const channelSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
-    type: z.enum(['webhook', 'telegram']),
+    type: z.enum(CHANNEL_TYPES),
     enabled: z.boolean(),
     allowPrivate: z.boolean().default(false),
     includeUrl: z.boolean().default(false),
@@ -32,6 +38,8 @@ const stateSchema = z
     status: z.enum(['available', 'unavailable', 'unknown']),
     lastDown: z.number().nullable(),
     notifiedDown: z.boolean(),
+    failures: z.number().int().nonnegative().optional(),
+    oks: z.number().int().nonnegative().optional(),
   })
   .strict();
 type Vault = ReturnType<typeof createVault>;
@@ -64,13 +72,36 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
     if (id !== undefined && !old) return null;
     const previous = old && old.type === data.type ? credentials(old) : {};
     const secret =
-      data.type === 'webhook'
-        ? { destination: data.destination || previous.destination }
-        : { token: data.token || previous.token, chatId: data.chatId || previous.chatId };
-    if (data.type === 'webhook') {
+      data.type === 'telegram'
+        ? { token: data.token || previous.token, chatId: data.chatId || previous.chatId }
+        : data.type === 'ntfy'
+          ? {
+              destination: data.destination || previous.destination,
+              // An empty token on edit keeps the stored one; there is no way to clear it but replacing the channel.
+              token: data.token || previous.token,
+            }
+          : { destination: data.destination || previous.destination };
+    if (data.type !== 'telegram') {
       if (!secret.destination) throw new Error('Destination required');
       const url = new URL(secret.destination);
-      if (url.protocol !== 'https:' || url.username || url.password || url.hash)
+      const secure = url.protocol === 'https:';
+      // ntfy on the LAN is usually plain HTTP; that is only accepted for a private address without a token.
+      const lan = data.type === 'ntfy' && data.allowPrivate && !('token' in secret && secret.token);
+      if (
+        (!secure && !(lan && url.protocol === 'http:')) ||
+        url.username ||
+        url.password ||
+        url.hash
+      )
+        throw new Error('Invalid destination');
+      if (
+        data.type === 'discord' &&
+        !(
+          DISCORD_HOSTS.test(url.hostname) && /^\/api\/webhooks\/\d+\/[\w-]+\/?$/.test(url.pathname)
+        )
+      )
+        throw new Error('Invalid destination');
+      if (data.type === 'ntfy' && (url.pathname.replace(/\/+$/, '') === '' || url.search))
         throw new Error('Invalid destination');
     } else if (
       !secret.token ||
@@ -141,9 +172,26 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
           return [];
         }
       });
+      const limits = new Map(
+        (
+          db
+            .prepare(
+              'SELECT service_id,failure_threshold,recovery_threshold FROM service_monitor_settings',
+            )
+            .all() as {
+            service_id: number;
+            failure_threshold: number;
+            recovery_threshold: number;
+          }[]
+        ).map((r) => [
+          r.service_id,
+          { failureThreshold: r.failure_threshold, recoveryThreshold: r.recovery_threshold },
+        ]),
+      );
       const tracker = createNotificationTransitions(
         300_000,
         saved.map(([id, value]) => [id, value]),
+        (id) => limits.get(id) ?? { failureThreshold: 1, recoveryThreshold: 1 },
       );
       const events = tracker.observe(services, states);
       db.exec('BEGIN IMMEDIATE');

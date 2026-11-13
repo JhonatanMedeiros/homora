@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from 'react';
-import type { Service, UptimeRange } from '@homora/shared';
+import type { Incident, MonitorSettings, Service, UptimeRange } from '@homora/shared';
 import { GroupSection } from '@/components/group-section';
 import { OrganizeRow } from '@/components/organize-row';
 import { ServiceCard } from '@/components/service-card';
@@ -27,6 +27,11 @@ type GroupData = {
   coolify: Record<number, CardCoolify>;
   uptime: Record<number, UptimeSummary>;
   uptimeRange: UptimeRange;
+  /** Alert settings, the incident each service is in, maintenance windows and tags (all optional). */
+  monitorSettings?: Record<number, MonitorSettings>;
+  incidents?: Record<number, Incident>;
+  maintenanceUntil?: Record<number, number>;
+  tags?: Record<number, string[]>;
   impacts: Map<number, Impact>;
   dependencyNotes: Record<number, string>;
 };
@@ -43,6 +48,7 @@ type GroupPresentation = {
 
 type GroupActions = {
   onUptimeRangeChange: (range: UptimeRange) => void;
+  onTag?: (tag: string) => void;
   hostOf: (service: Service) => HostLabel | null;
   onEditService: (service: Service) => void;
   onRemoveService: (service: Service) => void;
@@ -75,6 +81,10 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
     coolify,
     uptime,
     uptimeRange,
+    monitorSettings,
+    incidents,
+    maintenanceUntil,
+    tags,
     impacts,
     dependencyNotes,
   } = data;
@@ -82,6 +92,7 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
     presentation;
   const {
     onUptimeRangeChange,
+    onTag,
     hostOf,
     onEditService,
     onRemoveService,
@@ -203,6 +214,11 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
               coolify={coolify[service.id]}
               onCoolify={() => onCoolify(service.id)}
               uptime={uptime[service.id]}
+              monitor={monitorSettings?.[service.id]}
+              incident={incidents?.[service.id]}
+              maintenanceUntil={maintenanceUntil?.[service.id]}
+              tags={tags?.[service.id]}
+              onTag={onTag}
               uptimeRange={uptimeRange}
               onUptimeRangeChange={onUptimeRangeChange}
               host={hostOf(service)}

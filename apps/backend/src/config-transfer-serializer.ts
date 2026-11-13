@@ -38,9 +38,12 @@ export function serializeConfiguration(
           ...(service.description ? { description: service.description } : {}),
           ...(service.icon ? { icon: service.icon } : {}),
           ...(service.allowPrivate ? { allowPrivate: true } : {}),
-          ...(service.checkType === 'ping' ? { check: 'ping' } : {}),
+          ...(service.checkType && service.checkType !== 'http'
+            ? { check: service.checkType }
+            : {}),
           ...(service.expectedStatus ? { expectedStatus: service.expectedStatus } : {}),
           ...(service.checkPath ? { checkPath: service.checkPath } : {}),
+          ...(service.checkMatch ? { checkMatch: service.checkMatch } : {}),
           ...(service.checkInterval ? { interval: service.checkInterval } : {}),
         })),
     })),

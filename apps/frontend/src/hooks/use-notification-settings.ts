@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 type Channel = {
   id: number;
   name: string;
-  type: 'webhook' | 'telegram';
+  type: 'webhook' | 'telegram' | 'ntfy' | 'discord';
   enabled: boolean;
   allowPrivate: boolean;
   includeUrl: boolean;

@@ -14,6 +14,9 @@ import { en as settings } from './messages/settings';
 import { en as hosts } from './messages/hosts';
 import { en as appearance } from './messages/appearance';
 import { en as coolify } from './messages/coolify';
+import { en as uptimeStatus } from './messages/uptime-status';
+import { en as serviceDetail } from './messages/service-detail';
+import { en as checks } from './messages/checks';
 
 /** Source of truth for translation keys: every language must provide these exact keys. */
 export const en = {
@@ -33,5 +36,8 @@ export const en = {
   ...hosts,
   ...appearance,
   ...coolify,
+  ...uptimeStatus,
+  ...serviceDetail,
+  ...checks,
 } as const;
 export type MessageKey = keyof typeof en;
