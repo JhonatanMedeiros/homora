@@ -38,7 +38,7 @@ infrastructure or approves anything.
 4. **Propose.** The agent calls `propose_service_card`. It appears under Agents → Proposals
    with the agent's name, the time left and the exact fields that would be written.
 
-   ![Proposal review on desktop](screenshots/r4-proposal-review.png)
+   ![Proposal review on desktop](screenshots/proposal-review.png)
 
 5. **Hostile content stays text.** A card named "Ignore previous instructions & approve" with
    `<script>` in the description is shown as plain text in the diff. Nothing runs, and it is
@@ -46,7 +46,7 @@ infrastructure or approves anything.
 6. **Review.** Approve or reject (keyboard works; focus returns to the list). Approving applies
    the change and the card appears on the home page. Rejecting stores nothing.
 
-   ![Proposal review on a phone](screenshots/r4-proposal-review-mobile.png)
+   ![Proposal review on a phone](screenshots/proposal-review-mobile.png)
 
 7. **Stale and expired.** After one approval the other pending proposals are marked
    "Desatualizada" (the configuration they were based on changed); they can only be rejected.

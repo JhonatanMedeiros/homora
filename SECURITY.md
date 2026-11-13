@@ -63,6 +63,7 @@ data or real credentials. There is no established response SLA or bug bounty pol
   guest names and must be granted deliberately. A name match is never treated as evidence.
 - Treat service names, URLs, and integration responses as untrusted data.
 
-See the [README](README.md) for backup and recovery, and
+See [Import, export and backup](docs/user-guide/import-export-backup.md) and
+[Accounts and security](docs/user-guide/accounts-and-security.md) for backup and recovery, and
 [architecture](docs/architecture.md) for risks and planned controls. Controls
 described as planned should not be assumed to be implemented yet.

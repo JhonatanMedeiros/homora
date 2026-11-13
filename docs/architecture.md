@@ -123,7 +123,8 @@ MCP reads the shared inventory directly and can only create reviewable proposals
 created, a proposal remains independently reviewable if its source is later revoked.
 The local Docker source remains independent. The Docker socket remains privileged,
 and the agent requires a private HTTPS path with certificate verification. See
-[ADR 0003](decisions/0003-docker-push-discovery.md) and the README for limits and setup.
+[ADR 0003](decisions/0003-docker-push-discovery.md) and the
+[Docker discovery guide](user-guide/docker-discovery.md) for limits and setup.
 
 ## Initial Domain Model
 
