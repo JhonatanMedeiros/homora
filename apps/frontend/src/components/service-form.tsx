@@ -1,15 +1,17 @@
 import { Spinner } from '@/components/ui/spinner';
-import type { FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import { flushSync } from 'react-dom';
 import type { HostLink, ServiceInput } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { FormError } from '@/components/form-error';
-import { ServiceFormAdvanced, type FormMonitoring } from '@/components/service-form-advanced';
-import { HostPicker } from '@/components/host-picker';
+import type { FormMonitoring } from '@/components/service-form-monitoring';
+import { ServiceFormSections } from '@/components/service-form-sections';
+import type { Section } from '@/components/service-form-summary';
+import { ServiceIcon } from '@/components/service-icon';
+import { suggestBrandIcon } from '@/lib/icons';
 import { DependencyPicker } from '@/components/dependency-picker';
 import type { HostConnection, HostInventories } from '@/lib/hosts';
 import { t } from '@/i18n';
@@ -65,104 +67,112 @@ export function ServiceForm({
   onCancel,
 }: Props) {
   const set = (patch: Partial<ServiceInput>) => onChange({ ...value, ...patch });
+  const [open, setOpen] = useState<Section | ''>('look');
+  const suggestion = value.icon ? null : suggestBrandIcon(value.name);
+  /** Opens the section holding a field the browser reports as invalid, so the message is seen. */
+  const revealInvalid = (event: React.FormEvent) => {
+    const id = (event.target as HTMLElement).closest<HTMLElement>('[data-section]')?.dataset
+      .section as Section | undefined;
+    // Flushed so the field is visible when the browser tries to focus it.
+    if (id && id !== open) flushSync(() => setOpen(id));
+  };
+  /** The tile opens the icon field, since choosing an icon lives with the appearance. */
+  const changeIcon = () => {
+    flushSync(() => setOpen('look'));
+    document.getElementById('service-icon')?.focus();
+  };
   return (
     <form
       aria-label={editing ? t('form.editTitle') : t('form.newTitle')}
       onSubmit={onSubmit}
-      className="flex flex-col gap-6"
+      onInvalidCapture={revealInvalid}
+      className="flex flex-col gap-4"
     >
-      <FieldGroup className="grid gap-4 sm:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor="service-name">{t('form.name')}</FieldLabel>
-          <Input
-            ref={nameRef}
-            id="service-name"
-            required
-            maxLength={80}
-            autoComplete="off"
-            value={value.name}
-            onChange={(e) => set({ name: e.target.value })}
-            placeholder="Jellyfin"
-          />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="service-url">{t('form.url')}</FieldLabel>
-          <Input
-            id="service-url"
-            type="url"
-            inputMode="url"
-            required
-            autoComplete="off"
-            value={value.url}
-            onChange={(e) => set({ url: e.target.value })}
-            placeholder="http://192.168.1.10:8096"
-          />
-        </Field>
-        <Field>
-          <FieldLabel id="service-open-target-label">{t('form.openTarget')}</FieldLabel>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            aria-labelledby="service-open-target-label"
-            value={value.openTarget ?? 'new-tab'}
-            onValueChange={(next) => {
-              if (next === 'new-tab' || next === 'same-tab') set({ openTarget: next });
-            }}
-          >
-            <ToggleGroupItem value="new-tab">{t('form.openNewTab')}</ToggleGroupItem>
-            <ToggleGroupItem value="same-tab">{t('form.openSameTab')}</ToggleGroupItem>
-          </ToggleGroup>
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>
-          <Input
-            id="service-category"
-            required
-            maxLength={40}
-            list="categories"
-            autoComplete="off"
-            value={value.category}
-            onChange={(e) => set({ category: e.target.value })}
-            placeholder={t('form.categoryPlaceholder')}
-          />
-          <datalist id="categories">
-            {categories.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </Field>
-        {hosts && <HostPicker {...hosts} />}
-        {dependencies && <DependencyPicker {...dependencies} />}
-        <Field orientation="horizontal" className="items-start sm:col-span-2">
-          <Checkbox
-            id="service-private"
-            checked={value.allowPrivate === true}
-            onCheckedChange={(checked) => set({ allowPrivate: checked === true })}
-          />
-          <div className="flex flex-col gap-1">
-            <FieldLabel htmlFor="service-private">{t('form.allowPrivate')}</FieldLabel>
-            <FieldDescription>{t('form.allowPrivateHint')}</FieldDescription>
-          </div>
-        </Field>
-        <Field orientation="horizontal" className="items-start sm:col-span-2">
-          <Checkbox
-            id="service-public"
-            checked={isPublic}
-            onCheckedChange={(checked) => onPublicChange(checked === true)}
-          />
-          <div className="flex flex-col gap-1">
-            <FieldLabel htmlFor="service-public">{t('form.public')}</FieldLabel>
-            <FieldDescription>{t('form.publicHint')}</FieldDescription>
-          </div>
-        </Field>
-      </FieldGroup>
-      <ServiceFormAdvanced value={value} onChange={onChange} monitoring={monitoring} tags={tags} />
-      <FormError className="mt-3">{error}</FormError>
-      <DialogFooter>
+      <div className="flex items-start gap-4">
+        <button
+          type="button"
+          onClick={changeIcon}
+          aria-label={t('form.changeIcon')}
+          className="hidden size-14 shrink-0 place-items-center rounded-xl border bg-secondary text-xl font-semibold transition-colors outline-none hover:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:grid"
+        >
+          <ServiceIcon icon={value.icon} name={value.name || '?'} />
+        </button>
+        <FieldGroup className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="service-name">{t('form.name')}</FieldLabel>
+            <Input
+              ref={nameRef}
+              id="service-name"
+              required
+              maxLength={80}
+              autoComplete="off"
+              value={value.name}
+              onChange={(e) => set({ name: e.target.value })}
+              placeholder="Jellyfin"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="service-url">{t('form.url')}</FieldLabel>
+            <Input
+              id="service-url"
+              type="url"
+              inputMode="url"
+              required
+              autoComplete="off"
+              value={value.url}
+              onChange={(e) => set({ url: e.target.value })}
+              placeholder="http://192.168.1.10:8096"
+            />
+          </Field>
+          <Field className="sm:col-span-2">
+            <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>
+            <Input
+              id="service-category"
+              required
+              maxLength={40}
+              list="categories"
+              autoComplete="off"
+              value={value.category}
+              onChange={(e) => set({ category: e.target.value })}
+              placeholder={t('form.categoryPlaceholder')}
+            />
+            <datalist id="categories">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </Field>
+          {suggestion && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-fit sm:col-span-2"
+              onClick={() => set({ icon: `brand:${suggestion}` })}
+            >
+              <ServiceIcon icon={`brand:${suggestion}`} name={value.name} />
+              {t('icon.suggested', { icon: suggestion })}
+            </Button>
+          )}
+        </FieldGroup>
+      </div>
+      <ServiceFormSections
+        value={value}
+        onChange={onChange}
+        isPublic={isPublic}
+        onPublicChange={onPublicChange}
+        monitoring={monitoring}
+        tags={tags}
+        hosts={hosts}
+        dependencies={dependencies}
+        open={open}
+        onOpenChange={setOpen}
+      />
+      <FormError>{error}</FormError>
+      <DialogFooter className="sticky bottom-0 -mx-6 -mb-6 flex-row justify-end gap-2 border-t bg-background px-6 py-3 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving} className="max-sm:flex-1">
           {saving && <Spinner data-icon="inline-start" />}
           {editing ? t('form.saveChanges') : t('form.saveService')}
         </Button>

@@ -42,7 +42,6 @@ it('displays services, filters, and submits a new entry', async () => {
   fireEvent.change(within(dialog).getByLabelText('Categoria'), {
     target: { value: 'Infraestrutura' },
   });
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Opções avançadas' }));
   fireEvent.click(within(dialog).getByRole('button', { name: 'Escolher ícone' }));
   fireEvent.change(screen.getByPlaceholderText('Buscar ícones pelo nome'), {
     target: { value: 'film' },
