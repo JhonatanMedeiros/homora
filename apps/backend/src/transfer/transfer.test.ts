@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Service } from '@homora/shared';
-import { parseTransfer, planImport, serializeConfiguration } from './config-transfer.js';
+import { parseTransfer, planImport, serializeConfiguration } from './index.js';
 
 const service = (patch: Partial<Service>): Service => ({
   id: 1,

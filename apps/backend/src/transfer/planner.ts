@@ -1,5 +1,5 @@
 import { samePageName } from '@homora/shared';
-import type { ImportPlan, ParsedImport } from './config-transfer-types.js';
+import type { ImportPlan, ParsedImport } from './types.js';
 
 type Existing = {
   groups: string[];

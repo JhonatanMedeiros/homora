@@ -14,6 +14,7 @@ import {
   THRESHOLD_MAX,
 } from '@homora/shared';
 import { z } from 'zod';
+import { MAX_GROUP_COLUMNS } from './group-limits.js';
 import { LEGACY_WIDGET_SOURCES } from '@homora/integrations';
 import { AGENT_SCOPES } from './agent-scopes.js';
 import {
@@ -90,7 +91,7 @@ export const groupCreateSchema = z
   .strict();
 
 export const groupColumnsSchema = z
-  .object({ columns: z.number().int().min(1).max(6).nullable() })
+  .object({ columns: z.number().int().min(1).max(MAX_GROUP_COLUMNS).nullable() })
   .strict();
 
 export const groupOrderSchema = z.object({ names: z.array(z.string()) }).strict();

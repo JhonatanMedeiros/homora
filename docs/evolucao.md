@@ -1619,3 +1619,8 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 
 - Moved application and notification catalogs into `packages/i18n`, with separate frontend and notification entry points and shared locale metadata. The frontend still combines integration-owned translations with the application catalog; i18next initialization remains specific to each app.
 - Updated Docker dependency-stage manifests and contributor guidance. Validation: `pnpm check` (1,363 application tests and 18 script tests), `pnpm build`, and a production backend Docker build with a runtime import of the notification catalog. Adding a language still requires configuring both apps, integration catalogs and appropriate plural, formatting and direction support.
+
+### Configuration transfer boundary
+
+- Moved format contracts, parsers, importers, planner and serializer into `apps/backend/src/transfer/` behind `index.ts`; `MAX_GROUP_COLUMNS` now lives in `group-limits.ts`, removing the reverse dependency from group configuration. Persistence, authorization and confirmation stay in `service-configuration-transfer.ts` and the routes. Decision: no workspace package yet ([ADR 0013](decisoes/0013-configuration-transfer-boundary.md)).
+- No format, limit or data change. Validation: `pnpm check` (1,363 application tests; an earlier run had load-dependent timeouts in unrelated tests that passed on rerun) and `pnpm build` passed. Live Docker and browser import/export were not verified.

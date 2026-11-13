@@ -2,8 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../service-monitor.js';
-import { MAX_TRANSFER_CHARS, serializeConfiguration } from '../config-transfer.js';
-import { IMPORT_SOURCES, parseBySource } from '../importers.js';
+import {
+  IMPORT_SOURCES,
+  MAX_TRANSFER_CHARS,
+  parseBySource,
+  serializeConfiguration,
+} from '../transfer/index.js';
 import { errorBody } from '../api-error.js';
 import type { AppearanceStore } from '../appearance.js';
 import type { CustomCssStore } from '../custom-css.js';

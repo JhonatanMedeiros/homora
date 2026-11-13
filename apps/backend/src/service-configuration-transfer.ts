@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { MAX_PAGES, validateService, type CheckType, type Service } from '@homora/shared';
-import { planImport, type ImportPlan, type ParsedImport } from './config-transfer.js';
+import { planImport, type ImportPlan, type ParsedImport } from './transfer/index.js';
 
 type ServiceRow = Omit<Service, 'position' | 'allowPrivate' | 'checkType' | 'checkInterval'> & {
   position: number;

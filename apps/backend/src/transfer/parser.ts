@@ -1,4 +1,5 @@
 import { parse } from 'yaml';
+import { MAX_GROUP_COLUMNS } from '../group-limits.js';
 import {
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
@@ -14,7 +15,6 @@ import {
 import {
   MAX_FLOW_OPENERS,
   MAX_GROUPS,
-  MAX_GROUP_COLUMNS,
   MAX_SERVICES,
   MAX_TRANSFER_CHARS,
   READABLE_TRANSFER_VERSIONS,
@@ -24,7 +24,7 @@ import {
   type ImportIssue,
   type IssueCode,
   type ParsedImport,
-} from './config-transfer-types.js';
+} from './types.js';
 
 /** True when `content` is small enough in structure to hand to the YAML parser. */
 export function withinParseBudget(content: string): boolean {

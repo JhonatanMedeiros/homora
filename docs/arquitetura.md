@@ -152,11 +152,13 @@ releases exist.
   application of reviewed service changes live in `service-card-configuration.ts`.
   `service-group-configuration.ts`
   owns group/page assignment and ordering; import/export orchestration lives in
-  `service-configuration-transfer.ts` and uses `config-transfer.ts` as the public facade over the
-  format contracts, serializer, parser, and additive import planner.
-- Import-format parsing is separated by source: Homepage and Dashy have dedicated modules, while
-  icon mapping, YAML bounds, validation, and group collection live in `importer-common.ts`.
-  `importers.ts` remains the parser facade; local Docker discovery reuses the common collector.
+  `service-configuration-transfer.ts` and uses `transfer/index.ts` as the public interface of the
+  pure format code ([ADR 0013](decisoes/0013-configuration-transfer-boundary.md)).
+- `apps/backend/src/transfer/` holds format contracts and parse budgets, the Homora parser, the
+  Homepage and Dashy importers (icon mapping, YAML bounds and group collection in
+  `importer-common.ts`), the additive planner and the serializer. It imports no routes, SQLite or
+  authorization; those stay in the application service. Local Docker discovery reuses the collector
+  through `transfer/index.ts`. `MAX_GROUP_COLUMNS` is owned by `group-limits.ts`.
 - `proposals.ts` composes proposal creation and lifecycle operations. Managed proposal preparation
   lives in `managed-proposal-creator.ts`; approval and batch review live in `proposal-review.ts`.
   Atomic batch creation and recreation of expired batches live in `proposal-batches.ts`.

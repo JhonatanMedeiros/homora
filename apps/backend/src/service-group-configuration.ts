@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { renumberGroups } from './group-order.js';
-import { MAX_GROUP_COLUMNS } from './config-transfer.js';
+import { MAX_GROUP_COLUMNS } from './group-limits.js';
 
 type Group = {
   id: number;

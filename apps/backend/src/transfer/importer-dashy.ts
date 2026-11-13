@@ -1,4 +1,5 @@
-import { isRecord, type ParsedImport } from './config-transfer.js';
+import { isRecord } from './parser.js';
+import type { ParsedImport } from './types.js';
 import { add, fatal, finish, groupFor, loadYaml, newCollector } from './importer-common.js';
 
 /**
