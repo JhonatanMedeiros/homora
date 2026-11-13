@@ -35,6 +35,7 @@ export function PasswordForm({ onChanged }: { onChanged: () => void }) {
     setSaving(false);
     if (errorMessage) {
       setError(errorMessage);
+      toast.error(errorMessage);
       return;
     }
     setCurrent('');

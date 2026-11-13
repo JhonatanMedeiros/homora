@@ -36,6 +36,7 @@ export function useServicePageActions({
       announce(t('page.removed'));
     } catch {
       setMessage(t('error.remove'));
+      toast.error(t('error.remove'));
     }
   }
 
@@ -45,6 +46,7 @@ export function useServicePageActions({
     const failure = await data.moveServiceToGroup(service, group);
     if (failure) {
       setMessage(failure);
+      toast.error(failure);
       return;
     }
     toast(t('page.moved', { name: service.name, group }), {
@@ -53,7 +55,10 @@ export function useServicePageActions({
         label: t('common.undo'),
         onClick: () =>
           void data.restoreService(service, originalOrder).then((undoFailure) => {
-            if (undoFailure) setMessage(undoFailure);
+            if (undoFailure) {
+              setMessage(undoFailure);
+              toast.error(undoFailure);
+            }
           }),
       },
     });
@@ -66,8 +71,10 @@ export function useServicePageActions({
     total?: number,
   ) {
     const failure = await task;
-    if (failure) setMessage(failure);
-    else if (service && index !== undefined && total)
+    if (failure) {
+      setMessage(failure);
+      toast.error(failure);
+    } else if (service && index !== undefined && total)
       setSrNote(t('organize.position', { name: service.name, position: index + 1, total }));
   }
 

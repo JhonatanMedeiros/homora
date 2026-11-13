@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import type { Maintenance } from '@homora/shared';
 import { CalendarClock } from 'lucide-react';
@@ -27,9 +28,12 @@ export function MaintenancePanel({
         const body: unknown = await response.json().catch(() => null);
         throw new Error(apiError(body, t('maint.cancelError')));
       }
+      toast.success(t('maint.cancelled'));
       onChanged();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t('maint.cancelError'));
+      const message = failure instanceof Error ? failure.message : t('maint.cancelError');
+      setError(message);
+      toast.error(message);
     }
   }
   return (

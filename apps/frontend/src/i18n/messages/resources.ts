@@ -2,6 +2,8 @@
 export const en = {
   'connections.apiToken': 'API token',
   'apiError.resource-link-not-found': 'This card is not linked to a resource.',
+  'resources.partialResult': 'Some resources could not be saved. Review the details below.',
+  'resources.changeSaved': 'Resource changes saved.',
   'resources.stat.total': 'Resources',
   'resources.stat.running': 'Running',
   'resources.stat.degraded': 'Degraded',
@@ -119,6 +121,8 @@ export const en = {
 export const ptBR: Record<keyof typeof en, string> = {
   'connections.apiToken': 'Token de API',
   'apiError.resource-link-not-found': 'Este card não está vinculado a um recurso.',
+  'resources.partialResult': 'Alguns recursos não puderam ser salvos. Confira os detalhes abaixo.',
+  'resources.changeSaved': 'Alterações dos recursos salvas.',
   'resources.stat.total': 'Recursos',
   'resources.stat.running': 'Em execução',
   'resources.stat.degraded': 'Degradados',

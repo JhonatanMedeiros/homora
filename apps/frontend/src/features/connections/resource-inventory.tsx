@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
 import { RotateCw } from 'lucide-react';
 import type { IntegrationResource, ResourceState, ResourceType } from '@homora/shared';
@@ -73,8 +74,11 @@ function ResourcesBody({ connection }: { connection: Connection }) {
     try {
       await deleteLink(link.serviceId);
       await reloadSide();
+      toast.success(t('resources.changeSaved'));
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t('resources.actionFailed'));
+      const message = failure instanceof Error ? failure.message : t('resources.actionFailed');
+      setError(message);
+      toast.error(message);
     }
   }
 

@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState, type FormEvent } from 'react';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { MAX_PAGES, PAGE_NAME_MAX } from '@homora/shared';
@@ -28,12 +29,12 @@ export function PagesSettings({ onChanged }: { onChanged?: () => void | Promise<
   const [deleting, setDeleting] = useState<PageRow | null>(null);
   const [moveTo, setMoveTo] = useState('');
   const [error, setError] = useState('');
-  const [status, setStatus] = useState('');
   const full = pages.length >= MAX_PAGES;
 
   async function finish(failure: string | null) {
     setError(failure ?? '');
-    setStatus(failure ? '' : t('pages.saved'));
+    if (failure) toast.error(failure);
+    else toast.success(t('pages.saved'));
     if (!failure) await onChanged?.();
     return failure === null;
   }
@@ -173,9 +174,6 @@ export function PagesSettings({ onChanged }: { onChanged?: () => void | Promise<
           <p className="text-sm text-muted-foreground">{t('pages.limit', { max: MAX_PAGES })}</p>
         )}
         <FormError>{error}</FormError>
-        <p role="status" className="text-sm text-muted-foreground empty:hidden">
-          {status}
-        </p>
       </div>
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>

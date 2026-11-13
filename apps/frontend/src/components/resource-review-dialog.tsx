@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import type { Service } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -41,10 +42,13 @@ export function ResourceReviewDialog({ service, info, onClose, onChanged }: Prop
     setError('');
     try {
       await work();
+      toast.success(t('resources.changeSaved'));
       onChanged();
       onClose();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t('resources.actionFailed'));
+      const message = failure instanceof Error ? failure.message : t('resources.actionFailed');
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }

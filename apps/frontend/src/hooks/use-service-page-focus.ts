@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import {
   useEffect,
   useRef,
@@ -30,7 +31,6 @@ export function useServicePageFocus({
   loaded: boolean;
 }): {
   addButton: RefObject<HTMLButtonElement | null>;
-  flash: string;
   srNote: string;
   setSrNote: Dispatch<SetStateAction<string>>;
   focusService: Service | undefined;
@@ -38,12 +38,8 @@ export function useServicePageFocus({
   announce: (text: string) => void;
   focusEditTrigger: (id: number | null) => void;
 } {
-  const [flash, setFlash] = useState('');
   const [srNote, setSrNote] = useState('');
-  const flashTimer = useRef<number | undefined>(undefined);
   const addButton = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => () => window.clearTimeout(flashTimer.current), []);
 
   // Clear the category filter, let the group expand, then scroll and briefly highlight the card.
   const focusService = focusRequest
@@ -97,9 +93,7 @@ export function useServicePageFocus({
   }, [managing, formRoute, loaded, services]);
 
   function announce(text: string) {
-    setFlash(text);
-    window.clearTimeout(flashTimer.current);
-    flashTimer.current = window.setTimeout(() => setFlash(''), 5000);
+    toast.success(text);
   }
 
   function focusEditTrigger(id: number | null) {
@@ -110,7 +104,6 @@ export function useServicePageFocus({
 
   return {
     addButton,
-    flash,
     srNote,
     setSrNote,
     focusService,

@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { t } from '@/i18n';
 
@@ -56,14 +57,21 @@ export function useAuth() {
       setStatus({ configured: true, authenticated: true });
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.connectionFailed'));
+      const message = err instanceof Error ? err.message : t('auth.connectionFailed');
+      setError(message);
+      toast.error(message);
       return false;
     }
   }
 
   async function logout() {
-    await fetch('/api/auth/sign-out', { method: 'POST' });
-    setStatus({ configured: true, authenticated: false });
+    try {
+      const response = await fetch('/api/auth/sign-out', { method: 'POST' });
+      if (!response.ok) throw new Error();
+      setStatus({ configured: true, authenticated: false });
+    } catch {
+      toast.error(t('auth.logoutFailed'));
+    }
   }
 
   return { status, error, submit, logout, retry };

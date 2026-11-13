@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import {
@@ -46,6 +47,7 @@ export function TokenDialog({ token, agentName, onDone }: Props) {
       setCopyFailed(false);
     } catch {
       setCopyFailed(true);
+      toast.error(t('agents.copyFailed'));
     }
   }
 

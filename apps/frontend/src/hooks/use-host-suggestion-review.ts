@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import type { HostLink } from '@homora/shared';
 import type {
@@ -40,7 +41,10 @@ export function useHostSuggestionReview({
     setBusy(true);
     setError('');
     const ok = await task();
-    if (!ok) setError(t('hosts.suggest.failed'));
+    if (!ok) {
+      setError(t('hosts.suggest.failed'));
+      toast.error(t('hosts.suggest.failed'));
+    }
     setBusy(false);
     onChanged();
   }

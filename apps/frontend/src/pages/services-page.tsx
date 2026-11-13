@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -105,24 +104,16 @@ export function ServicesPage({
     setLocalFocus(null);
     handledFocus?.();
   };
-  const {
-    addButton,
-    flash,
-    srNote,
-    setSrNote,
-    focusService,
-    focusNonce,
-    announce,
-    focusEditTrigger,
-  } = useServicePageFocus({
-    services,
-    focusRequest,
-    onFocusHandled,
-    setSelected,
-    managing,
-    formRoute,
-    loaded: data.loaded,
-  });
+  const { addButton, srNote, setSrNote, focusService, focusNonce, announce, focusEditTrigger } =
+    useServicePageFocus({
+      services,
+      focusRequest,
+      onFocusHandled,
+      setSelected,
+      managing,
+      formRoute,
+      loaded: data.loaded,
+    });
   const mapView = arrange === 'map' && !managing;
   const hostList = arrange === 'host' && !managing;
   const hostView = hostList || mapView;
@@ -326,15 +317,6 @@ export function ServicesPage({
       <p role="status" className="sr-only">
         {srNote}
       </p>
-      {flash && (
-        <p
-          role="status"
-          className="motion-feedback flex w-fit items-center gap-2 rounded-md bg-success px-3 py-2 text-sm font-semibold text-success-foreground"
-        >
-          <Check className="size-4" aria-hidden="true" />
-          {flash}
-        </p>
-      )}
       {paged && !hostView && (
         <PageTabs
           pages={pages}

@@ -34,6 +34,7 @@ export const en = {
   'auth.setupFailed':
     'Could not create the account. Check the email and use a password of at least 8 characters.',
   'auth.loginFailed': 'Invalid email or password, or too many attempts. Try again later.',
+  'auth.logoutFailed': 'Could not sign out. Try again.',
   'auth.connectionFailed': 'Connection failed.',
   'integrations.title': 'Integrations',
   'integrations.description':
@@ -86,6 +87,7 @@ export const ptBR: Record<keyof typeof en, string> = {
     'Não foi possível criar a conta. Verifique o e-mail e use uma senha de pelo menos 8 caracteres.',
   'auth.loginFailed':
     'E-mail ou senha inválidos, ou muitas tentativas. Tente novamente mais tarde.',
+  'auth.logoutFailed': 'Não foi possível sair. Tente novamente.',
   'auth.connectionFailed': 'Falha de conexão.',
   'integrations.title': 'Integrações',
   'integrations.description':

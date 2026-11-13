@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useCallback, useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 import type { Plan } from '@/features/transfer/transfer-model';
@@ -65,7 +66,9 @@ export function usePushSources(onImported: () => void | Promise<void>) {
     try {
       await work();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t('push.failed'));
+      const message = failure instanceof Error ? failure.message : t('push.failed');
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -113,7 +116,7 @@ export function usePushSources(onImported: () => void | Promise<void>) {
         expectedVersion: preview.version,
         ...(allowPrivate ? { keepPrivate: true } : {}),
       });
-      setMessage(t('discovery.added', { count: result.created }));
+      toast.success(t('discovery.added', { count: result.created }));
       setPreview(null);
       setSelected(new Set());
       await onImported();

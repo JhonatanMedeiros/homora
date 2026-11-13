@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState, type FormEvent } from 'react';
 import { MAINTENANCE_NOTE_MAX } from '@homora/shared';
 import { FormError } from '@/components/form-error';
@@ -57,10 +58,13 @@ export function MaintenanceDialog({
         const body: unknown = await response.json().catch(() => null);
         throw new Error(apiError(body, t('maint.error')));
       }
+      toast.success(t('maint.scheduled'));
       onScheduled();
       onOpenChange(false);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t('maint.error'));
+      const message = failure instanceof Error ? failure.message : t('maint.error');
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

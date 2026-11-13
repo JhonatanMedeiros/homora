@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { apiError, getLocale, t } from '@/i18n';
 
@@ -105,9 +106,10 @@ export function useNotificationSettings() {
       if (!response.ok) throw new Error();
       await refresh();
       reset();
-      setMessage({ error: false, text: t('notifications.saved') });
+      toast.success(t('notifications.saved'));
     } catch {
       setMessage({ error: true, text: t('notifications.error') });
+      toast.error(t('notifications.error'));
     } finally {
       setBusy(false);
     }
@@ -129,14 +131,18 @@ export function useNotificationSettings() {
             : apiError(body, t('notifications.error')),
         );
       }
-      if (action === 'test') setMessage({ error: false, text: t('notifications.success') });
+      if (action === 'test') {
+        toast.success(t('notifications.success'));
+      }
       if (editing === channel.id && action === 'delete') reset();
       await refresh();
+      if (action === 'delete') toast.success(t('notifications.removed'));
     } catch (error) {
       setMessage({
         error: true,
         text: error instanceof Error ? error.message : t('notifications.error'),
       });
+      toast.error(error instanceof Error ? error.message : t('notifications.error'));
       await refresh().catch(() => {});
     } finally {
       setBusy(false);

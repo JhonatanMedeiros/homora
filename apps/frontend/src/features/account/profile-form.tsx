@@ -30,7 +30,9 @@ export function ProfileForm({
     const result = await saveProfile(name);
     setSaving(false);
     if (!result.profile) {
-      setError(result.error ?? t('account.profileFailed'));
+      const message = result.error ?? t('account.profileFailed');
+      setError(message);
+      toast.error(message);
       return;
     }
     const saved = result.profile;
