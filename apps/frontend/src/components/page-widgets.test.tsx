@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { PageWidgets } from './page-widgets';
+import { setLocale } from '@/i18n';
+
+beforeEach(() => setLocale('pt-BR'));
 
 afterEach(() => {
   cleanup();
@@ -35,8 +38,55 @@ it('shows a clock without querying a connection and opens a prefilled creation f
   await screen.findByText('Office');
   expect(document.querySelector('time')).toBeTruthy();
   expect(fetcher.mock.calls.some(([url]) => url.includes('/data'))).toBe(false);
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar widget' }));
+  expect(screen.queryByRole('button', { name: 'Adicionar widget' })).toBeNull();
+  expect(screen.queryByText('Widgets da página')).toBeNull();
+});
+
+it('adds a widget from the gallery in organize mode, with a prefilled form', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response('[]')),
+  );
+  render(
+    <PageWidgets pageId={1} organizing pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />,
+  );
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar widget' }));
+  fireEvent.click(await screen.findByRole('button', { name: /Relógio/ }));
+  expect(await screen.findByText('Será adicionado em Home.')).toBeTruthy();
+  expect(screen.getByLabelText('Prévia')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Nome e página (opcional)' }));
   expect(await screen.findByLabelText('Nome (opcional)')).toBeTruthy();
+});
+
+it('reorders widgets from the keyboard handle in organize mode', async () => {
+  const clock = (id: number, name: string) => ({
+    id,
+    pageId: 1,
+    type: 'clock',
+    name,
+    config: { hourFormat: '24h', timeZone: 'UTC', seconds: false, date: true },
+    connectionId: null,
+    position: id,
+    version: 1,
+  });
+  const fetcher = vi.fn(
+    async (url: string) =>
+      new Response(
+        JSON.stringify(url === '/api/page-widgets' ? [clock(1, 'A'), clock(2, 'B')] : []),
+      ),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  render(
+    <PageWidgets pageId={1} organizing pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />,
+  );
+  const grip = await screen.findByRole('button', { name: /Arrastar A/ });
+  fireEvent.keyDown(grip, { key: 'ArrowRight' });
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/page-widgets/order',
+      expect.objectContaining({ method: 'PUT', body: JSON.stringify({ pageId: 1, ids: [2, 1] }) }),
+    ),
+  );
 });
 
 it('isolates a failed connection from a clock on the same page', async () => {
@@ -99,7 +149,11 @@ it('removes a widget after confirmation without sending an empty JSON body', asy
   });
   vi.stubGlobal('fetch', fetcher);
   render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Remover widget: Office' }));
+  fireEvent.pointerDown(await screen.findByRole('button', { name: 'Ações: Office' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Remover' }));
   await waitFor(() => expect(screen.queryByText('Office')).toBeNull());
   expect(fetcher).toHaveBeenCalledWith('/api/page-widgets/1', { method: 'DELETE' });

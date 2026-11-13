@@ -1721,3 +1721,14 @@ manual responsive and keyboard verification in a browser remains pending.
   transferência e verificações completas do projeto; navegador em desktop e celular com criação,
   edição, ordenação por teclado, troca de página, remoção e telemetria simulada. A imagem Docker
   de backend foi construída e o pacote carregado no contêiner. Nenhum serviço real foi acessado.
+
+### Widgets de página: gerenciamento sem ruído (2026-11-13)
+
+- A Home mostra os widgets como informação, sem título nem botões fixos. Cada card tem um menu
+  `⋯` (editar, mover para outra página, reordenar, remover com confirmação), visível no hover,
+  no foco e sempre no toque.
+- O modo Organizar existente também organiza widgets: arrastar, alça com setas do teclado,
+  editar, remover e um espaço tracejado para adicionar no fim da grade.
+- Adicionar abre uma galeria com busca (Homora e conexões) e depois as opções, com prévia ao
+  vivo do relógio; nome e página ficam recolhidos. Editar pula a galeria e não troca o tipo.
+- Validação: testes de interface do componente; verificação em navegador pendente.

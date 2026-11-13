@@ -1,7 +1,17 @@
-import { ArrowDown, ArrowUp, Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { clockWidget, defaultClockConfig, type ClockConfig } from '@homora/widgets/clock';
+import { GripVertical, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
+import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,18 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { FormSelect, FormSelectOption } from '@/components/form-select';
-import { ResponsiveDialog } from '@/components/responsive-dialog';
 import { Clock } from '@/components/top-bar';
 import { CardWidgets } from '@/components/card-widgets';
 import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
 import { widgetStats, type Connection } from '@/features/connections/connection-model';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import type { PageRow } from '@/hooks/use-pages';
-import { listTimeZones } from '@/lib/clock';
+import { PageWidgetDialog, type WidgetDraft } from '@/components/page-widget-dialog';
+import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
 type PageWidget = {
@@ -36,20 +42,35 @@ type PageWidget = {
   position: number;
   version: number;
 };
-type Draft = {
-  id: number | null;
+
+function newWidgetDraft(pageId: number): WidgetDraft {
+  return {
+    id: null,
+    pageId,
+    type: 'clock',
+    name: '',
+    config: defaultClockConfig,
+    connectionId: null,
+  };
+}
+
+type Props = {
   pageId: number;
-  type: string;
-  name: string;
-  config: ClockConfig;
-  connectionId: number | null;
+  pages: PageRow[];
+  /** Organize mode of the page: widgets can be dragged, added and removed in place. */
+  organizing?: boolean;
+  onOrganize?: () => void;
 };
 
-export function PageWidgets({ pageId, pages }: { pageId: number; pages: PageRow[] }) {
+/** Widgets of a page. Plain information by default; the controls appear in the card menu and organize mode. */
+export function PageWidgets({ pageId, pages, organizing = false, onOrganize }: Props) {
   const [widgets, setWidgets] = useState<PageWidget[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [readings, setReadings] = useState<Record<number, CardWidgetState>>({});
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<WidgetDraft | null>(null);
+  const [chosen, setChosen] = useState(false);
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [overId, setOverId] = useState<number | null>(null);
   const [removing, setRemoving] = useState<PageWidget | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -158,32 +179,21 @@ export function PageWidgets({ pageId, pages }: { pageId: number; pages: PageRow[
       setBusy(false);
     }
   }
-  const setConfig = (patch: Partial<ClockConfig>) =>
-    setDraft((value) => value && { ...value, config: { ...value.config, ...patch } });
+  const openAdd = () => {
+    setChosen(false);
+    setDraft(newWidgetDraft(pageId));
+  };
+  const reorder = (id: number, to: number) => {
+    const ids = current.map((entry) => entry.id);
+    const from = ids.indexOf(id);
+    if (from < 0 || to < 0 || to >= ids.length || from === to) return;
+    ids.splice(to, 0, ...ids.splice(from, 1));
+    void change('/api/page-widgets/order', 'PUT', { pageId, ids });
+  };
   if (!pageId) return null;
   return (
     <section aria-label={t('pageWidgets.title')} className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-medium">{t('pageWidgets.title')}</h2>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            setDraft({
-              id: null,
-              pageId,
-              type: 'clock',
-              name: '',
-              config: defaultClockConfig,
-              connectionId: null,
-            })
-          }
-        >
-          {t('pageWidgets.add')}
-        </Button>
-      </div>
-      {error && (
+      {error && !draft && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
@@ -193,116 +203,213 @@ export function PageWidgets({ pageId, pages }: { pageId: number; pages: PageRow[
           {t('common.loading')}
         </p>
       )}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {current.map((item, index) => {
-          const displayName =
-            item.name ||
-            (item.type === 'clock'
-              ? t('pageWidgets.clock')
-              : (connections.find((connection) => connection.id === item.connectionId)?.name ??
-                item.type));
-          const config =
-            item.type === 'clock' && item.version === 1
-              ? clockWidget.parseConfig(item.config)
-              : null;
-          const state = (item.version !== 1
-            ? {
-                widget: {
-                  id: item.id,
-                  integrationId: item.connectionId ?? 0,
-                  type: item.type,
-                  name: displayName,
-                  serviceId: null,
-                },
-                status: 'invalid' as const,
-              }
-            : readings[item.id]) ?? {
-            widget: {
-              id: item.id,
-              integrationId: item.connectionId ?? 0,
-              type: item.type,
-              name: displayName,
-              serviceId: null,
-            },
-            status: 'loading' as const,
-          };
-          return (
-            <article
-              key={item.id}
-              className="flex min-w-0 flex-col gap-3 rounded-md border bg-card p-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="truncate text-sm font-medium">{displayName}</h3>
-              </div>
-              <WidgetErrorBoundary key={`${item.type}:${item.id}`}>
-                {item.type === 'clock' ? (
-                  config ? (
-                    <Clock preferences={config} />
-                  ) : (
-                    <p>{t('cardWidget.invalid')}</p>
-                  )
-                ) : (
-                  <CardWidgets widgets={[state]} />
+      {organizing && (
+        <p className="text-sm text-muted-foreground">{t('pageWidgets.organizeHelp')}</p>
+      )}
+      {(current.length > 0 || organizing) && (
+        <div
+          role={organizing ? 'list' : undefined}
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {current.map((item, index) => {
+            const displayName =
+              item.name ||
+              (item.type === 'clock'
+                ? t('pageWidgets.clock')
+                : (connections.find((connection) => connection.id === item.connectionId)?.name ??
+                  item.type));
+            const config =
+              item.type === 'clock' && item.version === 1
+                ? clockWidget.parseConfig(item.config)
+                : null;
+            const base = {
+              widget: {
+                id: item.id,
+                integrationId: item.connectionId ?? 0,
+                type: item.type,
+                name: displayName,
+                serviceId: null,
+              },
+            };
+            const state: CardWidgetState =
+              item.version !== 1
+                ? { ...base, status: 'invalid' }
+                : (readings[item.id] ?? { ...base, status: 'loading' });
+            const edit = () => {
+              setChosen(true);
+              setDraft({
+                id: item.id,
+                pageId: item.pageId,
+                type: item.type,
+                name: item.name,
+                connectionId: item.connectionId,
+                config: config ?? defaultClockConfig,
+              });
+            };
+            const movePage = (target: number) =>
+              void change(`/api/page-widgets/${item.id}`, 'PUT', {
+                pageId: target,
+                type: item.type,
+                name: item.name,
+                connectionId: item.connectionId,
+                config: item.type === 'clock' ? (config ?? defaultClockConfig) : {},
+              });
+            const onGripKey = (event: KeyboardEvent) => {
+              const step =
+                event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+                  ? -1
+                  : event.key === 'ArrowRight' || event.key === 'ArrowDown'
+                    ? 1
+                    : 0;
+              if (!step) return;
+              event.preventDefault();
+              reorder(item.id, index + step);
+            };
+            return (
+              <article
+                key={item.id}
+                role={organizing ? 'listitem' : undefined}
+                draggable={organizing}
+                onDragStart={() => setDragId(item.id)}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setOverId(null);
+                }}
+                onDragOver={(event) => {
+                  if (!organizing || dragId === null) return;
+                  event.preventDefault();
+                  setOverId(item.id);
+                }}
+                onDragLeave={() => setOverId((value) => (value === item.id ? null : value))}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragId !== null) reorder(dragId, index);
+                  setDragId(null);
+                  setOverId(null);
+                }}
+                className={cn(
+                  'group relative flex min-w-0 flex-col gap-3 rounded-md border bg-card p-3',
+                  organizing && 'cursor-grab border-dashed pointer-coarse:cursor-default',
+                  dragId === item.id && 'opacity-50',
+                  overId === item.id && dragId !== item.id && 'border-primary bg-primary/10',
                 )}
-              </WidgetErrorBoundary>
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`${t('common.edit')}: ${displayName}`}
-                  disabled={item.version !== 1}
-                  onClick={() =>
-                    setDraft({
-                      id: item.id,
-                      pageId: item.pageId,
-                      type: item.type,
-                      name: item.name,
-                      connectionId: item.connectionId,
-                      config: config ?? defaultClockConfig,
-                    })
-                  }
-                >
-                  <Pencil />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`${t('pageWidgets.up')}: ${displayName}`}
-                  disabled={index === 0}
-                  onClick={() => {
-                    const ids = current.map((entry) => entry.id);
-                    [ids[index - 1], ids[index]] = [ids[index]!, ids[index - 1]!];
-                    void change('/api/page-widgets/order', 'PUT', { pageId, ids });
-                  }}
-                >
-                  <ArrowUp />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`${t('pageWidgets.down')}: ${displayName}`}
-                  disabled={index === current.length - 1}
-                  onClick={() => {
-                    const ids = current.map((entry) => entry.id);
-                    [ids[index], ids[index + 1]] = [ids[index + 1]!, ids[index]!];
-                    void change('/api/page-widgets/order', 'PUT', { pageId, ids });
-                  }}
-                >
-                  <ArrowDown />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`${t('pageWidgets.remove')}: ${displayName}`}
-                  onClick={() => setRemoving(item)}
-                >
-                  <Trash2 />
-                </Button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+              >
+                <h3 className="truncate pr-24 text-sm font-medium">{displayName}</h3>
+                <WidgetErrorBoundary key={`${item.type}:${item.id}`}>
+                  {item.type === 'clock' ? (
+                    config ? (
+                      <Clock preferences={config} />
+                    ) : (
+                      <p>{t('cardWidget.invalid')}</p>
+                    )
+                  ) : (
+                    <CardWidgets widgets={[state]} />
+                  )}
+                </WidgetErrorBoundary>
+                {organizing ? (
+                  <div className="absolute top-1.5 right-1.5 flex items-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="pointer-coarse:size-11"
+                      aria-label={`${t('common.edit')}: ${displayName}`}
+                      disabled={item.version !== 1}
+                      onClick={edit}
+                    >
+                      <Pencil />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="pointer-coarse:size-11"
+                      aria-label={`${t('pageWidgets.remove')}: ${displayName}`}
+                      onClick={() => setRemoving(item)}
+                    >
+                      <Trash2 />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="cursor-grab pointer-coarse:size-11"
+                      aria-label={t('pageWidgets.drag', { name: displayName })}
+                      aria-description={t('pageWidgets.position', {
+                        name: displayName,
+                        position: index + 1,
+                        total: current.length,
+                      })}
+                      onKeyDown={onGripKey}
+                    >
+                      <GripVertical />
+                    </Button>
+                  </div>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="absolute top-1.5 right-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:size-11 pointer-coarse:opacity-100"
+                        aria-label={t('pageWidgets.options', { name: displayName })}
+                      >
+                        <MoreHorizontal />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuItem disabled={item.version !== 1} onSelect={edit}>
+                        {t('common.edit')}
+                      </DropdownMenuItem>
+                      {pages.length > 1 && (
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            {t('pageWidgets.movePage')}
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {pages
+                              .filter((page) => page.id !== item.pageId)
+                              .map((page) => (
+                                <DropdownMenuItem
+                                  key={page.id}
+                                  disabled={item.version !== 1}
+                                  onSelect={() => movePage(page.id)}
+                                >
+                                  {page.name}
+                                </DropdownMenuItem>
+                              ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      )}
+                      {onOrganize && current.length > 1 && (
+                        <DropdownMenuItem onSelect={onOrganize}>
+                          {t('pageWidgets.reorder')}
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(item)}>
+                        {t('common.remove')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </article>
+            );
+          })}
+          {organizing && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto min-h-24 border-dashed text-muted-foreground"
+              onClick={openAdd}
+            >
+              <Plus />
+              {t('pageWidgets.addTile')}
+            </Button>
+          )}
+        </div>
+      )}
       <AlertDialog
         open={removing !== null}
         onOpenChange={(open) => {
@@ -328,141 +435,27 @@ export function PageWidgets({ pageId, pages }: { pageId: number; pages: PageRow[
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <ResponsiveDialog
-        open={draft !== null}
-        onOpenChange={(open) => {
-          if (!open) setDraft(null);
+      <PageWidgetDialog
+        draft={draft}
+        chosen={chosen}
+        connections={connections}
+        pages={pages}
+        busy={busy}
+        error={error}
+        onChange={setDraft}
+        onChoose={setChosen}
+        onClose={() => setDraft(null)}
+        onSubmit={() => {
+          if (!draft) return;
+          const { id, ...body } = draft;
+          void change(id ? `/api/page-widgets/${id}` : '/api/page-widgets', id ? 'PUT' : 'POST', {
+            ...body,
+            config: body.type === 'clock' ? body.config : {},
+          }).then((ok) => {
+            if (ok) setDraft(null);
+          });
         }}
-        title={draft?.id ? t('pageWidgets.edit') : t('pageWidgets.add')}
-      >
-        {draft && (
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const { id, ...body } = draft;
-              void change(
-                id ? `/api/page-widgets/${id}` : '/api/page-widgets',
-                id ? 'PUT' : 'POST',
-                { ...body, config: body.type === 'clock' ? body.config : {} },
-              ).then((ok) => {
-                if (ok) setDraft(null);
-              });
-            }}
-          >
-            {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="pw-name">{t('pageWidgets.name')}</FieldLabel>
-                <Input
-                  id="pw-name"
-                  maxLength={80}
-                  value={draft.name}
-                  onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="pw-type">{t('pageWidgets.kind')}</FieldLabel>
-                <FormSelect
-                  id="pw-type"
-                  value={draft.connectionId === null ? 'clock' : String(draft.connectionId)}
-                  onChange={(event) => {
-                    const connection = connections.find(
-                      (item) => item.id === Number(event.target.value),
-                    );
-                    setDraft({
-                      ...draft,
-                      type: connection?.type ?? 'clock',
-                      connectionId: connection?.id ?? null,
-                    });
-                  }}
-                >
-                  <FormSelectOption value="clock">{t('pageWidgets.clock')}</FormSelectOption>
-                  {connections.map((connection) => (
-                    <FormSelectOption key={connection.id} value={String(connection.id)}>
-                      {connection.name}
-                    </FormSelectOption>
-                  ))}
-                </FormSelect>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="pw-page">{t('pageWidgets.page')}</FieldLabel>
-                <FormSelect
-                  id="pw-page"
-                  value={String(draft.pageId)}
-                  onChange={(event) => setDraft({ ...draft, pageId: Number(event.target.value) })}
-                >
-                  {pages.map((page) => (
-                    <FormSelectOption key={page.id} value={String(page.id)}>
-                      {page.name}
-                    </FormSelectOption>
-                  ))}
-                </FormSelect>
-              </Field>
-              {draft.type === 'clock' && (
-                <>
-                  <Field>
-                    <FieldLabel htmlFor="pw-zone">{t('settings.ui.timeZone')}</FieldLabel>
-                    <FormSelect
-                      id="pw-zone"
-                      value={draft.config.timeZone}
-                      onChange={(event) => setConfig({ timeZone: event.target.value })}
-                    >
-                      <FormSelectOption value="">
-                        {t('settings.ui.timeZoneBrowser', {
-                          zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        })}
-                      </FormSelectOption>
-                      {listTimeZones().map((zone) => (
-                        <FormSelectOption key={zone} value={zone}>
-                          {zone}
-                        </FormSelectOption>
-                      ))}
-                    </FormSelect>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="pw-hours">{t('settings.ui.hours')}</FieldLabel>
-                    <FormSelect
-                      id="pw-hours"
-                      value={draft.config.hourFormat}
-                      onChange={(event) =>
-                        setConfig({ hourFormat: event.target.value as ClockConfig['hourFormat'] })
-                      }
-                    >
-                      <FormSelectOption value="auto">{t('settings.ui.hoursAuto')}</FormSelectOption>
-                      <FormSelectOption value="12h">{t('settings.ui.hours12')}</FormSelectOption>
-                      <FormSelectOption value="24h">{t('settings.ui.hours24')}</FormSelectOption>
-                    </FormSelect>
-                  </Field>
-                  <Field orientation="horizontal">
-                    <Switch
-                      id="pw-date"
-                      checked={draft.config.date}
-                      onCheckedChange={(date) => setConfig({ date })}
-                    />
-                    <FieldLabel htmlFor="pw-date">{t('settings.ui.date')}</FieldLabel>
-                  </Field>
-                  <Field orientation="horizontal">
-                    <Switch
-                      id="pw-seconds"
-                      checked={draft.config.seconds}
-                      onCheckedChange={(seconds) => setConfig({ seconds })}
-                    />
-                    <FieldLabel htmlFor="pw-seconds">{t('settings.ui.seconds')}</FieldLabel>
-                  </Field>
-                </>
-              )}
-            </FieldGroup>
-            <Button type="submit" disabled={busy}>
-              {t('widgets.save')}
-            </Button>
-          </form>
-        )}
-      </ResponsiveDialog>
+      />
     </section>
   );
 }

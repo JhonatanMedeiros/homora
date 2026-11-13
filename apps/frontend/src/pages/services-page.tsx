@@ -351,7 +351,14 @@ export function ServicesPage({
           }}
         />
       )}
-      {!managing && !hostView && !organizing && <PageWidgets pageId={activePageId} pages={pages} />}
+      {!managing && !hostView && (
+        <PageWidgets
+          pageId={activePageId}
+          pages={pages}
+          organizing={organizing}
+          onOrganize={() => setOrganizing(true)}
+        />
+      )}
       {managing && !organizing && services.length > 0 && (
         <Input
           type="search"
