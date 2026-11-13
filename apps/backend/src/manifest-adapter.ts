@@ -5,6 +5,7 @@ import type {
   Literal,
   ManifestField,
 } from '@homora/shared';
+import { defineBackendIntegration } from '@homora/integrations/backend';
 import { InputError, type ErrorCode } from './api-error.js';
 import type {
   IntegrationAdapter,
@@ -293,11 +294,7 @@ export function createManifestAdapter(
 /** Registry entry for a manifest. The definition is validated here, at registry creation. */
 export function createManifestRegistration(manifest: IntegrationManifest): IntegrationRegistration {
   assertValidDefinition(manifest);
-  return {
-    type: manifest.type,
-    label: manifest.label,
-    capabilities: manifest.capabilities,
-    definition: manifest,
+  return defineBackendIntegration(manifest, {
     prepare(context) {
       if (!context.transport) throw new Error('Integration transport unavailable.');
       const adapter = createManifestAdapter(manifest, context.transport);
@@ -314,5 +311,5 @@ export function createManifestRegistration(manifest: IntegrationManifest): Integ
       const config = adapter.validate(values);
       return () => adapter.collect(config);
     },
-  };
+  });
 }

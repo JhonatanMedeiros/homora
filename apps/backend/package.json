@@ -14,6 +14,7 @@
   "dependencies": {
     "@fastify/rate-limit": "^11.2.2",
     "@homora/db": "workspace:*",
+    "@homora/integrations": "workspace:*",
     "@homora/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.2",
     "better-auth": "1.7.21",

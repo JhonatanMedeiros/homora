@@ -113,9 +113,9 @@ releases exist.
   persistence, observation caching, and adapter dispatch; route handlers parse requests and
   translate results into HTTP status and JSON responses.
 - `integration-registry.ts` builds the registry from `integrationDefinitions`
-  (`packages/shared/src/integration-manifest.ts`). Simple read-only integrations are
+  (`packages/integrations/src/integration-manifest.ts`). Simple read-only integrations are
   **manifests**, validated at startup (`integration-manifest.ts`) and run by one interpreter
-  (`manifest-adapter.ts`); Proxmox stays a code adapter registered by hand. Type enums, stored
+  (`manifest-adapter.ts`); Proxmox and Coolify are code adapters registered by hand. Type enums, stored
   config keys, proposal schemas, the connection form, widget text and the catalog endpoint derive
   from the same definitions ([ADR 0009](decisoes/0009-declarative-integration-adapters.md)).
   `adapter-contract.ts` is the test every adapter must pass ([adapters](adapters.md)). All connection adapters use the shared

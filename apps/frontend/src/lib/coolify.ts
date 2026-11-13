@@ -2,7 +2,6 @@ import {
   COOLIFY_UUID_PATTERN,
   type CoolifyResource,
   type CoolifyState,
-  type CoolifySummary,
   type ResourceLink,
 } from '@homora/shared';
 
@@ -15,12 +14,7 @@ const count = (value: unknown): value is number =>
 const text = (value: unknown, max: number): value is string =>
   typeof value === 'string' && value.length <= max;
 
-export function parseSummary(value: unknown): CoolifySummary | null {
-  if (!isRecord(value)) return null;
-  const { total, running, degraded, stopped, unknown } = value;
-  if (![total, running, degraded, stopped, unknown].every(count)) return null;
-  return { total, running, degraded, stopped, unknown } as CoolifySummary;
-}
+export { parseSummary } from '@homora/integrations/coolify/frontend';
 
 function parseResource(value: unknown): CoolifyResource | null {
   if (!isRecord(value)) return null;

@@ -13,7 +13,6 @@ import { getAuthorizedResponse } from './network-request.js';
 import { createObservationCache, type IntegrationTransport } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
 import { InputError } from './api-error.js';
-import { CoolifyBackoffError } from './coolify-connection.js';
 import { hasField, publicFieldShape, publicFieldsOf } from './integration-fields.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
@@ -95,7 +94,8 @@ export function createIntegrationConnections(
    */
   const backoffs = new Map<number, number>();
   async function guarded<T>(row: Row, run: () => Promise<T>, bypass = false): Promise<T> {
-    if (row.type !== 'coolify') return run();
+    const retryDelaySeconds = integrationRegistry.get(row.type)?.retryDelaySeconds;
+    if (!retryDelaySeconds) return run();
     const until = backoffs.get(row.id);
     if (!bypass && until !== undefined && until > clock())
       throw new Error('Integration temporarily unavailable.');
@@ -104,11 +104,9 @@ export function createIntegrationConnections(
       backoffs.delete(row.id);
       return result;
     } catch (error) {
-      if (error instanceof CoolifyBackoffError) {
-        const wait = Math.min(
-          BACKOFF_MAX_MS,
-          Math.max(BACKOFF_MIN_MS, (error.retryAfterSeconds ?? 0) * 1000),
-        );
+      const retryDelay = retryDelaySeconds(error);
+      if (retryDelay !== null) {
+        const wait = Math.min(BACKOFF_MAX_MS, Math.max(BACKOFF_MIN_MS, retryDelay * 1000));
         backoffs.set(row.id, clock() + wait);
       }
       throw error;
@@ -269,11 +267,7 @@ export function createIntegrationConnections(
             ...(request.apiKey ? { 'x-api-key': request.apiKey } : {}),
           },
           ca: keys.ca,
-          ...(type === 'proxmox'
-            ? { maxBodyBytes: 2_000_000 }
-            : request.maxBodyBytes
-              ? { maxBodyBytes: request.maxBodyBytes }
-              : {}),
+          ...(request.maxBodyBytes ? { maxBodyBytes: request.maxBodyBytes } : {}),
         },
       );
       let body: unknown = null;

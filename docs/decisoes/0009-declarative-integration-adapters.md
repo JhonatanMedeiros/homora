@@ -14,7 +14,7 @@ values.
 
 ## Decision
 
-A small **closed manifest format**, defined as data in `packages/shared/src/integration-manifest.ts`,
+A small **closed manifest format**, now defined in `packages/integrations/src/integration-manifest.ts`,
 run by **one reviewed interpreter** (`apps/backend/src/manifest-adapter.ts`).
 
 - **Built-in only.** Manifests are TypeScript data in the repository. Nothing is loaded from the

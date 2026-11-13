@@ -5,14 +5,15 @@ import {
   createCoolifyAdapter,
   normalizeCoolifyState,
   parseCoolifyUrls,
-} from './coolify-connection.js';
-import type { FakeRequest, FakeResponse } from './adapter-contract.js';
+} from '../../../../../apps/backend/src/coolify-connection.js';
+import type {
+  FakeRequest,
+  FakeResponse,
+} from '../../../../../apps/backend/src/adapter-contract.js';
 
 const read = (name: string) =>
   (
-    JSON.parse(
-      readFileSync(new URL(`./fixtures/coolify/${name}.json`, import.meta.url), 'utf8'),
-    ) as {
+    JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url), 'utf8')) as {
       body: unknown;
     }
   ).body;

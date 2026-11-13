@@ -23,7 +23,8 @@
     "prepare": "husky",
     "backup": "node scripts/backup.mjs",
     "auth:reset": "node scripts/auth-reset.mjs",
-    "css:reset": "node scripts/css-reset.mjs"
+    "css:reset": "node scripts/css-reset.mjs",
+    "integration:create": "node scripts/create-integration.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",

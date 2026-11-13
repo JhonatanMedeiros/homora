@@ -1,7 +1,25 @@
 import { expect, it, vi } from 'vitest';
+import { defineBackendIntegration } from '@homora/integrations/backend';
+import { jellyfinManifest } from '@homora/shared';
 import { createIntegrationRegistry, createObservationCache } from './integrations.js';
 
 const proxmoxAdapter = { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] };
+
+it('derives metadata from the definition and delegates reads to the supplied hooks', async () => {
+  const collect = vi.fn(async () => ({ name: 'example' }));
+  const prepare = vi.fn(() => collect);
+  const entry = defineBackendIntegration(jellyfinManifest, { prepare });
+  const registry = createIntegrationRegistry([entry]);
+  const context = { publicConfig: { url: 'https://example.test' }, credentials: {} };
+  expect(registry.list()[0]).toEqual({
+    type: jellyfinManifest.type,
+    label: jellyfinManifest.label,
+    capabilities: jellyfinManifest.capabilities,
+  });
+  expect(await registry.prepare(jellyfinManifest.type, context)()).toEqual({ name: 'example' });
+  expect(prepare).toHaveBeenCalledWith(context);
+  expect(() => registry.prepareInventory(jellyfinManifest.type, context)).toThrow();
+});
 
 it('exposes metadata without disclosing implementation or configs and rejects duplicates', () => {
   const registry = createIntegrationRegistry([proxmoxAdapter]);

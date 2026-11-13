@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { createProxmoxConnectionAdapter } from './proxmox-connection.js';
+import { createProxmoxConnectionAdapter } from '../../../../../apps/backend/src/proxmox-connection.js';
 
 const config = { url: 'https://pve.example:8006', tokenId: 'user@pve!test', secret: 'test' };
 
@@ -15,6 +15,7 @@ it('uses the authorized transport and returns only aggregated data', async () =>
     origin: config.url,
     path: '/api2/json/cluster/resources',
     authorization: 'PVEAPIToken=user@pve!test=test',
+    maxBodyBytes: 2_000_000,
   });
 });
 

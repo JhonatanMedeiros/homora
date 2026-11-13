@@ -1,4 +1,5 @@
 import { BRAND_ICON_NAMES } from './brand-icons.js';
+import { isNodeName, isVmid, type GuestType } from '@homora/integrations';
 
 export * from './appearance.js';
 export * from './custom-css.js';
@@ -245,15 +246,8 @@ export type UptimeSummary = {
   buckets: { start: string; status: UptimeBucketStatus }[];
 };
 
-/** Guest kinds that Proxmox reports in its cluster inventory. */
-export type GuestType = 'qemu' | 'lxc';
 /** Optional "runs on" link from a card to a Proxmox guest. Stores ids only, never guest names. */
 export type HostLink = { connectionId: number; node: string; vmid: number; type: GuestType };
-/** Proxmox node names are DNS-like labels. */
-export const isNodeName = (value: unknown): value is string =>
-  typeof value === 'string' && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,62})$/.test(value);
-export const isVmid = (value: unknown): value is number =>
-  Number.isSafeInteger(value) && Number(value) >= 100 && Number(value) <= 999_999_999;
 /** Returns a normalized link, or null when the value is not a well-formed link. */
 export function parseHostLink(value: unknown): HostLink | null {
   if (!value || typeof value !== 'object') return null;
@@ -263,5 +257,4 @@ export function parseHostLink(value: unknown): HostLink | null {
   if (!isNodeName(node) || !isVmid(vmid) || (type !== 'qemu' && type !== 'lxc')) return null;
   return { connectionId: Number(connectionId), node, vmid, type };
 }
-export * from './integration-manifest.js';
-export * from './coolify.js';
+export * from '@homora/integrations';

@@ -1,0 +1,56 @@
+{
+  "name": "@homora/integrations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./backend": {
+      "types": "./dist/backend.d.ts",
+      "default": "./dist/backend.js"
+    },
+    "./frontend": {
+      "types": "./dist/frontend.d.ts",
+      "default": "./dist/frontend.js"
+    },
+    "./coolify/frontend": {
+      "types": "./dist/integrations/coolify/frontend.d.ts",
+      "default": "./dist/integrations/coolify/frontend.js"
+    },
+    "./coolify/backend": {
+      "types": "./dist/integrations/coolify/backend.d.ts",
+      "default": "./dist/integrations/coolify/backend.js"
+    },
+    "./proxmox/frontend": {
+      "types": "./dist/integrations/proxmox/frontend.d.ts",
+      "default": "./dist/integrations/proxmox/frontend.js"
+    },
+    "./proxmox/backend": {
+      "types": "./dist/integrations/proxmox/backend.d.ts",
+      "default": "./dist/integrations/proxmox/backend.js"
+    },
+    "./proxmox/inventory": {
+      "types": "./dist/integrations/proxmox/inventory.d.ts",
+      "default": "./dist/integrations/proxmox/inventory.js"
+    },
+    "./proxmox/summary": {
+      "types": "./dist/integrations/proxmox/summary.d.ts",
+      "default": "./dist/integrations/proxmox/summary.js"
+    },
+    "./definitions/*": {
+      "types": "./dist/integrations/*/definition.d.ts",
+      "default": "./dist/integrations/*/definition.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3"
+  }
+}
