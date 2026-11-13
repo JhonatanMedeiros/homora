@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/item';
 import { FormError } from '@/components/form-error';
 import { SectionTitle } from '@/components/section-title';
-import { apiError, formatDateTime, t } from '@/i18n';
+import { apiError, formatAgo, formatDateTime, formatIn, t } from '@/i18n';
 import { useAccountSessions } from '@/hooks/use-account-sessions';
 import type { AccountSession } from './account-model';
 
@@ -91,11 +91,17 @@ export function SessionsList({ refreshKey }: { refreshKey: number }) {
                       <Badge variant="success">{t('account.currentSession')}</Badge>
                     )}
                   </ItemTitle>
-                  <ItemDescription className="font-mono text-xs">
-                    {[
-                      session.ipAddress,
+                  <ItemDescription
+                    className="font-mono text-xs"
+                    title={[
                       t('account.started', { time: formatDateTime(session.createdAt) }),
                       t('account.expires', { time: formatDateTime(session.expiresAt) }),
+                    ].join(' · ')}
+                  >
+                    {[
+                      session.ipAddress,
+                      t('account.started', { time: formatAgo(session.createdAt) }),
+                      t('account.expires', { time: formatIn(session.expiresAt) }),
                     ]
                       .filter(Boolean)
                       .join(' · ')}

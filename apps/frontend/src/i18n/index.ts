@@ -97,6 +97,16 @@ export function formatAgo(value: Date | string | number, now = Date.now()) {
   return rtf.format(-Math.floor(seconds / 86_400), 'day');
 }
 
+/** "in 7 hours" for future instants, coarse like `formatAgo`. */
+export function formatIn(value: Date | string | number, now = Date.now()) {
+  const seconds = Math.max(0, Math.round((new Date(value).getTime() - now) / 1000));
+  const rtf = new Intl.RelativeTimeFormat(getLocale(), { numeric: 'auto' });
+  if (seconds < 60) return rtf.format(0, 'minute');
+  if (seconds < 3600) return rtf.format(Math.floor(seconds / 60), 'minute');
+  if (seconds < 86_400) return rtf.format(Math.floor(seconds / 3600), 'hour');
+  return rtf.format(Math.floor(seconds / 86_400), 'day');
+}
+
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) =>
   value.toLocaleString(getLocale(), options);
 

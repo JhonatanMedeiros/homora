@@ -1,11 +1,17 @@
 import type { FastifyInstance } from 'fastify';
 import {
+  EmailUnchangedError,
   InvalidPasswordError,
   RateLimitedError,
   SessionNotFoundError,
   type createAuth,
 } from '../auth.js';
-import { auditQuerySchema, changePasswordSchema, profileSchema } from '../input-schemas.js';
+import {
+  auditQuerySchema,
+  changeEmailSchema,
+  changePasswordSchema,
+  profileSchema,
+} from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
 import type { AuditLog } from '../audit.js';
 import { describeUserAgent } from '../client-info.js';
@@ -31,6 +37,34 @@ export function registerAccountRoutes(app: FastifyInstance, auth: Auth, audit: A
     if (!who) return reply.code(401).send(errorBody('auth-required'));
     await auth.updateName(request.headers, parsed.data.name);
     audit.record({ actor: who, action: 'profile-update', result: 'ok', ipAddress: request.ip });
+    return auth.profile(request.headers);
+  });
+
+  app.patch('/api/account/email', async (request, reply) => {
+    const parsed = changeEmailSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-email'));
+    const who = await actor(request);
+    if (!who) return reply.code(401).send(errorBody('auth-required'));
+    try {
+      await auth.changeEmail(request.headers, parsed.data);
+    } catch (error) {
+      if (error instanceof RateLimitedError)
+        return reply.code(429).send(errorBody('too-many-attempts'));
+      if (error instanceof EmailUnchangedError)
+        return reply.code(400).send(errorBody('email-unchanged'));
+      if (error instanceof InvalidPasswordError) {
+        audit.record({
+          actor: who,
+          action: 'email-change',
+          result: 'failed',
+          ipAddress: request.ip,
+        });
+        return reply.code(400).send(errorBody('invalid-current-password'));
+      }
+      throw error;
+    }
+    // The address itself is never written to the log: it is the sign-in name.
+    audit.record({ actor: who, action: 'email-change', result: 'ok', ipAddress: request.ip });
     return auth.profile(request.headers);
   });
 

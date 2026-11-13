@@ -118,6 +118,14 @@ export const setupSchema = z
 
 export const profileSchema = z.object({ name: z.string().trim().min(1).max(80) }).strict();
 
+/** E-mail is the sign-in name, so a change needs the password again; it is stored in lower case. */
+export const changeEmailSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+    currentPassword: passwordValueSchema.min(1),
+  })
+  .strict();
+
 export const changePasswordSchema = z
   .object({
     currentPassword: passwordValueSchema.min(1),

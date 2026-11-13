@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { setLocale } from '@/i18n';
 import type { Profile } from '@/features/account/account-model';
 import { AccountPage } from './account-page';
@@ -23,6 +24,35 @@ const passkey = {
   transports: [],
 };
 
+const now = Date.now();
+const activity = {
+  nextBefore: null,
+  events: [
+    {
+      id: 2,
+      createdAt: now - 60 * 60 * 1000,
+      kind: 'access',
+      action: 'login',
+      outcome: 'failure',
+      actor: { type: 'anonymous', name: null },
+      detail: '3',
+      ipAddress: '10.0.0.9',
+      proposalId: null,
+    },
+    {
+      id: 1,
+      createdAt: now - 3 * 24 * 60 * 60 * 1000,
+      kind: 'access',
+      action: 'login',
+      outcome: 'success',
+      actor: { type: 'user', name: 'Ana' },
+      detail: null,
+      ipAddress: '10.0.0.2',
+      proposalId: null,
+    },
+  ],
+};
+
 function mockApi(passkeys: unknown[] = [passkey]) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/account/sessions') return new Response('[]');
@@ -30,9 +60,14 @@ function mockApi(passkeys: unknown[] = [passkey]) {
       return new Response(JSON.stringify({ passkey: { origins: [] } }));
     if (url === '/api/auth/passkey/list-user-passkeys')
       return new Response(JSON.stringify(passkeys));
+    if (url.startsWith('/api/activity')) return new Response(JSON.stringify(activity));
     if (url === '/api/account' && init?.method === 'PATCH')
       return new Response(
         JSON.stringify({ ...profile, name: JSON.parse(String(init.body)).name as string }),
+      );
+    if (url === '/api/account/email' && init?.method === 'PATCH')
+      return new Response(
+        JSON.stringify({ ...profile, email: JSON.parse(String(init.body)).email as string }),
       );
     return new Response('{}');
   });
@@ -41,7 +76,11 @@ function mockApi(passkeys: unknown[] = [passkey]) {
 }
 
 function renderPage(onProfileChange = vi.fn()) {
-  render(<AccountPage profile={profile} failed={false} onProfileChange={onProfileChange} />);
+  render(
+    <MemoryRouter>
+      <AccountPage profile={profile} failed={false} onProfileChange={onProfileChange} />
+    </MemoryRouter>,
+  );
   return onProfileChange;
 }
 
@@ -93,6 +132,7 @@ it('starts two-step setup from the summary and keeps the dialog open while the Q
     if (url === '/api/auth/status')
       return new Response(JSON.stringify({ passkey: { origins: [] } }));
     if (url === '/api/auth/passkey/list-user-passkeys') return new Response('[]');
+    if (url.startsWith('/api/activity')) return new Response(JSON.stringify(activity));
     return new Response('{}');
   });
   renderPage();
@@ -128,4 +168,44 @@ it('edits the name in a dialog and closes it once saved', async () => {
     '/api/account',
     expect.objectContaining({ method: 'PATCH' }),
   );
+});
+
+it('changes the sign-in email only after asking for the password', async () => {
+  const fetchMock = mockApi();
+  const onChange = renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Profile' });
+  expect(within(dialog).queryByLabelText('Current password')).toBeNull();
+  fireEvent.change(within(dialog).getByLabelText('Email'), { target: { value: 'novo@casa.test' } });
+  const save = within(dialog).getByRole('button', { name: 'Save changes' }) as HTMLButtonElement;
+  expect(save.disabled).toBe(true);
+  fireEvent.change(within(dialog).getByLabelText('Current password'), {
+    target: { value: 'senha-segura-123' },
+  });
+  expect(save.disabled).toBe(false);
+  fireEvent.click(save);
+  await waitFor(() =>
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ email: 'novo@casa.test' })),
+  );
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/account/email',
+    expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({ email: 'novo@casa.test', currentPassword: 'senha-segura-123' }),
+    }),
+  );
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+});
+
+it('shows recent sign-ins with the failed attempts of the last day and a link to all activity', async () => {
+  mockApi();
+  renderPage();
+  const section = (await screen.findByText('Recent sign-ins')).closest('section') as HTMLElement;
+  expect(
+    await within(section).findByText('1 failed sign-in attempt in the last 24 hours'),
+  ).toBeTruthy();
+  expect(within(section).getByText(/10\.0\.0\.9/)).toBeTruthy();
+  expect(
+    within(section).getByRole('link', { name: 'View all activity' }).getAttribute('href'),
+  ).toBe('/manage/activity');
 });

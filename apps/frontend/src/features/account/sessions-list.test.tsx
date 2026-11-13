@@ -49,3 +49,23 @@ it('ends another session only after a second click and never offers to end this 
     expect(fetchMock).toHaveBeenCalledWith('/api/account/sessions/b/revoke', { method: 'POST' }),
   );
 });
+
+it('shows when a session started and ends as relative times, with the exact dates on hover', async () => {
+  const now = Date.now();
+  const recent = [
+    {
+      ...sessions[0]!,
+      createdAt: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
+      expiresAt: new Date(now + 6 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify(recent))),
+  );
+  render(<SessionsList refreshKey={0} />);
+  const line = await screen.findByText(/192\.168\.1\.24/);
+  expect(line.textContent).toMatch(/2 hours ago/);
+  expect(line.textContent).toMatch(/in 6 hours/);
+  expect(line.getAttribute('title')).toMatch(/\d/);
+});
