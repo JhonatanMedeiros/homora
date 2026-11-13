@@ -127,12 +127,15 @@ without sharing administrator credentials.
 
 - [ ] AI agents proposing widgets, integrations, and discovered shortcuts as reviewable diffs with
       full audit trails.
-- [ ] Visual verification and load testing of proposal lifecycle (P4).
+- [x] Visual verification and load testing of proposal lifecycle (P4). Browser-verified and
+      load-tested with scripted MCP clients on 2026-11-12; evidence and limits in the R4
+      section of [evolucao.md](evolucao.md). No real LLM agent was used.
 - [x] Service-to-host operational map with Proxmox: manual associations and evidence-backed
       suggestions, never inferred by name alone. Done in issue #96; validated with simulated
       Proxmox data only.
 - [ ] Public demonstration and verifiable positioning: clear boundaries of what agents can and
-      cannot do.
+      cannot do. The written walkthrough exists ([agent-demo.md](agent-demo.md)); publishing it
+      and a recording, and the live Proxmox validation, are still open.
 
 **Done Definition:** the governing agent differentiator is demonstrable to people who have not read the source code.
 

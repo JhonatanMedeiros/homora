@@ -629,10 +629,25 @@ connected through Streamable HTTP. Nothing real was connected.
 - [ ] Validation against a real read-only Proxmox. **Blocked** until an environment and
       explicit authorization exist; phase 1–5 results above are simulated only.
 
-### 5. Demonstration and claims
+### 5. Demonstration and claims (partial, 2026-11-12)
 
-- [ ] Walkthrough with synthetic data (mocked versus live labelled) and reconciliation of
-      README and public claims with evidence.
+- [x] Walkthrough with scoped token, allowed read, proposal, diff review, approval and
+      rejection, audit, revocation and a denied out-of-scope action:
+      [agent-demo.md](agent-demo.md), with two screenshots from the validation run. It labels
+      real, scripted and mocked parts, and states that the agent was a scripted client and
+      that the Proxmox map is not demonstrated. The reproduce commands were smoke-tested.
+- [x] README now points to the walkthrough and the capability inventory and states the boundary
+      (read by scope, propose, you approve, no credentials, no infrastructure writes).
+- [ ] Not done: publishing the walkthrough or a recording, a run with a real LLM agent, and a
+      review of public claims outside this repository.
+
+### R4 completion status
+
+R4 is **not complete**. Stage 1 is done. Stages 2 and 3 are verified for the paths and limits
+recorded above. Stage 4 is blocked: it needs a real read-only Proxmox and explicit
+authorization, and nothing was marked validated from fixtures. Stage 5 has the written
+walkthrough but not publication. Acceptance criteria still unmet: live-only validation (stage 4)
+and the open items listed under stages 2 and 3.
 
 ## Upgrade and Clean Installation Validation (2026-11-10)
 

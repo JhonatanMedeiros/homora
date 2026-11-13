@@ -225,6 +225,8 @@ Set up Proxmox on the Integrations page with an account and token that have read
 
 ## MCP and AI agents
 
+New to this? [A ten-minute walkthrough](docs/agent-demo.md) shows scopes, proposals, review, audit, revocation and a denied action with synthetic data, and says which parts are mocked. What each tool does is in the [capability inventory](docs/agent-capabilities.md). In short: agents read what their scopes allow and propose changes; you approve each one; they never receive credentials and cannot write to external infrastructure.
+
 The Agents page shows how long each proposal has left. The review period defaults to 15 minutes and can be changed there to 1–120 minutes for new proposals; existing deadlines do not change. Expired proposals remain visible and an administrator can recreate them for another review. Expired batches are recreated together. Re-creation validates the original diff against the current configuration and may fail when it no longer matches; it never applies a change.
 
 Homora supports local stdio and stateless Streamable HTTP. Both use the same agent tokens, scopes and human approval rules. Create an agent on **Agents**, then choose the connection method under **Connect**.
