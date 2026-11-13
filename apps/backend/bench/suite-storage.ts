@@ -2,7 +2,7 @@ import { rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { CHECK_INTERVAL_DEFAULT, type Service } from '@homora/shared';
-import { serializeConfiguration } from '../src/config-transfer.js';
+import { serializeConfiguration } from '../src/transfer/index.js';
 import { createServiceConfiguration } from '../src/service-configuration.js';
 import {
   createObservationStore,

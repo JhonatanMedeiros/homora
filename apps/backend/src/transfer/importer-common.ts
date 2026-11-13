@@ -1,17 +1,16 @@
 import { parse } from 'yaml';
 import { BRAND_ICON_NAMES, ICON_NAMES, normalizeIcon } from '@homora/shared';
+import { withinParseBudget, parseService } from './parser.js';
 import {
   MAX_GROUPS,
   MAX_SERVICES,
   MAX_TRANSFER_CHARS,
-  withinParseBudget,
-  parseService,
   type ImportDocument,
   type ImportIssue,
   type ImportedGroup,
   type IssueCode,
   type ParsedImport,
-} from './config-transfer.js';
+} from './types.js';
 
 const knownIcons = new Set<string>(ICON_NAMES);
 const knownBrands = new Set<string>(BRAND_ICON_NAMES);

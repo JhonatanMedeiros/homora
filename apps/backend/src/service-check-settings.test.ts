@@ -6,7 +6,7 @@ import { parse } from 'yaml';
 import { createDatabase } from '@homora/db';
 import { createTestSession } from './test-auth.js';
 import { createApp } from './app.js';
-import { parseTransfer } from './config-transfer.js';
+import { parseTransfer } from './transfer/index.js';
 
 it('stores check method and interval, validates bounds, and carries values in export/import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-check-settings-'));

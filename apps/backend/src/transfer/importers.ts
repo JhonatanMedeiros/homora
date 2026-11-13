@@ -1,4 +1,5 @@
-import { parseTransfer, type ParsedImport } from './config-transfer.js';
+import { parseTransfer } from './parser.js';
+import type { ParsedImport } from './types.js';
 import { parseDashy } from './importer-dashy.js';
 import { parseHomepage } from './importer-homepage.js';
 

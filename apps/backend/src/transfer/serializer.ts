@@ -1,6 +1,6 @@
 import { stringify } from 'yaml';
 import type { Service } from '@homora/shared';
-import { TRANSFER_VERSION, type ExportedSettings } from './config-transfer-types.js';
+import { TRANSFER_VERSION, type ExportedSettings } from './types.js';
 
 /**
  * Serializes groups and cards in current order. Never includes secrets, connections or IDs.

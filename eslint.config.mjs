@@ -43,9 +43,10 @@ export default tseslint.config(
     },
   },
   {
-    // Monitoring is a capability: outside code imports `monitoring/index.ts`, never its internals.
+    // Capabilities expose one entry point: outside code imports `monitoring/index.ts` or
+    // `transfer/index.ts`, never their internals.
     files: ['apps/backend/src/**/*.ts', 'apps/backend/bench/**/*.ts'],
-    ignores: ['apps/backend/src/monitoring/**'],
+    ignores: ['apps/backend/src/monitoring/**', 'apps/backend/src/transfer/**'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -54,6 +55,10 @@ export default tseslint.config(
             {
               regex: '/monitoring/(?!index(\\.js)?$)',
               message: 'Import the monitoring capability through monitoring/index.ts.',
+            },
+            {
+              regex: '/transfer/(?!index(\\.js)?$)',
+              message: 'Import configuration transfer through transfer/index.ts.',
             },
           ],
         },

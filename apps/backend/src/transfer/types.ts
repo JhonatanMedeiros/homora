@@ -8,7 +8,6 @@ export const TRANSFER_VERSION = 2;
 export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2];
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
-export const MAX_GROUP_COLUMNS = 6;
 export const MAX_SERVICES = 1000;
 /**
  * Flow collections (`[` and `{`) a document may open. Deeply nested garbage makes the YAML parser
