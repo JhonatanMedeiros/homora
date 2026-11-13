@@ -106,7 +106,7 @@ secrets are never exposed to the frontend, MCP tools, or application logs. Exter
   private network monitoring requires explicit per-service opt-in (disabled by default).
   This setup has been verified with integration test mocks and awaits real-world LAN testing.
 
-Consult the [evolution plan](evolucao.md)
+Consult the [evolution plan](evolution.md)
 and codebase for live status. Private network access is essential for homelabs and must
 be explicitly authorized; discovery never grants permission to execute arbitrary commands,
 probe arbitrary network addresses, or mutate infrastructure.
@@ -124,7 +124,7 @@ probe arbitrary network addresses, or mutate infrastructure.
 - The Docker socket grants root-equivalent daemon control. Discovery is optional
   (`HOMORA_DOCKER_HOST`), restricted to container listing, and architected for a
   read-only unprivileged proxy (`compose.docker-discovery.yml`); Homora never mounts
-  the raw socket directly. See log in [evolucao.md](evolucao.md).
+  the raw socket directly. See log in [evolution.md](evolution.md).
 
 ## Experimental Connections Guide
 
@@ -405,7 +405,7 @@ covered there remain unvalidated.
 
 Both were evaluated against the declarative format and the shared transport; neither fits without
 widening the transport, so they were not implemented (decision recorded in
-[ADR 0009](decisoes/0009-declarative-integration-adapters.md)).
+[ADR 0009](decisions/0009-declarative-integration-adapters.md)).
 
 - **Beszel:** the hub API is PocketBase's. A client logs in with `POST /api/collections/users/auth-with-password`
   and then sends the returned token. The later session capability in ADR 0018 supports some additional JSON login shapes, but
@@ -436,7 +436,7 @@ widening the transport, so they were not implemented (decision recorded in
 
 "Unvalidated" means no one has tried it against a live service yet. Adding one is documented in
 [adapters](adapters.md); the manifest vocabulary and its limits are in
-[ADR 0009](decisoes/0009-declarative-integration-adapters.md).
+[ADR 0009](decisions/0009-declarative-integration-adapters.md).
 
 ### Proxmox node selection
 
@@ -471,7 +471,7 @@ body and sends the session in `X-FTL-SID` over HTTPS. Sessions are kept in memor
 reused and renewed on expiry or once after a 401. Concurrent logins are deduplicated. They are
 removed locally on edits and deletion, but not explicitly logged out remotely; Pi-hole expires them.
 Pi-hole limits concurrent sessions. There are no integration write operations. See
-[ADR 0018](decisoes/0018-integration-session-auth.md) and the [official authentication documentation](https://docs.pi-hole.net/api/auth/).
+[ADR 0018](decisions/0018-integration-session-auth.md) and the [official authentication documentation](https://docs.pi-hole.net/api/auth/).
 
 Live validation still needs to cover the app password with `app_sudo` off, real v6 payloads and
 counts, expired credentials, session limits, private destination policy, certificate validation,

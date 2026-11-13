@@ -3,7 +3,7 @@
 This document establishes conventions to keep Homora simple, predictable, and
 secure as it grows. It serves as an implementation guide, not a mandate to introduce
 premature abstractions or unnecessary layers. Module boundaries and current constraints
-are documented in [architecture](arquitetura.md).
+are documented in [architecture](architecture.md).
 
 ## Module Boundaries
 
@@ -145,7 +145,7 @@ are documented in [architecture](arquitetura.md).
   for broad changes; targeted unit tests for isolated edits) and report exact test results.
 - Keep documentation up to date: README for setup/usage; architecture for boundaries
   and designs; evolution plan for validated progress; this document when conventions evolve.
-- For architectural decisions with lasting impact, create `docs/decisoes/NNNN-title.md`
+- For architectural decisions with lasting impact, create `docs/decisions/NNNN-title.md`
   documenting context, decision, alternatives, consequences, and status. ADRs are not
   required for local refactorings.
 

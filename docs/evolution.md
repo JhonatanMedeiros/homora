@@ -12,7 +12,7 @@ does not imply the end-to-end workflow has been validated. Work phases may be de
 into smaller subtasks.
 
 > **Direction (2026-11-10):** strategic positioning relative to Homepage and Dashy
-> alongside phases R0 through R4 are detailed in [estrategia.md](estrategia.md).
+> alongside phases R0 through R4 are detailed in [strategy.md](strategy.md).
 > Phases P0 through P5 below continue tracking baseline progress; when beginning an
 > R phase, break down its goals into tracking items here.
 
@@ -242,7 +242,7 @@ image builds, and English documentation ready for external community contributio
 
 ## R0 — Frictionless Adoption (Tasks)
 
-Origin: [estrategia.md](estrategia.md), phase R0. Mark items only with stated implementation
+Origin: [strategy.md](strategy.md), phase R0. Mark items only with stated implementation
 and verification evidence.
 
 - [ ] **Reproducible Docker image:** pin Node and nginx base images by version and SHA256 digest,
@@ -314,7 +314,7 @@ and verification evidence.
 
 ## R1 — Living Homepage and Honest Status (Tasks)
 
-Origin: [estrategia.md](estrategia.md), phase R1 and real-world Homepage migration benchmark.
+Origin: [strategy.md](strategy.md), phase R1 and real-world Homepage migration benchmark.
 Mark items only with stated implementation and verification evidence.
 
 - [ ] **In-card widgets:** each card can display metrics from an attached connection, showing
@@ -679,8 +679,8 @@ and the open items listed under stages 2 and 3.
 - Verification suites were not executed during initial audit due to uninstalled dependencies
   and lack of npm registry access in that environment.
 - Comparison: simplicity and link management are foundational expectations; infrastructure
-  metrics and agent assistance represent differentiating opportunities. See [product](produto.md)
-  and [architecture](arquitetura.md).
+  metrics and agent assistance represent differentiating opportunities. See [product](product.md)
+  and [architecture](architecture.md).
 
 ## Initial Baseline Validation
 
@@ -775,7 +775,7 @@ and the open items listed under stages 2 and 3.
 the product principle "works out of the box".
 
 **Constraints (keep):** per-service authorization stays the security model (`SECURITY.md`,
-`docs/arquitetura.md`). Special ranges, pinned DNS, mixed DNS responses, and redirects stay
+`docs/architecture.md`). Special ranges, pinned DNS, mixed DNS responses, and redirects stay
 blocked. Imports, Docker labels, and MCP proposals must never enable private access on their own.
 
 **Options:**
@@ -791,7 +791,7 @@ blocked. Imports, Docker labels, and MCP proposals must never enable private acc
 **Work for option 2:** a settings key with a compatible migration (existing services unchanged);
 validation in the API; apply the default only on UI-created services; Settings switch; form checkbox
 initialized from the default; tests proving imports, Docker, and MCP do not inherit it; update
-`SECURITY.md` and `docs/arquitetura.md`. Needs an explicit maintainer decision before
+`SECURITY.md` and `docs/architecture.md`. Needs an explicit maintainer decision before
 implementation because it changes a security default.
 
 **Done (option 2, issue #83):**
@@ -804,7 +804,7 @@ implementation because it changes a security default.
 - Settings has a new **Monitoring** section with the switch; the new-service form starts its checkbox
   from the setting (editing keeps the stored value). The blocked-state hint mentions the setting.
   English and pt-BR strings added.
-- Docs: `SECURITY.md`, `docs/arquitetura.md`, README.
+- Docs: `SECURITY.md`, `docs/architecture.md`, README.
 - Verified by automated tests only: backend (default off, on, explicit false wins, existing
   services unchanged, auth, validation, audit, and import, Docker local, Docker push and proposals
   not inheriting) and frontend (switch loads/saves/fails, form initial value for new vs edit).
@@ -1074,7 +1074,7 @@ implementation because it changes a security default.
 
 ## Auth Log — Better Auth for Web Authentication (2026-11-11)
 
-See [ADR 0004](decisoes/0004-better-auth-web-authentication.md).
+See [ADR 0004](decisions/0004-better-auth-web-authentication.md).
 
 - Replaced the file-based account (`<database>.auth`, in-memory sessions) with Better Auth
   1.7.19 (email and password) on the application's SQLite database. Pinned to 1.7.19 because
@@ -1177,7 +1177,7 @@ Services can optionally check a same-origin path independently of their card URL
 
 ## Public read-only status page (issue #63)
 
-See [ADR 0006](decisoes/0006-public-read-only-status-page.md).
+See [ADR 0006](decisions/0006-public-read-only-status-page.md).
 
 - `services.is_public` (default 0) and an `app_settings` table (`public_status_enabled`, `public_status_title`) in migration 0015; existing rows keep `is_public=0`.
 - `GET /api/public/status` is the only anonymous API path (exact-path allowlist in the auth hook, GET only), limited by `@fastify/rate-limit` to 60 requests per minute per client IP, cached 15 s, `404 not-found` when disabled or empty. Payload: name, category, `up|down|unknown`, `checkedAt`, `uptime` (24 h) and 24 hourly `bars`; stale observations read as `unknown`.
@@ -1187,7 +1187,7 @@ See [ADR 0006](decisoes/0006-public-read-only-status-page.md).
 
 ### Monitor: uptime and latency per service (issue #62)
 
-See [ADR 0007](decisoes/0007-service-observation-history-and-uptime.md).
+See [ADR 0007](decisions/0007-service-observation-history-and-uptime.md).
 
 - `GET /api/services/uptime?range=24h|7d|30d` (all services) and `GET /api/services/:id/uptime` return uptime %, check counts, last latency and a bar of buckets (30 min for 24 h, 2 h for 7 d, 6 h for 30 d; at most 120). Both use the same function, so the numbers match; only the single-service call adds `p95LatencyMs` (nearest rank), because the percentile needs a sort of every latency.
 - Only checks made under the service's current configuration (`signature`) count; the response flags `reconfigured` and the card says so. `unknown` checks stay out of the denominator and empty buckets read `unknown`. With fewer than 5 up/down checks the percentage is `null` and the card shows a dash.
@@ -1247,7 +1247,7 @@ See [ADR 0007](decisoes/0007-service-observation-history-and-uptime.md).
 
 ### Notification channels (issue #61)
 
-See [ADR 0005](decisoes/0005-status-transition-notifications.md).
+See [ADR 0005](decisions/0005-status-transition-notifications.md).
 
 - Webhook and Telegram channels, encrypted destinations, per-channel private-network opt-in, bounded asynchronous delivery and persisted service transition state. The five-minute cooldown suppresses a repeated outage and its recovery; unknown checks retain the last known state. Retries can duplicate deliveries and queued messages do not survive a restart.
 - Validation: `pnpm build`, lint, formatting and type checks passed; 422 application tests passed with `vitest run --maxWorkers=4`, and 6 script tests passed. Two unrestricted `pnpm check` runs timed out in the existing load-sensitive uptime benchmark, which passed in isolation. Telegram and webhook delivery were mocked; the UI was not visually reviewed in a browser.
@@ -1300,7 +1300,7 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 ### Service-to-host map, phase 1: manual link and Host view (issue #96)
 
-- Migration `0020` adds `host_connection_id`, `host_node`, `host_vmid`, `host_type` (all nullable) to `services`; the connection id references `integration_instances` with `ON DELETE SET NULL`. `packages/db/src/migration.test.ts` starts from a database at migration `0019`, checks that existing cards keep their data with all four columns `NULL`, and that deleting the connection unlinks the card. Decisions are in [ADR 0008](decisoes/0008-service-to-host-map.md).
+- Migration `0020` adds `host_connection_id`, `host_node`, `host_vmid`, `host_type` (all nullable) to `services`; the connection id references `integration_instances` with `ON DELETE SET NULL`. `packages/db/src/migration.test.ts` starts from a database at migration `0019`, checks that existing cards keep their data with all four columns `NULL`, and that deleting the connection unlinks the card. Decisions are in [ADR 0008](decisions/0008-service-to-host-map.md).
 - Backend: `proxmox-inventory.ts` lists nodes and guests from the same `/cluster/resources` response (templates and malformed items dropped); `GET /api/connections/:id/guests` (session required, 30 s cache, 400 for non-Proxmox). `POST/PUT /api/services` accept `host`, `PUT /api/services/:id/host` links or unlinks (audited); the connection must exist and be Proxmox (`invalid-host`). `GET /api/services` returns `host`. Agent proposals reject `host`; export/import and the MCP card tools do not carry it (omission recorded in the ADR).
 - Frontend: "Runs on" field in the service form (connection, node, search and guest list in a bottom sheet on phones, side sheet on desktop; "Unlink host"), a **Group | Host** control on Home (the Map joins in phase 4), the Host view (accordion per node, unlinked cards in their own section, "Host not found" and "Host unavailable" sections) and a "Runs on" line on each card.
 - Validated: `pnpm check` and `pnpm build`. New tests: migration, inventory parsing, link/unlink/validation/rename/connection-delete flow with a mocked Proxmox transport, host grouping, picker (search, node filter, select, unlink, not found, no connection) and Host view.
@@ -1316,7 +1316,7 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 ### Service-to-host map, phase 3: evidence-based suggestions and agent proposals (issue #96)
 
-- Migration `0021` adds `host_suggestion_dismissals`; the test starts from a database at `0020`. Engine, parsing, API and MCP details are in [ADR 0008](decisoes/0008-service-to-host-map.md).
+- Migration `0021` adds `host_suggestion_dismissals`; the test starts from a database at `0020`. Engine, parsing, API and MCP details are in [ADR 0008](decisions/0008-service-to-host-map.md).
 - API: `GET /api/host-suggestions` (session only) and `PUT /api/services/:id/host-suggestion-dismissal`. Accepting uses the phase 1 `PUT /api/services/:id/host`. UI: "Suggested hosts" panel (side sheet on desktop, full screen on phones) with per-item select, Accept, Dismiss, Undo, "Accept selected (N)", "Choose host manually", strength written as text and evidence per item; it is loaded only when opened because it reads guest configurations from Proxmox.
 - MCP: scopes `hosts:read` and `hosts:propose`, tools `list_host_suggestions` and `propose_host_link`; the proposal diff is rendered in the agent review screen with the server-computed evidence. Existing tokens do not gain the new scopes.
 - Validated: `pnpm check` and `pnpm build`. Tests: each signal alone, combinations, name-only, ties and conflicting evidence, dismissals per card and guest, address parsing, hostname resolution blocked/authorized/failed (no signal, no card connection), API with and without a session, only GET requests to the Proxmox mock, degradation when the guest agent is refused, MCP scope enforcement, refusal without evidence, proposal creation, audit entries and approval, panel actions and error state.
@@ -1324,7 +1324,7 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 ### Service-to-host map, phase 4: read-only Map (issue #96)
 
-- Home gets **Group | Host | Map**. The map (`components/host-map.tsx`, `lib/map-layout.ts`) uses a custom deterministic layout instead of `@xyflow/react`; reasons in [ADR 0008](decisoes/0008-service-to-host-map.md). No dependency was added.
+- Home gets **Group | Host | Map**. The map (`components/host-map.tsx`, `lib/map-layout.ts`) uses a custom deterministic layout instead of `@xyflow/react`; reasons in [ADR 0008](decisions/0008-service-to-host-map.md). No dependency was added.
 - Interactions (all read-only): select a service or a guest to open the side panel (service, address, status, runs on, affected by, "Open card on Home", "Change host"), pan (native scroll, touch, mouse drag), zoom 60% to 120%, fit, reset, refresh (bypasses the 30 s cache) and return to the host list. Map controls sit in the canvas toolbar. "Used by" is not shown yet: dependencies arrive in phase 5. Offline nodes are drawn with a dashed border and the words "Offline" and the affected count; impact wording comes from phase 2.
 - Validated: `pnpm check` and `pnpm build`. Tests: layout (determinism, containment, no overlaps, wrapping, focus order equals Host view order, empty input, zoom bounds), component (containers and offline text, focus order, selection and panel actions, guest panel, zoom limits, reduced motion, refresh and list link, phone notice under 768 px, empty state).
 - Not verified: no real browser or phone (happy-dom has no layout, so panning, `scrollTo` distances and the fit zoom against real viewport sizes were not observed), no screen-reader pass, no large installation (layout cost with hundreds of guests was not measured).
@@ -1332,25 +1332,25 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 ### Service-to-host map, phase 5: Map editing and manual dependencies (issue #96)
 
 - Fixed canvas coordinate nesting: guest cards are positioned within their node and service tiles within their guest, preventing them from drifting outside the host containers.
-- Migration `0022` adds `service_dependencies`; the test starts from a database at `0021` and checks existing cards, the duplicate and self-link constraints and the cascade. Design in [ADR 0008](decisoes/0008-service-to-host-map.md).
+- Migration `0022` adds `service_dependencies`; the test starts from a database at `0021` and checks existing cards, the duplicate and self-link constraints and the cascade. Design in [ADR 0008](decisions/0008-service-to-host-map.md).
 - API: `GET /api/service-dependencies`, `POST /api/services/:id/dependencies`, `DELETE /api/services/:id/dependencies/:other` (cycle, self, missing card and limit are rejected with distinct codes), audited. MCP: `list_service_dependencies` under `services:read`.
 - Map: drag an unlinked service onto a guest to link it; non-drag alternative in the side panel (same chooser as the form, plus "Unlink host"); "Depends on" and "Used by" lists, "Add dependency" picking mode (Escape or Cancel leaves it) and removal; read-only on phones. The service form has a "Depends on" list. Home cards, the Host view, the map panel and the banner show the manual "may be affected" hint.
 - Validated: `pnpm check` and `pnpm build`. Tests: dependency CRUD, authorization (no session, no origin), cycle (direct and transitive), self link, missing card, limit via validation, cascade on delete, audit entries, scoped MCP read, impact through dependencies (including a cycle that bypassed validation), drag link, keyboard alternative producing the identical call, unlink, failed change reporting, picking, Escape, error messages, read-only on a phone and without edit access, form picker, banner.
-- Roadmap item 18 (service-to-host map) is marked done in `plano.md` and `estrategia.md`, with the caveat below.
+- Roadmap item 18 (service-to-host map) is marked done in `plan.md` and `strategy.md`, with the caveat below.
 - Not verified: everything against a real Proxmox (all Proxmox traffic is simulated); real HTML5 drag and drop in a browser (happy-dom events were used, so drop positioning and touch devices were not exercised); screen readers; a drag with a very large map. The "Test unavailability, invalid credentials and reduced permissions against a real Proxmox" item in the plan therefore stays open.
 
 ## UI component consistency sweep (2026-11-12)
 
 - Replaced the custom HTML-backed select implementation with `FormSelect` composed from the shadcn `Select` primitives, including an option component that supports empty values and controlled selection. Migrated its uses across services, settings, activity, host selection, transfer and widgets, with accessible names on composite controls.
 - Converted the agent profile radio cards to the existing shadcn `ToggleGroup`, direct product buttons to shadcn `Button`, and standalone labels to shadcn `Label`. Inputs, textareas, checkboxes, switches, overlays, cards, alerts and empty states were already using the project primitives; semantic links, the category datalist and structural HTML remain native.
-- Recorded the component priority and exceptions in `docs/padroes.md` and `AGENTS.md`; updated the map decision to name the shadcn Select.
+- Recorded the component priority and exceptions in `docs/standards.md` and `AGENTS.md`; updated the map decision to name the shadcn Select.
 - Validation: `pnpm --filter @homora/frontend build` passes (TypeScript and Vite). Static source scan confirms no direct product `<button>`, `<input>`, `<select>`, `<textarea>` or `<label>` outside `src/components/ui`; the native category `<option>` remains inside its semantic `<datalist>`. Tests and browser/screen-reader behavior were not run.
 - Follow-up: integration data in service cards now uses a shared three-column grid with labels above tabular values. Widget loading placeholders use the same grid and reserve the expected row count for each integration type.
 - CI follow-up: validation tests now interact with shadcn Select and ToggleGroup controls through their combobox/radio roles and keyboard behavior instead of native select/label assumptions.
 
 ## Appearance, custom CSS and pages (2026-11-12)
 
-- Issue #97 in four phases ([ADR 0009](decisoes/0009-appearance-and-pages.md)): accent color, gradients and card translucency with a contrast check in both themes; an optional background image processed with `sharp`; custom CSS served same-origin with a safe mode (`?safe=1`, `pnpm css:reset`); and pages as tabs on the Home (migration `0023`).
+- Issue #97 in four phases ([ADR 0009](decisions/0009-appearance-and-pages.md)): accent color, gradients and card translucency with a contrast check in both themes; an optional background image processed with `sharp`; custom CSS served same-origin with a safe mode (`?safe=1`, `pnpm css:reset`); and pages as tabs on the Home (migration `0023`).
 - Export now writes version 2 (pages and a page per group) and still reads version 1. It also includes appearance and custom CSS, which import deliberately does not read.
 - Validation: `pnpm check` and `pnpm build` on every phase. Tests cover the contrast function, image processing, CSS validation, the routes (auth, audit, limits), the migration, import and export with pages, the settings screens, the tab strip and the digit shortcuts.
 - Not verified: any behaviour in a real browser (rendering of gradients, blur and the background image, the look of the tab strip on phones, drag and drop, keyboard focus order), screen readers, real HTTP proxies in front of the 2 MB upload, and a CSP (none is shipped).
@@ -1384,14 +1384,14 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
   Proxmox adapter tests beside their implementations; the host's reusable harness remains in the
   backend. The package test TypeScript configuration runs after the workspace type checks so its
   backend imports have built dependencies even on a clean checkout. The SDK boundaries are recorded
-  in [ADR 0011](decisoes/0011-integration-sdk.md).
+  in [ADR 0011](decisions/0011-integration-sdk.md).
 - Final local validation: `pnpm check` passed (1,247 application and 16 script tests), as did
   `pnpm build`. All 11 definitions were compared with the pre-change source and matched exactly.
   A backend Docker image built successfully and loaded all 11 registry entries in a production
   container. Generator tests compile both scaffold types in a temporary copy. Contract tests also
   check console output for credentials on successful and failed reads.
 - Not verified: a browser or screen reader, any additional live integration instance, or the
-  remaining live-validation cases already listed in `integracoes.md`. No schema migration was needed;
+  remaining live-validation cases already listed in `integrations.md`. No schema migration was needed;
   integration IDs, public fields and stored formats remain unchanged.
 - CI follow-up: the first GitHub validation exposed a clean-checkout dependency-order race in test
   type checking; moved that check after the workspace tasks so `shared` is built first.
@@ -1445,7 +1445,7 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 ## Extensible integrations (issue #98)
 
 - **Phase 1:** `adapter-contract.ts` (`runAdapterContract`) tests every adapter with a fake transport: validation, request shape and path safety, secrets, each response class, bounds and the observation cache. Fixtures carry a `_source` block. `docs/adapters.md` is the contribution guide. The harness found that Home Assistant, Uptime Kuma, AdGuard Home and the Proxmox validator accepted URLs over 2048 characters; all four now reject them.
-- **Phase 2:** [ADR 0009](decisoes/0009-declarative-integration-adapters.md). A closed manifest format in `packages/shared`, validated at startup and run by one interpreter. Jellyfin, Uptime Kuma, Home Assistant and AdGuard Home were migrated after a differential run (URLs, ids, credentials, responses) showed identical decisions, requests and data; their expectations live in `manifest-adapters.test.ts`. Type enums, stored keys, proposal schemas, the form, widget text, the picker and the catalog now derive from the definitions. Proposals now require `https://` for every HTTPS-only integration, not only Proxmox.
+- **Phase 2:** [ADR 0009](decisions/0009-declarative-integration-adapters.md). A closed manifest format in `packages/shared`, validated at startup and run by one interpreter. Jellyfin, Uptime Kuma, Home Assistant and AdGuard Home were migrated after a differential run (URLs, ids, credentials, responses) showed identical decisions, requests and data; their expectations live in `manifest-adapters.test.ts`. Type enums, stored keys, proposal schemas, the form, widget text, the picker and the catalog now derive from the definitions. Proposals now require `https://` for every HTTPS-only integration, not only Proxmox.
 - **Phase 3:** Speedtest Tracker, Portainer, NetBird, Tailscale and Cloudflare added as manifests, each **implemented, unvalidated**. Fixtures are hand-written from the vendors' published schemas or source (cited, read 2026-11-12), not recorded from live services. Beszel (login flow with POST) and TrueNAS (WebSocket-only API) were skipped. Vocabulary extensions: `basic-key` auth, root-array counting, forwarded `maxBodyBytes`, field defaults and an optional brand icon; the transport and header whitelist are unchanged.
 - **Phase 4:** a Proxmox connection can scope widgets and the top bar to one node (stored as public config `node`, picked from the inventory while editing). Whole cluster stays the default; a missing or offline node reports `unavailable` and never falls back to cluster totals.
 - Validated: `pnpm check` and `pnpm build`. Not verified: any integration against a live service, the new UI in a real browser, screen readers, and the Tailscale scope names and NetBird role needed for a read-only token.
@@ -1490,10 +1490,10 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 ## Coolify read-only integration (issue #102)
 
-- Implemented all four phases in one change, **implemented, unvalidated**: [ADR 0010](decisoes/0010-coolify-read-only-integration.md). Code adapter with a `read`-only Bearer token; summary widget; searchable inventory (`GET /api/connections/:id/resources`); card links by connection and resource UUID (table `integration_resource_links`, migration 0024); discovery with review; a separate Coolify state on the card with "needs review" for changed or missing resources; `Retry-After` exposed by the transport and a Coolify-only pause after 401, 403 and 429.
-- Docs: [Coolify section](integracoes.md#coolify) with set-up, permissions, troubleshooting and the live validation checklist; Portuguese set-up and troubleshooting in `README.pt-BR.md`.
+- Implemented all four phases in one change, **implemented, unvalidated**: [ADR 0010](decisions/0010-coolify-read-only-integration.md). Code adapter with a `read`-only Bearer token; summary widget; searchable inventory (`GET /api/connections/:id/resources`); card links by connection and resource UUID (table `integration_resource_links`, migration 0024); discovery with review; a separate Coolify state on the card with "needs review" for changed or missing resources; `Retry-After` exposed by the transport and a Coolify-only pause after 401, 403 and 429.
+- Docs: [Coolify section](integrations.md#coolify) with set-up, permissions, troubleshooting and the live validation checklist; Portuguese set-up and troubleshooting in `README.pt-BR.md`.
 - Not done on purpose: deployments in progress (the schema carries logs; deferred to validation), project and environment names (not in the documented list endpoints), addresses for services (no documented field; typed by hand), multi-team behavior at scale.
-- Live validation (2026-11-12, Coolify v4.7.5, team token believed unrestricted): connection, test, widget (6 resources, 6 running), inventory with addresses and resources without an address, several domains on one application, link and discovery review, and an invalid token (generic error and pause) worked. A layout bug in the review dialog was found and fixed (`7a9d1a9`). Record in [integracoes.md](integracoes.md#coolify).
+- Live validation (2026-11-12, Coolify v4.7.5, team token believed unrestricted): connection, test, widget (6 resources, 6 running), inventory with addresses and resources without an address, several domains on one application, link and discovery review, and an invalid token (generic error and pause) worked. A layout bug in the review dialog was found and fixed (`7a9d1a9`). Record in [integrations.md](integrations.md#coolify).
 - Still open: a token **limited** to selected resources, an unreachable host, the exact `fqdn` separator for several domains, other `status` strings, services in detail, multi-team behavior and the real 429 path. The issue's live-validation item is therefore only partly done. Results of `pnpm check` and `pnpm build` are recorded in the pull request.
 
 ## Architectural cleanup (2026-11-12)
@@ -1584,7 +1584,7 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 
 ## Uptime status: incidents, banner and degraded state (2026-11-12)
 
-Phase 1 of the uptime redesign (see [ADR 0011](decisoes/0011-incidents-and-alert-thresholds.md)).
+Phase 1 of the uptime redesign (see [ADR 0011](decisions/0011-incidents-and-alert-thresholds.md)).
 
 - [x] Incident log derived from checks, rebuilt from history on first start; `GET /api/services/:id/incidents`.
 - [x] Per-service failure/recovery thresholds and degraded latency, applied to incidents and alerts (anti-flapping).
@@ -1592,7 +1592,7 @@ Phase 1 of the uptime redesign (see [ADR 0011](decisoes/0011-incidents-and-alert
 - [x] Degraded state (amber) on cards and bars; failure reason and "down since" on the card.
 - [x] History bars with tooltip, selectable detail (click, tap, arrow keys), latency line and axis; recent incidents in the history panel.
 - [x] Phase 2: service detail page (`/services/:id`), p50/p95 latency chart, 90-day heatmap, failure reasons, incident table, latest checks and previous-period comparison on the cards. Backed by an hourly rollup table (`service_uptime_rollup`, migration 0026, about 100 days) filled from every new check and backfilled from the raw history once. Not done from the mockup: pause, schedule maintenance and check-now buttons, CSV export, the alert column and the TLS block (they depend on features of Phases 3 and 4).
-- [x] Phase 3: TCP, DNS, TLS certificate, keyword and JSON checks (check-type tiles in the service form), scheduled maintenance per service (dashboard blue state, banner line, detail page panel and dialog), TLS certificate stat in the banner ([ADR 0012](decisoes/0012-check-types-and-maintenance.md)). Not done from the mockup: heartbeat (push) checks, recurring windows and windows for a whole group, DNS server/record type/expected answer, ICMP packet count, and the redirect-following/TLS-warning toggles.
+- [x] Phase 3: TCP, DNS, TLS certificate, keyword and JSON checks (check-type tiles in the service form), scheduled maintenance per service (dashboard blue state, banner line, detail page panel and dialog), TLS certificate stat in the banner ([ADR 0012](decisions/0012-check-types-and-maintenance.md)). Not done from the mockup: heartbeat (push) checks, recurring windows and windows for a whole group, DNS server/record type/expected answer, ICMP packet count, and the redirect-following/TLS-warning toggles.
 - [x] Phase 4: free-form tags per service (own table `service_tags`, migration 0029, kept out of the check signature; editor in the service form, chips on the card, tag filter on the Home), ntfy and Discord notification channels (secrets encrypted like the others; ntfy token optional, private ntfy servers need the per-channel "allow private" opt-in), status chips on the Home (All / Offline / Degraded / In maintenance, with counts) and problems-first ordering (offline, then degraded) inside each group, and a wider public status page (90 daily bars with 90-day availability, last-30-day incident list and upcoming/active maintenance; still opt-in per service and without reasons, notes, URLs or ids). Not done from the mockup: the e-mail channel (needs SMTP settings), the per-event toggle panel for channels, and a configurable SLA target (the endpoint exists, there is no UI).
 
 Verification: `pnpm check` (1266 tests) and `pnpm build` pass. The uptime performance budget in
@@ -1618,7 +1618,7 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 ### MCP, agent and proposal boundaries (issue #136)
 
 - Mapped transports, scope enforcement, tools, identities and the proposal domain
-  ([ADR 0014](decisoes/0014-mcp-agent-proposal-boundaries.md)). Extracted `mcp-identity.ts`,
+  ([ADR 0014](decisions/0014-mcp-agent-proposal-boundaries.md)). Extracted `mcp-identity.ts`,
   `mcp-responses.ts`, `mcp-proposal-schemas.ts` and `agent-changes.ts`, removing the tool-to-tool
   import and the `proposals` ↔ `proposal-review` cycle. A separate package was evaluated and deferred.
 - Behavior is unchanged; this does not complete R4 (issue #124), whose criteria stay open.
@@ -1627,7 +1627,7 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 
 ### Monitoring capability boundary (issue #135)
 
-- Monitoring code moved to `apps/backend/src/monitoring/` behind `monitoring/index.ts`; an ESLint rule blocks deep imports from outside. Import map, flow and pure/I-O split are in `docs/arquitetura.md`; the no-package decision is in [ADR 0013](decisoes/0013-monitoring-capability-boundary.md). No migration, API, MCP or notification behaviour changed.
+- Monitoring code moved to `apps/backend/src/monitoring/` behind `monitoring/index.ts`; an ESLint rule blocks deep imports from outside. Import map, flow and pure/I-O split are in `docs/architecture.md`; the no-package decision is in [ADR 0013](decisions/0013-monitoring-capability-boundary.md). No migration, API, MCP or notification behaviour changed.
 
 ### Shared localization catalogs
 
@@ -1636,7 +1636,7 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 
 ### Configuration transfer boundary
 
-- Moved format contracts, parsers, importers, planner and serializer into `apps/backend/src/transfer/` behind `index.ts`; `MAX_GROUP_COLUMNS` now lives in `group-limits.ts`, removing the reverse dependency from group configuration. Persistence, authorization and confirmation stay in `service-configuration-transfer.ts` and the routes. Decision: no workspace package yet ([ADR 0015](decisoes/0015-configuration-transfer-boundary.md)).
+- Moved format contracts, parsers, importers, planner and serializer into `apps/backend/src/transfer/` behind `index.ts`; `MAX_GROUP_COLUMNS` now lives in `group-limits.ts`, removing the reverse dependency from group configuration. Persistence, authorization and confirmation stay in `service-configuration-transfer.ts` and the routes. Decision: no workspace package yet ([ADR 0015](decisions/0015-configuration-transfer-boundary.md)).
 - No format, limit or data change. Validation: `pnpm check` (1,363 application tests; an earlier run had load-dependent timeouts in unrelated tests that passed on rerun) and `pnpm build` passed. Live Docker and browser import/export were not verified.
 
 ### Remembered sign-in
@@ -1676,18 +1676,18 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 
 ### Two-step verification (issue #148)
 
-- Added optional TOTP two-step verification with ten one-time recovery codes ([ADR 0016](decisoes/0016-two-factor-authentication.md)): migration `0031`, five forwarded Better Auth routes, a sign-in challenge that is not recorded as a login until verified, password re-authentication, other sessions ended on enable/disable, attempt limits, an Account section (QR code, setup key, recovery codes) and a login step. `pnpm auth:reset` also clears the new tables and `--two-factor-only` removes only the second step. The session secret now also protects the authenticator secret and must be backed up with the database.
+- Added optional TOTP two-step verification with ten one-time recovery codes ([ADR 0016](decisions/0016-two-factor-authentication.md)): migration `0031`, five forwarded Better Auth routes, a sign-in challenge that is not recorded as a login until verified, password re-authentication, other sessions ended on enable/disable, attempt limits, an Account section (QR code, setup key, recovery codes) and a login step. `pnpm auth:reset` also clears the new tables and `--two-factor-only` removes only the second step. The session secret now also protects the authenticator secret and must be backed up with the database.
 - Validation: API, interface, migration and script tests (backup/restore, lost secret, both resets). Not verified: a real authenticator app, a real browser, OIDC (#147) and passkey interaction (not implemented).
 
 ### Passkey sign-in (issue #149)
 
-- Added optional passkey (WebAuthn) sign-in for the single administrator ([ADR 0017](decisoes/0017-passkey-sign-in.md)): `@better-auth/passkey` 1.7.21, migration `0032` (`passkey`, unique credential ID, cascade with the user), seven forwarded routes with validated and reduced bodies and responses, required user verification with discoverable credentials, RP ID/origins from configuration (`HOMORA_PASSKEY_RP_ID`, default `localhost`) and never from request headers, password re-authentication to add or remove, other sessions ended on removal, the password session lifetime (8 hours, or 30 days with “Keep me signed in”), a passkey sign-in that does not trigger the authenticator code (policy stated, tested and shown in the interface), attempt limits, audit events, an Account section (add, rename, remove, several passkeys) and a sign-in button that explains itself when the browser or address cannot use passkeys. `pnpm auth:reset` also deletes passkeys and `--passkeys-only` removes just them.
+- Added optional passkey (WebAuthn) sign-in for the single administrator ([ADR 0017](decisions/0017-passkey-sign-in.md)): `@better-auth/passkey` 1.7.21, migration `0032` (`passkey`, unique credential ID, cascade with the user), seven forwarded routes with validated and reduced bodies and responses, required user verification with discoverable credentials, RP ID/origins from configuration (`HOMORA_PASSKEY_RP_ID`, default `localhost`) and never from request headers, password re-authentication to add or remove, other sessions ended on removal, the password session lifetime (8 hours, or 30 days with “Keep me signed in”), a passkey sign-in that does not trigger the authenticator code (policy stated, tested and shown in the interface), attempt limits, audit events, an Account section (add, rename, remove, several passkeys) and a sign-in button that explains itself when the browser or address cannot use passkeys. `pnpm auth:reset` also deletes passkeys and `--passkeys-only` removes just them.
 - Validation: API tests with a software authenticator (replay, tampering, wrong origin/RP ID, missing user verification, expired challenge, unknown credential, rate limit, sessions, second-step policy, closed routes, forged headers), config, interface, migration and script tests (backup/restore with a different session secret, both resets, legacy database). A manual browser pass on `localhost` with headless Chromium and its virtual authenticator (CTAP2, internal, resident keys, user verification): account creation, wrong password refused, adding a passkey, passkey sign-in with a browser-session cookie (`HttpOnly`, `SameSite=Strict`), the explanation on `127.0.0.1`, removal and refusal afterwards. **Not verified:** a real hardware or platform authenticator, other browsers (Firefox, Safari), the HTTPS reverse-proxy scenario with `HOMORA_PASSKEY_RP_ID` in a browser (covered only by configuration and API tests), and OIDC (#147) interaction (not implemented; it must choose its own second-step policy).
 
 ### Pi-hole v6 and session authentication
 
 - Added a built-in read-only Pi-hole summary and a host-owned session login capability
-  ([ADR 0018](decisoes/0018-integration-session-auth.md)); session login is the only POST allowed
+  ([ADR 0018](decisions/0018-integration-session-auth.md)); session login is the only POST allowed
   for the integration and does not grant service writes.
 - Contract, network, session and connection tests cover mock responses. A user reported a
   successful live test; detailed validation of app-password privileges and payloads remains pending.

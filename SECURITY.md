@@ -64,5 +64,5 @@ data or real credentials. There is no established response SLA or bug bounty pol
 - Treat service names, URLs, and integration responses as untrusted data.
 
 See the [README](README.md) for backup and recovery, and
-[architecture](docs/arquitetura.md) for risks and planned controls. Controls
+[architecture](docs/architecture.md) for risks and planned controls. Controls
 described as planned should not be assumed to be implemented yet.

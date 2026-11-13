@@ -4,7 +4,7 @@ import { integrationDefinitions } from './generated/definitions.js';
  * Built-in integration definitions. Pure data: nothing here runs code and nothing is loaded at
  * runtime from the database, the network or the user. The backend validates every manifest with a
  * schema at startup and runs it with one reviewed interpreter; the frontend generates the
- * connection form and the widget text from the same definitions. See docs/decisoes/0009.
+ * connection form and the widget text from the same definitions. See docs/decisions/0009.
  */
 export type FieldKind = 'url' | 'text' | 'secret' | 'token-id';
 export type ManifestField = {

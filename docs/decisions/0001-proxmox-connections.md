@@ -35,4 +35,4 @@ legacy HTTP routes (`/api/proxmox/*`), the single-endpoint transport and every f
 the `.proxmox` file outside the migrator were removed. A Proxmox widget proposal and the MCP
 `list_proxmox_resources` tool work only through connections. The migrator, `validateProxmoxConfig`
 and the legacy file handling remain until the maintainer confirms no unmigrated installation is
-left (tracked in `docs/evolucao.md`).
+left (tracked in `docs/evolution.md`).
