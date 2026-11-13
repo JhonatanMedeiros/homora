@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { CoolifyResourceType, ResourceLink } from '@homora/shared';
+import type { ResourceType, ResourceLink } from '@homora/shared';
+import { hasInventoryDomain } from '@homora/integrations';
 
 export class ResourceLinkError extends Error {
   constructor(readonly code: 'service-not-found' | 'integration-not-found' | 'invalid-data') {
@@ -11,7 +12,7 @@ export class ResourceLinkError extends Error {
 export type ResourceLinkInput = {
   integrationId: number;
   resourceUuid: string;
-  resourceType: CoolifyResourceType;
+  resourceType: ResourceType;
   name: string;
   url: string | null;
 };
@@ -55,7 +56,8 @@ export function createResourceLinks(sqlite: DatabaseSync, now: () => number = Da
         .prepare('SELECT type FROM integration_instances WHERE id=?')
         .get(input.integrationId) as { type: string } | undefined;
       if (!connection) throw new ResourceLinkError('integration-not-found');
-      if (connection.type !== 'coolify') throw new ResourceLinkError('invalid-data');
+      if (!hasInventoryDomain(connection.type, 'resources'))
+        throw new ResourceLinkError('invalid-data');
       sqlite
         .prepare(
           `INSERT INTO integration_resource_links

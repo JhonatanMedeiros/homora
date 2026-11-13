@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { AGENT_SCOPES } from './agent-scopes.js';
+import { integrationTools } from '@homora/integrations/backend/mcp';
 import type { McpRuntimeContext } from './mcp-tool-context.js';
 
 export function registerMcpCapabilitiesTool(
@@ -60,7 +61,7 @@ export function registerMcpCapabilitiesTool(
           'propose_agent_revoke',
           'propose_agent_rotate',
         ].map((name) => ({ name, scopes: ['agents:propose'] })),
-        { name: 'list_proxmox_resources', scopes: ['proxmox:read'] },
+        ...integrationTools().map(({ name, scopes }) => ({ name, scopes: [...scopes] })),
         ...['propose_service_card', 'propose_card_order'].map((name) => ({
           name,
           scopes: ['proposals:create'],

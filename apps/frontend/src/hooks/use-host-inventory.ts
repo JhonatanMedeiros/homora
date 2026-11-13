@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { hasInventoryDomain } from '@homora/integrations';
 import type {
   HostConnection,
   HostGuest,
@@ -28,7 +29,9 @@ export function useHostInventory(enabled: boolean, needed: number[]) {
       .then((rows) => {
         if (!active) return;
         setConnections(
-          rows.filter((row) => row.type === 'proxmox').map(({ id, name }) => ({ id, name })),
+          rows
+            .filter((row) => hasInventoryDomain(row.type, 'hosts'))
+            .map(({ id, name }) => ({ id, name })),
         );
         setConnectionsLoaded(true);
       })

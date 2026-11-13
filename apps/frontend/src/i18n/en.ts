@@ -1,3 +1,4 @@
+import { integrationEnglish } from '@homora/integrations/translations';
 import { en as core } from './messages/core';
 import { en as appShell } from './messages/app-shell';
 import { en as serviceCards } from './messages/service-cards';
@@ -13,7 +14,7 @@ import { en as status } from './messages/status';
 import { en as settings } from './messages/settings';
 import { en as hosts } from './messages/hosts';
 import { en as appearance } from './messages/appearance';
-import { en as coolify } from './messages/coolify';
+import { en as resourceLink } from './messages/resources';
 
 /** Source of truth for translation keys: every language must provide these exact keys. */
 export const en = {
@@ -24,6 +25,7 @@ export const en = {
   ...serviceForm,
   ...agents,
   ...integrations,
+  ...integrationEnglish,
   ...connections,
   ...transfer,
   ...account,
@@ -32,6 +34,6 @@ export const en = {
   ...settings,
   ...hosts,
   ...appearance,
-  ...coolify,
+  ...resourceLink,
 } as const;
 export type MessageKey = keyof typeof en;

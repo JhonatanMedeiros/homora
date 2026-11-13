@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createIntegration } from '../create-integration.mjs';
+import { generateCatalog } from '../../packages/integrations/scripts/integration-catalog.mjs';
 
 test('creates unregistered manifest and code skeletons without overwriting', async () => {
   const root = await mkdtemp(join(tmpdir(), 'homora-integration-'));
@@ -21,9 +22,16 @@ test('creates unregistered manifest and code skeletons without overwriting', asy
     await assert.rejects(createIntegration(root, 'my-service', 'manifest'), { code: 'EEXIST' });
     assert.equal(await readFile(join(manifest, 'definition.ts'), 'utf8'), original);
     const code = await createIntegration(root, 'other-service', 'code');
-    assert.match(await readFile(join(code, 'backend.ts.example'), 'utf8'), /context\.transport/);
+    assert.match(
+      await readFile(join(code, 'registration.ts.example'), 'utf8'),
+      /context\.transport/,
+    );
     assert.match(await readFile(join(code, 'frontend.ts.example'), 'utf8'), /definePresentation/);
     assert.match(await readFile(join(code, 'contract.test.ts.example'), 'utf8'), /createAdapter/);
+    assert.match(
+      await readFile(join(code, 'integration.json.example'), 'utf8'),
+      /createRegistration/,
+    );
     for (const id of ['../outside', 'x', 'a/b', 'a--b', 'Upper'])
       await assert.rejects(createIntegration(root, id, 'manifest'));
     await assert.rejects(createIntegration(root, 'valid-name', 'invalid'));
@@ -42,10 +50,19 @@ test('generated definitions compile against the SDK without modifying the reposi
     await cp(join(repo, 'packages/integrations/tsconfig.json'), join(target, 'tsconfig.json'));
     await cp(join(repo, 'tsconfig.json'), join(root, 'tsconfig.json'));
     await symlink(join(repo, 'node_modules'), join(root, 'node_modules'), 'dir');
-    await createIntegration(root, 'example-manifest', 'manifest');
+    const manifest = await createIntegration(root, 'example-manifest', 'manifest');
     const code = await createIntegration(root, 'example-code', 'code');
     await cp(join(code, 'backend.ts.example'), join(code, 'backend.ts'));
+    await cp(join(code, 'registration.ts.example'), join(code, 'registration.ts'));
     await cp(join(code, 'frontend.ts.example'), join(code, 'frontend.ts'));
+    await cp(join(manifest, 'integration.json.example'), join(manifest, 'integration.json'));
+    const codeDescriptor = JSON.parse(
+      await readFile(join(code, 'integration.json.example'), 'utf8'),
+    );
+    codeDescriptor.order = 10010;
+    await writeFile(join(code, 'integration.json'), JSON.stringify(codeDescriptor));
+    await generateCatalog(root, true);
+    await generateCatalog(root);
     await promisify(execFile)(join(repo, 'node_modules/.bin/tsc'), [
       '-p',
       join(target, 'tsconfig.json'),

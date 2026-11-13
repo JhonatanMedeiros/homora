@@ -16,21 +16,21 @@ payloads, POST, a login flow, a non-whitelisted header) stays a **code adapter**
 needs a write call or a new header is out of scope until a decision says otherwise.
 
 Each built-in definition and its response fixtures live in a separate directory under
-`packages/integrations/src/integrations/`; shared URL field defaults live in `fields.ts`. The central
-definition file explicitly registers and exports them.
+`packages/integrations/src/integrations/`; shared URL field defaults live in `fields.ts`. Static
+catalogs are generated from explicit integration descriptors.
 The SDK exposes backend registration contracts from `@homora/integrations/backend` and frontend
 presentation contracts from `@homora/integrations/frontend`. It does not load plugins at runtime.
 
 ### Files to touch for a manifest
 
-| Purpose                 | File                                                                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Manifest                | Define the manifest (see `packages/integrations/src/integrations/jellyfin/definition.ts`) and explicitly register it in `integrationDefinitions` |
-| Brand icon              | must already be in `packages/shared/src/brand-icons.ts` (`BRAND_ICON_NAMES`); add the logo there first if not                                    |
-| Fixtures                | `packages/integrations/src/integrations/<type>/fixtures/*.json`                                                                                  |
-| Contract and unit tests | a `runAdapterContract` call in `<type>/contract.test.ts` (use `createManifestAdapter`), and a data-mapping case in `manifest-adapters.test.ts`   |
-| Translations (optional) | `labelKey` and `key` values must exist in `apps/frontend/src/i18n/messages`; without them the English text shows                                 |
-| Docs                    | the integration entry in `docs/integracoes.md` with required permissions                                                                         |
+| Purpose                 | File                                                                                                                                           |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Manifest                | Define the manifest (see `packages/integrations/src/integrations/jellyfin/definition.ts`) and add an integration descriptor                    |
+| Brand icon              | must already be in `packages/shared/src/brand-icons.ts` (`BRAND_ICON_NAMES`); add the logo there first if not                                  |
+| Fixtures                | `packages/integrations/src/integrations/<type>/fixtures/*.json`                                                                                |
+| Contract and unit tests | a `runAdapterContract` call in `<type>/contract.test.ts` (use `createManifestAdapter`), and a data-mapping case in `manifest-adapters.test.ts` |
+| Translations (optional) | Add `messages.ts` exporting `en` and `ptBR` and set `translations: true` in the descriptor; otherwise the English fallback shows               |
+| Docs                    | the integration entry in `docs/integracoes.md` with required permissions                                                                       |
 
 Type enums, stored fields, the connection form, widget text, the picker and the catalog endpoint derive
 from the manifest. You do not edit `input-schemas.ts`, `managed-proposals.ts`,
@@ -42,26 +42,41 @@ From the repository root, run `pnpm integration:create my-service manifest` for 
 integration, or `pnpm integration:create my-service code` for one requiring code. The command
 creates a new directory with an illustrative definition, fixture, checklist and templates; it never
 overwrites an existing directory or registers the integration. Replace all placeholders, cite the
-fixture source, implement the contract tests and register the definition before submitting it. For a
-code adapter, the backend and frontend templates must also be implemented and registered. The
-generated example is not evidence of compatibility with a real service.
+fixture source and implement the contract tests. Rename `integration.json.example` to
+`integration.json`, select a unique order and run `pnpm integration:catalog`. The command generates
+static imports for the definition, declared factories, optional translations, development examples and MCP tools. For a code
+adapter, implement the backend and frontend templates first. The example is not evidence of
+compatibility with a real service. Builds check that the catalogs are current; integration code is
+never discovered or loaded dynamically at runtime.
 
 ### Files to touch for a code adapter
 
-| Purpose      | File                                                                                                                                   |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Adapter      | `<type>/backend.ts`: `create<Name>Adapter(transport)` returning `{ type, label, capabilities, validate, collect }`                     |
-| Metadata     | a `kind: 'code'` definition in the integration directory, registered in `integrationDefinitions`                                       |
-| Registration | use `defineBackendIntegration` and register the resulting entry in `apps/backend/src/integration-registry.ts`                          |
-| Display      | implement a presentation in the integration directory and register it in `features/connections/presentations`; see Coolify and Proxmox |
-| Tests, docs  | as above                                                                                                                               |
+| Purpose      | File                                                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Adapter      | `<type>/backend.ts`: `create<Name>Adapter(transport)` returning `{ type, label, capabilities, validate, collect }` |
+| Metadata     | a `kind: 'code'` definition and descriptor in the integration directory                                            |
+| Registration | use `defineBackendIntegration` and declare the factory in the descriptor                                           |
+| Display      | implement a presentation in the integration directory and declare its factory in the descriptor                    |
+| Tests, docs  | as above                                                                                                           |
 
 `defineBackendIntegration` derives public metadata from the shared definition. Its optional
 `prepareInventory` and `prepareAddresses` hooks serve authenticated, capability-specific workflows;
 `retryDelaySeconds` can request a bounded pause after a known error, as Coolify does. These hooks do
 not grant network permissions: reads still use the injected transport and host destination policy.
+An inventory declares its `inventoryDomain` (`hosts` or `resources`) in its definition, so host
+workflows select the correct capability without checking an integration's identifier.
 For frontend displays, `definePresentation` returns bounded text and statistics, with translation
-injected by the host. Declarative displays use `renderManifestDisplay` automatically.
+injected by the host. Declarative displays use `renderManifestDisplay` automatically. A descriptor
+can opt into `messages.ts` with `translations: true`; export `en` and `ptBR` with matching keys.
+Optional `mcp` factories and their namespaced `scopes` are generated into the catalog. Tools are
+read-only, checked against their declared scopes by the host, and can access only connections of
+their own integration type. Optional `development: true` loads the integration's local demo fixture.
+
+The `hosts` inventory domain is a specific node/VM/container contract, including numeric VM IDs;
+`resources` is the normalized application/service inventory contract. An integration may declare a
+domain only if it implements that entire contract. These domains are not arbitrary inventories.
+The generic routes, forms, resource workflows and widgets consume these contracts; new integrations
+should not add type-specific branches to either application.
 
 ## Security rules
 

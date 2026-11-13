@@ -13,7 +13,7 @@ import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
 import { CardWidgets } from '@/components/card-widgets';
-import { CoolifyLine } from '@/components/coolify-line';
+import { ResourceLine } from '@/components/resource-line';
 import { ServiceFailureDetails } from '@/components/service-failure-details';
 import { ServiceUptime } from '@/components/service-uptime';
 import { cn } from '@/lib/utils';
@@ -26,8 +26,8 @@ export function ServiceCardTile({
   service,
   status,
   widgets = [],
-  coolify,
-  onCoolify = () => {},
+  resourceLink,
+  onResource = () => {},
   uptime,
   uptimeRange = '24h',
   onUptimeRangeChange = () => {},
@@ -104,7 +104,7 @@ export function ServiceCardTile({
             <ItemDescription className="line-clamp-2">{service.description}</ItemDescription>
           )}
         <CardWidgets widgets={widgets} />
-        {coolify && <CoolifyLine info={coolify} onOpen={onCoolify} />}
+        {resourceLink && <ResourceLine info={resourceLink} onOpen={onResource} />}
         {view.note && (
           <div className="relative z-10 -mb-1 flex items-center justify-between gap-2">
             <p

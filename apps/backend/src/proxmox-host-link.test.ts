@@ -6,7 +6,7 @@ import { createDatabase } from '@homora/db';
 import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
-import { inventoryProxmox } from './proxmox-inventory.js';
+import { inventoryProxmox } from '@homora/integrations/proxmox/inventory';
 import { serviceProposalSchema } from './input-schemas.js';
 import { getAuthorizedResponse } from './network-request.js';
 

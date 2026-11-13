@@ -8,6 +8,7 @@ import {
   isVmid,
 } from '@homora/shared';
 import { z } from 'zod';
+import { LEGACY_WIDGET_SOURCES } from '@homora/integrations';
 import { AGENT_SCOPES } from './agent-scopes.js';
 import {
   integrationTypeSchema as integrationType,
@@ -162,7 +163,7 @@ export const updateConnectionSchema = connectionFields;
 export const createWidgetSchema = z
   .object({
     integrationId: z.number().int().safe().positive().optional(),
-    source: z.literal('proxmox').optional(),
+    source: z.enum(LEGACY_WIDGET_SOURCES).optional(),
     name: z.string().trim().min(1).max(80),
     serviceId: z.number().int().safe().positive().nullable().optional(),
   })

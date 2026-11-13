@@ -1,11 +1,11 @@
 import { definePresentation, type WidgetStat } from '../../frontend.js';
 
 type Key =
-  | 'coolify.stat.total'
-  | 'coolify.stat.running'
-  | 'coolify.stat.degraded'
-  | 'coolify.stat.stopped'
-  | 'coolify.stat.unknown';
+  | 'resources.stat.total'
+  | 'resources.stat.running'
+  | 'resources.stat.degraded'
+  | 'resources.stat.stopped'
+  | 'resources.stat.unknown';
 
 export function parseSummary(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -31,17 +31,17 @@ export function createCoolifyPresentation(t: (key: Key) => string) {
     const summary = parseSummary(value);
     if (!summary) return null;
     const stats: WidgetStat[] = [
-      { label: t('coolify.stat.total'), value: String(summary.total) },
-      { label: t('coolify.stat.running'), value: String(summary.running) },
+      { label: t('resources.stat.total'), value: String(summary.total) },
+      { label: t('resources.stat.running'), value: String(summary.running) },
     ];
     if (summary.degraded > 0)
-      stats.push({ label: t('coolify.stat.degraded'), value: String(summary.degraded) });
+      stats.push({ label: t('resources.stat.degraded'), value: String(summary.degraded) });
     if (summary.stopped > 0)
-      stats.push({ label: t('coolify.stat.stopped'), value: String(summary.stopped) });
+      stats.push({ label: t('resources.stat.stopped'), value: String(summary.stopped) });
     if (summary.unknown > 0)
-      stats.push({ label: t('coolify.stat.unknown'), value: String(summary.unknown) });
+      stats.push({ label: t('resources.stat.unknown'), value: String(summary.unknown) });
     return stats;
   }
 
-  return definePresentation({ stats });
+  return definePresentation({ stats, placeholderCount: 5 });
 }

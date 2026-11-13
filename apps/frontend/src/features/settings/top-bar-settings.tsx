@@ -7,7 +7,7 @@ import { useClockPreferences } from '@/hooks/use-clock-preferences';
 import { useShortcutsPreference } from '@/hooks/use-shortcuts-preference';
 import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
 import { useTopBar } from '@/hooks/use-top-bar';
-import { useProxmoxConnections } from '@/hooks/use-proxmox-connections';
+import { useTelemetryConnections } from '@/hooks/use-telemetry-connections';
 import { t, type MessageKey } from '@/i18n';
 import { browserTimeZone, listTimeZones } from '@/lib/clock';
 import {
@@ -33,7 +33,7 @@ export function TopBarSettings() {
   const search = useWebSearchPreferences();
   const [customDraft, setCustomDraft] = useState(search.customUrl);
   const [customProblem, setCustomProblem] = useState<TemplateProblem | null>(null);
-  const connections = useProxmoxConnections();
+  const connections = useTelemetryConnections();
   const [source, setSource] = useState(() => {
     try {
       return localStorage.getItem('homora-top-bar-connection') ?? '';

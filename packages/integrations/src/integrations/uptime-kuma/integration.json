@@ -1,0 +1,5 @@
+{
+  "type": "uptime-kuma",
+  "order": 30,
+  "definition": "uptimeKumaManifest"
+}

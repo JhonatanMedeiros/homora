@@ -1,0 +1,5 @@
+{
+  "type": "speedtest-tracker",
+  "order": 50,
+  "definition": "speedtestTrackerManifest"
+}

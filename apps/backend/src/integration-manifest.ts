@@ -57,6 +57,7 @@ const field = z
       .optional(),
     httpsOnly: z.boolean().optional(),
     allowPath: z.boolean().optional(),
+    picker: z.literal('host-node').optional(),
     identity: z.boolean().optional(),
     defaultValue: z.string().max(2048).optional(),
     errorCode: z
@@ -153,6 +154,8 @@ const manifestSchema = z
       .array(z.string().regex(/^[a-z-]{2,40}$/))
       .min(1)
       .max(8),
+    inventoryDomain: z.enum(['hosts', 'resources']).optional(),
+    systemTelemetry: z.boolean().optional(),
     fields: z.array(field).min(1).max(8),
     auth: z.discriminatedUnion('type', [
       z.object({ type: z.literal('none') }).strict(),
@@ -257,6 +260,13 @@ export function assertValidDefinition(definition: IntegrationDefinition): void {
     !(BRAND_ICON_NAMES as readonly string[]).includes(definition.brandIcon)
   )
     fail(`unknown brand icon ${definition.brandIcon}`);
+  if (
+    definition.inventoryDomain !== undefined &&
+    !['hosts', 'resources'].includes(definition.inventoryDomain)
+  )
+    fail('unknown inventory domain');
+  if (definition.systemTelemetry !== undefined && typeof definition.systemTelemetry !== 'boolean')
+    fail('invalid system telemetry flag');
   const keys = new Set<string>();
   for (const item of definition.fields) {
     if (item.errorCode && !Object.hasOwn(ERROR_MESSAGES, item.errorCode))
@@ -269,6 +279,8 @@ export function assertValidDefinition(definition: IntegrationDefinition): void {
     if (item.kind === 'token-id' && item.key !== 'tokenId')
       fail('the token field must be named tokenId');
     if (item.kind === 'text' && RESERVED_KEYS.includes(item.key)) fail(`reserved key ${item.key}`);
+    if (item.picker && (item.kind !== 'text' || definition.inventoryDomain !== 'hosts'))
+      fail('host node picker requires a text field and host inventory');
   }
   if (!keys.has('url')) fail('missing url field');
   if (definition.kind === 'code') return;

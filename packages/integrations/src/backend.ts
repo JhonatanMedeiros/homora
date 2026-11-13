@@ -22,10 +22,20 @@ export type IntegrationContext = {
   credentials: { secret?: string; ca?: string; tokenId?: string };
   transport?: IntegrationTransport;
 };
+export type InputErrorFactory = (
+  code: 'invalid-data' | 'https-url-required' | 'invalid-token' | 'invalid-config',
+) => Error;
+
+export function transportFrom(context: IntegrationContext): IntegrationTransport {
+  if (!context.transport) throw new Error('Integration transport unavailable.');
+  return context.transport;
+}
 export type IntegrationRegistration = IntegrationMetadata & {
   definition?: IntegrationDefinition;
   prepare?: (context: IntegrationContext) => () => Promise<unknown>;
   prepareInventory?: (context: IntegrationContext) => () => Promise<unknown>;
+  /** Shape of the authenticated inventory capability, if the integration provides one. */
+  inventoryDomain?: 'hosts' | 'resources';
   prepareAddresses?: (
     context: IntegrationContext,
   ) => (guests: readonly unknown[]) => Promise<unknown>;
@@ -41,11 +51,16 @@ export function defineBackendIntegration(
     'prepare' | 'prepareInventory' | 'prepareAddresses' | 'retryDelaySeconds'
   >,
 ): IntegrationRegistration {
+  if (definition.inventoryDomain && !hooks.prepareInventory)
+    throw new Error(`Integration ${definition.type} declares inventory without an inventory hook.`);
+  if (hooks.prepareAddresses && definition.inventoryDomain !== 'hosts')
+    throw new Error(`Integration ${definition.type} declares addresses without host inventory.`);
   return {
     ...hooks,
     type: definition.type,
     label: definition.label,
     capabilities: definition.capabilities,
+    inventoryDomain: definition.inventoryDomain,
     definition,
   };
 }

@@ -41,5 +41,5 @@ export function createProxmoxPresentation(t: (key: Key) => string) {
     return stats;
   }
 
-  return definePresentation({ stats });
+  return definePresentation({ stats, placeholderCount: 5 });
 }

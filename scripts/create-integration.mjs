@@ -15,11 +15,12 @@ export async function createIntegration(root, id, kind) {
   await mkdir(target);
   await mkdir(join(target, 'fixtures'));
   const name = JSON.stringify(id);
+  const symbol = `${id.replace(/-([a-z0-9])/g, (_, letter) => letter.toUpperCase())}${kind === 'manifest' ? 'Manifest' : 'Definition'}`;
   const identity = `  type: ${name},\n  label: ${name},\n  mark: 'NEW',\n  capabilities: ['summary'],\n  fields: [urlField({ httpsOnly: true })],`;
   const content =
     kind === 'manifest'
-      ? `import type { IntegrationManifest } from '../../integration-manifest.js';\nimport { urlField } from '../fields.js';\n\n// TODO: replace the illustrative endpoint, response and display before registration.\nexport const definition: IntegrationManifest = {\n  kind: 'manifest',\n${identity}\n  auth: { type: 'none' },\n  requests: [{ id: 'summary', path: '/example' }],\n  extract: [{ op: 'pick', out: 'name', path: ['name'], type: 'string', maxLength: 128 }],\n  display: { summary: { text: '{name}' }, stats: [{ label: 'Name', value: '{name}' }] },\n};\n`
-      : `import type { CodeDefinition } from '../../integration-manifest.js';\nimport { urlField } from '../fields.js';\n\n// TODO: describe the real fields and capabilities before registration.\nexport const definition: CodeDefinition = {\n  kind: 'code',\n${identity}\n  display: 'custom',\n};\n`;
+      ? `import type { IntegrationManifest } from '../../integration-manifest.js';\nimport { urlField } from '../fields.js';\n\n// TODO: replace the illustrative endpoint, response and display before registration.\nexport const ${symbol}: IntegrationManifest = {\n  kind: 'manifest',\n${identity}\n  auth: { type: 'none' },\n  requests: [{ id: 'summary', path: '/example' }],\n  extract: [{ op: 'pick', out: 'name', path: ['name'], type: 'string', maxLength: 128 }],\n  display: { summary: { text: '{name}' }, stats: [{ label: 'Name', value: '{name}' }] },\n};\n`
+      : `import type { CodeDefinition } from '../../integration-manifest.js';\nimport { urlField } from '../fields.js';\n\n// TODO: describe the real fields and capabilities before registration.\nexport const ${symbol}: CodeDefinition = {\n  kind: 'code',\n${identity}\n  display: 'custom',\n};\n`;
   const fixture = {
     _source: {
       kind: 'illustrative',
@@ -28,35 +29,50 @@ export async function createIntegration(root, id, kind) {
     },
     body: { name: 'Example' },
   };
-  const test = `// Template: rename to contract.test.ts and replace the illustrative values.\nimport { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';\nimport { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';\nimport { fixture } from '../../../../../apps/backend/src/integration-test-support.js';\nimport { definition } from './definition.js';\n\nrunAdapterContract({\n  name: ${name},\n  create: (transport) => createManifestAdapter(definition, transport),\n  validConfig: { url: 'https://service.example.test' },\n  secrets: [],\n  invalidConfigs: [{ label: 'credentials in URL', config: { url: 'https://user:pass@example.test' } }],\n  fixtures: {\n    valid: { body: fixture('${id}/example.json'), expected: { name: 'Example' } },\n    wrongShape: [{ label: 'missing name', body: {} }],\n    oversized: [{ label: 'long name', body: { name: 'x'.repeat(129) } }],\n  },\n  authenticated: false,\n});\n`;
+  const test = `// Template: rename to contract.test.ts and replace the illustrative values.\nimport { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';\nimport { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';\nimport { fixture } from '../../../../../apps/backend/src/integration-test-support.js';\nimport { ${symbol} as definition } from './definition.js';\n\nrunAdapterContract({\n  name: ${name},\n  create: (transport) => createManifestAdapter(definition, transport),\n  validConfig: { url: 'https://service.example.test' },\n  secrets: [],\n  invalidConfigs: [{ label: 'credentials in URL', config: { url: 'https://user:pass@example.test' } }],\n  fixtures: {\n    valid: { body: fixture('${id}/example.json'), expected: { name: 'Example' } },\n    wrongShape: [{ label: 'missing name', body: {} }],\n    oversized: [{ label: 'long name', body: { name: 'x'.repeat(129) } }],\n  },\n  authenticated: false,\n});\n`;
   const codeTest = test
     .replace(
       "import { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';\n",
       '',
     )
     .replace(
-      "import { definition } from './definition.js';",
+      `import { ${symbol} as definition } from './definition.js';`,
       "import { createAdapter } from './backend.js';",
     )
     .replace(
       'create: (transport) => createManifestAdapter(definition, transport),',
       'create: createAdapter,',
     );
-  const backend = `// Template: rename to backend.ts and implement validation and collection.\nimport { defineBackendIntegration, type IntegrationAdapter, type IntegrationTransport } from '../../backend.js';\nimport { definition } from './definition.js';\n\ntype Config = { url: string };\ntype Data = { name: string };\n\nexport function createAdapter(_transport: IntegrationTransport): IntegrationAdapter<Config, Data> {\n  return {\n    type: definition.type, label: definition.label, capabilities: definition.capabilities,\n    validate(_config) { throw new Error('Validation not implemented.'); },\n    async collect(_config) { throw new Error('Collection not implemented.'); },\n  };\n}\n\nexport const registration = defineBackendIntegration(definition, {\n  prepare(context) {\n    if (!context.transport) throw new Error('Integration transport unavailable.');\n    const adapter = createAdapter(context.transport);\n    const config = adapter.validate({ url: String(context.publicConfig.url ?? '') });\n    return () => adapter.collect(config);\n  },\n});\n`;
-  const frontend = `// Template: rename to frontend.ts and implement a presentation factory.\nimport { definePresentation } from '../../frontend.js';\n\nexport const presentation = definePresentation({\n  stats(_value) {\n    // TODO: validate returned data and produce translated widget stats.\n    return null;\n  },\n});\n`;
-  const readme = `# ${id}\n\nThis is an unregistered ${kind} skeleton, not a working integration.\n\n- Replace the example definition and fixture with the service's documented API and record the fixture source.\n- Rename contract.test.ts.example to contract.test.ts and adapt its cases, including credentials and all failure paths.\n- Register the definition explicitly in packages/integrations/src/integration-manifest.ts.\n${kind === 'code' ? '- Implement and register the backend adapter and frontend presentation; see docs/adapters.md.\n' : ''}- Document required read-only permissions and mark the integration unvalidated until checked against a real instance.\n- Run pnpm check and pnpm build.\n\nNever use a network client directly: use the host-provided restricted transport.\n`;
+  const backend = `// Template: rename to backend.ts and implement validation and collection.\nimport type { IntegrationAdapter, IntegrationTransport } from '../../backend.js';\nimport { ${symbol} as definition } from './definition.js';\n\ntype Config = { url: string };\ntype Data = { name: string };\n\nexport function createAdapter(_transport: IntegrationTransport): IntegrationAdapter<Config, Data> {\n  return {\n    type: definition.type, label: definition.label, capabilities: definition.capabilities,\n    validate(_config) { throw new Error('Validation not implemented.'); },\n    async collect(_config) { throw new Error('Collection not implemented.'); },\n  };\n}\n`;
+  const registration = `// Template: rename to registration.ts after implementing the adapter.\nimport { defineBackendIntegration, type InputErrorFactory } from '../../backend.js';\nimport { ${symbol} as definition } from './definition.js';\nimport { createAdapter } from './backend.js';\n\nexport function createRegistration(_inputError: InputErrorFactory) {\n  return defineBackendIntegration(definition, {\n    prepare(context) {\n      if (!context.transport) throw new Error('Integration transport unavailable.');\n      const adapter = createAdapter(context.transport);\n      const config = adapter.validate({ url: String(context.publicConfig.url ?? '') });\n      return () => adapter.collect(config);\n    },\n  });\n}\n`;
+  const frontend = `// Template: rename to frontend.ts and implement a presentation factory.\nimport { definePresentation } from '../../frontend.js';\n\nexport function createPresentation(_translate: (key: string) => string) {\n  return definePresentation({\n    stats(_value) {\n      // TODO: validate returned data and produce translated widget stats.\n      return null;\n    },\n  });\n}\n`;
+  const descriptor = {
+    type: id,
+    order: 10000,
+    definition: symbol,
+    ...(kind === 'code' ? { backend: 'createRegistration', frontend: 'createPresentation' } : {}),
+  };
+  const readme = `# ${id}\n\nThis is an unregistered ${kind} skeleton, not a working integration.\n\n- Replace the example definition and fixture with the service's documented API and record the fixture source.\n- Rename contract.test.ts.example to contract.test.ts and adapt its cases, including credentials and all failure paths.\n${kind === 'code' ? '- Implement the backend, registration and frontend templates.\n' : ''}- Set a unique order in integration.json.example, rename it to integration.json, then run pnpm integration:catalog.\n- Document required read-only permissions and mark the integration unvalidated until checked against a real instance.\n- Run pnpm check and pnpm build.\n\nNever use a network client directly: use the host-provided restricted transport.\n`;
   await Promise.all([
     writeFile(join(target, 'definition.ts'), content, { flag: 'wx' }),
     writeFile(join(target, 'fixtures/example.json'), `${JSON.stringify(fixture, null, 2)}\n`, {
       flag: 'wx',
     }),
     writeFile(join(target, 'README.md'), readme, { flag: 'wx' }),
+    writeFile(
+      join(target, 'integration.json.example'),
+      `${JSON.stringify(descriptor, null, 2)}\n`,
+      {
+        flag: 'wx',
+      },
+    ),
     writeFile(join(target, 'contract.test.ts.example'), kind === 'manifest' ? test : codeTest, {
       flag: 'wx',
     }),
     ...(kind === 'code'
       ? [
           writeFile(join(target, 'backend.ts.example'), backend, { flag: 'wx' }),
+          writeFile(join(target, 'registration.ts.example'), registration, { flag: 'wx' }),
           writeFile(join(target, 'frontend.ts.example'), frontend, { flag: 'wx' }),
         ]
       : []),

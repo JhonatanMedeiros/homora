@@ -5,7 +5,7 @@ import {
   createCoolifyAdapter,
   normalizeCoolifyState,
   parseCoolifyUrls,
-} from '../../../../../apps/backend/src/coolify-connection.js';
+} from './testing.js';
 import type {
   FakeRequest,
   FakeResponse,

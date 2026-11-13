@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { createConfigurationTransfer } from './service-configuration-transfer.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { parseHostLink, type HostLink } from '@homora/shared';
+import { hasInventoryDomain } from '@homora/integrations';
 import { createServiceGroupConfiguration } from './service-group-configuration.js';
 import {
   createServiceCardConfiguration,
@@ -71,7 +72,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
       const connection = sqlite
         .prepare('SELECT type FROM integration_instances WHERE id=?')
         .get(host.connectionId) as { type: string } | undefined;
-      if (connection?.type !== 'proxmox') throw new HostLinkError();
+      if (!connection || !hasInventoryDomain(connection.type, 'hosts')) throw new HostLinkError();
     }
     sqlite
       .prepare(

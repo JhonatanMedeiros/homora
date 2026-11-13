@@ -26,7 +26,7 @@ export type ServiceChange =
 export class HostLinkError extends Error {
   readonly code = 'invalid-host' as const;
   constructor() {
-    super('Choose an existing Proxmox connection for the host.');
+    super('Choose an existing host inventory connection.');
     this.name = 'HostLinkError';
   }
 }

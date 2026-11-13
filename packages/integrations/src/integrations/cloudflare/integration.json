@@ -1,0 +1,5 @@
+{
+  "type": "cloudflare",
+  "order": 90,
+  "definition": "cloudflareManifest"
+}

@@ -1,3 +1,4 @@
+import { integrationPortuguese } from '@homora/integrations/translations';
 import type { MessageKey } from './en';
 import { ptBR as core } from './messages/core';
 import { ptBR as appShell } from './messages/app-shell';
@@ -14,7 +15,7 @@ import { ptBR as status } from './messages/status';
 import { ptBR as settings } from './messages/settings';
 import { ptBR as hosts } from './messages/hosts';
 import { ptBR as appearance } from './messages/appearance';
-import { ptBR as coolify } from './messages/coolify';
+import { ptBR as resourceLink } from './messages/resources';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -24,6 +25,7 @@ export const ptBR: Record<MessageKey, string> = {
   ...serviceForm,
   ...agents,
   ...integrations,
+  ...integrationPortuguese,
   ...connections,
   ...transfer,
   ...account,
@@ -32,5 +34,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...settings,
   ...hosts,
   ...appearance,
-  ...coolify,
+  ...resourceLink,
 };

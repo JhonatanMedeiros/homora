@@ -88,7 +88,7 @@ it('shows the current guest name, unlinks, and says "Host not found" for a vanis
   expect(screen.getByText('Host not found')).toBeTruthy();
 });
 
-it('points to Integrations when there is no Proxmox connection', () => {
+it('points to Integrations when there is no host inventory connection', () => {
   render(
     <HostPicker
       value={null}
@@ -99,7 +99,7 @@ it('points to Integrations when there is no Proxmox connection', () => {
       onReload={() => {}}
     />,
   );
-  expect(screen.getByText(/Add a Proxmox connection/)).toBeTruthy();
+  expect(screen.getByText(/Add a host inventory connection/)).toBeTruthy();
 });
 
 it('renders the Host view with node sections, an unlinked section and "Host not found"', () => {

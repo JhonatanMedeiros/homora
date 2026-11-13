@@ -1,0 +1,5 @@
+{
+  "type": "tailscale",
+  "order": 80,
+  "definition": "tailscaleManifest"
+}

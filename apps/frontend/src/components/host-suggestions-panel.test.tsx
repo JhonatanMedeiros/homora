@@ -163,5 +163,5 @@ it('shows the evidence computed by Homora for an agent host-link proposal', () =
   expect(screen.getByText('Host link suggestion')).toBeTruthy();
   expect(screen.getByText(/The service address 10.0.0.7/)).toBeTruthy();
   expect(screen.getByText('Medium')).toBeTruthy();
-  expect(screen.getByText(/Proxmox is never changed/)).toBeTruthy();
+  expect(screen.getByText(/The external system is never changed/)).toBeTruthy();
 });

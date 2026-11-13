@@ -1,19 +1,20 @@
-/** Text for the "runs on" link between cards and Proxmox guests, and the Host view. */
+/** Text for the "runs on" link between cards and infrastructure guests, and the Host view. */
 export const en = {
   'hosts.arrange': 'Arrange services',
   'hosts.arrange.group': 'Group',
   'hosts.arrange.host': 'Host',
   'hosts.runsOn': 'Runs on',
   'hosts.runsOnHint':
-    'Link this card to the Proxmox guest it runs on. Homora never changes Proxmox.',
+    'Link this card to the infrastructure guest it runs on. Homora never changes the external system.',
   'hosts.none': 'Not linked to a host',
-  'hosts.noConnections': 'Add a Proxmox connection in Integrations to link this service to a host.',
+  'hosts.noConnections':
+    'Add a host inventory connection in Integrations to link this service to a host.',
   'hosts.choose': 'Choose host',
   'hosts.change': 'Change host',
   'hosts.unlink': 'Unlink host',
   'hosts.sheetTitle': 'Choose host',
   'hosts.sheetDescription': 'Pick the node and guest where this service runs.',
-  'hosts.connection': 'Proxmox connection',
+  'hosts.connection': 'host inventory connection',
   'hosts.node': 'Node',
   'hosts.allNodes': 'All nodes',
   'hosts.search': 'Search guests',
@@ -21,10 +22,11 @@ export const en = {
   'hosts.guests': 'Guests',
   'hosts.noGuests': 'No guests match.',
   'hosts.loading': 'Loading guests…',
-  'hosts.loadError': 'Could not read the Proxmox inventory.',
+  'hosts.loadError': 'Could not read the host inventory.',
   'hosts.retry': 'Try again',
   'hosts.notFound': 'Host not found',
-  'hosts.notFoundHint': 'This guest no longer exists in Proxmox. Choose another host or unlink it.',
+  'hosts.notFoundHint':
+    'This guest no longer exists in the inventory. Choose another host or unlink it.',
   'hosts.unavailable': 'Host unavailable',
   'hosts.guestLabel': '{name} · {vmid}',
   'hosts.on': 'on {node}',
@@ -44,7 +46,8 @@ export const en = {
   'hosts.view.unlinked': 'Not linked',
   'hosts.view.notFound': 'Host not found',
   'hosts.view.unavailable': 'Host unavailable',
-  'hosts.view.unavailableHint': 'Proxmox could not be reached, so these hosts are unknown.',
+  'hosts.view.unavailableHint':
+    'The host connection could not be reached, so these hosts are unknown.',
   'hosts.view.edit': 'Edit {name}',
   'hosts.view.openCard': 'Open {name}',
   'hosts.impact.hostOffline': 'Host offline',
@@ -61,10 +64,10 @@ export const en = {
   'managed.host': 'Host',
   'managed.strength': 'Evidence strength',
   'managed.evidence': 'Evidence',
-  'managed.connectionId': 'Proxmox connection',
+  'managed.connectionId': 'host inventory connection',
   'managed.vmid': 'Guest ID',
   'managed.hostNote':
-    'Approving only saves the link in Homora. Proxmox is never changed. The evidence was computed by Homora, not by the agent.',
+    'Approving only saves the link in Homora. The external system is never changed. The evidence was computed by Homora, not by the agent.',
   'hosts.strength.strong': 'Strong',
   'hosts.strength.medium': 'Medium',
   'hosts.suggest.open': 'Suggested hosts',
@@ -72,9 +75,10 @@ export const en = {
   'hosts.suggest.description':
     'Homora suggests a host only when independent evidence agrees. A name match is never enough. Accepting only saves the link in Homora.',
   'hosts.suggest.loading': 'Looking for evidence…',
-  'hosts.suggest.error': 'Could not read suggestions. Check the Proxmox connection and try again.',
+  'hosts.suggest.error':
+    'Could not read suggestions. Check the host inventory connection and try again.',
   'hosts.suggest.partial':
-    'Some Proxmox connections could not be read, so their guests are missing.',
+    'Some host inventory connections could not be read, so their guests are missing.',
   'hosts.suggest.empty': 'Every service already has a host, or none needs one.',
   'hosts.suggest.select': 'Select {name}',
   'hosts.suggest.accept': 'Accept',
@@ -153,7 +157,7 @@ export const en = {
   'apiError.dependency-limit': 'A service can have at most 50 dependencies.',
   'activity.event.service-dependency-add': 'Service dependency added',
   'activity.event.service-dependency-remove': 'Service dependency removed',
-  'apiError.invalid-host': 'Choose an existing Proxmox connection for the host.',
+  'apiError.invalid-host': 'Choose an existing host inventory connection for the host.',
   'activity.event.service-host-link': 'Service linked to a host',
   'activity.event.service-host-unlink': 'Service unlinked from a host',
 } as const;
@@ -164,16 +168,16 @@ export const ptBR: Record<keyof typeof en, string> = {
   'hosts.arrange.host': 'Host',
   'hosts.runsOn': 'Roda em',
   'hosts.runsOnHint':
-    'Vincule este cartão ao convidado do Proxmox em que ele roda. O Homora nunca altera o Proxmox.',
+    'Vincule este cartão ao convidado da infraestrutura em que ele roda. O Homora nunca altera o sistema externo.',
   'hosts.none': 'Sem host vinculado',
   'hosts.noConnections':
-    'Adicione uma conexão Proxmox em Integrações para vincular este serviço a um host.',
+    'Adicione uma conexão de inventário de hosts em Integrações para vincular este serviço a um host.',
   'hosts.choose': 'Escolher host',
   'hosts.change': 'Trocar host',
   'hosts.unlink': 'Desvincular host',
   'hosts.sheetTitle': 'Escolher host',
   'hosts.sheetDescription': 'Escolha o nó e o convidado em que este serviço roda.',
-  'hosts.connection': 'Conexão Proxmox',
+  'hosts.connection': 'Conexão de inventário de hosts',
   'hosts.node': 'Nó',
   'hosts.allNodes': 'Todos os nós',
   'hosts.search': 'Buscar convidados',
@@ -181,11 +185,11 @@ export const ptBR: Record<keyof typeof en, string> = {
   'hosts.guests': 'Convidados',
   'hosts.noGuests': 'Nenhum convidado encontrado.',
   'hosts.loading': 'Carregando convidados…',
-  'hosts.loadError': 'Não foi possível ler o inventário do Proxmox.',
+  'hosts.loadError': 'Não foi possível ler o inventário de hosts.',
   'hosts.retry': 'Tentar novamente',
   'hosts.notFound': 'Host não encontrado',
   'hosts.notFoundHint':
-    'Este convidado não existe mais no Proxmox. Escolha outro host ou desvincule.',
+    'Este convidado não existe mais no inventário. Escolha outro host ou desvincule.',
   'hosts.unavailable': 'Host indisponível',
   'hosts.guestLabel': '{name} · {vmid}',
   'hosts.on': 'em {node}',
@@ -206,7 +210,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'hosts.view.notFound': 'Host não encontrado',
   'hosts.view.unavailable': 'Host indisponível',
   'hosts.view.unavailableHint':
-    'Não foi possível acessar o Proxmox, então estes hosts são desconhecidos.',
+    'Não foi possível acessar a conexão de hosts, então estes hosts são desconhecidos.',
   'hosts.view.edit': 'Editar {name}',
   'hosts.view.openCard': 'Abrir {name}',
   'hosts.impact.hostOffline': 'Host offline',
@@ -223,10 +227,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'managed.host': 'Host',
   'managed.strength': 'Força da evidência',
   'managed.evidence': 'Evidência',
-  'managed.connectionId': 'Conexão Proxmox',
+  'managed.connectionId': 'Conexão de inventário de hosts',
   'managed.vmid': 'ID do convidado',
   'managed.hostNote':
-    'Aprovar apenas salva o vínculo no Homora. O Proxmox nunca é alterado. A evidência foi calculada pelo Homora, não pelo agente.',
+    'Aprovar apenas salva o vínculo no Homora. O sistema externo nunca é alterado. A evidência foi calculada pelo Homora, não pelo agente.',
   'hosts.strength.strong': 'Forte',
   'hosts.strength.medium': 'Média',
   'hosts.suggest.open': 'Hosts sugeridos',
@@ -235,9 +239,9 @@ export const ptBR: Record<keyof typeof en, string> = {
     'O Homora só sugere um host quando evidências independentes concordam. Coincidência de nome nunca basta. Aceitar apenas salva o vínculo no Homora.',
   'hosts.suggest.loading': 'Procurando evidências…',
   'hosts.suggest.error':
-    'Não foi possível ler as sugestões. Verifique a conexão Proxmox e tente novamente.',
+    'Não foi possível ler as sugestões. Verifique a conexão de inventário de hosts e tente novamente.',
   'hosts.suggest.partial':
-    'Algumas conexões Proxmox não puderam ser lidas, então faltam os convidados delas.',
+    'Algumas conexões de hosts não puderam ser lidas, então faltam os convidados delas.',
   'hosts.suggest.empty': 'Todo serviço já tem host, ou nenhum precisa de um.',
   'hosts.suggest.select': 'Selecionar {name}',
   'hosts.suggest.accept': 'Aceitar',
@@ -321,7 +325,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'apiError.dependency-limit': 'Um serviço pode ter no máximo 50 dependências.',
   'activity.event.service-dependency-add': 'Dependência de serviço adicionada',
   'activity.event.service-dependency-remove': 'Dependência de serviço removida',
-  'apiError.invalid-host': 'Escolha uma conexão Proxmox existente para o host.',
+  'apiError.invalid-host': 'Escolha uma conexão de inventário de hosts existente para o host.',
   'activity.event.service-host-link': 'Serviço vinculado a um host',
   'activity.event.service-host-unlink': 'Serviço desvinculado de um host',
 };

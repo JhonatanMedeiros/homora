@@ -4,7 +4,7 @@ import {
   urlCases,
   long,
 } from '../../../../../apps/backend/src/integration-test-support.js';
-import { createCoolifyAdapter } from '../../../../../apps/backend/src/coolify-connection.js';
+import { createCoolifyAdapter } from './testing.js';
 
 const coolifyToken = '1|coolify-SECRET456';
 runAdapterContract({

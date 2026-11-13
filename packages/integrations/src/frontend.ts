@@ -4,6 +4,7 @@ import type { ManifestDisplay } from './integration-manifest.js';
 export type WidgetStat = { label: string; value: string; id?: 'cpu' | 'memory' | 'disk' };
 export type IntegrationPresentation = {
   stats(value: unknown): WidgetStat[] | null;
+  placeholderCount?: number;
 };
 
 /** Explicitly registered code presentations complement the declarative manifest display. */

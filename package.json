@@ -24,7 +24,8 @@
     "backup": "node scripts/backup.mjs",
     "auth:reset": "node scripts/auth-reset.mjs",
     "css:reset": "node scripts/css-reset.mjs",
-    "integration:create": "node scripts/create-integration.mjs"
+    "integration:create": "node scripts/create-integration.mjs",
+    "integration:catalog": "node packages/integrations/scripts/integration-catalog.mjs --write"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",

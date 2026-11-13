@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { COOLIFY_UUID_PATTERN } from '@homora/shared';
+import { RESOURCE_ID_PATTERN } from '@homora/shared';
 import { createResourceLinks, ResourceLinkError } from '../resource-links.js';
 import { parseId } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
@@ -22,7 +22,7 @@ const httpUrl = z
 const bodySchema = z
   .object({
     integrationId: z.number().int().safe().positive(),
-    resourceUuid: z.string().regex(COOLIFY_UUID_PATTERN),
+    resourceUuid: z.string().regex(RESOURCE_ID_PATTERN),
     resourceType: z.enum(['application', 'service']),
     name: z.string().trim().min(1).max(200),
     url: httpUrl.nullable(),

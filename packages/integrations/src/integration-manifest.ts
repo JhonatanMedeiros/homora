@@ -1,14 +1,4 @@
-import { proxmoxDefinition } from './integrations/proxmox/definition.js';
-import { coolifyDefinition } from './integrations/coolify/definition.js';
-import { homeAssistantManifest } from './integrations/home-assistant/definition.js';
-import { uptimeKumaManifest } from './integrations/uptime-kuma/definition.js';
-import { adguardManifest } from './integrations/adguard-home/definition.js';
-import { speedtestTrackerManifest } from './integrations/speedtest-tracker/definition.js';
-import { portainerManifest } from './integrations/portainer/definition.js';
-import { netbirdManifest } from './integrations/netbird/definition.js';
-import { tailscaleManifest } from './integrations/tailscale/definition.js';
-import { cloudflareManifest } from './integrations/cloudflare/definition.js';
-import { jellyfinManifest } from './integrations/jellyfin/definition.js';
+import { integrationDefinitions } from './generated/definitions.js';
 
 /**
  * Built-in integration definitions. Pure data: nothing here runs code and nothing is loaded at
@@ -38,7 +28,7 @@ export type ManifestField = {
   /** url fields only: keep a base path (for example a reverse proxy prefix). */
   allowPath?: boolean;
   /** The form offers a choice list read from the connection (only while editing a saved connection). */
-  picker?: 'proxmox-node';
+  picker?: 'host-node';
   /** Changing this field requires a new secret, because the credential identity changes. */
   identity?: boolean;
   /** Stable API error code when this field is invalid. */
@@ -134,6 +124,10 @@ type Identity = {
   /** Name from BRAND_ICON_NAMES; omitted when no logo is bundled (the mark is shown instead). */
   brandIcon?: string;
   capabilities: readonly string[];
+  /** Shape of authenticated inventory offered to host workflows, when supported. */
+  inventoryDomain?: 'hosts' | 'resources';
+  /** The widget supplies CPU, memory or disk statistics for the optional top bar. */
+  systemTelemetry?: boolean;
   fields: readonly ManifestField[];
 };
 export type AuthSpec =
@@ -173,31 +167,14 @@ export type IntegrationManifest = Identity & {
 export type CodeDefinition = Identity & { kind: 'code'; display: 'custom' };
 export type IntegrationDefinition = IntegrationManifest | CodeDefinition;
 
-export { proxmoxDefinition };
-export { coolifyDefinition };
-export { homeAssistantManifest };
-export { uptimeKumaManifest };
-export { adguardManifest };
-export { speedtestTrackerManifest };
-export { portainerManifest };
-export { netbirdManifest };
-export { tailscaleManifest };
-export { cloudflareManifest };
-export { jellyfinManifest };
-
-export const integrationDefinitions: readonly IntegrationDefinition[] = [
-  jellyfinManifest,
-  homeAssistantManifest,
-  uptimeKumaManifest,
-  adguardManifest,
-  speedtestTrackerManifest,
-  portainerManifest,
-  netbirdManifest,
-  tailscaleManifest,
-  cloudflareManifest,
-  coolifyDefinition,
-  proxmoxDefinition,
-];
+export * from './generated/definitions.js';
 
 export const integrationDefinition = (type: string) =>
   integrationDefinitions.find((definition) => definition.type === type);
+
+/** Match the shape of an inventory, independent of the integration's identifier. */
+export const hasInventoryDomain = (type: string, domain: 'hosts' | 'resources'): boolean =>
+  integrationDefinition(type)?.inventoryDomain === domain;
+
+export const hasSystemTelemetry = (type: string): boolean =>
+  integrationDefinition(type)?.systemTelemetry === true;

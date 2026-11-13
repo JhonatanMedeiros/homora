@@ -1,5 +1,5 @@
 import type { Service, UptimeRange, UptimeSummary } from '@homora/shared';
-import type { CardCoolify } from '@/hooks/use-resource-links';
+import type { CardResource } from '@/hooks/use-resource-links';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import type { HostLabel, Impact } from '@/lib/hosts';
 import type { ServiceStatus } from '@/lib/services';
@@ -9,9 +9,9 @@ export type ServiceCardProps = {
   service: Service;
   status?: ServiceStatus;
   widgets?: CardWidgetState[];
-  /** Linked Coolify resource, with the state Coolify reports (separate from the HTTP status). */
-  coolify?: CardCoolify;
-  onCoolify?: () => void;
+  /** Linked integration resource, with the state the integration reports (separate from the HTTP status). */
+  resourceLink?: CardResource;
+  onResource?: () => void;
   uptime?: UptimeSummary;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;

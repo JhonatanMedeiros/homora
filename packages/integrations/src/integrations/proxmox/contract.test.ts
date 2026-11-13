@@ -1,6 +1,6 @@
 import { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';
 import { fixture, urlCases } from '../../../../../apps/backend/src/integration-test-support.js';
-import { createProxmoxConnectionAdapter } from '../../../../../apps/backend/src/proxmox-connection.js';
+import { createProxmoxConnectionAdapter } from './testing.js';
 
 const proxmoxToken = 'proxmox-SECRET789';
 runAdapterContract({

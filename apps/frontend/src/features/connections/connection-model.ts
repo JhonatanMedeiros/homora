@@ -1,7 +1,8 @@
 import { apiError, t, tOr } from '@/i18n';
-import { customPresentations } from './presentations';
+import { createPresentationCatalog } from '@homora/integrations/frontend/catalog';
 import { renderManifestDisplay, type WidgetStat } from '@homora/integrations/frontend';
 import { integrationDefinition, integrationDefinitions, type ManifestField } from '@homora/shared';
+const presentations = createPresentationCatalog((key) => tOr(key, key));
 export type Kind = string;
 export type Connection = {
   id: number;
@@ -114,20 +115,6 @@ export function connectionDraft(value: unknown): ConnectionFormState | null {
     ),
   };
 }
-export function proxmoxDraft(value: unknown): string | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const input = value as Record<string, unknown>;
-  if (input.type !== 'proxmox' || typeof input.url !== 'string' || input.url.length > 2048)
-    return null;
-  try {
-    const url = new URL(input.url);
-    return url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash
-      ? url.origin
-      : null;
-  } catch {
-    return null;
-  }
-}
 export async function request(url: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(url, init);
   const data: unknown = await response.json().catch(() => null);
@@ -146,7 +133,7 @@ function renderManifest(type: WidgetKind, value: unknown) {
 
 export function describeData(type: WidgetKind, value: unknown): string | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  if (Object.hasOwn(customPresentations, type))
+  if (presentations.get(type))
     return (
       widgetStats(type, value)
         ?.map((stat) => `${stat.label}: ${stat.value}`)
@@ -158,7 +145,7 @@ export function describeData(type: WidgetKind, value: unknown): string | null {
 /** Short numbers and text from a query, for display within a card. */
 export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const presentation = Object.hasOwn(customPresentations, type) ? customPresentations[type] : null;
+  const presentation = presentations.get(type);
   return presentation ? presentation.stats(value) : (renderManifest(type, value)?.stats ?? null);
 }
 

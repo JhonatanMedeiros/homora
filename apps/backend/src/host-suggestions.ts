@@ -1,8 +1,9 @@
 import { isIP } from 'node:net';
 import type { DatabaseSync } from 'node:sqlite';
 import type { GuestType, HostLink, Service } from '@homora/shared';
+import { hasInventoryDomain } from '@homora/integrations';
 import { authorizeDestination } from './network-policy.js';
-import type { GuestAddresses, ProxmoxInventory } from './proxmox-inventory.js';
+import type { HostGuestAddresses, HostInventoryData } from '@homora/integrations';
 
 /** Independent kinds of evidence. A name match is deliberately not one of them. */
 export type EvidenceKind = 'config-address' | 'guest-agent' | 'docker-source';
@@ -154,22 +155,22 @@ export function createHostSuggestions(options: {
     async list() {
       const linked = options.listHosts();
       const unlinked = options.listServices().filter((service) => !linked.has(service.id));
-      const proxmox = (await connections.listConnections()).filter(
-        (item) => item.type === 'proxmox',
+      const hostConnections = (await connections.listConnections()).filter((item) =>
+        hasInventoryDomain(item.type, 'hosts'),
       );
       const guests: GuestFacts[] = [];
       const unavailable: number[] = [];
-      for (const connection of proxmox) {
+      for (const connection of hostConnections) {
         try {
           const inventory = (await connections.inventoryData(connection.id)) as {
-            data: ProxmoxInventory;
+            data: HostInventoryData;
           } | null;
           if (!inventory || typeof inventory !== 'object') throw new Error();
           const addresses = (await connections.addressData(
             connection.id,
             inventory.data.guests,
           )) as {
-            data: GuestAddresses[];
+            data: HostGuestAddresses[];
           } | null;
           const byGuest = new Map(
             (addresses?.data ?? []).map((item) => [`${item.type}:${item.vmid}`, item]),

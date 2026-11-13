@@ -1275,6 +1275,28 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Integrated the concurrent main-branch module split: retained its connection transport, manifest
   response parser and smaller shared modules while using the SDK definitions and hooks. After conflict
   resolution, `pnpm build` and `pnpm check` passed (1,248 application and 16 script tests).
+- Review follow-up: adapter registrations, Proxmox credential validation and widget
+  presentation selection now live in integration-package catalogs; host applications consume these
+  catalogs generically. Widget placeholder counts and Speedtest's icon now come from integration
+  metadata. Subsequent changes below migrate specialized workflows and legacy compatibility.
+- Inventory dispatch now selects the declared `hosts` or `resources` domain, and address reads use
+  the optional registered capability, rather than selecting integrations by type in those paths.
+  Existing HTTP responses and legacy identifiers are unchanged.
+- Host inventory and top-bar telemetry capabilities are now declared by the integration definition.
+  The top bar determines the actual connection type before rendering its telemetry, and the node
+  picker uses a generic host-inventory field. Focused tests passed; integration-specific
+  resource workflows and legacy APIs were subsequently migrated as described below.
+
+- Built-in descriptors now generate static definition, backend, frontend, MCP, translation and demo
+  catalogs. Host and resource workflows use declared capabilities and normalized contracts; the
+  applications no longer register or dispatch individual integration implementations. Legacy vault,
+  widget sources and wire fields remain compatible through the package. Existing database rows and
+  external APIs are retained without a schema migration.
+- MCP integration tools require their registered scopes and their connection access is restricted to
+  their owning integration type. Development examples are isolated in integration modules and enabled
+  only in development mode. Existing transport, destination checks and GET-only policy remain in force.
+- Validation after the review changes: `pnpm check` passed (1,252 application tests and 17 script
+  tests) and `pnpm build` passed. No live service, browser or screen reader was tested.
 
 ## Extensible integrations (issue #98)
 

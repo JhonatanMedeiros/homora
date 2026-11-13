@@ -66,7 +66,7 @@ export function ServicesPage({
   const paged = pages.length > 1 && !managing;
   const cardWidgets = useCardWidgets();
   const resourceLinks = useResourceLinks();
-  const [coolifyReview, setCoolifyReview] = useState<number | null>(null);
+  const [resourceReview, setResourceReview] = useState<number | null>(null);
   const [topBar] = useTopBar();
   const {
     view,
@@ -393,7 +393,7 @@ export function ServicesPage({
             statuses,
             blockedIds,
             widgets: cardWidgets,
-            coolify: resourceLinks.byService,
+            resourceLink: resourceLinks.byService,
             uptime,
             uptimeRange,
             impacts,
@@ -414,7 +414,7 @@ export function ServicesPage({
             onEditService: openForm,
             onRemoveService: (service) => void remove(service),
             onCancelRemoval: (id) => setConfirming((current) => (current === id ? null : current)),
-            onCoolify: setCoolifyReview,
+            onResource: setResourceReview,
             onPlaceService: (service, position, total) =>
               void reorder(data.placeService(service, position), position, service, total),
             onMoveServiceToGroup: (service, group) => void moveToGroup(service, group),
@@ -439,10 +439,10 @@ export function ServicesPage({
           setSuggestOpen(false);
           navigate(`/manage/services/${service.id}/edit`);
         }}
-        coolifyReviewId={coolifyReview}
-        coolifyByService={resourceLinks.byService}
-        onCloseCoolify={() => setCoolifyReview(null)}
-        onReloadCoolify={resourceLinks.reload}
+        resourceReviewId={resourceReview}
+        resourceByService={resourceLinks.byService}
+        onCloseResource={() => setResourceReview(null)}
+        onReloadResource={resourceLinks.reload}
         removingGroup={removingGroup}
         onRemovingGroupChange={setRemovingGroup}
         onDeleteGroup={deleteGroup}

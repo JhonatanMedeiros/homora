@@ -8,6 +8,8 @@ export const proxmoxDefinition: CodeDefinition = {
   mark: 'PVE',
   brandIcon: 'proxmox',
   capabilities: ['inventory'],
+  inventoryDomain: 'hosts',
+  systemTelemetry: true,
   fields: [
     urlField({ httpsOnly: true, errorCode: 'https-url-required' }),
     {
@@ -30,7 +32,7 @@ export const proxmoxDefinition: CodeDefinition = {
       required: false,
       maxLength: 63,
       pattern: '[A-Za-z0-9][A-Za-z0-9-]{0,62}',
-      picker: 'proxmox-node',
+      picker: 'host-node',
       errorCode: 'invalid-config',
     },
     {

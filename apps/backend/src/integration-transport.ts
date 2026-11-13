@@ -1,11 +1,6 @@
 import type { ConnectionData, Credentials } from './integration-connection-config.js';
-import type { IntegrationContext, IntegrationTransport } from './integrations.js';
+import type { IntegrationTransport } from './integrations.js';
 import { getAuthorizedResponse } from './network-request.js';
-
-export function transportFrom(context: IntegrationContext) {
-  if (!context.transport) throw new Error('Integration transport unavailable.');
-  return context.transport;
-}
 
 /** Builds the JSON transport shared by integration reads and Proxmox address lookups. */
 export function createIntegrationTransport(

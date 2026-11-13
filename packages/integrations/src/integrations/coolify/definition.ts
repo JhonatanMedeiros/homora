@@ -10,6 +10,7 @@ export const coolifyDefinition: CodeDefinition = {
   mark: 'CL',
   brandIcon: 'coolify',
   capabilities: ['inventory', 'resource-links'],
+  inventoryDomain: 'resources',
   fields: [
     urlField({
       httpsOnly: true,

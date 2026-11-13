@@ -1,0 +1,5 @@
+{
+  "type": "portainer",
+  "order": 60,
+  "definition": "portainerManifest"
+}

@@ -52,6 +52,7 @@ it('displays clock only when no Proxmox widget exists', async () => {
 it('queries the selected connection even without a widget', async () => {
   localStorage.setItem('homora-top-bar-connection', '21');
   stubApi({
+    '/api/connections': json([{ id: 21, type: 'proxmox', name: 'PVE' }]),
     '/api/connections/21/data': json({
       data: {
         vms: { running: 0, total: 0 },

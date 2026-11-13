@@ -8,6 +8,7 @@ export const speedtestTrackerManifest: IntegrationManifest = {
   type: 'speedtest-tracker',
   label: 'Speedtest Tracker',
   mark: 'ST',
+  brandIcon: 'ookla-speedtest',
   capabilities: ['speedtest-results'],
   fields: [
     urlField({ httpsOnly: true, allowPath: true, errorCode: 'https-url-required' }),

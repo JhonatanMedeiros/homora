@@ -19,7 +19,9 @@ has a directory containing its definition, fixtures, contract test and, when nee
 frontend implementations. Backend-only modules have separate exports so browser imports do not
 include Node dependencies. Existing `@homora/shared` exports remain as compatibility reexports.
 
-Definitions and executable hooks are explicitly registered at build time. The application owns
+Definitions and executable hooks are explicitly registered at build time inside the integrations
+package. Host applications consume its catalogs without registering individual adapter or widget
+presentations. The application owns
 transport implementation, destination and DNS policy, vault access, input errors, persistence,
 authentication, and capability-specific routes. It injects transport and host-specific validation
 into adapters; no integration can opt into a new network method or header through this contract.
@@ -33,7 +35,7 @@ not assert compatibility with any service.
 ## Consequences
 
 IDs, field names and existing data formats must remain stable; this reorganization needs no data
-migration. Code adapters may need small host registration modules and explicit presentation exports.
+migration. Code adapters register backend and presentation factories through their own descriptors; optional scoped MCP tools, translations and development examples are catalogued the same way. Host routes consume capability contracts instead of service identifiers.
 The internal API can evolve with the monorepo; publishing it as a third-party SDK would require a
 separate versioning, compatibility and security decision. A mocked contract test and a build do not
 replace live-service validation.

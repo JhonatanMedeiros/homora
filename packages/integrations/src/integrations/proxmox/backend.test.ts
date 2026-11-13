@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { createProxmoxConnectionAdapter } from '../../../../../apps/backend/src/proxmox-connection.js';
+import { createProxmoxConnectionAdapter } from './testing.js';
 
 const config = { url: 'https://pve.example:8006', tokenId: 'user@pve!test', secret: 'test' };
 

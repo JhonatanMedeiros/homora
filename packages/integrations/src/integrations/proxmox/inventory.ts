@@ -1,17 +1,17 @@
 import { isIP } from 'node:net';
 import { isNodeName, isVmid, type GuestType } from './contracts.js';
+import type {
+  HostNodeState,
+  HostNode,
+  HostGuest,
+  HostInventoryData,
+  HostGuestAddresses,
+} from '../../host-contracts.js';
 
-export type ProxmoxNodeState = 'online' | 'offline' | 'unknown';
-export type ProxmoxNode = { name: string; status: ProxmoxNodeState };
-export type ProxmoxGuest = {
-  vmid: number;
-  name: string;
-  type: GuestType;
-  node: string;
-  /** Raw Proxmox status (`running`, `stopped`, `paused`...); `unknown` when absent. */
-  status: string;
-};
-export type ProxmoxInventory = { nodes: ProxmoxNode[]; guests: ProxmoxGuest[] };
+export type ProxmoxNodeState = HostNodeState;
+export type ProxmoxNode = HostNode;
+export type ProxmoxGuest = HostGuest;
+export type ProxmoxInventory = HostInventoryData;
 
 const text = (value: unknown, max: number) =>
   typeof value === 'string' && value.length > 0 && value.length <= max ? value : null;
@@ -116,12 +116,4 @@ export function agentAddresses(data: unknown): string[] {
   return [...found].slice(0, MAX_ADDRESSES);
 }
 
-export type GuestAddresses = {
-  node: string;
-  vmid: number;
-  type: GuestType;
-  /** Static addresses from the guest configuration. */
-  config: string[];
-  /** Addresses from the QEMU guest agent; empty when the token or the agent does not allow it. */
-  agent: string[];
-};
+export type GuestAddresses = HostGuestAddresses;

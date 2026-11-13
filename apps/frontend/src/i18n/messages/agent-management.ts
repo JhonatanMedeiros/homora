@@ -42,8 +42,6 @@ export const en = {
   'scope.agents:propose.hint': 'Suggests changes to agent identities for human review.',
   'scope.audit:read': 'Read audit history',
   'scope.audit:read.hint': 'Sees audit events and proposal references.',
-  'scope.proxmox:read': 'Read Proxmox resources',
-  'scope.proxmox:read.hint': 'Sees nodes, VMs and containers, without being able to change them.',
   'scope.proposals:create': 'Create proposals',
   'scope.proposals:create.hint':
     'Suggests changes to cards. Nothing changes without your approval.',
@@ -51,10 +49,10 @@ export const en = {
   'scope.groups:propose.hint': 'Suggests creating, renaming, ordering or removing groups.',
   'scope.hosts:read': 'Read host suggestions',
   'scope.hosts:read.hint':
-    'Sees Proxmox guest names and the evidence that links cards to them. Sensitive inventory.',
+    'Sees infrastructure guest names and the evidence that links cards to them. Sensitive inventory.',
   'scope.hosts:propose': 'Propose host links',
   'scope.hosts:propose.hint':
-    'Suggests linking a card to a Proxmox guest. Needs independent evidence and your approval.',
+    'Suggests linking a card to a infrastructure guest. Needs independent evidence and your approval.',
   'scope.widgets:read': 'Read widgets',
   'scope.widgets:read.hint': 'Sees widget names and their links.',
   'scope.widgets:propose': 'Propose widget changes',
@@ -178,18 +176,16 @@ export const ptBR: Record<keyof typeof en, string> = {
   'scope.agents:propose.hint': 'Sugere alterações de identidades para revisão humana.',
   'scope.audit:read': 'Ler histórico de auditoria',
   'scope.audit:read.hint': 'Vê eventos de auditoria e referências de propostas.',
-  'scope.proxmox:read': 'Ler recursos do Proxmox',
-  'scope.proxmox:read.hint': 'Vê nós, VMs e containers, sem poder alterá-los.',
   'scope.proposals:create': 'Criar propostas',
   'scope.proposals:create.hint': 'Sugere mudanças nos cards. Nada muda sem a sua aprovação.',
   'scope.groups:propose': 'Propor mudanças em grupos',
   'scope.groups:propose.hint': 'Sugere criar, renomear, ordenar ou remover grupos.',
   'scope.hosts:read': 'Ler hosts sugeridos',
   'scope.hosts:read.hint':
-    'Vê nomes de convidados do Proxmox e a evidência que liga cartões a eles. Inventário sensível.',
+    'Vê nomes de convidados da infraestrutura e a evidência que liga cartões a eles. Inventário sensível.',
   'scope.hosts:propose': 'Propor vínculos de host',
   'scope.hosts:propose.hint':
-    'Sugere vincular um cartão a um convidado do Proxmox. Exige evidência independente e a sua aprovação.',
+    'Sugere vincular um cartão a um convidado da infraestrutura. Exige evidência independente e a sua aprovação.',
   'scope.widgets:read': 'Ler widgets',
   'scope.widgets:read.hint': 'Vê nomes e vínculos de widgets.',
   'scope.widgets:propose': 'Propor mudanças em widgets',

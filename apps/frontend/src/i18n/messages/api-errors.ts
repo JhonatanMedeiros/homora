@@ -59,7 +59,6 @@ export const en = {
   'apiError.proposal-limit': 'The agent has reached its pending proposal limit.',
   'apiError.batch-conflict': 'The batch changes conflict. Nothing was applied.',
   'apiError.config-changed': 'The configuration changed. Review it again.',
-  'apiError.proxmox-not-configured': 'Proxmox is not configured.',
 } as const;
 
 export const ptBR = {
@@ -122,5 +121,4 @@ export const ptBR = {
   'apiError.proposal-limit': 'O agente atingiu o limite de propostas pendentes.',
   'apiError.batch-conflict': 'As alterações do lote entram em conflito. Nada foi aplicado.',
   'apiError.config-changed': 'A configuração mudou. Revise novamente.',
-  'apiError.proxmox-not-configured': 'Proxmox não configurado.',
 } as const;

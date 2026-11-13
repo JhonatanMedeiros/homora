@@ -1,17 +1,17 @@
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { Input } from '@/components/ui/input';
 import { t } from '@/i18n';
-import { useProxmoxNodeOptions } from '@/hooks/use-proxmox-node-options';
+import { useHostNodeOptions } from '@/hooks/use-host-node-options';
 
 type Props = { id: string; connectionId: number; value: string; onChange: (value: string) => void };
 
 /**
- * Chooses the Proxmox node to scope widgets and the top bar to, from the saved connection's
+ * Chooses a host node to scope widgets and the top bar to, from the saved connection's
  * inventory. If the inventory cannot be read it falls back to a text field, so the scope can still
  * be changed or cleared.
  */
 export function NodePicker({ id, connectionId, value, onChange }: Props) {
-  const names = useProxmoxNodeOptions(connectionId);
+  const names = useHostNodeOptions(connectionId);
   if (names === 'failed')
     return (
       <Input

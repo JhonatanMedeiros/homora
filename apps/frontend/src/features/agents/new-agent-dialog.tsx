@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { isWriteScope, PROFILES, scopeLabel, SCOPES, type Profile } from './agent-model';
+import { isWriteScope, PROFILES, scopeHint, scopeLabel, SCOPES, type Profile } from './agent-model';
 import { SHEET_CLASS } from './sheet-class';
 import { t, type MessageKey } from '@/i18n';
 
@@ -131,8 +131,10 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
                         }
                       />
                       <div className="flex flex-col gap-1">
-                        <FieldLabel htmlFor={`scope-${scope.id}`}>{t(scope.label)}</FieldLabel>
-                        <FieldDescription>{t(scope.hint)}</FieldDescription>
+                        <FieldLabel htmlFor={`scope-${scope.id}`}>
+                          {scopeLabel(scope.id)}
+                        </FieldLabel>
+                        <FieldDescription>{scopeHint(scope)}</FieldDescription>
                       </div>
                     </Field>
                   ))}
