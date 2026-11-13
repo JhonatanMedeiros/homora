@@ -8,8 +8,8 @@ import {
   type StatusOverview,
   type UptimeSummary,
 } from '@homora/shared';
-import type { ServiceStatus } from './service-monitor.js';
-import { serviceSignature } from './service-signature.js';
+import type { ServiceStatus } from './monitor.js';
+import { serviceSignature } from './signature.js';
 
 const DAY = 24 * 3_600_000;
 const SLA_KEY = 'sla_target_pct';

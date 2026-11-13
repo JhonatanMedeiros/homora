@@ -43,6 +43,24 @@ export default tseslint.config(
     },
   },
   {
+    // Monitoring is a capability: outside code imports `monitoring/index.ts`, never its internals.
+    files: ['apps/backend/src/**/*.ts', 'apps/backend/bench/**/*.ts'],
+    ignores: ['apps/backend/src/monitoring/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '/monitoring/(?!index(\\.js)?$)',
+              message: 'Import the monitoring capability through monitoring/index.ts.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['apps/frontend/src/main.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },

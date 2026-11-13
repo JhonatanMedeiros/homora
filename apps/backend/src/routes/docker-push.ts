@@ -4,7 +4,7 @@ import { errorBody } from '../api-error.js';
 import { parseDocker } from '../docker-discovery.js';
 import type { createDockerPush } from '../docker-push.js';
 import type { createServiceConfiguration } from '../service-configuration.js';
-import type { createServiceMonitor } from '../service-monitor.js';
+import type { createServiceMonitor } from '../monitoring/index.js';
 import type { createAuth } from '../auth.js';
 
 const createSchema = z.object({ name: z.string().trim().min(1).max(80) }).strict();

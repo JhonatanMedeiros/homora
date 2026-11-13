@@ -24,7 +24,8 @@
     "i18next": "^27.1.1",
     "sharp": "^0.35.5",
     "yaml": "2.9.1",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "@homora/i18n": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "26.6.6",

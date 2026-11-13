@@ -1,4 +1,4 @@
-# ADR 0013: MCP, agent identity and proposal boundaries
+# ADR 0014: MCP, agent identity and proposal boundaries
 
 **Status:** Accepted
 

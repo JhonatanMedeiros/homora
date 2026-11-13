@@ -1,12 +1,12 @@
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
-import { apiError, getLocale, t } from '@/i18n';
+import { apiError, getLocale, t, type Locale } from '@/i18n';
 
 type Channel = {
   id: number;
   name: string;
   type: 'webhook' | 'telegram' | 'ntfy' | 'discord';
-  locale: 'en' | 'pt-BR';
+  locale: Locale;
   enabled: boolean;
   allowPrivate: boolean;
   includeUrl: boolean;

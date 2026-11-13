@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { createObservationStore } from './service-observations.js';
+import { createObservationStore } from './monitoring/index.js';
 import type { McpToolContext } from './mcp-tool-context.js';
 
 export function registerMcpServiceTools(

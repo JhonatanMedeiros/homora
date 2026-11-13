@@ -55,8 +55,8 @@ flowchart LR
 - App-level UI journey tests are grouped by responsibility in `App.dashboard.test.tsx`,
   `App.groups.test.tsx`, `App.proposals.test.tsx`, `App.auth.test.tsx`, and
   `App.navigation.test.tsx`; these exercise user flows across the composed application.
-- Frontend message catalogs are split by application shell, service cards, service groups, service form, agent management, and proposal review in `src/i18n/messages`; `agents.ts` preserves the combined catalog facade, `en.ts` assembles the source keys, and `pt-br.ts` requires an exact `MessageKey` map.
-- Frontend localization uses i18next and react-i18next with the browser language detector. The existing `homora-locale` preference, English fallback, flat keys and single-brace interpolation are retained. Integration message catalogs are registered as resources; the backend returns stable error codes and English defaults, which the frontend translates. The frontend keeps typed convenience functions and locale-aware formatting around the libraries.
+- Application message catalogs live in `packages/i18n/src/messages`, grouped by feature. The package assembles and type-checks the English and Portuguese catalogs and separately exports notification messages and supported locales; the frontend combines them with integration-owned translations. See `packages/i18n/README.md` for adding a language.
+- Frontend localization uses i18next and react-i18next with the browser language detector. The existing `homora-locale` preference, English fallback, flat keys and single-brace interpolation are retained. Integration message catalogs are registered as resources; notification catalogs are imported by the backend without loading frontend messages, and the backend returns stable error codes and English defaults, which the frontend translates. The frontend keeps typed convenience functions and locale-aware formatting around the libraries.
 
 - HTTP API: web session authentication (Better Auth, single administrator account), Zod validation of request bodies, parameters,
   and query strings, composing routes by capability. Card and group business rules are
@@ -74,7 +74,7 @@ flowchart LR
 - Current MCP: local stdio process and stateless Streamable HTTP endpoint with scoped token authentication. The stdio process accesses SQLite
   and the credential vault directly. MCP tool registration is composed by capability in `mcp.ts`;
   the `mcp-*-tools.ts` modules own tool groups, while shared authorization and response helpers
-  are passed through `mcp-tool-context.ts`. Scope binding (`mcp-identity.ts`), response filtering (`mcp-responses.ts`) and discovery schemas (`mcp-proposal-schemas.ts`) are separate from transports and from the proposal domain; see [ADR 0013](decisoes/0013-mcp-agent-proposal-boundaries.md). MCP tools validate inputs with Zod and provide queries
+  are passed through `mcp-tool-context.ts`. Scope binding (`mcp-identity.ts`), response filtering (`mcp-responses.ts`) and discovery schemas (`mcp-proposal-schemas.ts`) are separate from transports and from the proposal domain; see [ADR 0014](decisoes/0014-mcp-agent-proposal-boundaries.md). MCP tools validate inputs with Zod and provide queries
   and proposal creation without going through HTTP routes or web session cookies. They never
   persist card, group, or widget changes without human approval. Connection suggestions open a human-completed form and do not create a connection; integration queries do not return credentials.
 - Persistence: SQLite, migrations, and database restore scripts are implemented.
@@ -231,8 +231,9 @@ releases exist.
   persistence/encryption, observation caches, and adapter dispatch. `integration-transport.ts`
   builds the policy-bound JSON transport shared by adapter reads and Proxmox address lookups.
   Route handlers parse requests and translate results into HTTP status and JSON responses.
-- `service-observations.ts` persists and serves current observations and failure history;
-  uptime SQL aggregation and summary calculations live in `service-uptime.ts`.
+- The monitoring capability lives in `apps/backend/src/monitoring/` (see "Monitoring capability"
+  below). `observations.ts` persists and serves current observations and failure history; uptime
+  SQL aggregation and summary calculations live in `uptime.ts`.
 - `integration-registry.ts` builds the registry from `integrationDefinitions`
   (`packages/integrations/src/integration-manifest.ts`). Simple read-only integrations are
   **manifests**, validated at startup (`backend-manifest-validation.ts`) and run by one SDK interpreter
@@ -273,11 +274,38 @@ releases exist.
   per range and configuration version, and shared as one `Buffer`, because the body reaches tens
   of MB on thousands of services. Import parsing refuses documents with more than 20,000 flow
   collections before the YAML parser runs.
-- Probe execution and HTTP/ICMP classification live in `service-probe.ts`; `service-monitor.ts`
+- Probe execution and HTTP/ICMP classification live in `monitoring/probe.ts`; `monitoring/monitor.ts`
   owns scheduling, concurrency, invalidation, and publication of check cycles.
 - SQLite is the primary persistent store. Schema changes are versioned migrations; session
   sessions and the administrator account live in the database; sign-in rate-limit counters and
   certain observation caches are maintained in memory.
+
+## Monitoring capability
+
+`apps/backend/src/monitoring/` groups everything that decides and records service health. Its public
+interface is `monitoring/index.ts` (`createServiceMonitor`, `startServiceMonitor`,
+`createObservationStore`, `createRollupStore`, `createIncidentStore`, `createMaintenanceStore`,
+`MaintenanceError`, `serviceSignature` and the `ServiceStatus`/`CheckResult`/`StatusReason` types).
+An ESLint rule rejects imports of the folder's other files from outside it.
+
+Execution flow: `monitor.ts` (scheduler, concurrency, invalidation) -> `probe.ts` (HTTP/ICMP/TCP/DNS/TLS/
+keyword/JSON classification; uses `network-checks.ts` for raw sockets and `check-body.ts` for body
+matching) -> `monitor.ts` publishes results to `observations.ts` (append, dedupe, 30-day retention,
+which feeds `rollup.ts` hourly rows) and to the notification callback wired in `app.ts`.
+`uptime.ts` is read-side SQL aggregation; `incidents.ts` derives incidents and thresholds from history;
+`maintenance.ts` stores windows. `signature.ts` hashes the check settings and is the only module also used by
+notifications. Imports inside the folder are acyclic (`probe` <- `monitor`; `rollup` <- `observations`;
+`signature` is a leaf); `observations` and `incidents` take only types from `monitor`.
+
+Pure versus I/O: `check-body.ts`, `signature.ts` and the classification functions in `probe.ts` are pure;
+`network-checks.ts` and the probe execution do network I/O; `observations`, `rollup`, `uptime`,
+`incidents` and `maintenance` take a `DatabaseSync` and do SQLite I/O; `monitor.ts` owns timers.
+
+Boundaries that deliberately stay outside: server composition and route registration (`app.ts`,
+`routes/`), schema and migrations (`packages/db`), and destination authorization, DNS pinning,
+redirect and TLS controls (`network-policy.ts`, `network-request.ts`), which probes call but cannot
+bypass. The MCP process only reads observations and never starts checks. No workspace package was
+created; see [ADR 0013](decisoes/0013-monitoring-capability-boundary.md).
 
 ## Assessment and Architectural Priorities
 
