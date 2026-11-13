@@ -33,6 +33,7 @@ it('allows sign-in after account creation even if first login fails', async () =
   fireEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
   expect(await screen.findByText('Bem-vindo de volta.')).toBeTruthy();
   expect((await screen.findByRole('alert')).textContent).toContain('E-mail ou senha inválidos');
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Manter conectado' }));
   fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
   expect(await screen.findByRole('heading', { name: /Tudo em seu lugar/ })).toBeTruthy();
   const calls = fetchMock.mock.calls as unknown as [string, { body: string }][];
@@ -44,7 +45,9 @@ it('allows sign-in after account creation even if first login fails', async () =
     password: 'senha-segura-123',
   });
   const loginCalls = calls.filter(([url]) => url === '/api/auth/sign-in/email');
+  expect(JSON.parse(loginCalls[0][1].body).rememberMe).toBe(false);
   expect(JSON.parse(loginCalls[1][1].body)).toEqual({
+    rememberMe: true,
     email: 'ana@homora.test',
     password: 'senha-segura-123',
   });

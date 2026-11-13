@@ -21,6 +21,7 @@ describe('API authentication', () => {
     const localApp = createApp(db.db, 5173, localAuth, undefined, allowedOrigins);
     return {
       localApp,
+      sqlite: getSqliteHandle(db.db),
       signIn: (password: string, headers: Record<string, string> = { origin }) =>
         localApp.inject({
           method: 'POST',
@@ -74,7 +75,7 @@ describe('API authentication', () => {
       expect(setCookie).toContain('homora.session_token=');
       expect(setCookie).toContain('HttpOnly');
       expect(setCookie).toContain('SameSite=Strict');
-      expect(setCookie).toContain('Max-Age=28800');
+      expect(setCookie.split(',')[0]).not.toContain('Max-Age=');
       expect(setCookie).not.toContain('Secure');
       const cookie = cookieOf(login);
       expect(
@@ -94,6 +95,95 @@ describe('API authentication', () => {
       expect(
         (await localApp.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
           .statusCode,
+      ).toBe(401);
+    } finally {
+      await done();
+    }
+  });
+
+  it('applies fixed lifetimes, persistent cookies, expiration and revocation to both choices', async () => {
+    const { localApp, sqlite, setup, done } = fresh();
+    try {
+      await setup();
+      const login = async (rememberMe: boolean) =>
+        localApp.inject({
+          method: 'POST',
+          url: '/api/auth/sign-in/email',
+          headers: { origin },
+          payload: { email: account.email, password: account.password, rememberMe },
+        });
+      const ordinary = await login(false);
+      const remembered = await login(true);
+      const ordinaryHeader = String(ordinary.headers['set-cookie']);
+      const rememberedHeader = String(remembered.headers['set-cookie']);
+      expect(ordinaryHeader.split(',')[0]).not.toContain('Max-Age=');
+      expect(rememberedHeader).toContain('Max-Age=2592000');
+      const ordinaryCookie = cookieOf(ordinary);
+      const rememberedCookie = cookieOf(remembered);
+      const list = (
+        await localApp.inject({
+          method: 'GET',
+          url: '/api/account/sessions',
+          headers: { cookie: ordinaryCookie },
+        })
+      ).json();
+      const current = list.find((row: { current: boolean }) => row.current);
+      const other = list.find((row: { current: boolean }) => !row.current);
+      expect(Date.parse(current.expiresAt) - Date.parse(current.createdAt)).toBeCloseTo(
+        8 * 3600 * 1000,
+        -3,
+      );
+      expect(Date.parse(other.expiresAt) - Date.parse(other.createdAt)).toBeCloseTo(
+        30 * 24 * 3600 * 1000,
+        -3,
+      );
+      expect(
+        (
+          await localApp.inject({
+            method: 'POST',
+            url: `/api/account/sessions/${other.id}/revoke`,
+            headers: { origin, cookie: ordinaryCookie },
+          })
+        ).statusCode,
+      ).toBe(200);
+      expect(
+        (
+          await localApp.inject({
+            method: 'GET',
+            url: '/api/services',
+            headers: { cookie: rememberedCookie },
+          })
+        ).statusCode,
+      ).toBe(401);
+      const again = await login(true);
+      const againCookie = cookieOf(again);
+      expect(
+        (
+          await localApp.inject({
+            method: 'POST',
+            url: '/api/auth/sign-out',
+            headers: { origin, cookie: againCookie },
+          })
+        ).statusCode,
+      ).toBe(200);
+      expect(
+        (
+          await localApp.inject({
+            method: 'GET',
+            url: '/api/services',
+            headers: { cookie: againCookie },
+          })
+        ).statusCode,
+      ).toBe(401);
+      sqlite.prepare('UPDATE session SET expiresAt = 0').run();
+      expect(
+        (
+          await localApp.inject({
+            method: 'GET',
+            url: '/api/services',
+            headers: { cookie: ordinaryCookie },
+          })
+        ).statusCode,
       ).toBe(401);
     } finally {
       await done();

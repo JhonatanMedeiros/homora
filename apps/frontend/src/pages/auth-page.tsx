@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/i18n';
 
@@ -25,6 +26,7 @@ export function AuthPage({ status, error, onSubmit, onRetry }: Props) {
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [mismatch, setMismatch] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
 
@@ -37,7 +39,7 @@ export function AuthPage({ status, error, onSubmit, onRetry }: Props) {
     pending.current = true;
     setBusy(true);
     try {
-      if (await onSubmit({ name: name.trim(), email: email.trim(), password })) {
+      if (await onSubmit({ name: name.trim(), email: email.trim(), password, rememberMe })) {
         setPassword('');
         setConfirmation('');
       }
@@ -121,6 +123,16 @@ export function AuthPage({ status, error, onSubmit, onRetry }: Props) {
                           value={confirmation}
                           onChange={(e) => setConfirmation(e.target.value)}
                         />
+                      </Field>
+                    )}
+                    {status.configured && (
+                      <Field orientation="horizontal">
+                        <Checkbox
+                          id="remember-me"
+                          checked={rememberMe}
+                          onCheckedChange={(checked) => setRememberMe(checked === true)}
+                        />
+                        <FieldLabel htmlFor="remember-me">{t('auth.rememberMe')}</FieldLabel>
                       </Field>
                     )}
                     <FormError>{mismatch ? t('auth.passwordMismatch') : error}</FormError>
