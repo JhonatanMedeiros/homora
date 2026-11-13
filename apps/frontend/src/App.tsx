@@ -35,10 +35,18 @@ import { ActivityPage } from '@/pages/activity-page';
 import { IntegrationsPage } from '@/pages/integrations-page';
 import { ServicesPage, type FocusRequest } from '@/pages/services-page';
 import { StatusPage } from '@/pages/status-page';
+import { ServiceDetailPage } from '@/pages/service-detail-page';
 
-type DashboardRoute = { tab: Tab; managing: boolean; form: 'new' | number | null; valid: boolean };
+type DashboardRoute = {
+  tab: Tab;
+  managing: boolean;
+  form: 'new' | number | null;
+  valid: boolean;
+  detail: number | null;
+};
 const validPaths = [
   '/',
+  '/services/:id',
   '/manage',
   '/manage/services',
   '/manage/services/new',
@@ -67,6 +75,7 @@ function Dashboard({
   managing,
   form = null,
   valid = true,
+  detail = null,
   token,
   setToken,
 }: {
@@ -77,10 +86,11 @@ function Dashboard({
   managing: boolean;
   form?: 'new' | number | null;
   valid?: boolean;
+  detail?: number | null;
 }) {
   const routerNavigate = useNavigate();
   const navigate = (path: string, replace = false) => routerNavigate(path, { replace });
-  const route: DashboardRoute = { tab, managing, form, valid };
+  const route: DashboardRoute = { tab, managing, form, valid, detail };
   const data = useServices();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
@@ -180,7 +190,18 @@ function Dashboard({
           </Button>
         </section>
       ) : (
-        tab === 'services' && (
+        tab === 'services' &&
+        (detail !== null ? (
+          <ServiceDetailPage
+            key={detail}
+            id={detail}
+            services={data.services}
+            loaded={data.loaded}
+            statuses={data.statuses}
+            blockedIds={data.blockedIds}
+            navigate={navigate}
+          />
+        ) : (
           <ServicesPage
             key={String(managing)}
             data={data}
@@ -193,7 +214,7 @@ function Dashboard({
               navigate('/manage/services/new');
             }}
           />
-        )
+        ))
       )}
       {managing && tab === 'integrations' && <IntegrationsPage onImported={data.refresh} />}
       {managing && tab === 'activity' && <ActivityPage />}
@@ -260,7 +281,18 @@ function DashboardForRoute({
     Boolean(matchPath('/manage/settings/*', pathname)) &&
     !matchPath('/manage/settings', pathname) &&
     !isSettingsSection(settingsSection);
-  const valid = home || isList || isNew || isEdit || (tab !== 'services' && !unknownSettings);
+  const detailId = matchPath('/services/:id', pathname)?.params.id;
+  const detail =
+    detailId && /^[1-9]\d*$/.test(detailId) && Number.isSafeInteger(Number(detailId))
+      ? Number(detailId)
+      : null;
+  const valid =
+    home ||
+    detail !== null ||
+    isList ||
+    isNew ||
+    isEdit ||
+    (tab !== 'services' && !unknownSettings);
   const account = tab === 'account';
   return (
     <Dashboard
@@ -268,9 +300,10 @@ function DashboardForRoute({
       setToken={setToken}
       onLogout={onLogout}
       tab={tab}
-      managing={valid && !home && !account}
+      managing={valid && !home && !account && detail === null}
       valid={valid}
       form={isNew ? 'new' : isEdit ? number : null}
+      detail={detail}
     />
   );
 }

@@ -1,5 +1,5 @@
 import { isDegraded, type MonitorSettings, type UptimeBucket } from '@homora/shared';
-import { t } from '@/i18n';
+import { formatNumber, t } from '@/i18n';
 
 /** What one period of the history bar shows; `slow` is an online period above the degraded limit. */
 export type BarState = 'up' | 'slow' | 'down' | 'partial' | 'unknown';
@@ -76,4 +76,17 @@ export function sparklinePaths(
   });
   if (current.length > 1) paths.push(current.join(' '));
   return paths;
+}
+
+/** "▲ +0.10 pp" for a change in availability, with the tone it deserves; null without a comparison. */
+export function deltaText(
+  delta: number | null | undefined,
+): { text: string; tone: 'up' | 'down' | 'same' } | null {
+  if (typeof delta !== 'number') return null;
+  if (delta === 0) return { text: t('detail.delta.same'), tone: 'same' };
+  const pp = formatNumber(Math.abs(delta), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return {
+    text: t(delta > 0 ? 'detail.delta.up' : 'detail.delta.down', { pp }),
+    tone: delta > 0 ? 'up' : 'down',
+  };
 }

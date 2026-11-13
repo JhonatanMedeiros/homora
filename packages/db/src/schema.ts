@@ -169,6 +169,25 @@ export const serviceIncidents = sqliteTable(
   ],
 );
 
+/**
+ * Hourly counts of checks per service. Raw checks are kept for 30 days; this keeps the numbers
+ * for about 100 so the 90-day heatmap and the "versus the previous period" comparison work.
+ * Not tied to the check configuration: it is a long-term availability record, not a signature.
+ */
+export const serviceUptimeRollup = sqliteTable(
+  'service_uptime_rollup',
+  {
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    hour: integer('hour').notNull(),
+    up: integer('up').notNull().default(0),
+    down: integer('down').notNull().default(0),
+    unknown: integer('unknown').notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.serviceId, table.hour] })],
+);
+
 // Configuration stored here must never contain credentials; secretRef points to a
 // future credential store. Existing Proxmox credentials remain in their vault.
 export const integrationInstances = sqliteTable('integration_instances', {

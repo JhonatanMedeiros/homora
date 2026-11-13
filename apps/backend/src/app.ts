@@ -19,6 +19,7 @@ import { registerServiceConfigurationRoutes } from './routes/service-configurati
 import { errorBody } from './api-error.js';
 import { createObservationStore } from './service-observations.js';
 import { createIncidentStore } from './service-incidents.js';
+import { createRollupStore } from './service-rollup.js';
 import { createDockerPush } from './docker-push.js';
 import { registerDockerPushRoutes } from './routes/docker-push.js';
 import { registerMcpHttp } from './mcp-http.js';
@@ -66,7 +67,8 @@ export function createApp(
   const appearance = createAppearance(sqlite);
   const customCss = createCustomCss(sqlite);
   const proposals = createProposalService(sqlite, configuration);
-  const observations = createObservationStore(sqlite);
+  const rollup = createRollupStore(sqlite);
+  const observations = createObservationStore(sqlite, rollup);
   const notifications = createNotifications(sqlite, vault);
   const incidents = createIncidentStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
@@ -85,6 +87,11 @@ export function createApp(
       }
     },
   );
+  try {
+    rollup.backfill();
+  } catch {
+    /* The long-range charts stay empty; checks keep working. */
+  }
   const publicStatus = createPublicStatus(sqlite, observations);
   try {
     incidents.rebuildFromHistory(

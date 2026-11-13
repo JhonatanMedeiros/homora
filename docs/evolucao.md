@@ -1294,7 +1294,7 @@ Phase 1 of the uptime redesign (see [ADR 0011](decisoes/0011-incidents-and-alert
 - [x] Health banner (problems with duration, uptime, incidents per week, recovery time, 30-day target and error budget).
 - [x] Degraded state (amber) on cards and bars; failure reason and "down since" on the card.
 - [x] History bars with tooltip, selectable detail (click, tap, arrow keys), latency line and axis; recent incidents in the history panel.
-- [ ] Phase 2: service detail page, p50/p95 latency chart, 90-day heatmap and previous-period comparison (needs hourly/daily rollups).
+- [x] Phase 2: service detail page (`/services/:id`), p50/p95 latency chart, 90-day heatmap, failure reasons, incident table, latest checks and previous-period comparison on the cards. Backed by an hourly rollup table (`service_uptime_rollup`, migration 0026, about 100 days) filled from every new check and backfilled from the raw history once. Not done from the mockup: pause, schedule maintenance and check-now buttons, CSV export, the alert column and the TLS block (they depend on features of Phases 3 and 4).
 - [ ] Phase 3: TCP, DNS, keyword/JSON, heartbeat and TLS checks; scheduled maintenance.
 - [ ] Phase 4: tags, ntfy/Discord/e-mail, wider public page, filters and sorting by problem.
 

@@ -155,4 +155,32 @@ describe('incident routes', () => {
     });
     await app.close();
   });
+
+  it('serves the latency series and the detail insights, and rejects bad input', async () => {
+    const { app, headers, id } = await setup();
+    for (const url of [`/api/services/${id}/latency`, `/api/services/${id}/insights`])
+      expect((await app.inject({ method: 'GET', url })).statusCode).toBe(401);
+    const latency = await app.inject({
+      method: 'GET',
+      url: `/api/services/${id}/latency?range=7d`,
+      headers,
+    });
+    expect(latency.statusCode).toBe(200);
+    expect(latency.json()).toMatchObject({ range: '7d', p50: null, points: expect.any(Array) });
+    expect(latency.json<{ points: unknown[] }>().points).toHaveLength(84);
+    for (const url of [`/api/services/${id}/latency?range=1y`, `/api/services/${id}/latency?x=1`])
+      expect((await app.inject({ method: 'GET', url, headers })).statusCode).toBe(400);
+    const insights = await app.inject({
+      method: 'GET',
+      url: `/api/services/${id}/insights`,
+      headers,
+    });
+    expect(insights.json()).toMatchObject({ heat: [], reasons: [], recent: [] });
+    for (const path of ['latency', 'insights'])
+      expect(
+        (await app.inject({ method: 'GET', url: `/api/services/9999/${path}`, headers }))
+          .statusCode,
+      ).toBe(404);
+    await app.close();
+  });
 });

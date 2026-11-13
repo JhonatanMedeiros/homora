@@ -337,11 +337,44 @@ export type UptimeSummary = {
   downChecks: number;
   unknownChecks: number;
   lastLatencyMs: number | null;
+  /** Availability of the period right before this one (same length), or null without enough data. */
+  previousUptimePct?: number | null;
   /** Nearest-rank 95th percentile of successful checks; only present on the single-service endpoint. */
   p95LatencyMs?: number | null;
   /** True when older checks in this period were made under a different configuration and are left out. */
   reconfigured: boolean;
   buckets: UptimeBucket[];
+};
+
+/** Median and 95th percentile of the successful checks of one slot of the latency chart. */
+export type LatencyPoint = {
+  start: number;
+  p50: number | null;
+  p95: number | null;
+  max: number | null;
+  checks: number;
+};
+export type LatencySeries = {
+  range: UptimeRange;
+  bucketMs: number;
+  start: number;
+  points: LatencyPoint[];
+  p50: number | null;
+  p95: number | null;
+  max: number | null;
+};
+/** Extra data of the service detail page. `heat` rows are hourly counts of checks. */
+export type ServiceInsights = {
+  generatedAt: number;
+  heat: { hour: number; up: number; down: number; unknown: number }[];
+  reasons: { reason: string; httpStatus: number | null; count: number }[];
+  recent: {
+    observedAt: number;
+    status: 'available' | 'unavailable' | 'unknown';
+    reason: string;
+    httpStatus: number | null;
+    latencyMs: number | null;
+  }[];
 };
 
 /** Guest kinds that Proxmox reports in its cluster inventory. */

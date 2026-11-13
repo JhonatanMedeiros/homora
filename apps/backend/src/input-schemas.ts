@@ -221,6 +221,9 @@ export const monitorSettingsSchema = z
       .nullable(),
   })
   .strict();
+export const latencyQuerySchema = z
+  .object({ range: z.enum(['24h', '7d', '30d']).optional() })
+  .strict();
 export const incidentQuerySchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(100).optional(),

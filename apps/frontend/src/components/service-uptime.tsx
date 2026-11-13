@@ -9,12 +9,15 @@ import {
   type UptimeSummary,
 } from '@homora/shared';
 import { ChevronDown, X } from 'lucide-react';
+import { Link, useInRouterContext } from 'react-router';
+import { deltaPoints } from '@/lib/detail-view';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
 import { cn } from '@/lib/utils';
 import {
   barState,
+  deltaText,
   formatDuration,
   reasonText,
   sparklinePaths,
@@ -289,7 +292,10 @@ export function ServiceUptime({
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const inRouter = useInRouterContext();
   if (!summary) return null;
+  const delta = deltaText(deltaPoints(summary.uptimePct, summary.previousUptimePct));
+  const detailPath = `/services/${service.id}`;
   return (
     <div className="relative z-10 flex flex-col gap-2">
       <div className="flex items-center justify-between gap-3">
@@ -298,6 +304,19 @@ export function ServiceUptime({
             {t('uptime.label', { range: rangeLabel(range) })}
           </span>
           <span className="font-mono tabular-nums">{formatPct(summary.uptimePct)}</span>
+          {delta && (
+            <span
+              title={t('detail.deltaHint')}
+              className={cn(
+                'font-mono text-xs tabular-nums',
+                delta.tone === 'up' && 'text-success',
+                delta.tone === 'down' && 'text-destructive',
+                delta.tone === 'same' && 'text-muted-foreground',
+              )}
+            >
+              {delta.text}
+            </span>
+          )}
         </span>
         <Sparkline summary={summary} />
         <Button
@@ -318,6 +337,17 @@ export function ServiceUptime({
         </Button>
       </div>
       <UptimeBars summary={summary} monitor={monitor} />
+      <div className="flex justify-end text-xs">
+        {inRouter ? (
+          <Link to={detailPath} className="text-primary hover:underline">
+            {t('detail.link')} →
+          </Link>
+        ) : (
+          <a href={detailPath} className="text-primary hover:underline">
+            {t('detail.link')} →
+          </a>
+        )}
+      </div>
       {open && (
         <UptimeDetails
           id={panelId}
