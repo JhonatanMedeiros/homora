@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { serviceProposalSchema } from './input-schemas.js';
-import type { agentChangeSchema } from './proposals.js';
+import type { agentChangeSchema } from './agent-changes.js';
 import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
 import { applyManagedChange, managedChangeSchema } from './managed-proposals.js';
 

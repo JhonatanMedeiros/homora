@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 
 export type AuthStatus = { configured: boolean; authenticated: boolean };
 /** `name` is only needed to create the first account. */
-export type Credentials = { email: string; password: string; name?: string };
+export type Credentials = { email: string; password: string; name?: string; rememberMe?: boolean };
 
 /** Access status: checks session, creates admin account, and signs in or out. */
 export function useAuth() {
@@ -36,7 +36,7 @@ export function useAuth() {
     setAttempt((value) => value + 1);
   }
 
-  async function submit({ name, email, password }: Credentials) {
+  async function submit({ name, email, password, rememberMe = false }: Credentials) {
     setError('');
     try {
       if (!status?.configured) {
@@ -51,7 +51,7 @@ export function useAuth() {
       const login = await fetch('/api/auth/sign-in/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
       if (!login.ok) throw new Error(t('auth.loginFailed'));
       setStatus({ configured: true, authenticated: true });

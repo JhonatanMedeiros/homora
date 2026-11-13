@@ -56,13 +56,19 @@ export function registerAuthRoutes(
       headers.delete('content-length');
       headers.delete('transfer-encoding');
       headers.set(CLIENT_IP_HEADER, request.ip);
-      const hasBody = request.body !== undefined && request.body !== null;
+      const body =
+        pathname === `${AUTH_BASE_PATH}/sign-in/email` &&
+        request.body &&
+        typeof request.body === 'object'
+          ? { rememberMe: false, ...request.body }
+          : request.body;
+      const hasBody = body !== undefined && body !== null;
       if (hasBody) headers.set('content-type', 'application/json');
       const response = await auth.handler(
         new Request(new URL(request.url, `http://localhost:${webPort}`), {
           method: request.method,
           headers,
-          body: hasBody ? JSON.stringify(request.body) : undefined,
+          body: hasBody ? JSON.stringify(body) : undefined,
         }),
       );
       const text = response.body ? await response.text() : null;

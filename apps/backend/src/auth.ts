@@ -17,6 +17,7 @@ export const AUTH_BASE_PATH = '/api/auth';
 export const CLIENT_IP_HEADER = 'x-homora-client-ip';
 
 const SESSION_SECONDS = 8 * 60 * 60;
+const REMEMBERED_SESSION_SECONDS = 30 * 24 * 60 * 60;
 export class AccountExistsError extends Error {
   constructor() {
     super('An administrator account already exists.');
@@ -75,7 +76,7 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
       maxPasswordLength: 1024,
       autoSignIn: false,
     },
-    session: { expiresIn: SESSION_SECONDS },
+    session: { expiresIn: REMEMBERED_SESSION_SECONDS, disableSessionRefresh: true },
     // Public sign-up is closed: the account is created by `setup()` only.
     disabledPaths: ['/sign-up/email'],
     rateLimit: {
@@ -95,6 +96,17 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
       ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },
     databaseHooks: {
+      session: {
+        create: {
+          // Better Auth otherwise hard-codes a 24-hour lifetime for browser-session cookies.
+          before: async (session, context) => {
+            if (context?.path === '/sign-in/email' && context.body?.rememberMe === false)
+              return {
+                data: { ...session, expiresAt: new Date(Date.now() + SESSION_SECONDS * 1000) },
+              };
+          },
+        },
+      },
       user: {
         create: {
           // Last line of defense: no route can ever create a second account.
@@ -197,7 +209,7 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
     /** Server-side sign-in returning a `Cookie` header value (tests and restore checks). */
     async createSessionCookie(email: string, password: string) {
       const { headers } = await instance.api.signInEmail({
-        body: { email, password },
+        body: { email, password, rememberMe: false },
         returnHeaders: true,
       });
       return headers

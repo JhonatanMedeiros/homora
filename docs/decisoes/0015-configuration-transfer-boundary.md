@@ -1,4 +1,4 @@
-# 0014 — Configuration transfer boundary
+# 0015 — Configuration transfer boundary
 
 Status: accepted (2026-11-13)
 

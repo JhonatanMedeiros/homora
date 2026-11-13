@@ -6,7 +6,7 @@
  * module imports no routes, SQLite, authorization or confirmation logic; those stay in
  * `service-configuration-transfer.ts` and `routes/config-transfer.ts`. Docker discovery reuses the
  * collector exported below. Limits owned elsewhere (e.g. `MAX_GROUP_COLUMNS`) are imported from
- * their owner, never the other way around. See ADR 0014.
+ * their owner, never the other way around. See ADR 0015.
  */
 export * from './types.js';
 export { isRecord, parseService, parseTransfer, withinParseBudget } from './parser.js';
