@@ -1615,6 +1615,16 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Kept typed application and integration adapters because they serve existing non-React call sites, dynamic fallback contracts and locale-aware formatting. The dynamic fallback now uses the public i18next translation API instead of its interpolator service.
 - Validation: `pnpm check` (1,357 application tests and 18 script tests) and `pnpm build` passed. Browser layout and live notification delivery remain unverified.
 
+### MCP, agent and proposal boundaries (issue #136)
+
+- Mapped transports, scope enforcement, tools, identities and the proposal domain
+  ([ADR 0014](decisoes/0014-mcp-agent-proposal-boundaries.md)). Extracted `mcp-identity.ts`,
+  `mcp-responses.ts`, `mcp-proposal-schemas.ts` and `agent-changes.ts`, removing the tool-to-tool
+  import and the `proposals` ↔ `proposal-review` cycle. A separate package was evaluated and deferred.
+- Behavior is unchanged; this does not complete R4 (issue #124), whose criteria stay open.
+- Validated with `pnpm check` (includes the MCP, governance, lifecycle and concurrency suites) and
+  `pnpm build`. No live-infrastructure validation was performed.
+
 ### Monitoring capability boundary (issue #135)
 
 - Monitoring code moved to `apps/backend/src/monitoring/` behind `monitoring/index.ts`; an ESLint rule blocks deep imports from outside. Import map, flow and pure/I-O split are in `docs/arquitetura.md`; the no-package decision is in [ADR 0013](decisoes/0013-monitoring-capability-boundary.md). No migration, API, MCP or notification behaviour changed.
