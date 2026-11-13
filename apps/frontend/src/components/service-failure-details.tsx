@@ -1,20 +1,10 @@
-import { useEffect, useState } from 'react';
 import { CHECK_INTERVAL_DEFAULT, type Service } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { DetailsSkeleton } from '@/components/skeletons';
 import { formatAgo, formatTime, t } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { ServiceStatus } from '@/lib/services';
-
-type Check = Pick<ServiceStatus, 'status' | 'reason' | 'httpStatus' | 'latencyMs'> & {
-  observedAt: number;
-};
-type Detail = {
-  recent: Check[];
-  failingSince: number | null;
-  failingSinceIsApproximate: boolean;
-  lastSuccess: { observedAt: number; latencyMs: number | null } | null;
-};
+import { useServiceFailureDetails, type FailureCheck } from '@/hooks/use-service-failure-details';
 
 const BARS = 24;
 
@@ -54,20 +44,7 @@ export function ServiceFailureDetails({
   onEdit: () => void;
   className?: string;
 }) {
-  const [detail, setDetail] = useState<Detail | 'loading' | 'error'>('loading');
-  useEffect(() => {
-    let active = true;
-    fetch(`/api/services/${service.id}/status-detail`)
-      .then((response) => {
-        if (!response.ok) throw new Error();
-        return response.json() as Promise<Detail>;
-      })
-      .then((data) => active && setDetail(data))
-      .catch(() => active && setDetail('error'));
-    return () => {
-      active = false;
-    };
-  }, [service.id, status.lastAttempt]);
+  const detail = useServiceFailureDetails(service.id, status.lastAttempt);
 
   if (detail === 'loading') {
     return (
@@ -92,7 +69,7 @@ export function ServiceFailureDetails({
 
   const seconds = service.checkInterval ?? CHECK_INTERVAL_DEFAULT;
   const since = detail.failingSince ?? (status.lastAttempt ? Date.parse(status.lastAttempt) : null);
-  const bars: (Check | null)[] = [
+  const bars: (FailureCheck | null)[] = [
     ...Array.from<null>({ length: Math.max(0, BARS - detail.recent.length) }).fill(null),
     ...detail.recent.slice(-BARS),
   ];

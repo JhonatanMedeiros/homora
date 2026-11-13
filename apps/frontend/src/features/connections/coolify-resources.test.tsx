@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { setLocale } from '@/i18n';
 import type { CoolifyResource, ResourceLink } from '@homora/shared';
 import { Connections } from './connections';
 import { CoolifyResources } from './coolify-resources';
@@ -10,7 +11,10 @@ import type { Connection } from './connection-model';
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  setLocale('en');
+  localStorage.clear();
 });
+beforeEach(() => setLocale('pt-BR'));
 
 const connection: Connection = {
   id: 2,

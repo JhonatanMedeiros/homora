@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useUptimeDetails } from '@/hooks/use-uptime-details';
 import {
   UPTIME_RANGES,
   type Incident,
@@ -441,23 +442,8 @@ function UptimeDetails({
   range: UptimeRange;
   onRangeChange: (range: UptimeRange) => void;
 }) {
-  // The batch leaves out the percentile; the single-service endpoint has it.
-  const key = `${service.id}:${range}:${summary.checks}`;
-  const [result, setResult] = useState<{ key: string; p95: number | null | 'error' }>();
-  const p95 = result?.key === key ? result.p95 : 'loading';
-  useEffect(() => {
-    let active = true;
-    fetch(`/api/services/${service.id}/uptime?range=${range}`)
-      .then((response) => {
-        if (!response.ok) throw new Error();
-        return response.json() as Promise<UptimeSummary>;
-      })
-      .then((data) => active && setResult({ key, p95: data.p95LatencyMs ?? null }))
-      .catch(() => active && setResult({ key, p95: 'error' }));
-    return () => {
-      active = false;
-    };
-  }, [service.id, range, key]);
+  // The batch omits percentiles; this hook loads p95 for the expanded single-service detail.
+  const p95 = useUptimeDetails(service.id, range, summary.checks);
   const ms = (value: number | null) =>
     value === null ? t('uptime.none') : `${Math.round(value)} ms`;
   const facts: [string, string][] = [

@@ -1,40 +1,12 @@
-import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
+import { useMonitoringDefaults } from '@/hooks/use-monitoring-defaults';
 import { t } from '@/i18n';
 import { SettingRow, SettingsGroup } from './setting-row';
 
 /** Instance-wide monitoring defaults, kept on the server. */
 export function MonitoringSettings() {
-  const [allowPrivate, setAllowPrivate] = useState<boolean | null>(null);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/service-defaults', { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error();
-        return response.json() as Promise<{ allowPrivate: boolean }>;
-      })
-      .then((data) => setAllowPrivate(data.allowPrivate === true))
-      .catch(() => {
-        if (!controller.signal.aborted) setError(t('settings.monitoring.loadError'));
-      });
-    return () => controller.abort();
-  }, []);
-  async function change(next: boolean) {
-    setError('');
-    try {
-      const response = await fetch('/api/service-defaults', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ allowPrivate: next }),
-      });
-      if (!response.ok) throw new Error();
-      setAllowPrivate(next);
-    } catch {
-      setError(t('settings.monitoring.saveError'));
-    }
-  }
+  const { allowPrivate, error, change } = useMonitoringDefaults();
   return (
     <div className="flex flex-col gap-4">
       {error && (

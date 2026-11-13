@@ -12,11 +12,9 @@ import {
 import { PublicStatusSettings } from '@/features/public-status/public-status-settings';
 import { SettingsSearch } from '@/features/settings/settings-search';
 import { AlertsSettings } from '@/features/settings/alerts-settings';
-import {
-  HomeSettings,
-  InterfaceSettings,
-  TopBarSettings,
-} from '@/features/settings/interface-settings';
+import { HomeSettings } from '@/features/settings/home-settings';
+import { InterfaceSettings } from '@/features/settings/interface-settings';
+import { TopBarSettings } from '@/features/settings/top-bar-settings';
 import {
   isSettingsSection,
   settingsPath,

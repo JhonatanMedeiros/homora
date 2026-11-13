@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import type { Service } from '@homora/shared';
-import { afterEach, beforeAll, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { setLocale } from '@/i18n';
 import { CommandPalette } from './command-palette';
 
 beforeAll(() => {
@@ -13,8 +14,10 @@ beforeAll(() => {
   };
   Element.prototype.scrollIntoView ??= () => {};
 });
+beforeEach(() => setLocale('pt-BR'));
 afterEach(() => {
   cleanup();
+  setLocale('en');
   localStorage.clear();
   vi.restoreAllMocks();
 });

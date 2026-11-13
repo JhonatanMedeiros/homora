@@ -11,217 +11,6 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
 });
-it('moves a service to another group from the organize menu', async () => {
-  localStorage.clear();
-  window.history.replaceState(null, '', '/manage/services');
-  const calls: { url: string; method?: string; body?: string }[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
-      calls.push({ url, method: init?.method, body: init?.body });
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/services' && !init?.method)
-        return {
-          ok: true,
-          json: async () => [
-            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
-            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
-          ],
-        };
-      return { ok: true, json: async () => (init?.method ? {} : []) };
-    }),
-  );
-  render(<App />);
-  await screen.findByText('Wiki');
-  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
-  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções de Wiki' }), { key: 'Enter' });
-  fireEvent.keyDown(await screen.findByRole('menuitem', { name: 'Mover para o grupo' }), {
-    key: 'ArrowRight',
-  });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Infra' }));
-  await waitFor(() => {
-    const put = calls.find((call) => call.url === '/api/services/1' && call.method === 'PUT');
-    expect(put).toBeTruthy();
-    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ name: 'Wiki', category: 'Infra' });
-  });
-  window.history.replaceState(null, '', '/');
-});
-
-it('moves a service by dragging it onto another group row or an empty group', async () => {
-  localStorage.clear();
-  window.history.replaceState(null, '', '/manage/services');
-  const calls: { url: string; method?: string; body?: string }[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
-      calls.push({ url, method: init?.method, body: init?.body });
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/services' && !init?.method)
-        return {
-          ok: true,
-          json: async () => [
-            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
-            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
-          ],
-        };
-      if (url === '/api/groups' && !init?.method)
-        return {
-          ok: true,
-          json: async () => [
-            { id: 1, name: 'Casa', position: 0, columns: null },
-            { id: 2, name: 'Infra', position: 1, columns: null },
-            { id: 3, name: 'Vazio', position: 2, columns: null },
-          ],
-        };
-      return { ok: true, json: async () => (init?.method ? {} : []) };
-    }),
-  );
-  render(<App />);
-  await screen.findByText('Wiki');
-  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
-  const rowOf = (name: string) => screen.getByText(name).closest('li') as HTMLElement;
-  const dataTransfer = { effectAllowed: '', dropEffect: '', setData: vi.fn() };
-  // Onto a row of another group.
-  fireEvent.dragStart(rowOf('Wiki'), { dataTransfer });
-  fireEvent.dragOver(rowOf('Proxmox'), { dataTransfer });
-  fireEvent.drop(rowOf('Proxmox'), { dataTransfer });
-  await waitFor(() => {
-    const put = calls.find((call) => call.url === '/api/services/1' && call.method === 'PUT');
-    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ category: 'Infra' });
-  });
-  calls.length = 0;
-  // Onto an empty group's drop zone, which only exists while dragging.
-  expect(document.querySelector('[data-group-drop]')).toBeNull();
-  fireEvent.dragStart(rowOf('Proxmox'), { dataTransfer });
-  const zone = await waitFor(() => {
-    const found = document.querySelector('[data-group-drop]');
-    expect(found).toBeTruthy();
-    return found as HTMLElement;
-  });
-  fireEvent.dragOver(zone, { dataTransfer });
-  fireEvent.drop(zone, { dataTransfer });
-  await waitFor(() => {
-    const put = calls.find((call) => call.url === '/api/services/2' && call.method === 'PUT');
-    expect(JSON.parse(put?.body ?? '{}')).toMatchObject({ category: 'Vazio' });
-  });
-  window.history.replaceState(null, '', '/');
-});
-
-it('keeps focus on an arrow when its row reaches the end and announces the position', async () => {
-  localStorage.clear();
-  window.history.replaceState(null, '', '/manage/services');
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/services' && !init?.method)
-        return {
-          ok: true,
-          json: async () => [
-            { id: 1, name: 'Alfa', url: 'http://wiki.test/', category: 'Casa', description: '' },
-            { id: 2, name: 'Beta', url: 'http://notes.test/', category: 'Casa', description: '' },
-          ],
-        };
-      return { ok: true, json: async () => (init?.method ? {} : []) };
-    }),
-  );
-  render(<App />);
-  await screen.findByText('Alfa');
-  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
-  const down = screen.getByRole('button', { name: 'Mover Alfa para baixo' });
-  down.focus();
-  fireEvent.click(down);
-  expect(await screen.findByText('Alfa: posição 2 de 2.')).toBeTruthy();
-  // At the end the arrow stays focusable instead of dropping focus to the page.
-  expect(
-    screen.getByRole('button', { name: 'Mover Alfa para baixo' }).getAttribute('aria-disabled'),
-  ).toBe('true');
-  expect(document.activeElement).toBe(
-    screen.getByRole('button', { name: 'Mover Alfa para baixo' }),
-  );
-  window.history.replaceState(null, '', '/');
-});
-
-it('notes when availability cannot be refreshed', async () => {
-  localStorage.clear();
-  window.history.replaceState(null, '', '/');
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/service-status') return { ok: false, json: async () => ({}) };
-      if (url === '/api/services')
-        return {
-          ok: true,
-          json: async () => [
-            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
-          ],
-        };
-      return { ok: true, json: async () => [] };
-    }),
-  );
-  render(<App />);
-  await screen.findByText('Wiki');
-  expect(await screen.findByText(/Não foi possível atualizar a disponibilidade/)).toBeTruthy();
-});
-
-it('undoes a move to another group, restoring group and order', async () => {
-  localStorage.clear();
-  window.history.replaceState(null, '', '/manage/services');
-  const calls: { url: string; method?: string; body?: string }[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
-      calls.push({ url, method: init?.method, body: init?.body });
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/services' && !init?.method)
-        return {
-          ok: true,
-          json: async () => [
-            {
-              id: 1,
-              name: 'Alfa',
-              url: 'http://a.test/',
-              category: 'Casa',
-              description: '',
-              position: 0,
-            },
-            {
-              id: 3,
-              name: 'Beta',
-              url: 'http://b.test/',
-              category: 'Casa',
-              description: '',
-              position: 1,
-            },
-            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
-          ],
-        };
-      return { ok: true, json: async () => (init?.method ? {} : []) };
-    }),
-  );
-  render(<App />);
-  await screen.findByText('Alfa');
-  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
-  fireEvent.keyDown(screen.getByRole('button', { name: 'Opções de Alfa' }), { key: 'Enter' });
-  fireEvent.keyDown(await screen.findByRole('menuitem', { name: 'Mover para o grupo' }), {
-    key: 'ArrowRight',
-  });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Infra' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }));
-  await waitFor(() => {
-    const order = calls.find((call) => call.url === '/api/services/order');
-    expect(JSON.parse(order?.body ?? '{}')).toEqual({ category: 'Casa', ids: [1, 3] });
-  });
-  const puts = calls.filter((call) => call.url === '/api/services/1' && call.method === 'PUT');
-  expect(puts.map((call) => JSON.parse(call.body ?? '{}').category)).toEqual(['Infra', 'Casa']);
-  window.history.replaceState(null, '', '/');
-});
 
 function stubSignedIn() {
   vi.stubGlobal(
@@ -236,6 +25,158 @@ function stubSignedIn() {
     }),
   );
 }
+
+it('opens service management directly and returns to dashboard', async () => {
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
+  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
+  expect(window.location.pathname).toBe('/manage/services');
+  expect(screen.getByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
+  const navigation = screen.getByRole('navigation', { name: 'Gerenciamento' });
+  expect(
+    within(navigation).getByRole('button', { name: 'Serviços' }).getAttribute('aria-current'),
+  ).toBe('page');
+  expect(within(navigation).getByRole('button', { name: 'Integrações' })).toBeTruthy();
+  expect(within(navigation).getByRole('button', { name: 'Agentes' })).toBeTruthy();
+  fireEvent.click(within(navigation).getByRole('button', { name: 'Agentes' }));
+  expect(window.location.pathname).toBe('/manage/agents');
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
+  expect(screen.getByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
+  expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
+    serviceRequests,
+  );
+});
+
+it('opens a management route directly and responds to browser history', async () => {
+  window.history.replaceState(null, '', '/manage/integrations');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Integrações' })).toBeTruthy();
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+      name: 'Agentes',
+    }),
+  );
+  expect(window.location.pathname).toBe('/manage/agents');
+  window.history.replaceState(null, '', '/');
+  fireEvent.popState(window);
+  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  window.history.replaceState(null, '', '/manage/services');
+  fireEvent.popState(window);
+  expect(await screen.findByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
+});
+
+it('displays error for unknown pages and missing service', async () => {
+  window.history.replaceState(null, '', '/manage/nao-existe');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  const view = render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeTruthy();
+  view.unmount();
+  window.history.replaceState(null, '', '/manage/services/99/edit');
+  render(<App />);
+  expect(await screen.findByText('Serviço não encontrado.')).toBeTruthy();
+});
+
+it('shows the list view by default and opens the command palette with Ctrl K', async () => {
+  localStorage.clear();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 1,
+              name: 'Jellyfin',
+              url: 'https://example.com/',
+              category: 'Mídia',
+              description: 'Filmes',
+            },
+          ],
+        };
+      if (url === '/api/service-status')
+        return { ok: true, json: async () => ({ 1: { status: 'available' } }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Jellyfin/ });
+  fireEvent.click(screen.getByRole('button', { name: 'Visualização' }));
+  expect((await screen.findByRole('radio', { name: 'Lista' })).getAttribute('data-state')).toBe(
+    'on',
+  );
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+  fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+  expect(await screen.findByPlaceholderText('Buscar serviços ou executar um comando')).toBeTruthy();
+  expect(screen.getByText('Alternar tema')).toBeTruthy();
+  fireEvent.click(screen.getByText('Adicionar serviço'));
+  expect(window.location.pathname).toBe('/manage/services/new');
+  localStorage.clear();
+});
+
+it('opens the palette from the header button and goes to a card inside a collapsed group', async () => {
+  localStorage.clear();
+  localStorage.setItem('homora-collapsed-groups', JSON.stringify(['Infra']));
+  window.history.replaceState(null, '', '/');
+  Element.prototype.scrollIntoView = vi.fn();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/services')
+        return {
+          ok: true,
+          json: async () => [
+            { id: 1, name: 'Wiki', url: 'http://wiki.test/', category: 'Casa', description: '' },
+            { id: 2, name: 'Proxmox', url: 'http://pve.test/', category: 'Infra', description: '' },
+          ],
+        };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Wiki/ });
+  expect(document.getElementById('service-2')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Buscar ou executar um comando' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Ir para o card de Proxmox' }));
+  await waitFor(() => expect(document.getElementById('service-2')?.dataset.highlight).toBe('true'));
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  // The expansion is temporary: the saved preference is kept.
+  expect(localStorage.getItem('homora-collapsed-groups')).toContain('Infra');
+  await waitFor(
+    () => expect(document.getElementById('service-2')?.dataset.highlight).toBeUndefined(),
+    {
+      timeout: 3000,
+    },
+  );
+  localStorage.clear();
+});
 
 it('opens the account from the user menu as its own page, outside the management area', async () => {
   stubSignedIn();

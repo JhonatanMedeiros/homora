@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Container, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -10,118 +9,29 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { SectionSkeleton } from '@/components/skeletons';
-import { apiError, t } from '@/i18n';
+import { t } from '@/i18n';
 import { ImportPreview } from '@/features/transfer/import-preview';
-import type { Plan } from '@/features/transfer/transfer-model';
 import { PrivateOption, SuggestionList } from './suggestion-list';
-
-type Entry = { id: string; container: string; group: string; url: string };
-type Found = {
-  enabled: true;
-  scanned: number;
-  entries: Entry[];
-  version: number;
-  plan: Plan;
-};
-type State =
-  | { status: 'loading' }
-  | { status: 'disabled' }
-  | { status: 'error'; message: string }
-  | { status: 'ready'; found: Found };
+import { useLocalDiscovery } from '@/hooks/use-local-discovery';
 
 /**
  * Card suggestions from the labels of this host's Docker containers. Nothing is added without
  * review: the user selects containers and confirms, and the server re-queries Docker.
  */
 export function LocalDiscovery({ onImported }: { onImported: () => void | Promise<void> }) {
-  const [state, setState] = useState<State>({ status: 'loading' });
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [allowPrivate, setAllowPrivate] = useState(false);
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(true);
-  const [reload, setReload] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function scan() {
-      try {
-        const response = await fetch('/api/discovery', { signal: controller.signal });
-        const body: unknown = await response.json().catch(() => null);
-        if (controller.signal.aborted) return;
-        if (!response.ok) {
-          setState({ status: 'error', message: apiError(body, t('discovery.failed')) });
-        } else if (
-          !body ||
-          typeof body !== 'object' ||
-          (body as { enabled?: unknown }).enabled !== true
-        ) {
-          setState({ status: 'disabled' });
-        } else {
-          setState({ status: 'ready', found: body as Found });
-          setSelected(new Set());
-        }
-      } catch {
-        if (!controller.signal.aborted)
-          setState({ status: 'error', message: t('discovery.failed') });
-      } finally {
-        if (!controller.signal.aborted) setBusy(false);
-      }
-    }
-    void scan();
-    return () => controller.abort();
-  }, [reload]);
-
-  function rescan() {
-    setBusy(true);
-    setMessage('');
-    setReload((value) => value + 1);
-  }
-
-  async function add() {
-    if (state.status !== 'ready' || selected.size === 0) return;
-    setBusy(true);
-    setMessage('');
-    try {
-      const response = await fetch('/api/discovery/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ids: [...selected],
-          keepPrivate: allowPrivate,
-          expectedVersion: state.found.version,
-        }),
-      });
-      const body: unknown = await response.json().catch(() => null);
-      if (!response.ok) {
-        setMessage(apiError(body, t('discovery.failed')));
-        return;
-      }
-      const created = (body as { created?: number }).created ?? 0;
-      await onImported();
-      setMessage(t('discovery.added', { count: created }));
-      setReload((value) => value + 1);
-    } catch {
-      setMessage(t('discovery.failed'));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const items =
-    state.status === 'ready'
-      ? state.found.plan.services.map((service, index) => {
-          const entry = state.found.entries[index];
-          return {
-            id: entry?.id,
-            name: service.name,
-            group: service.group,
-            url: service.url,
-            container: entry?.container,
-            isNew: service.status === 'new',
-          };
-        })
-      : [];
-  const newCount = items.filter((item) => item.isNew).length;
+  const {
+    state,
+    selected,
+    setSelected,
+    allowPrivate,
+    setAllowPrivate,
+    message,
+    busy,
+    rescan,
+    add,
+    items,
+    newCount,
+  } = useLocalDiscovery(onImported);
 
   return (
     <div className="flex flex-col gap-4">

@@ -1,86 +1,48 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
-import {
-  DEFAULT_MONITOR_SETTINGS,
-  type HostLink,
-  type MonitorSettings,
-  type Service,
-  type ServiceInput,
-} from '@homora/shared';
-import {
-  Check,
-  LayoutGrid,
-  Map as MapIcon,
-  Plus,
-  Server,
-  SlidersHorizontal,
-  Sparkles,
-} from 'lucide-react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { ViewOptions } from '@/components/view-options';
-import { HostView } from '@/components/host-view';
-import { HostMap } from '@/components/host-map';
 import { useDependencies } from '@/hooks/use-dependencies';
-import { dependsOn, dependentsOf, impairedUpstream, isImpaired } from '@/lib/dependencies';
-import { Toggle } from '@/components/ui/toggle';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useHostInventory } from '@/hooks/use-host-inventory';
-import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
-import { HostImpactBanner } from '@/components/host-impact-banner';
-import { hostLabel, offlineNodes, serviceImpact } from '@/lib/hosts';
+import { dependentsOf } from '@/lib/dependencies';
+import { hostLabel } from '@/lib/hosts';
 import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
 import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
-import { useTags } from '@/hooks/use-tags';
 import { StatusFilter } from '@/components/status-filter';
-import {
-  matchesStatusFilter,
-  statusBucket,
-  STATUS_FILTERS,
-  type StatusFilter as StatusFilterValue,
-} from '@/lib/status-filter';
-import { FormError } from '@/components/form-error';
 import { StatusBanner } from '@/components/status-banner';
+import { Toggle } from '@/components/ui/toggle';
+import { useTags } from '@/hooks/use-tags';
 import { useStatusOverview } from '@/hooks/use-status-overview';
 import { activeWindows, useMaintenance } from '@/hooks/use-maintenance';
 import { useNow } from '@/hooks/use-now';
-import { TopBar } from '@/components/top-bar';
+import type { StatusFilter as StatusFilterValue } from '@/lib/status-filter';
+import { FormError } from '@/components/form-error';
 import { useTopBar } from '@/hooks/use-top-bar';
-import { GroupSection } from '@/components/group-section';
 import { ServicesSkeleton } from '@/components/skeletons';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { OrganizePanel } from '@/components/organize-panel';
-import { PageHeader } from '@/components/page-header';
-import { ServiceCard } from '@/components/service-card';
+import { ServiceGroups } from '@/components/service-groups';
+import { ServiceDashboardHeader } from '@/components/service-dashboard-header';
 import { useCardWidgets } from '@/hooks/use-card-widgets';
 import { useResourceLinks } from '@/hooks/use-resource-links';
-import { CoolifyReviewDialog } from '@/components/coolify-review-dialog';
-import { ServiceForm } from '@/components/service-form';
-import { OrganizeRow } from '@/components/organize-row';
+import { ServicePageOverlays } from '@/components/service-page-overlays';
+import { ServicePageEditor } from '@/components/service-page-editor';
+import { useServiceEditor } from '@/hooks/use-service-editor';
+import { useServiceGroups } from '@/hooks/use-service-groups';
+import { useServicePageModel } from '@/hooks/use-service-page-model';
+import { useServicePageFocus, type FocusRequest } from '@/hooks/use-service-page-focus';
 import { ServicesEmpty } from '@/components/services-empty';
 import type { useServices } from '@/hooks/use-services';
-import { apiError, t } from '@/i18n';
-import { emptyService } from '@/lib/services';
+import { useServicePageActions } from '@/hooks/use-service-page-actions';
+import { t } from '@/i18n';
+
+const HostView = lazy(() =>
+  import('@/components/host-view').then((module) => ({ default: module.HostView })),
+);
+const HostMap = lazy(() =>
+  import('@/components/host-map').then((module) => ({ default: module.HostMap })),
+);
 
 /** Main screen: service groups with status, search, edit, and Organize mode. */
 type Props = {
@@ -95,10 +57,7 @@ type Props = {
   onFocusHandled?: () => void;
 };
 
-/** Asks the page to scroll to a service and flash it; `nonce` makes repeated requests distinct. */
-export type FocusRequest = { id: number; nonce: number };
-
-const HIGHLIGHT_MS = 2000;
+export type { FocusRequest } from '@/hooks/use-service-page-focus';
 
 export function ServicesPage({
   data,
@@ -111,7 +70,6 @@ export function ServicesPage({
 }: Props) {
   const { services, groupRows, statuses, sortedIn, blockedIds, refresh, pages } = data;
   const { activePageId, pageIdOf } = data;
-  const allCategories = data.categories;
   // Group view shows one page at a time; Host and Map views show every page.
   const paged = pages.length > 1 && !managing;
   const cardWidgets = useCardWidgets();
@@ -134,24 +92,13 @@ export function ServicesPage({
   const maintenance = useMaintenance();
   const clock = useNow();
   const inMaintenance = activeWindows(maintenance.windows, clock);
+  const { tags: tagMap, reload: reloadTags } = useTags();
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>('all');
   const list = view === 'list' || managing;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
-  const { tags: tagMap, reload: reloadTags } = useTags();
-  const [tagDraft, setTagDraft] = useState<string[] | null>(null);
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>('all');
-  const [form, setForm] = useState<ServiceInput>(emptyService);
-  const [shared, setShared] = useState(false);
-  // Alert settings live apart from the card. `null` means untouched, so the form shows what the
-  // server reports (even when that arrives after the form opened) until the user changes a field.
-  const [monitorDraft, setMonitorDraft] = useState<MonitorSettings | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [host, setHost] = useState<HostLink | null>(null);
   const deps = useDependencies();
-  // Edits to "Depends on" in the open form, applied with the card on save.
-  const [depAdded, setDepAdded] = useState<number[]>([]);
-  const [depRemoved, setDepRemoved] = useState<number[]>([]);
   // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
   const [localFocus, setLocalFocus] = useState<FocusRequest | null>(null);
   const focusRequest = localFocus ?? requestedFocus;
@@ -159,606 +106,176 @@ export function ServicesPage({
     setLocalFocus(null);
     handledFocus?.();
   };
+  const {
+    addButton,
+    flash,
+    srNote,
+    setSrNote,
+    focusService,
+    focusNonce,
+    announce,
+    focusEditTrigger,
+  } = useServicePageFocus({
+    services,
+    focusRequest,
+    onFocusHandled,
+    setSelected,
+    managing,
+    formRoute,
+    loaded: data.loaded,
+  });
   const mapView = arrange === 'map' && !managing;
   const hostList = arrange === 'host' && !managing;
   const hostView = hostList || mapView;
+  const editor = useServiceEditor({
+    managing,
+    formRoute,
+    hostView,
+    data,
+    deps,
+    navigate,
+    announce,
+    onOpenForm: () => setConfirming(null),
+    onSaved: () => setSelected(null),
+    monitorSettings: overview?.settings,
+    tagMap,
+    onMonitoringSaved: () => setOverviewVersion((version) => version + 1),
+    onTagsSaved: reloadTags,
+  });
+  const { openForm, hostData } = editor;
+  const groupActions = useServiceGroups({
+    data,
+    activePageId,
+    announce,
+    onSaved: () => setSelected(null),
+  });
+  const {
+    editingGroup,
+    beginRename,
+    cancelRename,
+    groupDraft,
+    setGroupDraft,
+    groupError,
+    removingGroup,
+    setRemovingGroup,
+    saveGroup,
+    deleteGroup,
+  } = groupActions;
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const linkedConnections = useMemo(
-    () => [...new Set(services.flatMap((s) => (s.host ? [s.host.connectionId] : [])))],
-    [services],
-  );
-  const hostData = useHostInventory(hostView || formOpen, linkedConnections);
   const [nodeFilter, setNodeFilter] = useState<{ connectionId: number; node: string } | null>(null);
-  const impacts = useMemo(
-    () =>
-      new Map(
-        services.map((s) => [
-          s.id,
-          serviceImpact(
-            s,
-            statuses[s.id]?.status,
-            blockedIds.has(s.id),
-            hostData.connections,
-            hostData.inventories,
-          ),
-        ]),
-      ),
-    [services, statuses, blockedIds, hostData.connections, hostData.inventories],
-  );
-  const upstream = useMemo(
-    () => impairedUpstream(services, deps.dependencies, impacts),
-    [services, deps.dependencies, impacts],
-  );
-  const dependencyNotes = useMemo(() => {
-    const notes: Record<number, string> = {};
-    for (const [id, causes] of upstream) {
-      if (isImpaired(impacts.get(id))) continue;
-      const names = causes
-        .map((cause) => services.find((s) => s.id === cause)?.name)
-        .filter(Boolean)
-        .join(', ');
-      if (names) notes[id] = t('dependencies.mayBeAffected', { names });
-    }
-    return notes;
-  }, [upstream, impacts, services]);
-  const offline = useMemo(
-    () => offlineNodes(services, hostData.connections, hostData.inventories),
-    [services, hostData.connections, hostData.inventories],
-  );
-  // Instance setting that only seeds the "allow private network" box of a NEW service.
-  const privateDefaultRef = useRef(false);
-  const [editing, setEditing] = useState<number | null>(null);
-  const [formError, setFormError] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [confirming, setConfirming] = useState<number | null>(null);
   const [organizing, setOrganizing] = useState(false);
-  const [dragging, setDragging] = useState<number | null>(null);
-  const [dropOver, setDropOver] = useState<number | null>(null);
-  const [dropGroup, setDropGroup] = useState<string | null>(null);
-  const [removingGroup, setRemovingGroup] = useState<{ id: number; name: string } | null>(null);
-  const [message, setMessage] = useState('');
-  const [flash, setFlash] = useState('');
-  // Quiet live-region text for screen readers (e.g. new position after an arrow press).
-  const [srNote, setSrNote] = useState('');
-  const [editingGroup, setEditingGroup] = useState<number | null>(null);
-  const [groupDraft, setGroupDraft] = useState('');
-  const [groupError, setGroupError] = useState('');
-  const flashTimer = useRef<number | undefined>(undefined);
-  const initializedRoute = useRef<'new' | number | null>(null);
-  const nameInput = useRef<HTMLInputElement>(null);
-  const addButton = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => () => window.clearTimeout(flashTimer.current), []);
-  useEffect(() => {
-    if (!managing) return;
-    const controller = new AbortController();
-    fetch('/api/service-defaults', { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { allowPrivate?: unknown } | null) => {
-        const value = data?.allowPrivate === true;
-        privateDefaultRef.current = value;
-        // It can arrive after a "new service" form opened: seed it while the form is untouched.
-        if (value && initializedRoute.current === 'new')
-          setForm((current) =>
-            current.name || current.url || current.allowPrivate
-              ? current
-              : { ...current, allowPrivate: true },
-          );
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, [managing]);
-
-  // "Go to card": clear the category filter, let the group expand, then scroll and flash the card.
-  const focusService = focusRequest ? services.find((s) => s.id === focusRequest.id) : undefined;
-  const focusNonce = focusRequest?.nonce;
-  useEffect(() => {
-    if (focusNonce === undefined || !focusService) return;
-    const timers: number[] = [];
-    // Two steps: first lift the category filter that could hide the card, then, once the group has
-    // rendered and expanded, scroll and flash.
-    timers.push(
-      window.setTimeout(() => {
-        setSelected(null);
-        timers.push(
-          window.setTimeout(() => {
-            const card = document.getElementById(`service-${focusService.id}`);
-            if (card) {
-              const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-              card.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' });
-              card.dataset.highlight = 'true';
-              // Not cancelled on cleanup: handing the request back re-runs this effect.
-              window.setTimeout(() => delete card.dataset.highlight, HIGHLIGHT_MS);
-            }
-            onFocusHandled?.();
-          }, 50),
-        );
-      }, 0),
-    );
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
-    // Only a new request (nonce) should trigger it, not later edits to the service list.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusNonce, focusService?.id]);
-  function announce(text: string) {
-    setFlash(text);
-    window.clearTimeout(flashTimer.current);
-    flashTimer.current = window.setTimeout(() => setFlash(''), 5000);
-  }
-
-  const categories = useMemo(
-    () =>
-      paged && !hostView
-        ? allCategories.filter((category) => pageIdOf(category) === activePageId)
-        : allCategories,
-    [paged, hostView, allCategories, pageIdOf, activePageId],
-  );
-  const pageName = (service: Service) =>
-    pages.length > 1
-      ? pages.find((page) => page.id === pageIdOf(service.category))?.name
-      : undefined;
-  const onPage = (service: Service) => !paged || hostView || categories.includes(service.category);
-  const needle = managing ? query.trim().toLowerCase() : '';
-  const matches = (s: Service) =>
-    !needle || s.name.toLowerCase().includes(needle) || s.url.toLowerCase().includes(needle);
-  const allTags = [...new Set(Object.values(tagMap).flat())].sort();
-  const activeTag = managing || organizing || hostView ? null : tagFilter;
-  const bucketOf = (s: Service) =>
-    statusBucket(statuses[s.id], overview?.settings[s.id], blockedIds.has(s.id));
-  const activeStatusFilter = managing || organizing || hostView ? 'all' : statusFilter;
-  const filtered = services.filter(
-    (s) =>
-      onPage(s) &&
-      matches(s) &&
-      (selected === null || s.category === selected) &&
-      (activeTag === null || (tagMap[s.id] ?? []).includes(activeTag)) &&
-      matchesStatusFilter(activeStatusFilter, bucketOf(s)),
-  );
-  const statusCounts = Object.fromEntries(
-    STATUS_FILTERS.map((filter) => [
-      filter,
-      services.filter((s) => onPage(s) && matchesStatusFilter(filter, bucketOf(s))).length,
-    ]),
-  ) as Record<StatusFilterValue, number>;
-  const problemRank = (bucket: ReturnType<typeof statusBucket>) =>
-    bucket === 'down' ? 2 : bucket === 'degraded' ? 1 : 0;
-  const isDown = (s: Service) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id);
-  const groups = categories
-    .map((category) => ({
-      category,
-      items: sortedIn(category)
-        .filter((s) => filtered.some((f) => f.id === s.id))
-        // Problems rise to the top of the group (offline, then degraded), except in Organize mode,
-        // where the user sets the order. The sort is stable, so the rest keeps its own order.
-        .sort((a, b) => (organizing ? 0 : problemRank(bucketOf(b)) - problemRank(bucketOf(a)))),
-    }))
-    .filter(
-      (group) =>
-        group.items.length ||
-        (selected === null && !needle && activeStatusFilter === 'all' && activeTag === null),
-    );
-
-  function focusEditTrigger(id: number | null) {
-    if (id !== null)
-      document.querySelector<HTMLButtonElement>(`[data-service-edit="${id}"]`)?.focus();
-    else addButton.current?.focus();
-  }
-  function openForm(service?: Service) {
-    navigate(service ? `/manage/services/${service.id}/edit` : '/manage/services/new');
-    setConfirming(null);
-    setEditing(service?.id ?? null);
-    setHost(service?.host ?? null);
-    setDepAdded([]);
-    setDepRemoved([]);
-    setShared(service?.isPublic === true);
-    setMonitorDraft(null);
-    setTagDraft(null);
-    setForm(
-      service
-        ? {
-            name: service.name,
-            url: service.url,
-            category: service.category,
-            description: service.description,
-            icon: service.icon ?? '',
-            position: service.position ?? 0,
-            allowPrivate: service.allowPrivate === true,
-            checkType: service.checkType ?? 'http',
-            checkInterval: service.checkInterval ?? null,
-            expectedStatus: service.expectedStatus ?? null,
-            checkPath: service.checkPath ?? null,
-            checkMatch: service.checkMatch ?? null,
-          }
-        : { ...emptyService, allowPrivate: privateDefaultRef.current },
-    );
-    setFormError('');
-    setFormOpen(true);
-  }
-  function closeForm() {
-    try {
-      sessionStorage.setItem('homora-focus-service', editing === null ? 'new' : String(editing));
-    } catch {
-      /* storage unavailable */
-    }
-    setFormOpen(false);
-    navigate('/manage/services', true);
-  }
-  useEffect(() => {
-    if (!managing || formRoute !== null) return;
-    try {
-      const value = sessionStorage.getItem('homora-focus-service');
-      if (!value || (value !== 'new' && !data.loaded)) return;
-      const target =
-        value === 'new'
-          ? addButton.current
-          : (document.querySelector<HTMLButtonElement>(`[data-service-edit="${Number(value)}"]`) ??
-            addButton.current);
-      if (target) {
-        target.focus();
-        sessionStorage.removeItem('homora-focus-service');
-      }
-    } catch {
-      /* storage unavailable */
-    }
-  }, [managing, formRoute, data.loaded, services]);
-  useEffect(() => {
-    if (formRoute === null) {
-      initializedRoute.current = null;
-      // Synchronize the controlled dialog with browser history.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormOpen(false);
-      return;
-    }
-    const service =
-      typeof formRoute === 'number' ? services.find((item) => item.id === formRoute) : undefined;
-    if (initializedRoute.current === formRoute) return;
-    if (typeof formRoute === 'number' && !service) {
-      setFormOpen(false);
-      return;
-    }
-    initializedRoute.current = formRoute;
-    // Initialize the draft once per route after service data arrives.
-    setEditing(service?.id ?? null);
-    setHost(service?.host ?? null);
-    setDepAdded([]);
-    setDepRemoved([]);
-    setShared(service?.isPublic === true);
-    setMonitorDraft(null);
-    setTagDraft(null);
-    setForm(
-      service
-        ? {
-            name: service.name,
-            url: service.url,
-            category: service.category,
-            description: service.description,
-            icon: service.icon ?? '',
-            position: service.position ?? 0,
-            allowPrivate: service.allowPrivate === true,
-            checkType: service.checkType ?? 'http',
-            checkInterval: service.checkInterval ?? null,
-            expectedStatus: service.expectedStatus ?? null,
-            checkPath: service.checkPath ?? null,
-            checkMatch: service.checkMatch ?? null,
-          }
-        : { ...emptyService, allowPrivate: privateDefaultRef.current },
-    );
-    setFormError('');
-    setFormOpen(true);
-  }, [formRoute, services]);
-
+  const pageModel = useServicePageModel({
+    data,
+    hostData,
+    dependencies: deps.dependencies,
+    managing,
+    hostView,
+    paged,
+    query,
+    selected,
+    organizing,
+    statusFilter,
+    tagFilter,
+    tags: tagMap,
+    monitorSettings: overview?.settings,
+  });
+  const {
+    allCategories,
+    categories,
+    pageName,
+    onPage,
+    isDown,
+    groups,
+    statusCounts,
+    allTags,
+    impacts,
+    dependencyNotes,
+    offline,
+  } = pageModel;
+  const actions = useServicePageActions({
+    data,
+    sortedIn,
+    announce,
+    setSelected,
+    setSrNote,
+  });
+  const { message, confirming, setConfirming, remove, moveToGroup, reorder } = actions;
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (editingGroup !== null) {
-        setEditingGroup(null);
-        setGroupDraft('');
-        document.querySelector<HTMLButtonElement>(`[data-group-edit="${editingGroup}"]`)?.focus();
-      }
+      cancelRename();
       setConfirming(null);
     };
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
-  }, [editingGroup]);
+  }, [cancelRename, setConfirming]);
 
-  async function save(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setFormError('');
-    try {
-      const response = await fetch(
-        editing === null ? '/api/services' : `/api/services/${editing}`,
-        {
-          method: editing === null ? 'POST' : 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...form, host }),
-        },
-      );
-      const body: unknown = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(apiError(body, t('error.save')));
-      const savedId = editing ?? (body as { id?: number } | null)?.id;
-      const wasShared =
-        editing !== null && services.find((s) => s.id === editing)?.isPublic === true;
-      if (savedId !== undefined && shared !== wasShared) {
-        const visibility = await fetch(`/api/services/${savedId}/public`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isPublic: shared }),
-        });
-        if (!visibility.ok) throw new Error(t('error.savePublic'));
-      }
-      if (savedId !== undefined) {
-        const before =
-          (editing !== null && overview?.settings[editing]) || DEFAULT_MONITOR_SETTINGS;
-        if (monitorDraft && JSON.stringify(before) !== JSON.stringify(monitorDraft)) {
-          const alerts = await fetch(`/api/services/${savedId}/monitoring`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(monitorDraft),
-          });
-          if (!alerts.ok) throw new Error(t('error.saveMonitoring'));
-          setOverviewVersion((version) => version + 1);
-        }
-        if (tagDraft && JSON.stringify(tagDraft) !== JSON.stringify(tagMap[savedId] ?? [])) {
-          const saved = await fetch(`/api/services/${savedId}/tags`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tags: tagDraft }),
-          });
-          if (!saved.ok) throw new Error(t('error.saveTags'));
-          reloadTags();
-        }
-        for (const id of depAdded) {
-          const failure = await deps.add(savedId, id);
-          if (failure) throw new Error(failure);
-        }
-        for (const id of depRemoved) {
-          const failure = await deps.remove(savedId, id);
-          if (failure) throw new Error(failure);
-        }
-      }
-      const wasNew = editing === null;
-      closeForm();
-      setSelected(null);
-      await refresh();
-      announce(wasNew ? t('page.added') : t('page.saved'));
-    } catch (e) {
-      setFormError(e instanceof Error && e.message ? e.message : t('error.save'));
-    } finally {
-      setSaving(false);
-    }
-  }
-  async function remove(s: Service) {
-    if (confirming !== s.id) {
-      setConfirming(s.id);
-      return;
-    }
-    setConfirming(null);
-    try {
-      const response = await fetch(`/api/services/${s.id}`, { method: 'DELETE' });
-      if (!response.ok) throw Error();
-      setSelected(null);
-      await refresh();
-      announce(t('page.removed'));
-    } catch {
-      setMessage(t('error.remove'));
-    }
-  }
-  async function saveGroup(e: FormEvent) {
-    e.preventDefault();
-    setGroupError('');
-    try {
-      const response = await fetch(
-        editingGroup === null ? '/api/groups' : `/api/groups/${editingGroup}`,
-        {
-          method: editingGroup === null ? 'POST' : 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: groupDraft,
-            ...(editingGroup === null && pages.length > 1 && { pageId: activePageId }),
-          }),
-        },
-      );
-      const body: unknown = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(apiError(body, t('error.saveGroup')));
-      const wasEditing = editingGroup !== null;
-      setEditingGroup(null);
-      setGroupDraft('');
-      setSelected(null);
-      await refresh();
-      announce(
-        t(wasEditing ? 'group.saved' : 'group.added', {
-          name: groupDraft.trim(),
-        }),
-      );
-      if (wasEditing) document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
-    } catch (error) {
-      setGroupError(error instanceof Error ? error.message : t('error.saveGroup'));
-    }
-  }
-  async function deleteGroup(id: number) {
-    try {
-      const name = groupRows.find((group) => group.id === id)?.name;
-      const response = await fetch(`/api/groups/${id}`, { method: 'DELETE' });
-      const body: unknown = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(apiError(body, t('error.removeGroup')));
-      await refresh();
-      if (name) announce(t('group.removed', { name }));
-      document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
-    } catch (error) {
-      setGroupError(error instanceof Error ? error.message : t('error.removeGroup'));
-    }
-  }
-  async function moveToGroup(service: Service, group: string) {
-    // Captured before the move so Undo can restore the original position, not just the group.
-    const originalOrder = sortedIn(service.category).map((item) => item.id);
-    const failure = await data.moveServiceToGroup(service, group);
-    if (failure) {
-      setMessage(failure);
-      return;
-    }
-    toast(t('page.moved', { name: service.name, group }), {
-      duration: 8000,
-      action: {
-        label: t('common.undo'),
-        onClick: () =>
-          void data.restoreService(service, originalOrder).then((undoFailure) => {
-            if (undoFailure) setMessage(undoFailure);
-          }),
-      },
-    });
-  }
-  async function reorder(
-    task: Promise<string | null>,
-    index?: number,
-    service?: Service,
-    total?: number,
-  ) {
-    const failure = await task;
-    if (failure) setMessage(failure);
-    else if (service && index !== undefined && total)
-      setSrNote(t('organize.position', { name: service.name, position: index + 1, total }));
-  }
-
-  const total = services.length;
   return (
     <section
       aria-label={t('nav.services')}
       className={cn('flex flex-col gap-6', organizing && 'pb-20 md:pb-0')}
     >
-      {managing && (
-        <PageHeader
-          title={t('manage.services')}
-          description={
-            total
-              ? `${t('page.summary', { services: t('page.servicesCount', { count: total }), groups: t('page.groupsCount', { count: allCategories.length }) })} ${t('manage.serviceDescription')}`
-              : t('page.emptyDescription')
-          }
-          actions={
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                aria-pressed={organizing}
-                onClick={() => {
-                  setOrganizing(!organizing);
-                  setConfirming(null);
-                }}
-              >
-                <SlidersHorizontal />
-                {organizing ? t('page.done') : t('page.organize')}
-              </Button>
-              <Button ref={addButton} type="button" onClick={() => openForm()}>
-                <Plus />
-                {t('page.add')}
-              </Button>
-            </>
-          }
-        />
-      )}
-      {!managing && !organizing && topBar && <TopBar />}
-      {!managing && !organizing && (
-        <StatusBanner
-          services={services}
-          statuses={statuses}
-          blockedIds={blockedIds}
-          overview={overview}
-          maintenance={maintenance.windows}
-          uptime={uptime}
-          range={uptimeRange}
-        />
-      )}
-      {!managing && (
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          <span />
-          {services.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              {hostData.connections.length > 0 && services.some((s) => !s.host) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="pointer-coarse:h-11"
-                  onClick={() => setSuggestOpen(true)}
-                >
-                  <Sparkles aria-hidden="true" />
-                  {t('hosts.suggest.open')}
-                </Button>
-              )}
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                size="sm"
-                value={arrange}
-                onValueChange={(value) => {
-                  if (value === 'group' || value === 'host' || value === 'map') setArrange(value);
-                }}
-                aria-label={t('hosts.arrange')}
-              >
-                <ToggleGroupItem
-                  value="group"
-                  className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
-                >
-                  <LayoutGrid aria-hidden="true" />
-                  {t('hosts.arrange.group')}
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="host"
-                  className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
-                >
-                  <Server aria-hidden="true" />
-                  {t('hosts.arrange.host')}
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="map"
-                  className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
-                >
-                  <MapIcon aria-hidden="true" />
-                  {t('hosts.arrange.map')}
-                </ToggleGroupItem>
-              </ToggleGroup>
-              <ViewOptions
-                view={view}
-                onViewChange={setView}
-                showDescriptions={showDescriptions}
-                onShowDescriptionsChange={setShowDescriptions}
-              />
-            </div>
-          )}
-        </div>
-      )}
-      {!managing && (
-        <HostImpactBanner
-          nodes={offline}
-          pageCount={(node) => new Set(node.affected.map((s) => pageIdOf(s.category))).size}
-          indirect={(node) => {
-            const direct = new Set(node.affected.map((s) => s.id));
+      <ServiceDashboardHeader
+        managing={managing}
+        organizing={organizing}
+        topBar={topBar}
+        banner={
+          <StatusBanner
+            services={services}
+            statuses={statuses}
+            blockedIds={blockedIds}
+            overview={overview}
+            maintenance={maintenance.windows}
+            uptime={uptime}
+            range={uptimeRange}
+          />
+        }
+        serviceCount={services.length}
+        groupCount={allCategories.length}
+        toolbar={{
+          arrange,
+          onArrangeChange: setArrange,
+          view,
+          onViewChange: setView,
+          showDescriptions,
+          onShowDescriptionsChange: setShowDescriptions,
+          showHostSuggestions:
+            hostData.connections.length > 0 && services.some((service) => !service.host),
+          onHostSuggestions: () => setSuggestOpen(true),
+        }}
+        addButton={addButton}
+        onToggleOrganizing={() => {
+          setOrganizing(!organizing);
+          setConfirming(null);
+        }}
+        onAddService={() => openForm()}
+        showImpact={!managing}
+        impact={{
+          nodes: offline,
+          pageCount: (node) =>
+            new Set(node.affected.map((service) => pageIdOf(service.category))).size,
+          indirect: (node) => {
+            const direct = new Set(node.affected.map((service) => service.id));
             return dependentsOf([...direct], deps.dependencies).filter((id) => !direct.has(id))
               .length;
-          }}
-          onSeeImpact={(node) => {
+          },
+          onSeeImpact: (node) => {
             setNodeFilter({ connectionId: node.connectionId, node: node.node });
             setArrange('host');
-          }}
-        />
-      )}
+          },
+        }}
+        groupEditor={{
+          renaming: editingGroup !== null,
+          draft: groupDraft,
+          onDraftChange: setGroupDraft,
+          onSubmit: (event) => void saveGroup(event),
+          onCancelRename: cancelRename,
+        }}
+      />
       {!managing && data.statusError && (
         <p role="status" className="text-xs text-muted-foreground">
           {t('status.stale')}
         </p>
-      )}
-      {organizing && (
-        <OrganizePanel
-          renaming={editingGroup !== null}
-          draft={groupDraft}
-          onDraftChange={setGroupDraft}
-          onSubmit={(event) => void saveGroup(event)}
-          onCancelRename={() => {
-            const id = editingGroup;
-            setEditingGroup(null);
-            setGroupDraft('');
-            document.querySelector<HTMLButtonElement>(`[data-group-edit="${id}"]`)?.focus();
-          }}
-        />
       )}
       <FormError>{groupError}</FormError>
       {typeof formRoute === 'number' &&
@@ -777,85 +294,13 @@ export function ServicesPage({
             </AlertDescription>
           </Alert>
         )}
-      <Dialog
-        open={formOpen}
-        onOpenChange={(open) => {
-          if (!open && !saving) closeForm();
-        }}
-      >
-        <DialogContent
-          className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl"
-          showCloseButton={false}
-          onOpenAutoFocus={(event) => {
-            event.preventDefault();
-            nameInput.current?.focus();
-          }}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            focusEditTrigger(editing);
-          }}
-          onEscapeKeyDown={(event) => {
-            if (saving) event.preventDefault();
-          }}
-          onInteractOutside={(event) => {
-            if (saving) event.preventDefault();
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle className="font-label text-xl">
-              {editing !== null ? t('form.editTitle') : t('form.newTitle')}
-            </DialogTitle>
-            <DialogDescription>{t('form.dialogDescription')}</DialogDescription>
-          </DialogHeader>
-          <ServiceForm
-            nameRef={nameInput}
-            editing={editing !== null}
-            value={form}
-            categories={allCategories}
-            error={formError}
-            saving={saving}
-            hosts={{
-              value: host,
-              onChange: setHost,
-              connections: hostData.connections,
-              connectionsLoaded: hostData.connectionsLoaded,
-              inventories: hostData.inventories,
-              onReload: (id, refresh) => void hostData.reload(id, refresh),
-            }}
-            dependencies={{
-              selfId: editing,
-              services,
-              value: [
-                ...(editing === null
-                  ? []
-                  : dependsOn(editing, deps.dependencies).filter((id) => !depRemoved.includes(id))),
-                ...depAdded,
-              ],
-              onChange: (next) => {
-                const base = editing === null ? [] : dependsOn(editing, deps.dependencies);
-                setDepAdded(next.filter((id) => !base.includes(id)));
-                setDepRemoved(base.filter((id) => !next.includes(id)));
-              },
-            }}
-            isPublic={shared}
-            onPublicChange={setShared}
-            tags={{
-              value: tagDraft ?? (editing === null ? [] : (tagMap[editing] ?? [])),
-              onChange: setTagDraft,
-            }}
-            monitoring={{
-              value:
-                monitorDraft ??
-                (editing === null ? undefined : overview?.settings[editing]) ??
-                DEFAULT_MONITOR_SETTINGS,
-              onChange: setMonitorDraft,
-            }}
-            onChange={setForm}
-            onSubmit={(event) => void save(event)}
-            onCancel={closeForm}
-          />
-        </DialogContent>
-      </Dialog>
+      <ServicePageEditor
+        editor={editor}
+        categories={allCategories}
+        services={services}
+        dependencies={deps.dependencies}
+        onFocusEditTrigger={focusEditTrigger}
+      />
       <div role="status" id="message" className="empty:hidden">
         {(message || data.loadError) && (
           <Alert variant="destructive">
@@ -937,253 +382,131 @@ export function ServicesPage({
         />
       )}
       {mapView && services.length > 0 && (
-        <HostMap
-          services={services}
-          connections={hostData.connections}
-          inventories={hostData.inventories}
-          statuses={statuses}
-          blockedIds={blockedIds}
-          onRefresh={() => hostData.connections.forEach((c) => void hostData.reload(c.id, true))}
-          onListView={() => setArrange('host')}
-          onHome={() => setArrange('group')}
-          onOpenCard={(service) => {
-            setArrange('group');
-            setLocalFocus({ id: service.id, nonce: Date.now() });
-          }}
-          pageName={pageName}
-          onChangeHost={(service) => navigate(`/manage/services/${service.id}/edit`)}
-          dependencies={deps.dependencies}
-          notes={dependencyNotes}
-          edit={{
-            // The same endpoint the form and the suggestions use, so a link made on the map is
-            // identical to one made anywhere else.
-            onLinkHost: async (service, next) => {
-              try {
-                const response = await fetch(`/api/services/${service.id}/host`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ host: next }),
-                });
-                if (!response.ok) return false;
+        <Suspense fallback={<ServicesSkeleton label={t('common.loading')} list={list} />}>
+          <HostMap
+            services={services}
+            connections={hostData.connections}
+            inventories={hostData.inventories}
+            statuses={statuses}
+            blockedIds={blockedIds}
+            onRefresh={() => hostData.connections.forEach((c) => void hostData.reload(c.id, true))}
+            onListView={() => setArrange('host')}
+            onHome={() => setArrange('group')}
+            onOpenCard={(service) => {
+              setArrange('group');
+              setLocalFocus({ id: service.id, nonce: Date.now() });
+            }}
+            pageName={pageName}
+            onChangeHost={(service) => navigate(`/manage/services/${service.id}/edit`)}
+            dependencies={deps.dependencies}
+            notes={dependencyNotes}
+            edit={{
+              // The same endpoint the form and the suggestions use, so a link made on the map is
+              // identical to one made anywhere else.
+              onLinkHost: async (service, next) => {
+                const linked = await data.linkHost(service.id, next);
+                if (!linked) return false;
                 await refresh();
                 return true;
-              } catch {
-                return false;
-              }
+              },
+              onAddDependency: deps.add,
+              onRemoveDependency: deps.remove,
+              connectionsLoaded: hostData.connectionsLoaded,
+              onReload: (id, force) => void hostData.reload(id, force),
+            }}
+          />
+        </Suspense>
+      )}
+      {hostList && services.length > 0 && (
+        <Suspense fallback={<ServicesSkeleton label={t('common.loading')} list={list} />}>
+          <HostView
+            services={services}
+            connections={hostData.connections}
+            inventories={hostData.inventories}
+            statuses={statuses}
+            blockedIds={blockedIds}
+            onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
+            notes={dependencyNotes}
+            pageName={pageName}
+            nodeFilter={nodeFilter}
+            onClearFilter={() => setNodeFilter(null)}
+          />
+        </Suspense>
+      )}
+      {!hostView && (
+        <ServiceGroups
+          data={{
+            groups,
+            services,
+            groupRows,
+            pages,
+            allCategories,
+            pageIdOf,
+            sortedIn,
+            statuses,
+            blockedIds,
+            widgets: cardWidgets,
+            coolify: resourceLinks.byService,
+            uptime,
+            uptimeRange,
+            monitorSettings: overview?.settings,
+            incidents: overview?.open,
+            maintenanceUntil: Object.fromEntries(
+              Object.entries(inMaintenance).map(([id, window]) => [id, window.endsAt]),
+            ),
+            tags: tagMap,
+            impacts,
+            dependencyNotes,
+          }}
+          presentation={{
+            managing,
+            organizing,
+            list,
+            showDescriptions,
+            revealServiceId: focusService?.id,
+            revealNonce: focusNonce,
+            confirming,
+          }}
+          actions={{
+            onUptimeRangeChange: setUptimeRange,
+            onTag: setTagFilter,
+            hostOf: (service) => hostLabel(service, hostData.connections, hostData.inventories),
+            onEditService: openForm,
+            onRemoveService: (service) => void remove(service),
+            onCancelRemoval: (id) => setConfirming((current) => (current === id ? null : current)),
+            onCoolify: setCoolifyReview,
+            onPlaceService: (service, position, total) =>
+              void reorder(data.placeService(service, position), position, service, total),
+            onMoveServiceToGroup: (service, group) => void moveToGroup(service, group),
+            onMoveGroup: (category, direction) => void reorder(data.moveGroup(category, direction)),
+            onMoveGroupToPage: (group, pageId) =>
+              void reorder(data.moveGroupToPage(group.id, pageId)),
+            onSetGroupColumns: (group, columns) =>
+              void reorder(data.setGroupColumns(group.id, columns)),
+            onRenameGroup: (group) => {
+              beginRename(group.id, group.name);
             },
-            onAddDependency: deps.add,
-            onRemoveDependency: deps.remove,
-            connectionsLoaded: hostData.connectionsLoaded,
-            onReload: (id, force) => void hostData.reload(id, force),
+            onRemoveGroup: (group) => setRemovingGroup({ id: group.id, name: group.name }),
           }}
         />
       )}
-      {hostList && services.length > 0 && (
-        <HostView
-          services={services}
-          connections={hostData.connections}
-          inventories={hostData.inventories}
-          statuses={statuses}
-          blockedIds={blockedIds}
-          onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
-          notes={dependencyNotes}
-          pageName={pageName}
-          nodeFilter={nodeFilter}
-          onClearFilter={() => setNodeFilter(null)}
-        />
-      )}
-      {!managing &&
-        !organizing &&
-        !hostView &&
-        services.length > 0 &&
-        (activeStatusFilter !== 'all' || activeTag !== null) &&
-        filtered.length === 0 && (
-          <p role="status" className="py-8 text-center text-sm text-muted-foreground">
-            {t('filter.empty')}
-          </p>
-        )}
-      {(hostView ? [] : groups).map(({ category, items }) => {
-        const row = groupRows.find((group) => group.name === category);
-        return (
-          <GroupSection
-            key={category}
-            category={category}
-            count={items.length}
-            organizing={organizing}
-            list={list}
-            managing={managing}
-            revealSignal={focusService?.category === category ? focusNonce : undefined}
-            pages={pages}
-            pageId={row?.pageId}
-            onPage={(pageId) => row && void reorder(data.moveGroupToPage(row.id, pageId))}
-            canEdit={Boolean(row)}
-            canRemove={!services.some((service) => service.category === category)}
-            groupId={row?.id}
-            columns={row?.columns}
-            onColumns={(columns) => row && void reorder(data.setGroupColumns(row.id, columns))}
-            onRename={() => {
-              if (!row) return;
-              setEditingGroup(row.id);
-              setGroupDraft(row.name);
-            }}
-            onRemove={() => row && setRemovingGroup({ id: row.id, name: row.name })}
-            emptyDrop={{
-              active: dragging !== null,
-              over: dropGroup === category,
-              onOver: () => setDropGroup(category),
-              onLeave: () => setDropGroup((g) => (g === category ? null : g)),
-              onDrop: () => {
-                const dragged = services.find((item) => item.id === dragging);
-                setDragging(null);
-                setDropGroup(null);
-                if (dragged && dragged.category !== category) void moveToGroup(dragged, category);
-              },
-            }}
-            onMove={(direction) => void reorder(data.moveGroup(category, direction))}
-          >
-            {items.map((s, index) => {
-              if (organizing) {
-                const dragProps = {
-                  onDragStart: (event: DragEvent) => {
-                    setDragging(s.id);
-                    event.dataTransfer.effectAllowed = 'move';
-                  },
-                  onDragEnd: () => {
-                    setDragging(null);
-                    setDropOver(null);
-                    setDropGroup(null);
-                  },
-                  onDragOver: (event: DragEvent) => {
-                    if (dragging !== null && dragging !== s.id) {
-                      event.preventDefault();
-                      setDropOver(s.id);
-                    }
-                  },
-                  onDrop: (event: DragEvent) => {
-                    event.preventDefault();
-                    const dragged = services.find((item) => item.id === dragging);
-                    setDragging(null);
-                    setDropOver(null);
-                    if (!dragged) return;
-                    if (dragged.category !== s.category) {
-                      void moveToGroup(dragged, s.category);
-                      return;
-                    }
-                    void reorder(
-                      data.placeService(
-                        dragged,
-                        sortedIn(s.category).findIndex((item) => item.id === s.id),
-                      ),
-                    );
-                  },
-                };
-                return (
-                  <OrganizeRow
-                    key={s.id}
-                    service={s}
-                    otherGroups={allCategories.filter((name) => name !== s.category)}
-                    pageLabel={(name) =>
-                      pages.length > 1
-                        ? pages.find((page) => page.id === pageIdOf(name))?.name
-                        : undefined
-                    }
-                    first={index === 0}
-                    last={index === items.length - 1}
-                    dragging={dragging === s.id}
-                    dropTarget={dropOver === s.id}
-                    onMove={(direction) =>
-                      void reorder(
-                        data.placeService(s, index + direction),
-                        index + direction,
-                        s,
-                        items.length,
-                      )
-                    }
-                    onMoveToTop={() => void reorder(data.placeService(s, 0), 0, s, items.length)}
-                    onMoveToGroup={(group) => void moveToGroup(s, group)}
-                    dragProps={dragProps}
-                  />
-                );
-              }
-              const info = statuses[s.id];
-              return (
-                <ServiceCard
-                  key={s.id}
-                  service={s}
-                  status={info}
-                  widgets={cardWidgets[s.id]}
-                  coolify={resourceLinks.byService[s.id]}
-                  onCoolify={() => setCoolifyReview(s.id)}
-                  uptime={uptime[s.id]}
-                  monitor={overview?.settings[s.id]}
-                  tags={tagMap[s.id]}
-                  onTag={setTagFilter}
-                  incident={overview?.open[s.id]}
-                  maintenanceUntil={inMaintenance[s.id]?.endsAt}
-                  uptimeRange={uptimeRange}
-                  onUptimeRangeChange={setUptimeRange}
-                  host={hostLabel(s, hostData.connections, hostData.inventories)}
-                  impact={impacts.get(s.id)}
-                  dependencyNote={dependencyNotes[s.id]}
-                  blocked={blockedIds.has(s.id)}
-                  managing={managing}
-                  list={list}
-                  showDescription={showDescriptions || managing}
-                  confirmingRemoval={confirming === s.id}
-                  onEdit={() => openForm(s)}
-                  onRemove={() => void remove(s)}
-                  onCancelRemoval={() => setConfirming((c) => (c === s.id ? null : c))}
-                />
-              );
-            })}
-          </GroupSection>
-        );
-      })}
-      <HostSuggestionsPanel
-        open={suggestOpen}
-        onOpenChange={setSuggestOpen}
+      <ServicePageOverlays
         services={services}
-        onChanged={() => void refresh()}
-        onChooseManually={(service) => {
+        suggestionsOpen={suggestOpen}
+        onSuggestionsOpenChange={setSuggestOpen}
+        onRefresh={refresh}
+        onChooseHostManually={(service) => {
           setSuggestOpen(false);
           navigate(`/manage/services/${service.id}/edit`);
         }}
+        coolifyReviewId={coolifyReview}
+        coolifyByService={resourceLinks.byService}
+        onCloseCoolify={() => setCoolifyReview(null)}
+        onReloadCoolify={resourceLinks.reload}
+        removingGroup={removingGroup}
+        onRemovingGroupChange={setRemovingGroup}
+        onDeleteGroup={deleteGroup}
       />
-      {coolifyReview !== null &&
-        resourceLinks.byService[coolifyReview] &&
-        services.find((item) => item.id === coolifyReview) && (
-          <CoolifyReviewDialog
-            service={services.find((item) => item.id === coolifyReview)!}
-            info={resourceLinks.byService[coolifyReview]}
-            onClose={() => setCoolifyReview(null)}
-            onChanged={() => {
-              void refresh();
-              resourceLinks.reload();
-            }}
-          />
-        )}
-      <AlertDialog
-        open={removingGroup !== null}
-        onOpenChange={(open) => !open && setRemovingGroup(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('group.removeTitle', { name: removingGroup?.name ?? '' })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>{t('group.removeBody')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => removingGroup && void deleteGroup(removingGroup.id)}
-            >
-              {t('common.remove')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       {organizing && (
         <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex items-center justify-between gap-3 border-t bg-card px-4 py-3 md:hidden">
           <span className="font-mono text-xs text-muted-foreground">{t('organize.bar')}</span>

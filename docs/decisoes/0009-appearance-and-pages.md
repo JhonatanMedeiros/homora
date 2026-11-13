@@ -18,10 +18,12 @@ or run script.
   `accent`, `customAccent`, `background`, `cardOpacity` 60 to 100 in steps of 5, `blur`,
   `image`). `parseAppearance` reads version 1 and upgrades it; unknown or invalid data
   falls back to the default look. Theme and language stay per browser.
-- The frontend turns the setting into `--ap-*` CSS variables (`appearanceTokens`) and sets
-  them with `style.setProperty`, which a strict CSP allows. `style.css` maps them to the
-  semantic tokens (`--primary`, `--ring`, `--card`, `--page-background`, ...). No component
-  uses a raw color.
+- `packages/shared/src/appearance.ts` owns the setting contract, parsing, color math, and
+  contrast policy used by both server and browser. The frontend-only
+  `apps/frontend/src/lib/appearance-tokens.ts` turns a setting into `--ap-*` CSS variables;
+  `appearance.ts` applies them with `style.setProperty`, which a strict CSP allows. `style.css`
+  maps them to semantic tokens (`--primary`, `--ring`, `--card`, `--page-background`, ...).
+  No component uses a raw color.
 - **Naming divergence:** the project already used `--accent` for a neutral hover surface,
   so the chosen accent drives `--primary` and a new `--accent-text`; `--accent` keeps its
   meaning.
