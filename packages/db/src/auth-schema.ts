@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // Better Auth tables. Names and columns must match what the library expects (camelCase, dates
 // as ISO-8601 text); a backend test compares this schema with the library's own requirements.
@@ -83,5 +83,31 @@ export const twoFactor = sqliteTable(
   (table) => [
     index('twoFactor_secret_idx').on(table.secret),
     index('twoFactor_userId_idx').on(table.userId),
+  ],
+);
+
+// Passkeys (WebAuthn credentials) of the account. Only the public key is stored; `credentialID`
+// is what the authenticator presents when signing in.
+export const passkey = sqliteTable(
+  'passkey',
+  {
+    id: text('id').primaryKey(),
+    name: text('name'),
+    publicKey: text('publicKey').notNull(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    credentialID: text('credentialID').notNull(),
+    counter: integer('counter').notNull(),
+    deviceType: text('deviceType').notNull(),
+    backedUp: integer('backedUp', { mode: 'boolean' }).notNull(),
+    transports: text('transports'),
+    createdAt: text('createdAt'),
+    aaguid: text('aaguid'),
+  },
+  (table) => [
+    index('passkey_userId_idx').on(table.userId),
+    // One row per credential: the same authenticator cannot be added twice.
+    uniqueIndex('passkey_credentialID_unique').on(table.credentialID),
   ],
 );

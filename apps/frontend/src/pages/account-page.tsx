@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/page-header';
 import { FormError } from '@/components/form-error';
 import { PasswordForm } from '@/features/account/password-form';
 import { ProfileForm } from '@/features/account/profile-form';
+import { PasskeysForm } from '@/features/account/passkeys-form';
 import { TwoFactorForm } from '@/features/account/two-factor-form';
 import { SessionsList } from '@/features/account/sessions-list';
 import type { Profile } from '@/features/account/account-model';
@@ -35,6 +36,12 @@ export function AccountPage({
             onProfileChange({ ...profile, twoFactorEnabled });
             setSessionsVersion((value) => value + 1);
           }}
+        />
+      )}
+      {profile && (
+        <PasskeysForm
+          twoFactorEnabled={profile.twoFactorEnabled}
+          onChanged={() => setSessionsVersion((value) => value + 1)}
         />
       )}
       <SessionsList refreshKey={sessionsVersion} />

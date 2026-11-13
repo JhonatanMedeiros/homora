@@ -5,6 +5,8 @@ import { setupSchema } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
 import { ANONYMOUS_ACTOR, type AuditLog } from '../audit.js';
 import { describeUserAgent } from '../client-info.js';
+import { PASSKEY_PATHS } from '../passkey-gateway.js';
+import { handlePasskeyRoute } from './passkey.js';
 import {
   sanitizeTwoFactorBody,
   sessionCookieOf,
@@ -15,13 +17,14 @@ import {
 
 type Auth = ReturnType<typeof createAuth>;
 
-// Only what the interface uses is reachable (sign-in, session and the second-factor routes); every other Better Auth route stays closed until
-// a feature needs it.
+// Only what the interface uses is reachable (sign-in, session, the second-factor and the passkey
+// routes); every other Better Auth route stays closed until a feature needs it.
 const FORWARDED_PATHS = new Set([
   `${AUTH_BASE_PATH}/sign-in/email`,
   `${AUTH_BASE_PATH}/sign-out`,
   `${AUTH_BASE_PATH}/get-session`,
   ...TWO_FACTOR_PATHS,
+  ...PASSKEY_PATHS,
 ]);
 
 const clientLabel = (userAgent: string | undefined) => {
@@ -38,6 +41,8 @@ export function registerAuthRoutes(
   app.get('/api/auth/status', async (request) => ({
     configured: auth.configured(),
     authenticated: (await auth.session(request.headers)) !== null,
+    // Browsers only offer a passkey on these origins; the interface compares its own.
+    passkey: { origins: auth.passkey.origins },
   }));
   app.post('/api/auth/setup', async (request, reply) => {
     if (auth.configured()) return reply.code(403).send(errorBody('account-exists'));
@@ -58,6 +63,8 @@ export function registerAuthRoutes(
     async handler(request, reply) {
       const { pathname } = new URL(request.url, 'http://localhost');
       if (!FORWARDED_PATHS.has(pathname)) return reply.code(404).send(errorBody('not-found'));
+      if (PASSKEY_PATHS.has(pathname))
+        return handlePasskeyRoute({ request, reply, pathname, auth, audit, webPort, clientLabel });
       const signingOut = pathname === `${AUTH_BASE_PATH}/sign-out`;
       const signedOutUser = signingOut ? await auth.session(request.headers) : null;
       const headers = fromNodeHeaders(request.headers);

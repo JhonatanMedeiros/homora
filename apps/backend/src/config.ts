@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { parseDockerHost } from './discovery/index.js';
+import { parsePasskeyRpId, resolvePasskeyConfig } from './passkey-config.js';
 export const root = fileURLToPath(new URL('../../../', import.meta.url));
 export function parseAllowedOrigins(value: string | undefined): string[] {
   if (value === undefined || value.trim() === '') return [];
@@ -44,6 +45,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   const bindHost = env.HOMORA_BIND_HOST ?? '127.0.0.1';
   if (!['127.0.0.1', '0.0.0.0'].includes(bindHost)) throw new Error('Invalid bind host.');
   const allowedOrigins = parseAllowedOrigins(env.HOMORA_ALLOWED_ORIGINS);
+  const passkeyRpId = parsePasskeyRpId(env.HOMORA_PASSKEY_RP_ID);
+  // Fails at startup when the domain has no matching HTTPS origin.
+  resolvePasskeyConfig({ webPort, allowedOrigins, rpId: passkeyRpId });
   if (!['true', 'false', undefined, ''].includes(env.HOMORA_TRUST_PROXY))
     throw new Error('HOMORA_TRUST_PROXY must be true or false.');
   const sessionSecret = env.HOMORA_SESSION_SECRET || undefined;
@@ -54,6 +58,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     apiPort,
     webPort,
     allowedOrigins,
+    passkeyRpId,
     sessionSecret,
     trustProxy: env.HOMORA_TRUST_PROXY === 'true',
     developmentMocks: env.HOMORA_DEV_MOCKS === 'true',

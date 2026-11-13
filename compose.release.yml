@@ -12,6 +12,8 @@ services:
       HOMORA_TRUST_PROXY: 'true'
       # Public HTTPS origin(s) when a reverse proxy is in front, e.g. https://homora.example.home
       HOMORA_ALLOWED_ORIGINS: ${HOMORA_ALLOWED_ORIGINS:-}
+      # Domain passkeys are bound to when served over HTTPS (default: localhost only).
+      HOMORA_PASSKEY_RP_ID: ${HOMORA_PASSKEY_RP_ID:-}
     volumes:
       - homora-data:/app/data
     restart: unless-stopped

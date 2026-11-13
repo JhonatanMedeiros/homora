@@ -1,4 +1,5 @@
 import { PasswordInput } from '@/components/password-input';
+import { KeyRound } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import type { AuthStatus, Credentials } from '@/hooks/use-auth';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { TwoFactorChallenge } from '@/features/auth/two-factor-challenge';
+import { passkeyAvailability } from '@/hooks/use-passkeys';
 import { t } from '@/i18n';
 
 type Props = {
@@ -19,6 +21,8 @@ type Props = {
   /** The password was accepted and the second step is pending. */
   challenge?: boolean;
   onSubmit: (credentials: Credentials) => Promise<boolean>;
+  /** Signs in with a passkey; `rememberMe` is the form's "keep me signed in" choice. */
+  onPasskey?: (rememberMe: boolean) => Promise<boolean>;
   onVerify?: (code: string, recovery: boolean) => Promise<boolean>;
   onCancelChallenge?: () => void;
   onRetry?: () => void;
@@ -30,6 +34,7 @@ export function AuthPage({
   error,
   challenge = false,
   onSubmit,
+  onPasskey,
   onVerify,
   onCancelChallenge,
   onRetry,
@@ -42,6 +47,19 @@ export function AuthPage({
   const [rememberMe, setRememberMe] = useState(false);
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
+  const passkey = status?.configured ? passkeyAvailability(status.passkey?.origins) : null;
+
+  async function startPasskey() {
+    if (pending.current || !onPasskey) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      await onPasskey(rememberMe);
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -163,6 +181,26 @@ export function AuthPage({
                           ? t('auth.signIn')
                           : t('auth.createAccount')}
                     </Button>
+                    {passkey === 'available' && onPasskey && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => void startPasskey()}
+                      >
+                        <KeyRound data-icon="inline-start" />
+                        {t('auth.passkeySignIn')}
+                      </Button>
+                    )}
+                    {passkey && passkey !== 'available' && (
+                      <p className="text-sm text-muted-foreground">
+                        {passkey === 'no-browser'
+                          ? t('auth.passkeyNoBrowser')
+                          : t('auth.passkeyWrongOrigin', {
+                              origins: status.passkey?.origins.join(', ') ?? '',
+                            })}
+                      </p>
+                    )}
                   </FieldGroup>
                 </form>
               </CardContent>

@@ -634,3 +634,41 @@ it('adds two-factor storage without touching the existing account and keeps it o
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('adds passkey storage without touching the existing account and removes it with the account', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-passkey-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, 32)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO \"user\"(id,name,email,emailVerified,createdAt,updatedAt) VALUES('u1','Admin','admin@homora.test',0,'2026-01-01','2026-01-01');" +
+        "INSERT INTO account(id,accountId,providerId,userId,password,createdAt,updatedAt) VALUES('a1','u1','credential','u1','hash','2026-01-01','2026-01-01')",
+    );
+    old.close();
+    const database = createDatabase(path);
+    const sqlite = getSqliteHandle(database.db);
+    expect(sqlite.prepare('SELECT email FROM "user"').get()).toEqual({
+      email: 'admin@homora.test',
+    });
+    expect(sqlite.prepare('SELECT password FROM account').get()).toEqual({ password: 'hash' });
+    expect(sqlite.prepare('SELECT COUNT(*) AS n FROM passkey').get()).toEqual({ n: 0 });
+    // Credentials follow the account when it is removed: no orphan rows.
+    sqlite.exec('PRAGMA foreign_keys = ON');
+    sqlite.exec(
+      "INSERT INTO passkey(id,publicKey,userId,credentialID,counter,deviceType,backedUp) VALUES('p1','k','u1','c',0,'multiDevice',1); DELETE FROM \"user\"",
+    );
+    expect(sqlite.prepare('SELECT COUNT(*) AS n FROM passkey').get()).toEqual({ n: 0 });
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

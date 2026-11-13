@@ -60,6 +60,7 @@ describe('API authentication', () => {
       expect((await localApp.inject({ method: 'GET', url: '/api/auth/status' })).json()).toEqual({
         configured: false,
         authenticated: false,
+        passkey: { origins: ['http://localhost:5173'] },
       });
       expect((await setup({ origin }, { password: 'only-a-password' })).statusCode).toBe(400);
       expect((await setup({ origin }, { ...account, email: 'not-an-email' })).statusCode).toBe(400);
@@ -86,7 +87,11 @@ describe('API authentication', () => {
         (
           await localApp.inject({ method: 'GET', url: '/api/auth/status', headers: { cookie } })
         ).json(),
-      ).toEqual({ configured: true, authenticated: true });
+      ).toEqual({
+        configured: true,
+        authenticated: true,
+        passkey: { origins: ['http://localhost:5173'] },
+      });
       await localApp.inject({
         method: 'POST',
         url: '/api/auth/sign-out',
@@ -200,6 +205,7 @@ describe('API authentication', () => {
       expect((await localApp.inject({ method: 'GET', url: '/api/auth/status' })).json()).toEqual({
         configured: true,
         authenticated: false,
+        passkey: { origins: ['http://localhost:5173'] },
       });
     } finally {
       await done();

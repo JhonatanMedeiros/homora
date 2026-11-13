@@ -21,6 +21,7 @@ const app = createApp(
     secret: loadSessionSecret(`${config.databasePath}.session-secret`, config.sessionSecret),
     webPort: config.webPort,
     allowedOrigins: config.allowedOrigins,
+    passkeyRpId: config.passkeyRpId,
   }),
   vault,
   config.allowedOrigins,
