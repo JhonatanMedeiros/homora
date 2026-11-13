@@ -39,38 +39,7 @@ export function ServiceViewToolbar({
           {t('hosts.suggest.open')}
         </Button>
       )}
-      <ToggleGroup
-        type="single"
-        variant="outline"
-        size="sm"
-        value={arrange}
-        onValueChange={(value) => {
-          if (value === 'group' || value === 'host' || value === 'map') onArrangeChange(value);
-        }}
-        aria-label={t('hosts.arrange')}
-      >
-        <ToggleGroupItem
-          value="group"
-          className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
-        >
-          <LayoutGrid aria-hidden="true" />
-          {t('hosts.arrange.group')}
-        </ToggleGroupItem>
-        <ToggleGroupItem
-          value="host"
-          className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
-        >
-          <Server aria-hidden="true" />
-          {t('hosts.arrange.host')}
-        </ToggleGroupItem>
-        <ToggleGroupItem
-          value="map"
-          className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
-        >
-          <MapIcon aria-hidden="true" />
-          {t('hosts.arrange.map')}
-        </ToggleGroupItem>
-      </ToggleGroup>
+      <ArrangeToggle arrange={arrange} onArrangeChange={onArrangeChange} />
       <ViewOptions
         view={view}
         onViewChange={onViewChange}
@@ -78,5 +47,52 @@ export function ServiceViewToolbar({
         onShowDescriptionsChange={onShowDescriptionsChange}
       />
     </div>
+  );
+}
+
+/** Group / Host / Map: how the Home arranges services. */
+export function ArrangeToggle({
+  arrange,
+  onArrangeChange,
+  className,
+}: {
+  arrange: Arrange;
+  onArrangeChange: (value: Arrange) => void;
+  className?: string;
+}) {
+  return (
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      size="sm"
+      value={arrange}
+      onValueChange={(value) => {
+        if (value === 'group' || value === 'host' || value === 'map') onArrangeChange(value);
+      }}
+      aria-label={t('hosts.arrange')}
+      className={className}
+    >
+      <ToggleGroupItem
+        value="group"
+        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+      >
+        <LayoutGrid aria-hidden="true" />
+        {t('hosts.arrange.group')}
+      </ToggleGroupItem>
+      <ToggleGroupItem
+        value="host"
+        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+      >
+        <Server aria-hidden="true" />
+        {t('hosts.arrange.host')}
+      </ToggleGroupItem>
+      <ToggleGroupItem
+        value="map"
+        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+      >
+        <MapIcon aria-hidden="true" />
+        {t('hosts.arrange.map')}
+      </ToggleGroupItem>
+    </ToggleGroup>
   );
 }

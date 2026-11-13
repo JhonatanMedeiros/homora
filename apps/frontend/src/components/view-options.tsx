@@ -31,38 +31,57 @@ export function ViewOptions({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-60 flex-col gap-3">
-        <p className="font-mono text-xs text-muted-foreground">{t('view.layout')}</p>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          size="sm"
-          value={view}
-          onValueChange={(value) => {
-            if (value === 'list' || value === 'cards') onViewChange(value);
-          }}
-          aria-label={t('view.layout')}
-          className="w-full"
-        >
-          <ToggleGroupItem value="list" className="flex-1 pointer-coarse:h-11">
-            {t('view.list')}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="cards" className="flex-1 pointer-coarse:h-11">
-            {t('view.cards')}
-          </ToggleGroupItem>
-        </ToggleGroup>
-        {view === 'cards' ? (
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="view-descriptions">{t('view.showDescriptions')}</Label>
-            <Switch
-              id="view-descriptions"
-              checked={showDescriptions}
-              onCheckedChange={onShowDescriptionsChange}
-            />
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">{t('view.descriptionsHint')}</p>
-        )}
+        <ViewLayoutFields
+          view={view}
+          onViewChange={onViewChange}
+          showDescriptions={showDescriptions}
+          onShowDescriptionsChange={onShowDescriptionsChange}
+        />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Layout toggle and descriptions switch, shared by the View popover and the mobile options sheet. */
+export function ViewLayoutFields({
+  view,
+  onViewChange,
+  showDescriptions,
+  onShowDescriptionsChange,
+}: Props) {
+  return (
+    <>
+      <p className="font-mono text-xs text-muted-foreground">{t('view.layout')}</p>
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        size="sm"
+        value={view}
+        onValueChange={(value) => {
+          if (value === 'list' || value === 'cards') onViewChange(value);
+        }}
+        aria-label={t('view.layout')}
+        className="w-full"
+      >
+        <ToggleGroupItem value="list" className="flex-1 pointer-coarse:h-11">
+          {t('view.list')}
+        </ToggleGroupItem>
+        <ToggleGroupItem value="cards" className="flex-1 pointer-coarse:h-11">
+          {t('view.cards')}
+        </ToggleGroupItem>
+      </ToggleGroup>
+      {view === 'cards' ? (
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="view-descriptions">{t('view.showDescriptions')}</Label>
+          <Switch
+            id="view-descriptions"
+            checked={showDescriptions}
+            onCheckedChange={onShowDescriptionsChange}
+          />
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">{t('view.descriptionsHint')}</p>
+      )}
+    </>
   );
 }

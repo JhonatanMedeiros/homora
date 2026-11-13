@@ -113,6 +113,8 @@ Content up to 72rem, 16px side margins (32px from `md`). Homepage: search (`/` f
 
 Services default to a **list** view: one dense row per service (icon, name, host in mono, status light), two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "View" button in the summary row (`ViewOptions`, a popover) switches between them; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`list` or `cards`; the older `comfortable` maps to cards, `compact` to list). Group filter tabs appear only with three or more groups.
 
+On phones (under 768px) the status filter, the arrangement (Group, Host, Map), the layout and Suggested hosts move into one **Options** button that opens a bottom sheet (`ServiceOptionsSheet`), next to the category chips. The health banner shows only its headline until "Details" is opened, and the optional top bar (clock and system resources) stays governed by its setting, only more compact.
+
 ### Organize mode
 
 Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top" and "Move to group". Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only, after a confirmation dialog). A one-line hint and a "New group" button replace the old form; on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group; while dragging, empty groups show a drop zone.

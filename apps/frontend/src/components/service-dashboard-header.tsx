@@ -18,6 +18,8 @@ type Props = {
   managing: boolean;
   organizing: boolean;
   topBar: boolean;
+  /** Phones: the state filter and the view toolbar live in the options sheet instead. */
+  compact?: boolean;
   /** Health banner: the first thing the Home says. */
   banner?: ReactNode;
   /** State filter, on the left of the view toolbar. */
@@ -38,6 +40,7 @@ export function ServiceDashboardHeader({
   managing,
   organizing,
   topBar,
+  compact = false,
   banner,
   stateFilter,
   serviceCount,
@@ -81,7 +84,7 @@ export function ServiceDashboardHeader({
       )}
       {!managing && !organizing && topBar && <TopBar />}
       {!managing && !organizing && banner}
-      {!managing && (
+      {!managing && !compact && (
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           {stateFilter ?? <span />}
           {serviceCount > 0 && <ServiceViewToolbar {...toolbar} />}

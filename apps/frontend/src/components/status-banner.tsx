@@ -185,10 +185,10 @@ export function StatusBanner({
       : null;
 
   return (
-    <Card aria-label={t('banner.label')} role="region" className="gap-3 py-4">
+    <Card aria-label={t('banner.label')} role="region" className="gap-3 py-3 sm:py-4">
       <CardContent className="flex flex-col gap-3 px-4 sm:px-5">
         <div className="flex flex-wrap items-start gap-x-8 gap-y-3">
-          <div className="flex min-w-64 flex-[1_1_18rem] items-start gap-3">
+          <div className="flex min-w-0 flex-[1_1_18rem] items-start gap-3 sm:min-w-64">
             <span
               aria-hidden="true"
               className={cn(
@@ -205,10 +205,19 @@ export function StatusBanner({
               )}
             </span>
             <div className="min-w-0 flex-1">
-              <p role="status" className="text-lg leading-tight font-semibold tracking-tight">
+              <p
+                role="status"
+                className="text-base leading-tight font-semibold tracking-tight sm:text-lg"
+              >
                 {title}
               </p>
-              {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
+              {subtitle && (
+                <p
+                  className={cn('mt-0.5 text-sm text-muted-foreground', !open && 'hidden sm:block')}
+                >
+                  {subtitle}
+                </p>
+              )}
             </div>
             <Button
               type="button"
