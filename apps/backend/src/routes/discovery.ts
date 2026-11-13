@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../monitoring/index.js';
 import { InputError, errorBody } from '../api-error.js';
-import { parseDocker, type DockerSource } from '../docker-discovery.js';
+import { parseDocker, type DockerSource } from '../discovery/index.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;

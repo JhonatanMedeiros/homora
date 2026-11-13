@@ -44,9 +44,13 @@ export default tseslint.config(
   },
   {
     // Capabilities expose one entry point: outside code imports `monitoring/index.ts` or
-    // `transfer/index.ts`, never their internals.
+    // `transfer/index.ts` or `discovery/index.ts`, never their internals.
     files: ['apps/backend/src/**/*.ts', 'apps/backend/bench/**/*.ts'],
-    ignores: ['apps/backend/src/monitoring/**', 'apps/backend/src/transfer/**'],
+    ignores: [
+      'apps/backend/src/monitoring/**',
+      'apps/backend/src/transfer/**',
+      'apps/backend/src/discovery/**',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -59,6 +63,10 @@ export default tseslint.config(
             {
               regex: '/transfer/(?!index(\\.js)?$)',
               message: 'Import configuration transfer through transfer/index.ts.',
+            },
+            {
+              regex: '/discovery/(?!index(\\.js)?$)',
+              message: 'Import Docker discovery through discovery/index.ts.',
             },
           ],
         },

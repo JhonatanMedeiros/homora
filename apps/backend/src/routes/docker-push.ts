@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { errorBody } from '../api-error.js';
-import { parseDocker } from '../docker-discovery.js';
-import type { createDockerPush } from '../docker-push.js';
+import { parseDocker } from '../discovery/index.js';
+import type { createDockerPush } from '../discovery/index.js';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../monitoring/index.js';
 import type { createAuth } from '../auth.js';

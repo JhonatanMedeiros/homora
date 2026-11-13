@@ -157,8 +157,20 @@ releases exist.
 - `apps/backend/src/transfer/` holds format contracts and parse budgets, the Homora parser, the
   Homepage and Dashy importers (icon mapping, YAML bounds and group collection in
   `importer-common.ts`), the additive planner and the serializer. It imports no routes, SQLite or
-  authorization; those stay in the application service. Local Docker discovery reuses the collector
+  authorization; those stay in the application service. Docker discovery reuses the collector
   through `transfer/index.ts`. `MAX_GROUP_COLUMNS` is owned by `group-limits.ts`.
+- `apps/backend/src/discovery/index.ts` exposes the Docker discovery capability. `local.ts`
+  validates the administrator-configured socket or proxy and performs a bounded read-only container
+  list; `push.ts` owns remote source tokens, revocation, bounded inventory validation, SQLite storage,
+  five-minute freshness and version checks. The separate remote agent reads its own Docker socket
+  and pushes supported labels; it does not share the local source's authorization. `labels.ts` is a
+  pure transformation shared by both sources and uses the transfer collector; the transfer planner
+  and application service still own preview and transactional import. HTTP routes retain explicit
+  review, configuration version and private-network opt-in checks; MCP requires discovery scope,
+  proposal scope for writes, and human review, with a current inventory guard for remote proposals.
+  Frontend discovery components and hooks own presentation and API interaction. A separate package
+  was deferred: no independent consumer needs these backend-specific source and storage boundaries.
+  No new socket or network access is introduced.
 - `proposals.ts` composes proposal creation and lifecycle operations. Managed proposal preparation
   lives in `managed-proposal-creator.ts`; approval and batch review live in `proposal-review.ts`.
   Atomic batch creation and recreation of expired batches live in `proposal-batches.ts`.
