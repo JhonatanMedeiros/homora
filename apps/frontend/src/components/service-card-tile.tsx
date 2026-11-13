@@ -55,7 +55,7 @@ export function ServiceCardTile({
         data-homora="service-card"
         variant="outline"
         className={cn(
-          'service-surface relative h-fit w-full flex-col flex-nowrap items-stretch gap-3 bg-card hover:bg-accent/60 focus-within:bg-accent/60',
+          'service-surface relative h-full w-full flex-col flex-nowrap items-stretch gap-3 bg-card hover:bg-accent/60 focus-within:bg-accent/60',
           view.state === 'available' &&
             !isBlocked &&
             'shadow-[inset_0_1px_0_color-mix(in_oklch,var(--primary)_16%,transparent)]',
@@ -176,7 +176,7 @@ export function ServiceCardTile({
         )}
         <div
           className={cn(
-            'flex items-center justify-between gap-3 border-t pt-3',
+            'mt-auto flex items-center justify-between gap-3 border-t pt-3',
             view.failing && !isBlocked && 'border-destructive/35',
           )}
         >

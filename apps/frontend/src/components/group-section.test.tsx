@@ -17,40 +17,40 @@ const base = {
   onMove: () => {},
 };
 
-it('uses vertical card columns without a selected count and respects saved counts', () => {
+it('uses card grid without a selected count and respects saved counts', () => {
   const { container, rerender } = render(
     <GroupSection {...base}>
       <li>a</li>
     </GroupSection>,
   );
-  expect(container.querySelector('ul')?.className).toContain('xl:columns-3');
+  expect(container.querySelector('ul')?.className).toContain('xl:grid-cols-3');
   rerender(
     <GroupSection {...base} columns={2}>
       <li>a</li>
     </GroupSection>,
   );
   const list = container.querySelector('ul');
-  expect(list?.className).toContain('sm:columns-2');
-  expect(list?.className).not.toContain('xl:columns-3');
+  expect(list?.className).toContain('sm:grid-cols-2');
+  expect(list?.className).not.toContain('xl:grid-cols-3');
   rerender(
     <GroupSection {...base} columns={5}>
       <li>a</li>
     </GroupSection>,
   );
   // Saved values above 3 are applied as 3.
-  expect(container.querySelector('ul')?.className).toContain('xl:columns-3');
+  expect(container.querySelector('ul')?.className).toContain('xl:grid-cols-3');
   rerender(
     <GroupSection {...base} columns={1}>
       <li>a</li>
     </GroupSection>,
   );
-  expect(container.querySelector('ul')?.className).not.toContain('sm:columns-2');
+  expect(container.querySelector('ul')?.className).not.toContain('sm:grid-cols-2');
   rerender(
     <GroupSection {...base} columns={99}>
       <li>a</li>
     </GroupSection>,
   );
-  expect(container.querySelector('ul')?.className).toContain('xl:columns-3');
+  expect(container.querySelector('ul')?.className).toContain('xl:grid-cols-3');
 });
 
 it('puts columns, rename, and remove in the group menu in organize mode only', async () => {
