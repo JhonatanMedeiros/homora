@@ -9,7 +9,10 @@ import { Input } from '@/components/ui/input';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { t, formatDateTime } from '@/i18n';
 import { SectionSkeleton } from '@/components/skeletons';
-import { useNotificationSettings } from '@/hooks/use-notification-settings';
+import {
+  notificationErrorMessage,
+  useNotificationSettings,
+} from '@/hooks/use-notification-settings';
 
 export function NotificationSettings() {
   const {
@@ -133,8 +136,10 @@ export function NotificationSettings() {
                   )}
                   {channel.lastError && (
                     <p className="text-sm">
-                      {t('notifications.failed', { error: channel.lastError })} ·{' '}
-                      {t('notifications.failures', { count: channel.failures })}
+                      {t('notifications.failed', {
+                        error: notificationErrorMessage(channel.lastError),
+                      })}{' '}
+                      · {t('notifications.failures', { count: channel.failures })}
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2">

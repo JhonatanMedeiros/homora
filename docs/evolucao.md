@@ -1608,3 +1608,9 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - The application retains thin typed helpers for existing call sites and locale-aware formatting. Adding a language still requires catalog coverage and tests; it is not automatic.
 
 - Notification delivery errors now include a stable API code. Migration coverage checks preservation of existing channel data. Live notification providers and browser layout were not verified.
+
+### Localization audit follow-up
+
+- Reviewed backend error boundaries and frontend translation helpers. Existing notification delivery diagnostics are translated at display time, with unknown values reduced to a generic message and HTTP status codes retained. MCP and upstream authentication errors remain separate protocol/client boundaries; not all runtime dependency errors have a localized code.
+- Kept typed application and integration adapters because they serve existing non-React call sites, dynamic fallback contracts and locale-aware formatting. The dynamic fallback now uses the public i18next translation API instead of its interpolator service.
+- Validation: `pnpm check` (1,357 application tests and 18 script tests) and `pnpm build` passed. Browser layout and live notification delivery remain unverified.

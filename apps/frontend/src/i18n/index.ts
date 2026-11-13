@@ -63,9 +63,7 @@ export function t(key: MessageKey, params?: Params): string {
 
 /** Translate a dynamic integration key, or display the integration's default text. */
 export function tOr(key: string | undefined, fallback: string, params?: Params): string {
-  return key
-    ? i18n.t(key, { ...params, defaultValue: fallback })
-    : i18n.services.interpolator.interpolate(fallback, params ?? {}, getLocale(), {});
+  return i18n.t(key ?? '', { ...params, defaultValue: fallback });
 }
 
 export function useI18n() {

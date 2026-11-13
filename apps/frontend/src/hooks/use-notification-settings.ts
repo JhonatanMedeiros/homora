@@ -33,6 +33,13 @@ const blank = (): Form => ({
   chatId: '',
 });
 
+/** Old rows store these safe English strings; translate them without rewriting the database. */
+export function notificationErrorMessage(error: string): string {
+  if (/^HTTP \d{3}$/.test(error)) return error;
+  if (error === 'Queue full') return t('notifications.queueFull');
+  return t('apiError.notification-delivery-failed');
+}
+
 export function useNotificationSettings() {
   const [channels, setChannels] = useState<Channel[] | null>(null);
   const [form, setForm] = useState<Form>(blank);
