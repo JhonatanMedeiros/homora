@@ -33,6 +33,7 @@ it('adopts legacy database and preserves its data across restarts', async () => 
     ]);
     expect((await database.db.select().from(services))[0].position).toBe(0);
     expect((await database.db.select().from(services))[0].allowPrivate).toBe(false);
+    expect((await database.db.select().from(services))[0].openTarget).toBe('new-tab');
     database.close();
     database = createDatabase(path);
     expect(await database.db.select().from(services)).toHaveLength(1);

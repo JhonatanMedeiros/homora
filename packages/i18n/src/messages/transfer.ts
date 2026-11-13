@@ -185,6 +185,7 @@ export const en = {
     'The limit of 12 pages was reached; the group goes to the first page.',
   'transfer.issue.columns-ignored':
     'The number of columns must be between 1 and 6; it was ignored.',
+  'transfer.issue.open-target-ignored': 'Invalid link opening option; new tab will be used.',
   'transfer.issue.check-ignored':
     'The check method must be http or ping and the interval between 30 and 3600 seconds; it was ignored.',
   'transfer.source': 'File format',
@@ -386,6 +387,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'transfer.issue.page-limit':
     'O limite de 12 páginas foi atingido; o grupo vai para a primeira página.',
   'transfer.issue.columns-ignored': 'O número de colunas deve estar entre 1 e 6; foi ignorado.',
+  'transfer.issue.open-target-ignored': 'Opção de abertura inválida; será usada uma nova aba.',
   'transfer.issue.check-ignored':
     'O método de verificação deve ser http ou ping e o intervalo ficar entre 30 e 3600 segundos; foi ignorado.',
   'transfer.source': 'Formato do arquivo',

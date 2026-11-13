@@ -74,12 +74,14 @@ function ServiceRow({
       <span className="flex min-w-0 flex-1 flex-col">
         <a
           href={service.url}
-          target="_blank"
+          target={service.openTarget === 'same-tab' ? undefined : '_blank'}
           rel="noopener noreferrer"
           className="truncate rounded-sm text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {service.name}
-          <span className="sr-only">{t('card.opensNewTab')}</span>
+          {service.openTarget !== 'same-tab' && (
+            <span className="sr-only">{t('card.opensNewTab')}</span>
+          )}
         </a>
         <span className="truncate font-mono text-xs text-muted-foreground">
           {page ? `${page} · ` : ''}

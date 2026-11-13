@@ -1,4 +1,4 @@
-import type { Appearance, CheckType } from '@homora/shared';
+import type { Appearance, CheckType, OpenTarget } from '@homora/shared';
 
 /**
  * Homora export format version. Version 2 added pages (`pages` and a `page` on each group);
@@ -20,6 +20,7 @@ export type ImportedService = {
   description: string;
   icon: string;
   allowPrivate: boolean;
+  openTarget?: OpenTarget;
   checkType?: CheckType;
   checkInterval?: number;
   expectedStatus?: string;
@@ -50,6 +51,7 @@ export type IssueCode =
   | 'duplicate-in-file'
   | 'icon-unsupported'
   | 'columns-ignored'
+  | 'open-target-ignored'
   | 'check-ignored'
   | 'widget-ignored'
   | 'pages-ignored'

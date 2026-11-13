@@ -99,3 +99,10 @@ it('asks what a keyword or JSON check looks for, and reads the tiles with the ar
   fireEvent.keyDown(group, { key: 'ArrowRight' });
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ checkType: 'http' }));
 });
+
+it('chooses how the service opens, defaulting to a new tab', () => {
+  const onChange = setup();
+  expect(screen.getByRole('radio', { name: 'Nova aba' }).getAttribute('aria-checked')).toBe('true');
+  fireEvent.click(screen.getByRole('radio', { name: 'Mesma aba' }));
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ openTarget: 'same-tab' }));
+});

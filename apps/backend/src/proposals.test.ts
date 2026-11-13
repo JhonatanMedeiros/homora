@@ -7,7 +7,7 @@ import { createProposalService } from './proposals.js';
 
 function fixture() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT,host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT);
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
@@ -88,7 +88,7 @@ it('serializes review across SQLite connections and prevents replay', () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-proposal-'));
   const path = join(dir, 'test.sqlite');
   const first = new DatabaseSync(path);
-  first.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT,host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT);
+  first.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT);
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);

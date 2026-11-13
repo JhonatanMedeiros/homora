@@ -10,7 +10,12 @@ const noop = () => {};
 function show(
   status?: ServiceStatus,
   blocked = false,
-  extra: { list?: boolean; description?: string; onEdit?: () => void } = {},
+  extra: {
+    list?: boolean;
+    description?: string;
+    onEdit?: () => void;
+    openTarget?: 'new-tab' | 'same-tab';
+  } = {},
 ) {
   cleanup();
   return render(
@@ -22,6 +27,7 @@ function show(
           url: 'https://wiki.test',
           category: 'Casa',
           description: extra.description ?? '',
+          openTarget: extra.openTarget,
         }}
         status={status}
         blocked={blocked}
@@ -178,4 +184,18 @@ it('uses the same words in the list layout, with the failure sentence on its own
   expect(screen.getByText('Fora do ar')).toBeTruthy();
   expect(screen.getByText(/Sem resposta/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: /Detalhes/ })).toBeNull();
+});
+
+it('respects the opening preference in list and card views', () => {
+  for (const list of [true, false]) {
+    show(undefined, false, { list });
+    let link = screen.getByRole('link', { name: /Wiki/ });
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+    expect(link.textContent).toContain('abre em nova aba');
+    show(undefined, false, { list, openTarget: 'same-tab' });
+    link = screen.getByRole('link', { name: /Wiki/ });
+    expect(link.getAttribute('target')).toBeNull();
+    expect(link.textContent).not.toContain('abre em nova aba');
+  }
 });
