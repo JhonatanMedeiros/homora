@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { t } from '@/i18n';
+import { apiError, getLocale, t } from '@/i18n';
 
 type Channel = {
   id: number;
   name: string;
   type: 'webhook' | 'telegram' | 'ntfy' | 'discord';
+  locale: 'en' | 'pt-BR';
   enabled: boolean;
   allowPrivate: boolean;
   includeUrl: boolean;
@@ -12,7 +13,10 @@ type Channel = {
   lastError: string | null;
   failures: number;
 };
-type Form = Pick<Channel, 'name' | 'type' | 'enabled' | 'allowPrivate' | 'includeUrl'> & {
+type Form = Pick<
+  Channel,
+  'name' | 'type' | 'locale' | 'enabled' | 'allowPrivate' | 'includeUrl'
+> & {
   destination: string;
   token: string;
   chatId: string;
@@ -20,6 +24,7 @@ type Form = Pick<Channel, 'name' | 'type' | 'enabled' | 'allowPrivate' | 'includ
 const blank = (): Form => ({
   name: '',
   type: 'webhook',
+  locale: getLocale(),
   enabled: true,
   allowPrivate: false,
   includeUrl: false,
@@ -27,6 +32,13 @@ const blank = (): Form => ({
   token: '',
   chatId: '',
 });
+
+/** Old rows store these safe English strings; translate them without rewriting the database. */
+export function notificationErrorMessage(error: string): string {
+  if (/^HTTP \d{3}$/.test(error)) return error;
+  if (error === 'Queue full') return t('notifications.queueFull');
+  return t('apiError.notification-delivery-failed');
+}
 
 export function useNotificationSettings() {
   const [channels, setChannels] = useState<Channel[] | null>(null);
@@ -60,6 +72,7 @@ export function useNotificationSettings() {
       ...blank(),
       name: channel.name,
       type: channel.type,
+      locale: channel.locale ?? 'en',
       enabled: channel.enabled,
       allowPrivate: channel.allowPrivate,
       includeUrl: channel.includeUrl,
@@ -109,9 +122,11 @@ export function useNotificationSettings() {
         { method: action === 'test' ? 'POST' : 'DELETE' },
       );
       if (!response.ok) {
-        const body = (await response.json()) as { error?: string };
+        const body = (await response.json()) as { code?: string; error?: string };
         throw new Error(
-          /^HTTP \d{3}$/.test(body.error ?? '') ? body.error : t('notifications.error'),
+          /^HTTP \d{3}$/.test(body.error ?? '')
+            ? body.error
+            : apiError(body, t('notifications.error')),
         );
       }
       if (action === 'test') setMessage({ error: false, text: t('notifications.success') });

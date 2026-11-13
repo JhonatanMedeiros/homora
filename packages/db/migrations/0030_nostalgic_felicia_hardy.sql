@@ -1,0 +1,1 @@
+ALTER TABLE `notification_channels` ADD `locale` text DEFAULT 'en' NOT NULL;

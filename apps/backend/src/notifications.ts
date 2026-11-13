@@ -19,6 +19,7 @@ const channelSchema = z
     enabled: z.boolean(),
     allowPrivate: z.boolean().default(false),
     includeUrl: z.boolean().default(false),
+    locale: z.enum(['en', 'pt-BR']).optional(),
     destination: z.string().max(2048).optional(),
     token: z.string().max(256).optional(),
     chatId: z.string().max(128).optional(),
@@ -55,6 +56,7 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
     enabled: !!c.enabled,
     allowPrivate: !!c.allow_private,
     includeUrl: !!c.include_url,
+    locale: c.locale,
     hasSecret: true,
     createdAt: c.created_at,
     lastSentAt: c.last_sent_at,
@@ -118,7 +120,7 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
     const sealed = vault.seal(JSON.stringify(secret), !encrypted);
     if (old) {
       db.prepare(
-        'UPDATE notification_channels SET name=?,type=?,secret=?,enabled=?,allow_private=?,include_url=? WHERE id=?',
+        'UPDATE notification_channels SET name=?,type=?,secret=?,enabled=?,allow_private=?,include_url=?,locale=? WHERE id=?',
       ).run(
         data.name,
         data.type,
@@ -126,13 +128,14 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
         Number(data.enabled),
         Number(data.allowPrivate),
         Number(data.includeUrl),
+        data.locale ?? old.locale,
         old.id,
       );
       return publicRow(row(old.id)!);
     }
     const result = db
       .prepare(
-        'INSERT INTO notification_channels(name,type,secret,enabled,allow_private,include_url,created_at) VALUES(?,?,?,?,?,?,?)',
+        'INSERT INTO notification_channels(name,type,secret,enabled,allow_private,include_url,locale,created_at) VALUES(?,?,?,?,?,?,?,?)',
       )
       .run(
         data.name,
@@ -141,6 +144,7 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
         Number(data.enabled),
         Number(data.allowPrivate),
         Number(data.includeUrl),
+        data.locale ?? 'en',
         new Date().toISOString(),
       );
     return publicRow(row(Number(result.lastInsertRowid))!);

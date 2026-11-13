@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, expect, it, vi } from 'vitest';
 import { NotificationSettings } from './notification-settings';
 import { setLocale } from '@/i18n';
+import { notificationErrorMessage } from '@/hooks/use-notification-settings';
 
 it('creates a webhook without displaying its saved destination', async () => {
   setLocale('en');
@@ -48,6 +49,7 @@ it('opens the Telegram form separately and allows cancelling it', async () => {
   await screen.findByText('No Telegram channels configured.');
   fireEvent.click(screen.getByRole('button', { name: 'Add Telegram' }));
   expect(screen.getByLabelText('Bot token')).toBeTruthy();
+  expect(screen.getByLabelText('Message language').textContent).toContain('English');
   expect(screen.getByLabelText('Chat ID')).toBeTruthy();
   expect(screen.queryByLabelText('Webhook URL (HTTPS)')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -75,6 +77,7 @@ it('creates an ntfy channel with an optional token and a Discord channel without
   fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
   await waitFor(() => expect(fetchMock.mock.calls[1][1].body).toContain('"type":"ntfy"'));
   expect(fetchMock.mock.calls[1][1].body).toContain('https://ntfy.sh/homora');
+  expect(fetchMock.mock.calls[1][1].body).toContain('"locale":"en"');
 
   fireEvent.click(screen.getByRole('button', { name: 'Add Discord' }));
   expect(screen.queryByLabelText('Access token (optional)')).toBeNull();
@@ -134,4 +137,38 @@ it('groups existing channels and edits one without revealing its secret', async 
   expect((screen.getByRole('button', { name: 'Add webhook' }) as HTMLButtonElement).disabled).toBe(
     true,
   );
+});
+
+it('localizes saved notification errors without exposing unknown messages', () => {
+  setLocale('pt-BR');
+  expect(notificationErrorMessage('Delivery failed')).toBe('Falha ao enviar a notificação.');
+  expect(notificationErrorMessage('Queue full')).toBe('Fila de entrega cheia.');
+  expect(notificationErrorMessage('HTTP 503')).toBe('HTTP 503');
+  expect(notificationErrorMessage('unexpected')).toBe('Falha ao enviar a notificação.');
+});
+
+it('displays a translated saved error in the notification list', async () => {
+  setLocale('pt-BR');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          id: 1,
+          name: 'Alertas',
+          type: 'discord',
+          locale: 'pt-BR',
+          enabled: true,
+          allowPrivate: false,
+          includeUrl: false,
+          lastSentAt: null,
+          lastError: 'Queue full',
+          failures: 2,
+        },
+      ],
+    }),
+  );
+  render(<NotificationSettings />);
+  expect(await screen.findByText(/Fila de entrega cheia/)).toBeTruthy();
 });

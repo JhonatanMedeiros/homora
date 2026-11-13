@@ -6,9 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { t, formatDateTime } from '@/i18n';
 import { SectionSkeleton } from '@/components/skeletons';
-import { useNotificationSettings } from '@/hooks/use-notification-settings';
+import {
+  notificationErrorMessage,
+  useNotificationSettings,
+} from '@/hooks/use-notification-settings';
 
 export function NotificationSettings() {
   const {
@@ -132,8 +136,10 @@ export function NotificationSettings() {
                   )}
                   {channel.lastError && (
                     <p className="text-sm">
-                      {t('notifications.failed', { error: channel.lastError })} ·{' '}
-                      {t('notifications.failures', { count: channel.failures })}
+                      {t('notifications.failed', {
+                        error: notificationErrorMessage(channel.lastError),
+                      })}{' '}
+                      · {t('notifications.failures', { count: channel.failures })}
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2">
@@ -282,6 +288,27 @@ export function NotificationSettings() {
                             )}
                           </Field>
                         </>
+                      )}
+                      {form.type !== 'webhook' && (
+                        <Field>
+                          <FieldLabel htmlFor="notification-locale">
+                            {t('notifications.language')}
+                          </FieldLabel>
+                          <FormSelect
+                            id="notification-locale"
+                            value={form.locale}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                locale: event.target.value === 'pt-BR' ? 'pt-BR' : 'en',
+                              })
+                            }
+                          >
+                            <FormSelectOption value="en">English</FormSelectOption>
+                            <FormSelectOption value="pt-BR">Português (Brasil)</FormSelectOption>
+                          </FormSelect>
+                          <FieldDescription>{t('notifications.languageHint')}</FieldDescription>
+                        </Field>
                       )}
                       {(
                         [
