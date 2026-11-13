@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
-import { t } from '@/i18n';
+import { apiError, t } from '@/i18n';
 
 export type AuthStatus = { configured: boolean; authenticated: boolean };
 /** `name` is only needed to create the first account. */
@@ -10,6 +10,8 @@ export type Credentials = { email: string; password: string; name?: string; reme
 export function useAuth() {
   const [status, setStatus] = useState<AuthStatus | null>(null);
   const [error, setError] = useState('');
+  // The password was accepted but a code from the authenticator app is still needed.
+  const [challenge, setChallenge] = useState(false);
 
   const [attempt, setAttempt] = useState(0);
 
@@ -54,6 +56,14 @@ export function useAuth() {
         body: JSON.stringify({ email, password, rememberMe }),
       });
       if (!login.ok) throw new Error(t('auth.loginFailed'));
+      // A successful response is not a session yet when the account asks for a second step.
+      const result = await Promise.resolve()
+        .then(() => login.json() as Promise<{ twoFactorRedirect?: boolean } | null>)
+        .catch(() => null);
+      if (result?.twoFactorRedirect === true) {
+        setChallenge(true);
+        return true;
+      }
       setStatus({ configured: true, authenticated: true });
       return true;
     } catch (err) {
@@ -62,6 +72,39 @@ export function useAuth() {
       toast.error(message);
       return false;
     }
+  }
+
+  /** Answers the second-step challenge with an authenticator code or a recovery code. */
+  async function verifyTwoFactor(code: string, recovery: boolean) {
+    setError('');
+    try {
+      const response = await fetch(
+        recovery ? '/api/auth/two-factor/verify-backup-code' : '/api/auth/two-factor/verify-totp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        },
+      );
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { code?: unknown } | null;
+        // An expired or exhausted challenge cannot be retried: start again from the password.
+        if (body?.code === 'two-factor-challenge-expired') setChallenge(false);
+        throw new Error(apiError(body, t('auth.twoFactorFailed')));
+      }
+      setChallenge(false);
+      setStatus({ configured: true, authenticated: true });
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('auth.connectionFailed');
+      setError(message);
+      return false;
+    }
+  }
+
+  function cancelChallenge() {
+    setChallenge(false);
+    setError('');
   }
 
   async function logout() {
@@ -74,5 +117,5 @@ export function useAuth() {
     }
   }
 
-  return { status, error, submit, logout, retry };
+  return { status, error, challenge, submit, verifyTwoFactor, cancelChallenge, logout, retry };
 }

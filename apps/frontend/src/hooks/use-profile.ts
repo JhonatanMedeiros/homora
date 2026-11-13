@@ -14,7 +14,12 @@ export function useProfile() {
       })
       .then((data) => {
         if (typeof data?.name !== 'string' || typeof data.email !== 'string') throw new Error();
-        if (active) setProfile({ name: data.name, email: data.email });
+        if (active)
+          setProfile({
+            name: data.name,
+            email: data.email,
+            twoFactorEnabled: data.twoFactorEnabled === true,
+          });
       })
       .catch(() => {
         if (active) setFailed(true);

@@ -106,3 +106,75 @@ it('rejects external redirect after login', async () => {
   expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
   expect(window.location.pathname).toBe('/');
 });
+
+it('does not open the app after the password alone when a second step is required', async () => {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: false }) };
+    if (url === '/api/auth/sign-in/email')
+      return {
+        ok: true,
+        json: async () => ({ twoFactorRedirect: true, twoFactorMethods: ['totp'] }),
+      };
+    if (url === '/api/auth/two-factor/verify-totp') {
+      const { code } = JSON.parse(String(init?.body));
+      return code === '123456'
+        ? { ok: true, json: async () => ({}) }
+        : { ok: false, json: async () => ({ code: 'two-factor-invalid-code' }) };
+    }
+    if (url === '/api/auth/two-factor/verify-backup-code')
+      return { ok: true, json: async () => ({}) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  fireEvent.change(await screen.findByLabelText('E-mail'), {
+    target: { value: 'ana@homora.test' },
+  });
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-segura-123' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+
+  expect(await screen.findByRole('heading', { name: 'Verificação em duas etapas' })).toBeTruthy();
+  expect(screen.queryByRole('heading', { name: /Tudo em seu lugar/ })).toBeNull();
+  fireEvent.change(screen.getByLabelText('Código de autenticação'), {
+    target: { value: '000000' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Verificar' }));
+  expect((await screen.findByRole('alert')).textContent).toBe('O código não é válido.');
+  expect(screen.queryByRole('heading', { name: /Tudo em seu lugar/ })).toBeNull();
+
+  // A recovery code is a separate route and field.
+  fireEvent.click(screen.getByRole('button', { name: 'Usar um código de recuperação' }));
+  fireEvent.change(screen.getByLabelText('Código de recuperação'), {
+    target: { value: 'abcde-12345' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Verificar' }));
+  expect(await screen.findByRole('heading', { name: /Tudo em seu lugar/ })).toBeTruthy();
+  const urls = fetchMock.mock.calls.map(([url]) => url);
+  expect(urls).toContain('/api/auth/two-factor/verify-backup-code');
+});
+
+it('returns to the password step when the sign-in challenge expired', async () => {
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: false }) };
+    if (url === '/api/auth/sign-in/email')
+      return { ok: true, json: async () => ({ twoFactorRedirect: true }) };
+    if (url === '/api/auth/two-factor/verify-totp')
+      return { ok: false, json: async () => ({ code: 'two-factor-challenge-expired' }) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  fireEvent.change(await screen.findByLabelText('E-mail'), {
+    target: { value: 'ana@homora.test' },
+  });
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-segura-123' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+  fireEvent.change(await screen.findByLabelText('Código de autenticação'), {
+    target: { value: '123456' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Verificar' }));
+  expect(await screen.findByText('Bem-vindo de volta.')).toBeTruthy();
+  expect((await screen.findByRole('alert')).textContent).toContain('expirou');
+});

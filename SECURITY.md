@@ -22,6 +22,9 @@ data or real credentials. There is no established response SLA or bug bounty pol
 - The database may contain encrypted credentials; the `.key` file is required to
   decrypt them. Protect and store backups separately. Without this key,
   credentials will need to be re-entered.
+- If two-step verification is on, its secret and recovery codes are encrypted with the session
+  secret (`.session-secret` or `HOMORA_SESSION_SECRET`): back it up with the database and protect it
+  like the `.key`. Recovery without it is local only (`pnpm auth:reset --two-factor-only`).
 - Appearance and custom CSS are administrator-controlled. Custom CSS is validated and served from
   the same origin, but Homora does not send a Content-Security-Policy header today, so treat the
   stylesheet as trusted administrator content. If it breaks the interface, open the page with

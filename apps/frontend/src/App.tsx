@@ -112,7 +112,8 @@ function DashboardForRoute({
 }
 
 function AppRoutes() {
-  const { status, error, submit, logout, retry } = useAuth();
+  const { status, error, challenge, submit, verifyTwoFactor, cancelChallenge, logout, retry } =
+    useAuth();
   const [token, setToken] = useState('');
   useEffect(() => {
     if (!token) return;
@@ -129,7 +130,18 @@ function AppRoutes() {
     setToken('');
     void logout();
   };
-  if (!status) return <AuthPage status={status} error={error} onSubmit={submit} onRetry={retry} />;
+  const authPage = (
+    <AuthPage
+      status={status}
+      error={error}
+      challenge={challenge}
+      onSubmit={submit}
+      onVerify={verifyTwoFactor}
+      onCancelChallenge={cancelChallenge}
+      onRetry={retry}
+    />
+  );
+  if (!status) return authPage;
   if (!status.authenticated) {
     if (location.pathname !== '/login')
       return (
@@ -138,7 +150,7 @@ function AppRoutes() {
           to={`/login?returnTo=${encodeURIComponent(validDestination(location.pathname) ? location.pathname : '/')}`}
         />
       );
-    return <AuthPage status={status} error={error} onSubmit={submit} onRetry={retry} />;
+    return authPage;
   }
   if (location.pathname === '/login') {
     const destination = new URLSearchParams(location.search).get('returnTo') ?? '/';

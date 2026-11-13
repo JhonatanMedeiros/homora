@@ -1,4 +1,4 @@
-export type Profile = { name: string; email: string };
+export type Profile = { name: string; email: string; twoFactorEnabled: boolean };
 
 export type AccountSession = {
   id: string;
