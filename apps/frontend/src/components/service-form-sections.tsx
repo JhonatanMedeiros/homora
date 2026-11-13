@@ -139,7 +139,7 @@ export function ServiceFormSections(props: SectionsProps) {
       <TabsList
         variant="line"
         aria-label={t('form.sections')}
-        className="grid h-auto w-full grid-cols-[repeat(auto-fit,minmax(0,1fr))] items-stretch"
+        className="grid w-full grid-cols-[repeat(auto-fit,minmax(0,1fr))] items-stretch group-data-[orientation=horizontal]/tabs:h-auto"
       >
         {sections.map((section) => (
           <TabsTrigger

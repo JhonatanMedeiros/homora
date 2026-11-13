@@ -86,89 +86,91 @@ export function ServiceForm({
       aria-label={editing ? t('form.editTitle') : t('form.newTitle')}
       onSubmit={onSubmit}
       onInvalidCapture={revealInvalid}
-      className="flex flex-col gap-4"
+      className="flex min-h-0 flex-1 flex-col"
     >
-      <div className="flex items-start gap-4">
-        <button
-          type="button"
-          onClick={changeIcon}
-          aria-label={t('form.changeIcon')}
-          className="hidden size-14 shrink-0 place-items-center rounded-xl border bg-secondary text-xl font-semibold transition-colors outline-none hover:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:grid"
-        >
-          <ServiceIcon icon={value.icon} name={value.name || '?'} />
-        </button>
-        <FieldGroup className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="service-name">{t('form.name')}</FieldLabel>
-            <Input
-              ref={nameRef}
-              id="service-name"
-              required
-              maxLength={80}
-              autoComplete="off"
-              value={value.name}
-              onChange={(e) => set({ name: e.target.value })}
-              placeholder="Jellyfin"
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="service-url">{t('form.url')}</FieldLabel>
-            <Input
-              id="service-url"
-              type="url"
-              inputMode="url"
-              required
-              autoComplete="off"
-              value={value.url}
-              onChange={(e) => set({ url: e.target.value })}
-              placeholder="http://192.168.1.10:8096"
-            />
-          </Field>
-          <Field className="sm:col-span-2">
-            <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>
-            <Input
-              id="service-category"
-              required
-              maxLength={40}
-              list="categories"
-              autoComplete="off"
-              value={value.category}
-              onChange={(e) => set({ category: e.target.value })}
-              placeholder={t('form.categoryPlaceholder')}
-            />
-            <datalist id="categories">
-              {categories.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
-          </Field>
-          {suggestion && (
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-fit sm:col-span-2"
-              onClick={() => set({ icon: `brand:${suggestion}` })}
-            >
-              <ServiceIcon icon={`brand:${suggestion}`} name={value.name} />
-              {t('icon.suggested', { icon: suggestion })}
-            </Button>
-          )}
-        </FieldGroup>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-4">
+        <div className="flex items-start gap-4">
+          <button
+            type="button"
+            onClick={changeIcon}
+            aria-label={t('form.changeIcon')}
+            className="hidden size-14 shrink-0 place-items-center rounded-xl border bg-secondary text-xl font-semibold transition-colors outline-none hover:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:grid"
+          >
+            <ServiceIcon icon={value.icon} name={value.name || '?'} />
+          </button>
+          <FieldGroup className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="service-name">{t('form.name')}</FieldLabel>
+              <Input
+                ref={nameRef}
+                id="service-name"
+                required
+                maxLength={80}
+                autoComplete="off"
+                value={value.name}
+                onChange={(e) => set({ name: e.target.value })}
+                placeholder="Jellyfin"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="service-url">{t('form.url')}</FieldLabel>
+              <Input
+                id="service-url"
+                type="url"
+                inputMode="url"
+                required
+                autoComplete="off"
+                value={value.url}
+                onChange={(e) => set({ url: e.target.value })}
+                placeholder="http://192.168.1.10:8096"
+              />
+            </Field>
+            <Field className="sm:col-span-2">
+              <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>
+              <Input
+                id="service-category"
+                required
+                maxLength={40}
+                list="categories"
+                autoComplete="off"
+                value={value.category}
+                onChange={(e) => set({ category: e.target.value })}
+                placeholder={t('form.categoryPlaceholder')}
+              />
+              <datalist id="categories">
+                {categories.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </Field>
+            {suggestion && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-fit sm:col-span-2"
+                onClick={() => set({ icon: `brand:${suggestion}` })}
+              >
+                <ServiceIcon icon={`brand:${suggestion}`} name={value.name} />
+                {t('icon.suggested', { icon: suggestion })}
+              </Button>
+            )}
+          </FieldGroup>
+        </div>
+        <ServiceFormSections
+          value={value}
+          onChange={onChange}
+          isPublic={isPublic}
+          onPublicChange={onPublicChange}
+          monitoring={monitoring}
+          tags={tags}
+          hosts={hosts}
+          dependencies={dependencies}
+          open={open}
+          onOpenChange={setOpen}
+        />
+        <FormError>{error}</FormError>
       </div>
-      <ServiceFormSections
-        value={value}
-        onChange={onChange}
-        isPublic={isPublic}
-        onPublicChange={onPublicChange}
-        monitoring={monitoring}
-        tags={tags}
-        hosts={hosts}
-        dependencies={dependencies}
-        open={open}
-        onOpenChange={setOpen}
-      />
-      <FormError>{error}</FormError>
-      <DialogFooter className="sticky bottom-0 -mx-6 -mb-6 flex-row justify-end gap-2 border-t bg-background px-6 py-3 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <DialogFooter className="shrink-0 flex-row justify-end gap-2 border-t px-6 py-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
           {t('common.cancel')}
         </Button>

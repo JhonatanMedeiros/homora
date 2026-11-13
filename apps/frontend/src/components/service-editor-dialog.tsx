@@ -33,7 +33,7 @@ export function ServiceEditorDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl max-sm:top-auto max-sm:bottom-0 max-sm:max-h-[92dvh] max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none"
+        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-sm:top-auto max-sm:bottom-0 max-sm:max-h-[92dvh] max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none"
         showCloseButton={false}
         onOpenAutoFocus={(event) => {
           event.preventDefault();
@@ -50,7 +50,7 @@ export function ServiceEditorDialog({
           if (saving) event.preventDefault();
         }}
       >
-        <DialogHeader>
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="font-label text-xl">
             {editing !== null ? t('form.editTitle') : t('form.newTitle')}
           </DialogTitle>
