@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Service } from '@homora/shared';
 import { ChevronDown, Plus } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { PROPOSALS_CHANGED } from '@/hooks/use-pending-proposals';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
@@ -62,6 +63,7 @@ export function Agents({
   const [now, setNow] = useState(() => Date.now());
   const [ttl, setTtl] = useState('15');
   const [recreating, setRecreating] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
     fetch('/api/proposal-settings')
       .then((response) => (response.ok ? response.json() : Promise.reject()))
@@ -93,6 +95,8 @@ export function Agents({
       setAgents((await agentResponse.json()) as Agent[]);
       setProposals((await proposalResponse.json()) as Proposal[]);
       setLoadFailed(false);
+      // The menu badge counts the same proposals; tell it they changed.
+      window.dispatchEvent(new Event(PROPOSALS_CHANGED));
     } catch {
       setLoadFailed(true);
     }
@@ -156,6 +160,10 @@ export function Agents({
     if (!response?.ok) setMessage(t('agents.revokeFailed'));
     else await load();
   }
+  /** The reviewed card leaves the list, so keyboard focus would fall back to the page start. */
+  function focusPanel() {
+    sectionRef.current?.querySelector<HTMLElement>('[role="tabpanel"]')?.focus();
+  }
   async function review(id: string, approve: boolean, batch = false) {
     const response = await fetch(
       batch ? `/api/proposal-batches/${id}/review` : `/api/proposals/${id}/review`,
@@ -167,14 +175,17 @@ export function Agents({
     ).catch(() => null);
     if (response?.ok) {
       const result = (await response.json()) as { token?: string; agentId?: string };
+      const approved = proposals?.find((proposal) => proposal.id === id);
+      const diff = approved ? parseDiff(approved.diff) : null;
       if (result.token) {
+        // A newly created identity is not in the loaded list yet: name it from the proposal.
+        const proposedName = (diff?.change as { name?: unknown } | undefined)?.name;
         setTokenFor(
-          agents?.find((agent) => agent.id === result.agentId)?.name ?? t('agents.fallbackName'),
+          agents?.find((agent) => agent.id === result.agentId)?.name ??
+            (typeof proposedName === 'string' ? proposedName : t('agents.fallbackName')),
         );
         setToken(result.token);
       }
-      const approved = proposals?.find((proposal) => proposal.id === id);
-      const diff = approved ? parseDiff(approved.diff) : null;
       setMessage(
         approve
           ? t(
@@ -186,20 +197,25 @@ export function Agents({
       );
       await load();
       await onApplied();
+      focusPanel();
     } else {
       const body = (await response?.json().catch(() => null)) as { code?: string } | null;
+      const unexpected = !response || response.status >= 500;
       setMessage(
         t(
-          body?.code === 'batch-conflict'
-            ? 'agents.batchConflict'
-            : body?.code === 'config-changed'
-              ? 'agents.configChanged'
-              : body?.code === 'proposal-unavailable'
-                ? 'agents.proposalUnavailable'
-                : 'agents.reviewFailed',
+          unexpected
+            ? 'agents.reviewError'
+            : body?.code === 'batch-conflict'
+              ? 'agents.batchConflict'
+              : body?.code === 'config-changed'
+                ? 'agents.configChanged'
+                : body?.code === 'proposal-unavailable'
+                  ? 'agents.proposalUnavailable'
+                  : 'agents.reviewFailed',
         ),
       );
       await load();
+      focusPanel();
     }
   }
   async function recreate(id: string) {
@@ -293,7 +309,7 @@ export function Agents({
   };
 
   return (
-    <section aria-label={t('agents.title')} className="flex flex-col gap-8">
+    <section ref={sectionRef} aria-label={t('agents.title')} className="flex flex-col gap-8">
       <PageHeader
         title={t('agents.title')}
         description={t('agents.description')}

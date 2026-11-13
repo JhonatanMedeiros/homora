@@ -13,6 +13,7 @@ export const en = {
   'agents.rejected': 'Proposal rejected.',
   'agents.reviewFailed':
     'The proposal expired or the configuration changed. Ask the agent for a new one.',
+  'agents.reviewError': 'The review could not be completed. The proposal is unchanged; try again.',
   'agents.copyFailed': 'Could not copy. Select the token and copy it manually.',
   'agents.fallbackName': 'Agent',
   'agents.proposals': 'Proposals',
@@ -223,6 +224,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'agents.approved': 'Proposta aprovada e aplicada.',
   'agents.rejected': 'Proposta rejeitada.',
   'agents.reviewFailed': 'A proposta expirou ou a configuração mudou. Peça ao agente uma nova.',
+  'agents.reviewError':
+    'Não foi possível concluir a revisão. A proposta não mudou; tente novamente.',
   'agents.copyFailed': 'Não foi possível copiar. Selecione o token e copie manualmente.',
   'agents.fallbackName': 'Agente',
   'agents.proposals': 'Propostas',

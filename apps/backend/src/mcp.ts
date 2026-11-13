@@ -71,8 +71,17 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
     ],
     isError: true as const,
   });
-  const failed = () => ({
-    content: [{ type: 'text' as const, text: 'The request could not be completed.' }],
+  /** Only the pending-proposal limit is named: it is actionable for the agent and not sensitive. */
+  const failed = (error?: unknown) => ({
+    content: [
+      {
+        type: 'text' as const,
+        text:
+          error instanceof Error && error.message === 'Pending proposal limit reached'
+            ? 'Pending proposal limit reached (100). Wait for review or expiry, or withdraw one with withdraw_proposal.'
+            : 'The request could not be completed.',
+      },
+    ],
     isError: true as const,
   });
   const result = (value: unknown) => ({
@@ -233,8 +242,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!authorize('services:read')) return unauthorized();
       try {
         return result(createObservationStore(database).list());
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -331,8 +340,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
           .list()
           .find((item) => item.id === id);
         return status ? result(status) : failed();
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -355,8 +364,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (from > to) return failed();
       try {
         return result(createObservationStore(database).history(id, from, to, before, limit));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -370,8 +379,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!authorize('agents:read')) return unauthorized();
       try {
         return result(proposalService.listAgents());
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -387,8 +396,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       try {
         const agent = proposalService.listAgents().find((row) => row.id === id);
         return agent ? result(agent) : failed();
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -430,8 +439,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
           events: rows.slice(0, limit),
           nextBefore: rows.length > limit ? rows[limit - 1].id : null,
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -447,8 +456,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.withdraw(author, id));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -534,8 +543,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
         return unauthorized();
       try {
         return result(proposalService.proposeBatch(author, items));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -552,8 +561,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'create', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -568,8 +577,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'update-scopes', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -581,8 +590,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'revoke', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -594,8 +603,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'rotate', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -624,7 +633,9 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
         return {
           content: [{ type: 'text', text: JSON.stringify(proposalService.propose(author, input)) }],
         };
-      } catch {
+      } catch (error) {
+        if (error instanceof Error && error.message === 'Pending proposal limit reached')
+          return failed(error);
         return {
           content: [
             { type: 'text', text: 'Proposal rejected: invalid or unavailable service data.' },
@@ -647,8 +658,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'group', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -665,8 +676,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'card-order', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -687,8 +698,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
             )
             .all(),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -706,8 +717,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'widget', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -739,8 +750,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
                 )
                 .all(),
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -759,8 +770,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
         if (!options.connections) return failed();
         const data = await options.connections.connectionData(id);
         return data ? result(data) : failed();
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -794,8 +805,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
               dependsOnName: names.get(item.dependsOnId) ?? '',
             })),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -830,8 +841,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
               })),
             })),
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -878,8 +889,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
             },
           }),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -897,8 +908,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'connection-setup', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -920,8 +931,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
           entries: entries.map((entry) => ({ ...entry, url: publicUrl(entry.url) })),
           scanned,
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -955,8 +966,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
         );
         if (cards.length !== 1) return failed();
         return result(proposalService.propose(author, { op: 'create', service: cards[0] }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -1033,8 +1044,8 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
             dockerPush.isCurrent(sourceId, inventoryVersion),
           ),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );

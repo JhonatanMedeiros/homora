@@ -170,3 +170,45 @@ it('keeps proposals private to their author and never returns tokens or hashes',
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('tells an agent that it reached the pending proposal limit instead of a generic failure', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-gov-'));
+  const storage = createDatabase(join(dir, 'db.sqlite'));
+  const db = getSqliteHandle(storage.db);
+  try {
+    const service = createProposalService(db);
+    const agent = service.issue('busy', ['proposals:create', 'groups:propose']);
+    const client = await connect(db, agent.token);
+    const card = (n: number) => ({
+      op: 'create',
+      service: { name: `C${n}`, url: `https://c${n}.example`, category: 'X' },
+    });
+    for (let n = 0; n < 100; n += 1)
+      await client.callTool({ name: 'propose_service_card', arguments: card(n) });
+    const cardResult = await client.callTool({
+      name: 'propose_service_card',
+      arguments: card(100),
+    });
+    const groupResult = await client.callTool({
+      name: 'propose_group_change',
+      arguments: { op: 'create', name: 'G' },
+    });
+    for (const result of [cardResult, groupResult]) {
+      expect(failed(result)).toBe(true);
+      expect(text(result)).toContain('Pending proposal limit reached (100)');
+    }
+    expect(db.prepare('SELECT count(*) AS n FROM service_proposals').get()).toEqual({ n: 100 });
+    // Other failures stay generic and do not reveal internals.
+    const other = await connect(db, service.issue('other', ['groups:propose']).token);
+    const invalid = await other.callTool({
+      name: 'propose_group_change',
+      arguments: { op: 'delete', id: 9999 },
+    });
+    expect(failed(invalid)).toBe(true);
+    expect(text(invalid)).toBe('The request could not be completed.');
+    await other.close();
+    await client.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
