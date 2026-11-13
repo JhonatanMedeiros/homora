@@ -124,7 +124,7 @@ export function SecurityCard({
 }) {
   return (
     <Card className="md:h-full">
-      <CardContent className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 md:h-full md:grid-cols-1 md:content-start">
+      <CardContent className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] md:flex md:h-full md:flex-col md:items-start">
         <span
           aria-hidden="true"
           className="grid size-9 place-items-center rounded-md bg-muted text-muted-foreground [&_svg]:size-4.5"
@@ -135,7 +135,7 @@ export function SecurityCard({
           <h3 className="font-semibold">{title}</h3>
           <p className="text-sm text-muted-foreground max-md:text-xs">{description}</p>
         </div>
-        <div className="md:mt-auto md:self-start">{action}</div>
+        <div className="col-start-2 sm:col-auto md:mt-auto">{action}</div>
       </CardContent>
     </Card>
   );
