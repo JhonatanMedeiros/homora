@@ -38,8 +38,8 @@ it('shows a clock without querying a connection and opens a prefilled creation f
   await screen.findByText('Office');
   expect(document.querySelector('time')).toBeTruthy();
   expect(fetcher.mock.calls.some(([url]) => url.includes('/data'))).toBe(false);
-  expect(screen.queryByRole('button', { name: 'Adicionar widget' })).toBeNull();
   expect(screen.queryByText('Widgets da página')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Organizar widgets' })).toBeNull();
 });
 
 it('adds a widget from the gallery, with a prefilled form', async () => {
@@ -75,11 +75,7 @@ it('reorders widgets from the keyboard handle in organize mode', async () => {
   );
   vi.stubGlobal('fetch', fetcher);
   render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
-  fireEvent.pointerDown(await screen.findByRole('button', { name: 'Ações: A' }), {
-    button: 0,
-    ctrlKey: false,
-  });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Organizar widgets' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Organizar widgets' }));
   const grip = await screen.findByRole('button', { name: /Arrastar A/ });
   fireEvent.keyDown(grip, { key: 'ArrowRight' });
   await waitFor(() =>
@@ -160,7 +156,7 @@ it('removes a widget after confirmation without sending an empty JSON body', asy
   expect(fetcher).toHaveBeenCalledWith('/api/page-widgets/1', { method: 'DELETE' });
 });
 
-it('adds another widget from the card menu', async () => {
+it('adds another widget from the page toolbar', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(
@@ -186,10 +182,6 @@ it('adds another widget from the card menu', async () => {
     ),
   );
   render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
-  fireEvent.pointerDown(await screen.findByRole('button', { name: 'Ações: Office' }), {
-    button: 0,
-    ctrlKey: false,
-  });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Adicionar widget' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar widget' }));
   expect(await screen.findByRole('button', { name: /Relógio/ })).toBeTruthy();
 });

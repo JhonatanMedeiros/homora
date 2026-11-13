@@ -1,4 +1,11 @@
-import { GripVertical, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  GripVertical,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  SlidersHorizontal,
+  Trash2,
+} from 'lucide-react';
 import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
 import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
 import { Button } from '@/components/ui/button';
@@ -198,20 +205,43 @@ export function PageWidgets({ pageId, pages }: Props) {
           {t('common.loading')}
         </p>
       )}
-      {organizing && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-dashed px-3 py-2">
-          <p className="text-sm text-muted-foreground">{t('pageWidgets.organizeHelp')}</p>
-          <Button type="button" size="sm" onClick={() => setOrganizing(false)}>
-            {t('page.done')}
-          </Button>
-        </div>
-      )}
-      {!organizing && !loading && current.length === 0 && (
-        <div>
-          <Button type="button" variant="ghost" size="sm" onClick={openAdd}>
-            <Plus />
-            {t('pageWidgets.add')}
-          </Button>
+      {!loading && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {organizing && (
+            <p className="text-sm text-muted-foreground">{t('pageWidgets.organizeHelp')}</p>
+          )}
+          <div className="ml-auto flex items-center gap-1">
+            {organizing ? (
+              <Button type="button" size="sm" onClick={() => setOrganizing(false)}>
+                {t('page.done')}
+              </Button>
+            ) : (
+              <>
+                {current.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() => setOrganizing(true)}
+                  >
+                    <SlidersHorizontal />
+                    {t('pageWidgets.reorder')}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={openAdd}
+                >
+                  <Plus />
+                  {t('pageWidgets.add')}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
       {(current.length > 0 || organizing) && (
@@ -390,10 +420,6 @@ export function PageWidgets({ pageId, pages }: Props) {
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       )}
-                      <DropdownMenuItem onSelect={openAdd}>{t('pageWidgets.add')}</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => setOrganizing(true)}>
-                        {t('pageWidgets.reorder')}
-                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(item)}>
                         {t('common.remove')}
