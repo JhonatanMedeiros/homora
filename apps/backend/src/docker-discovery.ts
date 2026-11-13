@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { InputError } from './api-error.js';
 import type { ImportedService, ParsedImport } from './config-transfer.js';
-import { add, finish, groupFor, newCollector } from './importers.js';
+import { add, finish, groupFor, newCollector } from './importer-common.js';
 
 /**
  * Service discovery via Docker container labels. Optional (active only if

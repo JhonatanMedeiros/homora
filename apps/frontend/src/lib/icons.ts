@@ -1,4 +1,4 @@
-import { BRAND_ICON_NAMES } from '@homora/shared';
+import { BRAND_ICON_NAMES } from '@homora/icons';
 import {
   Server,
   HardDrive,

@@ -19,6 +19,31 @@ the code and test suite serve as the ground truth for what is currently implemen
 | [Dynacat](https://github.com/Panonim/dynacat)                                                                                                          | Emphasizes dynamic hot-reloading and external integrations.                                                                                                                                                                                      | Consider seamless config reloads; implementation internals unverified in this study.      |
 | [LinkStack](https://github.com/LinkStackOrg/LinkStack), [NodeBB](https://github.com/NodeBB/NodeBB), [Rackula](https://github.com/RackulaLives/Rackula) | Link directory, community forum, and rack visualization projects respectively.                                                                                                                                                                   | Indirect design references for layout, community ergonomics, and physical layout visuals. |
 
+## Built-in integration SDK coverage
+
+The following existing integrations use the same static SDK catalog for definitions, forms and
+widgets. Declarative integrations use the shared manifest interpreter; the two code adapters
+provide registered backend and presentation factories. Each has a contract test with mocked
+transport and sanitized fixtures. This describes the implementation, not live-service validation.
+
+| Integration       | Adapter      |
+| ----------------- | ------------ |
+| Jellyfin          | Manifest     |
+| Home Assistant    | Manifest     |
+| Uptime Kuma       | Manifest     |
+| AdGuard Home      | Manifest     |
+| Speedtest Tracker | Manifest     |
+| Portainer         | Manifest     |
+| NetBird           | Manifest     |
+| Tailscale         | Manifest     |
+| Cloudflare        | Manifest     |
+| Coolify           | Code adapter |
+| Proxmox           | Code adapter |
+
+Brand logos used by integrations and service cards live in `packages/icons`; they remain local
+assets and keep their existing URLs. See [the adapter guide](adapters.md) for contribution steps
+and the sections below for feature and live-validation limitations.
+
 ## Proposed Domain Model
 
 - **Application / Service:** a shortcut with name, URL, and display options; operates

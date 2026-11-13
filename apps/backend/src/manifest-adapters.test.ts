@@ -6,7 +6,7 @@ import {
   uptimeKumaManifest,
   type IntegrationManifest,
 } from '@homora/shared';
-import { createManifestAdapter } from './manifest-adapter.js';
+import { createManifestAdapter } from './integration-test-support.js';
 import type { IntegrationTransport } from './integrations.js';
 
 /**

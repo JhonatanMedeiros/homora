@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { hasSystemTelemetry } from '@homora/integrations';
 import {
   widgetStats,
   type IntegrationWidget,
@@ -21,7 +22,7 @@ async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
 }
 
 /**
- * System telemetry for top bar, polled from Proxmox widget (no host agent).
+ * System telemetry for the top bar, polled from an integration with that capability.
  * Only CPU, memory, and disk are surfaced; VMs and containers remain on cards.
  */
 export function useSystemStats(enabled: boolean): SystemStats {
@@ -42,22 +43,39 @@ export function useSystemStats(enabled: boolean): SystemStats {
           /* No saved preference. */
         }
         let connectionId: number | undefined;
-        if (selected && /^[1-9]\d*$/.test(selected)) connectionId = Number(selected);
-        else {
+        let integrationType: string | undefined;
+        if (selected && /^[1-9]\d*$/.test(selected)) {
+          connectionId = Number(selected);
+          const connections = await getJson('/api/connections', signal);
+          const connection = Array.isArray(connections)
+            ? connections.find(
+                (item: unknown) =>
+                  !!item &&
+                  typeof item === 'object' &&
+                  (item as { id?: unknown }).id === connectionId,
+              )
+            : undefined;
+          const type = (connection as { type?: unknown } | undefined)?.type;
+          if (typeof type === 'string' && hasSystemTelemetry(type)) integrationType = type;
+        } else {
           const list = await getJson('/api/widgets', signal);
           const widget = Array.isArray(list)
-            ? (list as IntegrationWidget[]).find((item) => item.type === 'proxmox')
+            ? (list as IntegrationWidget[]).find((item) => hasSystemTelemetry(item.type))
             : undefined;
           connectionId = widget?.integrationId;
+          integrationType = widget?.type;
         }
         if (signal.aborted) return;
         if (!connectionId) return setState({ status: 'none' });
+        if (!integrationType) return setState({ status: 'error' });
         const body = (await getJson(`/api/connections/${connectionId}/data`, signal)) as {
           data?: unknown;
         };
         if ((body.data as { unavailable?: unknown } | null)?.unavailable === true)
           return setState({ status: 'node-unavailable' });
-        const stats = widgetStats('proxmox', body.data)?.filter((stat) => stat.id !== undefined);
+        const stats = widgetStats(integrationType, body.data)?.filter(
+          (stat) => stat.id !== undefined,
+        );
         if (signal.aborted) return;
         setState(stats && stats.length > 0 ? { status: 'ready', stats } : { status: 'error' });
       } catch {

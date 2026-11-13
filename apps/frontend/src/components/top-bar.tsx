@@ -35,7 +35,7 @@ export function Clock({ preferences }: { preferences: ClockPreferences }) {
   );
 }
 
-/** Optional top bar showing date, time, and system resources from Proxmox. */
+/** Optional top bar showing date, time, and system resources from the selected connection. */
 export function TopBar() {
   const preferences = useClockPreferences();
   const system = useSystemStats(true);

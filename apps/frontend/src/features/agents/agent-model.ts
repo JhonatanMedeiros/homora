@@ -1,5 +1,6 @@
-import type { Service } from '@homora/shared';
-import { formatDateTime, t, type MessageKey } from '@/i18n';
+import type { CheckType, Service } from '@homora/shared';
+import { integrationScopeOptions } from '@homora/integrations';
+import { formatDateTime, t, tOr, type MessageKey } from '@/i18n';
 
 export type Agent = {
   id: string;
@@ -25,10 +26,11 @@ export type ServiceFields = {
   icon?: string;
   position?: number;
   allowPrivate?: boolean;
-  checkType?: 'http' | 'ping';
+  checkType?: CheckType;
   checkInterval?: number | null;
   expectedStatus?: string | null;
   checkPath?: string | null;
+  checkMatch?: string | null;
 };
 export type Diff = {
   op?: string;
@@ -46,7 +48,7 @@ export const SCOPES = [
   { id: 'agents:read', label: 'scope.agents:read', hint: 'scope.agents:read.hint' },
   { id: 'agents:propose', label: 'scope.agents:propose', hint: 'scope.agents:propose.hint' },
   { id: 'audit:read', label: 'scope.audit:read', hint: 'scope.audit:read.hint' },
-  { id: 'proxmox:read', label: 'scope.proxmox:read', hint: 'scope.proxmox:read.hint' },
+  ...integrationScopeOptions,
   {
     id: 'proposals:create',
     label: 'scope.proposals:create',
@@ -83,8 +85,11 @@ export type Profile = keyof typeof PROFILES | 'custom';
 
 export const scopeLabel = (id: string) => {
   const scope = SCOPES.find((item) => item.id === id);
-  return scope ? t(scope.label) : id;
+  return scope ? tOr(scope.label, 'labelFallback' in scope ? scope.labelFallback : id) : id;
 };
+
+export const scopeHint = (scope: (typeof SCOPES)[number]) =>
+  tOr(scope.hint, 'hintFallback' in scope ? scope.hintFallback : '');
 
 export const STATES: Record<string, MessageKey> = {
   pending: 'proposal.state.pending',
@@ -127,6 +132,7 @@ export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['checkInterval', 'field.checkInterval'],
   ['expectedStatus', 'form.expectedStatus'],
   ['checkPath', 'form.checkPath'],
+  ['checkMatch', 'check.match.keyword'],
 ];
 
 /** One-line description of what a proposal changes, used by the compact rows. */

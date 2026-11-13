@@ -1,13 +1,9 @@
-import { integrationDefinition } from '@homora/shared';
+import { createPresentationCatalog } from '@homora/integrations/frontend/catalog';
 import { t } from '@/i18n';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { WidgetSkeleton } from '@/components/skeletons';
 
-/** Placeholder rows while loading: the number of stats the definition shows (Proxmox shows five). */
-const skeletonStats = (type: string) => {
-  const definition = integrationDefinition(type);
-  return definition?.kind === 'manifest' ? definition.display.stats.length : 5;
-};
+const presentations = createPresentationCatalog((key) => key);
 
 /** Integration data within the card, with loading, error, and invalid data states. */
 export function CardWidgets({
@@ -44,7 +40,7 @@ export function CardWidgets({
           ) : entry.status === 'loading' ? (
             <WidgetSkeleton
               label={t('cardWidget.loading')}
-              count={skeletonStats(entry.widget.type)}
+              count={presentations.placeholderCount(entry.widget.type)}
             />
           ) : (
             <p className="text-xs text-muted-foreground">

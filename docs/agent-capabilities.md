@@ -1,7 +1,7 @@
 # Agent capability inventory (R4, stage 1)
 
 What an agent can read, what it can only propose, and what only a signed-in
-administrator can do. Derived from the code (`agent-scopes.ts`, `mcp.ts`,
+administrator can do. Derived from the code (`agent-scopes.ts`, `mcp.ts` and `mcp-*-tools.ts`,
 `managed-proposals.ts`, `proposals.ts`, `routes/agent-proposals.ts`) on 2026-11-12.
 This is an audit of the implementation, not a validation: see the R4 section of
 [evolucao.md](evolucao.md) for what has evidence.

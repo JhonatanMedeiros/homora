@@ -276,8 +276,9 @@ and verification evidence.
 
 ### R0 Log — Homepage and Dashy Importers (2026-11-10)
 
-- Importers implemented in `apps/backend/src/importers.ts` parsing Homepage `services.yaml`/`bookmarks.yaml`
-  and Dashy `conf.yml`. Validates input structure using Zod; maps icons to supported built-in names,
+- Importers exposed through `apps/backend/src/importers.ts`, with Homepage and Dashy parsers in
+  dedicated modules and common icon/validation/collection logic shared with local Docker discovery.
+  They parse Homepage `services.yaml`/`bookmarks.yaml` and Dashy `conf.yml`; map icons to supported built-in names,
   brand logos, emoji, or URLs, flagging unrecognized icons as skipped warnings.
 - Endpoints `POST /api/config/import/preview` and `POST /api/config/import` support optimistic
   version concurrency and dry-run reviews.
@@ -1354,6 +1355,93 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Validation: `pnpm check` and `pnpm build` on every phase. Tests cover the contrast function, image processing, CSS validation, the routes (auth, audit, limits), the migration, import and export with pages, the settings screens, the tab strip and the digit shortcuts.
 - Not verified: any behaviour in a real browser (rendering of gradients, blur and the background image, the look of the tab strip on phones, drag and drop, keyboard focus order), screen readers, real HTTP proxies in front of the 2 MB upload, and a CSP (none is shipped).
 
+## Integration SDK — initial extraction (issue #126)
+
+- Moved all built-in definitions and the reusable URL field into `packages/integrations/src/integrations`;
+  registration and existing exports remain unchanged. Proxmox and Coolify backend registrations now
+  live in their own files. Added backend and frontend SDK entry points and moved the two custom widget
+  presentations into separately registered modules. This is an organizational step, not the completed SDK.
+- Validated the shared package build and the adapter contract and manifest adapter suites (433 tests).
+  The first test attempt failed because the shared package had not yet been built; rerunning after
+  its build passed. Full project checks and live integration validation were not run.
+- Follow-up validation: `pnpm build` and 490 tests in the adapter, contract and widget suites passed
+  after extracting registrations and presentations. No live services or browser were used.
+- Organized definitions and their existing sourced fixtures into per-integration directories, and
+  added `pnpm integration:create <id> <manifest|code>` with non-overwriting, unregistered templates.
+  The generator is tested in an isolated temporary directory; its example data is explicitly marked
+  illustrative and must be replaced before registration. Adapter tests still live in the backend.
+- Moved the generic manifest display renderer into the frontend SDK, and Coolify and Proxmox custom
+  presentations into their integration directories. Translation is injected by the frontend. The
+  package build and 15 focused frontend tests passed; visual behavior was not checked in a browser.
+- Moved the Coolify and Proxmox read adapters and their service-specific contracts into their package
+  directories. The backend supplies its existing input-error handling and Proxmox vault validation;
+  the shared restricted transport is still injected. `pnpm build` and 448 focused tests passed after
+  the moves. These checks did not contact real services.
+- Retry pauses now use an optional registration hook (Coolify supplies it); the Proxmox adapter
+  requests its existing response limit through the transport contract instead of a central type check.
+  Existing Proxmox and Coolify connection tests passed with these paths.
+- Split the adapter contract cases into per-integration test files and moved the focused Coolify and
+  Proxmox adapter tests beside their implementations; the host's reusable harness remains in the
+  backend. The package test TypeScript configuration runs after the workspace type checks so its
+  backend imports have built dependencies even on a clean checkout. The SDK boundaries are recorded
+  in [ADR 0011](decisoes/0011-integration-sdk.md).
+- Final local validation: `pnpm check` passed (1,247 application and 16 script tests), as did
+  `pnpm build`. All 11 definitions were compared with the pre-change source and matched exactly.
+  A backend Docker image built successfully and loaded all 11 registry entries in a production
+  container. Generator tests compile both scaffold types in a temporary copy. Contract tests also
+  check console output for credentials on successful and failed reads.
+- Not verified: a browser or screen reader, any additional live integration instance, or the
+  remaining live-validation cases already listed in `integracoes.md`. No schema migration was needed;
+  integration IDs, public fields and stored formats remain unchanged.
+- CI follow-up: the first GitHub validation exposed a clean-checkout dependency-order race in test
+  type checking; moved that check after the workspace tasks so `shared` is built first.
+- Integrated the concurrent main-branch module split: retained its connection transport, manifest
+  response parser and smaller shared modules while using the SDK definitions and hooks. After conflict
+  resolution, `pnpm build` and `pnpm check` passed (1,248 application and 16 script tests).
+- Review follow-up: adapter registrations, Proxmox credential validation and widget
+  presentation selection now live in integration-package catalogs; host applications consume these
+  catalogs generically. Widget placeholder counts and Speedtest's icon now come from integration
+  metadata. Subsequent changes below migrate specialized workflows and legacy compatibility.
+- Inventory dispatch now selects the declared `hosts` or `resources` domain, and address reads use
+  the optional registered capability, rather than selecting integrations by type in those paths.
+  Existing HTTP responses and legacy identifiers are unchanged.
+- Host inventory and top-bar telemetry capabilities are now declared by the integration definition.
+  The top bar determines the actual connection type before rendering its telemetry, and the node
+  picker uses a generic host-inventory field. Focused tests passed; integration-specific
+  resource workflows and legacy APIs were subsequently migrated as described below.
+
+- Built-in descriptors now generate static definition, backend, frontend, MCP, translation and demo
+  catalogs. Host and resource workflows use declared capabilities and normalized contracts; the
+  applications no longer register or dispatch individual integration implementations. Legacy vault,
+  widget sources and wire fields remain compatible through the package. Existing database rows and
+  external APIs are retained without a schema migration.
+- MCP integration tools require their registered scopes and their connection access is restricted to
+  their owning integration type. Development examples are isolated in integration modules and enabled
+  only in development mode. Existing transport, destination checks and GET-only policy remain in force.
+- Validation after the review changes: `pnpm check` passed (1,252 application tests and 17 script
+  tests) and `pnpm build` passed. After merging the latest main branch, `pnpm check` passed again
+  (1,334 application tests and 17 script tests), as did `pnpm build`. No live service, browser or
+  screen reader was tested.
+
+- Follow-up coverage: all eleven existing definitions are in the generated catalog. Nine use the
+  shared manifest interpreter; Coolify and Proxmox use code factories. Service-specific widget
+  translations have moved into their respective integrations. Tests exercise the catalog and
+  widget presentation for every existing type, in addition to each adapter's mocked contract suite.
+- Moved the existing 164 brand SVGs and catalog into `@homora/icons`, shared by service cards and
+  integration badges. Stable local URLs are retained in Vite development and production builds;
+  a frontend container build and a local HTTP request were checked against the source SVG. Logo
+  ownership and license notices remain in `THIRD_PARTY_NOTICES.md`. `pnpm check` passed with
+  1,336 application tests and 17 script tests; `pnpm build` and frontend/backend container builds
+  passed. Live services, browser interaction and screen readers were not tested.
+
+- Moved the generic manifest interpreter, response parser, definition validation and widget
+  presentation selection into the SDK. Applications inject host-owned error policy and retain
+  authentication, storage, routes and restricted transport. A boundary test detects direct imports
+  and simple type comparisons for registered integrations in production app code. The contributor
+  guide and agent instructions now describe creation, maintenance, security and validation steps.
+  Validation: `pnpm check` (1,336 application tests and 18 script tests), `pnpm build`, and a backend
+  container build loading all 11 definitions passed. Live services and browser behavior were not tested.
+
 ## Extensible integrations (issue #98)
 
 - **Phase 1:** `adapter-contract.ts` (`runAdapterContract`) tests every adapter with a fake transport: validation, request shape and path safety, secrets, each response class, bounds and the observation cache. Fixtures carry a `_source` block. `docs/adapters.md` is the contribution guide. The harness found that Home Assistant, Uptime Kuma, AdGuard Home and the Proxmox validator accepted URLs over 2048 characters; all four now reject them.
@@ -1407,3 +1495,108 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Not done on purpose: deployments in progress (the schema carries logs; deferred to validation), project and environment names (not in the documented list endpoints), addresses for services (no documented field; typed by hand), multi-team behavior at scale.
 - Live validation (2026-11-12, Coolify v4.7.5, team token believed unrestricted): connection, test, widget (6 resources, 6 running), inventory with addresses and resources without an address, several domains on one application, link and discovery review, and an invalid token (generic error and pause) worked. A layout bug in the review dialog was found and fixed (`7a9d1a9`). Record in [integracoes.md](integracoes.md#coolify).
 - Still open: a token **limited** to selected resources, an unreachable host, the exact `fqdn` separator for several domains, other `status` strings, services in detail, multi-team behavior and the real 429 path. The issue's live-validation item is therefore only partly done. Results of `pnpm check` and `pnpm build` are recorded in the pull request.
+
+## Architectural cleanup (2026-11-12)
+
+- Split the Drizzle table declarations into core, monitoring, operations, and Better Auth schema modules. The existing `schema.ts` and `@homora/db` exports remain the same; no SQL definitions or migrations changed.
+- Moved Host Map host-link/dependency actions and their feedback into `use-host-map-editing.ts`; selection, diagram composition, and panel rendering remain in the map components.
+- Centralized group rename start/cancel and focus restoration in `use-service-groups.ts`; Escape and the cancel control use the same operation.
+- Extracted persisted group-collapse preferences and temporary reveal handling from `GroupSection` into `use-group-collapse.ts`.
+- Extracted session-secret file handling and the bounded in-memory rate limiter from `auth.ts`; the auth module continues to re-export the existing helper API.
+- Split MCP tool registration by capability: capabilities, services, proposals, integrations, hosts, Docker discovery and Proxmox. `mcp.ts` now composes the server and shared context; authorization and response behavior remain shared.
+- Extracted managed proposal preparation into `managed-proposal-creator.ts` and approval/batch review into `proposal-review.ts`; the proposal service supplies transaction, pending-limit, version-fingerprint, and Proxmox validation dependencies.
+- Extracted proposal listing, expiry/audit updates, stale-state calculation, agent-owned reads, and withdrawal into `proposal-queries.ts`; `proposals.ts` composes the query lifecycle with proposal creation and recreation.
+- Extracted atomic batch creation and expired batch recreation into `proposal-batches.ts`; `proposals.ts` supplies the shared transaction-aware creators and batch context.
+- Moved scoped agent-token issuance, authentication, rotation, revocation, and safe listing to `agent-identities.ts`; proposal creation/review still owns the transactional audit and change workflow.
+- Extracted service and group editor state/actions into `use-service-editor.ts` and `use-service-groups.ts`; the dialog shell lives in `service-editor-dialog.tsx`. Page filtering and derived status/impact data live in `use-service-page-model.ts`; focus restoration, card navigation, and live announcements live in `use-service-page-focus.ts`; the Home arrangement and density controls live in `service-view-toolbar.tsx`; grouped card and organize-row rendering plus its drag/drop state live in `service-groups.tsx`. `services-page.tsx` composes the dashboard and coordinates its views.
+- Split `ServiceCard` into a shared status/layout facade and dedicated list and tile renderers (`service-card-list.tsx` and `service-card-tile.tsx`); tile-only failure detail expansion stays with the tile layout.
+- Extracted the remote discovery source rows and their lifecycle actions to `push-source-list.tsx`; `push-sources.tsx` keeps data loading, preview/import state, and dialog orchestration.
+- Moved remote discovery creation, token reveal, inventory review, and lifecycle confirmation dialogs to `push-source-dialogs.tsx`; the page now composes dialogs with the list, status feedback, and agent setup instructions.
+- Split the 38 end-to-end `App` UI journeys into dashboard, groups, proposals, authentication, and navigation suites while retaining the same scenarios and assertions.
+- Split backend HTTP tests into service/group, configuration transfer, and authentication/origin suites; retained scenarios and made monitoring assertions independent of background check timing.
+- Separated outbound notification delivery, queueing, and retry lifecycle into `notification-delivery.ts`; channel configuration and transition persistence remain composed in `notifications.ts`.
+- Separated HTTP/ICMP probe execution and response classification into `service-probe.ts`; the monitor retains cycle scheduling, concurrency, invalidation, and publication.
+- Extracted bounded traversal and manifest response extraction into `manifest-response.ts`; `manifest-adapter.ts` retains configuration validation, authorized requests, and adapter composition.
+- Moved the authenticated shell and dashboard-wide command, shortcut, and preference composition from `App.tsx` to `pages/dashboard-page.tsx`; `App.tsx` now focuses on authentication and route selection (155 lines).
+- Consolidated the Proxmox legacy migration startup wrapper into `legacy-proxmox.ts` with the transactional migration; the server and migration tests now import the migration boundary directly.
+- Moved service form dialog wiring, host inventory fields, and dependency selection from `services-page.tsx` into `service-page-editor.tsx`; the page now passes the editor workflow as one unit.
+- Extracted Host Map zoom, fit/reset, reduced-motion scrolling, and mouse-pan handling to `use-host-map-viewport.ts`; selection and host/dependency editing remain coordinated by the map component.
+- Split the former 569-line core translation catalog into shared/authentication, application shell, service cards, service groups, and service form catalogs; the largest resulting file is 177 lines and the exact locale key contract remains enforced.
+- Split agent management/connection messages from proposal review messages; `agents.ts` remains the import facade and the English source and Portuguese exact-key contract are unchanged.
+- Extracted the proposal TTL form and pending, expired, and history views from `agents.tsx` to `proposal-workspace.tsx`; initial load and refresh now share one data-fetch operation, avoiding the previous duplicate pair of initial requests.
+- Extracted the identity list, empty/revoked states, token dialog, and create/rotate/revoke UI to `agent-identity-workspace.tsx`; `agents.tsx` now composes the proposal and identity tabs (195 lines).
+- Extracted the image upload/removal and advanced image, opacity, and blur controls from `appearance-settings.tsx` into `appearance-advanced-settings.tsx`; the settings coordinator retains draft/save/contrast behavior.
+- Split route-specific settings content out of `interface-settings.tsx` into `home-settings.tsx` and `top-bar-settings.tsx`; the interface module now only owns theme, locale, appearance, and custom CSS settings.
+- Extracted each Coolify discovery resource's editable review card into `coolify-discovery-row.tsx`; row validation and address/group normalization live in `coolify-discovery-model.ts`, while the dialog coordinates individual saves and retries.
+- Moved appearance CSS token generation and its tests from `packages/shared` into the frontend; the shared package now contains the appearance contract, parsing, color calculations, and contrast policy only.
+- Split service, host-link, and uptime contracts out of `packages/shared/src/index.ts`; the package entry point now only re-exports its domain modules.
+- Split benchmark support helpers by process metrics, server lifecycle, HTTP/load generation, monitored targets, database seeding, and reporting; the existing `bench/lib.ts` imports remain compatible through a barrel.
+- Split the 1,053-line benchmark runner into CLI/runtime setup, focused workload suites, and a small runner that preserves the original suite order and server cleanup boundary.
+- Split the configuration-transfer format into shared import/export contracts, serialization, parsing/validation, and import planning modules; retained `config-transfer.ts` as the existing public facade.
+- Moved connections-page state and API operations to `use-connections-page.ts`; `connections.tsx` now composes the connection, widget, and Coolify resource views.
+- Moved notification-channel loading, save, test, and delete operations from `notification-settings.tsx` to `use-notification-settings.ts`; the component retains channel groups and form presentation.
+- Moved remote discovery source loading, token lifecycle, inventory review, and import requests to `use-push-sources.ts`; `push-sources.tsx` keeps the management and review dialogs.
+- Moved service deletion and host-link HTTP calls from `services-page.tsx` into `use-services.ts`; the page retains confirmation, feedback, and post-operation refresh coordination.
+- Split optimistic card/group ordering, group/page movement, and undo actions from service list loading into `use-service-ordering.ts`; `use-services.ts` now retains collection state and its API lifecycle (206 lines).
+- Moved agent/proposal API operations, lifecycle state, expiration timing, and derived lists into `use-agent-workspace.ts`; `agents.tsx` now coordinates the page and its dialogs while `proposal-workspace.tsx` owns proposal presentation.
+- Kept frontend API/state hooks under `apps/frontend/src/hooks` per engineering standards; extracted public-status and Docker source DTOs into feature model modules shared by hooks and presentation.
+- Moved local Docker discovery requests/import actions, service failure history, and uptime percentile requests from UI components to `use-local-discovery.ts`, `use-service-failure-details.ts`, and `use-uptime-details.ts`.
+- Moved Proxmox node-option loading to `use-proxmox-node-options.ts`; the picker keeps its select and manual text fallback.
+- Moved account session loading and revocation requests to `use-account-sessions.ts`; the component keeps confirmation behavior and feedback. The session-list test now sets its locale explicitly so it does not depend on persisted browser state.
+- Moved account profile and password mutation requests to `use-account-mutations.ts`; account forms retain local input, pending, and feedback state.
+- Moved activity filtering, pagination, and API-backed feed state from `activity-page.tsx` to `use-activity-feed.ts`; the page now composes filters and feed presentation.
+- Moved instance monitoring defaults and Proxmox connection-option loading from settings components to `use-monitoring-defaults.ts` and `use-proxmox-connections.ts`.
+- Moved transfer page-option loading and import preview/apply HTTP requests from `config-transfer.tsx` to `use-config-transfer-api.ts`; the component retains file handling, review, and user feedback.
+- Moved service removal, group movement with undo, and ordering feedback into `use-service-page-actions.ts`; structured `ServiceGroups` inputs into data, presentation state, and action contexts to clarify the parent-child contract.
+- Separated the service form's optional metadata and monitoring controls into `service-form-advanced.tsx`; the main form retains essential fields, optional host/dependency controls, and submission.
+- Centralized the authorized JSON transport used by integration reads and Proxmox address lookups in `integration-transport.ts`; destination validation, TLS, body limits, headers, and existing invalid-JSON behavior are preserved.
+- Loaded the integrations, agents, activity, account, and settings pages on demand from the authenticated dashboard, with the existing skeleton system as the suspense fallback. The frontend build's main JavaScript chunk dropped from 1,083.09 kB (308.70 kB gzip) to 585.23 kB (172.93 kB gzip); the >500 kB warning remains.
+- Loaded the alternate Host and Map service presentations on demand. Focused services, map, and navigation suites passed (28 tests); the main JavaScript chunk is now 498.59 kB (148.99 kB gzip), below Vite's 500 kB warning threshold.
+- Extracted the dashboard summary, view controls, host impact banner, and organize controls into `service-dashboard-header.tsx`; `services-page.tsx` retains page-level composition.
+- Moved host-suggestion, Coolify review, and group-removal overlays into `service-page-overlays.tsx`; the services page keeps their state and composes the views.
+- Extracted the host-map breadcrumb and navigation actions into `host-map-header.tsx`; the map retains selection, viewport, and canvas coordination.
+- Split command-palette navigation, common actions, and web-search rows into `command-palette-commands.tsx`; `command-palette.tsx` retains query parsing, result ranking, and selection behavior.
+- Moved appearance draft synchronization, custom accent validation, contrast checks, dirty state, and discard behavior into `use-appearance-draft.ts`; server persistence and control composition remain in `appearance-settings.tsx`.
+- Extracted accent, custom HEX, and background preset controls to `appearance-colors.tsx`, leaving the settings module to coordinate persistence, contrast feedback, and preview (`appearance-settings.tsx`: 231 lines).
+- Extracted Coolify inventory rows, selection controls, linked-card labels, and per-resource menu actions to `coolify-resource-table.tsx`; the sheet coordinates search, filters, refresh, and link/create dialogs.
+- Moved the Coolify resource-card and group reference DTOs to `connection-model.ts`, shared by the resources hook and inventory table.
+- Moved host suggestion selection, bulk acceptance, decisions, and undo behavior to `use-host-suggestion-review.ts`; separated evidence-backed and manual-only rows into `host-suggestion-rows.tsx`.
+- Moved suggestion, evidence, and decision DTOs into `features/hosts/host-suggestion-model.ts`, shared by the suggestion API hook, review hook, and row components.
+- Split the host map's service details panel into `host-map-service-panel.tsx`, selected service/guest panel into `host-map-selection-panel.tsx`, and node, guest, service, and dependency rendering into `host-map-diagram.tsx` (`host-map.tsx` is now 450 lines); split the 713-line integration catalog into shared contracts plus one definition file per integration, retaining `integration-manifest.ts` as the public facade.
+- Moved group/page assignment and ordering rules into `service-group-configuration.ts` and configuration import/export orchestration into `service-configuration-transfer.ts`; `service-configuration.ts` now focuses on card, host-link, and version rules (363 lines).
+- Extracted service-card mutation and reviewed proposal application into `service-card-configuration.ts`; `service-configuration.ts` now composes card reads, shared transaction/version context, groups, and transfer operations.
+- Isolated the transactional legacy Proxmox migration and migrated-connection id resolver in `legacy-proxmox.ts`; proposals and managed widget changes now share the same tombstone and live-connection checks.
+- Moved uptime queries, bucketing, and latency summary calculations to `service-uptime.ts`; `service-observations.ts` retains observation publication, lookup, and failure history.
+- Extracted stored-config/credential validation and secret/certificate update rules into `integration-connection-config.ts`; widget persistence and service references now live in `integration-widgets.ts`; `integration-connections.ts` focuses on connection lifecycle, persistence, caches, and adapter dispatch (338 lines).
+- Validation: after moving discovery, failure-history, uptime, and Proxmox node-option APIs into hooks, `pnpm check` passed (111 Vitest files, 1,234 tests, and 14 script tests) and `pnpm build` passed across all four packages. Focused discovery, service-card, and uptime suites passed (14 tests); connection page/node-picker tests passed (17 tests). Earlier focused service page/App (40), map (20), widgets/connection/migration (13), and proposal (21) suites passed. The build still reports the main JavaScript chunk above 500 kB. Prettier and `git diff --check` passed. The cleanup is still in progress.
+- Validation after the latest services-page boundary changes: the focused services page suite passed (2 tests), `pnpm check` passed (111 Vitest files, 1,234 tests, and 14 script tests), `pnpm build` passed for all four packages, and `git diff --check` passed. The Vite bundle-size warning remains.
+- Validation after splitting palette commands: the focused palette suite passed (14 tests), `pnpm check` passed (111 Vitest files, 1,234 tests, and 14 script tests), and `pnpm build` passed across all four packages. `command-palette.tsx` is now 264 lines; the bundle-size warning remains.
+- Validation after splitting appearance draft state and color controls: the focused appearance suite passed (14 tests), `pnpm check` passed (111 Vitest files, 1,234 tests, and 14 script tests), and `pnpm build` passed across all four packages. `appearance-settings.tsx` is now 231 lines; the bundle-size warning remains.
+- Validation after extracting Coolify inventory rows: the focused resource suite passed (8 tests), `pnpm check` passed (111 Vitest files, 1,234 tests, and 14 script tests), and `pnpm build` passed across all four packages. `coolify-resources.tsx` is now 243 lines; the bundle-size warning remains.
+- Validation after splitting host suggestion review state and rows: the focused suite passed (6 tests), `pnpm check` passed (111 Vitest files, 1,234 tests, and 14 script tests), and `pnpm build` passed across all four packages. `host-suggestions-panel.tsx` is now 167 lines; the bundle-size warning remains.
+- Validation after the Host Map interaction extraction: focused map/layout suites passed (26 tests), `pnpm check` passed (118 Vitest files, 1,234 tests, 14 script tests), `pnpm build` passed across all four packages, and `git diff --check` passed. The Vite bundle-size warning remains.
+- Validation after centralizing group rename cancellation: focused service-page, group-flow, and group-section suites passed; the group-flow test confirms Escape restores focus to the edit control.
+- Validation after extracting advanced service form controls: `pnpm exec vitest run apps/frontend/src/components/service-form.test.tsx` passed (3 tests), `pnpm check` passed (118 Vitest files, 1,234 tests, 14 script tests), `pnpm build` passed across all packages, and formatting plus `git diff --check` passed. The existing Vite bundle-size warning remains.
+- Validation after centralizing integration HTTP transport: focused Coolify, host suggestion, manifest adapter, and Proxmox migration suites passed (62 tests); `pnpm check` passed (118 Vitest files, 1,234 tests, 14 script tests), `pnpm build` passed, and formatting plus `git diff --check` passed. The frontend bundle warning remains under review.
+- Validation after on-demand page and host-view loading: the focused application suites passed (38 tests), service/map/navigation suites passed (28 tests), `pnpm check` passed (118 Vitest files, 1,234 tests, 14 script tests), and `pnpm build` passed across all packages. The main JavaScript chunk is 498.59 kB (148.99 kB gzip); `git diff --check` passed. The i18n navigation test now waits for the lazy Settings heading.
+- Final organization review: remaining source files above 300 lines are page composers, cohesive domain validation/policy modules, message catalogs, or test contract/scenario suites. Their responsibilities are already explicit; further splitting solely to lower LOC would fragment those units. The current architectural cleanup scope is complete and validated locally; no commit or PR was created.
+- No API, MCP tool names, scopes, or user-visible responses were intentionally changed.
+
+## Uptime status: incidents, banner and degraded state (2026-11-12)
+
+Phase 1 of the uptime redesign (see [ADR 0011](decisoes/0011-incidents-and-alert-thresholds.md)).
+
+- [x] Incident log derived from checks, rebuilt from history on first start; `GET /api/services/:id/incidents`.
+- [x] Per-service failure/recovery thresholds and degraded latency, applied to incidents and alerts (anti-flapping).
+- [x] Health banner (problems with duration, uptime, incidents per week, recovery time, 30-day target and error budget).
+- [x] Degraded state (amber) on cards and bars; failure reason and "down since" on the card.
+- [x] History bars with tooltip, selectable detail (click, tap, arrow keys), latency line and axis; recent incidents in the history panel.
+- [x] Phase 2: service detail page (`/services/:id`), p50/p95 latency chart, 90-day heatmap, failure reasons, incident table, latest checks and previous-period comparison on the cards. Backed by an hourly rollup table (`service_uptime_rollup`, migration 0026, about 100 days) filled from every new check and backfilled from the raw history once. Not done from the mockup: pause, schedule maintenance and check-now buttons, CSV export, the alert column and the TLS block (they depend on features of Phases 3 and 4).
+- [x] Phase 3: TCP, DNS, TLS certificate, keyword and JSON checks (check-type tiles in the service form), scheduled maintenance per service (dashboard blue state, banner line, detail page panel and dialog), TLS certificate stat in the banner ([ADR 0012](decisoes/0012-check-types-and-maintenance.md)). Not done from the mockup: heartbeat (push) checks, recurring windows and windows for a whole group, DNS server/record type/expected answer, ICMP packet count, and the redirect-following/TLS-warning toggles.
+- [x] Phase 4: free-form tags per service (own table `service_tags`, migration 0029, kept out of the check signature; editor in the service form, chips on the card, tag filter on the Home), ntfy and Discord notification channels (secrets encrypted like the others; ntfy token optional, private ntfy servers need the per-channel "allow private" opt-in), status chips on the Home (All / Offline / Degraded / In maintenance, with counts) and problems-first ordering (offline, then degraded) inside each group, and a wider public status page (90 daily bars with 90-day availability, last-30-day incident list and upcoming/active maintenance; still opt-in per service and without reasons, notes, URLs or ids). Not done from the mockup: the e-mail channel (needs SMTP settings), the per-event toggle panel for channels, and a configurable SLA target (the endpoint exists, there is no UI).
+
+Verification: `pnpm check` (1266 tests) and `pnpm build` pass. The uptime performance budget in
+`service-uptime.test.ts` was raised (7 d 300 → 450 ms, 30 d 1000 → 1500 ms): the bars now read the mean
+latency and failure reason of each period, and the original code already reached ~940 ms under the
+parallel suite. Checked in Chromium against the mockup at 1440 px and 390 px (dark): banner, degraded
+and failing cards, bar tooltip and detail, expanded history with incidents.

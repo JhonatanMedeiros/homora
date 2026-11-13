@@ -1,3 +1,5 @@
+import { legacyApiErrorMessages } from '@homora/integrations';
+
 /**
  * API errors: each error response has a stable `code` (translated by the frontend) and an
  * `error` with the default message in English, useful for clients that do not translate.
@@ -46,13 +48,15 @@ export const ERROR_MESSAGES = {
   'invalid-status-page': 'Provide a valid status page identifier.',
   'invalid-name-or-type': 'Provide a valid name and type.',
   'invalid-name-or-category': 'Provide a valid name and category.',
-  'invalid-host': 'Choose an existing Proxmox connection for the host.',
+  'invalid-host': 'Choose an existing host inventory connection.',
   'dependency-self': 'A service cannot depend on itself.',
   'dependency-cycle': 'This would create a circular dependency.',
   'dependency-limit': 'A service can have at most 50 dependencies.',
   'invalid-ca': 'Invalid CA certificate.',
   'secret-required': 'Enter the secret again when changing the address or its identity.',
   'service-not-found': 'Service not found.',
+  'maintenance-overlap': 'This service already has maintenance scheduled in that period.',
+  'maintenance-not-found': 'Maintenance window not found.',
   'group-not-found': 'Group not found.',
   'group-exists': 'A group with this name already exists.',
   'group-not-empty': 'Move or remove this group’s cards before deleting it.',
@@ -83,7 +87,7 @@ export const ERROR_MESSAGES = {
   'proposal-unavailable': 'Proposal unavailable.',
   'batch-conflict': 'The changes in this batch conflict. No changes were applied.',
   'config-changed': 'The configuration changed. Review it again.',
-  'proxmox-not-configured': 'Proxmox is not configured.',
+  ...legacyApiErrorMessages,
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_MESSAGES;

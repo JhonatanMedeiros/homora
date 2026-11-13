@@ -11,6 +11,8 @@ afterEach(() => {
 });
 
 it('summarizes each integration type and rejects malformed data', () => {
+  expect(widgetStats('__proto__', {})).toBeNull();
+  expect(widgetStats('constructor', {})).toBeNull();
   expect(
     widgetStats('uptime-kuma', { up: 6, down: 7, pending: 0, maintenance: 0, unknown: 0 }),
   ).toEqual([

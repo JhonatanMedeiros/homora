@@ -18,11 +18,18 @@ import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
 import { createObservationStore } from './service-observations.js';
+import { createIncidentStore } from './service-incidents.js';
+import { createRollupStore } from './service-rollup.js';
+import { createMaintenanceStore } from './service-maintenance.js';
+import { createTagStore } from './service-tags.js';
+import { registerServiceTagRoutes } from './routes/service-tags.js';
+import { registerServiceMaintenanceRoutes } from './routes/service-maintenance.js';
 import { createDockerPush } from './docker-push.js';
 import { registerDockerPushRoutes } from './routes/docker-push.js';
 import { registerMcpHttp } from './mcp-http.js';
 import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
+import { registerServiceIncidentRoutes } from './routes/service-incidents.js';
 import { createNotifications } from './notifications.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
 import { registerResourceLinkRoutes } from './routes/resource-links.js';
@@ -64,8 +71,12 @@ export function createApp(
   const appearance = createAppearance(sqlite);
   const customCss = createCustomCss(sqlite);
   const proposals = createProposalService(sqlite, configuration);
-  const observations = createObservationStore(sqlite);
+  const rollup = createRollupStore(sqlite);
+  const observations = createObservationStore(sqlite, rollup);
   const notifications = createNotifications(sqlite, vault);
+  const incidents = createIncidentStore(sqlite);
+  const maintenance = createMaintenanceStore(sqlite);
+  const tagStore = createTagStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
   observations.clear();
   const serviceMonitor = createServiceMonitor(
@@ -76,12 +87,36 @@ export function createApp(
       try {
         observations.publish(rows, states);
         notifications.publish(rows, states);
+        incidents.observe(rows, states);
       } catch {
         /* Keep the dashboard usable on storage errors. */
       }
     },
+    (at) => {
+      try {
+        return new Set(maintenance.active(at).keys());
+      } catch {
+        return new Set<number>();
+      }
+    },
   );
+  try {
+    rollup.backfill();
+  } catch {
+    /* The long-range charts stay empty; checks keep working. */
+  }
   const publicStatus = createPublicStatus(sqlite, observations);
+  try {
+    incidents.rebuildFromHistory(
+      sqlite
+        .prepare(
+          'SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_match AS checkMatch FROM services',
+        )
+        .all() as unknown as Service[],
+    );
+  } catch {
+    /* Incidents are auxiliary: the dashboard stays usable without them. */
+  }
   const stopServiceMonitor = startServiceMonitor(serviceMonitor);
   app.addHook('onClose', async () => {
     stopServiceMonitor();
@@ -142,6 +177,9 @@ export function createApp(
   );
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
+  registerServiceIncidentRoutes(app, incidents, observations, auth, audit);
+  registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
+  registerServiceTagRoutes(app, tagStore);
   registerServiceConfigurationRoutes(
     app,
     configuration,

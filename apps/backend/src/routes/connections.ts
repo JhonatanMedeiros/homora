@@ -1,3 +1,4 @@
+import { developmentMockData } from '@homora/integrations/backend/development';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '@homora/db';
 import { createVault } from '../vault.js';
@@ -11,6 +12,7 @@ import {
   updateConnectionSchema,
 } from '../input-schemas.js';
 import { InputError, errorBody } from '../api-error.js';
+import { isLegacyUnavailableCode } from '@homora/integrations';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
@@ -44,7 +46,7 @@ export function registerConnectionRoutes(
       );
     } catch (error) {
       return reply
-        .code(error instanceof InputError && error.code === 'proxmox-not-configured' ? 404 : 502)
+        .code(error instanceof InputError && isLegacyUnavailableCode(error.code) ? 404 : 502)
         .send(errorBody(error instanceof InputError ? error.code : 'integration-save-failed'));
     }
     if (widget === 'service-missing') return reply.code(404).send(errorBody('service-not-found'));
@@ -111,21 +113,9 @@ export function registerConnectionRoutes(
       if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
       try {
         if (developmentMocks) {
-          const connection = (await connections.listConnections()).find(
-            (item) =>
-              item.id === id && item.name === 'Demo Proxmox (mock)' && item.type === 'proxmox',
-          );
-          if (connection)
-            return {
-              data: {
-                vms: { running: 3, total: 5 },
-                containers: { running: 8, total: 11 },
-                cpu: 23,
-                memory: 61,
-                disk: 37,
-              },
-              checkedAt: new Date().toISOString(),
-            };
+          const connection = (await connections.listConnections()).find((item) => item.id === id);
+          const mock = connection && developmentMockData(connection);
+          if (mock) return mock;
         }
         const result = await connections.connectionData(id, query.data.refresh === 'true');
         return result ?? reply.code(404).send(errorBody('integration-not-found'));
@@ -147,7 +137,8 @@ export function registerConnectionRoutes(
       try {
         const result = await connections.inventoryData(id, query.data.refresh === 'true');
         if (result === null) return reply.code(404).send(errorBody('integration-not-found'));
-        if (result === 'not-proxmox') return reply.code(400).send(errorBody('invalid-data'));
+        if (result === 'unsupported-inventory')
+          return reply.code(400).send(errorBody('invalid-data'));
         return result;
       } catch {
         return reply.code(502).send(errorBody('integration-query-failed'));
@@ -155,7 +146,7 @@ export function registerConnectionRoutes(
     },
   );
 
-  // Applications and services of a Coolify connection: names, UUIDs and addresses. Authenticated
+  // Applications and services from resource inventory: names, IDs and addresses. Authenticated
   // sessions only (the /api/ hook), never part of the public status page or MCP.
   app.get<{ Params: { id: string }; Querystring: { refresh?: string } }>(
     '/api/connections/:id/resources',
@@ -167,7 +158,8 @@ export function registerConnectionRoutes(
       try {
         const result = await connections.resourcesData(id, query.data.refresh === 'true');
         if (result === null) return reply.code(404).send(errorBody('integration-not-found'));
-        if (result === 'not-coolify') return reply.code(400).send(errorBody('invalid-data'));
+        if (result === 'unsupported-inventory')
+          return reply.code(400).send(errorBody('invalid-data'));
         return result;
       } catch {
         return reply.code(502).send(errorBody('integration-query-failed'));

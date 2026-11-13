@@ -1,41 +1,13 @@
-import type { IntegrationDefinition } from '@homora/shared';
+import type { IntegrationContext, IntegrationRegistration } from '@homora/integrations/backend';
 import { InputError } from './api-error.js';
 
-/** An adapter never exposes credentials through its public metadata. */
-export interface IntegrationAdapter<Config, Data> {
-  type: string;
-  label: string;
-  capabilities: readonly string[];
-  validate(config: Config): Config;
-  collect(config: Config): Promise<Data>;
-}
-
-export type IntegrationMetadata = { type: string; label: string; capabilities: readonly string[] };
-export type IntegrationTransport = (request: {
-  origin: string;
-  path: string;
-  authorization?: string;
-  /** Sent as `x-api-key`, a header the shared transport already whitelists. */
-  apiKey?: string;
-  /** Response size limit for this request; the transport caps it at 2 MB. */
-  maxBodyBytes?: number;
-}) => Promise<{ status: number; body: unknown; retryAfterSeconds?: number }>;
-export type IntegrationContext = {
-  publicConfig: Record<string, unknown>;
-  credentials: { secret?: string; ca?: string; tokenId?: string };
-  transport?: IntegrationTransport;
-};
-export type IntegrationRegistration = IntegrationMetadata & {
-  /** Public, static description used to generate forms and widget text. Never holds secrets. */
-  definition?: IntegrationDefinition;
-  prepare?: (context: IntegrationContext) => () => Promise<unknown>;
-  /** Detailed read that carries names and ids; only for authenticated callers. */
-  prepareInventory?: (context: IntegrationContext) => () => Promise<unknown>;
-  /** Per-guest addresses for suggestions; same audience as the inventory. */
-  prepareAddresses?: (
-    context: IntegrationContext,
-  ) => (guests: readonly unknown[]) => Promise<unknown>;
-};
+export type {
+  IntegrationAdapter,
+  IntegrationMetadata,
+  IntegrationTransport,
+  IntegrationContext,
+  IntegrationRegistration,
+} from '@homora/integrations/backend';
 
 /** Explicit registration keeps untrusted or unknown integration types from executing code. */
 export function createIntegrationRegistry<T extends IntegrationRegistration>(

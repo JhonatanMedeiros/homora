@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
-import { BRAND_ICON_NAMES } from '@homora/shared';
+import { BRAND_ICON_NAMES } from '@homora/icons';
 import { iconKind, suggestBrandIcon } from './icons';
 
-const dir = resolve(__dirname, '../../public/brand-icons');
+const dir = resolve(__dirname, '../../../../packages/icons/assets');
 
 it('each listed logo exists as SVG and no unlisted files exist in directory', () => {
   const files = readdirSync(dir).filter((file) => file.endsWith('.svg'));

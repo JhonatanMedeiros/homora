@@ -1,62 +1,21 @@
-import { execFile } from 'node:child_process';
 import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
+import { isNonHttp } from './service-probe.js';
 import { serviceSignature } from './service-signature.js';
-import { authorizeDestination } from './network-policy.js';
-import { getAuthorizedResponse } from './network-request.js';
+import {
+  classify,
+  checkService,
+  PingUnavailableError,
+  type CheckResult,
+  type ServiceStatus,
+} from './service-probe.js';
 
-/**
- * Explains service health status. `status` remains high-level summary (available,
- * unavailable, or unknown); `reason` explains probe details.
- */
-export type StatusReason =
-  | 'responding' // 2xx
-  | 'redirect' // 3xx, without following redirect
-  | 'login-required' // 401 or 403: responds, but requires credentials
-  | 'unexpected-status'
-  | 'not-found' // 404
-  | 'error-status' // other 4xx and 5xx
-  | 'reachable' // successful ICMP ping
-  | 'no-response' // network, DNS, TLS failure, unanswered ping, or timeout
-  | 'unchecked'; // not yet probed
-
-export type ServiceStatus = {
-  status: 'available' | 'unavailable' | 'unknown';
-  lastAttempt: string | null;
-  reason: StatusReason;
-  /** HTTP status code received; null when no response or not yet checked. */
-  httpStatus: number | null;
-  /** Latency in milliseconds; null when no response. */
-  latencyMs: number | null;
-  expectedStatus?: string | null;
-};
-
-/** `httpStatus` is null when check was a successful ICMP ping. */
-export type CheckResult = { httpStatus: number | null; latencyMs: number };
-
-/** The `ping` binary is missing or cannot be used: this is not a service failure. */
-export class PingUnavailableError extends Error {}
-
-/** Translates HTTP status into displayed state. Responding services, even demanding login, are considered online. */
-export function classify(
-  httpStatus: number,
-  expected?: string | number | null,
-): Pick<ServiceStatus, 'status' | 'reason'> {
-  if (expected) {
-    const matches =
-      String(expected) === String(httpStatus) ||
-      (expected === '2xx' && httpStatus >= 200 && httpStatus < 300) ||
-      (expected === '3xx' && httpStatus >= 300 && httpStatus < 400);
-    return matches
-      ? { status: 'available', reason: 'responding' }
-      : { status: 'unavailable', reason: 'unexpected-status' };
-  }
-  if (httpStatus >= 200 && httpStatus < 300) return { status: 'available', reason: 'responding' };
-  if (httpStatus >= 300 && httpStatus < 400) return { status: 'available', reason: 'redirect' };
-  if (httpStatus === 401 || httpStatus === 403)
-    return { status: 'available', reason: 'login-required' };
-  if (httpStatus === 404) return { status: 'unavailable', reason: 'not-found' };
-  return { status: 'unavailable', reason: 'error-status' };
-}
+export {
+  classify,
+  checkService,
+  PingUnavailableError,
+  CERT_WARNING_DAYS,
+} from './service-probe.js';
+export type { CheckResult, ServiceStatus, StatusReason } from './service-probe.js';
 
 const unchecked = (): ServiceStatus => ({
   status: 'unknown',
@@ -74,65 +33,18 @@ const dueSlackMs = 2_000;
 const cycleBudgetMs = 45_000;
 const maxConcurrentChecks = 5;
 
-/** Executes an ICMP ping to the authorized, DNS-pinned address from network policy. */
-function ping(address: string, family: number): Promise<CheckResult> {
-  return new Promise((resolve, reject) => {
-    const startedAt = Date.now();
-    // No shell: address is a validated IP passed as an isolated argument.
-    execFile(
-      'ping',
-      [family === 6 ? '-6' : '-4', '-c', '1', '-W', '2', '-n', address],
-      { timeout: 5000 },
-      (error, stdout) => {
-        if (error) {
-          reject(
-            // ENOENT: missing binary; 126: permission denied (e.g. container lacking NET_RAW).
-            (error as { code?: unknown }).code === 'ENOENT' ||
-              (error as { code?: unknown }).code === 126
-              ? new PingUnavailableError()
-              : new Error('No response to ping.'),
-          );
-          return;
-        }
-        const reported = /time[=<]\s*([\d.]+)\s*ms/.exec(stdout)?.[1];
-        resolve({
-          httpStatus: null,
-          latencyMs: Math.round(reported ? Number(reported) : Date.now() - startedAt),
-        });
-      },
-    );
-  });
-}
-
-/** Uses the shared pinned-DNS destination policy; private ranges require the
- * per-service opt-in and special ranges remain forbidden. */
-export async function checkService(
-  url: string,
-  allowPrivate = false,
-  type: CheckType = 'http',
-): Promise<CheckResult> {
-  const policy = { origins: [new URL(url).origin], allowPrivate };
-  if (type === 'ping') {
-    const { address } = await authorizeDestination(url, policy);
-    return ping(address.address, address.family);
-  }
-  const startedAt = Date.now();
-  const response = await getAuthorizedResponse(url, policy, {
-    timeoutMs: 8000,
-    reportRedirect: true,
-  });
-  return { httpStatus: response.status, latencyMs: Date.now() - startedAt };
-}
-
 export function createServiceMonitor(
   getServices: () => Promise<Service[]>,
   check: (
     url: string,
     allowPrivate?: boolean,
     type?: CheckType,
+    match?: string | null,
   ) => Promise<CheckResult> = checkService,
   now: () => number = Date.now,
   publish?: (services: Service[], states: Record<number, ServiceStatus>) => void,
+  /** Services in a scheduled maintenance window at the given time; they are not probed. */
+  inMaintenance: (at: number) => ReadonlySet<number> = () => new Set(),
 ) {
   const states = new Map<number, ServiceStatus>();
   /** Configuration each state was measured under, so edited services are probed again and only those. */
@@ -187,9 +99,13 @@ export function createServiceMonitor(
       // state and take precedence in the following cycle.
       const lastOf = (id: number) => states.get(id)?.lastAttempt ?? '';
       const startedAt = now();
+      const paused = inMaintenance(startedAt);
       const isDue = (service: Service) => {
         const last = lastOf(service.id);
         if (!last) return true;
+        // Entering or leaving a maintenance window shows at once, not at the next interval.
+        if (paused.has(service.id) !== (states.get(service.id)?.reason === 'maintenance'))
+          return true;
         const interval = (service.checkInterval ?? CHECK_INTERVAL_DEFAULT) * 1000;
         return startedAt - Date.parse(last) >= interval - dueSlackMs;
       };
@@ -207,19 +123,32 @@ export function createServiceMonitor(
             const service = monitored[nextIndex++];
             changed = true;
             const attemptedAt = new Date(now()).toISOString();
+            if (paused.has(service.id)) {
+              states.set(service.id, {
+                status: 'unknown',
+                lastAttempt: attemptedAt,
+                reason: 'maintenance',
+                httpStatus: null,
+                latencyMs: null,
+              });
+              continue;
+            }
             try {
               const result = await check(
-                service.checkType !== 'ping' && service.checkPath
+                !isNonHttp(service.checkType) && service.checkPath
                   ? new URL(service.checkPath, new URL(service.url).origin).href
                   : service.url,
                 service.allowPrivate === true,
                 service.checkType ?? 'http',
+                service.checkMatch ?? null,
               );
               if (runGeneration === generation)
                 states.set(service.id, {
-                  ...(result.httpStatus === null
-                    ? { status: 'available' as const, reason: 'reachable' as const }
-                    : classify(result.httpStatus, service.expectedStatus)),
+                  ...(result.outcome ??
+                    (result.httpStatus === null
+                      ? { status: 'available' as const, reason: 'reachable' as const }
+                      : classify(result.httpStatus, service.expectedStatus))),
+                  ...(result.certExpiresAt ? { certExpiresAt: result.certExpiresAt } : {}),
                   lastAttempt: attemptedAt,
                   httpStatus: result.httpStatus,
                   ...(result.httpStatus !== null && service.expectedStatus

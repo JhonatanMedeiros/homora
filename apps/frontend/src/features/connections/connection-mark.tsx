@@ -1,6 +1,5 @@
 import { marks, type Kind } from './connection-model';
-
-const iconFiles: Record<string, string> = { 'speedtest-tracker': 'ookla-speedtest' };
+import { integrationDefinition } from '@homora/integrations';
 
 /** Service badge/acronym; types outside the connection catalog use the first two letters. */
 export function ConnectionMark({ type }: { type: string }) {
@@ -10,7 +9,7 @@ export function ConnectionMark({ type }: { type: string }) {
       className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary p-2 text-secondary-foreground"
     >
       <img
-        src={`/brand-icons/${iconFiles[type] ?? type}.svg`}
+        src={`/brand-icons/${integrationDefinition(type)?.brandIcon ?? type}.svg`}
         alt=""
         className="size-full object-contain"
         onError={(event) => {

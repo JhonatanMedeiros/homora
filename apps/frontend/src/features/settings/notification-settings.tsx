@@ -1,6 +1,5 @@
 import { Spinner } from '@/components/ui/spinner';
-import { useEffect, useState } from 'react';
-import { Plus, Send, Webhook } from 'lucide-react';
+import { Bell, MessageSquare, Plus, Send, Webhook } from 'lucide-react';
 import { SectionTitle } from '@/components/section-title';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -9,133 +8,23 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { t, formatDateTime } from '@/i18n';
 import { SectionSkeleton } from '@/components/skeletons';
-
-type Channel = {
-  id: number;
-  name: string;
-  type: 'webhook' | 'telegram';
-  enabled: boolean;
-  allowPrivate: boolean;
-  includeUrl: boolean;
-  lastSentAt: string | null;
-  lastError: string | null;
-  failures: number;
-};
-type Form = Pick<Channel, 'name' | 'type' | 'enabled' | 'allowPrivate' | 'includeUrl'> & {
-  destination: string;
-  token: string;
-  chatId: string;
-};
-const blank = (): Form => ({
-  name: '',
-  type: 'webhook',
-  enabled: true,
-  allowPrivate: false,
-  includeUrl: false,
-  destination: '',
-  token: '',
-  chatId: '',
-});
+import { useNotificationSettings } from '@/hooks/use-notification-settings';
 
 export function NotificationSettings() {
-  const [channels, setChannels] = useState<Channel[] | null>(null);
-  const [form, setForm] = useState<Form>(blank);
-  const [editing, setEditing] = useState<number | null>(null);
-  const [openType, setOpenType] = useState<Channel['type'] | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<{ error: boolean; text: string } | null>(null);
-  async function refresh() {
-    const response = await fetch('/api/notifications/channels');
-    if (!response.ok) throw new Error();
-    setChannels((await response.json()) as Channel[]);
-  }
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/notifications/channels', { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error();
-        return response.json() as Promise<Channel[]>;
-      })
-      .then(setChannels)
-      .catch(() => {
-        if (!controller.signal.aborted) setMessage({ error: true, text: t('notifications.error') });
-      });
-    return () => controller.abort();
-  }, []);
-  function edit(channel: Channel) {
-    setEditing(channel.id);
-    setOpenType(channel.type);
-    setForm({
-      ...blank(),
-      name: channel.name,
-      type: channel.type,
-      enabled: channel.enabled,
-      allowPrivate: channel.allowPrivate,
-      includeUrl: channel.includeUrl,
-    });
-    setMessage(null);
-  }
-  function reset() {
-    setEditing(null);
-    setOpenType(null);
-    setForm(blank());
-  }
-  function add(type: Channel['type']) {
-    setEditing(null);
-    setOpenType(type);
-    setForm({ ...blank(), type });
-    setMessage(null);
-  }
-  async function save() {
-    setBusy(true);
-    setMessage(null);
-    try {
-      const response = await fetch(
-        `/api/notifications/channels${editing === null ? '' : `/${editing}`}`,
-        {
-          method: editing === null ? 'POST' : 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        },
-      );
-      if (!response.ok) throw new Error();
-      await refresh();
-      reset();
-      setMessage({ error: false, text: t('notifications.saved') });
-    } catch {
-      setMessage({ error: true, text: t('notifications.error') });
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function action(channel: Channel, action: 'test' | 'delete') {
-    if (action === 'delete' && !window.confirm(t('notifications.confirmDelete'))) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      const response = await fetch(
-        `/api/notifications/channels/${channel.id}${action === 'test' ? '/test' : ''}`,
-        { method: action === 'test' ? 'POST' : 'DELETE' },
-      );
-      if (!response.ok) {
-        const body = (await response.json()) as { error?: string };
-        throw new Error(
-          /^HTTP \d{3}$/.test(body.error ?? '') ? body.error : t('notifications.error'),
-        );
-      }
-      if (action === 'test') setMessage({ error: false, text: t('notifications.success') });
-      if (editing === channel.id && action === 'delete') reset();
-      await refresh();
-    } catch (error) {
-      setMessage({
-        error: true,
-        text: error instanceof Error ? error.message : t('notifications.error'),
-      });
-      await refresh().catch(() => {});
-    } finally {
-      setBusy(false);
-    }
-  }
+  const {
+    channels,
+    form,
+    setForm,
+    editing,
+    openType,
+    busy,
+    message,
+    edit,
+    reset,
+    add,
+    save,
+    action,
+  } = useNotificationSettings();
   const groups = [
     {
       type: 'webhook' as const,
@@ -152,6 +41,22 @@ export function NotificationSettings() {
       add: 'notifications.addTelegram' as const,
       empty: 'notifications.noTelegram' as const,
       icon: Send,
+    },
+    {
+      type: 'ntfy' as const,
+      title: 'notifications.ntfy' as const,
+      hint: 'notifications.ntfyHint' as const,
+      add: 'notifications.addNtfy' as const,
+      empty: 'notifications.noNtfy' as const,
+      icon: Bell,
+    },
+    {
+      type: 'discord' as const,
+      title: 'notifications.discord' as const,
+      hint: 'notifications.discordHint' as const,
+      add: 'notifications.addDiscord' as const,
+      empty: 'notifications.noDiscord' as const,
+      icon: MessageSquare,
     },
   ];
   return (
@@ -269,7 +174,11 @@ export function NotificationSettings() {
                       ? t(
                           group.type === 'webhook'
                             ? 'notifications.newWebhook'
-                            : 'notifications.newTelegram',
+                            : group.type === 'ntfy'
+                              ? 'notifications.newNtfy'
+                              : group.type === 'discord'
+                                ? 'notifications.newDiscord'
+                                : 'notifications.newTelegram',
                         )
                       : t('notifications.editChannel', { name: form.name })}
                   </h3>
@@ -292,25 +201,52 @@ export function NotificationSettings() {
                           onChange={(event) => setForm({ ...form, name: event.target.value })}
                         />
                       </Field>
-                      {form.type === 'webhook' ? (
-                        <Field>
-                          <FieldLabel htmlFor="notification-destination">
-                            {t('notifications.url')}
-                          </FieldLabel>
-                          <Input
-                            id="notification-destination"
-                            type="password"
-                            autoComplete="off"
-                            required={editing === null}
-                            value={form.destination}
-                            onChange={(event) =>
-                              setForm({ ...form, destination: event.target.value })
-                            }
-                          />
-                          {editing !== null && (
-                            <FieldDescription>{t('notifications.keep')}</FieldDescription>
+                      {form.type !== 'telegram' ? (
+                        <>
+                          <Field>
+                            <FieldLabel htmlFor="notification-destination">
+                              {t(
+                                form.type === 'ntfy'
+                                  ? 'notifications.urlNtfy'
+                                  : form.type === 'discord'
+                                    ? 'notifications.urlDiscord'
+                                    : 'notifications.url',
+                              )}
+                            </FieldLabel>
+                            <Input
+                              id="notification-destination"
+                              type="password"
+                              autoComplete="off"
+                              required={editing === null}
+                              value={form.destination}
+                              onChange={(event) =>
+                                setForm({ ...form, destination: event.target.value })
+                              }
+                            />
+                            {editing !== null && (
+                              <FieldDescription>{t('notifications.keep')}</FieldDescription>
+                            )}
+                          </Field>
+                          {form.type === 'ntfy' && (
+                            <Field>
+                              <FieldLabel htmlFor="notification-token">
+                                {t('notifications.ntfyToken')}
+                              </FieldLabel>
+                              <Input
+                                id="notification-token"
+                                type="password"
+                                autoComplete="off"
+                                value={form.token}
+                                onChange={(event) =>
+                                  setForm({ ...form, token: event.target.value })
+                                }
+                              />
+                              {editing !== null && (
+                                <FieldDescription>{t('notifications.keep')}</FieldDescription>
+                              )}
+                            </Field>
                           )}
-                        </Field>
+                        </>
                       ) : (
                         <>
                           <Field>
@@ -350,7 +286,9 @@ export function NotificationSettings() {
                       {(
                         [
                           'enabled',
-                          ...(form.type === 'webhook' ? ['allowPrivate' as const] : []),
+                          ...(form.type === 'webhook' || form.type === 'ntfy'
+                            ? ['allowPrivate' as const]
+                            : []),
                           'includeUrl',
                         ] as const
                       ).map((key) => (

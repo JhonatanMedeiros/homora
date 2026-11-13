@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Laptop, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
 import { FormError } from '@/components/form-error';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, formatDateTime, t } from '@/i18n';
+import { useAccountSessions } from '@/hooks/use-account-sessions';
 import type { AccountSession } from './account-model';
 
 const deviceName = (session: AccountSession) =>
@@ -24,33 +25,17 @@ const deviceName = (session: AccountSession) =>
 
 /** Active sessions of the account. Ending one asks for a second click, like revoking an agent. */
 export function SessionsList({ refreshKey }: { refreshKey: number }) {
-  const [sessions, setSessions] = useState<AccountSession[] | null>(null);
-  const [error, setError] = useState('');
   const [confirming, setConfirming] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    const response = await fetch('/api/account/sessions').catch(() => null);
-    if (!response?.ok) {
-      setError(t('account.sessionsFailed'));
-      return;
-    }
-    setSessions((await response.json()) as AccountSession[]);
-    setError('');
-  }, []);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- loads data from the server
-    void load();
-  }, [load, refreshKey]);
+  const { sessions, error, revoke } = useAccountSessions(refreshKey);
 
   async function end(url: string, success: string) {
     setConfirming(null);
-    const response = await fetch(url, { method: 'POST' }).catch(() => null);
+    const response = await revoke(url);
     if (!response?.ok) {
       toast.error(apiError(await response?.json().catch(() => null), t('account.sessionFailed')));
     } else {
       toast.success(success);
     }
-    await load();
   }
   const confirmOrEnd = (key: string, url: string, success: string) => {
     if (confirming !== key) setConfirming(key);

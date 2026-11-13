@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ResourceLink } from '@homora/shared';
-import { parseInventory, parseLinks, viewLink, type LinkView } from '@/lib/coolify';
+import {
+  parseInventory,
+  parseLinks,
+  viewLink,
+  type LinkView,
+} from '@homora/integrations/resources/client';
 
-export type CardCoolify = { link: ResourceLink; view: LinkView; checkedAt?: string };
+export type CardResource = { link: ResourceLink; view: LinkView; checkedAt?: string };
 
 const REFRESH_MS = 60_000;
 
@@ -13,12 +18,12 @@ async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
 }
 
 /**
- * Coolify state of every linked card, once a minute. Each connection is read once per cycle and a
+ * Integration state of every linked card, once a minute. Each connection is read once per cycle and a
  * failure only affects its own cards ("unavailable"); it never reads as offline and never touches
  * a card.
  */
 export function useResourceLinks() {
-  const [byService, setByService] = useState<Record<number, CardCoolify>>({});
+  const [byService, setByService] = useState<Record<number, CardResource>>({});
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -51,7 +56,7 @@ export function useResourceLinks() {
         }),
       );
       if (signal.aborted) return;
-      const next: Record<number, CardCoolify> = {};
+      const next: Record<number, CardResource> = {};
       for (const link of links) {
         const inventory = inventories.get(link.integrationId);
         next[link.serviceId] = {

@@ -6,7 +6,7 @@ import { createDatabase } from '@homora/db';
 import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
-import { summarizeProxmox } from './proxmox-summary.js';
+import { summarizeProxmox } from '@homora/integrations/proxmox/summary';
 import { getAuthorizedResponse } from './network-request.js';
 
 vi.mock('./network-request.js', () => ({ getAuthorizedResponse: vi.fn() }));

@@ -3,10 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { expect, it, vi } from 'vitest';
-import {
-  createIntegrationConnections,
-  migrateLegacyProxmoxAtStartup,
-} from './integration-connections.js';
+import { createIntegrationConnections } from './integration-connections.js';
+import { migrateLegacyConnectionsAtStartup } from './legacy-integrations.js';
 import { createVault } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
 
@@ -210,7 +208,7 @@ it('migrates at startup, keeps the file as backup and changes nothing on a secon
     await f.vault.save(legacy);
     const before = readFileSync(`${f.path}.proxmox`, 'utf8');
     const log = vi.fn();
-    migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log);
+    migrateLegacyConnectionsAtStartup(f.database.db, f.vault, log);
     const snapshot = () => ({
       instances: f.sqlite.prepare('SELECT * FROM integration_instances').all(),
       markers: f.sqlite.prepare('SELECT name FROM integration_migrations').all(),
@@ -225,7 +223,7 @@ it('migrates at startup, keeps the file as backup and changes nothing on a secon
       certificate_ref: 'secret',
     });
     expect(readFileSync(`${f.path}.proxmox`, 'utf8')).toBe(before);
-    migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log);
+    migrateLegacyConnectionsAtStartup(f.database.db, f.vault, log);
     expect(snapshot()).toEqual(first);
     expect(log).not.toHaveBeenCalled();
   } finally {
@@ -237,11 +235,11 @@ it('does not recreate a deleted migrated connection on restart', async () => {
   const f = startupFixture();
   try {
     await f.vault.save(legacy);
-    migrateLegacyProxmoxAtStartup(f.database.db, f.vault);
+    migrateLegacyConnectionsAtStartup(f.database.db, f.vault);
     const connections = createIntegrationConnections(f.database.db, f.vault);
     const [{ id }] = await connections.listConnections();
     expect(await connections.deleteConnection(id)).toBe('deleted');
-    migrateLegacyProxmoxAtStartup(f.database.db, f.vault);
+    migrateLegacyConnectionsAtStartup(f.database.db, f.vault);
     expect(f.sqlite.prepare('SELECT id FROM integration_instances').all()).toEqual([]);
     expect(f.sqlite.prepare('SELECT name FROM integration_migrations').all()).toEqual([
       { name: 'legacy-proxmox:deleted' },
@@ -258,12 +256,12 @@ it('survives a missing key or a corrupt legacy file and leaves the file untouche
     const before = readFileSync(`${f.path}.proxmox`, 'utf8');
     unlinkSync(`${f.path}.key`);
     const log = vi.fn();
-    expect(() => migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log)).not.toThrow();
+    expect(() => migrateLegacyConnectionsAtStartup(f.database.db, f.vault, log)).not.toThrow();
     expect(log).toHaveBeenCalledTimes(1);
     expect(log.mock.calls[0][0]).not.toContain('legacy-secret');
     expect(readFileSync(`${f.path}.proxmox`, 'utf8')).toBe(before);
     writeFileSync(`${f.path}.proxmox`, 'not json');
-    expect(() => migrateLegacyProxmoxAtStartup(f.database.db, f.vault, log)).not.toThrow();
+    expect(() => migrateLegacyConnectionsAtStartup(f.database.db, f.vault, log)).not.toThrow();
     expect(log).toHaveBeenCalledTimes(2);
     expect(readFileSync(`${f.path}.proxmox`, 'utf8')).toBe('not json');
     expect(f.sqlite.prepare('SELECT id FROM integration_instances').all()).toEqual([]);

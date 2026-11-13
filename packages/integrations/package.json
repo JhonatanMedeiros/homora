@@ -1,0 +1,111 @@
+{
+  "name": "@homora/integrations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./backend": {
+      "types": "./dist/backend.d.ts",
+      "default": "./dist/backend.js"
+    },
+    "./backend/catalog": {
+      "types": "./dist/backend-catalog.d.ts",
+      "default": "./dist/backend-catalog.js"
+    },
+    "./backend/vault": {
+      "types": "./dist/backend-vault.d.ts",
+      "default": "./dist/backend-vault.js"
+    },
+    "./backend/legacy": {
+      "types": "./dist/backend-legacy.d.ts",
+      "default": "./dist/backend-legacy.js"
+    },
+    "./backend/mcp": {
+      "types": "./dist/backend-mcp.d.ts",
+      "default": "./dist/backend-mcp.js"
+    },
+    "./frontend": {
+      "types": "./dist/frontend.d.ts",
+      "default": "./dist/frontend.js"
+    },
+    "./frontend/catalog": {
+      "types": "./dist/frontend-catalog.d.ts",
+      "default": "./dist/frontend-catalog.js"
+    },
+    "./resources/client": {
+      "types": "./dist/resource-client.d.ts",
+      "default": "./dist/resource-client.js"
+    },
+    "./coolify/frontend": {
+      "types": "./dist/integrations/coolify/frontend.d.ts",
+      "default": "./dist/integrations/coolify/frontend.js"
+    },
+    "./coolify/backend": {
+      "types": "./dist/integrations/coolify/backend.d.ts",
+      "default": "./dist/integrations/coolify/backend.js"
+    },
+    "./coolify/testing": {
+      "types": "./dist/integrations/coolify/testing.d.ts",
+      "default": "./dist/integrations/coolify/testing.js"
+    },
+    "./proxmox/frontend": {
+      "types": "./dist/integrations/proxmox/frontend.d.ts",
+      "default": "./dist/integrations/proxmox/frontend.js"
+    },
+    "./proxmox/backend": {
+      "types": "./dist/integrations/proxmox/backend.d.ts",
+      "default": "./dist/integrations/proxmox/backend.js"
+    },
+    "./proxmox/testing": {
+      "types": "./dist/integrations/proxmox/testing.d.ts",
+      "default": "./dist/integrations/proxmox/testing.js"
+    },
+    "./proxmox/validation": {
+      "types": "./dist/integrations/proxmox/validation.d.ts",
+      "default": "./dist/integrations/proxmox/validation.js"
+    },
+    "./proxmox/legacy": {
+      "types": "./dist/integrations/proxmox/legacy.d.ts",
+      "default": "./dist/integrations/proxmox/legacy.js"
+    },
+    "./proxmox/inventory": {
+      "types": "./dist/integrations/proxmox/inventory.d.ts",
+      "default": "./dist/integrations/proxmox/inventory.js"
+    },
+    "./proxmox/summary": {
+      "types": "./dist/integrations/proxmox/summary.d.ts",
+      "default": "./dist/integrations/proxmox/summary.js"
+    },
+    "./definitions/*": {
+      "types": "./dist/integrations/*/definition.d.ts",
+      "default": "./dist/integrations/*/definition.js"
+    },
+    "./translations": {
+      "types": "./dist/generated/translations.d.ts",
+      "default": "./dist/generated/translations.js"
+    },
+    "./backend/development": {
+      "types": "./dist/backend-development.d.ts",
+      "default": "./dist/backend-development.js"
+    },
+    "./backend/manifest": {
+      "types": "./dist/backend-manifest.d.ts",
+      "default": "./dist/backend-manifest.js"
+    }
+  },
+  "scripts": {
+    "build": "node scripts/integration-catalog.mjs --check && tsc -p tsconfig.json",
+    "type-check": "node scripts/integration-catalog.mjs --check && tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

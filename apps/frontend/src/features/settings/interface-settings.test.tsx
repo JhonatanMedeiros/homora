@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { HomeSettings, TopBarSettings } from './interface-settings';
+import { HomeSettings } from './home-settings';
+import { TopBarSettings } from './top-bar-settings';
 import { setLocale } from '@/i18n';
 import { chooseSelectOption } from '@/test-select';
 

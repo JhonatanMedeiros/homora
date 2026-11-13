@@ -62,6 +62,15 @@ const active = {
 const openAgents = async () =>
   fireEvent.mouseDown(await screen.findByRole('tab', { name: /^Agentes/ }));
 
+it('loads agents and proposals once on the initial render', async () => {
+  const calls = mockApi([]);
+  render(<Harness />);
+  await waitFor(() => {
+    expect(calls.filter((call) => call.url === '/api/agents')).toHaveLength(1);
+    expect(calls.filter((call) => call.url === '/api/proposals')).toHaveLength(1);
+  });
+});
+
 it('creates an agent in a dialog, then shows the token with a setup guide that includes it', async () => {
   const calls = mockApi([]);
   render(<Harness />);

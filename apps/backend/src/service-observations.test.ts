@@ -4,7 +4,7 @@ import { createObservationStore } from './service-observations.js';
 
 it('shares only current observations and treats stale, changed or malformed data as unknown', () => {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT);
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
     CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
     INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(1,'https://example.test',0,'http',30);`);
@@ -57,7 +57,7 @@ it('shares only current observations and treats stale, changed or malformed data
 
 it('retains unique observations for thirty days and filters the requested window', () => {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT);
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
     CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
     INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(1,'https://example.test',0,'http',30);`);
@@ -102,7 +102,7 @@ it('retains unique observations for thirty days and filters the requested window
 
 it('summarizes failure details: recent checks, outage start and last success', () => {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT);
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
     CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
     INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(1,'https://example.test',0,'http',30);`);
@@ -160,7 +160,7 @@ it('summarizes failure details: recent checks, outage start and last success', (
 
 it('marks the outage start as approximate when every read check failed', () => {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT);
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
     CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,UNIQUE(service_id,observed_at,signature));
     INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(1,'https://example.test',0,'http',30);`);

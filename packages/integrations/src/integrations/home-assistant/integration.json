@@ -1,0 +1,6 @@
+{
+  "type": "home-assistant",
+  "order": 20,
+  "definition": "homeAssistantManifest",
+  "translations": true
+}

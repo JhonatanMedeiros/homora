@@ -31,6 +31,8 @@ export const en = {
   'apiError.invalid-ca': 'Invalid CA certificate.',
   'apiError.secret-required': 'Enter the secret again when changing the address or its identity.',
   'apiError.service-not-found': 'Service not found.',
+  'apiError.maintenance-overlap': 'This service already has maintenance scheduled in that period.',
+  'apiError.maintenance-not-found': 'Maintenance window not found.',
   'apiError.group-not-found': 'Group not found.',
   'apiError.group-exists': 'A group with this name already exists.',
   'apiError.group-not-empty': 'Move or remove this group’s cards before deleting it.',
@@ -59,7 +61,6 @@ export const en = {
   'apiError.proposal-limit': 'The agent has reached its pending proposal limit.',
   'apiError.batch-conflict': 'The batch changes conflict. Nothing was applied.',
   'apiError.config-changed': 'The configuration changed. Review it again.',
-  'apiError.proxmox-not-configured': 'Proxmox is not configured.',
 } as const;
 
 export const ptBR = {
@@ -94,6 +95,8 @@ export const ptBR = {
   'apiError.invalid-ca': 'Certificado de CA inválido.',
   'apiError.secret-required': 'Informe novamente o segredo ao alterar o endereço ou a identidade.',
   'apiError.service-not-found': 'Serviço não encontrado.',
+  'apiError.maintenance-overlap': 'Este serviço já tem manutenção agendada nesse período.',
+  'apiError.maintenance-not-found': 'Janela de manutenção não encontrada.',
   'apiError.group-not-found': 'Grupo não encontrado.',
   'apiError.group-exists': 'Já existe um grupo com esse nome.',
   'apiError.group-not-empty': 'Mova ou remova os cards deste grupo antes de excluí-lo.',
@@ -122,5 +125,4 @@ export const ptBR = {
   'apiError.proposal-limit': 'O agente atingiu o limite de propostas pendentes.',
   'apiError.batch-conflict': 'As alterações do lote entram em conflito. Nada foi aplicado.',
   'apiError.config-changed': 'A configuração mudou. Revise novamente.',
-  'apiError.proxmox-not-configured': 'Proxmox não configurado.',
 } as const;

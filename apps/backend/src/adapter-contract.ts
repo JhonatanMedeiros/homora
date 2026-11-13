@@ -9,6 +9,7 @@
  * only from validated config, no secrets in data or errors, generic errors that never echo the
  * remote body, bounded output, and the observation cache semantics.
  */
+import { inspect } from 'node:util';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createIntegrationRegistry,
@@ -194,6 +195,26 @@ export function runAdapterContract<Config, Data>(options: AdapterContractOptions
         await adapter.collect(validConfig);
         expect(transport).toHaveBeenCalled();
         for (const [request] of transport.mock.calls) assertRequestIsSafe(request, secrets);
+      });
+      it('does not log credentials during a successful or failed collection', async () => {
+        const logs = [
+          vi.spyOn(console, 'log').mockImplementation(() => {}),
+          vi.spyOn(console, 'warn').mockImplementation(() => {}),
+          vi.spyOn(console, 'error').mockImplementation(() => {}),
+          vi.spyOn(console, 'debug').mockImplementation(() => {}),
+          vi.spyOn(console, 'info').mockImplementation(() => {}),
+        ];
+        try {
+          await respond({ status: 200, body: fixtures.valid.body }).adapter.collect(validConfig);
+          await rejection(respond({ status: 500, body: { marker: REMOTE_BODY_MARKER } }).adapter);
+          const output = inspect(
+            logs.flatMap((spy) => spy.mock.calls),
+            { depth: 10 },
+          );
+          for (const secret of secrets) expect(output).not.toContain(secret);
+        } finally {
+          logs.forEach((spy) => spy.mockRestore());
+        }
       });
     });
 

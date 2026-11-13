@@ -1,0 +1,19 @@
+{
+  "type": "proxmox",
+  "order": 110,
+  "definition": "proxmoxDefinition",
+  "backend": "createProxmoxRegistration",
+  "frontend": "createProxmoxPresentation",
+  "mcp": "createMcpTools",
+  "scopes": [
+    {
+      "id": "proxmox:read",
+      "label": "scope.proxmox:read",
+      "hint": "scope.proxmox:read.hint",
+      "labelFallback": "Read Proxmox resources",
+      "hintFallback": "Sees nodes, VMs and containers, without being able to change them."
+    }
+  ],
+  "translations": true,
+  "development": true
+}

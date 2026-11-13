@@ -1,0 +1,7 @@
+{
+  "type": "coolify",
+  "order": 100,
+  "definition": "coolifyDefinition",
+  "backend": "createCoolifyRegistration",
+  "frontend": "createCoolifyPresentation"
+}

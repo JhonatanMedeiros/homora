@@ -11,6 +11,7 @@ import { ConnectionMark } from './connection-mark';
 import { describeData, hostOf, labels, type Connection } from './connection-model';
 import { RowMenu } from './row-menu';
 import { formatDateTime, t } from '@/i18n';
+import { hasInventoryDomain } from '@homora/integrations';
 
 type Props = {
   items: Connection[];
@@ -55,9 +56,9 @@ export function ConnectionList({
                 <DropdownMenuItem onSelect={() => onAction(item, 'data')}>
                   {t('connections.refreshData')}
                 </DropdownMenuItem>
-                {item.type === 'coolify' && onResources && (
+                {hasInventoryDomain(item.type, 'resources') && onResources && (
                   <DropdownMenuItem onSelect={() => onResources(item)}>
-                    {t('coolify.resourcesAction')}
+                    {t('resources.resourcesAction')}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => onEdit(item)}>

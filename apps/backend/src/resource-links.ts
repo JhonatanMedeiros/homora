@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { CoolifyResourceType, ResourceLink } from '@homora/shared';
+import type { ResourceType, ResourceLink } from '@homora/shared';
+import { hasInventoryDomain } from '@homora/integrations';
 
 export class ResourceLinkError extends Error {
   constructor(readonly code: 'service-not-found' | 'integration-not-found' | 'invalid-data') {
@@ -11,7 +12,7 @@ export class ResourceLinkError extends Error {
 export type ResourceLinkInput = {
   integrationId: number;
   resourceUuid: string;
-  resourceType: CoolifyResourceType;
+  resourceType: ResourceType;
   name: string;
   url: string | null;
 };
@@ -37,9 +38,9 @@ const toLink = (row: Row): ResourceLink => ({
 });
 
 /**
- * Links between cards and Coolify resources, keyed by connection and resource UUID, never by name.
- * Homora's own data: nothing here calls Coolify. `seenName`/`seenUrl` hold what the user last
- * reviewed, so a later change at Coolify is flagged and never applied to the card automatically.
+ * Links between cards and external resources, keyed by connection and resource UUID, never by name.
+ * Homora's own data: nothing here calls external services. `seenName`/`seenUrl` hold what the user last
+ * reviewed, so a later change in the external service is flagged and never applied to the card automatically.
  * A card has one link; setting it again is how the user accepts a reviewed change.
  */
 export function createResourceLinks(sqlite: DatabaseSync, now: () => number = Date.now) {
@@ -55,7 +56,8 @@ export function createResourceLinks(sqlite: DatabaseSync, now: () => number = Da
         .prepare('SELECT type FROM integration_instances WHERE id=?')
         .get(input.integrationId) as { type: string } | undefined;
       if (!connection) throw new ResourceLinkError('integration-not-found');
-      if (connection.type !== 'coolify') throw new ResourceLinkError('invalid-data');
+      if (!hasInventoryDomain(connection.type, 'resources'))
+        throw new ResourceLinkError('invalid-data');
       sqlite
         .prepare(
           `INSERT INTO integration_resource_links

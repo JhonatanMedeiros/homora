@@ -12,7 +12,11 @@ import { createMcp } from './mcp.js';
 import { createIntegrationConnections } from './integration-connections.js';
 import { createProposalService } from './proposals.js';
 import { createServiceConfiguration } from './service-configuration.js';
-import { agentAddresses, configAddresses, usableAddress } from './proxmox-inventory.js';
+import {
+  agentAddresses,
+  configAddresses,
+  usableAddress,
+} from '@homora/integrations/proxmox/inventory';
 import { cardAddresses, rankSuggestions, type GuestFacts } from './host-suggestions.js';
 import { getAuthorizedResponse } from './network-request.js';
 

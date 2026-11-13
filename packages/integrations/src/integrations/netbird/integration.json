@@ -1,0 +1,5 @@
+{
+  "type": "netbird",
+  "order": 70,
+  "definition": "netbirdManifest"
+}
