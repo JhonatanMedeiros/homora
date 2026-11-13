@@ -8,24 +8,12 @@ type Props = {
   /** Connections already registered, by type. */
   counts: Partial<Record<Kind, number>>;
   onPick: (type: Kind) => void;
-  onCancel: () => void;
 };
 
 /** First step of adding a connection: pick the type, then fill in its form. */
-export function ConnectionPicker({ counts, onPick, onCancel }: Props) {
+export function ConnectionPicker({ counts, onPick }: Props) {
   return (
-    <section aria-labelledby="connection-picker-title" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 id="connection-picker-title" className="text-lg font-semibold">
-            {t('connections.pickTitle')}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t('connections.pickHint')}</p>
-        </div>
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-      </div>
+    <section aria-label={t('connections.pickTitle')} className="flex flex-col gap-3">
       <ul className="flex flex-col gap-2">
         {integrationDefinitions.map(({ type, capabilities }) => {
           const count = counts[type] ?? 0;

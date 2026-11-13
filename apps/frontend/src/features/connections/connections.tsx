@@ -1,8 +1,8 @@
 import { Plus, RotateCw } from 'lucide-react';
-import { hasInventoryDomain } from '@homora/integrations';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { RowListSkeleton } from '@/components/skeletons';
+import { CardGridSkeleton } from '@/components/skeletons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,135 +14,53 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ConnectionForm } from './connection-form';
-import { ConnectionList } from './connection-list';
-import { ConnectionPicker } from './connection-picker';
-import { newForm, type ConnectionFormState } from './connection-model';
+import { ConnectionCard } from './connection-card';
+import { ConnectionDialog } from './connection-dialog';
+import { ConnectionsSummary } from './connections-summary';
+import type { ConnectionFormState } from './connection-model';
+import { WidgetDialog } from './widget-dialog';
 import { WidgetsSection } from './widgets-section';
 import { ResourceInventoryPanel } from './resource-inventory';
 import { t } from '@/i18n';
-import { useConnectionsPage } from '@/hooks/use-connections-page';
+import { useConnectionsPage } from './use-connections-page';
 
 export function Connections({ initialDraft }: { initialDraft?: ConnectionFormState | null } = {}) {
   const state = useConnectionsPage(initialDraft);
-  const {
-    items,
-    loadFailed,
-    setLoadFailed,
-    widgets,
-    widgetName,
-    setWidgetName,
-    setWidgetConnection,
-    widgetCard,
-    setWidgetCard,
-    editingWidget,
-    setEditingWidget,
-    widgetEditName,
-    setWidgetEditName,
-    widgetEditCard,
-    setWidgetEditCard,
-    cards,
-    widgetResult,
-    form,
-    setForm,
-    editing,
-    editingItem,
-    setEditing,
-    message,
-    setMessage,
-    tab,
-    setTab,
-    picking,
-    setPicking,
-    resourcesOf,
-    setResourcesOf,
-    removing,
-    setRemoving,
-    result,
-    busy,
-    saveTesting,
-    selectedConnection,
-    counts,
-    browsing,
-    load,
-    edit,
-    createWidget,
-    updateWidget,
-    removeWidget,
-    queryWidget,
-    save,
-    action,
-  } = state;
+  const { items, widgets, tab, setTab, removingWidget, setRemovingWidget } = state;
   return (
     <section aria-label={t('connections.title')} className="flex flex-col gap-4">
+      {items && <ConnectionsSummary items={items} widgets={widgets} />}
       <Tabs value={tab} onValueChange={(value) => setTab(value as typeof tab)}>
-        {(tab === 'widgets' || browsing) && (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <TabsList variant="line">
-              <TabsTrigger value="connections">
-                {t('connections.tab')}
-                {items && <span className="font-mono text-xs opacity-70">{items.length}</span>}
-              </TabsTrigger>
-              <TabsTrigger value="widgets">
-                {t('widgets.tab')}
-                <span className="font-mono text-xs opacity-70">{widgets.length}</span>
-              </TabsTrigger>
-            </TabsList>
-            {tab === 'connections' && items !== null && (
-              <Button
-                type="button"
-                onClick={() => {
-                  setEditing(null);
-                  setMessage('');
-                  setPicking(true);
-                }}
-              >
-                <Plus data-icon="inline-start" />
-                {t('connections.add')}
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList variant="line">
+            <TabsTrigger value="connections">
+              {t('connections.tab')}
+              {items && <span className="font-mono text-xs opacity-70">{items.length}</span>}
+            </TabsTrigger>
+            <TabsTrigger value="widgets">
+              {t('widgets.tab')}
+              <span className="font-mono text-xs opacity-70">{widgets.length}</span>
+            </TabsTrigger>
+          </TabsList>
+          {tab === 'connections' && items !== null && (
+            <Button type="button" onClick={state.startAdding}>
+              <Plus data-icon="inline-start" />
+              {t('connections.add')}
+            </Button>
+          )}
+        </div>
         <TabsContent value="connections" className="flex flex-col gap-4">
-          {picking ? (
-            <ConnectionPicker
-              counts={counts}
-              onPick={(type) => {
-                setPicking(false);
-                setForm(newForm(type));
-              }}
-              onCancel={() => setPicking(false)}
-            />
-          ) : form ? (
-            <ConnectionForm
-              form={form}
-              editing={editing !== null}
-              connectionId={editing}
-              hasCa={Boolean(editingItem?.hasCa)}
-              busy={busy}
-              saveTesting={saveTesting}
-              onChange={setForm}
-              onUpdate={(update) => setForm((current) => (current ? update(current) : current))}
-              onCaError={setMessage}
-              onSubmit={(event) => void save(event)}
-              onSaveAndTest={() => void save(undefined, true)}
-              onCancel={() => {
-                setForm(null);
-                setEditing(null);
-                setMessage('');
-              }}
-            />
-          ) : items === null && loadFailed ? (
+          {items === null && state.loadFailed ? (
             <Button
               type="button"
               variant="outline"
               className="w-fit"
               onClick={() => {
-                setLoadFailed(false);
-                setMessage('');
-                void load().catch(() => {
-                  setLoadFailed(true);
-                  setMessage(t('connections.loadFailed'));
+                state.setLoadFailed(false);
+                state.setMessage('');
+                void state.load().catch(() => {
+                  state.setLoadFailed(true);
+                  state.setMessage(t('connections.loadFailed'));
                 });
               }}
             >
@@ -150,7 +68,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
               {t('connections.retryLoad')}
             </Button>
           ) : items === null ? (
-            <RowListSkeleton label={t('connections.loading')} />
+            <CardGridSkeleton label={t('connections.loading')} />
           ) : items.length === 0 ? (
             <Empty className="border border-dashed">
               <EmptyHeader>
@@ -159,79 +77,83 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
               </EmptyHeader>
             </Empty>
           ) : (
-            <ConnectionList
-              items={items}
-              busy={busy}
-              result={result}
-              onEdit={edit}
-              onAction={(item, operation) => void action(item, operation)}
-              onResources={setResourcesOf}
-              onRemove={(item) => setRemoving({ kind: 'connection', item })}
-            />
+            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {items.map((item) => (
+                <li key={item.id} className="flex min-w-0">
+                  <ConnectionCard item={item} onOpen={state.select} />
+                </li>
+              ))}
+              <li className="flex min-w-0">
+                <Card className="relative w-full items-center justify-center gap-1 border-dashed bg-transparent p-4 text-center transition-colors hover:border-ring">
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={state.startAdding}
+                    className="h-auto p-0 text-base font-semibold text-foreground after:absolute after:inset-0 after:content-[''] hover:no-underline"
+                  >
+                    <Plus data-icon="inline-start" />
+                    {t('connections.add')}
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {t('connections.addCardHint')}
+                  </span>
+                </Card>
+              </li>
+            </ul>
           )}
         </TabsContent>
         <TabsContent value="widgets">
           <WidgetsSection
             items={items}
             widgets={widgets}
-            busy={busy}
-            widgetName={widgetName}
-            widgetConnection={selectedConnection}
-            cards={cards}
-            widgetCard={widgetCard}
-            editingWidget={editingWidget}
-            widgetEditName={widgetEditName}
-            onEdit={(widget) => {
-              setEditingWidget(widget.id);
-              setWidgetEditName(widget.name);
-              setWidgetEditCard(widget.serviceId ? String(widget.serviceId) : '');
-            }}
-            onEditNameChange={setWidgetEditName}
-            widgetEditCard={widgetEditCard}
-            onEditCardChange={setWidgetEditCard}
-            onCancelEdit={() => setEditingWidget(null)}
-            onSaveEdit={(widget, name, card) => void updateWidget(widget, name, card)}
-            onCardChange={setWidgetCard}
-            widgetResult={widgetResult}
-            onNameChange={setWidgetName}
-            onConnectionChange={setWidgetConnection}
-            onCreate={(event) => void createWidget(event)}
-            onQuery={(widget) => void queryWidget(widget)}
-            onRemove={(widget) => setRemoving({ kind: 'widget', item: widget })}
+            busy={state.busy}
+            cards={state.cards}
+            widgetResult={state.widgetResult}
+            onNew={state.newWidget}
+            onEdit={state.editWidget}
+            onQuery={(widget) => void state.queryWidget(widget)}
+            onRemove={setRemovingWidget}
           />
         </TabsContent>
       </Tabs>
-      {message && (
+      {state.message && !state.form && (
         <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm font-medium">
-          {message}
+          {state.message}
         </p>
       )}
-      <ResourceInventoryPanel connection={resourcesOf} onClose={() => setResourcesOf(null)} />
-      <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
+      <ConnectionDialog state={state} />
+      <WidgetDialog
+        form={state.widgetForm}
+        items={items ?? []}
+        cards={state.cards}
+        busy={state.busy}
+        onChange={state.setWidgetForm}
+        onSubmit={(event) => void state.saveWidget(event)}
+        onClose={() => state.setWidgetForm(null)}
+      />
+      <ResourceInventoryPanel
+        connection={state.resourcesOf}
+        onClose={() => state.setResourcesOf(null)}
+      />
+      <AlertDialog
+        open={removingWidget !== null}
+        onOpenChange={(open) => !open && setRemovingWidget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {removing?.kind === 'widget'
-                ? t('widgets.removeTitle', { name: removing.item.name })
-                : t('connections.removeTitle', { name: removing?.item.name ?? '' })}
+              {t('widgets.removeTitle', { name: removingWidget?.name ?? '' })}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {removing?.kind === 'widget'
-                ? t('widgets.removeBody')
-                : removing?.item.type && hasInventoryDomain(removing.item.type, 'resources')
-                  ? t('resources.removeBody')
-                  : t('connections.removeBody')}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('widgets.removeBody')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
-                const target = removing;
-                setRemoving(null);
-                if (target?.kind === 'widget') void removeWidget(target.item);
-                else if (target) void action(target.item, 'delete');
+                const target = removingWidget;
+                setRemovingWidget(null);
+                if (target) void state.removeWidget(target);
               }}
             >
               {t('common.remove')}

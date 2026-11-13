@@ -232,6 +232,13 @@
       "when": 1794579893456,
       "tag": "0032_slow_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1794584053668,
+      "tag": "0033_integration_last_test",
+      "breakpoints": true
     }
   ]
 }
