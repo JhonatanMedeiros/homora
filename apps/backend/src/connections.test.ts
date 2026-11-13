@@ -155,3 +155,74 @@ it('protects credentials of multiple integrations and preserves associations', a
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('records the result of an explicit test as a short reason and clears it when edited', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-connections-'));
+  const path = join(dir, 'db.sqlite');
+  const db = createDatabase(path);
+  const { auth, cookie } = await createTestSession();
+  const headers = { origin: 'http://localhost:5173', cookie };
+  const app = createApp(db.db, 5173, auth, createVault(path));
+  try {
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/connections',
+      headers,
+      payload: {
+        type: 'home-assistant',
+        name: 'Casa',
+        url: 'https://hass.example',
+        entityId: 'sensor.temperatura',
+        secret: 'fake-test-token-123',
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json().lastTest).toBeNull();
+    const id = created.json().id;
+    const before = Date.now();
+    const failed = await app.inject({
+      method: 'POST',
+      url: `/api/connections/${id}/test`,
+      headers,
+    });
+    expect(failed.statusCode).toBe(502);
+    const listed = await app.inject({
+      method: 'GET',
+      url: '/api/connections',
+      headers: { cookie },
+    });
+    const [item] = listed.json();
+    expect(item.lastTest.at).toBeGreaterThanOrEqual(before);
+    expect(['failed', 'timeout']).toContain(item.lastTest.result);
+    expect(listed.body).not.toContain('fake-test-token-123');
+    const edited = await app.inject({
+      method: 'PUT',
+      url: `/api/connections/${id}`,
+      headers,
+      payload: {
+        type: 'home-assistant',
+        name: 'Casa 2',
+        url: 'https://hass.example',
+        entityId: 'sensor.temperatura',
+      },
+    });
+    expect(edited.statusCode).toBe(200);
+    expect(edited.json().lastTest).toBeNull();
+  } finally {
+    await app.close();
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('classifies test failures without keeping the service message', async () => {
+  const { testFailureReason } = await import('./integration-connection-config.js');
+  expect(testFailureReason(new Error('HTTP response 401.'))).toBe('rejected');
+  expect(testFailureReason(new Error('HTTP response 403.'))).toBe('rejected');
+  expect(testFailureReason(new Error('HTTP response 500.'))).toBe('http-error');
+  expect(testFailureReason(new Error('Timeout exceeded.'))).toBe('timeout');
+  expect(testFailureReason(new Error('Integration temporarily unavailable.'))).toBe('unavailable');
+  expect(testFailureReason(new Error('Invalid JSON response.'))).toBe('invalid-response');
+  expect(testFailureReason(new Error('connect ECONNREFUSED 10.0.0.5:8123'))).toBe('failed');
+  expect(testFailureReason('x')).toBe('failed');
+});

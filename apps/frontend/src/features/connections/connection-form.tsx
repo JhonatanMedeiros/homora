@@ -2,7 +2,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { PasswordInput } from '@/components/password-input';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -22,6 +21,8 @@ type Props = {
   /** Id of the saved connection being edited; choice lists need it. */
   connectionId?: number | null;
   hasCa: boolean;
+  /** Focus the credentials field first, for a connection whose credentials were rejected. */
+  focusSecret?: boolean;
   busy: boolean;
   saveTesting: boolean;
   onChange: (form: ConnectionFormState) => void;
@@ -37,6 +38,7 @@ export function ConnectionForm({
   editing,
   connectionId,
   hasCa,
+  focusSecret = false,
   busy,
   saveTesting,
   onChange,
@@ -55,15 +57,8 @@ export function ConnectionForm({
   const secretHelp = help(secret);
   return (
     <form onSubmit={onSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {editing
-              ? t('card.edit', { name: labels[form.type] })
-              : t('connections.newTitle', { type: labels[form.type] })}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="flex flex-col gap-6">
+        <div>
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="connection-name">{t('connections.name')}</FieldLabel>
@@ -140,6 +135,7 @@ export function ConnectionForm({
                 <PasswordInput
                   id="connection-secret"
                   required={!editing}
+                  autoFocus={focusSecret}
                   maxLength={secret.maxLength}
                   autoComplete="new-password"
                   value={form.secret}
@@ -195,8 +191,8 @@ export function ConnectionForm({
               </div>
             </Field>
           </FieldGroup>
-        </CardContent>
-        <CardFooter className="flex-wrap justify-end gap-2">
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
           <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
             {t('common.cancel')}
           </Button>
@@ -208,8 +204,8 @@ export function ConnectionForm({
             {saveTesting && <Spinner data-icon="inline-start" />}
             {t('connections.saveAndTest')}
           </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </form>
   );
 }

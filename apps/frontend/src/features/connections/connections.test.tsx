@@ -12,7 +12,12 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-/** Opens the "⋯" menu of a row and picks one of its items. */
+/** Opens a connection's details dialog from its card. */
+async function openDetails(name: string) {
+  fireEvent.click(await screen.findByRole('button', { name: `Abrir ${name}` }));
+  return screen.findByRole('dialog', { name });
+}
+/** Opens the "⋯" menu of a widget row and picks one of its items. */
 async function choose(row: string, item: string) {
   fireEvent.keyDown(await screen.findByRole('button', { name: `Ações de ${row}` }), {
     key: 'Enter',
@@ -21,7 +26,7 @@ async function choose(row: string, item: string) {
 }
 const openWidgets = () => fireEvent.mouseDown(screen.getByRole('tab', { name: /Widgets/ }));
 const pick = async (type: RegExp) => {
-  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Adicionar conexão' }))[0]!);
   fireEvent.click(await screen.findByRole('button', { name: type }));
 };
 it('registers Home Assistant with explicit private network authorization', async () => {
@@ -103,7 +108,8 @@ it('tests connection and displays sanitized API failure', async () => {
     }),
   );
   render(<Connections />);
-  await choose('Mídia', 'Testar conexão');
+  const dialog = await openDetails('Mídia');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Testar conexão' }));
   expect(await screen.findByText('A conexão falhou.')).toBeTruthy();
 });
 
@@ -149,7 +155,8 @@ it.each([
     ),
   );
   render(<Connections />);
-  await choose('Teste', 'Atualizar dados');
+  const dialog = await openDetails('Teste');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Atualizar dados' }));
   expect(await screen.findByText((content) => content.includes(expected))).toBeTruthy();
 });
 
@@ -204,6 +211,7 @@ it('creates, queries, and removes named widgets using linked connection', async 
   render(<Connections />);
   await screen.findByRole('tab', { name: /Widgets/ });
   openWidgets();
+  fireEvent.click(await screen.findByRole('button', { name: 'Novo widget' }));
   fireEvent.change(await screen.findByLabelText('Nome do widget'), {
     target: { value: 'Mídia sala' },
   });
@@ -266,6 +274,7 @@ it('offers Proxmox as widget source and queries aggregated numbers', async () =>
   render(<Connections />);
   await screen.findByRole('tab', { name: /Widgets/ });
   openWidgets();
+  fireEvent.click(await screen.findByRole('button', { name: 'Novo widget' }));
   const select = await screen.findByRole('combobox', { name: 'Conexão' });
   expect(select.textContent).toBe('Servidor Proxmox');
   fireEvent.change(screen.getByLabelText('Nome do widget'), { target: { value: 'Cluster' } });
@@ -298,7 +307,7 @@ it('lists the types to connect with what each one reads, then opens its form wit
     }),
   );
   render(<Connections />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Adicionar conexão' }))[0]!);
   expect(await screen.findByText('O que você quer conectar?')).toBeTruthy();
   // Descriptions come from the built-in definitions, not from a request.
   expect(await screen.findByText('Inventário da infraestrutura')).toBeTruthy();
@@ -307,11 +316,12 @@ it('lists the types to connect with what each one reads, then opens its form wit
   for (const name of ['Jellyfin', 'Home Assistant', 'Uptime Kuma', 'AdGuard Home', 'Proxmox VE'])
     expect(screen.getByRole('button', { name: new RegExp(name) })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /AdGuard Home/ }));
-  expect(screen.getByText('Nova conexão AdGuard Home')).toBeTruthy();
+  expect(screen.getByRole('dialog', { name: 'Nova conexão AdGuard Home' })).toBeTruthy();
   expect(screen.queryByLabelText('Tipo de serviço')).toBeNull();
   expect(screen.getByLabelText('Usuário')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-  expect(screen.getByRole('button', { name: 'Adicionar conexão' })).toBeTruthy();
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  expect(screen.getAllByRole('button', { name: 'Adicionar conexão' }).length).toBeGreaterThan(0);
 });
 
 it('still lets you pick a type when the catalog cannot be loaded', async () => {
@@ -323,7 +333,7 @@ it('still lets you pick a type when the catalog cannot be loaded', async () => {
     })),
   );
   render(<Connections />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar conexão' }));
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Adicionar conexão' }))[0]!);
   expect(screen.getByRole('button', { name: /Jellyfin/ })).toBeTruthy();
 });
 
@@ -342,16 +352,14 @@ it('asks before removing a connection and removes it once confirmed', async () =
   });
   vi.stubGlobal('fetch', fetchMock);
   render(<Connections />);
-  await choose('Mídia', 'Remover');
-  const dialog = await screen.findByRole('alertdialog');
-  expect(within(dialog).getByText('Remover Mídia?')).toBeTruthy();
+  const dialog = await openDetails('Mídia');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remover' }));
+  expect(await screen.findByRole('dialog', { name: 'Remover Mídia?' })).toBeTruthy();
   expect(fetchMock).not.toHaveBeenCalledWith('/api/connections/1', expect.anything());
   fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
   expect(fetchMock).not.toHaveBeenCalledWith('/api/connections/1', expect.anything());
-  await choose('Mídia', 'Remover');
-  fireEvent.click(
-    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Remover' }),
-  );
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remover' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remover conexão' }));
   await waitFor(() =>
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/connections/1',
@@ -425,7 +433,8 @@ it('scopes a Proxmox connection to a node picked from its inventory, and can cle
     }),
   );
   render(<Connections />);
-  await choose('Phobos', 'Editar');
+  const details = await openDetails('Phobos');
+  fireEvent.click(within(details).getByRole('button', { name: 'Editar' }));
   const picker = await screen.findByRole('combobox', { name: 'Nó' });
   expect(picker.textContent).toContain('pve2');
   fireEvent.click(picker);
@@ -444,4 +453,124 @@ it('does not offer the node field while creating a Proxmox connection', async ()
   await pick(/Proxmox/);
   expect(screen.getByLabelText('ID do token')).toBeTruthy();
   expect(screen.queryByLabelText('Nó')).toBeNull();
+});
+
+const failing = {
+  id: 1,
+  type: 'home-assistant',
+  name: 'Casa',
+  url: 'https://hass.example',
+  allowPrivate: false,
+  hasSecret: true,
+  hasCa: false,
+  entityId: 'sensor.temp',
+  lastTest: { at: Date.now() - 12 * 60 * 1000, result: 'rejected' },
+};
+const working = {
+  ...failing,
+  id: 2,
+  type: 'jellyfin',
+  name: 'Mídia',
+  lastTest: { at: Date.now() - 3 * 60 * 1000, result: 'ok' },
+};
+const untested = { ...working, id: 3, name: 'Novo', lastTest: null };
+
+it('summarises the connections and shows why one failed on its card', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => (url === '/api/connections' ? [failing, working, untested] : []),
+    })),
+  );
+  render(<Connections />);
+  await screen.findByRole('button', { name: 'Abrir Casa' });
+  const summary = screen.getByText('Precisam de atenção').closest('div') as HTMLElement;
+  expect(within(summary).getByText('1')).toBeTruthy();
+  expect(screen.getByText('Falhou')).toBeTruthy();
+  expect(
+    screen.getByText('Funcionando', { selector: '[data-slot="status-light"] span' }),
+  ).toBeTruthy();
+  expect(screen.getByText('Não testada')).toBeTruthy();
+  expect(screen.getByText(/O serviço recusou as credenciais/)).toBeTruthy();
+});
+
+it('offers to update the credentials of a rejected connection and focuses them', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => (url === '/api/connections' ? [failing] : []),
+    })),
+  );
+  render(<Connections />);
+  const dialog = await openDetails('Casa');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Atualizar credenciais' }));
+  const secret = await within(dialog).findByLabelText('Token de acesso');
+  expect(document.activeElement).toBe(secret);
+});
+
+it('keeps the result of a test after reloading and shows it in the details', async () => {
+  let tested = false;
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === '/api/connections/2/test' && init?.method === 'POST') {
+      tested = true;
+      return { ok: true, json: async () => ({ ok: true }) };
+    }
+    if (url === '/api/connections')
+      return {
+        ok: true,
+        json: async () => [
+          { ...working, lastTest: tested ? { at: Date.now(), result: 'ok' } : null },
+        ],
+      };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<Connections />);
+  const dialog = await openDetails('Mídia');
+  expect(within(dialog).getByText(/Ainda não testada/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Testar conexão' }));
+  await waitFor(() => expect(within(dialog).queryByText(/Ainda não testada/)).toBeNull());
+  expect(within(dialog).getByText('Funcionando')).toBeTruthy();
+});
+
+it('asks before discarding what was typed in a form', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => [] })),
+  );
+  render(<Connections />);
+  await pick(/Jellyfin/);
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Mídia' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  expect(await screen.findByRole('dialog', { name: 'Descartar alterações?' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar editando' }));
+  expect((screen.getByLabelText('Nome') as HTMLInputElement).value).toBe('Mídia');
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Descartar' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+});
+
+it('searches the types by name or by what they read, and Enter opens the only match', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => [] })),
+  );
+  render(<Connections />);
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Adicionar conexão' }))[0]!);
+  const search = await screen.findByRole('searchbox', { name: 'Buscar integrações' });
+  expect(document.activeElement).toBe(search);
+  fireEvent.change(search, { target: { value: 'jelly' } });
+  expect(screen.getByRole('button', { name: /Jellyfin/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /AdGuard Home/ })).toBeNull();
+  // Accents and case do not matter, and the description is searched too.
+  fireEvent.change(search, { target: { value: 'INVENTARIO' } });
+  expect(screen.getByRole('button', { name: /Proxmox/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Jellyfin/ })).toBeNull();
+  fireEvent.change(search, { target: { value: 'zzzz' } });
+  expect(screen.getByText(/Nenhuma integração para "zzzz"/)).toBeTruthy();
+  fireEvent.change(search, { target: { value: 'adguard' } });
+  fireEvent.keyDown(search, { key: 'Enter' });
+  expect(await screen.findByRole('dialog', { name: 'Nova conexão AdGuard Home' })).toBeTruthy();
 });

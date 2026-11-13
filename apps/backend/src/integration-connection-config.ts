@@ -71,7 +71,25 @@ export function publicConnection(row: Row) {
     ...data,
     hasSecret: row.certificateRef === 'secret' || row.certificateRef === 'both',
     hasCa: row.certificateRef === 'ca' || row.certificateRef === 'both',
+    lastTest:
+      row.lastTestAt !== null && row.lastTestResult !== null
+        ? { at: row.lastTestAt, result: row.lastTestResult }
+        : null,
   };
+}
+
+/**
+ * Short, stable reason for a failed test. The service's own message is never stored or shown:
+ * it can echo addresses or details of the internal network.
+ */
+export function testFailureReason(error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  if (/HTTP response (401|403)\b/.test(message)) return 'rejected';
+  if (/HTTP response/.test(message)) return 'http-error';
+  if (/time(d)? ?out|exceeded/i.test(message)) return 'timeout';
+  if (/temporarily unavailable/i.test(message)) return 'unavailable';
+  if (/invalid .*(json|response)|JSON/i.test(message)) return 'invalid-response';
+  return 'failed';
 }
 
 export function readConnectionCredentials(
