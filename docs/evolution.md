@@ -1724,11 +1724,10 @@ manual responsive and keyboard verification in a browser remains pending.
 
 ### Page widgets: quieter management (2026-11-13)
 
-- The Home shows widgets as plain information. A section header above the grid holds the page-level
-  actions (add widget, organize widgets); each card has only a `⋯` menu for its own actions (edit,
-  move to another page, remove with confirmation), visible on hover and focus and always on touch.
-- Organize widgets opens a widget organize mode on the Home: drag, a handle with arrow keys, edit,
-  remove, and a dashed tile to add at the end of the grid. "Done" leaves it.
+- The Home shows widgets as plain information, with no header or toolbar. A dashed tile after
+  the last card adds a widget; each card has a `⋯` menu for its own actions (edit, move earlier or
+  later, move to another page, remove with confirmation), visible on hover and focus and always on
+  touch. Cards can also be dragged to reorder.
 - Adding opens a searchable gallery (Homora and connections), then the options with a live clock
   preview; name and page are collapsed. Editing skips the gallery and does not change the type.
 - Validation: component interface tests; browser verification pending.

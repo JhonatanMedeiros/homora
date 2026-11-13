@@ -38,8 +38,8 @@ it('shows a clock without querying a connection and opens a prefilled creation f
   await screen.findByText('Office');
   expect(document.querySelector('time')).toBeTruthy();
   expect(fetcher.mock.calls.some(([url]) => url.includes('/data'))).toBe(false);
-  expect(screen.getByRole('heading', { name: 'Widgets da página' })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: 'Organizar widgets' })).toBeNull();
+  expect(screen.queryByText('Widgets da página')).toBeNull();
+  expect(screen.queryByRole('button', { name: /^(Editar|Remover)/ })).toBeNull();
 });
 
 it('adds a widget from the gallery, with a prefilled form', async () => {
@@ -56,7 +56,7 @@ it('adds a widget from the gallery, with a prefilled form', async () => {
   expect(await screen.findByLabelText('Nome (opcional)')).toBeTruthy();
 });
 
-it('reorders widgets from the keyboard handle in organize mode', async () => {
+it('reorders a widget from its card menu', async () => {
   const clock = (id: number, name: string) => ({
     id,
     pageId: 1,
@@ -75,9 +75,11 @@ it('reorders widgets from the keyboard handle in organize mode', async () => {
   );
   vi.stubGlobal('fetch', fetcher);
   render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Organizar widgets' }));
-  const grip = await screen.findByRole('button', { name: /Arrastar A/ });
-  fireEvent.keyDown(grip, { key: 'ArrowRight' });
+  fireEvent.pointerDown(await screen.findByRole('button', { name: 'Ações: A' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Mover para depois' }));
   await waitFor(() =>
     expect(fetcher).toHaveBeenCalledWith(
       '/api/page-widgets/order',
@@ -156,7 +158,7 @@ it('removes a widget after confirmation without sending an empty JSON body', asy
   expect(fetcher).toHaveBeenCalledWith('/api/page-widgets/1', { method: 'DELETE' });
 });
 
-it('adds another widget from the page toolbar', async () => {
+it('adds another widget from the tile after the cards', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(
@@ -184,4 +186,36 @@ it('adds another widget from the page toolbar', async () => {
   render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
   fireEvent.click(await screen.findByRole('button', { name: 'Adicionar widget' }));
   expect(await screen.findByRole('button', { name: /Relógio/ })).toBeTruthy();
+});
+
+it('reorders by dragging a card past another one', async () => {
+  const clock = (id: number, name: string) => ({
+    id,
+    pageId: 1,
+    type: 'clock',
+    name,
+    config: { hourFormat: '24h', timeZone: 'UTC', seconds: false, date: true },
+    connectionId: null,
+    position: id,
+    version: 1,
+  });
+  const fetcher = vi.fn(
+    async (url: string) =>
+      new Response(
+        JSON.stringify(url === '/api/page-widgets' ? [clock(1, 'A'), clock(2, 'B')] : []),
+      ),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  const [first, second] = (await screen.findAllByRole('listitem')) as [HTMLElement, HTMLElement];
+  const dataTransfer = { setData: vi.fn(), effectAllowed: '', dropEffect: '' };
+  fireEvent.dragStart(second, { dataTransfer });
+  fireEvent.dragOver(first, { dataTransfer });
+  fireEvent.drop(first, { dataTransfer });
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/page-widgets/order',
+      expect.objectContaining({ body: JSON.stringify({ pageId: 1, ids: [2, 1] }) }),
+    ),
+  );
 });
