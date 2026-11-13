@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FormError } from '@/components/form-error';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/hooks/use-appearance';
-import { useAppearanceDraft } from '@/hooks/use-appearance-draft';
+import { useAppearanceDraft } from './use-appearance-draft';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/hooks/use-theme';
 import { t, type MessageKey } from '@/i18n';

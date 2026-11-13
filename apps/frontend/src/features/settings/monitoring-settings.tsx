@@ -1,6 +1,6 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
-import { useMonitoringDefaults } from '@/hooks/use-monitoring-defaults';
+import { useMonitoringDefaults } from './use-monitoring-defaults';
 import { t } from '@/i18n';
 import { SettingRow, SettingsGroup } from './setting-row';
 
