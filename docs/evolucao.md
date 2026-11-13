@@ -1643,3 +1643,11 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 
 - Added an opt-in persistent sign-in with a fixed 30-day lifetime; ordinary sign-in uses a browser-session cookie and expires after eight hours. Neither renews automatically. Existing session revocation remains available. Browser session restoration can retain session cookies.
 - API tests cover cookie attributes, server expiry and revocation. Real browser close and restore behavior has not been manually verified.
+
+### Notification responsibility boundary (issue #139)
+
+- Extracted channel configuration, vault access and public DTOs into `notification-channels.ts`;
+  transition persistence and delivery composition remain in the backend facade. Documented the
+  monitor contract, queue lifecycle and decision to defer a package and provider registry. No
+  notification policy or data migration was introduced.
+- Validation: targeted notification and monitoring suites (79 tests), `pnpm check` (1,364 application and 18 script tests) and `pnpm build` passed. Live provider delivery was not verified.
