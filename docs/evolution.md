@@ -1721,3 +1721,13 @@ manual responsive and keyboard verification in a browser remains pending.
   transfer and full project checks; desktop and mobile browser passes covering creation,
   editing, keyboard reordering, page switching, removal, and simulated telemetry. The backend
   Docker image was built and the package loaded in the container. No live service was accessed.
+
+### Page widgets: quieter management (2026-11-13)
+
+- The Home shows widgets as plain information, with no header or toolbar. A dashed tile after
+  the last card adds a widget; each card has a `⋯` menu for its own actions (edit, move earlier or
+  later, move to another page, remove with confirmation), visible on hover and focus and always on
+  touch. Cards can also be dragged to reorder.
+- Adding opens a searchable gallery (Homora and connections), then the options with a live clock
+  preview; name and page are collapsed. Editing skips the gallery and does not change the type.
+- Validation: component interface tests; browser verification pending.
