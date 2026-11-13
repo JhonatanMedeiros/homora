@@ -1661,3 +1661,15 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Validation: targeted discovery, MCP and service-default suites (26 tests), `pnpm check`
   (1,364 application tests and 18 script tests), and `pnpm build` passed. No real Docker host
   was accessed; live validation was not performed.
+
+### Frontend feature boundaries (issue #140)
+
+- Inventoried ownership and cross-feature edges in architecture, revised the hook convention,
+  and colocated three settings-only hooks with their consumers. Navigation metadata remains
+  separate from view entry points to preserve lazy loading. Shared stores and UI stay shared;
+  no independent consumer justifies another frontend package. Further feature moves remain
+  subject to dependency review, especially service/uptime and the settings/public-status edge.
+- Validation: 38 focused settings and navigation tests, `pnpm check` (1,364 application
+  and 18 script tests), and `pnpm build` passed. The build retains a separate settings chunk;
+  desktop and mobile browser flows were not manually verified because rendered behavior did
+  not change.

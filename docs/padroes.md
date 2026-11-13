@@ -29,11 +29,16 @@ are documented in [architecture](arquitetura.md).
   the `shadcn` skill in `.agents/skills/shadcn` guides agents. Add primitives with
   `npx shadcn@latest add <component>` (inside `apps/frontend`) and review generated files:
   this project's CLI may generate `cn` imports as `"cn"`; correct them to `@/lib/utils`.
-- Every UI element is a component: primitives live in `src/components/ui`
-  (shadcn, aligned with tokens), product components in `src/components`
-  (`StatusLight`, `ServiceCard`, `AppSidebar`...), pages in `src/pages`,
-  and capability modules in `src/features`. State and API calls reside in
-  `src/hooks`; pure business rules in `src/lib`.
+- Primitives live in `src/components/ui` (shadcn, aligned with tokens), shared
+  product components in `src/components`, route composers in `src/pages`, and
+  capability modules in `src/features`. Colocate a hook, model, component and
+  its tests in a feature when their consumers belong to that feature; keep hooks
+  and utilities used by the shell or several features in `src/hooks` and `src/lib`.
+  Existing files need not move solely for consistency. Feature modules may depend
+  on shared code; shared code must not depend on feature internals. Cross-feature
+  consumers should use an intentional entry module exposing only what they need.
+  Keep lightweight routing metadata separate from view entry modules so eager imports
+  do not pull lazy pages into the shell. Avoid barrel files that combine both.
 - Prefer an existing shadcn primitive for every interactive control and reusable
   visual pattern before writing custom markup. Use `Button`, `Input`, `Textarea`,
   `FormSelect` (composed from shadcn `Select`), `Checkbox`, `Switch`, `ToggleGroup`,
