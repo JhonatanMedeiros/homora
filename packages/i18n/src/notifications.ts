@@ -1,0 +1,38 @@
+/** Server notification messages. English reason codes remain unchanged for compatibility. */
+export const notificationEnglish = {
+  up: 'UP',
+  down: 'DOWN',
+  responding: 'responding',
+  redirect: 'redirect',
+  'login-required': 'login-required',
+  'unexpected-status': 'unexpected-status',
+  'not-found': 'not-found',
+  'error-status': 'error-status',
+  reachable: 'reachable',
+  'no-response': 'no-response',
+  'content-mismatch': 'content-mismatch',
+  'cert-expired': 'cert-expired',
+  'cert-invalid': 'cert-invalid',
+  'cert-expiring': 'cert-expiring',
+  maintenance: 'maintenance',
+  unchecked: 'unchecked',
+} as const;
+
+export const notificationPortuguese: Record<keyof typeof notificationEnglish, string> = {
+  up: 'ONLINE',
+  down: 'OFFLINE',
+  responding: 'respondendo',
+  redirect: 'redirecionamento',
+  'login-required': 'autenticação necessária',
+  'unexpected-status': 'status inesperado',
+  'not-found': 'não encontrado',
+  'error-status': 'erro do servidor',
+  reachable: 'acessível',
+  'no-response': 'sem resposta',
+  'content-mismatch': 'conteúdo inesperado',
+  'cert-expired': 'certificado expirado',
+  'cert-invalid': 'certificado inválido',
+  'cert-expiring': 'certificado próximo do vencimento',
+  maintenance: 'em manutenção',
+  unchecked: 'não verificado',
+};

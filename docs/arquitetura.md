@@ -55,8 +55,8 @@ flowchart LR
 - App-level UI journey tests are grouped by responsibility in `App.dashboard.test.tsx`,
   `App.groups.test.tsx`, `App.proposals.test.tsx`, `App.auth.test.tsx`, and
   `App.navigation.test.tsx`; these exercise user flows across the composed application.
-- Frontend message catalogs are split by application shell, service cards, service groups, service form, agent management, and proposal review in `src/i18n/messages`; `agents.ts` preserves the combined catalog facade, `en.ts` assembles the source keys, and `pt-br.ts` requires an exact `MessageKey` map.
-- Frontend localization uses i18next and react-i18next with the browser language detector. The existing `homora-locale` preference, English fallback, flat keys and single-brace interpolation are retained. Integration message catalogs are registered as resources; the backend returns stable error codes and English defaults, which the frontend translates. The frontend keeps typed convenience functions and locale-aware formatting around the libraries.
+- Application message catalogs live in `packages/i18n/src/messages`, grouped by feature. The package assembles and type-checks the English and Portuguese catalogs and separately exports notification messages and supported locales; the frontend combines them with integration-owned translations. See `packages/i18n/README.md` for adding a language.
+- Frontend localization uses i18next and react-i18next with the browser language detector. The existing `homora-locale` preference, English fallback, flat keys and single-brace interpolation are retained. Integration message catalogs are registered as resources; notification catalogs are imported by the backend without loading frontend messages, and the backend returns stable error codes and English defaults, which the frontend translates. The frontend keeps typed convenience functions and locale-aware formatting around the libraries.
 
 - HTTP API: web session authentication (Better Auth, single administrator account), Zod validation of request bodies, parameters,
   and query strings, composing routes by capability. Card and group business rules are

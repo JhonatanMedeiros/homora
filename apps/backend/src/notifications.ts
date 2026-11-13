@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
+import { supportedLocales } from '@homora/i18n';
 import type { createVault } from './vault.js';
 import type { Service } from '@homora/shared';
 import type { ServiceStatus } from './monitoring/index.js';
@@ -19,7 +20,7 @@ const channelSchema = z
     enabled: z.boolean(),
     allowPrivate: z.boolean().default(false),
     includeUrl: z.boolean().default(false),
-    locale: z.enum(['en', 'pt-BR']).optional(),
+    locale: z.enum(supportedLocales).optional(),
     destination: z.string().max(2048).optional(),
     token: z.string().max(256).optional(),
     chatId: z.string().max(128).optional(),

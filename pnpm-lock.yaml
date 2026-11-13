@@ -236,6 +236,9 @@ importers:
       '@homora/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@homora/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@homora/icons':
         specifier: workspace:*
         version: link:../../packages/icons
@@ -288,6 +291,9 @@ importers:
       '@fontsource-variable/geist-mono':
         specifier: 5.3.0
         version: 5.3.0
+      '@homora/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@homora/icons':
         specifier: workspace:*
         version: link:../../packages/icons
@@ -380,6 +386,12 @@ importers:
       drizzle-kit:
         specifier: 0.31.11
         version: 0.31.11
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/i18n:
+    devDependencies:
       typescript:
         specifier: 6.0.3
         version: 6.0.3

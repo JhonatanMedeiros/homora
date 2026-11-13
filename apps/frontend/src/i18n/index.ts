@@ -1,17 +1,14 @@
 import i18next from 'i18next';
+import { locales, supportedLocales, type Locale } from '@homora/i18n';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next, useTranslation } from 'react-i18next';
 import { en, type MessageKey } from './en';
 import { ptBR } from './pt-br';
 
 export { apiError } from './api-errors';
-export type Locale = 'en' | 'pt-BR';
+export { locales };
+export type { Locale };
 export type { MessageKey };
-
-export const locales: { id: Locale; label: string }[] = [
-  { id: 'en', label: 'English' },
-  { id: 'pt-BR', label: 'Português (Brasil)' },
-];
 
 const i18n = i18next.createInstance();
 void i18n
@@ -20,7 +17,7 @@ void i18n
   .init({
     resources: { en: { translation: en }, 'pt-BR': { translation: ptBR } },
     fallbackLng: 'en',
-    supportedLngs: ['en', 'pt-BR'],
+    supportedLngs: [...supportedLocales],
     initAsync: false,
     keySeparator: false,
     nsSeparator: false,
