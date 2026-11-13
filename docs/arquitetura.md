@@ -68,7 +68,7 @@ flowchart LR
   exposes metadata and execution; each integration encapsulates credential structures
   and specific rate/size limits. Shared manifest contracts and form helpers live in
   `integration-manifest-shared.ts`; each built-in definition has a focused module under
-  `packages/shared/src/integration-manifests/`, re-exported through `integration-manifest.ts`.
+  `packages/integrations/src/integrations/`, exported through the integration SDK.
 - Current MCP: local stdio process and stateless Streamable HTTP endpoint with scoped token authentication. The stdio process accesses SQLite
   and the credential vault directly. MCP tool registration is composed by capability in `mcp.ts`;
   the `mcp-*-tools.ts` modules own tool groups, while shared authorization and response helpers
@@ -232,10 +232,10 @@ releases exist.
 - `service-observations.ts` persists and serves current observations and failure history;
   uptime SQL aggregation and summary calculations live in `service-uptime.ts`.
 - `integration-registry.ts` builds the registry from `integrationDefinitions`
-  (`packages/shared/src/integration-manifest.ts`). Simple read-only integrations are
-  **manifests**, validated at startup (`integration-manifest.ts`) and run by one interpreter
-  (`manifest-adapter.ts`); untrusted response traversal and extraction live in
-  `manifest-response.ts`; Proxmox stays a code adapter registered by hand. Type enums, stored
+  (`packages/integrations/src/integration-manifest.ts`). Simple read-only integrations are
+  **manifests**, validated at startup (`backend-manifest-validation.ts`) and run by one SDK interpreter
+  (`backend-manifest-adapter.ts`); untrusted response traversal and extraction live in
+  `backend-manifest-response.ts`; code adapters are registered through generated catalogs. Type enums, stored
   config keys, proposal schemas, the connection form, widget text and the catalog endpoint derive
   from the same definitions ([ADR 0009](decisoes/0009-declarative-integration-adapters.md)).
   `adapter-contract.ts` is the test every adapter must pass ([adapters](adapters.md)). All connection adapters use the shared

@@ -1,14 +1,8 @@
-import type { GuestType, HostLink, Service } from '@homora/shared';
+import type { HostLink, Service } from '@homora/shared';
+import type { HostGuest, HostNode } from '@homora/integrations';
+export type { HostGuest, HostNode } from '@homora/integrations';
 
 export type HostConnection = { id: number; name: string };
-export type HostNode = { name: string; status: 'online' | 'offline' | 'unknown' };
-export type HostGuest = {
-  vmid: number;
-  name: string;
-  type: GuestType;
-  node: string;
-  status: string;
-};
 /** Inventory of one connection as loaded by the browser. Names stay in memory only. */
 export type HostInventory =
   | { status: 'loading' }
@@ -129,7 +123,7 @@ export function hostLabel(
 }
 
 /**
- * Why a linked card may be affected. `unknown` means the Proxmox inventory could not be read:
+ * Why a linked card may be affected. `unknown` means the host inventory could not be read:
  * it is never reported as offline. A monitor failure on a running guest is a different cause
  * (`service-down`) from a stopped guest or an offline node.
  */

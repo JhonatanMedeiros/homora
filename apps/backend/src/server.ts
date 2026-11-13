@@ -6,13 +6,13 @@ import { loadConfig } from './config.js';
 import { createDockerSource } from './docker-discovery.js';
 import { createAuth, loadSessionSecret } from './auth.js';
 import { createVault } from './vault.js';
-import { migrateLegacyProxmoxAtStartup } from './legacy-proxmox.js';
+import { migrateLegacyConnectionsAtStartup } from './legacy-integrations.js';
 import { createShutdownHandler } from './shutdown.js';
 const config = loadConfig();
 await mkdir(dirname(config.databasePath), { recursive: true });
 const database = createDatabase(config.databasePath);
 const vault = createVault(config.databasePath);
-migrateLegacyProxmoxAtStartup(database.db, vault);
+migrateLegacyConnectionsAtStartup(database.db, vault);
 const app = createApp(
   database.db,
   config.webPort,

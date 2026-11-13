@@ -22,11 +22,11 @@ export type ServiceChange =
   | { op: 'update'; id: number; service: ServiceInput }
   | { op: 'delete'; id: number };
 
-/** The card-to-guest link points to a connection that is missing or is not Proxmox. */
+/** The card-to-guest link points to a connection that is missing or lacks host inventory. */
 export class HostLinkError extends Error {
   readonly code = 'invalid-host' as const;
   constructor() {
-    super('Choose an existing Proxmox connection for the host.');
+    super('Choose an existing host inventory connection.');
     this.name = 'HostLinkError';
   }
 }

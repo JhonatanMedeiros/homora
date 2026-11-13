@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { InputError } from './api-error.js';
 import { z } from 'zod';
 import { createDatabase, integrationInstances, integrationWidgets, services } from '@homora/db';
+import { legacyUnavailableCode, type LegacyWidgetSource } from '@homora/integrations';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Connection = typeof integrationInstances.$inferSelect;
@@ -20,7 +21,7 @@ const widgetSchema = z
 export function createIntegrationWidgets(
   db: Db,
   findConnection: (id: number) => Promise<Connection | undefined>,
-  migrateLegacy: () => number | null,
+  migrateLegacy: () => Map<LegacyWidgetSource, number | null>,
 ) {
   async function serviceExists(id: number) {
     return (
@@ -34,12 +35,14 @@ export function createIntegrationWidgets(
       return rows.map((row) => widgetSchema.parse(row));
     },
     async createWidget(
-      target: { integrationId: number } | { source: 'proxmox' },
+      target: { integrationId: number } | { source: LegacyWidgetSource },
       name: string,
       serviceId: number | null = null,
     ) {
-      const legacyId = migrateLegacy();
-      if ('source' in target && legacyId === null) throw new InputError('proxmox-not-configured');
+      const legacyIds = migrateLegacy();
+      const legacyId = 'source' in target ? legacyIds.get(target.source) : undefined;
+      if ('source' in target && !legacyId)
+        throw new InputError(legacyUnavailableCode(target.source));
       const connection = await findConnection(
         'source' in target ? legacyId! : target.integrationId,
       );

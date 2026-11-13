@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { hasInventoryDomain } from '@homora/integrations';
 import type {
   HostConnection,
   HostGuest,
@@ -10,9 +11,9 @@ import type {
 type Connection = { id: number; name: string; type: string };
 
 /**
- * Proxmox connections and their guest inventory. The inventory (names and ids) is fetched from
+ * host inventory connections and their guest inventory. The inventory (names and ids) is fetched from
  * the authenticated API only when `enabled` or when `needed` connections are linked, and is kept
- * in memory; the backend caches it for 30 s, so repeated calls do not hit Proxmox.
+ * in memory; the backend caches it for 30 s, so repeated calls do not query the external system.
  */
 export function useHostInventory(enabled: boolean, needed: number[]) {
   const [connections, setConnections] = useState<HostConnection[]>([]);
@@ -20,7 +21,7 @@ export function useHostInventory(enabled: boolean, needed: number[]) {
   const [inventories, setInventories] = useState<HostInventories>({});
   const requested = useRef(new Set<number>());
 
-  // The connection list is local (no Proxmox call), so it is always read; guest data is not.
+  // The connection list is local (no external call), so it is always read; guest data is not.
   useEffect(() => {
     let active = true;
     fetch('/api/connections')
@@ -28,7 +29,9 @@ export function useHostInventory(enabled: boolean, needed: number[]) {
       .then((rows) => {
         if (!active) return;
         setConnections(
-          rows.filter((row) => row.type === 'proxmox').map(({ id, name }) => ({ id, name })),
+          rows
+            .filter((row) => hasInventoryDomain(row.type, 'hosts'))
+            .map(({ id, name }) => ({ id, name })),
         );
         setConnectionsLoaded(true);
       })

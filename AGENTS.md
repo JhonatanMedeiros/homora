@@ -30,12 +30,26 @@ not necessarily the existing implementation.
 - When delivering, explain what changed, how it was validated, and what could not
   be verified. Do not claim tests passed without running them.
 
+## Integration work for contributors and agents
+
+- Before creating, changing, or reviewing an integration or widget, read
+  [the integration SDK guide](docs/adapters.md), [the integration reference](docs/integracoes.md),
+  and [ADR 0011](docs/decisoes/0011-integration-sdk.md). Check the existing integration's definition,
+  descriptor, tests and fixtures. The guide applies equally to human contributors and AI agents.
+- Put service-specific behavior, widgets, translations and fixtures under
+  `packages/integrations/src/integrations/<type>`; use `packages/icons` for bundled brand assets.
+  Use `pnpm integration:create` for a scaffold and `pnpm integration:catalog` after editing
+  descriptors. Do not add service-specific branches or imports to the applications. A new generic
+  host capability, network method or permission requires a separate design and review.
+- Preserve data compatibility, least privilege and the restricted transport. Verify contract tests,
+  `pnpm check` and `pnpm build`; describe live-service validation as pending unless actually performed.
+
 ## Structure and Commands
 
 - `apps/frontend`: React, Vite, Tailwind v4, and shadcn/ui (use the `shadcn` skill and UI conventions in `docs/padroes.md`); `apps/backend`: Fastify API, Proxmox, and MCP.
 - In frontend work, prioritize existing shadcn components and compose product UI from them; avoid raw HTML controls where a shadcn primitive fits. Follow the component selection and exception rules in `docs/padroes.md`.
 - `packages/db`: SQLite schema and migrations; `packages/shared`: shared
-  contracts and validation. `scripts/` contains backup utilities and tests.
+  contracts and validation; `packages/integrations`: integration SDK; `packages/icons`: brand assets. `scripts/` contains backup utilities and tests.
 - Consult [engineering standards](docs/padroes.md) for module boundaries,
   validation, persistence, tests, and recording architectural decisions.
 - Use the Node version specified in `.nvmrc` and the pnpm version in `package.json`.

@@ -5,8 +5,8 @@ import {
   uptimeKumaManifest,
   type IntegrationManifest,
 } from '@homora/shared';
-import { assertValidDefinition } from './integration-manifest.js';
-import { createManifestAdapter, createManifestRegistration } from './manifest-adapter.js';
+import { assertValidDefinition } from './integration-test-support.js';
+import { createManifestAdapter, createManifestRegistration } from './integration-test-support.js';
 import { integrationRegistry } from './integration-registry.js';
 import { createIntegrationRegistry, type IntegrationTransport } from './integrations.js';
 import { integrationTypes, publicFieldKeys } from './integration-fields.js';

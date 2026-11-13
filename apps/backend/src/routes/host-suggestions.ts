@@ -8,7 +8,7 @@ import { errorBody } from '../api-error.js';
 
 /**
  * Suggested hosts for cards without one. Authenticated sessions only (the `/api/` hook): guest
- * names and addresses never reach the public status page. Nothing here writes to Proxmox, and
+ * names and addresses never reach the public status page. Nothing here writes to external systems, and
  * accepting a suggestion is the ordinary `PUT /api/services/:id/host`.
  */
 export function registerHostSuggestionRoutes(

@@ -2,14 +2,12 @@ import type { ConnectionData, Credentials } from './integration-connection-confi
 import type { IntegrationTransport } from './integrations.js';
 import { getAuthorizedResponse } from './network-request.js';
 
-const PROXMOX_MAX_BODY_BYTES = 2_000_000;
-
-/** Builds the JSON transport shared by integration reads and Proxmox address lookups. */
+/** Builds the JSON transport shared by integration reads and host address lookups. */
 export function createIntegrationTransport(
   data: ConnectionData,
   credentials: Credentials,
-  type: string,
   invalidJson: 'error' | 'empty' = 'error',
+  defaultMaxBodyBytes?: number,
 ): IntegrationTransport {
   return async (request) => {
     const response = await getAuthorizedResponse(
@@ -21,11 +19,9 @@ export function createIntegrationTransport(
           ...(request.apiKey ? { 'x-api-key': request.apiKey } : {}),
         },
         ca: credentials.ca,
-        ...(type === 'proxmox'
-          ? { maxBodyBytes: PROXMOX_MAX_BODY_BYTES }
-          : request.maxBodyBytes
-            ? { maxBodyBytes: request.maxBodyBytes }
-            : {}),
+        ...((request.maxBodyBytes ?? defaultMaxBodyBytes)
+          ? { maxBodyBytes: request.maxBodyBytes ?? defaultMaxBodyBytes }
+          : {}),
       },
     );
 

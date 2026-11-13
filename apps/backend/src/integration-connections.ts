@@ -1,12 +1,15 @@
 import { eq } from 'drizzle-orm';
 import { createDatabase, getSqliteHandle, integrationInstances } from '@homora/db';
 import { createVault } from './vault.js';
-import { migrateLegacyProxmox } from './legacy-proxmox.js';
+import {
+  migrateLegacyConnections,
+  markLegacyConnectionDeleted,
+  isHiddenLegacyConnection,
+} from './legacy-integrations.js';
 import { createObservationCache } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
 import { createIntegrationWidgets } from './integration-widgets.js';
 import { createIntegrationTransport } from './integration-transport.js';
-import { CoolifyBackoffError } from './coolify-connection.js';
 import {
   parseConnectionData,
   prepareConnection,
@@ -29,15 +32,16 @@ export function createIntegrationConnections(
   clock: () => number = Date.now,
 ) {
   /**
-   * Coolify blocks a client after 30 failed requests a minute (and notifies the team), so after a
-   * 401, 403 or 429 the automatic reads of that connection stop for 60 s, or for `Retry-After`
-   * when longer (at most 15 min), and fail without touching the network. In memory, per
+   * An integration may request a pause after an error. Automatic reads then stop for at least
+   * 60 s, or the requested delay when longer (at most 15 min), and fail without touching the
+   * network. In memory, per
    * connection, cleared when the connection is edited or a read succeeds. It never stores a
    * success: this is the one deliberate exception to "retry on every request".
    */
   const backoffs = new Map<number, number>();
   async function guarded<T>(row: Row, run: () => Promise<T>, bypass = false): Promise<T> {
-    if (row.type !== 'coolify') return run();
+    const retryDelaySeconds = integrationRegistry.get(row.type)?.retryDelaySeconds;
+    if (!retryDelaySeconds) return run();
     const until = backoffs.get(row.id);
     if (!bypass && until !== undefined && until > clock())
       throw new Error('Integration temporarily unavailable.');
@@ -46,17 +50,15 @@ export function createIntegrationConnections(
       backoffs.delete(row.id);
       return result;
     } catch (error) {
-      if (error instanceof CoolifyBackoffError) {
-        const wait = Math.min(
-          BACKOFF_MAX_MS,
-          Math.max(BACKOFF_MIN_MS, (error.retryAfterSeconds ?? 0) * 1000),
-        );
+      const retryDelay = retryDelaySeconds(error);
+      if (retryDelay !== null) {
+        const wait = Math.min(BACKOFF_MAX_MS, Math.max(BACKOFF_MIN_MS, retryDelay * 1000));
         backoffs.set(row.id, clock() + wait);
       }
       throw error;
     }
   }
-  const migrateLegacy = () => migrateLegacyProxmox(db, vault);
+  const migrateLegacy = () => migrateLegacyConnections(db, vault);
   const caches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
   const addressCaches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
   const inventoryCaches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
@@ -72,7 +74,7 @@ export function createIntegrationConnections(
     return (await db.select().from(integrationInstances).where(eq(integrationInstances.id, id)))[0];
   }
   function prepareAdapter(type: string, data: ConnectionData, keys: Credentials, detail = false) {
-    const transport = createIntegrationTransport(data, keys, type);
+    const transport = createIntegrationTransport(data, keys);
     const context = { publicConfig: data, credentials: keys, transport };
     return detail
       ? integrationRegistry.prepareInventory(type, context)
@@ -136,7 +138,7 @@ export function createIntegrationConnections(
     async listConnections() {
       migrateLegacy();
       return (await db.select().from(integrationInstances))
-        .filter((row) => row.type !== 'proxmox' || row.publicConfig !== '{}')
+        .filter((row) => !isHiddenLegacyConnection(row))
         .map(publicRow);
     },
     createConnection(input: ConnectionInput) {
@@ -165,9 +167,7 @@ export function createIntegrationConnections(
           sqlite.exec('COMMIT');
           return 'has-widgets' as const;
         }
-        sqlite
-          .prepare('UPDATE integration_migrations SET name=? WHERE name=?')
-          .run('legacy-proxmox:deleted', `legacy-proxmox:${id}`);
+        markLegacyConnectionDeleted(sqlite, id);
         sqlite.prepare('DELETE FROM integration_instances WHERE id=?').run(id);
         sqlite.exec('COMMIT');
         caches.delete(id);
@@ -191,14 +191,15 @@ export function createIntegrationConnections(
       }, refresh);
     },
     /**
-     * Names and ids of nodes and guests of a Proxmox connection, cached for 30 s like the summary.
-     * Returns null when the connection is missing and 'not-proxmox' for other types.
+     * Names and ids of nodes and guests, cached for 30 s like the summary. Returns null when the
+     * connection is missing and 'unsupported-inventory' when it cannot provide host inventory.
      */
     async inventoryData(id: number, refresh = false) {
       migrateLegacy();
       const row = await find(id);
       if (!row) return null;
-      if (row.type !== 'proxmox') return 'not-proxmox' as const;
+      if (integrationRegistry.get(row.type)?.inventoryDomain !== 'hosts')
+        return 'unsupported-inventory' as const;
       let cache = inventoryCaches.get(id);
       if (!cache) {
         cache = createObservationCache<unknown>(30_000);
@@ -210,15 +211,16 @@ export function createIntegrationConnections(
       );
     },
     /**
-     * Applications and services of a Coolify connection with names, UUIDs and addresses, cached for
-     * 30 s like the summary. Returns null when the connection is missing and 'not-coolify' for
+     * Applications and services with names, IDs and addresses, cached for 30 s like the summary.
+     * Returns null when the connection is missing and 'unsupported-inventory' for
      * other types. Authenticated callers only; never part of MCP or the public status page.
      */
     async resourcesData(id: number, refresh = false) {
       migrateLegacy();
       const row = await find(id);
       if (!row) return null;
-      if (row.type !== 'coolify') return 'not-coolify' as const;
+      if (integrationRegistry.get(row.type)?.inventoryDomain !== 'resources')
+        return 'unsupported-inventory' as const;
       let cache = inventoryCaches.get(id);
       if (!cache) {
         cache = createObservationCache<unknown>(30_000);
@@ -237,7 +239,7 @@ export function createIntegrationConnections(
     async addressData(id: number, guests: readonly unknown[]) {
       migrateLegacy();
       const row = await find(id);
-      if (!row || row.type !== 'proxmox') return null;
+      if (!row || !integrationRegistry.get(row.type)?.prepareAddresses) return null;
       let cache = addressCaches.get(id);
       if (!cache) {
         cache = createObservationCache<unknown>(300_000);
@@ -245,7 +247,7 @@ export function createIntegrationConnections(
       }
       const data = parseData(row);
       const keys = credentials(row);
-      const transport = createIntegrationTransport(data, keys, row.type, 'empty');
+      const transport = createIntegrationTransport(data, keys, 'empty', 2_000_000);
       return cache.collect(() =>
         integrationRegistry.prepareAddresses(row.type, {
           publicConfig: data,

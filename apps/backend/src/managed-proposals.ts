@@ -2,9 +2,14 @@ import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { isNodeName, isVmid } from '@homora/shared';
+import {
+  hasInventoryDomain,
+  LEGACY_WIDGET_SOURCES,
+  legacyUnavailableMessage,
+} from '@homora/integrations';
 import { renumberGroups } from './group-order.js';
 import { definitionOf, integrationTypeSchema, publicFieldShape } from './integration-fields.js';
-import { legacyProxmoxConnectionId } from './legacy-proxmox.js';
+import { resolveLegacyConnection } from './legacy-integrations.js';
 
 const id = z.number().int().safe().positive();
 const name = z.string().trim().min(1).max(40);
@@ -32,7 +37,7 @@ export const widgetChangeSchema = z.discriminatedUnion('op', [
     .object({
       op: z.literal('create'),
       integrationId: id.optional(),
-      source: z.literal('proxmox').optional(),
+      source: z.enum(LEGACY_WIDGET_SOURCES).optional(),
       name: widgetName,
       serviceId: id.nullable().optional(),
     })
@@ -72,7 +77,7 @@ export const connectionSetupSchema = z
     return !url?.httpsOnly || value.url.startsWith('https://');
   });
 /**
- * Links a card to a Proxmox guest. The strength and evidence are computed by the server when the
+ * Links a card to an infrastructure guest. The strength and evidence are computed by the server when the
  * proposal is created (an agent cannot supply them) and shown to the reviewer next to the diff.
  */
 export const hostLinkChangeSchema = z
@@ -212,9 +217,9 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
   } else if (kind === 'widget') {
     if (change.op === 'create') {
       let connectionId = change.integrationId;
-      if (change.source === 'proxmox') {
-        const legacyId = legacyProxmoxConnectionId(db);
-        if (legacyId === null) throw new Error('Proxmox not configured');
+      if (change.source) {
+        const legacyId = resolveLegacyConnection(db, change.source);
+        if (legacyId === null) throw new Error(legacyUnavailableMessage(change.source));
         connectionId = legacyId;
       }
       const connection = db
@@ -251,7 +256,8 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
     const connection = db
       .prepare('SELECT type FROM integration_instances WHERE id=?')
       .get(change.host.connectionId) as { type: string } | undefined;
-    if (connection?.type !== 'proxmox') throw new Error('Connection not found');
+    if (!connection || !hasInventoryDomain(connection.type, 'hosts'))
+      throw new Error('Connection not found');
     db.prepare(
       'UPDATE services SET host_connection_id=?,host_node=?,host_vmid=?,host_type=? WHERE id=?',
     ).run(

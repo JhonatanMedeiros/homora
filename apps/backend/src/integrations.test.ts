@@ -1,7 +1,49 @@
 import { expect, it, vi } from 'vitest';
+import { defineBackendIntegration } from '@homora/integrations/backend';
+import { createCodeRegistrations } from '@homora/integrations/backend/catalog';
+import { hasInventoryDomain, hasSystemTelemetry, jellyfinManifest } from '@homora/shared';
 import { createIntegrationRegistry, createObservationCache } from './integrations.js';
 
 const proxmoxAdapter = { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] };
+
+it('exposes inventory capabilities through the integration catalog', () => {
+  const entries = createCodeRegistrations((code) => new Error(code));
+  expect(entries.get('proxmox')?.inventoryDomain).toBe('hosts');
+  expect(entries.get('proxmox')?.prepareAddresses).toBeTypeOf('function');
+  expect(entries.get('coolify')?.inventoryDomain).toBe('resources');
+  expect(entries.get('coolify')?.prepareInventory).toBeTypeOf('function');
+  expect(entries.get('constructor')).toBeUndefined();
+  expect(hasInventoryDomain('proxmox', 'hosts')).toBe(true);
+  expect(hasInventoryDomain('coolify', 'hosts')).toBe(false);
+  expect(hasInventoryDomain('coolify', 'resources')).toBe(true);
+  expect(hasInventoryDomain('constructor', 'hosts')).toBe(false);
+  expect(hasSystemTelemetry('proxmox')).toBe(true);
+  expect(hasSystemTelemetry('coolify')).toBe(false);
+});
+
+it('rejects incomplete or inconsistent inventory capability registrations', () => {
+  const definition = { ...jellyfinManifest, inventoryDomain: 'hosts' as const };
+  expect(() => defineBackendIntegration(definition, {})).toThrow('without an inventory hook');
+  expect(() =>
+    defineBackendIntegration(jellyfinManifest, { prepareAddresses: () => async () => [] }),
+  ).toThrow('without host inventory');
+});
+
+it('derives metadata from the definition and delegates reads to the supplied hooks', async () => {
+  const collect = vi.fn(async () => ({ name: 'example' }));
+  const prepare = vi.fn(() => collect);
+  const entry = defineBackendIntegration(jellyfinManifest, { prepare });
+  const registry = createIntegrationRegistry([entry]);
+  const context = { publicConfig: { url: 'https://example.test' }, credentials: {} };
+  expect(registry.list()[0]).toEqual({
+    type: jellyfinManifest.type,
+    label: jellyfinManifest.label,
+    capabilities: jellyfinManifest.capabilities,
+  });
+  expect(await registry.prepare(jellyfinManifest.type, context)()).toEqual({ name: 'example' });
+  expect(prepare).toHaveBeenCalledWith(context);
+  expect(() => registry.prepareInventory(jellyfinManifest.type, context)).toThrow();
+});
 
 it('exposes metadata without disclosing implementation or configs and rejects duplicates', () => {
   const registry = createIntegrationRegistry([proxmoxAdapter]);

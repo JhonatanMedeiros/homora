@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { isLegacyConnectionType, legacyConnectionCapabilities } from '@homora/integrations';
 import { integrationRegistry } from './integration-registry.js';
 import { widgetChangeDiscoverySchema } from './mcp-proposal-tools.js';
 import type { McpRuntimeContext } from './mcp-tool-context.js';
@@ -75,19 +76,21 @@ export function registerMcpIntegrationTools(
         const configured = options.connections ? await options.connections.listConnections() : null;
         return result({
           catalog: integrationRegistry.list(),
-          proxmoxConfigured: configured
-            ? configured.some((item) => item.type === 'proxmox')
-            : false,
+          ...legacyConnectionCapabilities(configured),
           connections: configured
             ? configured.map((connection) => ({
                 ...connection,
                 url: publicUrl(connection.url),
               }))
-            : database
-                .prepare(
-                  "SELECT id,type,name FROM integration_instances WHERE type != 'proxmox' ORDER BY id",
-                )
-                .all(),
+            : (
+                database
+                  .prepare('SELECT id,type,name FROM integration_instances ORDER BY id')
+                  .all() as {
+                  id: number;
+                  type: string;
+                  name: string;
+                }[]
+              ).filter((connection) => !isLegacyConnectionType(connection.type)),
         });
       } catch {
         return failed();

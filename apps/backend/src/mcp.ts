@@ -8,7 +8,7 @@ import { registerMcpCapabilitiesTool } from './mcp-capabilities-tools.js';
 import { registerMcpIntegrationTools } from './mcp-integration-tools.js';
 import { registerMcpHostTools } from './mcp-host-tools.js';
 import { registerMcpDiscoveryTools } from './mcp-discovery-tools.js';
-import { registerMcpProxmoxTools } from './mcp-proxmox-tools.js';
+import { registerIntegrationTools } from './mcp-integration-extensions.js';
 import type { McpOptions } from './mcp-tool-context.js';
 import { createDockerPush } from './docker-push.js';
 
@@ -138,6 +138,6 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
     publicUrl,
     proposalService,
   });
-  registerMcpProxmoxTools(server, { options, authorize, result, failed });
+  registerIntegrationTools(server, { options, authorize, result, failed });
   return server;
 }

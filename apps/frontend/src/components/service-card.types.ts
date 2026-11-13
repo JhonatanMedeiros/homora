@@ -5,7 +5,7 @@ import type {
   UptimeRange,
   UptimeSummary,
 } from '@homora/shared';
-import type { CardCoolify } from '@/hooks/use-resource-links';
+import type { CardResource } from '@/hooks/use-resource-links';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import type { HostLabel, Impact } from '@/lib/hosts';
 import type { ServiceStatus } from '@/lib/services';
@@ -15,9 +15,9 @@ export type ServiceCardProps = {
   service: Service;
   status?: ServiceStatus;
   widgets?: CardWidgetState[];
-  /** Linked Coolify resource, with the state Coolify reports (separate from the HTTP status). */
-  coolify?: CardCoolify;
-  onCoolify?: () => void;
+  /** Linked integration resource, with the state the integration reports (separate from the HTTP status). */
+  resourceLink?: CardResource;
+  onResource?: () => void;
   uptime?: UptimeSummary;
   /** Alert settings (degraded limit) and the incident the service is in right now, if any. */
   monitor?: MonitorSettings;
@@ -29,7 +29,7 @@ export type ServiceCardProps = {
   onTag?: (tag: string) => void;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
-  /** Where the card runs, resolved from the live Proxmox inventory (null when not linked). */
+  /** Where the card runs, resolved from the live host inventory (null when not linked). */
   host?: HostLabel | null;
   /** Why the card may be affected; text is always shown, never only color. */
   impact?: Impact;

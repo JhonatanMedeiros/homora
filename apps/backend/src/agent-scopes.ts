@@ -1,10 +1,12 @@
+import { integrationAgentScopeIds } from '@homora/integrations';
+
 /** Existing tokens retain their permissions; new domains require explicit grants. */
 export const AGENT_SCOPES = [
   'services:read',
   'agents:read',
   'agents:propose',
   'audit:read',
-  'proxmox:read',
+  ...integrationAgentScopeIds,
   'proposals:create',
   'groups:propose',
   'widgets:read',

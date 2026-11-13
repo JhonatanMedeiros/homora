@@ -1,3 +1,5 @@
+import { legacyApiErrorMessages } from '@homora/integrations';
+
 /**
  * API errors: each error response has a stable `code` (translated by the frontend) and an
  * `error` with the default message in English, useful for clients that do not translate.
@@ -46,7 +48,7 @@ export const ERROR_MESSAGES = {
   'invalid-status-page': 'Provide a valid status page identifier.',
   'invalid-name-or-type': 'Provide a valid name and type.',
   'invalid-name-or-category': 'Provide a valid name and category.',
-  'invalid-host': 'Choose an existing Proxmox connection for the host.',
+  'invalid-host': 'Choose an existing host inventory connection.',
   'dependency-self': 'A service cannot depend on itself.',
   'dependency-cycle': 'This would create a circular dependency.',
   'dependency-limit': 'A service can have at most 50 dependencies.',
@@ -85,7 +87,7 @@ export const ERROR_MESSAGES = {
   'proposal-unavailable': 'Proposal unavailable.',
   'batch-conflict': 'The changes in this batch conflict. No changes were applied.',
   'config-changed': 'The configuration changed. Review it again.',
-  'proxmox-not-configured': 'Proxmox is not configured.',
+  ...legacyApiErrorMessages,
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_MESSAGES;

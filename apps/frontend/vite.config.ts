@@ -2,6 +2,8 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { BRAND_ICON_NAMES } from '@homora/icons';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, root, 'HOMORA_'), ...process.env };
@@ -15,7 +17,38 @@ export default defineConfig(({ mode }) => {
     apiPort = parsePort(env.HOMORA_API_PORT, 3000);
   if (port === apiPort) throw new Error('API and web interface ports must be different.');
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'homora-brand-icons',
+        apply: 'build',
+        buildStart() {
+          for (const name of BRAND_ICON_NAMES) {
+            const source = readFileSync(
+              fileURLToPath(import.meta.resolve(`@homora/icons/assets/${name}.svg`)),
+            );
+            this.emitFile({ type: 'asset', fileName: `brand-icons/${name}.svg`, source });
+          }
+        },
+      },
+      {
+        name: 'homora-brand-icons-dev',
+        apply: 'serve',
+        configureServer(server) {
+          const names = new Set<string>(BRAND_ICON_NAMES);
+          server.middlewares.use((req, res, next) => {
+            const match = /^\/brand-icons\/([a-z0-9-]+)\.svg(?:\?.*)?$/.exec(req.url ?? '');
+            if (!match || !names.has(match[1]!)) return next();
+            const source = readFileSync(
+              fileURLToPath(import.meta.resolve(`@homora/icons/assets/${match[1]}.svg`)),
+            );
+            res.setHeader('Content-Type', 'image/svg+xml');
+            res.end(source);
+          });
+        },
+      },
+    ],
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
     server: {
       host: '127.0.0.1',

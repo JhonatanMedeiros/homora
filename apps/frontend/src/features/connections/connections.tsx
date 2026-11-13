@@ -1,4 +1,5 @@
 import { Plus, RotateCw } from 'lucide-react';
+import { hasInventoryDomain } from '@homora/integrations';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { RowListSkeleton } from '@/components/skeletons';
@@ -18,7 +19,7 @@ import { ConnectionList } from './connection-list';
 import { ConnectionPicker } from './connection-picker';
 import { newForm, type ConnectionFormState } from './connection-model';
 import { WidgetsSection } from './widgets-section';
-import { CoolifyResources } from './coolify-resources';
+import { ResourceInventoryPanel } from './resource-inventory';
 import { t } from '@/i18n';
 import { useConnectionsPage } from '@/hooks/use-connections-page';
 
@@ -205,7 +206,7 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
           {message}
         </p>
       )}
-      <CoolifyResources connection={resourcesOf} onClose={() => setResourcesOf(null)} />
+      <ResourceInventoryPanel connection={resourcesOf} onClose={() => setResourcesOf(null)} />
       <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -217,8 +218,8 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
             <AlertDialogDescription>
               {removing?.kind === 'widget'
                 ? t('widgets.removeBody')
-                : removing?.item.type === 'coolify'
-                  ? t('coolify.removeBody')
+                : removing?.item.type && hasInventoryDomain(removing.item.type, 'resources')
+                  ? t('resources.removeBody')
                   : t('connections.removeBody')}
             </AlertDialogDescription>
           </AlertDialogHeader>

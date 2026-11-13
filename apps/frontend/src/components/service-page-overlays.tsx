@@ -9,9 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CoolifyReviewDialog } from '@/components/coolify-review-dialog';
+import { ResourceReviewDialog } from '@/components/resource-review-dialog';
 import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
-import type { CardCoolify } from '@/hooks/use-resource-links';
+import type { CardResource } from '@/hooks/use-resource-links';
 import { t } from '@/i18n';
 
 type RemovingGroup = { id: number; name: string } | null;
@@ -22,10 +22,10 @@ type Props = {
   onSuggestionsOpenChange: (open: boolean) => void;
   onRefresh: () => void | Promise<void>;
   onChooseHostManually: (service: Service) => void;
-  coolifyReviewId: number | null;
-  coolifyByService: Record<number, CardCoolify>;
-  onCloseCoolify: () => void;
-  onReloadCoolify: () => void;
+  resourceReviewId: number | null;
+  resourceByService: Record<number, CardResource>;
+  onCloseResource: () => void;
+  onReloadResource: () => void;
   removingGroup: RemovingGroup;
   onRemovingGroupChange: (group: RemovingGroup) => void;
   onDeleteGroup: (id: number) => void | Promise<void>;
@@ -38,16 +38,16 @@ export function ServicePageOverlays({
   onSuggestionsOpenChange,
   onRefresh,
   onChooseHostManually,
-  coolifyReviewId,
-  coolifyByService,
-  onCloseCoolify,
-  onReloadCoolify,
+  resourceReviewId,
+  resourceByService,
+  onCloseResource,
+  onReloadResource,
   removingGroup,
   onRemovingGroupChange,
   onDeleteGroup,
 }: Props) {
-  const coolifyService = services.find((service) => service.id === coolifyReviewId);
-  const coolifyInfo = coolifyReviewId === null ? undefined : coolifyByService[coolifyReviewId];
+  const resourceService = services.find((service) => service.id === resourceReviewId);
+  const resourceInfo = resourceReviewId === null ? undefined : resourceByService[resourceReviewId];
 
   return (
     <>
@@ -58,14 +58,14 @@ export function ServicePageOverlays({
         onChanged={() => void onRefresh()}
         onChooseManually={onChooseHostManually}
       />
-      {coolifyService && coolifyInfo && (
-        <CoolifyReviewDialog
-          service={coolifyService}
-          info={coolifyInfo}
-          onClose={onCloseCoolify}
+      {resourceService && resourceInfo && (
+        <ResourceReviewDialog
+          service={resourceService}
+          info={resourceInfo}
+          onClose={onCloseResource}
           onChanged={() => {
             void onRefresh();
-            onReloadCoolify();
+            onReloadResource();
           }}
         />
       )}

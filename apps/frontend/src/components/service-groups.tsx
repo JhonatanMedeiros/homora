@@ -4,7 +4,7 @@ import { GroupSection } from '@/components/group-section';
 import { OrganizeRow } from '@/components/organize-row';
 import { ServiceCard } from '@/components/service-card';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
-import type { CardCoolify } from '@/hooks/use-resource-links';
+import type { CardResource } from '@/hooks/use-resource-links';
 import type { useServices } from '@/hooks/use-services';
 import type { HostLabel, Impact } from '@/lib/hosts';
 import type { ServiceStatus } from '@/lib/services';
@@ -24,7 +24,7 @@ type GroupData = {
   statuses: Record<number, ServiceStatus>;
   blockedIds: Set<number>;
   widgets: Record<number, CardWidgetState[]>;
-  coolify: Record<number, CardCoolify>;
+  resourceLink: Record<number, CardResource>;
   uptime: Record<number, UptimeSummary>;
   uptimeRange: UptimeRange;
   /** Alert settings, the incident each service is in, maintenance windows and tags (all optional). */
@@ -53,7 +53,7 @@ type GroupActions = {
   onEditService: (service: Service) => void;
   onRemoveService: (service: Service) => void;
   onCancelRemoval: (serviceId: number) => void;
-  onCoolify: (serviceId: number) => void;
+  onResource: (serviceId: number) => void;
   onPlaceService: (service: Service, position: number, total: number) => void;
   onMoveServiceToGroup: (service: Service, group: string) => void;
   onMoveGroup: (category: string, direction: -1 | 1) => void;
@@ -78,7 +78,7 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
     statuses,
     blockedIds,
     widgets,
-    coolify,
+    resourceLink,
     uptime,
     uptimeRange,
     monitorSettings,
@@ -97,7 +97,7 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
     onEditService,
     onRemoveService,
     onCancelRemoval,
-    onCoolify,
+    onResource,
     onPlaceService,
     onMoveServiceToGroup,
     onMoveGroup,
@@ -211,8 +211,8 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
               service={service}
               status={statuses[service.id]}
               widgets={widgets[service.id]}
-              coolify={coolify[service.id]}
-              onCoolify={() => onCoolify(service.id)}
+              resourceLink={resourceLink[service.id]}
+              onResource={() => onResource(service.id)}
               uptime={uptime[service.id]}
               monitor={monitorSettings?.[service.id]}
               incident={incidents?.[service.id]}

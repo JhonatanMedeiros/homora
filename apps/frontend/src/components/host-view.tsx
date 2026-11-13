@@ -109,7 +109,7 @@ function ServiceRow({
 }
 
 /**
- * Services by Proxmox host. It is the complete, accessible equivalent of the future Map:
+ * Services by infrastructure host. It is the complete, accessible equivalent of the future Map:
  * everything is reachable by keyboard, and state is always written out, never only colored.
  */
 export function HostView({

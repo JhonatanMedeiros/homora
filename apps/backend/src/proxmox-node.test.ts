@@ -6,7 +6,7 @@ import { createDatabase } from '@homora/db';
 import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
-import { createProxmoxConnectionAdapter } from './proxmox-connection.js';
+import { createProxmoxConnectionAdapter } from '@homora/integrations/proxmox/testing';
 import { integrationRegistry } from './integration-registry.js';
 
 const config = { url: 'https://pve.example:8006', tokenId: 'user@pve!test', secret: 'test' };

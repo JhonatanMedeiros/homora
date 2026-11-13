@@ -1,0 +1,6 @@
+{
+  "type": "jellyfin",
+  "order": 10,
+  "definition": "jellyfinManifest",
+  "translations": true
+}

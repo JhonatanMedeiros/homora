@@ -5,7 +5,7 @@ import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
 import { CardWidgets } from '@/components/card-widgets';
-import { CoolifyLine } from '@/components/coolify-line';
+import { ResourceLine } from '@/components/resource-line';
 import { UptimePercent } from '@/components/service-uptime';
 import { cn } from '@/lib/utils';
 import { hostOf } from '@/lib/services';
@@ -16,8 +16,8 @@ import type { ServiceCardLayoutProps } from '@/components/service-card.types';
 export function ServiceCardList({
   service,
   widgets = [],
-  coolify,
-  onCoolify = () => {},
+  resourceLink,
+  onResource = () => {},
   uptime,
   host = null,
   impact = 'none',
@@ -127,9 +127,9 @@ export function ServiceCardList({
             {view.note}
           </p>
         )}
-        {coolify && (
+        {resourceLink && (
           <div className="basis-full pl-11">
-            <CoolifyLine info={coolify} onOpen={onCoolify} />
+            <ResourceLine info={resourceLink} onOpen={onResource} />
           </div>
         )}
       </Item>

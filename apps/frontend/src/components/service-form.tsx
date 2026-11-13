@@ -13,7 +13,7 @@ import { DependencyPicker } from '@/components/dependency-picker';
 import type { HostConnection, HostInventories } from '@/lib/hosts';
 import { t } from '@/i18n';
 
-/** Proxmox data for the "Runs on" section; omitted when the form is used without hosts. */
+/** Host inventory data for the "Runs on" section; omitted when the form is used without hosts. */
 export type FormHosts = {
   value: HostLink | null;
   onChange: (value: HostLink | null) => void;

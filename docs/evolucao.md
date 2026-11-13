@@ -1232,6 +1232,93 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Validation: `pnpm check` and `pnpm build` on every phase. Tests cover the contrast function, image processing, CSS validation, the routes (auth, audit, limits), the migration, import and export with pages, the settings screens, the tab strip and the digit shortcuts.
 - Not verified: any behaviour in a real browser (rendering of gradients, blur and the background image, the look of the tab strip on phones, drag and drop, keyboard focus order), screen readers, real HTTP proxies in front of the 2 MB upload, and a CSP (none is shipped).
 
+## Integration SDK — initial extraction (issue #126)
+
+- Moved all built-in definitions and the reusable URL field into `packages/integrations/src/integrations`;
+  registration and existing exports remain unchanged. Proxmox and Coolify backend registrations now
+  live in their own files. Added backend and frontend SDK entry points and moved the two custom widget
+  presentations into separately registered modules. This is an organizational step, not the completed SDK.
+- Validated the shared package build and the adapter contract and manifest adapter suites (433 tests).
+  The first test attempt failed because the shared package had not yet been built; rerunning after
+  its build passed. Full project checks and live integration validation were not run.
+- Follow-up validation: `pnpm build` and 490 tests in the adapter, contract and widget suites passed
+  after extracting registrations and presentations. No live services or browser were used.
+- Organized definitions and their existing sourced fixtures into per-integration directories, and
+  added `pnpm integration:create <id> <manifest|code>` with non-overwriting, unregistered templates.
+  The generator is tested in an isolated temporary directory; its example data is explicitly marked
+  illustrative and must be replaced before registration. Adapter tests still live in the backend.
+- Moved the generic manifest display renderer into the frontend SDK, and Coolify and Proxmox custom
+  presentations into their integration directories. Translation is injected by the frontend. The
+  package build and 15 focused frontend tests passed; visual behavior was not checked in a browser.
+- Moved the Coolify and Proxmox read adapters and their service-specific contracts into their package
+  directories. The backend supplies its existing input-error handling and Proxmox vault validation;
+  the shared restricted transport is still injected. `pnpm build` and 448 focused tests passed after
+  the moves. These checks did not contact real services.
+- Retry pauses now use an optional registration hook (Coolify supplies it); the Proxmox adapter
+  requests its existing response limit through the transport contract instead of a central type check.
+  Existing Proxmox and Coolify connection tests passed with these paths.
+- Split the adapter contract cases into per-integration test files and moved the focused Coolify and
+  Proxmox adapter tests beside their implementations; the host's reusable harness remains in the
+  backend. The package test TypeScript configuration runs after the workspace type checks so its
+  backend imports have built dependencies even on a clean checkout. The SDK boundaries are recorded
+  in [ADR 0011](decisoes/0011-integration-sdk.md).
+- Final local validation: `pnpm check` passed (1,247 application and 16 script tests), as did
+  `pnpm build`. All 11 definitions were compared with the pre-change source and matched exactly.
+  A backend Docker image built successfully and loaded all 11 registry entries in a production
+  container. Generator tests compile both scaffold types in a temporary copy. Contract tests also
+  check console output for credentials on successful and failed reads.
+- Not verified: a browser or screen reader, any additional live integration instance, or the
+  remaining live-validation cases already listed in `integracoes.md`. No schema migration was needed;
+  integration IDs, public fields and stored formats remain unchanged.
+- CI follow-up: the first GitHub validation exposed a clean-checkout dependency-order race in test
+  type checking; moved that check after the workspace tasks so `shared` is built first.
+- Integrated the concurrent main-branch module split: retained its connection transport, manifest
+  response parser and smaller shared modules while using the SDK definitions and hooks. After conflict
+  resolution, `pnpm build` and `pnpm check` passed (1,248 application and 16 script tests).
+- Review follow-up: adapter registrations, Proxmox credential validation and widget
+  presentation selection now live in integration-package catalogs; host applications consume these
+  catalogs generically. Widget placeholder counts and Speedtest's icon now come from integration
+  metadata. Subsequent changes below migrate specialized workflows and legacy compatibility.
+- Inventory dispatch now selects the declared `hosts` or `resources` domain, and address reads use
+  the optional registered capability, rather than selecting integrations by type in those paths.
+  Existing HTTP responses and legacy identifiers are unchanged.
+- Host inventory and top-bar telemetry capabilities are now declared by the integration definition.
+  The top bar determines the actual connection type before rendering its telemetry, and the node
+  picker uses a generic host-inventory field. Focused tests passed; integration-specific
+  resource workflows and legacy APIs were subsequently migrated as described below.
+
+- Built-in descriptors now generate static definition, backend, frontend, MCP, translation and demo
+  catalogs. Host and resource workflows use declared capabilities and normalized contracts; the
+  applications no longer register or dispatch individual integration implementations. Legacy vault,
+  widget sources and wire fields remain compatible through the package. Existing database rows and
+  external APIs are retained without a schema migration.
+- MCP integration tools require their registered scopes and their connection access is restricted to
+  their owning integration type. Development examples are isolated in integration modules and enabled
+  only in development mode. Existing transport, destination checks and GET-only policy remain in force.
+- Validation after the review changes: `pnpm check` passed (1,252 application tests and 17 script
+  tests) and `pnpm build` passed. After merging the latest main branch, `pnpm check` passed again
+  (1,334 application tests and 17 script tests), as did `pnpm build`. No live service, browser or
+  screen reader was tested.
+
+- Follow-up coverage: all eleven existing definitions are in the generated catalog. Nine use the
+  shared manifest interpreter; Coolify and Proxmox use code factories. Service-specific widget
+  translations have moved into their respective integrations. Tests exercise the catalog and
+  widget presentation for every existing type, in addition to each adapter's mocked contract suite.
+- Moved the existing 164 brand SVGs and catalog into `@homora/icons`, shared by service cards and
+  integration badges. Stable local URLs are retained in Vite development and production builds;
+  a frontend container build and a local HTTP request were checked against the source SVG. Logo
+  ownership and license notices remain in `THIRD_PARTY_NOTICES.md`. `pnpm check` passed with
+  1,336 application tests and 17 script tests; `pnpm build` and frontend/backend container builds
+  passed. Live services, browser interaction and screen readers were not tested.
+
+- Moved the generic manifest interpreter, response parser, definition validation and widget
+  presentation selection into the SDK. Applications inject host-owned error policy and retain
+  authentication, storage, routes and restricted transport. A boundary test detects direct imports
+  and simple type comparisons for registered integrations in production app code. The contributor
+  guide and agent instructions now describe creation, maintenance, security and validation steps.
+  Validation: `pnpm check` (1,336 application tests and 18 script tests), `pnpm build`, and a backend
+  container build loading all 11 definitions passed. Live services and browser behavior were not tested.
+
 ## Extensible integrations (issue #98)
 
 - **Phase 1:** `adapter-contract.ts` (`runAdapterContract`) tests every adapter with a fake transport: validation, request shape and path safety, secrets, each response class, bounds and the observation cache. Fixtures carry a `_source` block. `docs/adapters.md` is the contribution guide. The harness found that Home Assistant, Uptime Kuma, AdGuard Home and the Proxmox validator accepted URLs over 2048 characters; all four now reject them.

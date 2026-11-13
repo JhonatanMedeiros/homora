@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "type-check": "turbo type-check",
+    "type-check": "turbo type-check && tsc -p packages/integrations/tsconfig.tests.json",
     "test": "vitest run && node --test scripts/test/*.test.mjs",
     "db:generate": "pnpm --filter @homora/db db:generate",
     "test:watch": "vitest",
@@ -23,7 +23,9 @@
     "prepare": "husky",
     "backup": "node scripts/backup.mjs",
     "auth:reset": "node scripts/auth-reset.mjs",
-    "css:reset": "node scripts/css-reset.mjs"
+    "css:reset": "node scripts/css-reset.mjs",
+    "integration:create": "node scripts/create-integration.mjs",
+    "integration:catalog": "node packages/integrations/scripts/integration-catalog.mjs --write"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",

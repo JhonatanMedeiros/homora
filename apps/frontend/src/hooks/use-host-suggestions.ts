@@ -11,7 +11,7 @@ export type { GuestType } from '@homora/shared';
 
 const json = { 'Content-Type': 'application/json' };
 
-/** Loads suggested hosts on demand only: building them reads guest configurations from Proxmox. */
+/** Loads suggested hosts on demand only: building them reads guest configurations from external systems. */
 export function useHostSuggestions() {
   const [items, setItems] = useState<CardSuggestion[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');

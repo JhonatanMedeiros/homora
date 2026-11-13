@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 
 export type View = 'list' | 'cards';
-/** How Home arranges services: by group (default) or by the Proxmox host they run on. */
+/** How Home arranges services: by group (default) or by the infrastructure host they run on. */
 export type Arrange = 'group' | 'host' | 'map';
 const VIEW_KEY = 'homora-density';
 const DESCRIPTIONS_KEY = 'homora-descriptions';
