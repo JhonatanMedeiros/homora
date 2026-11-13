@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { MaintenanceOverview } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { maintenanceSchema, parseId } from '../input-schemas.js';
-import { MaintenanceError, type createMaintenanceStore } from '../service-maintenance.js';
+import { MaintenanceError, type createMaintenanceStore } from '../monitoring/index.js';
 import type { createAuth } from '../auth.js';
 import type { AuditLog } from '../audit.js';
 

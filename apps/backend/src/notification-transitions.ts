@@ -1,6 +1,6 @@
 import type { Service } from '@homora/shared';
-import type { ServiceStatus } from './service-monitor.js';
-import { serviceSignature } from './service-signature.js';
+import type { ServiceStatus } from './monitoring/index.js';
+import { serviceSignature } from './monitoring/index.js';
 
 export type NotificationEvent = {
   event: 'down' | 'up';

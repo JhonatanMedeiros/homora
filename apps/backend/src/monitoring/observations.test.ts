@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
-import { createObservationStore } from './service-observations.js';
+import { createObservationStore } from './observations.js';
 
 it('shares only current observations and treats stale, changed or malformed data as unknown', () => {
   const db = new DatabaseSync(':memory:');

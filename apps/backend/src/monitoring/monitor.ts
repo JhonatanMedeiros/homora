@@ -1,21 +1,16 @@
 import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
-import { isNonHttp } from './service-probe.js';
-import { serviceSignature } from './service-signature.js';
+import { isNonHttp } from './probe.js';
+import { serviceSignature } from './signature.js';
 import {
   classify,
   checkService,
   PingUnavailableError,
   type CheckResult,
   type ServiceStatus,
-} from './service-probe.js';
+} from './probe.js';
 
-export {
-  classify,
-  checkService,
-  PingUnavailableError,
-  CERT_WARNING_DAYS,
-} from './service-probe.js';
-export type { CheckResult, ServiceStatus, StatusReason } from './service-probe.js';
+export { classify, checkService, PingUnavailableError, CERT_WARNING_DAYS } from './probe.js';
+export type { CheckResult, ServiceStatus, StatusReason } from './probe.js';
 
 const unchecked = (): ServiceStatus => ({
   status: 'unknown',

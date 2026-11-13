@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
-import { createObservationStore } from './service-observations.js';
+import { createObservationStore } from './observations.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;

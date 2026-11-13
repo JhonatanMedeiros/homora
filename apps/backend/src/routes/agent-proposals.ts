@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { createProposalService } from '../proposals.js';
 import { createAgentSchema, opaqueIdSchema, proposalReviewSchema } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
-import type { createServiceMonitor } from '../service-monitor.js';
+import type { createServiceMonitor } from '../monitoring/index.js';
 import type { createAuth } from '../auth.js';
 import type { AuditLog } from '../audit.js';
 

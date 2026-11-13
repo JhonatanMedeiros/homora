@@ -1,9 +1,9 @@
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import type { Service, UptimeSummary } from '@homora/shared';
-import type { ServiceStatus } from './service-monitor.js';
-import { serviceSignature } from './service-signature.js';
-import { createIncidentStore } from './service-incidents.js';
+import type { ServiceStatus } from './monitor.js';
+import { serviceSignature } from './signature.js';
+import { createIncidentStore } from './incidents.js';
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;

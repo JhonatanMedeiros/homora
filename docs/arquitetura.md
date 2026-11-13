@@ -231,8 +231,9 @@ releases exist.
   persistence/encryption, observation caches, and adapter dispatch. `integration-transport.ts`
   builds the policy-bound JSON transport shared by adapter reads and Proxmox address lookups.
   Route handlers parse requests and translate results into HTTP status and JSON responses.
-- `service-observations.ts` persists and serves current observations and failure history;
-  uptime SQL aggregation and summary calculations live in `service-uptime.ts`.
+- The monitoring capability lives in `apps/backend/src/monitoring/` (see "Monitoring capability"
+  below). `observations.ts` persists and serves current observations and failure history; uptime
+  SQL aggregation and summary calculations live in `uptime.ts`.
 - `integration-registry.ts` builds the registry from `integrationDefinitions`
   (`packages/integrations/src/integration-manifest.ts`). Simple read-only integrations are
   **manifests**, validated at startup (`backend-manifest-validation.ts`) and run by one SDK interpreter
@@ -273,11 +274,38 @@ releases exist.
   per range and configuration version, and shared as one `Buffer`, because the body reaches tens
   of MB on thousands of services. Import parsing refuses documents with more than 20,000 flow
   collections before the YAML parser runs.
-- Probe execution and HTTP/ICMP classification live in `service-probe.ts`; `service-monitor.ts`
+- Probe execution and HTTP/ICMP classification live in `monitoring/probe.ts`; `monitoring/monitor.ts`
   owns scheduling, concurrency, invalidation, and publication of check cycles.
 - SQLite is the primary persistent store. Schema changes are versioned migrations; session
   sessions and the administrator account live in the database; sign-in rate-limit counters and
   certain observation caches are maintained in memory.
+
+## Monitoring capability
+
+`apps/backend/src/monitoring/` groups everything that decides and records service health. Its public
+interface is `monitoring/index.ts` (`createServiceMonitor`, `startServiceMonitor`,
+`createObservationStore`, `createRollupStore`, `createIncidentStore`, `createMaintenanceStore`,
+`MaintenanceError`, `serviceSignature` and the `ServiceStatus`/`CheckResult`/`StatusReason` types).
+An ESLint rule rejects imports of the folder's other files from outside it.
+
+Execution flow: `monitor.ts` (scheduler, concurrency, invalidation) -> `probe.ts` (HTTP/ICMP/TCP/DNS/TLS/
+keyword/JSON classification; uses `network-checks.ts` for raw sockets and `check-body.ts` for body
+matching) -> `monitor.ts` publishes results to `observations.ts` (append, dedupe, 30-day retention,
+which feeds `rollup.ts` hourly rows) and to the notification callback wired in `app.ts`.
+`uptime.ts` is read-side SQL aggregation; `incidents.ts` derives incidents and thresholds from history;
+`maintenance.ts` stores windows. `signature.ts` hashes the check settings and is the only module also used by
+notifications. Imports inside the folder are acyclic (`probe` <- `monitor`; `rollup` <- `observations`;
+`signature` is a leaf); `observations` and `incidents` take only types from `monitor`.
+
+Pure versus I/O: `check-body.ts`, `signature.ts` and the classification functions in `probe.ts` are pure;
+`network-checks.ts` and the probe execution do network I/O; `observations`, `rollup`, `uptime`,
+`incidents` and `maintenance` take a `DatabaseSync` and do SQLite I/O; `monitor.ts` owns timers.
+
+Boundaries that deliberately stay outside: server composition and route registration (`app.ts`,
+`routes/`), schema and migrations (`packages/db`), and destination authorization, DNS pinning,
+redirect and TLS controls (`network-policy.ts`, `network-request.ts`), which probes call but cannot
+bypass. The MCP process only reads observations and never starts checks. No workspace package was
+created; see [ADR 0013](decisoes/0013-monitoring-capability-boundary.md).
 
 ## Assessment and Architectural Priorities
 
