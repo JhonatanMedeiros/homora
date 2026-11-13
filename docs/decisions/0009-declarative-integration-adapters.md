@@ -110,7 +110,7 @@ extensions, none of which widens the transport:
 - A field `defaultValue` prefills the new-connection form (a cloud API address, the default tailnet).
   `brandIcon` is optional: Speedtest Tracker has no bundled SVG logo, so its mark is shown.
 
-Still outside the format, so these services were **skipped** (see `docs/integracoes.md`):
+Still outside the format, so these services were **skipped** (see `docs/integrations.md`):
 
 - **Beszel:** its hub API is PocketBase's. A client must first log in with
   `POST /api/collections/users/auth-with-password` and then send the returned token, which is a

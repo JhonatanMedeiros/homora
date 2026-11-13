@@ -6,7 +6,7 @@
 
 > **Historical snapshot (2026-11-10).** Several gaps described here, such as the 25-service
 > check limit and non-semantic status, were addressed in phase R1; see
-> [evolucao.md](evolucao.md) for current state.
+> [evolution.md](evolution.md) for current state.
 
 This is a comparison of published capabilities, not a benchmark of performance,
 security, market adoption, or user satisfaction. Visual review was conducted via

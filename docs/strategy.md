@@ -3,13 +3,13 @@
 **Date:** 2026-11-10  
 **Status:** direction decision confirmed by maintainer. Checked items are implemented;
 unchecked items are planned or still need real-world validation. The actual progress of each item is tracked in
-[evolucao.md](evolucao.md).
+[evolution.md](evolution.md).
 
 This document positions Homora relative to [Homepage](https://github.com/gethomepage/homepage)
 and [Dashy](https://github.com/Lissy93/dashy), the maintainer's primary reference projects.
-It complements the [product evaluation](avaliacao-produto.md), which contains a detailed
+It complements the [product evaluation](product-evaluation.md), which contains a detailed
 comparison against other dashboards, and does not replace the
-[evolution plan](evolucao.md), which remains the system of record for implementation progress.
+[evolution plan](evolution.md), which remains the system of record for implementation progress.
 
 ## Decisions
 
@@ -90,16 +90,16 @@ and no card appears monitored without being checked.
 - [x] Declarative adapter format (specifying capabilities, fields, and fetch logic) to lower
       contribution friction for external developers: closed manifest, one interpreter, startup
       validation, four adapters migrated with parity checks
-      ([ADR 0009](decisoes/0009-declarative-integration-adapters.md)). Proxmox stays code.
+      ([ADR 0009](decisions/0009-declarative-integration-adapters.md)). Proxmox stays code.
 - [ ] Prioritize top ~10 most popular self-hosted integrations, validating each against live instances.
       Maintainer list is a hypothesis and should be refined with user demand.
 - [ ] Reference case integrations: Portainer, Cloudflare, Tailscale, Netbird, TrueNAS, Beszel,
       and Speedtest Tracker. Each is marked complete only with live validation. Speedtest Tracker,
       Portainer, NetBird, Tailscale and Cloudflare are implemented and **unvalidated** (contract
       tests and fixtures only, no live service); Beszel (login flow with POST) and TrueNAS
-      (WebSocket-only API) are skipped, see [integrations](integracoes.md#reference-integrations-issue-98).
+      (WebSocket-only API) are skipped, see [integrations](integrations.md#reference-integrations-issue-98).
 - [x] Extract Proxmox from legacy vault into unified connection architecture (see
-      [ADR 0001](decisoes/0001-proxmox-connections.md)). The legacy file is migrated at backend
+      [ADR 0001](decisions/0001-proxmox-connections.md)). The legacy file is migrated at backend
       startup and the legacy routes, transport and fallbacks are gone; only the migrator and the
       `.proxmox` backup remain, to be removed once no unmigrated installation is left.
 - [x] Proxmox node selection within a connection: optional, default whole cluster, an unavailable
@@ -116,7 +116,7 @@ and prioritized adapters are verified against live production services.
 - [ ] Finalize and document supported network topology scenarios (P2) before advertising access
       outside localhost.
 - [x] Theming, custom CSS, background images, translucent cards, and multi-page/tab views
-      (issue #97, [ADR 0009](decisoes/0009-appearance-and-pages.md)); not yet checked in a real browser.
+      (issue #97, [ADR 0009](decisions/0009-appearance-and-pages.md)); not yet checked in a real browser.
 - [x] Keyboard shortcuts and optional web search redirection (configurable engine, without leaking
       Homora internal data).
 
@@ -129,7 +129,7 @@ without sharing administrator credentials.
       full audit trails.
 - [x] Visual verification and load testing of proposal lifecycle (P4). Browser-verified and
       load-tested with scripted MCP clients on 2026-11-12; evidence and limits in the R4
-      section of [evolucao.md](evolucao.md). No real LLM agent was used.
+      section of [evolution.md](evolution.md). No real LLM agent was used.
 - [x] Service-to-host operational map with Proxmox: manual associations and evidence-backed
       suggestions, never inferred by name alone. Done in issue #96; validated with simulated
       Proxmox data only.
@@ -189,6 +189,6 @@ or network destination policies.
 
 ## Progress Tracking
 
-When a phase begins, translate its milestones into tasks in [evolucao.md](evolucao.md),
+When a phase begins, translate its milestones into tasks in [evolution.md](evolution.md),
 applying the same governance rule: items are checked off only with proof of implementation
 and automated/manual verification.

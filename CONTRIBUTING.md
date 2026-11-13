@@ -6,8 +6,8 @@ the project. See also [security](SECURITY.md) before reporting a vulnerability.
 
 ## Setup and Validation
 
-Adding an integration? Read [docs/adapters.md](docs/adapters.md). Follow the [engineering standards](docs/padroes.md) and review current
-[architecture](docs/arquitetura.md) before making changes across modules,
+Adding an integration? Read [docs/adapters.md](docs/adapters.md). Follow the [engineering standards](docs/standards.md) and review current
+[architecture](docs/architecture.md) before making changes across modules,
 persistence, or integrations.
 
 Use Node.js 24 (`.nvmrc`) and pnpm 12.4.2 (`packageManager`):

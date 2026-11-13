@@ -2,7 +2,7 @@
 
 This guide explains how to add a read-only integration. New integrations are marked
 **implemented, unvalidated** until checked against a real instance; see the current status in
-[integrations](integracoes.md) and the [live validation template](#live-validation-template).
+[integrations](integrations.md) and the [live validation template](#live-validation-template).
 Integrations are built in: they are registered in the repository, never loaded from the database,
 the network or the user. Do not add runtime code loading.
 
@@ -10,11 +10,11 @@ the network or the user. Do not add runtime code loading.
 
 Most read-only integrations are a **manifest**: data in `packages/integrations/src/integration-manifest.ts`
 validated at startup and run by the SDK interpreter (`packages/integrations/src/backend-manifest-adapter.ts`). Read
-[ADR 0009](decisoes/0009-declarative-integration-adapters.md) for the vocabulary and what it does not
+[ADR 0009](decisions/0009-declarative-integration-adapters.md) for the vocabulary and what it does not
 cover. Anything needing more than that (several requests with partial failure, CA pinning, large
 payloads, POST, a login flow, a non-whitelisted header) stays a **code adapter**, and a service that
 needs a write call or a new header is out of scope until a decision says otherwise. The reviewed
-session-authentication exception is described in [ADR 0018](decisoes/0018-integration-session-auth.md).
+session-authentication exception is described in [ADR 0018](decisions/0018-integration-session-auth.md).
 
 Each built-in definition and its response fixtures live in a separate directory under
 `packages/integrations/src/integrations/`; shared URL field defaults live in `fields.ts`. Static
@@ -31,7 +31,7 @@ presentation contracts from `@homora/integrations/frontend`. It does not load pl
 | Fixtures                | `packages/integrations/src/integrations/<type>/fixtures/*.json`                                                                  |
 | Contract and unit tests | a `runAdapterContract` call in `<type>/contract.test.ts` with a sourced fixture and response assertions                          |
 | Translations (optional) | Add `messages.ts` exporting `en` and `ptBR` and set `translations: true` in the descriptor; otherwise the English fallback shows |
-| Docs                    | the integration entry in `docs/integracoes.md` with required permissions                                                         |
+| Docs                    | the integration entry in `docs/integrations.md` with required permissions                                                        |
 
 Type enums, stored fields, the connection form, widget text, the picker and the catalog endpoint derive
 from the manifest. You do not edit `input-schemas.ts`, `managed-proposals.ts`,
@@ -178,7 +178,7 @@ whose transport already throws fixed strings; justify it in the test.
 ## Live validation template
 
 An integration stays **implemented, unvalidated** until the maintainer fills this in against a real
-instance. Copy it into the PR or `docs/integracoes.md`.
+instance. Copy it into the PR or `docs/integrations.md`.
 
 ```text
 Integration: <name>      Service version: <x.y.z>      Date: <YYYY-MM-DD>
@@ -203,6 +203,6 @@ Notes / deviations:
 - [ ] Marked "implemented, unvalidated" in the docs
 - [ ] `pnpm check` and `pnpm build` pass
 
-## Contrato interno de widgets
+## Internal widget contract
 
-`@homora/widgets` contém definições, estados e contratos de fonte independentes do host; `clock.ts` é o exemplo de widget local sem rede. Para uma apresentação conectada, mantenha definição, dados validados, traduções, fixtures e apresentação sob a integração e registre-a pelo catálogo gerado como descrito acima. `integrationWidgetDefinition` declara o contrato específico da saída; apenas uma capacidade declarada pode oferecer uma fonte compartilhada. A apresentação recebe dados, nunca credenciais ou acesso direto à rede. Configuração, posicionamento, atualizações e persistência pertencem ao host. A versão atual não fornece armazenamento próprio mutável nem plugins externos. Consulte [ADR 0019](decisoes/0019-widget-sdk.md) e o [inventário](inventario-widgets-159.md).
+`@homora/widgets` contains host-independent definitions, states, and source contracts; `clock.ts` is the example of a networkless local widget. For a connected presentation, keep the definition, validated data, translations, fixtures, and presentation under the integration, and register it through the generated catalog as described above. `integrationWidgetDefinition` declares the specific output contract; only a declared capability can provide a shared source. The presentation receives data, never credentials or direct network access. Configuration, placement, updates, and persistence belong to the host. The current version provides neither custom mutable storage nor external plugins. See [ADR 0019](decisions/0019-widget-sdk.md) and the [widget inventory](issue-159-widget-inventory.md).

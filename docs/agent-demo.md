@@ -2,7 +2,7 @@
 
 What an AI agent can and cannot do in Homora, shown step by step with synthetic data.
 Capabilities and apply rules: [agent-capabilities.md](agent-capabilities.md). Evidence and its
-limits: the R4 section of [evolucao.md](evolucao.md).
+limits: the R4 section of [evolution.md](evolution.md).
 
 **What is real and what is not.** Everything below ran against a real Homora backend and
 database, over real MCP transports (Streamable HTTP and stdio). The agent was a **scripted MCP
