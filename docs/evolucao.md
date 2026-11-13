@@ -569,12 +569,20 @@ No tests were added and no behaviour changed.
   appear in proposals, audit or identity rows, and an injected instruction stays plain card data.
 - Bounded load: 100 proposals created and rejected across two connections in about one second
   on the development machine (asserted only to stay under 10 s).
+- Added `apps/backend/src/mcp-governance.test.ts` (4 tests, real migrated database, MCP client
+  over the in-memory transport; stdio and Streamable HTTP share `createMcp`, so this is the same
+  authorization code): a read-only token is refused by every propose tool and by agent/audit
+  reads, and nothing is persisted; a mixed batch with one out-of-scope item is refused whole;
+  rotation and revocation apply to an already connected client on its next call, while a proposal
+  made earlier stays for human review; proposals are private to their author, and agent and audit
+  listings never contain tokens or hash fields. Sanity check: weakening the `propose_group_change`
+  scope check made the suite fail, and the change was reverted.
 - [ ] Still open: truly parallel processes (the tests interleave calls in one process, so they
-      prove serialization and the state checks, not OS-level races); expiry racing approval;
-      scope isolation and revocation over stdio and Streamable HTTP with a hostile client
-      (existing `mcp-http.test.ts` covers scopes and revocation for HTTP only); malformed and
-      oversized responses from external services; log inspection for credentials; live hostile
-      content from a real agent.
+      prove serialization and the state checks, not OS-level races); expiry racing approval
+      (expiry itself is covered by `proposals.test.ts`); revocation over a real stdio child
+      process (HTTP revocation is covered by `mcp-http.test.ts`); malformed and oversized
+      responses from external services; inspection of backend logs for credentials; live
+      hostile content from a real agent.
 
 ### 4. Service-to-host map
 
