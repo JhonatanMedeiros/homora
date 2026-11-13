@@ -78,9 +78,15 @@ function uptimeSummarizerOf(db: DatabaseSync, range: UptimeRange, now: number, s
   const since = Math.max(now - span, now - HISTORY_RETENTION);
   const start = now - span;
   const grouped = db.prepare(
-    `SELECT CAST((observed_at-?)/? AS INTEGER) AS slot,${STATUS_SQL} AS status,COUNT(*) AS n
+    `SELECT CAST((observed_at-?)/? AS INTEGER) AS slot,${STATUS_SQL} AS status,COUNT(*) AS n,AVG(${LATENCY_SQL}) AS latency,MAX(observed_at) AS lastAt
          FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=?
          GROUP BY slot,status`,
+  );
+  // Why each period failed: the grouped query already knows when the last failure of each period
+  // happened, so only that one row (at most one per period) has its JSON read.
+  const failureAt = db.prepare(
+    `SELECT json_extract(observation,'$.reason') AS reason,json_extract(observation,'$.httpStatus') AS httpStatus
+         FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at=?`,
   );
   const other = db.prepare(
     'SELECT 1 FROM service_observation_history WHERE service_id=? AND signature<>? AND observed_at>=? AND observed_at<=? LIMIT 1',
@@ -97,7 +103,15 @@ function uptimeSummarizerOf(db: DatabaseSync, range: UptimeRange, now: number, s
   return (row: UptimeService): UptimeSummary => {
     const sig = signature(row);
     const args = [row.id, sig, since, now] as const;
-    const slots = Array.from({ length: count }, () => ({ up: 0, down: 0, unknown: 0 }));
+    const slots = Array.from({ length: count }, () => ({
+      up: 0,
+      down: 0,
+      unknown: 0,
+      latencySum: 0,
+      lastFailureAt: 0,
+      reason: undefined as string | undefined,
+      httpStatus: null as number | null,
+    }));
     let up = 0;
     let down = 0;
     let unknown = 0;
@@ -105,19 +119,31 @@ function uptimeSummarizerOf(db: DatabaseSync, range: UptimeRange, now: number, s
       slot: number;
       status: string;
       n: number;
+      latency: number | null;
+      lastAt: number;
     }[]) {
       const slot = slots[Math.min(Math.max(group.slot, 0), count - 1)];
       if (!slot) continue;
       if (group.status === 'available') {
         slot.up += group.n;
+        slot.latencySum += (group.latency ?? 0) * group.n;
         up += group.n;
       } else if (group.status === 'unavailable') {
         slot.down += group.n;
+        slot.lastFailureAt = group.lastAt;
         down += group.n;
       } else {
         slot.unknown += group.n;
         unknown += group.n;
       }
+    }
+    for (const slot of slots) {
+      if (!slot.lastFailureAt) continue;
+      const detail = failureAt.get(row.id, sig, slot.lastFailureAt) as
+        { reason: string | null; httpStatus: number | null } | undefined;
+      if (!detail) continue;
+      slot.reason = detail.reason ?? undefined;
+      slot.httpStatus = detail.httpStatus;
     }
     const counted = up + down;
     // The percentile needs a sort of every latency, so only the single-service call pays for it.
@@ -141,6 +167,9 @@ function uptimeSummarizerOf(db: DatabaseSync, range: UptimeRange, now: number, s
       buckets: slots.map((slot, index) => ({
         start: new Date(start + index * bucket).toISOString(),
         status: slot.up && slot.down ? 'partial' : slot.down ? 'down' : slot.up ? 'up' : 'unknown',
+        checks: slot.up + slot.down + slot.unknown,
+        avgLatencyMs: slot.up ? Math.round(slot.latencySum / slot.up) : null,
+        ...(slot.down && slot.reason ? { reason: slot.reason, httpStatus: slot.httpStatus } : {}),
       })),
     };
   };

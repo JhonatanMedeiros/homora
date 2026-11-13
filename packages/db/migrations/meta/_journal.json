@@ -176,6 +176,13 @@
       "when": 1794510106532,
       "tag": "0024_coolify_resource_links",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1794529125504,
+      "tag": "0025_service_incidents",
+      "breakpoints": true
     }
   ]
 }

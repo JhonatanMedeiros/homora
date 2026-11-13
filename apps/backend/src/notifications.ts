@@ -35,6 +35,8 @@ const stateSchema = z
     status: z.enum(['available', 'unavailable', 'unknown']),
     lastDown: z.number().nullable(),
     notifiedDown: z.boolean(),
+    failures: z.number().int().nonnegative().optional(),
+    oks: z.number().int().nonnegative().optional(),
   })
   .strict();
 type Channel = {
@@ -243,9 +245,26 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
           return [];
         }
       });
+      const limits = new Map(
+        (
+          db
+            .prepare(
+              'SELECT service_id,failure_threshold,recovery_threshold FROM service_monitor_settings',
+            )
+            .all() as {
+            service_id: number;
+            failure_threshold: number;
+            recovery_threshold: number;
+          }[]
+        ).map((r) => [
+          r.service_id,
+          { failureThreshold: r.failure_threshold, recoveryThreshold: r.recovery_threshold },
+        ]),
+      );
       const tracker = createNotificationTransitions(
         300_000,
         saved.map(([id, value]) => [id, value]),
+        (id) => limits.get(id) ?? { failureThreshold: 1, recoveryThreshold: 1 },
       );
       const events = tracker.observe(services, states);
       db.exec('BEGIN IMMEDIATE');

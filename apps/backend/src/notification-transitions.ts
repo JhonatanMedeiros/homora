@@ -18,12 +18,24 @@ export type Previous = {
   status: 'available' | 'unavailable' | 'unknown';
   lastDown: number | null;
   notifiedDown: boolean;
+  /** Consecutive failed checks in the current streak (anti-flapping); absent in older saved state. */
+  failures?: number;
+  /** Consecutive successful checks since the last failure while an outage is open. */
+  oks?: number;
 };
+
+/** How many consecutive checks must agree before an alert is sent; 1 alerts on the first change. */
+export type AlertThresholds = (serviceId: number) => {
+  failureThreshold: number;
+  recoveryThreshold: number;
+};
+const immediately: AlertThresholds = () => ({ failureThreshold: 1, recoveryThreshold: 1 });
 
 /** Ignores repeated publications and preserves the last known status through unknown checks. */
 export function createNotificationTransitions(
   cooldownMs = 5 * 60_000,
   initial: Iterable<[number, Previous]> = [],
+  thresholds: AlertThresholds = immediately,
 ) {
   const previous = new Map<number, Previous>(initial);
   return {
@@ -55,17 +67,38 @@ export function createNotificationTransitions(
         if (current.status !== 'unknown') {
           let event: 'down' | 'up' | undefined;
           const at = Date.parse(current.lastAttempt);
-          if (current.status === 'unavailable' && state.status !== 'unavailable') {
-            if (state.lastDown === null || at - state.lastDown >= cooldownMs) {
+          const { failureThreshold, recoveryThreshold } = thresholds(service.id);
+          if (current.status === 'unavailable') {
+            // State saved before thresholds existed counts an open outage as already past its threshold.
+            const failures =
+              (state.failures ?? (state.status === 'unavailable' ? failureThreshold : 0)) + 1;
+            state.failures = failures;
+            state.oks = 0;
+            // Only the check that reaches the threshold alerts, so a long outage alerts once.
+            if (
+              failures === failureThreshold &&
+              (state.lastDown === null || at - state.lastDown >= cooldownMs)
+            ) {
               event = 'down';
               state.lastDown = at;
               state.notifiedDown = true;
             }
-          } else if (current.status === 'available' && state.status === 'unavailable') {
-            if (state.notifiedDown) event = 'up';
-            state.notifiedDown = false;
+            state.status = 'unavailable';
+          } else if (state.status === 'unavailable') {
+            const oks = (state.oks ?? 0) + 1;
+            state.oks = oks;
+            if (oks >= recoveryThreshold) {
+              if (state.notifiedDown) event = 'up';
+              state.notifiedDown = false;
+              state.status = 'available';
+              state.failures = 0;
+              state.oks = 0;
+            }
+          } else {
+            state.status = 'available';
+            state.failures = 0;
+            state.oks = 0;
           }
-          state.status = current.status;
           if (event)
             events.push({
               event,

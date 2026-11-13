@@ -127,6 +127,48 @@ export const serviceObservationHistory = sqliteTable(
   ],
 );
 
+/**
+ * How a service's health is interpreted, kept apart from the probe configuration: changing it
+ * never invalidates history (it is not part of the service signature) and, like `is_public`, it
+ * is never written by imports or agent proposals. No row means the defaults.
+ */
+export const serviceMonitorSettings = sqliteTable('service_monitor_settings', {
+  serviceId: integer('service_id')
+    .primaryKey()
+    .references(() => services.id, { onDelete: 'cascade' }),
+  // Consecutive failed checks before an incident opens and an alert is sent (anti-flapping).
+  failureThreshold: integer('failure_threshold').notNull().default(1),
+  // Consecutive successful checks before an open incident counts as recovered.
+  recoveryThreshold: integer('recovery_threshold').notNull().default(1),
+  // An online service slower than this (milliseconds) reads "Degraded"; null disables the state.
+  degradedLatencyMs: integer('degraded_latency_ms'),
+});
+
+/**
+ * Periods in which a service was considered down, derived from its checks. An incident is open
+ * while `ended_at` is null. `started_at` is the first failed check of the streak, not the moment
+ * the failure threshold was reached. Reasons come from the monitor's own vocabulary, never from
+ * the response body.
+ */
+export const serviceIncidents = sqliteTable(
+  'service_incidents',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    startedAt: integer('started_at').notNull(),
+    endedAt: integer('ended_at'),
+    reason: text('reason').notNull(),
+    httpStatus: integer('http_status'),
+    failedChecks: integer('failed_checks').notNull().default(1),
+  },
+  (table) => [
+    index('service_incidents_service_idx').on(table.serviceId, table.startedAt),
+    index('service_incidents_started_idx').on(table.startedAt),
+  ],
+);
+
 // Configuration stored here must never contain credentials; secretRef points to a
 // future credential store. Existing Proxmox credentials remain in their vault.
 export const integrationInstances = sqliteTable('integration_instances', {

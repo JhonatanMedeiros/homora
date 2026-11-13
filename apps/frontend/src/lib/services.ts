@@ -21,6 +21,8 @@ export type ServiceGroup = {
   columns?: number | null;
 };
 export type Availability = 'available' | 'unavailable' | 'unknown';
+/** What the status light shows: an online service that is slower than its limit reads `degraded`. */
+export type LightState = Availability | 'degraded';
 /** Health probe status reason from monitor; absent in responses from older versions. */
 export type StatusReason =
   | 'responding'

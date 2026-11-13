@@ -5,8 +5,13 @@ import {
   CHECK_INTERVAL_DEFAULT,
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
+  DEFAULT_MONITOR_SETTINGS,
+  DEGRADED_LATENCY_MAX,
+  DEGRADED_LATENCY_MIN,
   ICON_MAX_LENGTH,
+  THRESHOLD_MAX,
   type HostLink,
+  type MonitorSettings,
   type ServiceInput,
 } from '@homora/shared';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
@@ -16,7 +21,13 @@ import { IconPicker } from '@/components/icon-picker';
 import { suggestBrandIcon } from '@/lib/icons';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
 import { ServiceIcon } from '@/components/service-icon';
@@ -38,8 +49,15 @@ export type FormHosts = {
 /** Manual dependencies for the form; omitted when the form is used without them. */
 export type FormDependencies = React.ComponentProps<typeof DependencyPicker>;
 
+/** Alert settings of the service, saved separately from the card; omitted where there is nothing to save to. */
+export type FormMonitoring = {
+  value: MonitorSettings;
+  onChange: (value: MonitorSettings) => void;
+};
+
 type Props = {
   hosts?: FormHosts;
+  monitoring?: FormMonitoring;
   dependencies?: FormDependencies;
   editing: boolean;
   value: ServiceInput;
@@ -56,6 +74,7 @@ type Props = {
 
 export function ServiceForm({
   hosts,
+  monitoring,
   dependencies,
   editing,
   value,
@@ -79,7 +98,11 @@ export function ServiceForm({
       value.checkType === 'ping' ||
       value.checkInterval ||
       value.expectedStatus ||
-      value.checkPath,
+      value.checkPath ||
+      (monitoring &&
+        (monitoring.value.failureThreshold !== DEFAULT_MONITOR_SETTINGS.failureThreshold ||
+          monitoring.value.recoveryThreshold !== DEFAULT_MONITOR_SETTINGS.recoveryThreshold ||
+          monitoring.value.degradedLatencyMs !== DEFAULT_MONITOR_SETTINGS.degradedLatencyMs)),
     ),
   );
   return (
@@ -276,6 +299,80 @@ export function ServiceForm({
                 {t('form.intervalHint', { min: CHECK_INTERVAL_MIN, max: CHECK_INTERVAL_MAX })}
               </FieldDescription>
             </Field>
+            {monitoring && (
+              <>
+                <FieldSeparator className="sm:col-span-2">
+                  {t('form.monitoring.title')}
+                </FieldSeparator>
+                <p className="text-sm text-muted-foreground sm:col-span-2">
+                  {t('form.monitoring.hint')}
+                </p>
+                <Field>
+                  <FieldLabel htmlFor="service-failures">
+                    {t('form.monitoring.failures')}
+                  </FieldLabel>
+                  <Input
+                    id="service-failures"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={THRESHOLD_MAX}
+                    step={1}
+                    value={monitoring.value.failureThreshold}
+                    onChange={(e) =>
+                      monitoring.onChange({
+                        ...monitoring.value,
+                        failureThreshold: Number(e.target.value) || 1,
+                      })
+                    }
+                  />
+                  <FieldDescription>{t('form.monitoring.failuresHint')}</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="service-recoveries">
+                    {t('form.monitoring.recoveries')}
+                  </FieldLabel>
+                  <Input
+                    id="service-recoveries"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={THRESHOLD_MAX}
+                    step={1}
+                    value={monitoring.value.recoveryThreshold}
+                    onChange={(e) =>
+                      monitoring.onChange({
+                        ...monitoring.value,
+                        recoveryThreshold: Number(e.target.value) || 1,
+                      })
+                    }
+                  />
+                  <FieldDescription>{t('form.monitoring.recoveriesHint')}</FieldDescription>
+                </Field>
+                <Field className="sm:col-span-2">
+                  <FieldLabel htmlFor="service-degraded">
+                    {t('form.monitoring.degraded')}
+                  </FieldLabel>
+                  <Input
+                    id="service-degraded"
+                    type="number"
+                    inputMode="numeric"
+                    min={DEGRADED_LATENCY_MIN}
+                    max={DEGRADED_LATENCY_MAX}
+                    step={1}
+                    value={monitoring.value.degradedLatencyMs ?? ''}
+                    onChange={(e) =>
+                      monitoring.onChange({
+                        ...monitoring.value,
+                        degradedLatencyMs: e.target.value === '' ? null : Number(e.target.value),
+                      })
+                    }
+                    placeholder="800"
+                  />
+                  <FieldDescription>{t('form.monitoring.degradedHint')}</FieldDescription>
+                </Field>
+              </>
+            )}
           </FieldGroup>
         </CollapsibleContent>
       </Collapsible>

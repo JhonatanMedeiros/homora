@@ -1,15 +1,20 @@
 import { cn } from '@/lib/utils';
-import type { Availability } from '@/lib/services';
+import type { LightState } from '@/lib/services';
 import { t } from '@/i18n';
 import { useEffect, useRef, useState } from 'react';
 
-type Props = { state: Availability; blocked?: boolean; label?: string; className?: string };
+type Props = { state: LightState; blocked?: boolean; label?: string; className?: string };
 
 const view = {
   available: {
     label: 'status.available',
     text: 'text-success',
     dot: 'bg-success shadow-[0_0_8px_1px_color-mix(in_oklch,var(--success)_70%,transparent)]',
+  },
+  degraded: {
+    label: 'status.degraded',
+    text: 'text-warning',
+    dot: 'bg-warning shadow-[0_0_8px_1px_color-mix(in_oklch,var(--warning)_55%,transparent)]',
   },
   unavailable: {
     label: 'status.unavailable',
@@ -29,8 +34,8 @@ const view = {
 } as const;
 
 /**
- * Homora signature: the window light. Lit green when the service is up, red
- * when down, an empty ring when unknown or blocked. Always paired with text.
+ * Homora signature: the window light. Lit green when the service is up, amber when it is
+ * up but slow, red when down, an empty ring when unknown or blocked. Always paired with text.
  */
 export function StatusLight({ state, blocked = false, label: custom, className }: Props) {
   const key = blocked ? 'blocked' : state;

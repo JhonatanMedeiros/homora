@@ -1,11 +1,14 @@
 import {
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
+  DEGRADED_LATENCY_MAX,
+  DEGRADED_LATENCY_MIN,
   ICON_MAX_LENGTH,
   isCheckPath,
   isExpectedStatus,
   isNodeName,
   isVmid,
+  THRESHOLD_MAX,
 } from '@homora/shared';
 import { z } from 'zod';
 import { AGENT_SCOPES } from './agent-scopes.js';
@@ -204,3 +207,23 @@ export const publicStatusSettingsSchema = z
       value.enabled !== undefined || value.title !== undefined || value.description !== undefined,
   );
 export const servicePublicSchema = z.object({ isPublic: z.boolean() }).strict();
+
+/** Alert thresholds and the "degraded" latency of one service; every field is required. */
+export const monitorSettingsSchema = z
+  .object({
+    failureThreshold: z.number().int().min(1).max(THRESHOLD_MAX),
+    recoveryThreshold: z.number().int().min(1).max(THRESHOLD_MAX),
+    degradedLatencyMs: z
+      .number()
+      .int()
+      .min(DEGRADED_LATENCY_MIN)
+      .max(DEGRADED_LATENCY_MAX)
+      .nullable(),
+  })
+  .strict();
+export const incidentQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    before: z.coerce.number().int().positive().optional(),
+  })
+  .strict();

@@ -1284,3 +1284,22 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Not done on purpose: deployments in progress (the schema carries logs; deferred to validation), project and environment names (not in the documented list endpoints), addresses for services (no documented field; typed by hand), multi-team behavior at scale.
 - Live validation (2026-11-12, Coolify v4.7.5, team token believed unrestricted): connection, test, widget (6 resources, 6 running), inventory with addresses and resources without an address, several domains on one application, link and discovery review, and an invalid token (generic error and pause) worked. A layout bug in the review dialog was found and fixed (`7a9d1a9`). Record in [integracoes.md](integracoes.md#coolify).
 - Still open: a token **limited** to selected resources, an unreachable host, the exact `fqdn` separator for several domains, other `status` strings, services in detail, multi-team behavior and the real 429 path. The issue's live-validation item is therefore only partly done. Results of `pnpm check` and `pnpm build` are recorded in the pull request.
+
+## Uptime status: incidents, banner and degraded state (2026-11-12)
+
+Phase 1 of the uptime redesign (see [ADR 0011](decisoes/0011-incidents-and-alert-thresholds.md)).
+
+- [x] Incident log derived from checks, rebuilt from history on first start; `GET /api/services/:id/incidents`.
+- [x] Per-service failure/recovery thresholds and degraded latency, applied to incidents and alerts (anti-flapping).
+- [x] Health banner (problems with duration, uptime, incidents per week, recovery time, 30-day target and error budget).
+- [x] Degraded state (amber) on cards and bars; failure reason and "down since" on the card.
+- [x] History bars with tooltip, selectable detail (click, tap, arrow keys), latency line and axis; recent incidents in the history panel.
+- [ ] Phase 2: service detail page, p50/p95 latency chart, 90-day heatmap and previous-period comparison (needs hourly/daily rollups).
+- [ ] Phase 3: TCP, DNS, keyword/JSON, heartbeat and TLS checks; scheduled maintenance.
+- [ ] Phase 4: tags, ntfy/Discord/e-mail, wider public page, filters and sorting by problem.
+
+Verification: `pnpm check` (1266 tests) and `pnpm build` pass. The uptime performance budget in
+`service-uptime.test.ts` was raised (7 d 300 → 450 ms, 30 d 1000 → 1500 ms): the bars now read the mean
+latency and failure reason of each period, and the original code already reached ~940 ms under the
+parallel suite. Checked in Chromium against the mockup at 1440 px and 390 px (dark): banner, degraded
+and failing cards, bar tooltip and detail, expanded history with incidents.

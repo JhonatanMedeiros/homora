@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
-import type { HostLink, Service, ServiceInput } from '@homora/shared';
+import {
+  DEFAULT_MONITOR_SETTINGS,
+  type HostLink,
+  type MonitorSettings,
+  type Service,
+  type ServiceInput,
+} from '@homora/shared';
 import {
   Check,
   LayoutGrid,
@@ -35,7 +41,8 @@ import { useUptime } from '@/hooks/use-uptime';
 import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
 import { FormError } from '@/components/form-error';
-import { HealthSummary } from '@/components/health-summary';
+import { StatusBanner } from '@/components/status-banner';
+import { useStatusOverview } from '@/hooks/use-status-overview';
 import { TopBar } from '@/components/top-bar';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { GroupSection } from '@/components/group-section';
@@ -111,11 +118,16 @@ export function ServicesPage({
     setUptimeRange,
   } = useViewPreferences();
   const uptime = useUptime(uptimeRange);
+  const [overviewVersion, setOverviewVersion] = useState(0);
+  const overview = useStatusOverview(overviewVersion);
   const list = view === 'list' || managing;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceInput>(emptyService);
   const [shared, setShared] = useState(false);
+  // Alert settings live apart from the card. `null` means untouched, so the form shows what the
+  // server reports (even when that arrives after the form opened) until the user changes a field.
+  const [monitorDraft, setMonitorDraft] = useState<MonitorSettings | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [host, setHost] = useState<HostLink | null>(null);
   const deps = useDependencies();
@@ -297,6 +309,7 @@ export function ServicesPage({
     setDepAdded([]);
     setDepRemoved([]);
     setShared(service?.isPublic === true);
+    setMonitorDraft(null);
     setForm(
       service
         ? {
@@ -366,6 +379,7 @@ export function ServicesPage({
     setDepAdded([]);
     setDepRemoved([]);
     setShared(service?.isPublic === true);
+    setMonitorDraft(null);
     setForm(
       service
         ? {
@@ -428,6 +442,17 @@ export function ServicesPage({
         if (!visibility.ok) throw new Error(t('error.savePublic'));
       }
       if (savedId !== undefined) {
+        const before =
+          (editing !== null && overview?.settings[editing]) || DEFAULT_MONITOR_SETTINGS;
+        if (monitorDraft && JSON.stringify(before) !== JSON.stringify(monitorDraft)) {
+          const alerts = await fetch(`/api/services/${savedId}/monitoring`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(monitorDraft),
+          });
+          if (!alerts.ok) throw new Error(t('error.saveMonitoring'));
+          setOverviewVersion((version) => version + 1);
+        }
         for (const id of depAdded) {
           const failure = await deps.add(savedId, id);
           if (failure) throw new Error(failure);
@@ -541,14 +566,6 @@ export function ServicesPage({
   }
 
   const total = services.length;
-  const online = services.filter((s) => statuses[s.id]?.status === 'available').length;
-  const down = services.filter(
-    (s) => statuses[s.id]?.status === 'unavailable' && !blockedIds.has(s.id),
-  ).length;
-  const blocked = services.filter(
-    (s) => blockedIds.has(s.id) && statuses[s.id]?.status !== 'available',
-  ).length;
-  const unknown = total - online - down - blocked;
   return (
     <section
       aria-label={t('nav.services')}
@@ -585,19 +602,19 @@ export function ServicesPage({
         />
       )}
       {!managing && !organizing && topBar && <TopBar />}
+      {!managing && !organizing && (
+        <StatusBanner
+          services={services}
+          statuses={statuses}
+          blockedIds={blockedIds}
+          overview={overview}
+          uptime={uptime}
+          range={uptimeRange}
+        />
+      )}
       {!managing && (
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          {!organizing ? (
-            <HealthSummary
-              total={total}
-              online={online}
-              down={down}
-              blocked={blocked}
-              unknown={unknown}
-            />
-          ) : (
-            <span />
-          )}
+          <span />
           {services.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               {hostData.connections.length > 0 && services.some((s) => !s.host) && (
@@ -767,6 +784,13 @@ export function ServicesPage({
             }}
             isPublic={shared}
             onPublicChange={setShared}
+            monitoring={{
+              value:
+                monitorDraft ??
+                (editing === null ? undefined : overview?.settings[editing]) ??
+                DEFAULT_MONITOR_SETTINGS,
+              onChange: setMonitorDraft,
+            }}
             onChange={setForm}
             onSubmit={(event) => void save(event)}
             onCancel={closeForm}
@@ -1004,6 +1028,8 @@ export function ServicesPage({
                   coolify={resourceLinks.byService[s.id]}
                   onCoolify={() => setCoolifyReview(s.id)}
                   uptime={uptime[s.id]}
+                  monitor={overview?.settings[s.id]}
+                  incident={overview?.open[s.id]}
                   uptimeRange={uptimeRange}
                   onUptimeRangeChange={setUptimeRange}
                   host={hostLabel(s, hostData.connections, hostData.inventories)}

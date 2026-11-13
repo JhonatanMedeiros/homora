@@ -1,4 +1,10 @@
-import type { Service, UptimeRange, UptimeSummary } from '@homora/shared';
+import type {
+  Incident,
+  MonitorSettings,
+  Service,
+  UptimeRange,
+  UptimeSummary,
+} from '@homora/shared';
 import { useId, useState } from 'react';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,6 +38,9 @@ type Props = {
   coolify?: CardCoolify;
   onCoolify?: () => void;
   uptime?: UptimeSummary;
+  /** Alert settings (degraded limit) and the incident the service is in right now, if any. */
+  monitor?: MonitorSettings;
+  incident?: Incident;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
   /** Where the card runs, resolved from the live Proxmox inventory (null when not linked). */
@@ -128,6 +137,8 @@ export function ServiceCard({
   coolify,
   onCoolify = () => {},
   uptime,
+  monitor,
+  incident,
   uptimeRange = '24h',
   onUptimeRangeChange = () => {},
   host = null,
@@ -143,7 +154,7 @@ export function ServiceCard({
   onCancelRemoval,
 }: Props) {
   const state = status?.status ?? 'unknown';
-  const view = describeStatus(status, blocked);
+  const view = describeStatus(status, blocked, { monitor, downSince: incident?.startedAt });
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
   const isBlocked = view.blocked;
@@ -161,6 +172,7 @@ export function ServiceCard({
               !isBlocked &&
               'shadow-[inset_0_1px_0_color-mix(in_oklch,var(--primary)_16%,transparent)]',
             state === 'unavailable' && !isBlocked && 'border-destructive bg-destructive/10',
+            view.degraded && !isBlocked && 'border-warning/60',
           )}
         >
           <ItemMedia
@@ -235,7 +247,11 @@ export function ServiceCard({
             <p
               className={cn(
                 'basis-full pl-11 text-xs',
-                view.failing ? 'text-destructive' : 'text-muted-foreground',
+                view.failing
+                  ? 'text-destructive'
+                  : view.degraded
+                    ? 'text-warning'
+                    : 'text-muted-foreground',
               )}
             >
               {view.note}
@@ -263,6 +279,7 @@ export function ServiceCard({
           state === 'unavailable' &&
             !isBlocked &&
             'border-destructive bg-destructive/10 ring-1 ring-destructive',
+          view.degraded && !isBlocked && 'border-warning/60 ring-1 ring-warning/40',
         )}
       >
         <div
@@ -312,7 +329,11 @@ export function ServiceCard({
             <p
               className={cn(
                 'min-w-0 text-sm',
-                view.failing ? 'text-destructive' : 'text-muted-foreground',
+                view.failing
+                  ? 'text-destructive'
+                  : view.degraded
+                    ? 'text-warning'
+                    : 'text-muted-foreground',
               )}
             >
               {view.note}
@@ -345,6 +366,7 @@ export function ServiceCard({
           summary={uptime}
           range={uptimeRange}
           onRangeChange={onUptimeRangeChange}
+          monitor={monitor}
         />
         <div
           className={cn(
