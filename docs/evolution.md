@@ -1724,7 +1724,7 @@ manual responsive and keyboard verification in a browser remains pending.
 
 ### Page widgets: quieter management (2026-11-13)
 
-- The Home shows widgets as plain information. A quiet toolbar above the grid holds the page-level
+- The Home shows widgets as plain information. A section header above the grid holds the page-level
   actions (add widget, organize widgets); each card has only a `⋯` menu for its own actions (edit,
   move to another page, remove with confirmation), visible on hover and focus and always on touch.
 - Organize widgets opens a widget organize mode on the Home: drag, a handle with arrow keys, edit,

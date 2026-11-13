@@ -38,7 +38,7 @@ it('shows a clock without querying a connection and opens a prefilled creation f
   await screen.findByText('Office');
   expect(document.querySelector('time')).toBeTruthy();
   expect(fetcher.mock.calls.some(([url]) => url.includes('/data'))).toBe(false);
-  expect(screen.queryByText('Widgets da página')).toBeNull();
+  expect(screen.getByRole('heading', { name: 'Widgets da página' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Organizar widgets' })).toBeNull();
 });
 

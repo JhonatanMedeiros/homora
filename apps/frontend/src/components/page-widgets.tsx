@@ -206,9 +206,11 @@ export function PageWidgets({ pageId, pages }: Props) {
         </p>
       )}
       {!loading && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {organizing && (
+        <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
+          {organizing ? (
             <p className="text-sm text-muted-foreground">{t('pageWidgets.organizeHelp')}</p>
+          ) : (
+            <h2 className="text-sm font-medium text-muted-foreground">{t('pageWidgets.title')}</h2>
           )}
           <div className="ml-auto flex items-center gap-1">
             {organizing ? (
