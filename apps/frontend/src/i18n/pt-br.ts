@@ -16,6 +16,9 @@ import { ptBR as settings } from './messages/settings';
 import { ptBR as hosts } from './messages/hosts';
 import { ptBR as appearance } from './messages/appearance';
 import { ptBR as resourceLink } from './messages/resources';
+import { ptBR as uptimeStatus } from './messages/uptime-status';
+import { ptBR as serviceDetail } from './messages/service-detail';
+import { ptBR as checks } from './messages/checks';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -35,4 +38,7 @@ export const ptBR: Record<MessageKey, string> = {
   ...hosts,
   ...appearance,
   ...resourceLink,
+  ...uptimeStatus,
+  ...serviceDetail,
+  ...checks,
 };

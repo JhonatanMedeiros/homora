@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Service } from '@homora/shared';
 import type { ServiceStatus } from './service-monitor.js';
 import { createNotificationTransitions } from './notification-transitions.js';
+import { serviceSignature } from './service-signature.js';
 
 const service = {
   id: 1,
@@ -49,5 +50,56 @@ describe('notification transitions', () => {
     tracker.observe([service], { 1: observation('unavailable', 0) });
     const changed = { ...service, url: 'https://example.org' };
     expect(tracker.observe([changed], { 1: observation('available', 1) })).toEqual([]);
+  });
+
+  it('waits for the failure threshold and alerts once per outage', () => {
+    const tracker = createNotificationTransitions(300_000, [], () => ({
+      failureThreshold: 3,
+      recoveryThreshold: 2,
+    }));
+    const check = (status: ServiceStatus['status'], minute: number) =>
+      tracker.observe([service], { 1: observation(status, minute) }).map(({ event }) => event);
+    expect(check('unavailable', 0)).toEqual([]);
+    expect(check('unavailable', 1)).toEqual([]);
+    expect(check('unavailable', 2)).toEqual(['down']);
+    expect(check('unavailable', 3)).toEqual([]);
+    // One success is not a recovery yet; a failure in between keeps the same outage.
+    expect(check('available', 4)).toEqual([]);
+    expect(check('unavailable', 5)).toEqual([]);
+    expect(check('available', 6)).toEqual([]);
+    expect(check('available', 7)).toEqual(['up']);
+  });
+
+  it('never alerts for failures that stop before the threshold', () => {
+    const tracker = createNotificationTransitions(300_000, [], () => ({
+      failureThreshold: 3,
+      recoveryThreshold: 1,
+    }));
+    const check = (status: ServiceStatus['status'], minute: number) =>
+      tracker.observe([service], { 1: observation(status, minute) }).map(({ event }) => event);
+    expect(check('unavailable', 0)).toEqual([]);
+    expect(check('unavailable', 1)).toEqual([]);
+    expect(check('available', 2)).toEqual([]);
+    expect(check('unavailable', 3)).toEqual([]);
+    expect(check('unavailable', 4)).toEqual([]);
+    expect(check('available', 5)).toEqual([]);
+  });
+
+  it('does not repeat the alert of an outage that was already open before thresholds existed', () => {
+    const saved = {
+      signature: serviceSignature(service),
+      attempt: observation('unavailable', 0).lastAttempt!,
+      status: 'unavailable' as const,
+      lastDown: Date.UTC(2026, 0, 1, 0, 0),
+      notifiedDown: true,
+    };
+    const tracker = createNotificationTransitions(0, [[1, saved]], () => ({
+      failureThreshold: 3,
+      recoveryThreshold: 1,
+    }));
+    expect(tracker.observe([service], { 1: observation('unavailable', 10) })).toEqual([]);
+    expect(
+      tracker.observe([service], { 1: observation('available', 11) }).map(({ event }) => event),
+    ).toEqual(['up']);
   });
 });

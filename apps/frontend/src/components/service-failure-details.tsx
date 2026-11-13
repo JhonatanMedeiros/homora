@@ -14,6 +14,12 @@ function reasonText(status: ServiceStatus) {
     return t('card.note.unexpected', { code, expected: status.expectedStatus });
   if (status.reason === 'not-found') return t('details.reasonNotFound');
   if (status.reason === 'error-status' && code !== null) return t('details.reasonError', { code });
+  if (
+    status.reason === 'content-mismatch' ||
+    status.reason === 'cert-expired' ||
+    status.reason === 'cert-invalid'
+  )
+    return t(`uptime.reason.${status.reason}`);
   return t('details.reasonNoResponse');
 }
 

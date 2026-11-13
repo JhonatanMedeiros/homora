@@ -97,8 +97,8 @@ it('does not treat unauthorized private network as service down', async () => {
   render(<App />);
   expect(await screen.findByText('Sem monitoramento')).toBeTruthy();
   expect(screen.queryByText('Fora do ar')).toBeNull();
-  expect(screen.getByText(/1 de \d+ no ar/)).toBeTruthy();
-  expect(screen.getByText(/1 sem monitoramento/)).toBeTruthy();
+  expect(screen.getByText('Todos os serviços monitorados no ar')).toBeTruthy();
+  expect(screen.getByText(/1 serviço sem monitoramento/)).toBeTruthy();
 });
 
 it('shows before and after of an update proposal', async () => {

@@ -31,13 +31,13 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   const selectServices = (order = 'category, position, name') =>
     sqlite
       .prepare(
-        `SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath FROM services ORDER BY ${order}`,
+        `SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch FROM services ORDER BY ${order}`,
       )
       .all() as unknown as ServiceRow[];
   const selectService = (id: number) =>
     sqlite
       .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath FROM services WHERE id=?',
+        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch FROM services WHERE id=?',
       )
       .get(id) as ServiceRow | undefined;
   type HostRow = {

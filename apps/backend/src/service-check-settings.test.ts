@@ -38,7 +38,7 @@ it('stores check method and interval, validates bounds, and carries values in ex
       { checkInterval: 29 },
       { checkInterval: 3601 },
       { checkInterval: 1.5 },
-      { checkType: 'tcp' },
+      { checkType: 'smtp' },
     ])
       expect((await send('POST', '/api/services', { ...base, name: 'X', ...bad })).statusCode).toBe(
         400,

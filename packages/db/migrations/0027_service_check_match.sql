@@ -1,0 +1,1 @@
+ALTER TABLE `services` ADD `check_match` text;

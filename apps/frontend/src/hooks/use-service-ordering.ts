@@ -66,6 +66,7 @@ export function useServiceOrdering({
           checkInterval: service.checkInterval ?? null,
           expectedStatus: service.expectedStatus ?? null,
           checkPath: service.checkPath ?? null,
+          checkMatch: service.checkMatch ?? null,
         }),
       });
       if (!response.ok) throw Error();

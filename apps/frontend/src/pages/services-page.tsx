@@ -11,6 +11,14 @@ import { useViewPreferences } from '@/hooks/use-view-preferences';
 import { useUptime } from '@/hooks/use-uptime';
 import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
+import { StatusFilter } from '@/components/status-filter';
+import { StatusBanner } from '@/components/status-banner';
+import { Toggle } from '@/components/ui/toggle';
+import { useTags } from '@/hooks/use-tags';
+import { useStatusOverview } from '@/hooks/use-status-overview';
+import { activeWindows, useMaintenance } from '@/hooks/use-maintenance';
+import { useNow } from '@/hooks/use-now';
+import type { StatusFilter as StatusFilterValue } from '@/lib/status-filter';
 import { FormError } from '@/components/form-error';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { ServicesSkeleton } from '@/components/skeletons';
@@ -79,6 +87,14 @@ export function ServicesPage({
     setUptimeRange,
   } = useViewPreferences();
   const uptime = useUptime(uptimeRange);
+  const [overviewVersion, setOverviewVersion] = useState(0);
+  const overview = useStatusOverview(overviewVersion);
+  const maintenance = useMaintenance();
+  const clock = useNow();
+  const inMaintenance = activeWindows(maintenance.windows, clock);
+  const { tags: tagMap, reload: reloadTags } = useTags();
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>('all');
   const list = view === 'list' || managing;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
@@ -121,6 +137,10 @@ export function ServicesPage({
     announce,
     onOpenForm: () => setConfirming(null),
     onSaved: () => setSelected(null),
+    monitorSettings: overview?.settings,
+    tagMap,
+    onMonitoringSaved: () => setOverviewVersion((version) => version + 1),
+    onTagsSaved: reloadTags,
   });
   const { openForm, hostData } = editor;
   const groupActions = useServiceGroups({
@@ -154,6 +174,10 @@ export function ServicesPage({
     query,
     selected,
     organizing,
+    statusFilter,
+    tagFilter,
+    tags: tagMap,
+    monitorSettings: overview?.settings,
   });
   const {
     allCategories,
@@ -162,10 +186,11 @@ export function ServicesPage({
     onPage,
     isDown,
     groups,
+    statusCounts,
+    allTags,
     impacts,
     dependencyNotes,
     offline,
-    summary: { total, online, down, blocked, unknown },
   } = pageModel;
   const actions = useServicePageActions({
     data,
@@ -194,8 +219,18 @@ export function ServicesPage({
         managing={managing}
         organizing={organizing}
         topBar={topBar}
-        summary={{ total, online, down, blocked, unknown }}
-        serviceCount={total}
+        banner={
+          <StatusBanner
+            services={services}
+            statuses={statuses}
+            blockedIds={blockedIds}
+            overview={overview}
+            maintenance={maintenance.windows}
+            uptime={uptime}
+            range={uptimeRange}
+          />
+        }
+        serviceCount={services.length}
         groupCount={allCategories.length}
         toolbar={{
           arrange,
@@ -316,6 +351,24 @@ export function ServicesPage({
           className="max-w-sm"
         />
       )}
+      {!managing && !organizing && !hostView && services.length > 0 && (
+        <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
+      )}
+      {!managing && !organizing && !hostView && allTags.length > 0 && (
+        <div role="group" aria-label={t('filter.byTag')} className="flex flex-wrap gap-1">
+          {allTags.map((tag) => (
+            <Toggle
+              key={tag}
+              size="sm"
+              pressed={tagFilter === tag}
+              onPressedChange={(on) => setTagFilter(on ? tag : null)}
+              className="text-sm text-muted-foreground data-[state=on]:bg-accent data-[state=on]:text-accent-foreground pointer-coarse:h-11"
+            >
+              #{tag}
+            </Toggle>
+          ))}
+        </div>
+      )}
       {!organizing && !hostView && services.length > 0 && categories.length > 2 && (
         <CategoryFilter
           categories={categories}
@@ -396,6 +449,12 @@ export function ServicesPage({
             resourceLink: resourceLinks.byService,
             uptime,
             uptimeRange,
+            monitorSettings: overview?.settings,
+            incidents: overview?.open,
+            maintenanceUntil: Object.fromEntries(
+              Object.entries(inMaintenance).map(([id, window]) => [id, window.endsAt]),
+            ),
+            tags: tagMap,
             impacts,
             dependencyNotes,
           }}
@@ -410,6 +469,7 @@ export function ServicesPage({
           }}
           actions={{
             onUptimeRangeChange: setUptimeRange,
+            onTag: setTagFilter,
             hostOf: (service) => hostLabel(service, hostData.connections, hostData.inventories),
             onEditService: openForm,
             onRemoveService: (service) => void remove(service),

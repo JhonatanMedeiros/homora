@@ -104,6 +104,17 @@ export const formatDateTime = (value: Date | string | number) =>
     new Date(value),
   );
 
+/** "12/11 21:08": day, month and time, for events close enough that the year is obvious. */
+export const formatShortDateTime = (value: Date | string | number) =>
+  new Intl.DateTimeFormat(current, {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(new Date(value))
+    .replace(',', '');
+
 export const formatTime = (value: Date | string | number) =>
   new Intl.DateTimeFormat(current, { timeStyle: 'short' }).format(new Date(value));
 

@@ -1,4 +1,10 @@
-import type { Service, UptimeRange, UptimeSummary } from '@homora/shared';
+import type {
+  Incident,
+  MonitorSettings,
+  Service,
+  UptimeRange,
+  UptimeSummary,
+} from '@homora/shared';
 import type { CardResource } from '@/hooks/use-resource-links';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import type { HostLabel, Impact } from '@/lib/hosts';
@@ -13,6 +19,14 @@ export type ServiceCardProps = {
   resourceLink?: CardResource;
   onResource?: () => void;
   uptime?: UptimeSummary;
+  /** Alert settings (degraded limit) and the incident the service is in right now, if any. */
+  monitor?: MonitorSettings;
+  incident?: Incident;
+  /** End of the maintenance window the service is in right now. */
+  maintenanceUntil?: number | null;
+  /** Labels on the service; clicking one filters the Home by it. */
+  tags?: string[];
+  onTag?: (tag: string) => void;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
   /** Where the card runs, resolved from the live Proxmox inventory (null when not linked). */

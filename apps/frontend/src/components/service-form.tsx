@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { FormError } from '@/components/form-error';
-import { ServiceFormAdvanced } from '@/components/service-form-advanced';
+import { ServiceFormAdvanced, type FormMonitoring } from '@/components/service-form-advanced';
 import { HostPicker } from '@/components/host-picker';
 import { DependencyPicker } from '@/components/dependency-picker';
 import type { HostConnection, HostInventories } from '@/lib/hosts';
@@ -26,8 +26,12 @@ export type FormHosts = {
 /** Manual dependencies for the form; omitted when the form is used without them. */
 export type FormDependencies = React.ComponentProps<typeof DependencyPicker>;
 
+export type { FormMonitoring };
+
 type Props = {
   hosts?: FormHosts;
+  monitoring?: FormMonitoring;
+  tags?: { value: string[]; onChange: (tags: string[]) => void };
   dependencies?: FormDependencies;
   editing: boolean;
   value: ServiceInput;
@@ -44,6 +48,8 @@ type Props = {
 
 export function ServiceForm({
   hosts,
+  monitoring,
+  tags,
   dependencies,
   editing,
   value,
@@ -134,7 +140,7 @@ export function ServiceForm({
           </div>
         </Field>
       </FieldGroup>
-      <ServiceFormAdvanced value={value} onChange={onChange} />
+      <ServiceFormAdvanced value={value} onChange={onChange} monitoring={monitoring} tags={tags} />
       <FormError className="mt-3">{error}</FormError>
       <DialogFooter>
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>

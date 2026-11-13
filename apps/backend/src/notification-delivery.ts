@@ -4,10 +4,14 @@ import { z } from 'zod';
 import { getAuthorizedResponse } from './network-request.js';
 import type { NotificationEvent } from './notification-transitions.js';
 
+/** Channels that send to one address (plus an optional token for ntfy). */
+export const CHANNEL_TYPES = ['webhook', 'telegram', 'ntfy', 'discord'] as const;
+export type ChannelType = (typeof CHANNEL_TYPES)[number];
+
 export type NotificationChannel = {
   id: number;
   name: string;
-  type: 'webhook' | 'telegram';
+  type: ChannelType;
   secret: string;
   enabled: number;
   allow_private: number;
@@ -49,30 +53,47 @@ export function createNotificationDelivery(
     serviceUrl: string,
   ) {
     const secret = credentials(channel);
-    const destination =
-      channel.type === 'telegram'
-        ? `https://api.telegram.org/bot${secret.token}/sendMessage`
-        : secret.destination!;
-    const payload =
-      channel.type === 'telegram'
-        ? {
-            chat_id: secret.chatId,
-            text: `Homora: ${event.service.name} — ${event.event.toUpperCase()} (${event.reason})${channel.include_url ? `\n${serviceUrl}` : ''}`,
-          }
-        : {
-            ...event,
-            service: {
-              ...event.service,
-              ...(channel.include_url ? { url: serviceUrl } : {}),
-            },
-          };
+    const text = `Homora: ${event.service.name} — ${event.event.toUpperCase()} (${event.reason})${channel.include_url ? `\n${serviceUrl}` : ''}`;
+    let destination = secret.destination!;
+    let headers: Record<string, string> | undefined;
+    let payload: unknown;
+    if (channel.type === 'telegram') {
+      destination = `https://api.telegram.org/bot${secret.token}/sendMessage`;
+      payload = { chat_id: secret.chatId, text };
+    } else if (channel.type === 'discord') {
+      payload = { content: text.slice(0, 2000), allowed_mentions: { parse: [] } };
+    } else if (channel.type === 'ntfy') {
+      // ntfy's JSON publishing: the topic is the path of the address, the request goes to the server root.
+      const url = new URL(secret.destination!);
+      const topic = decodeURIComponent(url.pathname.replace(/^\/+|\/+$/g, ''));
+      destination = `${url.origin}/`;
+      payload = {
+        topic,
+        title: event.service.name,
+        message: `${event.event.toUpperCase()} (${event.reason})${channel.include_url && serviceUrl ? `\n${serviceUrl}` : ''}`,
+        priority: event.event === 'down' ? 4 : 3,
+        tags: [event.event === 'down' ? 'rotating_light' : 'white_check_mark'],
+      };
+      if (secret.token) headers = { authorization: `Bearer ${secret.token}` };
+    } else {
+      payload = {
+        ...event,
+        service: { ...event.service, ...(channel.include_url ? { url: serviceUrl } : {}) },
+      };
+    }
     const response = await getAuthorizedResponse(
       destination,
       {
         origins: [new URL(destination).origin],
-        allowPrivate: !!channel.allow_private && channel.type === 'webhook',
+        allowPrivate:
+          !!channel.allow_private && (channel.type === 'webhook' || channel.type === 'ntfy'),
       },
-      { timeoutMs: 5000, maxBodyBytes: 16384, jsonBody: JSON.stringify(payload) },
+      {
+        timeoutMs: 5000,
+        maxBodyBytes: 16384,
+        jsonBody: JSON.stringify(payload),
+        ...(headers ? { headers } : {}),
+      },
     );
     if (response.status < 200 || response.status >= 300) throw new Error(`HTTP ${response.status}`);
     if (channel.type === 'telegram') {

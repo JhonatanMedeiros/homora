@@ -53,6 +53,39 @@ it('opens the Telegram form separately and allows cancelling it', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   expect(screen.queryByLabelText('Bot token')).toBeNull();
 });
+it('creates an ntfy channel with an optional token and a Discord channel without one', async () => {
+  setLocale('en');
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce({ ok: true, json: async () => [] })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 1 }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => [] })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 2 }) })
+    .mockResolvedValue({ ok: true, json: async () => [] });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<NotificationSettings />);
+  await screen.findByText('No ntfy channels configured.');
+  expect(screen.getByText('No Discord channels configured.')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Add ntfy' }));
+  expect(screen.getByLabelText('Access token (optional)')).toBeTruthy();
+  fireEvent.change(screen.getByLabelText('Channel name'), { target: { value: 'Phone' } });
+  fireEvent.change(screen.getByLabelText('Topic address (https://ntfy.sh/your-topic)'), {
+    target: { value: 'https://ntfy.sh/homora' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
+  await waitFor(() => expect(fetchMock.mock.calls[1][1].body).toContain('"type":"ntfy"'));
+  expect(fetchMock.mock.calls[1][1].body).toContain('https://ntfy.sh/homora');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Add Discord' }));
+  expect(screen.queryByLabelText('Access token (optional)')).toBeNull();
+  fireEvent.change(screen.getByLabelText('Channel name'), { target: { value: 'Team' } });
+  fireEvent.change(screen.getByLabelText('Discord webhook URL'), {
+    target: { value: 'https://discord.com/api/webhooks/1/abc' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
+  await waitFor(() => expect(fetchMock.mock.calls[3][1].body).toContain('"type":"discord"'));
+});
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();

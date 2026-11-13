@@ -83,8 +83,8 @@ describe('service monitoring', () => {
       check,
     );
     await monitor.run(true);
-    expect(check).toHaveBeenNthCalledWith(1, 'http://192.168.1.2', false, 'http');
-    expect(check).toHaveBeenNthCalledWith(2, 'http://[fd00::1]', true, 'http');
+    expect(check).toHaveBeenNthCalledWith(1, 'http://192.168.1.2', false, 'http', null);
+    expect(check).toHaveBeenNthCalledWith(2, 'http://[fd00::1]', true, 'http', null);
   });
 
   it('returns unknown status before execution and caches attempts', async () => {
@@ -276,7 +276,7 @@ describe('service monitoring', () => {
       check,
     );
     await monitor.run(true);
-    expect(check).toHaveBeenCalledWith('http://192.168.1.9', true, 'ping');
+    expect(check).toHaveBeenCalledWith('http://192.168.1.9', true, 'ping', null);
     expect(monitor.snapshot()[1]).toMatchObject({
       status: 'available',
       reason: 'reachable',
@@ -378,7 +378,7 @@ it('checks the configured path on the same origin and applies the expectation', 
     check,
   );
   await monitor.run();
-  expect(check).toHaveBeenCalledWith('https://example.test/health?full=1', false, 'http');
+  expect(check).toHaveBeenCalledWith('https://example.test/health?full=1', false, 'http', null);
   expect(monitor.snapshot()[1]).toMatchObject({
     status: 'unavailable',
     reason: 'unexpected-status',

@@ -29,6 +29,9 @@ export function ServiceCardTile({
   resourceLink,
   onResource = () => {},
   uptime,
+  monitor,
+  tags = [],
+  onTag,
   uptimeRange = '24h',
   onUptimeRangeChange = () => {},
   host = null,
@@ -59,6 +62,7 @@ export function ServiceCardTile({
           view.state === 'unavailable' &&
             !isBlocked &&
             'border-destructive bg-destructive/10 ring-1 ring-destructive',
+          view.degraded && !isBlocked && 'border-warning/60 ring-1 ring-warning/40',
         )}
       >
         <div
@@ -110,7 +114,11 @@ export function ServiceCardTile({
             <p
               className={cn(
                 'min-w-0 text-sm',
-                view.failing ? 'text-destructive' : 'text-muted-foreground',
+                view.failing
+                  ? 'text-destructive'
+                  : view.degraded
+                    ? 'text-warning'
+                    : 'text-muted-foreground',
               )}
             >
               {view.note}
@@ -143,7 +151,29 @@ export function ServiceCardTile({
           summary={uptime}
           range={uptimeRange}
           onRangeChange={onUptimeRangeChange}
+          monitor={monitor}
         />
+        {tags.length > 0 && (
+          <ul aria-label={t('form.tags')} className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+            {tags.map((tag) => (
+              <li key={tag}>
+                {onTag ? (
+                  <button
+                    type="button"
+                    onClick={() => onTag(tag)}
+                    className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground pointer-coarse:py-1.5"
+                  >
+                    {tag}
+                  </button>
+                ) : (
+                  <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                    {tag}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
         <div
           className={cn(
             'flex items-center justify-between gap-3 border-t pt-3',

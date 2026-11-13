@@ -18,6 +18,7 @@ import { DashboardPage } from '@/pages/dashboard-page';
 
 const validPaths = [
   '/',
+  '/services/:id',
   '/manage',
   '/manage/services',
   '/manage/services/new',
@@ -82,7 +83,18 @@ function DashboardForRoute({
     Boolean(matchPath('/manage/settings/*', pathname)) &&
     !matchPath('/manage/settings', pathname) &&
     !isSettingsSection(settingsSection);
-  const valid = home || isList || isNew || isEdit || (tab !== 'services' && !unknownSettings);
+  const detailId = matchPath('/services/:id', pathname)?.params.id;
+  const detail =
+    detailId && /^[1-9]\d*$/.test(detailId) && Number.isSafeInteger(Number(detailId))
+      ? Number(detailId)
+      : null;
+  const valid =
+    home ||
+    detail !== null ||
+    isList ||
+    isNew ||
+    isEdit ||
+    (tab !== 'services' && !unknownSettings);
   const account = tab === 'account';
   return (
     <DashboardPage
@@ -90,9 +102,10 @@ function DashboardForRoute({
       setToken={setToken}
       onLogout={onLogout}
       tab={tab}
-      managing={valid && !home && !account}
+      managing={valid && !home && !account && detail === null}
       valid={valid}
       form={isNew ? 'new' : isEdit ? number : null}
+      detail={detail}
     />
   );
 }
