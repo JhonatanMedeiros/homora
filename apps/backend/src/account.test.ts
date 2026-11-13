@@ -43,6 +43,7 @@ describe('account and activity API', () => {
     expect((await open.call('GET', '/api/account')).json()).toEqual({
       name: 'Administrator',
       email: TEST_EMAIL,
+      twoFactorEnabled: false,
     });
     expect((await open.call('PATCH', '/api/account', { name: '  Ana Lima ' })).json().name).toBe(
       'Ana Lima',

@@ -10,17 +10,30 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
+import { TwoFactorChallenge } from '@/features/auth/two-factor-challenge';
 import { t } from '@/i18n';
 
 type Props = {
   status: AuthStatus | null;
   error: string;
+  /** The password was accepted and the second step is pending. */
+  challenge?: boolean;
   onSubmit: (credentials: Credentials) => Promise<boolean>;
+  onVerify?: (code: string, recovery: boolean) => Promise<boolean>;
+  onCancelChallenge?: () => void;
   onRetry?: () => void;
 };
 
 /** Admin account setup and sign in. */
-export function AuthPage({ status, error, onSubmit, onRetry }: Props) {
+export function AuthPage({
+  status,
+  error,
+  challenge = false,
+  onSubmit,
+  onVerify,
+  onCancelChallenge,
+  onRetry,
+}: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +70,13 @@ export function AuthPage({ status, error, onSubmit, onRetry }: Props) {
           <LocaleSwitcher />
         </div>
         <Card>
-          {status ? (
+          {status && challenge && onVerify ? (
+            <TwoFactorChallenge
+              error={error}
+              onVerify={onVerify}
+              onCancel={onCancelChallenge ?? (() => undefined)}
+            />
+          ) : status ? (
             <>
               <CardHeader>
                 <h1 className="text-2xl">

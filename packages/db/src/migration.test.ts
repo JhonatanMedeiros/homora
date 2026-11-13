@@ -592,3 +592,45 @@ it('preserves notification channels when adding their language', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('adds two-factor storage without touching the existing account and keeps it off by default', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-two-factor-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, 31)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO \"user\"(id,name,email,emailVerified,createdAt,updatedAt) VALUES('u1','Admin','admin@homora.test',0,'2026-01-01','2026-01-01');" +
+        "INSERT INTO account(id,accountId,providerId,userId,password,createdAt,updatedAt) VALUES('a1','u1','credential','u1','hash','2026-01-01','2026-01-01');" +
+        "INSERT INTO session(id,expiresAt,token,createdAt,updatedAt,userId) VALUES('s1','2099-01-01','token','2026-01-01','2026-01-01','u1')",
+    );
+    old.close();
+    const database = createDatabase(path);
+    const sqlite = getSqliteHandle(database.db);
+    expect(sqlite.prepare('SELECT id, email, twoFactorEnabled FROM "user"').get()).toEqual({
+      id: 'u1',
+      email: 'admin@homora.test',
+      twoFactorEnabled: 0,
+    });
+    expect(sqlite.prepare('SELECT password FROM account').get()).toEqual({ password: 'hash' });
+    expect(sqlite.prepare('SELECT token FROM session').get()).toEqual({ token: 'token' });
+    expect(sqlite.prepare('SELECT COUNT(*) AS n FROM "twoFactor"').get()).toEqual({ n: 0 });
+    // The authenticator data follows the account when it is removed.
+    sqlite.exec('PRAGMA foreign_keys = ON');
+    sqlite.exec(
+      "INSERT INTO \"twoFactor\"(id,secret,backupCodes,userId) VALUES('t1','s','c','u1'); DELETE FROM \"user\"",
+    );
+    expect(sqlite.prepare('SELECT COUNT(*) AS n FROM "twoFactor"').get()).toEqual({ n: 0 });
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

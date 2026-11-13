@@ -8,6 +8,7 @@ export const user = sqliteTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: integer('emailVerified', { mode: 'boolean' }).notNull(),
   image: text('image'),
+  twoFactorEnabled: integer('twoFactorEnabled', { mode: 'boolean' }).default(false),
   createdAt: text('createdAt').notNull(),
   updatedAt: text('updatedAt').notNull(),
 });
@@ -62,4 +63,25 @@ export const verification = sqliteTable(
     updatedAt: text('updatedAt').notNull(),
   },
   (table) => [index('verification_identifier_idx').on(table.identifier)],
+);
+
+// Authenticator-app secret and recovery codes (both encrypted with the Better Auth secret) of
+// the account. `verified` stays false until the first code is confirmed.
+export const twoFactor = sqliteTable(
+  'twoFactor',
+  {
+    id: text('id').primaryKey(),
+    secret: text('secret').notNull(),
+    backupCodes: text('backupCodes').notNull(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    verified: integer('verified', { mode: 'boolean' }).default(true),
+    failedVerificationCount: integer('failedVerificationCount').default(0),
+    lockedUntil: text('lockedUntil'),
+  },
+  (table) => [
+    index('twoFactor_secret_idx').on(table.secret),
+    index('twoFactor_userId_idx').on(table.userId),
+  ],
 );

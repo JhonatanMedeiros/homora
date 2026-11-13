@@ -3,6 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { fromNodeHeaders } from 'better-auth/node';
+import { twoFactor } from 'better-auth/plugins/two-factor';
 import {
   createRateLimitStorage,
   SIGN_IN_MAX_ATTEMPTS,
@@ -18,6 +19,10 @@ export const CLIENT_IP_HEADER = 'x-homora-client-ip';
 
 const SESSION_SECONDS = 8 * 60 * 60;
 const REMEMBERED_SESSION_SECONDS = 30 * 24 * 60 * 60;
+/** Better Auth routes that only exist for two-factor authentication, relative to the base path. */
+const TWO_FACTOR_PATH_PREFIX = '/two-factor/';
+/** Seconds the password step stays valid while the authenticator code is typed. */
+const TWO_FACTOR_CHALLENGE_SECONDS = 5 * 60;
 export class AccountExistsError extends Error {
   constructor() {
     super('An administrator account already exists.');
@@ -70,6 +75,17 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
       ...allowedOrigins,
     ],
     telemetry: { enabled: false },
+    plugins: [
+      twoFactor({
+        issuer: 'Homora',
+        twoFactorCookieMaxAge: TWO_FACTOR_CHALLENGE_SECONDS,
+        // Authenticator app only: no e-mail/SMS codes (`otpOptions` is left unset) and no
+        // trusted-device cookie (the routes drop `trustDevice`).
+        backupCodeOptions: { storeBackupCodes: 'encrypted', amount: 10, length: 10 },
+        // Ten wrong codes in a row lock the second step for 15 minutes.
+        accountLockout: { enabled: true, maxFailedAttempts: 10, durationSeconds: 15 * 60 },
+      }),
+    ],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
@@ -86,6 +102,18 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
       customStorage: createRateLimitStorage(),
       customRules: {
         '/sign-in/email': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+        // Guessing a code or the password through the second-factor routes is limited like sign-in.
+        '/two-factor/verify-totp': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+        '/two-factor/verify-backup-code': {
+          window: SIGN_IN_WINDOW_SECONDS,
+          max: SIGN_IN_MAX_ATTEMPTS,
+        },
+        '/two-factor/enable': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+        '/two-factor/disable': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+        '/two-factor/generate-backup-codes': {
+          window: SIGN_IN_WINDOW_SECONDS,
+          max: SIGN_IN_MAX_ATTEMPTS,
+        },
       },
     },
     advanced: {
@@ -100,10 +128,24 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
         create: {
           // Better Auth otherwise hard-codes a 24-hour lifetime for browser-session cookies.
           before: async (session, context) => {
-            if (context?.path === '/sign-in/email' && context.body?.rememberMe === false)
-              return {
-                data: { ...session, expiresAt: new Date(Date.now() + SESSION_SECONDS * 1000) },
-              };
+            const expiresAt = async () => {
+              if (context?.path === '/sign-in/email')
+                return context.body?.rememberMe === false
+                  ? new Date(Date.now() + SESSION_SECONDS * 1000)
+                  : null;
+              if (!context?.path?.startsWith(TWO_FACTOR_PATH_PREFIX)) return null;
+              // Enabling or disabling the second step replaces the current session: keep its end.
+              const active = context.context.session?.session;
+              if (active) return new Date(active.expiresAt);
+              // Finishing a sign-in: the choice made at the password step is in this cookie.
+              const forgotten = await context.getSignedCookie(
+                context.context.authCookies.dontRememberToken.name,
+                context.context.secret,
+              );
+              return forgotten ? new Date(Date.now() + SESSION_SECONDS * 1000) : null;
+            };
+            const end = await expiresAt();
+            if (end) return { data: { ...session, expiresAt: end } };
           },
         },
       },
@@ -133,12 +175,20 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [] }: Opt
     handler: (request: Request) => instance.handler(request),
     async session(headers: IncomingHttpHeaders) {
       const found = await instance.api.getSession({ headers: fromNodeHeaders(headers) });
-      return found ? { userId: found.user.id } : null;
+      return found
+        ? { userId: found.user.id, twoFactorEnabled: found.user.twoFactorEnabled === true }
+        : null;
     },
-    /** Name and e-mail of the signed-in account. */
+    /** Name, e-mail and second-factor status of the signed-in account. */
     async profile(headers: IncomingHttpHeaders) {
       const found = await instance.api.getSession({ headers: fromNodeHeaders(headers) });
-      return found ? { name: found.user.name, email: found.user.email } : null;
+      return found
+        ? {
+            name: found.user.name,
+            email: found.user.email,
+            twoFactorEnabled: found.user.twoFactorEnabled === true,
+          }
+        : null;
     },
     async updateName(headers: IncomingHttpHeaders, name: string) {
       await instance.api.updateUser({ headers: fromNodeHeaders(headers), body: { name } });

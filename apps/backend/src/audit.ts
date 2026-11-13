@@ -4,9 +4,12 @@ export type AuditKind = 'access' | 'account' | 'proposal' | 'agent';
 export type AuditOutcome = 'success' | 'failure' | 'refused';
 
 const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
-  access: ['login', 'logout'],
+  access: ['login', 'logout', 'two-factor-recovery-used'],
   account: [
     'password-change',
+    'two-factor-enable',
+    'two-factor-disable',
+    'two-factor-codes-regenerate',
     'session-revoke',
     'sessions-revoke-others',
     'profile-update',

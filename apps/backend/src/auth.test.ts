@@ -57,7 +57,10 @@ describe('createAuth', () => {
       expect((sqlite.prepare('SELECT COUNT(*) AS n FROM "user"').get() as { n: number }).n).toBe(1);
       expect(await auth.session({})).toBeNull();
       expect(await auth.session({ cookie: 'homora.session_token=forged' })).toBeNull();
-      expect(await auth.session({ cookie })).toEqual({ userId: expect.any(String) });
+      expect(await auth.session({ cookie })).toEqual({
+        userId: expect.any(String),
+        twoFactorEnabled: false,
+      });
       await expect(auth.createSessionCookie(TEST_EMAIL, 'wrong-password')).rejects.toThrow();
     } finally {
       database.close();

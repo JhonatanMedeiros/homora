@@ -1673,3 +1673,8 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
   and 18 script tests), and `pnpm build` passed. The build retains a separate settings chunk;
   desktop and mobile browser flows were not manually verified because rendered behavior did
   not change.
+
+### Two-step verification (issue #148)
+
+- Added optional TOTP two-step verification with ten one-time recovery codes ([ADR 0016](decisoes/0016-two-factor-authentication.md)): migration `0031`, five forwarded Better Auth routes, a sign-in challenge that is not recorded as a login until verified, password re-authentication, other sessions ended on enable/disable, attempt limits, an Account section (QR code, setup key, recovery codes) and a login step. `pnpm auth:reset` also clears the new tables and `--two-factor-only` removes only the second step. The session secret now also protects the authenticator secret and must be backed up with the database.
+- Validation: API, interface, migration and script tests (backup/restore, lost secret, both resets). Not verified: a real authenticator app, a real browser, OIDC (#147) and passkey interaction (not implemented).
