@@ -94,6 +94,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
       });
       const body = (await response.json().catch(() => null)) as {
         created?: number;
+        widgetsCreated?: number;
         code?: string;
         error?: string;
       } | null;
@@ -105,7 +106,11 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
       }
       if (!response.ok) throw new Error(apiError(body, t('transfer.applyFailed')));
       reset();
-      toast.success(t('transfer.done', { count: body?.created ?? 0 }));
+      toast.success(
+        body?.widgetsCreated
+          ? t('pageWidgets.importDone', { cards: body.created ?? 0, widgets: body.widgetsCreated })
+          : t('transfer.done', { count: body?.created ?? 0 }),
+      );
       await onImported();
     } catch (error) {
       const failure =
@@ -118,7 +123,10 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
   }
 
   const hasChanges = preview
-    ? preview.plan.summary.newServices + preview.plan.summary.newGroups > 0
+    ? preview.plan.summary.newServices +
+        preview.plan.summary.newGroups +
+        (preview.plan.summary.newWidgets ?? 0) >
+      0
     : false;
   return (
     <div className="flex flex-col gap-6">
@@ -231,7 +239,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
               </Button>
               <Button type="button" disabled={busy || !hasChanges} onClick={() => void apply()}>
                 {hasChanges
-                  ? `${t('transfer.apply')} (${preview.plan.summary.newServices})`
+                  ? `${t('transfer.apply')} (${preview.plan.summary.newServices + (preview.plan.summary.newWidgets ?? 0)})`
                   : t('transfer.nothingToImport')}
               </Button>
             </CardFooter>

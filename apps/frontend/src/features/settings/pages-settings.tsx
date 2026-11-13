@@ -59,7 +59,7 @@ export function PagesSettings({ onChanged }: { onChanged?: () => void | Promise<
   }
   async function confirmDelete() {
     if (!deleting) return;
-    const target = deleting.groups > 0 ? Number(moveTo) : undefined;
+    const target = deleting.groups > 0 || (deleting.widgets ?? 0) > 0 ? Number(moveTo) : undefined;
     setDeleting(null);
     await finish(await remove(deleting.id, target));
   }
@@ -182,10 +182,12 @@ export function PagesSettings({ onChanged }: { onChanged?: () => void | Promise<
               {t('pages.deleteTitle', { name: deleting?.name ?? '' })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {deleting && deleting.groups > 0 ? t('pages.deleteMove') : t('pages.deleteEmpty')}
+              {deleting && (deleting.groups > 0 || (deleting.widgets ?? 0) > 0)
+                ? t('pageWidgets.deleteMove')
+                : t('pages.deleteEmpty')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {deleting && deleting.groups > 0 && (
+          {deleting && (deleting.groups > 0 || (deleting.widgets ?? 0) > 0) && (
             <FormSelect
               aria-label={t('pages.moveTo')}
               value={moveTo}

@@ -1,3 +1,4 @@
+import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
 import type { ReactNode, RefObject } from 'react';
 import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,11 @@ export function ServiceDashboardHeader({
           }
         />
       )}
-      {!managing && !organizing && topBar && <TopBar />}
+      {!managing && !organizing && topBar && (
+        <WidgetErrorBoundary>
+          <TopBar />
+        </WidgetErrorBoundary>
+      )}
       {!managing && !organizing && banner}
       {!managing && !compact && (
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">

@@ -1709,3 +1709,15 @@ stored per service, defaults to new tab for existing data, and travels in native
 imports. Service links in the dashboard and host views and the command palette respect it.
 Automated coverage checks the migration, form, card links, persistence and import/export;
 manual responsive and keyboard verification in a browser remains pending.
+
+### Widgets independentes (issue #159)
+
+- Criados contrato interno, relógio e armazenamento aditivo para instâncias por página; as linhas
+  legadas e preferências locais da barra superior mantêm seu significado. A transferência própria
+  inclui relógios e sinaliza widgets conectados que precisam ser recriados com uma fonte escolhida.
+  Decisão e limites: [ADR 0019](decisoes/0019-widget-sdk.md); inventário:
+  [widgets](inventario-widgets-159.md).
+- Validação: testes de contrato, API e interface, migração e recuperação em bancos temporários,
+  transferência e verificações completas do projeto; navegador em desktop e celular com criação,
+  edição, ordenação por teclado, troca de página, remoção e telemetria simulada. A imagem Docker
+  de backend foi construída e o pacote carregado no contêiner. Nenhum serviço real foi acessado.

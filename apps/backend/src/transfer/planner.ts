@@ -5,6 +5,7 @@ type Existing = {
   groups: string[];
   services: { category: string; url: string }[];
   pages?: string[];
+  widgetCount?: number;
 };
 
 /** Compares file with current configuration. Additive only: nothing is overwritten or deleted. */
@@ -19,6 +20,7 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
   const pages: ImportPlan['pages'] = [];
   const wantedPages = [
     ...(parsed.document.pages ?? []),
+    ...(parsed.document.widgets ?? []).map((widget) => widget.page),
     ...parsed.document.groups.flatMap((group) => (group.page ? [group.page] : [])),
   ];
   for (const name of wantedPages)
@@ -55,7 +57,21 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
       });
     });
   });
+  let remainingWidgets = Math.max(0, 200 - (existing.widgetCount ?? 0));
+  const widgets = (parsed.document.widgets ?? []).map((widget, index) => {
+    const canCreate = widget.type === 'clock' && remainingWidgets > 0;
+    if (canCreate) remainingWidgets -= 1;
+    else if (widget.type === 'clock')
+      issues.push({ path: `widgets[${index}]`, code: 'widget-limit', severity: 'warning' });
+    return {
+      page: widget.page,
+      name: widget.name,
+      type: widget.type,
+      status: canCreate ? ('new' as const) : ('skipped' as const),
+    };
+  });
   return {
+    widgets,
     groups,
     pages,
     services,
@@ -63,6 +79,7 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
     summary: {
       newGroups: groups.filter((g) => g.status === 'new').length,
       newPages: pages.filter((page) => page.status === 'new').length,
+      newWidgets: widgets.filter((widget) => widget.status === 'new').length,
       newServices: services.filter((s) => s.status === 'new').length,
       duplicates: services.filter((s) => s.status === 'duplicate').length,
       errors: issues.filter((i) => i.severity === 'error').length,

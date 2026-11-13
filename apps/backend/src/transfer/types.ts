@@ -1,11 +1,12 @@
+import type { ClockConfig } from '@homora/widgets/clock';
 import type { Appearance, CheckType, OpenTarget } from '@homora/shared';
 
 /**
  * Homora export format version. Version 2 added pages (`pages` and a `page` on each group);
- * version 1 files are still read, and their groups go to the first page.
+ * version 3 adds page widgets. Versions 1 and 2 remain readable; version 1 groups go to the first page.
  */
-export const TRANSFER_VERSION = 2;
-export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2];
+export const TRANSFER_VERSION = 3;
+export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3];
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
 export const MAX_SERVICES = 1000;
@@ -34,7 +35,18 @@ export type ImportedGroup = {
   page?: string;
   services: ImportedService[];
 };
-export type ImportDocument = { groups: ImportedGroup[]; pages?: string[] };
+export type PortableWidget = {
+  page: string;
+  type: string;
+  name: string;
+  config: ClockConfig | Record<string, never>;
+  source?: { type: string; name: string };
+};
+export type ImportDocument = {
+  groups: ImportedGroup[];
+  pages?: string[];
+  widgets?: PortableWidget[];
+};
 
 /** Stable codes: the UI translates them; the server returns no language-specific text. */
 export type IssueCode =
@@ -54,6 +66,9 @@ export type IssueCode =
   | 'open-target-ignored'
   | 'check-ignored'
   | 'widget-ignored'
+  | 'widget-source-unavailable'
+  | 'widget-invalid'
+  | 'widget-limit'
   | 'pages-ignored'
   | 'page-invalid'
   | 'page-limit'
@@ -66,11 +81,13 @@ export type ImportPlan = {
   /** Pages the file asks for, and whether they exist already. */
   pages: { name: string; status: 'new' | 'existing' }[];
   services: { group: string; name: string; url: string; status: 'new' | 'duplicate' }[];
+  widgets: { page: string; name: string; type: string; status: 'new' | 'skipped' }[];
   issues: ImportIssue[];
   summary: {
     newGroups: number;
     newPages: number;
     newServices: number;
+    newWidgets: number;
     duplicates: number;
     errors: number;
     warnings: number;

@@ -33,6 +33,20 @@ export function ImportPreview({ plan }: { plan: Plan }) {
           ))}
         </ul>
       )}
+      {(plan.widgets?.length ?? 0) > 0 && (
+        <ul className="flex flex-col gap-1 rounded-md border p-2 text-sm">
+          {plan.widgets?.map((widget, index) => (
+            <li key={index} className="flex justify-between gap-2">
+              <span>
+                {widget.name || widget.type} · {widget.page}
+              </span>
+              <Badge variant={widget.status === 'new' ? 'success' : 'secondary'}>
+                {widget.status === 'new' ? t('transfer.statusNew') : t('pageWidgets.skipped')}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      )}
       {plan.issues.length > 0 && (
         <section aria-label={t('transfer.issues')} className="flex flex-col gap-2">
           <h3 className="font-label text-base">{t('transfer.issues')}</h3>

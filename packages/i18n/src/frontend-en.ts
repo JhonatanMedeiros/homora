@@ -1,3 +1,4 @@
+import { en as pageWidgets } from './messages/page-widgets.js';
 import { en as core } from './messages/core.js';
 import { en as appShell } from './messages/app-shell.js';
 import { en as serviceCards } from './messages/service-cards.js';
@@ -39,5 +40,6 @@ export const en = {
   ...uptimeStatus,
   ...serviceDetail,
   ...checks,
+  ...pageWidgets,
 } as const;
 export type MessageKey = keyof typeof en;
