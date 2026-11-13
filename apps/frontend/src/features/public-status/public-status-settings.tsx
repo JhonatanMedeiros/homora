@@ -1,5 +1,4 @@
 import { Spinner } from '@/components/ui/spinner';
-import { useEffect, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { CopyButton } from '@/components/copy-button';
 import { SectionTitle } from '@/components/section-title';
@@ -12,56 +11,24 @@ import { Label } from '@/components/ui/label';
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group';
 import { Switch } from '@/components/ui/switch';
 import { SettingRow, SettingsGroup } from '@/features/settings/setting-row';
-import { PublicStatusView, type PublicStatus } from '@/pages/status-page';
+import { PublicStatusView } from '@/pages/status-page';
 import { t } from '@/i18n';
-
-type Admin = { enabled: boolean; title: string; description: string; preview: PublicStatus };
+import { usePublicStatusSettings } from '@/hooks/use-public-status-settings';
 
 /** Administrator controls for the public status page, with a preview of exactly what is exposed. */
 export function PublicStatusSettings() {
-  const [admin, setAdmin] = useState<Admin | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
-  const [saving, setSaving] = useState(false);
+  const {
+    admin,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    message,
+    setMessage,
+    saving,
+    update,
+  } = usePublicStatusSettings();
   const address = `${window.location.origin}/status`;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/public-status/admin', { signal: controller.signal })
-      .then((response) => (response.ok ? (response.json() as Promise<Admin>) : null))
-      .then((data) => {
-        if (data) {
-          setAdmin(data);
-          setTitle(data.title);
-          setDescription(data.description ?? '');
-        }
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
-
-  async function update(patch: { enabled?: boolean; title?: string; description?: string }) {
-    setSaving(true);
-    setMessage(null);
-    try {
-      const response = await fetch('/api/public-status/admin', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      if (!response.ok) throw new Error();
-      const data = (await response.json()) as Admin;
-      setAdmin(data);
-      setTitle(data.title);
-      setDescription(data.description ?? '');
-      setMessage({ kind: 'ok', text: t('settings.public.saved') });
-    } catch {
-      setMessage({ kind: 'error', text: t('settings.public.error') });
-    } finally {
-      setSaving(false);
-    }
-  }
 
   if (!admin) return null;
   const shared = admin.preview.services.length;

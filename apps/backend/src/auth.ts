@@ -1,10 +1,15 @@
-import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import type { DatabaseSync } from 'node:sqlite';
 import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { fromNodeHeaders } from 'better-auth/node';
+import {
+  createRateLimitStorage,
+  SIGN_IN_MAX_ATTEMPTS,
+  SIGN_IN_WINDOW_SECONDS,
+} from './auth-rate-limit.js';
+export { createRateLimitStorage } from './auth-rate-limit.js';
+export { loadSessionSecret } from './auth-session-secret.js';
 
 /** Path under which the Better Auth handler is mounted. */
 export const AUTH_BASE_PATH = '/api/auth';
@@ -12,41 +17,6 @@ export const AUTH_BASE_PATH = '/api/auth';
 export const CLIENT_IP_HEADER = 'x-homora-client-ip';
 
 const SESSION_SECONDS = 8 * 60 * 60;
-const SIGN_IN_WINDOW_SECONDS = 15 * 60;
-// Better Auth counts every attempt to the path, not only the failed ones.
-const SIGN_IN_MAX_ATTEMPTS = 10;
-
-const MAX_RATE_LIMIT_ENTRIES = 10_000;
-
-/**
- * Rate-limit counters kept in this instance's memory. Better Auth's built-in memory store is
- * shared by every instance in the process, so a private one keeps instances independent. The
- * window starts at the first request and counters reset when the backend restarts.
- */
-export function createRateLimitStorage(now: () => number = Date.now) {
-  const entries = new Map<string, { count: number; start: number; end: number }>();
-  return {
-    async consume(key: string, rule: { window: number; max: number }) {
-      const time = now();
-      for (const [name, entry] of entries) if (time >= entry.end) entries.delete(name);
-      const current = entries.get(key);
-      if (!current) {
-        // Oldest entries go first when a flood of distinct clients fills the table.
-        for (const name of entries.keys()) {
-          if (entries.size < MAX_RATE_LIMIT_ENTRIES) break;
-          entries.delete(name);
-        }
-        entries.set(key, { count: 1, start: time, end: time + rule.window * 1000 });
-        return { allowed: true, retryAfter: null };
-      }
-      if (current.count >= rule.max)
-        return { allowed: false, retryAfter: Math.max(1, Math.ceil((current.end - time) / 1000)) };
-      current.count++;
-      return { allowed: true, retryAfter: null };
-    },
-  };
-}
-
 export class AccountExistsError extends Error {
   constructor() {
     super('An administrator account already exists.');
@@ -72,30 +42,6 @@ export class SessionNotFoundError extends Error {
 }
 
 export type AccountInput = { name: string; email: string; password: string };
-
-/**
- * Secret used to sign session cookies. `HOMORA_SESSION_SECRET` wins; otherwise a random secret
- * is created next to the database (mode 0600). Losing it only signs everyone out.
- */
-export function loadSessionSecret(path: string, configured?: string): string {
-  if (configured) return configured;
-  const read = () => {
-    const value = readFileSync(path, 'utf8').trim();
-    if (!/^[0-9a-f]{64}$/.test(value)) throw new Error('Invalid session secret file.');
-    return value;
-  };
-  try {
-    return read();
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-  }
-  try {
-    writeFileSync(path, randomBytes(32).toString('hex'), { flag: 'wx', mode: 0o600 });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-  }
-  return read();
-}
 
 type Options = {
   sqlite: DatabaseSync;

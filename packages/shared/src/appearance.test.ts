@@ -5,7 +5,6 @@ import {
   BACKGROUND_IDS,
   BACKGROUND_PRESETS,
   DEFAULT_APPEARANCE,
-  appearanceTokens,
   contrastProblems,
   contrastRatio,
   hexToRgb,
@@ -119,28 +118,6 @@ describe('parseAppearance', () => {
   });
 });
 
-describe('appearanceTokens', () => {
-  it('emits nothing for the default so the shipped look is untouched', () => {
-    expect(appearanceTokens(DEFAULT_APPEARANCE)).toEqual({ light: {}, dark: {}, shared: {} });
-  });
-  it('emits accent, readable on-accent text, background and card tokens', () => {
-    const tokens = appearanceTokens(
-      make({ accent: 'violet', background: 'dusk', cardOpacity: 80, blur: true }),
-    );
-    expect(tokens.light['--ap-primary']).toBe(ACCENT_PRESETS.violet.light);
-    expect(tokens.light['--ap-primary-foreground']).toBe('#ffffff');
-    expect(tokens.dark['--ap-primary-foreground']).toBe('#000000');
-    expect(tokens.light['--ap-page-background']).toContain('linear-gradient');
-    expect(tokens.shared).toEqual({ '--ap-card-opacity': '0.8', '--ap-card-blur': 'blur(12px)' });
-    for (const theme of ['light', 'dark'] as const)
-      expect(tokens[theme]['--ap-accent-text']).toMatch(/^#[0-9a-f]{6}$/);
-  });
-  it('never emits an external url', () => {
-    for (const background of BACKGROUND_IDS)
-      expect(JSON.stringify(appearanceTokens(make({ background })))).not.toMatch(/url\(|https?:/);
-  });
-});
-
 const picture = (patch: Partial<BackgroundImage> = {}): BackgroundImage => ({
   name: 'a'.repeat(32) + '.webp',
   dim: 40,
@@ -186,17 +163,5 @@ describe('background image', () => {
     expect(white.some((p) => p.theme === 'dark' && p.on === 'page')).toBe(true);
     const black = contrastProblems(make({ image: picture({ average: '#000000', dim: 0 }) }));
     expect(black.some((p) => p.theme === 'light' && p.on === 'page')).toBe(true);
-  });
-
-  it('lets the image replace the preset and only ever points at the same origin', () => {
-    const tokens = appearanceTokens(
-      make({ background: 'dusk', image: picture({ position: 'tile' }) }),
-    );
-    expect(tokens.light['--ap-page-background']).toContain(
-      'url("/api/appearance/background/' + 'a'.repeat(32) + '.webp")',
-    );
-    expect(tokens.light['--ap-page-background']).not.toContain('linear-gradient(160deg');
-    expect(tokens.shared['--ap-page-repeat']).toBe('no-repeat, repeat');
-    expect(JSON.stringify(tokens)).not.toMatch(/https?:|\/\/[a-z]/);
   });
 });

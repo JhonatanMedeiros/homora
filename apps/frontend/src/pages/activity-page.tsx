@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -8,12 +8,8 @@ import { FormError } from '@/components/form-error';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { PageHeader } from '@/components/page-header';
 import { ActivityFeed } from '@/features/activity/activity-feed';
-import type {
-  ActivityEvent,
-  ActivityKind,
-  ActivityOutcome,
-  ActivityPage as Page,
-} from '@/features/activity/activity-model';
+import type { ActivityKind, ActivityOutcome } from '@/features/activity/activity-model';
+import { useActivityFeed } from '@/hooks/use-activity-feed';
 import { t } from '@/i18n';
 
 const KINDS: ('all' | ActivityKind)[] = ['all', 'access', 'account', 'proposal', 'agent'];
@@ -22,50 +18,7 @@ const OUTCOMES: ('all' | ActivityOutcome)[] = ['all', 'success', 'failure', 'ref
 export function ActivityPage() {
   const [kind, setKind] = useState<'all' | ActivityKind>('all');
   const [outcome, setOutcome] = useState<'all' | ActivityOutcome>('all');
-  const [events, setEvents] = useState<ActivityEvent[] | null>(null);
-  const [next, setNext] = useState<number | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const fetchPage = useCallback(
-    async (before?: number): Promise<Page | null> => {
-      const params = new URLSearchParams();
-      if (kind !== 'all') params.set('kind', kind);
-      if (outcome !== 'all') params.set('outcome', outcome);
-      if (before !== undefined) params.set('before', String(before));
-      const response = await fetch(`/api/activity?${params}`).catch(() => null);
-      return response?.ok ? ((await response.json()) as Page) : null;
-    },
-    [kind, outcome],
-  );
-
-  useEffect(() => {
-    let active = true;
-    void fetchPage().then((page) => {
-      if (!active) return;
-      setFailed(page === null);
-      if (page) {
-        setEvents(page.events);
-        setNext(page.nextBefore);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [fetchPage]);
-
-  async function loadMore() {
-    if (next === null) return;
-    setLoadingMore(true);
-    const page = await fetchPage(next);
-    setLoadingMore(false);
-    if (!page) {
-      setFailed(true);
-      return;
-    }
-    setEvents((current) => [...(current ?? []), ...page.events]);
-    setNext(page.nextBefore);
-  }
+  const { events, next, failed, loadingMore, loadMore } = useActivityFeed(kind, outcome);
 
   return (
     <section aria-label={t('activity.title')} className="flex flex-col gap-6">

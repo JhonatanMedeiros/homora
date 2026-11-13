@@ -1,10 +1,4 @@
-import type {
-  Extraction,
-  IntegrationManifest,
-  JsonPath,
-  Literal,
-  ManifestField,
-} from '@homora/shared';
+import type { IntegrationManifest, ManifestField } from '@homora/shared';
 import { InputError, type ErrorCode } from './api-error.js';
 import type {
   IntegrationAdapter,
@@ -12,10 +6,15 @@ import type {
   IntegrationTransport,
 } from './integrations.js';
 import { assertValidDefinition } from './integration-manifest.js';
+import {
+  extractManifestStep,
+  requiredValuesMatch,
+  type ManifestConfig,
+  type ManifestData,
+} from './manifest-response.js';
 
 /** Flat configuration: `url`, public text fields, and the credentials (`secret`, `tokenId`). */
-export type ManifestConfig = Record<string, string>;
-export type ManifestData = Record<string, string | number | boolean | null>;
+export type { ManifestConfig, ManifestData } from './manifest-response.js';
 
 const hasControl = (value: string) =>
   Array.from(value).some((char) => {
@@ -71,134 +70,6 @@ function validateConfig(manifest: IntegrationManifest, input: unknown): Manifest
     if (value !== '') config[field.key] = value;
   }
   return config;
-}
-
-function walk(value: unknown, path: JsonPath): unknown {
-  let current = value;
-  for (const step of path) {
-    if (typeof step === 'number') {
-      if (!Array.isArray(current)) return undefined;
-      current = current[step];
-    } else {
-      if (!current || typeof current !== 'object' || Array.isArray(current)) return undefined;
-      if (!Object.hasOwn(current, step)) return undefined;
-      current = (current as Record<string, unknown>)[step];
-    }
-  }
-  return current;
-}
-const MAX_ENTRIES = 10_000;
-
-function typed(
-  value: unknown,
-  type: 'string' | 'boolean' | 'integer' | 'number',
-  bounds: { maxLength?: number; min?: number; max?: number },
-): string | number | boolean | undefined {
-  if (type === 'string')
-    return typeof value === 'string' && value.length > 0 && value.length <= (bounds.maxLength ?? 0)
-      ? value
-      : undefined;
-  if (type === 'boolean') return typeof value === 'boolean' ? value : undefined;
-  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
-  if (type === 'integer' && !Number.isSafeInteger(value)) return undefined;
-  if (bounds.min !== undefined && value < bounds.min) return undefined;
-  if (bounds.max !== undefined && value > bounds.max) return undefined;
-  return value;
-}
-const sameLiteral = (a: unknown, b: Literal) => a === b;
-function stateOf(
-  value: unknown,
-  states: Readonly<Record<string, readonly Literal[]>>,
-  other: string,
-) {
-  for (const [name, literals] of Object.entries(states))
-    if (literals.some((literal) => sameLiteral(value, literal))) return name;
-  return other;
-}
-
-/** Runs one extraction step against the parsed responses. Any failure is an invalid response. */
-function extractStep(
-  step: Extraction,
-  body: (request?: string) => unknown,
-  config: ManifestConfig,
-  fail: () => never,
-  out: ManifestData,
-) {
-  if (step.op === 'config') {
-    out[step.out] = config[step.key] ?? null;
-    return;
-  }
-  const source = walk(body(step.request), step.path);
-  switch (step.op) {
-    case 'pick': {
-      if ((source === undefined || source === null) && step.optional) {
-        out[step.out] = null;
-        return;
-      }
-      const value = typed(source, step.type, step);
-      if (value === undefined) fail();
-      out[step.out] = value as string | number | boolean;
-      return;
-    }
-    case 'count': {
-      const items = source;
-      if (!Array.isArray(items) || items.length > MAX_ENTRIES) return fail();
-      const total = step.where
-        ? items.filter((item) => sameLiteral(walk(item, step.where!.path), step.where!.equals))
-            .length
-        : items.length;
-      if (total > (step.max ?? 100000)) fail();
-      out[step.out] = total;
-      return;
-    }
-    case 'sum': {
-      const items = source;
-      if (!Array.isArray(items) || items.length > MAX_ENTRIES) return fail();
-      let total = 0;
-      for (const item of items) {
-        const value = walk(item, step.field);
-        if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return fail();
-        total += value;
-      }
-      if (total > step.max) fail();
-      out[step.out] = total;
-      return;
-    }
-    case 'last': {
-      if (!Array.isArray(source) || source.length === 0 || source.length > MAX_ENTRIES)
-        return fail();
-      const value = typed(walk(source.at(-1), step.field), step.type, {
-        maxLength: step.maxLength,
-        min: -1e15,
-        max: 1e15,
-      });
-      if (value === undefined) fail();
-      out[step.out] = value as string | number | boolean;
-      return;
-    }
-    case 'state':
-      out[step.out] = stateOf(source, step.states, step.other);
-      return;
-    case 'tally': {
-      const groups =
-        source && typeof source === 'object' && !Array.isArray(source)
-          ? Object.values(source)
-          : null;
-      if (!groups || groups.length > MAX_ENTRIES) return fail();
-      for (const name of [...Object.keys(step.states), step.other]) out[name] = 0;
-      for (const group of groups) {
-        if (!Array.isArray(group)) return fail();
-        const latest: unknown = group.at(-1);
-        const name = stateOf(
-          latest === undefined ? undefined : walk(latest, step.field),
-          step.states,
-          step.other,
-        );
-        out[name] = (out[name] as number) + 1;
-      }
-      return;
-    }
-  }
 }
 
 function authorization(manifest: IntegrationManifest, config: ManifestConfig) {
@@ -275,13 +146,9 @@ export function createManifestAdapter(
       const fail = (): never => {
         throw invalidResponse(label);
       };
-      for (const rule of manifest.require ?? []) {
-        const actual = walk(body(rule.request), rule.path);
-        const expected = rule.equalsConfig !== undefined ? config[rule.equalsConfig] : rule.equals;
-        if (expected === undefined || actual !== expected) fail();
-      }
+      if (!requiredValuesMatch(manifest, body, config)) fail();
       const out: ManifestData = {};
-      for (const step of manifest.extract) extractStep(step, body, config, fail, out);
+      for (const step of manifest.extract) extractManifestStep(step, body, config, fail, out);
       // A credential reflected by the remote service must never reach a response.
       for (const value of Object.values(out))
         if (typeof value === 'string' && secrets.some((secret) => value.includes(secret))) fail();

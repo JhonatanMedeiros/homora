@@ -1,0 +1,225 @@
+import { useState, type DragEvent } from 'react';
+import type { Service, UptimeRange } from '@homora/shared';
+import { GroupSection } from '@/components/group-section';
+import { OrganizeRow } from '@/components/organize-row';
+import { ServiceCard } from '@/components/service-card';
+import type { CardWidgetState } from '@/hooks/use-card-widgets';
+import type { CardCoolify } from '@/hooks/use-resource-links';
+import type { useServices } from '@/hooks/use-services';
+import type { HostLabel, Impact } from '@/lib/hosts';
+import type { ServiceStatus } from '@/lib/services';
+import type { UptimeSummary } from '@homora/shared';
+
+type Group = { category: string; items: Service[] };
+type ServicesData = ReturnType<typeof useServices>;
+
+type GroupData = {
+  groups: Group[];
+  services: Service[];
+  groupRows: ServicesData['groupRows'];
+  pages: ServicesData['pages'];
+  allCategories: string[];
+  pageIdOf: (category: string) => number;
+  sortedIn: ServicesData['sortedIn'];
+  statuses: Record<number, ServiceStatus>;
+  blockedIds: Set<number>;
+  widgets: Record<number, CardWidgetState[]>;
+  coolify: Record<number, CardCoolify>;
+  uptime: Record<number, UptimeSummary>;
+  uptimeRange: UptimeRange;
+  impacts: Map<number, Impact>;
+  dependencyNotes: Record<number, string>;
+};
+
+type GroupPresentation = {
+  managing: boolean;
+  organizing: boolean;
+  list: boolean;
+  showDescriptions: boolean;
+  revealServiceId?: number;
+  revealNonce?: number;
+  confirming: number | null;
+};
+
+type GroupActions = {
+  onUptimeRangeChange: (range: UptimeRange) => void;
+  hostOf: (service: Service) => HostLabel | null;
+  onEditService: (service: Service) => void;
+  onRemoveService: (service: Service) => void;
+  onCancelRemoval: (serviceId: number) => void;
+  onCoolify: (serviceId: number) => void;
+  onPlaceService: (service: Service, position: number, total: number) => void;
+  onMoveServiceToGroup: (service: Service, group: string) => void;
+  onMoveGroup: (category: string, direction: -1 | 1) => void;
+  onMoveGroupToPage: (group: ServicesData['groupRows'][number], pageId: number) => void;
+  onSetGroupColumns: (group: ServicesData['groupRows'][number], columns: number | null) => void;
+  onRenameGroup: (group: ServicesData['groupRows'][number]) => void;
+  onRemoveGroup: (group: ServicesData['groupRows'][number]) => void;
+};
+
+type Props = { data: GroupData; presentation: GroupPresentation; actions: GroupActions };
+
+/** Renders service groups and their cards or organization rows. State for drag/drop stays local. */
+export function ServiceGroups({ data, presentation, actions }: Props) {
+  const {
+    groups,
+    services,
+    groupRows,
+    pages,
+    allCategories,
+    pageIdOf,
+    sortedIn,
+    statuses,
+    blockedIds,
+    widgets,
+    coolify,
+    uptime,
+    uptimeRange,
+    impacts,
+    dependencyNotes,
+  } = data;
+  const { managing, organizing, list, showDescriptions, revealServiceId, revealNonce, confirming } =
+    presentation;
+  const {
+    onUptimeRangeChange,
+    hostOf,
+    onEditService,
+    onRemoveService,
+    onCancelRemoval,
+    onCoolify,
+    onPlaceService,
+    onMoveServiceToGroup,
+    onMoveGroup,
+    onMoveGroupToPage,
+    onSetGroupColumns,
+    onRenameGroup,
+    onRemoveGroup,
+  } = actions;
+  const [dragging, setDragging] = useState<number | null>(null);
+  const [dropOver, setDropOver] = useState<number | null>(null);
+  const [dropGroup, setDropGroup] = useState<string | null>(null);
+
+  return groups.map(({ category, items }) => {
+    const row = groupRows.find((group) => group.name === category);
+    return (
+      <GroupSection
+        key={category}
+        category={category}
+        count={items.length}
+        organizing={organizing}
+        list={list}
+        managing={managing}
+        revealSignal={
+          revealServiceId !== undefined && items.some((item) => item.id === revealServiceId)
+            ? revealNonce
+            : undefined
+        }
+        pages={pages}
+        pageId={row?.pageId}
+        onPage={(pageId) => row && onMoveGroupToPage(row, pageId)}
+        canEdit={Boolean(row)}
+        canRemove={!services.some((service) => service.category === category)}
+        groupId={row?.id}
+        columns={row?.columns}
+        onColumns={(columns) => row && onSetGroupColumns(row, columns)}
+        onRename={() => row && onRenameGroup(row)}
+        onRemove={() => row && onRemoveGroup(row)}
+        emptyDrop={{
+          active: dragging !== null,
+          over: dropGroup === category,
+          onOver: () => setDropGroup(category),
+          onLeave: () => setDropGroup((current) => (current === category ? null : current)),
+          onDrop: () => {
+            const dragged = services.find((item) => item.id === dragging);
+            setDragging(null);
+            setDropGroup(null);
+            if (dragged && dragged.category !== category) onMoveServiceToGroup(dragged, category);
+          },
+        }}
+        onMove={(direction) => onMoveGroup(category, direction)}
+      >
+        {items.map((service, index) => {
+          if (organizing) {
+            const dragProps = {
+              onDragStart: (event: DragEvent) => {
+                setDragging(service.id);
+                event.dataTransfer.effectAllowed = 'move';
+              },
+              onDragEnd: () => {
+                setDragging(null);
+                setDropOver(null);
+                setDropGroup(null);
+              },
+              onDragOver: (event: DragEvent) => {
+                if (dragging !== null && dragging !== service.id) {
+                  event.preventDefault();
+                  setDropOver(service.id);
+                }
+              },
+              onDrop: (event: DragEvent) => {
+                event.preventDefault();
+                const dragged = services.find((item) => item.id === dragging);
+                setDragging(null);
+                setDropOver(null);
+                if (!dragged) return;
+                if (dragged.category !== service.category) {
+                  onMoveServiceToGroup(dragged, service.category);
+                  return;
+                }
+                onPlaceService(
+                  dragged,
+                  sortedIn(service.category).findIndex((item) => item.id === service.id),
+                  items.length,
+                );
+              },
+            };
+            return (
+              <OrganizeRow
+                key={service.id}
+                service={service}
+                otherGroups={allCategories.filter((name) => name !== service.category)}
+                pageLabel={(name) =>
+                  pages.length > 1
+                    ? pages.find((page) => page.id === pageIdOf(name))?.name
+                    : undefined
+                }
+                first={index === 0}
+                last={index === items.length - 1}
+                dragging={dragging === service.id}
+                dropTarget={dropOver === service.id}
+                onMove={(direction) => onPlaceService(service, index + direction, items.length)}
+                onMoveToTop={() => onPlaceService(service, 0, items.length)}
+                onMoveToGroup={(group) => onMoveServiceToGroup(service, group)}
+                dragProps={dragProps}
+              />
+            );
+          }
+          return (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              status={statuses[service.id]}
+              widgets={widgets[service.id]}
+              coolify={coolify[service.id]}
+              onCoolify={() => onCoolify(service.id)}
+              uptime={uptime[service.id]}
+              uptimeRange={uptimeRange}
+              onUptimeRangeChange={onUptimeRangeChange}
+              host={hostOf(service)}
+              impact={impacts.get(service.id)}
+              dependencyNote={dependencyNotes[service.id]}
+              blocked={blockedIds.has(service.id)}
+              managing={managing}
+              list={list}
+              showDescription={showDescriptions || managing}
+              confirmingRemoval={confirming === service.id}
+              onEdit={() => onEditService(service)}
+              onRemove={() => onRemoveService(service)}
+              onCancelRemoval={() => onCancelRemoval(service.id)}
+            />
+          );
+        })}
+      </GroupSection>
+    );
+  });
+}

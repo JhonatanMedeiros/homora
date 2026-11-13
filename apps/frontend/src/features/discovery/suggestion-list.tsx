@@ -4,15 +4,8 @@ import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import { t } from '@/i18n';
 
-export type Suggestion = {
-  /** Container id sent back on import. Missing when the container could not be matched. */
-  id: string | undefined;
-  name: string;
-  group: string;
-  url: string;
-  container: string | undefined;
-  isNew: boolean;
-};
+import type { Suggestion } from './local-discovery-model';
+export type { Suggestion } from './local-discovery-model';
 
 /** Containers offered as cards. Only new ones can be picked; duplicates stay visible but locked. */
 export function SuggestionList({

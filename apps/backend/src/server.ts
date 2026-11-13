@@ -6,7 +6,7 @@ import { loadConfig } from './config.js';
 import { createDockerSource } from './docker-discovery.js';
 import { createAuth, loadSessionSecret } from './auth.js';
 import { createVault } from './vault.js';
-import { migrateLegacyProxmoxAtStartup } from './integration-connections.js';
+import { migrateLegacyProxmoxAtStartup } from './legacy-proxmox.js';
 import { createShutdownHandler } from './shutdown.js';
 const config = loadConfig();
 await mkdir(dirname(config.databasePath), { recursive: true });

@@ -1,58 +1,22 @@
-import { useRef, useState } from 'react';
-import { ChevronDown, TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  ACCENT_IDS,
-  ACCENT_PRESETS,
-  BACKGROUND_IDS,
-  BACKGROUND_PRESETS,
-  CARD_OPACITY_MAX,
-  CARD_OPACITY_MIN,
-  CARD_OPACITY_STEP,
-  DEFAULT_APPEARANCE,
-  IMAGE_DIM_MAX,
-  IMAGE_DIM_STEP,
-  IMAGE_MAX_BYTES,
-  IMAGE_POSITIONS,
-  contrastProblems,
-  isHexColor,
-  type AccentId,
-  type Appearance,
-  type BackgroundId,
-  type ContrastProblem,
-  type ImagePosition,
-  type ThemeName,
-} from '@homora/shared';
+import { DEFAULT_APPEARANCE, IMAGE_MAX_BYTES, type ContrastProblem } from '@homora/shared';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { FormError } from '@/components/form-error';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppearance } from '@/hooks/use-appearance';
+import { useAppearanceDraft } from '@/hooks/use-appearance-draft';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/hooks/use-theme';
 import { t, type MessageKey } from '@/i18n';
-import { previewStyle } from '@/lib/appearance';
+import { previewStyle, sameAppearance } from '@/lib/appearance';
 import { apiError } from '@/i18n/api-errors';
-import { Segmented } from './segmented';
-import { SettingRow, SettingsGroup } from './setting-row';
-
-const OPACITIES = Array.from(
-  { length: (CARD_OPACITY_MAX - CARD_OPACITY_MIN) / CARD_OPACITY_STEP + 1 },
-  (_, index) => CARD_OPACITY_MIN + index * CARD_OPACITY_STEP,
-);
-const CUSTOM_FALLBACK = '#2f7d6b';
-
-const formatBytes = (bytes: number) =>
-  bytes >= 1024 * 1024
-    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+import { SettingsGroup } from './setting-row';
+import { AppearanceAdvancedSettings } from './appearance-advanced-settings';
+import { AppearanceColors } from './appearance-colors';
 
 /** One decimal, rounded down, so a failing ratio never reads as exactly the minimum. */
 const ratioText = (value: number) => (Math.floor(value * 10) / 10).toFixed(1);
@@ -66,42 +30,28 @@ function problemText(problem: ContrastProblem) {
   });
 }
 
-const sameAppearance = (a: Appearance, b: Appearance) => JSON.stringify(a) === JSON.stringify(b);
-const swatchBackground = (id: BackgroundId, theme: ThemeName) => {
-  const stops = BACKGROUND_PRESETS[id]?.[theme];
-  return stops ? `linear-gradient(160deg, ${stops.join(', ')})` : undefined;
-};
-
 /** Accent, page background and card translucency, saved on the server for every device. */
 export function AppearanceSettings() {
   const { appearance: saved, failed, save, reset, uploadImage, removeImage } = useAppearance();
   const phone = useIsMobile();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
   const { theme } = useTheme();
-  const [lastSaved, setLastSaved] = useState(saved);
-  const [draft, setDraft] = useState(saved);
-  const [hexText, setHexText] = useState(saved.customAccent ?? CUSTOM_FALLBACK);
+  const editor = useAppearanceDraft(saved);
+  const {
+    draft,
+    setDraft,
+    hexText,
+    setHexText,
+    hexValid,
+    candidate,
+    problems,
+    dirty,
+    blocked,
+    error,
+    setError,
+    patch,
+    discard,
+  } = editor;
   const [busy, setBusy] = useState<'save' | 'reset' | 'image' | null>(null);
-  const [error, setError] = useState('');
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  // The saved value arrived (or changed): start the draft from it.
-  if (saved !== lastSaved) {
-    setLastSaved(saved);
-    setDraft(saved);
-    setHexText(saved.customAccent ?? CUSTOM_FALLBACK);
-  }
-
-  const hexValid = isHexColor(hexText);
-  const candidate: Appearance | null =
-    draft.accent === 'custom'
-      ? hexValid
-        ? { ...draft, customAccent: hexText.toLowerCase() }
-        : null
-      : { ...draft, customAccent: null };
-  const problems = candidate ? contrastProblems(candidate) : [];
-  const dirty = !candidate || !sameAppearance(candidate, saved);
-  const blocked = problems.length > 0 || !candidate;
   const status = busy
     ? t('appearance.status.saving')
     : blocked
@@ -110,10 +60,6 @@ export function AppearanceSettings() {
         ? t('appearance.status.unsaved')
         : t('appearance.status.saved');
 
-  const patch = (change: Partial<Appearance>) => {
-    setError('');
-    setDraft((current) => ({ ...current, ...change }));
-  };
   const submit = async () => {
     if (!candidate || blocked) return;
     setBusy('save');
@@ -141,11 +87,6 @@ export function AppearanceSettings() {
     setBusy(null);
     if (result.ok) toast.success(t('appearance.imageRemoved'));
     else setError(result.message || t('appearance.error'));
-  };
-  const discard = () => {
-    setError('');
-    setDraft(saved);
-    setHexText(saved.customAccent ?? CUSTOM_FALLBACK);
   };
   const restore = async () => {
     setBusy('reset');
@@ -186,280 +127,31 @@ export function AppearanceSettings() {
             </div>
           )}
 
-          <SettingRow label={t('appearance.accent')} description={t('appearance.accentHint')}>
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              size="sm"
-              spacing={1}
-              className="flex-wrap sm:justify-end"
-              aria-label={t('appearance.accent')}
-              value={draft.accent}
-              onValueChange={(next) => {
-                if (next === 'custom' || (ACCENT_IDS as readonly string[]).includes(next))
-                  patch({ accent: next as AccentId | 'custom' });
-              }}
-            >
-              {ACCENT_IDS.map((id) => (
-                <ToggleGroupItem
-                  key={id}
-                  value={id}
-                  title={t(`appearance.accent.${id}` as MessageKey)}
-                  className="size-9 min-w-9 rounded-full p-0 data-[state=on]:ring-2 data-[state=on]:ring-foreground pointer-coarse:size-11"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="size-6 rounded-full border"
-                    style={{ backgroundColor: ACCENT_PRESETS[id][theme] }}
-                  />
-                  <span className="sr-only">{t(`appearance.accent.${id}` as MessageKey)}</span>
-                </ToggleGroupItem>
-              ))}
-              <ToggleGroupItem value="custom" className="px-3 pointer-coarse:h-11">
-                {t('appearance.accent.custom')}
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </SettingRow>
-          {draft.accent === 'custom' && (
-            <SettingRow
-              htmlFor="appearance-hex"
-              label={t('appearance.customHex')}
-              description={t('appearance.customHexHint')}
-            >
-              <div className="flex w-full flex-col gap-1 sm:w-48">
-                <Input
-                  id="appearance-hex"
-                  autoComplete="off"
-                  spellCheck={false}
-                  maxLength={7}
-                  value={hexText}
-                  aria-invalid={hexValid ? undefined : true}
-                  aria-describedby="appearance-hex-error"
-                  onChange={(event) => {
-                    setError('');
-                    setHexText(event.target.value.trim());
-                  }}
-                />
-                <FormError id="appearance-hex-error">
-                  {hexValid ? '' : t('appearance.customHexInvalid')}
-                </FormError>
-              </div>
-            </SettingRow>
-          )}
+          <AppearanceColors
+            draft={draft}
+            hexText={hexText}
+            hexValid={hexValid}
+            theme={theme}
+            onChange={patch}
+            onHexChange={setHexText}
+            onHexEdit={() => setError('')}
+          />
 
-          <SettingRow
-            label={t('appearance.background')}
-            description={t('appearance.backgroundHint')}
-          >
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              size="sm"
-              spacing={1}
-              className="flex-wrap sm:justify-end"
-              aria-label={t('appearance.background')}
-              value={draft.background}
-              onValueChange={(next) => {
-                if ((BACKGROUND_IDS as readonly string[]).includes(next))
-                  patch({ background: next as BackgroundId });
-              }}
-            >
-              {BACKGROUND_IDS.map((id) => (
-                <ToggleGroupItem
-                  key={id}
-                  value={id}
-                  title={t(`appearance.background.${id}` as MessageKey)}
-                  className="h-11 w-16 min-w-16 p-1 data-[state=on]:ring-2 data-[state=on]:ring-foreground"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="block size-full rounded-sm border bg-background"
-                    style={{ backgroundImage: swatchBackground(id, theme) }}
-                  />
-                  <span className="sr-only">{t(`appearance.background.${id}` as MessageKey)}</span>
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </SettingRow>
-
-          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <CollapsibleTrigger asChild>
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-4 p-4 text-left"
-              >
-                <span className="flex flex-col gap-1">
-                  <span className="text-sm font-medium">{t('settings.ui.advanced')}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t('appearance.advancedHint')}
-                  </span>
-                </span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={
-                    advancedOpen
-                      ? 'size-4 rotate-180 transition-transform'
-                      : 'size-4 transition-transform'
-                  }
-                />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="divide-y divide-border border-t">
-              <SettingRow label={t('appearance.image')} description={t('appearance.imageHint')}>
-                {phone ? (
-                  <p className="max-w-[40ch] text-sm text-muted-foreground">
-                    {t('appearance.imagePhone')}
-                  </p>
-                ) : (
-                  <div
-                    data-testid="image-dropzone"
-                    data-dragging={dragging || undefined}
-                    className="flex w-full flex-col items-start gap-2 rounded-lg border border-dashed p-3 data-[dragging=true]:border-primary sm:w-80"
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      setDragging(true);
-                    }}
-                    onDragLeave={() => setDragging(false)}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      setDragging(false);
-                      const file = event.dataTransfer.files[0];
-                      if (file && busy === null) void send(file);
-                    }}
-                  >
-                    <p className="text-sm text-muted-foreground">{t('appearance.imageDrop')}</p>
-                    <input
-                      ref={fileInput}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="sr-only"
-                      tabIndex={-1}
-                      aria-label={t('appearance.imageChoose')}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = '';
-                        if (file) void send(file);
-                      }}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="pointer-coarse:h-11"
-                        disabled={busy !== null}
-                        onClick={() => fileInput.current?.click()}
-                      >
-                        {busy === 'image' && <Spinner data-icon="inline-start" />}
-                        {saved.image ? t('appearance.imageReplace') : t('appearance.imageChoose')}
-                      </Button>
-                      {saved.image && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="pointer-coarse:h-11"
-                          disabled={busy !== null}
-                          onClick={() => void dropImage()}
-                        >
-                          {t('appearance.imageRemove')}
-                        </Button>
-                      )}
-                    </div>
-                    <p aria-live="polite" className="text-sm">
-                      {busy === 'image'
-                        ? t('appearance.imageWorking')
-                        : saved.image
-                          ? t('appearance.imageSizes', {
-                              before: formatBytes(saved.image.originalBytes),
-                              after: formatBytes(saved.image.bytes),
-                              width: saved.image.width,
-                              height: saved.image.height,
-                            })
-                          : t('appearance.imageNone')}
-                    </p>
-                  </div>
-                )}
-              </SettingRow>
-              {draft.image && (
-                <>
-                  <SettingRow
-                    label={t('appearance.imageDim')}
-                    description={t('appearance.imageDimHint')}
-                  >
-                    <div className="flex w-full items-center gap-3 sm:w-64">
-                      <Slider
-                        aria-label={t('appearance.imageDim')}
-                        min={0}
-                        max={IMAGE_DIM_MAX}
-                        step={IMAGE_DIM_STEP}
-                        disabled={phone}
-                        value={[draft.image.dim]}
-                        onValueChange={([dim]) =>
-                          setDraft((current) =>
-                            current.image && dim !== undefined
-                              ? { ...current, image: { ...current.image, dim } }
-                              : current,
-                          )
-                        }
-                      />
-                      <span className="w-12 text-right font-mono text-sm">
-                        {t('appearance.imageDimValue', { value: draft.image.dim })}
-                      </span>
-                    </div>
-                  </SettingRow>
-                  <SettingRow label={t('appearance.imagePosition')}>
-                    <Segmented<ImagePosition>
-                      label={t('appearance.imagePosition')}
-                      value={draft.image.position}
-                      onChange={(position) =>
-                        setDraft((current) =>
-                          current.image
-                            ? { ...current, image: { ...current.image, position } }
-                            : current,
-                        )
-                      }
-                      options={IMAGE_POSITIONS.map((position) => ({
-                        value: position,
-                        label: t(`appearance.imagePosition.${position}` as MessageKey),
-                      }))}
-                    />
-                  </SettingRow>
-                </>
-              )}
-
-              <SettingRow
-                htmlFor="appearance-opacity"
-                label={t('appearance.cardOpacity')}
-                description={t('appearance.cardOpacityHint')}
-              >
-                <FormSelect
-                  id="appearance-opacity"
-                  aria-label={t('appearance.cardOpacity')}
-                  className="sm:w-32"
-                  value={draft.cardOpacity}
-                  onChange={(event) => patch({ cardOpacity: Number(event.target.value) })}
-                >
-                  {OPACITIES.map((value) => (
-                    <FormSelectOption key={value} value={value}>
-                      {t('appearance.cardOpacityOption', { value })}
-                    </FormSelectOption>
-                  ))}
-                </FormSelect>
-              </SettingRow>
-              <SettingRow
-                htmlFor="appearance-blur"
-                label={t('appearance.blur')}
-                description={t('appearance.blurHint')}
-              >
-                <Switch
-                  id="appearance-blur"
-                  checked={draft.blur}
-                  onCheckedChange={(blur) => patch({ blur })}
-                />
-              </SettingRow>
-            </CollapsibleContent>
-          </Collapsible>
+          <AppearanceAdvancedSettings
+            phone={phone}
+            saved={saved}
+            draft={draft}
+            busy={busy !== null}
+            imageBusy={busy === 'image'}
+            onSend={(file) => void send(file)}
+            onRemoveImage={() => void dropImage()}
+            onChange={patch}
+            onChangeImage={(change) =>
+              setDraft((current) =>
+                current.image ? { ...current, image: { ...current.image, ...change } } : current,
+              )
+            }
+          />
           {problems.length > 0 && (
             <div className="p-4">
               <Alert variant="destructive">

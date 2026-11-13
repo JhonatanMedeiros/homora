@@ -3,10 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { expect, it, vi } from 'vitest';
-import {
-  createIntegrationConnections,
-  migrateLegacyProxmoxAtStartup,
-} from './integration-connections.js';
+import { createIntegrationConnections } from './integration-connections.js';
+import { migrateLegacyProxmoxAtStartup } from './legacy-proxmox.js';
 import { createVault } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
 

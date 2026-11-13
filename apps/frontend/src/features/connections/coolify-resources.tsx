@@ -3,8 +3,6 @@ import { RotateCw } from 'lucide-react';
 import type { CoolifyResource, CoolifyState, CoolifyResourceType } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,24 +13,15 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { RowListSkeleton } from '@/components/skeletons';
-import { CoolifyStateBadge } from '@/components/coolify-state';
 import { useCoolifyResources } from '@/hooks/use-coolify-resources';
 import { deleteLink } from '@/lib/coolify-api';
 import { filterResources } from '@/lib/coolify';
 import { formatDateTime, t } from '@/i18n';
 import { CoolifyDiscovery } from './coolify-discovery';
 import { CoolifyLinkDialog } from './coolify-link-dialog';
-import { RowMenu } from './row-menu';
+import { CoolifyResourceTable } from './coolify-resource-table';
 import type { Connection } from './connection-model';
 
 const STATES: CoolifyState[] = ['running', 'degraded', 'stopped', 'unknown'];
@@ -73,21 +62,12 @@ function ResourcesBody({ connection }: { connection: Connection }) {
     () => filterResources(resources, query, type, state),
     [resources, query, type, state],
   );
-  const cardName = (resource: CoolifyResource) => {
+  const chosen = visible.filter((resource) => selected.has(resource.uuid));
+
+  async function unlink(resource: CoolifyResource) {
     const link = links.find(
       (item) => item.integrationId === connection.id && item.resourceUuid === resource.uuid,
     );
-    return link ? (cards.find((card) => card.id === link.serviceId)?.name ?? '…') : null;
-  };
-  const linkOf = (resource: CoolifyResource) =>
-    links.find(
-      (item) => item.integrationId === connection.id && item.resourceUuid === resource.uuid,
-    );
-  const chosen = visible.filter((resource) => selected.has(resource.uuid));
-  const allChosen = visible.length > 0 && chosen.length === visible.length;
-
-  async function unlink(resource: CoolifyResource) {
-    const link = linkOf(resource);
     if (!link) return;
     setError('');
     try {
@@ -210,109 +190,27 @@ function ResourcesBody({ connection }: { connection: Connection }) {
                 {t('coolify.createSelected', { count: chosen.length })}
               </Button>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8">
-                    <Checkbox
-                      aria-label={t('coolify.selectAll')}
-                      checked={allChosen ? true : chosen.length > 0 ? 'indeterminate' : false}
-                      onCheckedChange={(checked) =>
-                        setSelected(
-                          checked === true ? new Set(visible.map((item) => item.uuid)) : new Set(),
-                        )
-                      }
-                    />
-                  </TableHead>
-                  <TableHead>{t('coolify.colName')}</TableHead>
-                  <TableHead>{t('coolify.colType')}</TableHead>
-                  <TableHead>{t('coolify.colState')}</TableHead>
-                  <TableHead>{t('coolify.colAddresses')}</TableHead>
-                  <TableHead>{t('coolify.colEnvironment')}</TableHead>
-                  <TableHead>{t('coolify.colCard')}</TableHead>
-                  <TableHead className="w-10">
-                    <span className="sr-only">{t('coolify.colActions')}</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visible.map((resource) => (
-                  <TableRow key={resource.uuid}>
-                    <TableCell>
-                      <Checkbox
-                        aria-label={t('coolify.selectRow', { name: resource.name })}
-                        checked={selected.has(resource.uuid)}
-                        onCheckedChange={(checked) =>
-                          setSelected((current) => {
-                            const next = new Set(current);
-                            if (checked === true) next.add(resource.uuid);
-                            else next.delete(resource.uuid);
-                            return next;
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="max-w-56 whitespace-normal">
-                      <div className="font-medium">{resource.name}</div>
-                      {resource.description && (
-                        <div className="line-clamp-2 text-xs text-muted-foreground">
-                          {resource.description}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {t(
-                        resource.type === 'application'
-                          ? 'coolify.type.application'
-                          : 'coolify.type.service',
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <CoolifyStateBadge state={resource.state} />
-                    </TableCell>
-                    <TableCell className="max-w-56 whitespace-normal font-mono text-xs">
-                      {resource.urls.length > 0 ? (
-                        <ul className="flex flex-col gap-0.5">
-                          {resource.urls.map((url) => (
-                            <li key={url} className="truncate">
-                              {url}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className="font-sans text-muted-foreground">
-                          {t('coolify.noAddress')}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {resource.environmentId === null
-                        ? '—'
-                        : t('coolify.environment', { id: resource.environmentId })}
-                    </TableCell>
-                    <TableCell>{cardName(resource) ?? '—'}</TableCell>
-                    <TableCell>
-                      <RowMenu label={t('coolify.rowMenu', { name: resource.name })}>
-                        <DropdownMenuItem onSelect={() => setLinking(resource)}>
-                          {t('coolify.linkExisting')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setCreating([resource])}>
-                          {t('coolify.createCard')}
-                        </DropdownMenuItem>
-                        {linkOf(resource) && (
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => void unlink(resource)}
-                          >
-                            {t('coolify.unlink')}
-                          </DropdownMenuItem>
-                        )}
-                      </RowMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <CoolifyResourceTable
+              connectionId={connection.id}
+              resources={visible}
+              selected={selected}
+              cards={cards}
+              links={links}
+              onSelect={(uuid, checked) =>
+                setSelected((current) => {
+                  const next = new Set(current);
+                  if (checked) next.add(uuid);
+                  else next.delete(uuid);
+                  return next;
+                })
+              }
+              onSelectVisible={(checked) =>
+                setSelected(checked ? new Set(visible.map((item) => item.uuid)) : new Set())
+              }
+              onLink={setLinking}
+              onCreate={(resource) => setCreating([resource])}
+              onUnlink={(resource) => void unlink(resource)}
+            />
           </>
         )}
       </div>

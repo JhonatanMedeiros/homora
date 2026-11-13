@@ -1,20 +1,13 @@
 import { useCallback, useState } from 'react';
-import type { GuestType, HostLink } from '@homora/shared';
+import type { HostLink } from '@homora/shared';
+import type { CardSuggestion } from '@/features/hosts/host-suggestion-model';
 
-export type SuggestionEvidence = {
-  kind: 'config-address' | 'guest-agent' | 'docker-source';
-  address?: string;
-};
-export type SuggestionCandidate = {
-  host: HostLink;
-  name: string;
-  status: string;
-  strength: 'strong' | 'medium';
-  evidence: SuggestionEvidence[];
-  ambiguous: boolean;
-};
-export type CardSuggestion = { serviceId: number; candidates: SuggestionCandidate[] };
-export type { GuestType };
+export type {
+  CardSuggestion,
+  SuggestionCandidate,
+  SuggestionEvidence,
+} from '@/features/hosts/host-suggestion-model';
+export type { GuestType } from '@homora/shared';
 
 const json = { 'Content-Type': 'application/json' };
 

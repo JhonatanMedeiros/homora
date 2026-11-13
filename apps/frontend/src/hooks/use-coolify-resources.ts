@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CoolifyResource, ResourceLink } from '@homora/shared';
 import { apiError, t } from '@/i18n';
 import { parseInventory, parseLinks } from '@/lib/coolify';
+import type { CardRef, GroupRef } from '@/features/connections/connection-model';
 
-export type CardRef = { id: number; name: string; url: string };
-export type GroupRef = { id: number; name: string };
+export type { CardRef, GroupRef } from '@/features/connections/connection-model';
 export type InventoryState =
   | { status: 'loading' }
   | { status: 'error'; message: string }

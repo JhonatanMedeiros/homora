@@ -107,7 +107,7 @@ it('keeps management and settings accessible in English', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Manage' }));
   expect(screen.getByRole('heading', { name: 'Services and groups' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
-  expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy();
+  expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Back to dashboard' }));
   expect(screen.getByRole('heading', { name: 'Everything in its place.' })).toBeTruthy();
 });
