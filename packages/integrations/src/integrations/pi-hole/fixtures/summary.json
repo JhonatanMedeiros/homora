@@ -1,0 +1,11 @@
+{
+  "_source": {
+    "kind": "hand-written",
+    "docs": "https://github.com/pi-hole/FTL/blob/master/src/api/docs/content/specs/stats.yaml",
+    "note": "Example fields from the official Pi-hole v6 OpenAPI specification; not a live recording."
+  },
+  "body": {
+    "queries": { "total": 7497, "blocked": 3465, "percent_blocked": 34.5 },
+    "gravity": { "domains_being_blocked": 104756 }
+  }
+}

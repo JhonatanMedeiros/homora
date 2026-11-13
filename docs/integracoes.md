@@ -408,7 +408,9 @@ widening the transport, so they were not implemented (decision recorded in
 [ADR 0009](decisoes/0009-declarative-integration-adapters.md)).
 
 - **Beszel:** the hub API is PocketBase's. A client logs in with `POST /api/collections/users/auth-with-password`
-  and then sends the returned token. That is a login flow with POST; the transport is GET only.
+  and then sends the returned token. The later session capability in ADR 0018 supports some additional JSON login shapes, but
+  Beszel has not been assessed or implemented against that capability. Its login and permissions
+  require integration-specific design, tests and review.
   Source: [Beszel REST API guide](https://beszel.dev/guide/rest-api), read 2026-11-12.
 - **TrueNAS:** the current API (25.04 and later) is JSON-RPC 2.0 over WebSocket, and the vendor
   deprecated the REST `/api/v2.0` API. WebSocket-only. Source: [TrueNAS API 25.04](https://api.truenas.com/v25.04/),
@@ -429,6 +431,7 @@ widening the transport, so they were not implemented (decision recorded in
 | Tailscale         | manifest | Implemented, unvalidated                                 | API access token, HTTPS              |
 | Cloudflare        | manifest | Implemented, unvalidated                                 | Token with Zone Read, HTTPS          |
 | Coolify           | code     | Partly validated on v4.7.5 (inventory, links, discovery) | Token with `read` only, HTTPS        |
+| Pi-hole v6        | code     | Partially validated (user reports it works)              | Application password, HTTPS          |
 | Beszel, TrueNAS   | —        | Skipped (see above)                                      | —                                    |
 
 "Unvalidated" means no one has tried it against a live service yet. Adding one is documented in
@@ -442,3 +445,35 @@ choose a **Node** (listed from the connection's inventory) to scope VMs, contain
 disk to that node. If the node disappears or is offline, the widget and the top bar say so; they never
 fall back to cluster totals. The node name is stored with the connection and is never part of the
 public status page. Choose "Whole cluster" to clear it.
+
+### Pi-hole v6
+
+**Partially validated:** on 2026-11-13 a user reported testing the integration successfully.
+The service version, environment and individual checks were not provided. The adapter logs in with an application
+password and reads `GET /api/stats/summary` for total DNS queries, blocked queries, percentage and
+number of domains in gravity. It also reads `GET /api/dns/blocking` for protection state; a
+failed or unrecognized response is shown as unknown. The fixture follows the [Pi-hole FTL OpenAPI specification](https://github.com/pi-hole/FTL/blob/master/src/api/docs/content/specs/stats.yaml);
+it is hand-written, not recorded from a live server. The query window follows the instance's
+in-memory statistics and must be verified against the target version.
+
+1. On Pi-hole v6, create an application password in the web interface's API settings. Leave
+   `webserver.api.app_sudo` disabled; the API can still grant more access than the widget needs,
+   so protect this password. Pi-hole v5 and passwordless instances are not supported.
+2. In Homora, add a Pi-hole connection with its HTTPS origin and application password. For a LAN
+   address explicitly allow the private network. Pi-hole must present a trusted certificate for
+   that address; a private CA may be supplied in the connection. Attach the widget to a card.
+3. Test the connection. Authentication errors and unreachable services return generic errors;
+   automatic retries pause for at least 60 seconds after a failed summary or initial login. An explicit connection test
+   bypasses the pause; editing the connection clears it.
+
+The password remains encrypted in the vault. The host sends it only in the fixed `POST /api/auth`
+body and sends the session in `X-FTL-SID` over HTTPS. Sessions are kept in memory per connection,
+reused and renewed on expiry or once after a 401. Concurrent logins are deduplicated. They are
+removed locally on edits and deletion, but not explicitly logged out remotely; Pi-hole expires them.
+Pi-hole limits concurrent sessions. There are no integration write operations. See
+[ADR 0018](decisoes/0018-integration-session-auth.md) and the [official authentication documentation](https://docs.pi-hole.net/api/auth/).
+
+Live validation still needs to cover the app password with `app_sudo` off, real v6 payloads and
+counts, expired credentials, session limits, private destination policy, certificate validation,
+and absence of secrets in logs and responses. The user report does not establish which of these
+checks were performed; a detailed validation record is still pending.

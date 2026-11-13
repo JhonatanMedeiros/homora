@@ -1,0 +1,8 @@
+{
+  "type": "pi-hole",
+  "order": 120,
+  "definition": "piHoleDefinition",
+  "backend": "createPiHoleRegistration",
+  "frontend": "createPiHolePresentation",
+  "translations": true
+}

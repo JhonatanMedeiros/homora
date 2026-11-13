@@ -3,7 +3,10 @@ import { coolifyDefinition as definition0 } from '../integrations/coolify/defini
 import { createCoolifyPresentation as factory0 } from '../integrations/coolify/frontend.js';
 import { proxmoxDefinition as definition1 } from '../integrations/proxmox/definition.js';
 import { createProxmoxPresentation as factory1 } from '../integrations/proxmox/frontend.js';
+import { piHoleDefinition as definition2 } from '../integrations/pi-hole/definition.js';
+import { createPiHolePresentation as factory2 } from '../integrations/pi-hole/frontend.js';
 export const frontendFactories = [
   { type: 'coolify', definition: definition0, create: factory0 },
   { type: 'proxmox', definition: definition1, create: factory1 },
+  { type: 'pi-hole', definition: definition2, create: factory2 },
 ];

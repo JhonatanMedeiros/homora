@@ -13,7 +13,8 @@ validated at startup and run by the SDK interpreter (`packages/integrations/src/
 [ADR 0009](decisoes/0009-declarative-integration-adapters.md) for the vocabulary and what it does not
 cover. Anything needing more than that (several requests with partial failure, CA pinning, large
 payloads, POST, a login flow, a non-whitelisted header) stays a **code adapter**, and a service that
-needs a write call or a new header is out of scope until a decision says otherwise.
+needs a write call or a new header is out of scope until a decision says otherwise. The reviewed
+session-authentication exception is described in [ADR 0018](decisoes/0018-integration-session-auth.md).
 
 Each built-in definition and its response fixtures live in a separate directory under
 `packages/integrations/src/integrations/`; shared URL field defaults live in `fields.ts`. Static
@@ -65,6 +66,16 @@ never discovered or loaded dynamically at runtime.
 not grant network permissions: reads still use the injected transport and host destination policy.
 An inventory declares its `inventoryDomain` (`hosts` or `resources`) in its definition, so host
 workflows select the correct capability without checking an integration's identifier.
+A built-in code registration may declare a `sessionAuth` profile. Declare the fixed login path,
+flat JSON body fields sourced from `secret`, `tokenId` or named public config, fixed response
+paths for the token and optional validity flag/lifetime, token format, whether successful reads
+extend expiry, and Bearer or an allowed header. Provide a bounded fallback lifetime if the
+response has no lifetime. These are reviewed source definitions, not user-provided rules. Mark
+identity fields in the definition so a change requires a new secret. Configure bounded retry
+backoff through `retryDelaySeconds`; do not echo credentials or remote errors. The host owns
+HTTPS, destination policy, session caching, renewal and concurrency. A different method,
+request shape or header still requires a separate design and review.
+
 For frontend displays, `definePresentation` returns bounded text and statistics, with translation
 injected by the host. Declarative displays use `renderManifestDisplay` automatically. A descriptor
 can opt into `messages.ts` with `translations: true`; export `en` and `ptBR` with matching keys.
@@ -111,8 +122,9 @@ in app production code; review remains necessary because it does not prove full 
 
 - All traffic goes through the injected transport (`network-request.ts`): destination policy,
   DNS pinning, TLS, timeouts, response size limit, header whitelist (`authorization`, `x-api-key`,
-  `accept`). Never use `fetch` or another client.
-- GET only. No write calls to integrated services.
+  `x-ftl-sid`, `accept`). Never use `fetch` or another client.
+- GET only for service data. A declared session profile may use the host-owned, fixed login POST
+  described in ADR 0018; no general write calls to integrated services.
 - `validate` rejects: non-string or oversized values (URL at most 2048 characters), non-http(s)
   schemes, credentials, query strings and fragments in URLs, and anything else the adapter does
   not need. Values that end up in a path (slug, entity id) must match a strict allow-list pattern.
@@ -185,7 +197,8 @@ Notes / deviations:
 - [ ] Every file in the relevant table above is updated
 - [ ] Contract test passes and the type is covered
 - [ ] Fixtures cite their source honestly
-- [ ] Only GET through the shared transport; no new header, method or code loading
+- [ ] Only GET through the shared transport, except a separately reviewed session login profile;
+      no unreviewed header, method or code loading
 - [ ] Required permissions documented (read-only token where supported)
 - [ ] Marked "implemented, unvalidated" in the docs
 - [ ] `pnpm check` and `pnpm build` pass

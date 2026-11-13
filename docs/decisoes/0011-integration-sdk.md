@@ -25,7 +25,7 @@ presentations. The SDK owns manifest interpretation and validation as well as wi
 transport implementation, destination and DNS policy, vault access, input errors, persistence,
 authentication, and capability-specific routes. It injects transport and host-specific validation
 into adapters; no integration can opt into a new network method or header through this contract.
-Only read-only GETs are supported. Code for third-party plugins is not loaded dynamically.
+Only read-only GETs are supported for service data; ADR 0018 permits a separately reviewed, host-owned session login POST. Code for third-party plugins is not loaded dynamically.
 
 The test harness remains in the backend because it exercises its registry, cache and host error
 handling. Each integration supplies contract cases alongside its fixtures. The generator creates

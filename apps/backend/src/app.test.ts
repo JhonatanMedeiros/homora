@@ -93,12 +93,16 @@ describe('Services API', () => {
         capabilities: [...capabilities],
       })),
     );
-    expect(catalog.at(-1)?.type).toBe('proxmox');
+    expect(catalog.some(({ type }) => type === 'proxmox')).toBe(true);
+    expect(
+      catalog.find(({ type }) => type === 'pi-hole')?.fields.map((field) => field.key),
+    ).toEqual(['url', 'secret']);
     // Field descriptions only: no stored values, requests or extraction rules.
     expect(
       catalog.find(({ type }) => type === 'home-assistant')!.fields.map((field) => field.key),
     ).toEqual(['url', 'entityId', 'secret']);
     expect(JSON.stringify(catalog)).not.toContain('/api/states');
+    expect(JSON.stringify(catalog)).not.toContain('/api/auth');
   });
   it('does not expose services without an active session', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);

@@ -5,7 +5,16 @@ import { en as en2, ptBR as pt2 } from '../integrations/uptime-kuma/messages.js'
 import { en as en3, ptBR as pt3 } from '../integrations/adguard-home/messages.js';
 import { en as en4, ptBR as pt4 } from '../integrations/tailscale/messages.js';
 import { en as en5, ptBR as pt5 } from '../integrations/proxmox/messages.js';
-export const integrationEnglish = { ...en0, ...en1, ...en2, ...en3, ...en4, ...en5 } as const;
+import { en as en6, ptBR as pt6 } from '../integrations/pi-hole/messages.js';
+export const integrationEnglish = {
+  ...en0,
+  ...en1,
+  ...en2,
+  ...en3,
+  ...en4,
+  ...en5,
+  ...en6,
+} as const;
 export const integrationPortuguese: Record<keyof typeof integrationEnglish, string> = {
   ...pt0,
   ...pt1,
@@ -13,4 +22,5 @@ export const integrationPortuguese: Record<keyof typeof integrationEnglish, stri
   ...pt3,
   ...pt4,
   ...pt5,
+  ...pt6,
 };

@@ -91,6 +91,11 @@ already enforce.
 - Phase 3 integrations are evaluated against this vocabulary. A service that needs anything listed
   above is skipped and recorded in the pull request, not forced through by widening the transport.
 
+## Session authentication exception
+
+ADR 0018 adds a host-owned, declared session login profile for Pi-hole. It does not change
+the manifest vocabulary or allow arbitrary POST operations.
+
 ## Phase 3 additions
 
 Verifying the reference integrations against their official API sources needed four small

@@ -55,10 +55,31 @@ it('prevents credentials over HTTP and arbitrary headers', async () => {
     }),
   ).rejects.toThrow('HTTPS');
   await expect(
+    getAuthorizedResponse('http://service.test/data', policy, {
+      headers: { 'x-ftl-sid': 'session' },
+    }),
+  ).rejects.toThrow('HTTPS');
+  await expect(
     getAuthorizedResponse('http://service.test/data', policy, { headers: { Host: 'example.com' } }),
   ).rejects.toThrow('headers');
   expect(spy).not.toHaveBeenCalled();
-  expect(authorize).toHaveBeenCalledTimes(1);
+  expect(authorize).toHaveBeenCalledTimes(2);
+});
+
+it('rejects a credential-bearing POST body over HTTP before opening a socket', async () => {
+  vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
+    url: new URL('http://service.test/auth'),
+    address: { address: '10.0.0.4', family: 4 },
+  });
+  const request = vi.spyOn(http, 'request');
+  await expect(
+    getAuthorizedResponse(
+      'http://service.test/auth',
+      { origins: ['http://service.test'], allowPrivate: true },
+      { jsonBody: '{"password":"test"}', sensitiveBody: true },
+    ),
+  ).rejects.toThrow('HTTPS');
+  expect(request).not.toHaveBeenCalled();
 });
 
 it('returns sanitized status code without propagating remote error body', async () => {

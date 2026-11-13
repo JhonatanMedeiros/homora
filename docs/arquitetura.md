@@ -269,6 +269,9 @@ releases exist.
   owns widget persistence and service references; `integration-connections.ts` owns connection
   persistence/encryption, observation caches, and adapter dispatch. `integration-transport.ts`
   builds the policy-bound JSON transport shared by adapter reads and Proxmox address lookups.
+  Declared session profiles may perform a fixed authentication POST; session IDs remain in memory
+  per connection and revision, with renewal and invalidation as described in
+  [ADR 0018](decisoes/0018-integration-session-auth.md).
   Route handlers parse requests and translate results into HTTP status and JSON responses.
 - The monitoring capability lives in `apps/backend/src/monitoring/` (see "Monitoring capability"
   below). `observations.ts` persists and serves current observations and failure history; uptime
