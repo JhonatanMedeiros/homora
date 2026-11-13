@@ -33,7 +33,7 @@ export function ServiceEditorDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl"
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl max-sm:top-auto max-sm:bottom-0 max-sm:max-h-[92dvh] max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none"
         showCloseButton={false}
         onOpenAutoFocus={(event) => {
           event.preventDefault();

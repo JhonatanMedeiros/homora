@@ -7,6 +7,9 @@ import { emptyService } from '@/lib/services';
 
 afterEach(cleanup);
 
+const openSection = (name: string) =>
+  fireEvent.mouseDown(screen.getByRole('tab', { name: new RegExp(name) }), { button: 0 });
+
 function setup(value: ServiceInput = emptyService) {
   const onChange = vi.fn();
   render(
@@ -29,7 +32,7 @@ function setup(value: ServiceInput = emptyService) {
 
 it('allows selecting ping and interval, restoring default when empty', async () => {
   const onChange = setup();
-  fireEvent.click(screen.getByRole('button', { name: 'Opções avançadas' }));
+  openSection('Monitoramento');
   const method = screen.getByRole('radiogroup', { name: 'Método de verificação' });
   expect(
     within(method)
@@ -48,19 +51,62 @@ it('allows selecting ping and interval, restoring default when empty', async () 
 
 it('warns that ping proves host reachability, not service health', () => {
   setup({ ...emptyService, checkType: 'ping', checkInterval: 45 });
+  openSection('Monitoramento');
   expect(screen.getByText(/não diz nada sobre o serviço/)).toBeTruthy();
   expect((screen.getByLabelText('Verificar a cada (segundos)') as HTMLInputElement).value).toBe(
     '45',
   );
 });
 
-it('keeps advanced options collapsed for a new service and open when values exist', () => {
+it('keeps the essentials on top and opens the appearance section first', () => {
   setup();
-  expect(screen.queryByLabelText('Método de verificação')).toBeNull();
   expect(screen.getByLabelText('Nome')).toBeTruthy();
+  expect(screen.getByLabelText('URL')).toBeTruthy();
+  expect(screen.getByLabelText('Categoria')).toBeTruthy();
+  expect(screen.getByRole('tab', { name: /Aparência/ }).getAttribute('aria-selected')).toBe('true');
+  expect(screen.getByRole('tab', { name: /Monitoramento/ }).getAttribute('aria-selected')).toBe(
+    'false',
+  );
+});
+
+it('summarises each section in one line, even while it is closed', () => {
+  setup({
+    ...emptyService,
+    description: 'Filmes',
+    icon: 'brand:jellyfin',
+    checkType: 'tcp',
+    checkInterval: 45,
+    allowPrivate: true,
+  });
+  const tab = (name: RegExp) => screen.getByRole('tab', { name }).textContent;
+  expect(tab(/Aparência/)).toContain('descrição · ícone');
+  expect(tab(/Monitoramento/)).toContain('TCP · a cada 45 s');
+  expect(tab(/Acesso/)).toContain('rede privada');
   cleanup();
-  setup({ ...emptyService, description: 'Filmes' });
-  expect(screen.getByLabelText('Método de verificação')).toBeTruthy();
+  setup();
+  expect(screen.getByRole('tab', { name: /Aparência/ }).textContent).toContain(
+    'Nada além do básico',
+  );
+  // Without host or dependency data there is nothing to show under Connections.
+  expect(screen.queryByRole('tab', { name: /Conexões/ })).toBeNull();
+});
+
+it('opens the section of a field that fails validation, so the message can be seen', () => {
+  setup({ ...emptyService, checkType: 'keyword', checkMatch: null });
+  expect(screen.getByRole('tab', { name: /Aparência/ }).getAttribute('aria-selected')).toBe('true');
+  const match = screen.getByLabelText('Texto que deve estar na página');
+  fireEvent.invalid(match);
+  expect(screen.getByRole('tab', { name: /Monitoramento/ }).getAttribute('aria-selected')).toBe(
+    'true',
+  );
+});
+
+it('moves to the icon field from the icon tile', () => {
+  setup({ ...emptyService, name: 'Jellyfin' });
+  openSection('Acesso');
+  fireEvent.click(screen.getByRole('button', { name: 'Trocar ícone' }));
+  expect(screen.getByRole('tab', { name: /Aparência/ }).getAttribute('aria-selected')).toBe('true');
+  expect(document.activeElement).toBe(document.getElementById('service-icon'));
 });
 
 it('shows only the fields a check type uses and clears the ones it does not', () => {
@@ -70,6 +116,7 @@ it('shows only the fields a check type uses and clears the ones it does not', ()
     checkPath: '/health',
     expectedStatus: '200',
   });
+  openSection('Monitoramento');
   expect(screen.getByLabelText(/Caminho de verificação/)).toBeTruthy();
   expect(screen.queryByLabelText('Texto que deve estar na página')).toBeNull();
   const group = screen.getByRole('radiogroup', { name: 'Método de verificação' });
@@ -88,6 +135,7 @@ it('shows only the fields a check type uses and clears the ones it does not', ()
 
 it('asks what a keyword or JSON check looks for, and reads the tiles with the arrow keys', () => {
   const onChange = setup({ ...emptyService, checkType: 'json', checkMatch: 'status=ok' });
+  openSection('Monitoramento');
   const match = screen.getByLabelText('Valor JSON esperado') as HTMLInputElement;
   expect(match.required).toBe(true);
   expect(match.value).toBe('status=ok');
