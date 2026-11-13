@@ -51,9 +51,13 @@ flowchart LR
   derived data and focus/announcement effects live in `use-service-page-model.ts` and
   `use-service-page-focus.ts`; the page composes them with the editor and group hooks.
   `service-page-editor.tsx` maps the editor hook state to the shared service form dialog,
-  including host inventory and dependency edits. `service-form.tsx` presents essential service
-  fields, while `service-form-advanced.tsx` owns optional metadata, icon selection, and monitoring
-  settings. Host and Map presentations load on demand when selected.
+  including host inventory and dependency edits. `service-form.tsx` presents the essential service
+  fields (name, URL, category) and the sticky footer, while `service-form-sections.tsx` lays out
+  the rest as four sections (tabs on wide screens, an accordion on phones) with a one-line summary
+  each (`service-form-summary.ts`): appearance (`service-form-look.tsx`), monitoring
+  (`service-form-monitoring.tsx`), connections (host and dependencies) and access. Every section
+  stays mounted, so native validation still works, and the form opens the section of an invalid
+  field before the browser reports it. Host and Map presentations load on demand when selected.
 - Frontend ownership inventory (issue #140): account, activity, agents, connections,
   discovery, public status, settings and transfer already own presentation and some
   models/tests under `features`; their route composers remain in `pages`. The service
