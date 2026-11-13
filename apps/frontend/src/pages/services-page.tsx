@@ -13,7 +13,6 @@ import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
 import { StatusFilter } from '@/components/status-filter';
 import { StatusBanner } from '@/components/status-banner';
-import { Toggle } from '@/components/ui/toggle';
 import { useTags } from '@/hooks/use-tags';
 import { useStatusOverview } from '@/hooks/use-status-overview';
 import { activeWindows, useMaintenance } from '@/hooks/use-maintenance';
@@ -230,6 +229,15 @@ export function ServicesPage({
             range={uptimeRange}
           />
         }
+        stateFilter={
+          !organizing && !hostView && services.length > 0 ? (
+            <StatusFilter
+              selected={statusFilter}
+              counts={statusCounts}
+              onSelect={setStatusFilter}
+            />
+          ) : undefined
+        }
         serviceCount={services.length}
         groupCount={allCategories.length}
         toolbar={{
@@ -351,21 +359,30 @@ export function ServicesPage({
           className="max-w-sm"
         />
       )}
-      {!managing && !organizing && !hostView && services.length > 0 && (
-        <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
-      )}
       {!managing && !organizing && !hostView && allTags.length > 0 && (
-        <div role="group" aria-label={t('filter.byTag')} className="flex flex-wrap gap-1">
+        <div
+          role="group"
+          aria-label={t('filter.byTag')}
+          className="flex flex-wrap items-center gap-1.5"
+        >
+          <span aria-hidden="true" className="text-xs text-muted-foreground">
+            {t('form.tags')}
+          </span>
           {allTags.map((tag) => (
-            <Toggle
+            <button
               key={tag}
-              size="sm"
-              pressed={tagFilter === tag}
-              onPressedChange={(on) => setTagFilter(on ? tag : null)}
-              className="text-sm text-muted-foreground data-[state=on]:bg-accent data-[state=on]:text-accent-foreground pointer-coarse:h-11"
+              type="button"
+              aria-pressed={tagFilter === tag}
+              onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+              className={cn(
+                'rounded-full border px-2.5 py-0.5 text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-9',
+                tagFilter === tag
+                  ? 'border-primary bg-primary/10 text-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              )}
             >
               #{tag}
-            </Toggle>
+            </button>
           ))}
         </div>
       )}

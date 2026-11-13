@@ -1,6 +1,6 @@
-import { Toggle } from '@/components/ui/toggle';
 import { t } from '@/i18n';
 import { STATUS_FILTERS, type StatusFilter as Filter } from '@/lib/status-filter';
+import { cn } from '@/lib/utils';
 
 type Props = {
   selected: Filter;
@@ -8,28 +8,56 @@ type Props = {
   onSelect: (filter: Filter) => void;
 };
 
-/** Todos / Offline / Degradados / Em manutenção, each with its count. */
+/** A dot of the state's colour, so the segments read as states and not as group names. */
+const DOT: Record<Filter, string | null> = {
+  all: null,
+  down: 'bg-destructive',
+  degraded: 'bg-warning',
+  maintenance: 'bg-info',
+};
+
+/**
+ * Todos / Offline / Degradados / Em manutenção as one segmented control with the count of each.
+ * It is deliberately unlike the category and tag chips below it: a single bordered track, state
+ * dots, and a raised selected segment. A state with nothing in it is dimmed, not hidden.
+ */
 export function StatusFilter({ selected, counts, onSelect }: Props) {
   return (
     <div
       role="group"
       aria-label={t('filter.byStatus')}
-      className="flex gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+      className="flex w-full max-w-full gap-0.5 overflow-x-auto rounded-lg border bg-muted/50 p-0.5 sm:inline-flex sm:w-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      {STATUS_FILTERS.map((filter) => (
-        <Toggle
-          key={filter}
-          size="sm"
-          pressed={selected === filter}
-          onPressedChange={() => onSelect(filter)}
-          className="shrink-0 whitespace-nowrap text-sm font-medium pointer-coarse:h-11 pointer-coarse:min-w-11 text-muted-foreground transition-colors duration-150 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
-        >
-          {t(`filter.status.${filter}`)}
-          <small aria-hidden="true" className="font-mono text-xs opacity-80">
-            {counts[filter]}
-          </small>
-        </Toggle>
-      ))}
+      {STATUS_FILTERS.map((filter) => {
+        const on = selected === filter;
+        const empty = counts[filter] === 0 && filter !== 'all';
+        return (
+          <button
+            key={filter}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onSelect(filter)}
+            className={cn(
+              'inline-flex flex-1 shrink-0 items-center justify-center gap-1 rounded-md px-1 py-1 text-xs font-medium sm:flex-none sm:gap-1.5 sm:px-2.5 sm:text-sm whitespace-nowrap transition-colors outline-none pointer-coarse:min-h-10 focus-visible:ring-2 focus-visible:ring-ring',
+              on
+                ? 'bg-background text-foreground shadow-sm ring-1 ring-border'
+                : 'text-muted-foreground hover:text-foreground',
+              empty && !on && 'opacity-60',
+            )}
+          >
+            {DOT[filter] && (
+              <span aria-hidden="true" className={cn('size-2 rounded-full', DOT[filter])} />
+            )}
+            {t(`filter.status.${filter}`)}
+            <small
+              aria-hidden="true"
+              className="font-mono text-xs text-muted-foreground tabular-nums"
+            >
+              {counts[filter]}
+            </small>
+          </button>
+        );
+      })}
     </div>
   );
 }
