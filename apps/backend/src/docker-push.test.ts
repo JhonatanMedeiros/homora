@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
-import { createDockerPush } from './docker-push.js';
+import { createDockerPush } from './discovery/index.js';
 
 describe('Docker push sources', () => {
   it('stores only a token hash and rejects unauthorized, invalid and revoked updates', () => {
@@ -240,7 +240,7 @@ it('rejects an outdated or revoked snapshot inside the card transaction', async 
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
   const { createServiceConfiguration } = await import('./service-configuration.js');
-  const { parseDocker } = await import('./docker-discovery.js');
+  const { parseDocker } = await import('./discovery/index.js');
   const dir = mkdtempSync(join(tmpdir(), 'homora-push-race-'));
   const first = createDatabase(join(dir, 'db.sqlite'));
   const second = createDatabase(join(dir, 'db.sqlite'));

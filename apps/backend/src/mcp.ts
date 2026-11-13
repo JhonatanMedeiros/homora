@@ -10,7 +10,7 @@ import { registerMcpHostTools } from './mcp-host-tools.js';
 import { registerMcpDiscoveryTools } from './mcp-discovery-tools.js';
 import { registerIntegrationTools } from './mcp-integration-extensions.js';
 import type { McpOptions } from './mcp-tool-context.js';
-import { createDockerPush } from './docker-push.js';
+import { createDockerPush } from './discovery/index.js';
 import { createMcpIdentity } from './mcp-identity.js';
 import { failed, publicUrl, result, unauthorized } from './mcp-responses.js';
 
