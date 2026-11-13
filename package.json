@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "type-check": "turbo type-check",
+    "type-check": "turbo type-check && tsc -p packages/integrations/tsconfig.tests.json",
     "test": "vitest run && node --test scripts/test/*.test.mjs",
     "db:generate": "pnpm --filter @homora/db db:generate",
     "test:watch": "vitest",

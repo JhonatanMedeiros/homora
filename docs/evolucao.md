@@ -1258,8 +1258,9 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
   Existing Proxmox and Coolify connection tests passed with these paths.
 - Split the adapter contract cases into per-integration test files and moved the focused Coolify and
   Proxmox adapter tests beside their implementations; the host's reusable harness remains in the
-  backend. The new package test TypeScript configuration checks these tests. The SDK boundaries are
-  recorded in [ADR 0011](decisoes/0011-integration-sdk.md).
+  backend. The package test TypeScript configuration runs after the workspace type checks so its
+  backend imports have built dependencies even on a clean checkout. The SDK boundaries are recorded
+  in [ADR 0011](decisoes/0011-integration-sdk.md).
 - Final local validation: `pnpm check` passed (1,247 application and 16 script tests), as did
   `pnpm build`. All 11 definitions were compared with the pre-change source and matched exactly.
   A backend Docker image built successfully and loaded all 11 registry entries in a production
@@ -1268,6 +1269,8 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
 - Not verified: a browser or screen reader, any additional live integration instance, or the
   remaining live-validation cases already listed in `integracoes.md`. No schema migration was needed;
   integration IDs, public fields and stored formats remain unchanged.
+- CI follow-up: the first GitHub validation exposed a clean-checkout dependency-order race in test
+  type checking; moved that check after the workspace tasks so `shared` is built first.
 
 ## Extensible integrations (issue #98)
 

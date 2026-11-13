@@ -47,7 +47,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json"
+    "type-check": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "26.6.6",
