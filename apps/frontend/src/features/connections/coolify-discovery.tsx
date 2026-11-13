@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { CoolifyResource } from '@homora/shared';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,41 +9,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { FormSelect, FormSelectOption } from '@/components/form-select';
-import { IconPicker } from '@/components/icon-picker';
-import { ServiceIcon } from '@/components/service-icon';
-import { CoolifyStateBadge } from '@/components/coolify-state';
 import { createCard, putLink } from '@/lib/coolify-api';
-import { isHttpUrl, sameUrl } from '@/lib/coolify';
+import { sameUrl } from '@/lib/coolify';
 import type { CardRef, GroupRef } from '@/hooks/use-coolify-resources';
 import type { ResourceLink } from '@homora/shared';
 import { t } from '@/i18n';
-
-const MANUAL = '__manual__';
-const NEW_GROUP = '__new__';
-const DEFAULT_GROUP = 'Coolify';
-const DEFAULT_ICON = 'brand:coolify';
-
-type Row = {
-  resource: CoolifyResource;
-  include: boolean;
-  mode: 'create' | 'link';
-  linkCard: string;
-  name: string;
-  urlChoice: string;
-  manualUrl: string;
-  group: string;
-  newGroup: string;
-  description: string;
-  icon: string;
-  allowPrivate: boolean;
-  /** Set once the card exists, so a retry after a failed link does not create a second card. */
-  createdId?: number;
-  outcome?: { ok: true } | { ok: false; message: string };
-};
+import { CoolifyDiscoveryRow } from './coolify-discovery-row';
+import {
+  addressOf,
+  DEFAULT_GROUP,
+  DEFAULT_ICON,
+  groupOf,
+  MANUAL,
+  NEW_GROUP,
+  problem,
+  type Row,
+} from './coolify-discovery-model';
 
 type Props = {
   connectionId: number;
@@ -57,19 +37,6 @@ type Props = {
   /** Called after at least one card or link was saved. */
   onDone: () => void;
 };
-
-const addressOf = (row: Row) => (row.urlChoice === MANUAL ? row.manualUrl : row.urlChoice).trim();
-const groupOf = (row: Row) => (row.group === NEW_GROUP ? row.newGroup : row.group).trim();
-
-/** Why a row cannot be saved yet; null when it is ready. */
-function problem(row: Row): string | null {
-  if (!row.include || row.outcome?.ok) return null;
-  if (row.mode === 'link') return row.linkCard ? null : t('coolify.problemCard');
-  if (!row.name.trim()) return t('coolify.problemName');
-  if (!isHttpUrl(addressOf(row))) return t('coolify.problemUrl');
-  if (!groupOf(row) || groupOf(row).length > 40) return t('coolify.problemGroup');
-  return null;
-}
 
 /**
  * Review before creating cards from Coolify resources. Nothing is created until the user confirms;
@@ -214,246 +181,18 @@ export function CoolifyDiscovery({
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto pr-3">
           <ul className="flex flex-col gap-3">
-            {rows.map((row) => {
-              const uuid = row.resource.uuid;
-              const duplicate = cards.find((card) =>
-                row.resource.urls.some((url) => sameUrl(url, card.url)),
-              );
-              const linkedTo = links.find(
-                (link) => link.integrationId === connectionId && link.resourceUuid === uuid,
-              );
-              const linkedCard = linkedTo && cards.find((card) => card.id === linkedTo.serviceId);
-              const issue = problem(row);
-              return (
-                <li key={uuid} className="rounded-lg border bg-card p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Checkbox
-                      id={`discover-include-${uuid}`}
-                      checked={row.include}
-                      disabled={busy || row.outcome?.ok}
-                      onCheckedChange={(checked) => change(uuid, { include: checked === true })}
-                    />
-                    <FieldLabel htmlFor={`discover-include-${uuid}`} className="font-medium">
-                      {row.resource.name}
-                    </FieldLabel>
-                    <span className="text-xs text-muted-foreground">
-                      {t(
-                        row.resource.type === 'application'
-                          ? 'coolify.type.application'
-                          : 'coolify.type.service',
-                      )}
-                    </span>
-                    <CoolifyStateBadge state={row.resource.state} />
-                    {row.outcome?.ok && (
-                      <span role="status" className="text-xs font-medium text-success">
-                        {t('coolify.rowSaved')}
-                      </span>
-                    )}
-                  </div>
-                  {linkedTo && (
-                    <Alert className="mt-2">
-                      <AlertDescription>
-                        {t('coolify.alreadyLinked', {
-                          card: linkedCard?.name ?? String(linkedTo.serviceId),
-                        })}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {row.outcome && !row.outcome.ok && (
-                    <Alert variant="destructive" className="mt-2">
-                      <AlertDescription>{row.outcome.message}</AlertDescription>
-                    </Alert>
-                  )}
-                  {row.include && !row.outcome?.ok && (
-                    <FieldGroup className="mt-3 gap-3">
-                      {duplicate && (
-                        <Alert>
-                          <AlertDescription>
-                            {t('coolify.duplicate', { card: duplicate.name })}
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      <Field>
-                        <FieldLabel htmlFor={`discover-mode-${uuid}`}>
-                          {t('coolify.action')}
-                        </FieldLabel>
-                        <FormSelect
-                          id={`discover-mode-${uuid}`}
-                          value={row.mode}
-                          disabled={busy || row.createdId !== undefined}
-                          onChange={(event) =>
-                            change(uuid, { mode: event.target.value as Row['mode'] })
-                          }
-                        >
-                          <FormSelectOption value="create">
-                            {t('coolify.actionCreate')}
-                          </FormSelectOption>
-                          <FormSelectOption value="link">
-                            {t('coolify.actionLink')}
-                          </FormSelectOption>
-                        </FormSelect>
-                      </Field>
-                      {row.mode === 'link' ? (
-                        <Field>
-                          <FieldLabel htmlFor={`discover-card-${uuid}`}>
-                            {t('coolify.card')}
-                          </FieldLabel>
-                          <FormSelect
-                            id={`discover-card-${uuid}`}
-                            value={row.linkCard}
-                            disabled={busy}
-                            onChange={(event) => change(uuid, { linkCard: event.target.value })}
-                          >
-                            <FormSelectOption value="">{t('coolify.chooseCard')}</FormSelectOption>
-                            {cards.map((card) => (
-                              <FormSelectOption key={card.id} value={String(card.id)}>
-                                {card.name}
-                              </FormSelectOption>
-                            ))}
-                          </FormSelect>
-                        </Field>
-                      ) : (
-                        <>
-                          <Field>
-                            <FieldLabel htmlFor={`discover-name-${uuid}`}>
-                              {t('coolify.fieldName')}
-                            </FieldLabel>
-                            <Input
-                              id={`discover-name-${uuid}`}
-                              maxLength={80}
-                              value={row.name}
-                              disabled={busy}
-                              onChange={(event) => change(uuid, { name: event.target.value })}
-                            />
-                          </Field>
-                          <Field>
-                            <FieldLabel htmlFor={`discover-url-${uuid}`}>
-                              {t('coolify.fieldUrl')}
-                            </FieldLabel>
-                            {row.resource.urls.length > 0 && (
-                              <FormSelect
-                                id={`discover-url-${uuid}`}
-                                value={row.urlChoice}
-                                disabled={busy}
-                                onChange={(event) =>
-                                  change(uuid, { urlChoice: event.target.value })
-                                }
-                              >
-                                {row.resource.urls.map((url) => (
-                                  <FormSelectOption key={url} value={url}>
-                                    {url}
-                                  </FormSelectOption>
-                                ))}
-                                <FormSelectOption value={MANUAL}>
-                                  {t('coolify.urlManual')}
-                                </FormSelectOption>
-                              </FormSelect>
-                            )}
-                            {row.urlChoice === MANUAL && (
-                              <Input
-                                id={
-                                  row.resource.urls.length > 0 ? undefined : `discover-url-${uuid}`
-                                }
-                                type="url"
-                                inputMode="url"
-                                aria-label={t('coolify.urlManualLabel')}
-                                value={row.manualUrl}
-                                placeholder="https://app.example"
-                                disabled={busy}
-                                onChange={(event) =>
-                                  change(uuid, { manualUrl: event.target.value })
-                                }
-                              />
-                            )}
-                            {row.resource.urls.length === 0 && (
-                              <FieldDescription>{t('coolify.noAddressHint')}</FieldDescription>
-                            )}
-                          </Field>
-                          <Field>
-                            <FieldLabel htmlFor={`discover-group-${uuid}`}>
-                              {t('coolify.group')}
-                            </FieldLabel>
-                            <FormSelect
-                              id={`discover-group-${uuid}`}
-                              value={row.group}
-                              disabled={busy}
-                              onChange={(event) => change(uuid, { group: event.target.value })}
-                            >
-                              {groupNames.map((name) => (
-                                <FormSelectOption key={name} value={name}>
-                                  {name}
-                                </FormSelectOption>
-                              ))}
-                              <FormSelectOption value={NEW_GROUP}>
-                                {t('coolify.groupNew')}
-                              </FormSelectOption>
-                            </FormSelect>
-                            {row.group === NEW_GROUP && (
-                              <Input
-                                aria-label={t('coolify.groupNewLabel')}
-                                maxLength={40}
-                                value={row.newGroup}
-                                disabled={busy}
-                                onChange={(event) => change(uuid, { newGroup: event.target.value })}
-                              />
-                            )}
-                          </Field>
-                          <Field>
-                            <FieldLabel htmlFor={`discover-description-${uuid}`}>
-                              {t('coolify.description')}
-                            </FieldLabel>
-                            <Input
-                              id={`discover-description-${uuid}`}
-                              maxLength={140}
-                              value={row.description}
-                              disabled={busy}
-                              onChange={(event) =>
-                                change(uuid, { description: event.target.value })
-                              }
-                            />
-                          </Field>
-                          <Field orientation="horizontal">
-                            <span
-                              aria-hidden="true"
-                              className="flex size-9 items-center justify-center"
-                            >
-                              <ServiceIcon icon={row.icon} name={row.name || row.resource.name} />
-                            </span>
-                            <IconPicker
-                              iconOnly
-                              value={row.icon}
-                              onChange={(icon) => change(uuid, { icon })}
-                            />
-                            <FieldLabel>{t('coolify.icon')}</FieldLabel>
-                          </Field>
-                          <Field orientation="horizontal" className="items-start">
-                            <Checkbox
-                              id={`discover-private-${uuid}`}
-                              checked={row.allowPrivate}
-                              disabled={busy}
-                              onCheckedChange={(checked) =>
-                                change(uuid, { allowPrivate: checked === true })
-                              }
-                            />
-                            <div className="flex flex-col gap-1">
-                              <FieldLabel htmlFor={`discover-private-${uuid}`}>
-                                {t('coolify.allowPrivate')}
-                              </FieldLabel>
-                              <FieldDescription>{t('coolify.allowPrivateHint')}</FieldDescription>
-                            </div>
-                          </Field>
-                        </>
-                      )}
-                      {issue && (
-                        <p role="alert" className="text-xs text-destructive">
-                          {issue}
-                        </p>
-                      )}
-                    </FieldGroup>
-                  )}
-                </li>
-              );
-            })}
+            {rows.map((row) => (
+              <CoolifyDiscoveryRow
+                key={row.resource.uuid}
+                row={row}
+                connectionId={connectionId}
+                cards={cards}
+                links={links}
+                groupNames={groupNames}
+                busy={busy}
+                onChange={change}
+              />
+            ))}
           </ul>
         </div>
         {(successes > 0 || failures > 0) && (

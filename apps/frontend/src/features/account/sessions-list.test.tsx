@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { setLocale } from '@/i18n';
 import { SessionsList } from './sessions-list';
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  setLocale('en');
 });
 
 const sessions = [
@@ -30,6 +32,7 @@ const sessions = [
 ];
 
 it('ends another session only after a second click and never offers to end this one', async () => {
+  setLocale('pt-BR');
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
     init?.method === 'POST' ? new Response('{"ok":true}') : new Response(JSON.stringify(sessions)),
   );

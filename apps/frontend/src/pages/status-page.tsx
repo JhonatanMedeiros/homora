@@ -2,24 +2,15 @@ import { useEffect, useState } from 'react';
 import { StatusLight } from '@/components/status-light';
 import { formatAgo, formatDateTime, t, useI18n } from '@/i18n';
 import type { Availability } from '@/lib/services';
+import type { PublicState, PublicStatus } from '@/features/public-status/public-status-model';
 import { cn } from '@/lib/utils';
 import { PublicStatusSkeleton } from '@/components/skeletons';
 
-export type PublicState = 'up' | 'down' | 'unknown';
-export type PublicService = {
-  name: string;
-  category: string;
-  status: PublicState;
-  checkedAt: string | null;
-  uptime: number | null;
-  bars: PublicState[];
-};
-export type PublicStatus = {
-  title: string;
-  description?: string;
-  updatedAt: string;
-  services: PublicService[];
-};
+export type {
+  PublicService,
+  PublicState,
+  PublicStatus,
+} from '@/features/public-status/public-status-model';
 
 const REFRESH_MS = 45_000;
 const availability: Record<PublicState, Availability> = {

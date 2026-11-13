@@ -1,5 +1,9 @@
 import type { MessageKey } from './en';
 import { ptBR as core } from './messages/core';
+import { ptBR as appShell } from './messages/app-shell';
+import { ptBR as serviceCards } from './messages/service-cards';
+import { ptBR as serviceGroups } from './messages/service-groups';
+import { ptBR as serviceForm } from './messages/service-form';
 import { ptBR as agents } from './messages/agents';
 import { ptBR as integrations } from './messages/integrations';
 import { ptBR as connections } from './messages/connections';
@@ -14,6 +18,10 @@ import { ptBR as coolify } from './messages/coolify';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
+  ...appShell,
+  ...serviceCards,
+  ...serviceGroups,
+  ...serviceForm,
   ...agents,
   ...integrations,
   ...connections,

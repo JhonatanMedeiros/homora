@@ -24,6 +24,8 @@ export type IntegrationWidget = {
   serviceId: number | null;
 };
 export type { WidgetStat } from '@homora/integrations/frontend';
+export type CardRef = { id: number; name: string; url: string };
+export type GroupRef = { id: number; name: string };
 export type ConnectionFormState = {
   type: Kind;
   name: string;

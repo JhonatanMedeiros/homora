@@ -7,7 +7,8 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { FormError } from '@/components/form-error';
 import { PasswordInput } from '@/components/password-input';
 import { SectionTitle } from '@/components/section-title';
-import { apiError, t } from '@/i18n';
+import { t } from '@/i18n';
+import { useAccountMutations } from '@/hooks/use-account-mutations';
 
 export function PasswordForm({ onChanged }: { onChanged: () => void }) {
   const [current, setCurrent] = useState('');
@@ -16,6 +17,7 @@ export function PasswordForm({ onChanged }: { onChanged: () => void }) {
   const [revokeOthers, setRevokeOthers] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const { changePassword } = useAccountMutations();
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -25,14 +27,14 @@ export function PasswordForm({ onChanged }: { onChanged: () => void }) {
       return;
     }
     setSaving(true);
-    const response = await fetch('/api/account/password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentPassword: current, newPassword: next, revokeOthers }),
-    }).catch(() => null);
+    const errorMessage = await changePassword({
+      currentPassword: current,
+      newPassword: next,
+      revokeOthers,
+    });
     setSaving(false);
-    if (!response?.ok) {
-      setError(apiError(await response?.json().catch(() => null), t('account.passwordFailed')));
+    if (errorMessage) {
+      setError(errorMessage);
       return;
     }
     setCurrent('');

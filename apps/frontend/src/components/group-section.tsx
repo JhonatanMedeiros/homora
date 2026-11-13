@@ -1,9 +1,10 @@
-import { useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useRef, type DragEvent, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { t } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useGroupCollapse } from '@/hooks/use-group-collapse';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,34 +102,7 @@ export function GroupSection({
         : rowLayout
           ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
           : 'columns-1 gap-3 sm:columns-2 xl:columns-3';
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('homora-collapsed-groups') ?? '[]').includes(category);
-    } catch {
-      return false;
-    }
-  });
-  // Expands for a reveal request without saving it. Adjusting state while rendering (not in an
-  // effect) avoids a second render pass with the group still collapsed.
-  const [seenReveal, setSeenReveal] = useState<number | undefined>(undefined);
-  if (revealSignal !== seenReveal) {
-    setSeenReveal(revealSignal);
-    if (revealSignal !== undefined) setCollapsed(false);
-  }
-  function toggleCollapsed() {
-    const next = !collapsed;
-    setCollapsed(next);
-    try {
-      const current: unknown = JSON.parse(localStorage.getItem('homora-collapsed-groups') ?? '[]');
-      const names = Array.isArray(current)
-        ? current.filter((name): name is string => typeof name === 'string' && name !== category)
-        : [];
-      if (next) names.push(category);
-      localStorage.setItem('homora-collapsed-groups', JSON.stringify(names));
-    } catch {
-      /* preference retained for this session only */
-    }
-  }
+  const { collapsed, toggleCollapsed } = useGroupCollapse(category, revealSignal);
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
       <div className="flex min-w-0 flex-wrap items-center gap-3">

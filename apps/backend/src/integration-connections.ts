@@ -1,82 +1,24 @@
-import { X509Certificate } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
-import {
-  createDatabase,
-  getSqliteHandle,
-  integrationInstances,
-  integrationWidgets,
-  services,
-} from '@homora/db';
-import { createVault, validateProxmoxConfig } from './vault.js';
-import { getAuthorizedResponse } from './network-request.js';
-import { createObservationCache, type IntegrationTransport } from './integrations.js';
+import { createDatabase, getSqliteHandle, integrationInstances } from '@homora/db';
+import { createVault } from './vault.js';
+import { migrateLegacyProxmox } from './legacy-proxmox.js';
+import { createObservationCache } from './integrations.js';
 import { integrationRegistry } from './integration-registry.js';
-import { InputError } from './api-error.js';
-import { hasField, publicFieldShape, publicFieldsOf } from './integration-fields.js';
+import { createIntegrationWidgets } from './integration-widgets.js';
+import { createIntegrationTransport } from './integration-transport.js';
+import {
+  parseConnectionData,
+  prepareConnection,
+  publicConnection,
+  readConnectionCredentials,
+  type ConnectionData,
+  type ConnectionInput,
+  type Credentials,
+} from './integration-connection-config.js';
 
 type Db = ReturnType<typeof createDatabase>['db'];
 type Vault = ReturnType<typeof createVault>;
 type Row = typeof integrationInstances.$inferSelect;
-type ConnectionInput = {
-  type?: string;
-  name?: string;
-  url?: string;
-  allowPrivate?: boolean;
-  tokenId?: string;
-  secret?: string;
-  ca?: string;
-  removeCa?: boolean;
-  /** Public fields declared by the integration definition (entityId, username, slug, ...). */
-  [field: string]: string | boolean | undefined;
-};
-type Credentials = { secret?: string; ca?: string; tokenId?: string };
-type ConnectionData = {
-  url: string;
-  allowPrivate: boolean;
-  [field: string]: string | boolean | undefined;
-};
-const connectionTypes = new Set(integrationRegistry.list().map(({ type }) => type));
-const storedConfigSchema = z
-  .object({
-    url: z.string().max(2048),
-    allowPrivate: z.boolean().default(false),
-    ...publicFieldShape(255),
-  })
-  .strict();
-const credentialsSchema = z
-  .object({
-    secret: z.string().max(65536).optional(),
-    ca: z.string().max(65536).optional(),
-    tokenId: z.string().max(255).optional(),
-  })
-  .strict();
-const widgetSchema = z
-  .object({
-    id: z.number(),
-    integrationId: z.number(),
-    type: z.string(),
-    name: z.string(),
-    publicConfig: z.string(),
-    serviceId: z.number().nullable(),
-  })
-  .strict();
-
-function validateCa(ca: string) {
-  if (
-    Buffer.byteLength(ca) > 65536 ||
-    !/^\s*-----BEGIN CERTIFICATE-----[\r\n]+[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----\s*$/.test(
-      ca,
-    )
-  )
-    throw new InputError('invalid-ca');
-  try {
-    if (!new X509Certificate(ca).ca) throw new Error();
-  } catch {
-    throw new InputError('invalid-ca');
-  }
-}
-
 const BACKOFF_MIN_MS = 60_000;
 const BACKOFF_MAX_MS = 900_000;
 
@@ -112,67 +54,7 @@ export function createIntegrationConnections(
       throw error;
     }
   }
-  // The encrypted legacy file remains untouched as a backup. The marker prevents
-  // re-importing a deliberately deleted connection on subsequent starts.
-  function migrateLegacy(): number | null {
-    if (!vault) return null;
-    const sqlite = getSqliteHandle(db);
-    sqlite.exec('BEGIN IMMEDIATE');
-    try {
-      const marker = sqlite
-        .prepare("SELECT name FROM integration_migrations WHERE name LIKE 'legacy-proxmox:%'")
-        .get() as { name: string } | undefined;
-      if (marker) {
-        sqlite.exec('COMMIT');
-        const id = Number(marker.name.slice('legacy-proxmox:'.length));
-        return Number.isSafeInteger(id) && id > 0 ? id : null;
-      }
-      const legacy = vault.load();
-      if (!legacy) {
-        sqlite.exec('COMMIT');
-        return null;
-      }
-      const config = validateProxmoxConfig(legacy);
-      const bridge = sqlite
-        .prepare(
-          "SELECT id FROM integration_instances WHERE type = 'proxmox' AND public_config = '{}' AND secret_ref IS NULL ORDER BY id LIMIT 1",
-        )
-        .get() as { id: number } | undefined;
-      const data = JSON.stringify({ url: config.url, allowPrivate: true });
-      const secret = vault.seal(
-        JSON.stringify({
-          secret: config.secret,
-          tokenId: config.tokenId,
-          ...(config.ca ? { ca: config.ca } : {}),
-        }),
-        false,
-      );
-      let id: number;
-      if (bridge) {
-        id = bridge.id;
-        sqlite
-          .prepare(
-            'UPDATE integration_instances SET public_config = ?, secret_ref = ?, certificate_ref = ? WHERE id = ?',
-          )
-          .run(data, secret, config.ca ? 'both' : 'secret', id);
-      } else {
-        const result = sqlite
-          .prepare(
-            "INSERT INTO integration_instances(type, name, public_config, secret_ref, certificate_ref) VALUES ('proxmox', 'Proxmox VE', ?, ?, ?)",
-          )
-          .run(data, secret, config.ca ? 'both' : 'secret');
-        id = Number(result.lastInsertRowid);
-      }
-      sqlite
-        .prepare('INSERT INTO integration_migrations(name) VALUES (?)')
-        .run(`legacy-proxmox:${id}`);
-      sqlite.exec('COMMIT');
-      return id;
-    } catch (error) {
-      sqlite.exec('ROLLBACK');
-      throw error;
-    }
-  }
+  const migrateLegacy = () => migrateLegacyProxmox(db, vault);
   const caches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
   const addressCaches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
   const inventoryCaches = new Map<number, ReturnType<typeof createObservationCache<unknown>>>();
@@ -187,108 +69,21 @@ export function createIntegrationConnections(
   async function find(id: number) {
     return (await db.select().from(integrationInstances).where(eq(integrationInstances.id, id)))[0];
   }
-  function parseData(row: Row) {
-    const parsed = storedConfigSchema.safeParse(JSON.parse(row.publicConfig));
-    if (!parsed.success) throw new Error('Configuração da integração inválida.');
-    return parsed.data;
-  }
-  function publicRow(row: Row) {
-    const data = parseData(row);
-    return {
-      id: row.id,
-      type: row.type,
-      name: row.name,
-      ...data,
-      hasSecret: row.certificateRef === 'secret' || row.certificateRef === 'both',
-      hasCa: row.certificateRef === 'ca' || row.certificateRef === 'both',
-    };
-  }
-  function credentials(row: Row): Credentials {
-    if (!row.secretRef) return {};
-    if (!vault) throw new Error('Cofre indisponível.');
-    const parsed = credentialsSchema.safeParse(JSON.parse(vault.unseal(row.secretRef)));
-    if (!parsed.success) throw new Error('Credenciais da integração inválidas.');
-    return parsed.data;
-  }
-  function prepare(input: ConnectionInput, current?: Row, saved: Credentials = {}) {
-    const old = current ? (parseData(current) as ConnectionData) : undefined;
-    const type = input.type || current?.type || '';
-    const name = input.name || current?.name || '';
-    if (!connectionTypes.has(type) || !name) throw new InputError('invalid-name-or-type');
-    const data: ConnectionData = {
-      url: input.url || old?.url || '',
-      allowPrivate: input.allowPrivate ?? old?.allowPrivate ?? false,
-      ...Object.fromEntries(
-        publicFieldsOf(type).flatMap(({ key, required }) => {
-          const given = typeof input[key] === 'string' ? (input[key] as string) : undefined;
-          const kept = (old?.[key] as string | undefined) ?? '';
-          // A required field keeps its saved value when empty; an optional one can be cleared.
-          const value = required ? given || kept : (given ?? kept);
-          return value === '' && !required ? [] : [[key, value]];
-        }),
-      ),
-    };
-    const identityFields = publicFieldsOf(type).filter(({ identity }) => identity);
-    const tokenField = hasField(type, 'token-id');
-    let originChanged = false;
-    if (old) {
-      try {
-        originChanged = new URL(data.url).origin !== new URL(old.url).origin;
-      } catch {
-        throw new InputError('invalid-url');
-      }
-    }
-    const identityChanged =
-      !!current &&
-      (current.type !== type ||
-        originChanged ||
-        identityFields.some(({ key }) => old?.[key] !== data[key]) ||
-        (tokenField && !!input.tokenId && saved.tokenId !== input.tokenId));
-    if (identityChanged && saved.secret && !input.secret) throw new InputError('secret-required');
-    const keys: Credentials = {
-      secret: input.secret || (identityChanged ? undefined : saved.secret),
-      tokenId: tokenField
-        ? input.tokenId || (originChanged ? undefined : saved.tokenId)
-        : undefined,
-      ca: input.removeCa ? undefined : input.ca || (identityChanged ? undefined : saved.ca),
-    };
-    if (keys.ca) validateCa(keys.ca);
-    prepareAdapter(type, data, keys); // validates configuration without making a network request
-    return { type, name, data, keys };
-  }
   function prepareAdapter(type: string, data: ConnectionData, keys: Credentials, detail = false) {
-    const transport = async (request: Parameters<IntegrationTransport>[0]) => {
-      const response = await getAuthorizedResponse(
-        new URL(request.path, request.origin).href,
-        { origins: [new URL(data.url).origin], allowPrivate: data.allowPrivate },
-        {
-          headers: {
-            ...(request.authorization ? { authorization: request.authorization } : {}),
-            ...(request.apiKey ? { 'x-api-key': request.apiKey } : {}),
-          },
-          ca: keys.ca,
-          ...(request.maxBodyBytes ? { maxBodyBytes: request.maxBodyBytes } : {}),
-        },
-      );
-      let body: unknown = null;
-      if (response.body) {
-        try {
-          body = JSON.parse(response.body) as unknown;
-        } catch {
-          throw new Error('Resposta JSON inválida.');
-        }
-      }
-      return {
-        status: response.status,
-        body,
-        ...(response.retryAfterSeconds ? { retryAfterSeconds: response.retryAfterSeconds } : {}),
-      };
-    };
+    const transport = createIntegrationTransport(data, keys);
     const context = { publicConfig: data, credentials: keys, transport };
     return detail
       ? integrationRegistry.prepareInventory(type, context)
       : integrationRegistry.prepare(type, context);
   }
+  const parseData = parseConnectionData;
+  const publicRow = publicConnection;
+  const credentials = (row: Row) => readConnectionCredentials(row, vault);
+  const prepare = (input: ConnectionInput, current?: Row, saved: Credentials = {}) =>
+    prepareConnection(input, current, saved, (type, data, keys) =>
+      prepareAdapter(type, data, keys),
+    );
+
   async function save(input: ConnectionInput, current?: Row) {
     if (!vault) throw new Error('Cofre indisponível.');
     const saved = current ? credentials(current) : {};
@@ -331,64 +126,16 @@ export function createIntegrationConnections(
     return guarded(row, () => prepareAdapter(row.type, data, keys)(), bypass);
   }
 
-  async function serviceExists(id: number) {
-    return (
-      (await db.select({ id: services.id }).from(services).where(eq(services.id, id))).length > 0
-    );
-  }
+  const widgets = createIntegrationWidgets(db, find, migrateLegacy);
 
   return {
     migrateLegacy,
+    ...widgets,
     async listConnections() {
       migrateLegacy();
       return (await db.select().from(integrationInstances))
         .filter((row) => row.type !== 'proxmox' || row.publicConfig !== '{}')
         .map(publicRow);
-    },
-    async listWidgets() {
-      const rows = await db.select().from(integrationWidgets);
-      return rows.map((row) => widgetSchema.parse(row));
-    },
-    async createWidget(
-      target: { integrationId: number } | { source: 'proxmox' },
-      name: string,
-      serviceId: number | null = null,
-    ) {
-      const legacyId = migrateLegacy();
-      if ('source' in target && legacyId === null) throw new InputError('proxmox-not-configured');
-      const connection = await find('source' in target ? legacyId! : target.integrationId);
-      if (!connection) return null;
-      if (serviceId !== null && !(await serviceExists(serviceId)))
-        return 'service-missing' as const;
-      const [widget] = await db
-        .insert(integrationWidgets)
-        .values({
-          integrationId: connection.id,
-          type: connection.type,
-          name,
-          publicConfig: '{}',
-          serviceId,
-        })
-        .returning();
-      return widgetSchema.parse(widget);
-    },
-    async updateWidget(id: number, patch: { serviceId?: number | null; name?: string }) {
-      const serviceId = patch.serviceId;
-      if (serviceId !== undefined && serviceId !== null && !(await serviceExists(serviceId)))
-        return 'service-missing' as const;
-      const [widget] = await db
-        .update(integrationWidgets)
-        .set(patch)
-        .where(eq(integrationWidgets.id, id))
-        .returning();
-      return widget ? widgetSchema.parse(widget) : null;
-    },
-    async deleteWidget(id: number) {
-      const rows = await db
-        .delete(integrationWidgets)
-        .where(eq(integrationWidgets.id, id))
-        .returning();
-      return rows.length > 0;
     },
     createConnection(input: ConnectionInput) {
       migrateLegacy();
@@ -496,30 +243,7 @@ export function createIntegrationConnections(
       }
       const data = parseData(row);
       const keys = credentials(row);
-      const transport = async (request: {
-        origin: string;
-        path: string;
-        authorization?: string;
-      }) => {
-        const response = await getAuthorizedResponse(
-          new URL(request.path, request.origin).href,
-          { origins: [new URL(data.url).origin], allowPrivate: data.allowPrivate },
-          {
-            headers: request.authorization ? { authorization: request.authorization } : {},
-            ca: keys.ca,
-            maxBodyBytes: 2_000_000,
-          },
-        );
-        let body: unknown = null;
-        if (response.body) {
-          try {
-            body = JSON.parse(response.body) as unknown;
-          } catch {
-            body = null;
-          }
-        }
-        return { status: response.status, body };
-      };
+      const transport = createIntegrationTransport(data, keys, 'empty', 2_000_000);
       return cache.collect(() =>
         integrationRegistry.prepareAddresses(row.type, {
           publicConfig: data,
@@ -536,23 +260,4 @@ export function createIntegrationConnections(
       return true;
     },
   };
-}
-
-/**
- * Runs the idempotent legacy Proxmox migration once, before the server accepts requests.
- * It never throws: a missing key or unreadable file leaves the legacy file untouched and is
- * retried on the next start. Only a fixed message is logged, never the file or error contents.
- */
-export function migrateLegacyProxmoxAtStartup(
-  db: Db,
-  vault: Vault,
-  log: (message: string) => void = console.warn,
-) {
-  try {
-    createIntegrationConnections(db, vault).migrateLegacy();
-  } catch {
-    log(
-      'Could not migrate the legacy Proxmox configuration (missing key or unreadable file). The legacy file was left untouched; it will be retried on the next start.',
-    );
-  }
 }
