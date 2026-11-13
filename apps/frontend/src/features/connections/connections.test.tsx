@@ -551,3 +551,26 @@ it('asks before discarding what was typed in a form', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Descartar' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
+
+it('searches the types by name or by what they read, and Enter opens the only match', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => [] })),
+  );
+  render(<Connections />);
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Adicionar conexão' }))[0]!);
+  const search = await screen.findByRole('searchbox', { name: 'Buscar integrações' });
+  expect(document.activeElement).toBe(search);
+  fireEvent.change(search, { target: { value: 'jelly' } });
+  expect(screen.getByRole('button', { name: /Jellyfin/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /AdGuard Home/ })).toBeNull();
+  // Accents and case do not matter, and the description is searched too.
+  fireEvent.change(search, { target: { value: 'INVENTARIO' } });
+  expect(screen.getByRole('button', { name: /Proxmox/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Jellyfin/ })).toBeNull();
+  fireEvent.change(search, { target: { value: 'zzzz' } });
+  expect(screen.getByText(/Nenhuma integração para "zzzz"/)).toBeTruthy();
+  fireEvent.change(search, { target: { value: 'adguard' } });
+  fireEvent.keyDown(search, { key: 'Enter' });
+  expect(await screen.findByRole('dialog', { name: 'Nova conexão AdGuard Home' })).toBeTruthy();
+});

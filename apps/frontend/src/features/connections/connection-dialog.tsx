@@ -45,6 +45,7 @@ export function ConnectionDialog({ state }: { state: State }) {
       onOpenChange={(next) => !next && state.closeDialog()}
       title={title}
       description={description}
+      wide={picking && !form}
     >
       {discarding ? (
         <div className="flex flex-col gap-4">
