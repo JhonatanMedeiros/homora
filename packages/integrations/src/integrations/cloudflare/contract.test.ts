@@ -5,7 +5,7 @@ import {
   long,
 } from '../../../../../apps/backend/src/integration-test-support.js';
 import { cloudflareManifest } from './definition.js';
-import { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';
+import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';
 
 const cloudflareToken = 'cf-token-SECRET753';
 runAdapterContract({

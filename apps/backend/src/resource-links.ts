@@ -38,9 +38,9 @@ const toLink = (row: Row): ResourceLink => ({
 });
 
 /**
- * Links between cards and Coolify resources, keyed by connection and resource UUID, never by name.
- * Homora's own data: nothing here calls Coolify. `seenName`/`seenUrl` hold what the user last
- * reviewed, so a later change at Coolify is flagged and never applied to the card automatically.
+ * Links between cards and external resources, keyed by connection and resource UUID, never by name.
+ * Homora's own data: nothing here calls external services. `seenName`/`seenUrl` hold what the user last
+ * reviewed, so a later change in the external service is flagged and never applied to the card automatically.
  * A card has one link; setting it again is how the user accepts a reviewed change.
  */
 export function createResourceLinks(sqlite: DatabaseSync, now: () => number = Date.now) {

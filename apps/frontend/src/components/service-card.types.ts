@@ -29,7 +29,7 @@ export type ServiceCardProps = {
   onTag?: (tag: string) => void;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
-  /** Where the card runs, resolved from the live Proxmox inventory (null when not linked). */
+  /** Where the card runs, resolved from the live host inventory (null when not linked). */
   host?: HostLabel | null;
   /** Why the card may be affected; text is always shown, never only color. */
   impact?: Impact;

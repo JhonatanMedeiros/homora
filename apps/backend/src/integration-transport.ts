@@ -2,7 +2,7 @@ import type { ConnectionData, Credentials } from './integration-connection-confi
 import type { IntegrationTransport } from './integrations.js';
 import { getAuthorizedResponse } from './network-request.js';
 
-/** Builds the JSON transport shared by integration reads and Proxmox address lookups. */
+/** Builds the JSON transport shared by integration reads and host address lookups. */
 export function createIntegrationTransport(
   data: ConnectionData,
   credentials: Credentials,

@@ -1,10 +1,9 @@
+export type ManifestValidationHost = {
+  isBrandIcon(name: string): boolean;
+  isErrorCode(code: string): boolean;
+};
 import { z } from 'zod';
-import { ERROR_MESSAGES } from './api-error.js';
-import {
-  BRAND_ICON_NAMES,
-  type IntegrationDefinition,
-  type IntegrationManifest,
-} from '@homora/shared';
+import { type IntegrationDefinition, type IntegrationManifest } from './integration-manifest.js';
 
 /**
  * Static validation of built-in definitions. It runs when the registry is created, so an invalid
@@ -250,15 +249,15 @@ export function outputKeys(manifest: IntegrationManifest) {
 }
 
 /** Throws a descriptive Error when a definition is invalid. Code definitions need only metadata. */
-export function assertValidDefinition(definition: IntegrationDefinition): void {
+export function assertValidDefinition(
+  definition: IntegrationDefinition,
+  host: ManifestValidationHost,
+): void {
   const name = definition.type;
   const fail = (message: string): never => {
     throw new Error(`Invalid integration definition "${name}": ${message}`);
   };
-  if (
-    definition.brandIcon !== undefined &&
-    !(BRAND_ICON_NAMES as readonly string[]).includes(definition.brandIcon)
-  )
+  if (definition.brandIcon !== undefined && !host.isBrandIcon(definition.brandIcon))
     fail(`unknown brand icon ${definition.brandIcon}`);
   if (
     definition.inventoryDomain !== undefined &&
@@ -269,7 +268,7 @@ export function assertValidDefinition(definition: IntegrationDefinition): void {
     fail('invalid system telemetry flag');
   const keys = new Set<string>();
   for (const item of definition.fields) {
-    if (item.errorCode && !Object.hasOwn(ERROR_MESSAGES, item.errorCode))
+    if (item.errorCode && !host.isErrorCode(item.errorCode))
       fail(`unknown error code ${item.errorCode}`);
     if (keys.has(item.key)) fail(`duplicate field ${item.key}`);
     keys.add(item.key);

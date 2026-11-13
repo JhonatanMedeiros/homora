@@ -123,7 +123,7 @@ export function hostLabel(
 }
 
 /**
- * Why a linked card may be affected. `unknown` means the Proxmox inventory could not be read:
+ * Why a linked card may be affected. `unknown` means the host inventory could not be read:
  * it is never reported as offline. A monitor failure on a running guest is a different cause
  * (`service-down`) from a stopped guest or an offline node.
  */

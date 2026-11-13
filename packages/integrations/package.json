@@ -91,6 +91,10 @@
     "./backend/development": {
       "types": "./dist/backend-development.d.ts",
       "default": "./dist/backend-development.js"
+    },
+    "./backend/manifest": {
+      "types": "./dist/backend-manifest.d.ts",
+      "default": "./dist/backend-manifest.js"
     }
   },
   "scripts": {
@@ -100,5 +104,8 @@
   "devDependencies": {
     "@types/node": "26.6.6",
     "typescript": "6.0.3"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
   }
 }

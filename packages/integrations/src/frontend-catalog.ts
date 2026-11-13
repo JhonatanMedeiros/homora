@@ -1,4 +1,4 @@
-import type { IntegrationPresentation } from './frontend.js';
+import { renderManifestDisplay, type IntegrationPresentation, type Translate } from './frontend.js';
 import { integrationDefinition } from './integration-manifest.js';
 import { frontendFactories } from './generated/frontend.js';
 
@@ -19,5 +19,28 @@ export function createPresentationCatalog(translate: (key: string) => string) {
       if (definition?.kind === 'manifest') return definition.display.stats.length;
       return entries.get(type)?.placeholderCount ?? 5;
     },
+  };
+}
+
+/** Resolve both manifest and code widgets using only the catalog and an injected translator. */
+export function createWidgetRenderer(translate: Translate) {
+  const catalog = createPresentationCatalog((key) => translate(key, key));
+  function render(type: string, value: unknown) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const presentation = catalog.get(type);
+    if (presentation) {
+      const stats = presentation.stats(value);
+      return stats
+        ? { stats, summary: stats.map((stat) => `${stat.label}: ${stat.value}`).join(' · ') }
+        : null;
+    }
+    const definition = integrationDefinition(type);
+    return definition?.kind === 'manifest'
+      ? renderManifestDisplay(definition.display, value, translate)
+      : null;
+  }
+  return {
+    stats: (type: string, value: unknown) => render(type, value)?.stats ?? null,
+    describe: (type: string, value: unknown) => render(type, value)?.summary ?? null,
   };
 }

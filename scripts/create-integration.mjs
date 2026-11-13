@@ -29,10 +29,10 @@ export async function createIntegration(root, id, kind) {
     },
     body: { name: 'Example' },
   };
-  const test = `// Template: rename to contract.test.ts and replace the illustrative values.\nimport { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';\nimport { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';\nimport { fixture } from '../../../../../apps/backend/src/integration-test-support.js';\nimport { ${symbol} as definition } from './definition.js';\n\nrunAdapterContract({\n  name: ${name},\n  create: (transport) => createManifestAdapter(definition, transport),\n  validConfig: { url: 'https://service.example.test' },\n  secrets: [],\n  invalidConfigs: [{ label: 'credentials in URL', config: { url: 'https://user:pass@example.test' } }],\n  fixtures: {\n    valid: { body: fixture('${id}/example.json'), expected: { name: 'Example' } },\n    wrongShape: [{ label: 'missing name', body: {} }],\n    oversized: [{ label: 'long name', body: { name: 'x'.repeat(129) } }],\n  },\n  authenticated: false,\n});\n`;
+  const test = `// Template: rename to contract.test.ts and replace the illustrative values.\nimport { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';\nimport { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';\nimport { fixture } from '../../../../../apps/backend/src/integration-test-support.js';\nimport { ${symbol} as definition } from './definition.js';\n\nrunAdapterContract({\n  name: ${name},\n  create: (transport) => createManifestAdapter(definition, transport),\n  validConfig: { url: 'https://service.example.test' },\n  secrets: [],\n  invalidConfigs: [{ label: 'credentials in URL', config: { url: 'https://user:pass@example.test' } }],\n  fixtures: {\n    valid: { body: fixture('${id}/example.json'), expected: { name: 'Example' } },\n    wrongShape: [{ label: 'missing name', body: {} }],\n    oversized: [{ label: 'long name', body: { name: 'x'.repeat(129) } }],\n  },\n  authenticated: false,\n});\n`;
   const codeTest = test
     .replace(
-      "import { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';\n",
+      "import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';\n",
       '',
     )
     .replace(

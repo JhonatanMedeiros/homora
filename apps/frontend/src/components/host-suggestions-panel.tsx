@@ -31,7 +31,7 @@ type Props = {
 
 /**
  * Evidence-based suggestions. Nothing is applied without an explicit action, accepting only
- * writes Homora's link (never Proxmox), and every action can be undone. A suggestion that has no
+ * writes Homora's link (never the external system), and every action can be undone. A suggestion that has no
  * independent evidence only offers manual linking.
  */
 export function HostSuggestionsPanel({ open, onOpenChange, ...rest }: Props) {

@@ -16,7 +16,7 @@ export type Dependency = { serviceId: number; dependsOnId: number };
 
 /**
  * Manual "service A depends on service B" records. Homora's own data: nothing here reads or
- * writes Proxmox. A new edge is rejected when it would close a cycle, so the stored graph is
+ * writes to external systems. A new edge is rejected when it would close a cycle, so the stored graph is
  * always acyclic and traversals terminate (they still keep a visited set).
  */
 export function createServiceDependencies(sqlite: DatabaseSync) {

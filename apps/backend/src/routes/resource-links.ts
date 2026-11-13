@@ -30,8 +30,8 @@ const bodySchema = z
   .strict();
 
 /**
- * Links between cards and Coolify resources. Session required (the `/api/` hook); every change is
- * audited with ids only. Nothing here writes to Coolify, and Coolify data never rewrites a card:
+ * Links between cards and external resources. Session required (the `/api/` hook); every change is
+ * audited with ids only. Nothing here writes to external services, and external data never rewrites a card:
  * setting the link again is how the user accepts a reviewed change.
  */
 export function registerResourceLinkRoutes(

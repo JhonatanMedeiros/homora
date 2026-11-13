@@ -1,8 +1,7 @@
 import { apiError, t, tOr } from '@/i18n';
-import { createPresentationCatalog } from '@homora/integrations/frontend/catalog';
-import { renderManifestDisplay, type WidgetStat } from '@homora/integrations/frontend';
+import { createWidgetRenderer } from '@homora/integrations/frontend/catalog';
 import { integrationDefinition, integrationDefinitions, type ManifestField } from '@homora/shared';
-const presentations = createPresentationCatalog((key) => tOr(key, key));
+const widgets = createWidgetRenderer(tOr);
 export type Kind = string;
 export type Connection = {
   id: number;
@@ -15,7 +14,7 @@ export type Connection = {
   /** Public fields declared by the integration definition (entityId, username, slug, ...). */
   [field: string]: string | number | boolean | undefined;
 };
-/** Widget kinds: connection catalog types and Proxmox, which still uses the legacy vault. */
+/** Widget types are supplied by the integration catalog. */
 export type WidgetKind = Kind;
 export type IntegrationWidget = {
   id: number;
@@ -124,30 +123,8 @@ export async function request(url: string, init?: RequestInit): Promise<unknown>
   return data;
 }
 
-function renderManifest(type: WidgetKind, value: unknown) {
-  const definition = integrationDefinition(type);
-  return definition?.kind === 'manifest'
-    ? renderManifestDisplay(definition.display, value, tOr)
-    : null;
-}
-
-export function describeData(type: WidgetKind, value: unknown): string | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  if (presentations.get(type))
-    return (
-      widgetStats(type, value)
-        ?.map((stat) => `${stat.label}: ${stat.value}`)
-        .join(' · ') ?? null
-    );
-  return renderManifest(type, value)?.summary ?? null;
-}
-
-/** Short numbers and text from a query, for display within a card. */
-export function widgetStats(type: WidgetKind, value: unknown): WidgetStat[] | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const presentation = presentations.get(type);
-  return presentation ? presentation.stats(value) : (renderManifest(type, value)?.stats ?? null);
-}
+export const describeData = widgets.describe;
+export const widgetStats = widgets.stats;
 
 export function hostOf(url: string) {
   try {

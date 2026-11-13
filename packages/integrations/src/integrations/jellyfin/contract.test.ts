@@ -5,7 +5,7 @@ import {
   long,
 } from '../../../../../apps/backend/src/integration-test-support.js';
 import { jellyfinManifest } from './definition.js';
-import { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';
+import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';
 
 const jellyfin = fixture('jellyfin/system-info-public.json') as Record<string, unknown>;
 runAdapterContract({

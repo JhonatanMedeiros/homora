@@ -1,21 +1,22 @@
-import type { IntegrationManifest, ManifestField } from '@homora/shared';
-import { defineBackendIntegration } from '@homora/integrations/backend';
-import { InputError, type ErrorCode } from './api-error.js';
+import type { ManifestValidationHost } from './backend-manifest-validation.js';
+export type ManifestHost = ManifestValidationHost & { inputError(code: string): Error };
+import type { IntegrationManifest, ManifestField } from './integration-manifest.js';
+import { defineBackendIntegration } from './backend.js';
 import type {
   IntegrationAdapter,
   IntegrationRegistration,
   IntegrationTransport,
-} from './integrations.js';
-import { assertValidDefinition } from './integration-manifest.js';
+} from './backend.js';
+import { assertValidDefinition } from './backend-manifest-validation.js';
 import {
   extractManifestStep,
   requiredValuesMatch,
   type ManifestConfig,
   type ManifestData,
-} from './manifest-response.js';
+} from './backend-manifest-response.js';
 
 /** Flat configuration: `url`, public text fields, and the credentials (`secret`, `tokenId`). */
-export type { ManifestConfig, ManifestData } from './manifest-response.js';
+export type { ManifestConfig, ManifestData } from './backend-manifest-response.js';
 
 const hasControl = (value: string) =>
   Array.from(value).some((char) => {
@@ -24,15 +25,14 @@ const hasControl = (value: string) =>
   });
 const invalidResponse = (label: string) => new Error(`Invalid response from ${label}.`);
 
-function validateUrl(field: ManifestField, input: unknown) {
-  const code = (field.errorCode ??
-    (field.httpsOnly ? 'https-url-required' : 'invalid-url')) as ErrorCode;
-  if (typeof input !== 'string' || input.length > field.maxLength) throw new InputError(code);
+function validateUrl(field: ManifestField, input: unknown, inputError: ManifestHost['inputError']) {
+  const code = field.errorCode ?? (field.httpsOnly ? 'https-url-required' : 'invalid-url');
+  if (typeof input !== 'string' || input.length > field.maxLength) throw inputError(code);
   let url: URL;
   try {
     url = new URL(input);
   } catch {
-    throw new InputError(code);
+    throw inputError(code);
   }
   if (
     !(field.httpsOnly ? url.protocol === 'https:' : ['http:', 'https:'].includes(url.protocol)) ||
@@ -42,15 +42,19 @@ function validateUrl(field: ManifestField, input: unknown) {
     url.hash ||
     (!field.allowPath && url.pathname !== '/')
   )
-    throw new InputError(code);
+    throw inputError(code);
   return field.allowPath ? url.toString().replace(/\/+$/, '') : url.origin;
 }
 
-function validateField(field: ManifestField, input: unknown): string {
-  if (field.kind === 'url') return validateUrl(field, input);
-  const code = (field.errorCode ?? 'invalid-config') as ErrorCode;
+function validateField(
+  field: ManifestField,
+  input: unknown,
+  inputError: ManifestHost['inputError'],
+): string {
+  if (field.kind === 'url') return validateUrl(field, input, inputError);
+  const code = field.errorCode ?? 'invalid-config';
   if (input === undefined || input === null || input === '') {
-    if (field.required) throw new InputError(code);
+    if (field.required) throw inputError(code);
     return '';
   }
   if (
@@ -59,15 +63,19 @@ function validateField(field: ManifestField, input: unknown): string {
     hasControl(input) ||
     (field.pattern !== undefined && !new RegExp(`^(?:${field.pattern})$`).test(input))
   )
-    throw new InputError(code);
+    throw inputError(code);
   return input;
 }
 
-function validateConfig(manifest: IntegrationManifest, input: unknown): ManifestConfig {
-  if (!input || typeof input !== 'object') throw new InputError('invalid-config');
+function validateConfig(
+  manifest: IntegrationManifest,
+  input: unknown,
+  inputError: ManifestHost['inputError'],
+): ManifestConfig {
+  if (!input || typeof input !== 'object') throw inputError('invalid-config');
   const config: ManifestConfig = {};
   for (const field of manifest.fields) {
-    const value = validateField(field, (input as Record<string, unknown>)[field.key]);
+    const value = validateField(field, (input as Record<string, unknown>)[field.key], inputError);
     if (value !== '') config[field.key] = value;
   }
   return config;
@@ -106,9 +114,10 @@ function buildPath(template: string, config: ManifestConfig) {
 export function createManifestAdapter(
   manifest: IntegrationManifest,
   transport: IntegrationTransport,
+  inputError: ManifestHost['inputError'],
 ): IntegrationAdapter<ManifestConfig, ManifestData> {
   const label = manifest.label;
-  const validate = (config: ManifestConfig) => validateConfig(manifest, config);
+  const validate = (config: ManifestConfig) => validateConfig(manifest, config, inputError);
   return {
     type: manifest.type,
     label,
@@ -159,12 +168,15 @@ export function createManifestAdapter(
 }
 
 /** Registry entry for a manifest. The definition is validated here, at registry creation. */
-export function createManifestRegistration(manifest: IntegrationManifest): IntegrationRegistration {
-  assertValidDefinition(manifest);
+export function createManifestRegistration(
+  manifest: IntegrationManifest,
+  host: ManifestHost,
+): IntegrationRegistration {
+  assertValidDefinition(manifest, host);
   return defineBackendIntegration(manifest, {
     prepare(context) {
       if (!context.transport) throw new Error('Integration transport unavailable.');
-      const adapter = createManifestAdapter(manifest, context.transport);
+      const adapter = createManifestAdapter(manifest, context.transport, host.inputError);
       const values: ManifestConfig = {};
       for (const field of manifest.fields) {
         const raw =

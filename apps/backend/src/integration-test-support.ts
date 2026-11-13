@@ -1,3 +1,27 @@
+import { BRAND_ICON_NAMES } from '@homora/icons';
+import {
+  createManifestAdapter as sdkAdapter,
+  createManifestRegistration as sdkRegistration,
+  assertValidDefinition as sdkValidate,
+} from '@homora/integrations/backend/manifest';
+import type { IntegrationManifest, IntegrationDefinition } from '@homora/integrations';
+import type { IntegrationTransport } from '@homora/integrations/backend';
+import { ERROR_MESSAGES, InputError, type ErrorCode } from './api-error.js';
+
+const manifestHost = {
+  isBrandIcon: (name: string) => (BRAND_ICON_NAMES as readonly string[]).includes(name),
+  isErrorCode: (code: string) => Object.hasOwn(ERROR_MESSAGES, code),
+  inputError: (code: string) => new InputError(code as ErrorCode),
+};
+export const createManifestAdapter = (
+  manifest: IntegrationManifest,
+  transport: IntegrationTransport,
+) => sdkAdapter(manifest, transport, manifestHost.inputError);
+export const createManifestRegistration = (manifest: IntegrationManifest) =>
+  sdkRegistration(manifest, manifestHost);
+export const assertValidDefinition = (definition: IntegrationDefinition) =>
+  sdkValidate(definition, manifestHost);
+
 import { readFileSync } from 'node:fs';
 
 export const fixtureDir = new URL(

@@ -50,6 +50,11 @@ test('generated definitions compile against the SDK without modifying the reposi
     await cp(join(repo, 'packages/integrations/tsconfig.json'), join(target, 'tsconfig.json'));
     await cp(join(repo, 'tsconfig.json'), join(root, 'tsconfig.json'));
     await symlink(join(repo, 'node_modules'), join(root, 'node_modules'), 'dir');
+    await symlink(
+      join(repo, 'packages/integrations/node_modules'),
+      join(target, 'node_modules'),
+      'dir',
+    );
     const manifest = await createIntegration(root, 'example-manifest', 'manifest');
     const code = await createIntegration(root, 'example-code', 'code');
     await cp(join(code, 'backend.ts.example'), join(code, 'backend.ts'));

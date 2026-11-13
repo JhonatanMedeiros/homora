@@ -26,7 +26,7 @@ type Props = {
 };
 
 /**
- * Review of a resource link. Changes reported by Coolify (name, address) are shown next to what the
+ * Review of a resource link. Changes reported by the external service (name, address) are shown next to what the
  * card has; nothing is applied until the user chooses. A missing resource only offers to remove
  * the link: the card is always kept.
  */

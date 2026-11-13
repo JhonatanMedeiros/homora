@@ -1,4 +1,4 @@
-import type { Extraction, IntegrationManifest, JsonPath, Literal } from '@homora/shared';
+import type { Extraction, IntegrationManifest, JsonPath, Literal } from './integration-manifest.js';
 
 export type ManifestData = Record<string, string | number | boolean | null>;
 export type ManifestConfig = Record<string, string>;

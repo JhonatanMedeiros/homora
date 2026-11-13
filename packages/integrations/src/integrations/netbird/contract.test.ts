@@ -5,7 +5,7 @@ import {
   long,
 } from '../../../../../apps/backend/src/integration-test-support.js';
 import { netbirdManifest } from './definition.js';
-import { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';
+import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';
 
 const netbirdToken = 'nbp_netbird-SECRET987';
 runAdapterContract({

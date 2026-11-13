@@ -1311,6 +1311,14 @@ See [ADR 0005](decisoes/0005-status-transition-notifications.md).
   1,336 application tests and 17 script tests; `pnpm build` and frontend/backend container builds
   passed. Live services, browser interaction and screen readers were not tested.
 
+- Moved the generic manifest interpreter, response parser, definition validation and widget
+  presentation selection into the SDK. Applications inject host-owned error policy and retain
+  authentication, storage, routes and restricted transport. A boundary test detects direct imports
+  and simple type comparisons for registered integrations in production app code. The contributor
+  guide and agent instructions now describe creation, maintenance, security and validation steps.
+  Validation: `pnpm check` (1,336 application tests and 18 script tests), `pnpm build`, and a backend
+  container build loading all 11 definitions passed. Live services and browser behavior were not tested.
+
 ## Extensible integrations (issue #98)
 
 - **Phase 1:** `adapter-contract.ts` (`runAdapterContract`) tests every adapter with a fake transport: validation, request shape and path safety, secrets, each response class, bounds and the observation cache. Fixtures carry a `_source` block. `docs/adapters.md` is the contribution guide. The harness found that Home Assistant, Uptime Kuma, AdGuard Home and the Proxmox validator accepted URLs over 2048 characters; all four now reject them.

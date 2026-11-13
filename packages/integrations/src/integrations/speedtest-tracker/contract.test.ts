@@ -5,7 +5,7 @@ import {
   long,
 } from '../../../../../apps/backend/src/integration-test-support.js';
 import { speedtestTrackerManifest } from './definition.js';
-import { createManifestAdapter } from '../../../../../apps/backend/src/manifest-adapter.js';
+import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';
 
 const speedtestToken = '1|speedtest-SECRET321';
 runAdapterContract({

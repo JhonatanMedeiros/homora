@@ -15,12 +15,12 @@ values.
 ## Decision
 
 A small **closed manifest format**, now defined in `packages/integrations/src/integration-manifest.ts`,
-run by **one reviewed interpreter** (`apps/backend/src/manifest-adapter.ts`).
+run by **one reviewed interpreter** (`packages/integrations/src/backend-manifest-adapter.ts`).
 
 - **Built-in only.** Manifests are TypeScript data in the repository. Nothing is loaded from the
   database, the network or the user at runtime. The registry's rule "explicit registration keeps
   unknown types from executing code" still holds.
-- **Validated at startup.** `assertValidDefinition` (zod, `integration-manifest.ts`) runs when the
+- **Validated at startup.** `assertValidDefinition` (zod, `backend-manifest-validation.ts`) runs when the
   registry is created. An invalid manifest throws there, so tests and the build fail, not production.
   It also cross-checks placeholders, request ids, outputs, display values, error codes and brand icons.
 - **Vocabulary.** Identity (`type`, `label`, `mark`, `brandIcon`, `capabilities`); fields (`url`,

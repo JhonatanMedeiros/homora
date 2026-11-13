@@ -77,7 +77,7 @@ export const connectionSetupSchema = z
     return !url?.httpsOnly || value.url.startsWith('https://');
   });
 /**
- * Links a card to a Proxmox guest. The strength and evidence are computed by the server when the
+ * Links a card to an infrastructure guest. The strength and evidence are computed by the server when the
  * proposal is created (an agent cannot supply them) and shown to the reviewer next to the diff.
  */
 export const hostLinkChangeSchema = z

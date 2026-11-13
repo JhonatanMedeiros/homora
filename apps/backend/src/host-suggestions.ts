@@ -134,7 +134,7 @@ export async function cardAddresses(
   }
 }
 
-/** Orchestrates inventory, addresses, dismissals and the pure ranking. Read-only toward Proxmox. */
+/** Orchestrates inventory, addresses, dismissals and the pure ranking. Read-only toward external systems. */
 export function createHostSuggestions(options: {
   sqlite: DatabaseSync;
   connections: Connections;
