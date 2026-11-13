@@ -7,7 +7,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import * as network from './network-request.js';
 import { createNotifications } from './notifications.js';
 import { createVault } from './vault.js';
-import type { ServiceStatus } from './service-monitor.js';
+import type { ServiceStatus } from './monitoring/index.js';
 
 const service = {
   id: 1,

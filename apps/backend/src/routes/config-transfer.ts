@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { createServiceConfiguration } from '../service-configuration.js';
-import type { createServiceMonitor } from '../service-monitor.js';
+import type { createServiceMonitor } from '../monitoring/index.js';
 import { MAX_TRANSFER_CHARS, serializeConfiguration } from '../config-transfer.js';
 import { IMPORT_SOURCES, parseBySource } from '../importers.js';
 import { errorBody } from '../api-error.js';

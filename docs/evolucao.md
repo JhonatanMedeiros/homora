@@ -1615,6 +1615,10 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Kept typed application and integration adapters because they serve existing non-React call sites, dynamic fallback contracts and locale-aware formatting. The dynamic fallback now uses the public i18next translation API instead of its interpolator service.
 - Validation: `pnpm check` (1,357 application tests and 18 script tests) and `pnpm build` passed. Browser layout and live notification delivery remain unverified.
 
+### Monitoring capability boundary (issue #135)
+
+- Monitoring code moved to `apps/backend/src/monitoring/` behind `monitoring/index.ts`; an ESLint rule blocks deep imports from outside. Import map, flow and pure/I-O split are in `docs/arquitetura.md`; the no-package decision is in [ADR 0013](decisoes/0013-monitoring-capability-boundary.md). No migration, API, MCP or notification behaviour changed.
+
 ### Shared localization catalogs
 
 - Moved application and notification catalogs into `packages/i18n`, with separate frontend and notification entry points and shared locale metadata. The frontend still combines integration-owned translations with the application catalog; i18next initialization remains specific to each app.

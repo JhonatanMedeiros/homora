@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
-import { createApp } from './app.js';
-import { createTestSession } from './test-auth.js';
+import { createApp } from '../app.js';
+import { createTestSession } from '../test-auth.js';
 
 // The real monitor would probe the fake URL and race with the rows set up below.
-vi.mock('./service-monitor.js', () => ({
+vi.mock('./monitor.js', () => ({
   createServiceMonitor: () => ({
     run: async () => {},
     invalidate: async () => {},

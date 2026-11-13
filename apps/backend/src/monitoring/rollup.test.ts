@@ -1,9 +1,9 @@
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
-import { createObservationStore } from './service-observations.js';
-import { createRollupStore } from './service-rollup.js';
-import { serviceSignature } from './service-signature.js';
-import type { ServiceStatus } from './service-monitor.js';
+import { createObservationStore } from './observations.js';
+import { createRollupStore } from './rollup.js';
+import { serviceSignature } from './signature.js';
+import type { ServiceStatus } from './monitor.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;

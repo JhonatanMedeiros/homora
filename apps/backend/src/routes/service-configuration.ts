@@ -2,8 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { HostLinkError } from '../service-configuration.js';
 import { ServiceValidationError, UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 import type { createServiceConfiguration } from '../service-configuration.js';
-import type { createServiceMonitor } from '../service-monitor.js';
-import type { createObservationStore } from '../service-observations.js';
+import type { createObservationStore, createServiceMonitor } from '../monitoring/index.js';
 import {
   groupColumnsSchema,
   groupCreateSchema,

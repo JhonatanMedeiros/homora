@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { createIncidentStore } from '../service-incidents.js';
-import type { createObservationStore } from '../service-observations.js';
+import type { createIncidentStore, createObservationStore } from '../monitoring/index.js';
 import { errorBody } from '../api-error.js';
 import {
   incidentQuerySchema,

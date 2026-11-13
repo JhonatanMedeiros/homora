@@ -1,13 +1,13 @@
 import net from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getAuthorizedResponse } from './network-request.js';
-import { authorizeDestination } from './network-policy.js';
+import { getAuthorizedResponse } from '../network-request.js';
+import { authorizeDestination } from '../network-policy.js';
 import { readCertificate, tcpConnect } from './network-checks.js';
-import { checkService, createServiceMonitor, CERT_WARNING_DAYS } from './service-monitor.js';
+import { checkService, createServiceMonitor, CERT_WARNING_DAYS } from './monitor.js';
 import type { Service } from '@homora/shared';
 
-vi.mock('./network-request.js', () => ({ getAuthorizedResponse: vi.fn() }));
-vi.mock('./network-policy.js', () => ({ authorizeDestination: vi.fn() }));
+vi.mock('../network-request.js', () => ({ getAuthorizedResponse: vi.fn() }));
+vi.mock('../network-policy.js', () => ({ authorizeDestination: vi.fn() }));
 vi.mock('./network-checks.js', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./network-checks.js')>()),
   readCertificate: vi.fn(),
