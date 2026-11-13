@@ -159,3 +159,37 @@ it('removes a widget after confirmation without sending an empty JSON body', asy
   await waitFor(() => expect(screen.queryByText('Office')).toBeNull());
   expect(fetcher).toHaveBeenCalledWith('/api/page-widgets/1', { method: 'DELETE' });
 });
+
+it('adds another widget from the card menu', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async (url: string) =>
+        new Response(
+          JSON.stringify(
+            url === '/api/page-widgets'
+              ? [
+                  {
+                    id: 1,
+                    pageId: 1,
+                    type: 'clock',
+                    name: 'Office',
+                    config: { hourFormat: '24h', timeZone: 'UTC', seconds: false, date: true },
+                    connectionId: null,
+                    position: 0,
+                    version: 1,
+                  },
+                ]
+              : [],
+          ),
+        ),
+    ),
+  );
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  fireEvent.pointerDown(await screen.findByRole('button', { name: 'Ações: Office' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Adicionar widget' }));
+  expect(await screen.findByRole('button', { name: /Relógio/ })).toBeTruthy();
+});

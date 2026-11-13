@@ -1725,7 +1725,7 @@ manual responsive and keyboard verification in a browser remains pending.
 ### Page widgets: quieter management (2026-11-13)
 
 - The Home shows widgets as plain information, with no fixed title or buttons. Each card has a
-  `⋯` menu (edit, move to another page, reorder, remove with confirmation), visible on hover and
+  `⋯` menu (edit, add widget, move to another page, organize, remove with confirmation), visible on hover and
   focus and always visible on touch.
 - "Organize widgets" in the card menu opens a widget organize mode on the Home: drag, a handle
   with arrow keys, edit, remove, and a dashed tile to add at the end of the grid. A page with no

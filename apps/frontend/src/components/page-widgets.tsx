@@ -390,6 +390,7 @@ export function PageWidgets({ pageId, pages }: Props) {
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       )}
+                      <DropdownMenuItem onSelect={openAdd}>{t('pageWidgets.add')}</DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => setOrganizing(true)}>
                         {t('pageWidgets.reorder')}
                       </DropdownMenuItem>
