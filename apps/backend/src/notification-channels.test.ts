@@ -75,6 +75,43 @@ describe('ntfy and Discord channels', () => {
     }
   });
 
+  it('keeps the configured language per channel and translates human messages', async () => {
+    const { notifier, dir } = setup();
+    const send = vi
+      .spyOn(network, 'getAuthorizedResponse')
+      .mockResolvedValue({ status: 204, body: '' });
+    try {
+      const channel = notifier.save({
+        name: 'd',
+        ...base,
+        type: 'discord',
+        destination: DISCORD,
+        locale: 'pt-BR',
+      })!;
+      expect(channel.locale).toBe('pt-BR');
+      expect(notifier.save({ name: 'edited', ...base, type: 'discord' }, channel.id)?.locale).toBe(
+        'pt-BR',
+      );
+      notifier.publish([service], { 1: down });
+      await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+      expect(JSON.parse(send.mock.calls[0]?.[2]?.jsonBody ?? '{}').content).toBe(
+        'Homora: Example — OFFLINE (erro do servidor)',
+      );
+      expect(() =>
+        notifier.save({
+          name: 'd',
+          ...base,
+          type: 'discord',
+          destination: DISCORD,
+          locale: 'invalid',
+        }),
+      ).toThrow();
+    } finally {
+      await notifier.stop();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('sends Discord a plain message that mentions nobody, and ntfy a JSON publish with its token', async () => {
     const { notifier, dir } = setup();
     const send = vi

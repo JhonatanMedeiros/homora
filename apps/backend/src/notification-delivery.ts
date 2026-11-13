@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { Service } from '@homora/shared';
 import { z } from 'zod';
+import { notificationText } from './notification-i18n.js';
 import { getAuthorizedResponse } from './network-request.js';
 import type { NotificationEvent } from './notification-transitions.js';
 
@@ -16,6 +17,7 @@ export type NotificationChannel = {
   enabled: number;
   allow_private: number;
   include_url: number;
+  locale: 'en' | 'pt-BR';
   created_at: string;
   last_sent_at: string | null;
   last_error: string | null;
@@ -53,7 +55,8 @@ export function createNotificationDelivery(
     serviceUrl: string,
   ) {
     const secret = credentials(channel);
-    const text = `Homora: ${event.service.name} — ${event.event.toUpperCase()} (${event.reason})${channel.include_url ? `\n${serviceUrl}` : ''}`;
+    const message = notificationText(channel.locale, event);
+    const text = `Homora: ${event.service.name} — ${message}${channel.include_url && serviceUrl ? `\n${serviceUrl}` : ''}`;
     let destination = secret.destination!;
     let headers: Record<string, string> | undefined;
     let payload: unknown;
@@ -70,7 +73,7 @@ export function createNotificationDelivery(
       payload = {
         topic,
         title: event.service.name,
-        message: `${event.event.toUpperCase()} (${event.reason})${channel.include_url && serviceUrl ? `\n${serviceUrl}` : ''}`,
+        message: `${message}${channel.include_url && serviceUrl ? `\n${serviceUrl}` : ''}`,
         priority: event.event === 'down' ? 4 : 3,
         tags: [event.event === 'down' ? 'rotating_light' : 'white_check_mark'],
       };

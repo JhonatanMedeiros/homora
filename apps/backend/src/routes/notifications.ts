@@ -41,9 +41,13 @@ export function registerNotificationRoutes(
       try {
         const result = await notifications.test(id);
         if (result === undefined) return reply.code(404).send(errorBody('not-found'));
-        return result === null ? { ok: true } : reply.code(502).send({ ok: false, error: result });
+        return result === null
+          ? { ok: true }
+          : reply
+              .code(502)
+              .send({ ...errorBody('notification-delivery-failed'), ok: false, error: result });
       } catch {
-        return reply.code(502).send({ ok: false, error: 'Delivery failed' });
+        return reply.code(502).send({ ...errorBody('notification-delivery-failed'), ok: false });
       }
     },
   );

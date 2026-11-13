@@ -562,3 +562,33 @@ it('adds resource links without touching existing cards, connections or widgets,
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('preserves notification channels when adding their language', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-notification-locale-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, 30)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO notification_channels(name,type,secret,enabled,allow_private,include_url,created_at) VALUES('Existing','discord','encrypted',1,0,0,'2026-01-01')",
+    );
+    old.close();
+    const database = createDatabase(path);
+    expect(
+      getSqliteHandle(database.db)
+        .prepare('SELECT name, secret, locale FROM notification_channels')
+        .get(),
+    ).toEqual({ name: 'Existing', secret: 'encrypted', locale: 'en' });
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

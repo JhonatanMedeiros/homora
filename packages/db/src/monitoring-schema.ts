@@ -19,6 +19,7 @@ export const notificationChannels = sqliteTable('notification_channels', {
   enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
   allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
   includeUrl: integer('include_url', { mode: 'boolean' }).notNull().default(false),
+  locale: text('locale').notNull().default('en'),
   createdAt: text('created_at').notNull(),
   lastSentAt: text('last_sent_at'),
   lastError: text('last_error'),

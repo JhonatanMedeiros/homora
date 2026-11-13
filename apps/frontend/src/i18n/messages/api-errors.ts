@@ -1,5 +1,6 @@
 /** API error code messages. Keys follow `ERROR_MESSAGES` from the backend. */
 export const en = {
+  'apiError.notification-delivery-failed': 'Notification delivery failed.',
   'apiError.auth-required': 'Authentication required.',
   'apiError.origin-not-allowed': 'Origin not allowed.',
   'apiError.not-found': 'Not found.',
@@ -64,6 +65,7 @@ export const en = {
 } as const;
 
 export const ptBR = {
+  'apiError.notification-delivery-failed': 'Falha ao enviar a notificação.',
   'apiError.auth-required': 'Autenticação necessária.',
   'apiError.origin-not-allowed': 'Origem não autorizada.',
   'apiError.not-found': 'Não encontrado.',

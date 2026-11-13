@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from '../App';
-import { apiError, formatNumber, getLocale, setLocale, t } from './index';
+import { apiError, formatNumber, getLocale, setLocale, t, tOr } from './index';
 import { en } from './en';
 import { ptBR } from './pt-br';
 
@@ -34,6 +34,18 @@ it('replaces placeholders and picks the language plural form', () => {
   setLocale('pt-BR');
   expect(t('page.servicesCount', { count: 1 })).toBe('1 serviço');
   expect(t('page.servicesCount', { count: 3 })).toBe('3 serviços');
+});
+
+it('translates integration messages and interpolates unknown integration fallbacks', () => {
+  expect(tOr('data.jellyfin', 'fallback', { name: 'Lab', version: '1' })).toBe(
+    'Server: Lab · Version: 1',
+  );
+  setLocale('pt-BR');
+  expect(tOr('data.jellyfin', 'fallback', { name: 'Lab', version: '1' })).toBe(
+    'Servidor: Lab · Versão: 1',
+  );
+  expect(tOr('unknown.integration', 'Server: {name}', { name: 'Lab' })).toBe('Server: Lab');
+  expect(tOr(undefined, 'Server: {name}', { name: 'Lab' })).toBe('Server: Lab');
 });
 
 it('formats numbers according to the locale', () => {

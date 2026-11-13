@@ -1600,3 +1600,11 @@ Verification: `pnpm check` (1266 tests) and `pnpm build` pass. The uptime perfor
 latency and failure reason of each period, and the original code already reached ~940 ms under the
 parallel suite. Checked in Chromium against the mockup at 1440 px and 390 px (dark): banner, degraded
 and failing cards, bar tooltip and detail, expanded history with incidents.
+
+### Localization migration to i18next
+
+- Replaced the frontend's custom message resolution, plural handling, language detection and React subscription with i18next, its browser detector and react-i18next. Existing browser preferences, message keys, interpolation syntax and integration catalogs remain compatible.
+- Backend API errors retain stable codes and English defaults; the frontend translates known codes. Telegram, Discord and ntfy notifications use a language selected per channel; existing channels default to English, and webhook JSON remains unchanged. MCP clients do not inherit the browser language.
+- The application retains thin typed helpers for existing call sites and locale-aware formatting. Adding a language still requires catalog coverage and tests; it is not automatic.
+
+- Notification delivery errors now include a stable API code. Migration coverage checks preservation of existing channel data. Live notification providers and browser layout were not verified.

@@ -56,6 +56,8 @@ flowchart LR
   `App.groups.test.tsx`, `App.proposals.test.tsx`, `App.auth.test.tsx`, and
   `App.navigation.test.tsx`; these exercise user flows across the composed application.
 - Frontend message catalogs are split by application shell, service cards, service groups, service form, agent management, and proposal review in `src/i18n/messages`; `agents.ts` preserves the combined catalog facade, `en.ts` assembles the source keys, and `pt-br.ts` requires an exact `MessageKey` map.
+- Frontend localization uses i18next and react-i18next with the browser language detector. The existing `homora-locale` preference, English fallback, flat keys and single-brace interpolation are retained. Integration message catalogs are registered as resources; the backend returns stable error codes and English defaults, which the frontend translates. The frontend keeps typed convenience functions and locale-aware formatting around the libraries.
+
 - HTTP API: web session authentication (Better Auth, single administrator account), Zod validation of request bodies, parameters,
   and query strings, composing routes by capability. Card and group business rules are
   delegated to the configuration module; connections employ a dedicated module for

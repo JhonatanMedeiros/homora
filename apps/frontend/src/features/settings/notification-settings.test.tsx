@@ -48,6 +48,7 @@ it('opens the Telegram form separately and allows cancelling it', async () => {
   await screen.findByText('No Telegram channels configured.');
   fireEvent.click(screen.getByRole('button', { name: 'Add Telegram' }));
   expect(screen.getByLabelText('Bot token')).toBeTruthy();
+  expect(screen.getByLabelText('Message language').textContent).toContain('English');
   expect(screen.getByLabelText('Chat ID')).toBeTruthy();
   expect(screen.queryByLabelText('Webhook URL (HTTPS)')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -75,6 +76,7 @@ it('creates an ntfy channel with an optional token and a Discord channel without
   fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
   await waitFor(() => expect(fetchMock.mock.calls[1][1].body).toContain('"type":"ntfy"'));
   expect(fetchMock.mock.calls[1][1].body).toContain('https://ntfy.sh/homora');
+  expect(fetchMock.mock.calls[1][1].body).toContain('"locale":"en"');
 
   fireEvent.click(screen.getByRole('button', { name: 'Add Discord' }));
   expect(screen.queryByLabelText('Access token (optional)')).toBeNull();

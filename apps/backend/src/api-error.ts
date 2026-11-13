@@ -80,6 +80,7 @@ export const ERROR_MESSAGES = {
   'invalid-profile': 'Provide a name with up to 80 characters.',
   'too-many-attempts': 'Too many attempts. Try again later.',
   'too-many-requests': 'Too many requests. Try again later.',
+  'notification-delivery-failed': 'Notification delivery failed.',
   'session-not-found': 'Session not found.',
   'identity-invalid': 'Invalid identity or scopes.',
   'identity-not-found': 'Identity not found.',

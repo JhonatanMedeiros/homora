@@ -1,4 +1,6 @@
-import { useSyncExternalStore } from 'react';
+import i18next from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import { initReactI18next, useTranslation } from 'react-i18next';
 import { en, type MessageKey } from './en';
 import { ptBR } from './pt-br';
 
@@ -11,102 +13,74 @@ export const locales: { id: Locale; label: string }[] = [
   { id: 'pt-BR', label: 'Português (Brasil)' },
 ];
 
-const STORAGE_KEY = 'homora-locale';
-const dictionaries: Record<Locale, Record<MessageKey, string>> = { en, 'pt-BR': ptBR };
+const i18n = i18next.createInstance();
+void i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: { en: { translation: en }, 'pt-BR': { translation: ptBR } },
+    fallbackLng: 'en',
+    supportedLngs: ['en', 'pt-BR'],
+    initAsync: false,
+    keySeparator: false,
+    nsSeparator: false,
+    interpolation: { prefix: '{', suffix: '}', escapeValue: false },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      lookupLocalStorage: 'homora-locale',
+      caches: [],
+      convertDetectedLanguage: (language: string) =>
+        language.toLowerCase().startsWith('pt') ? 'pt-BR' : language,
+    },
+  });
 
-function isLocale(value: unknown): value is Locale {
-  return value === 'en' || value === 'pt-BR';
+function applyDocumentLocale(locale: string) {
+  if (typeof document !== 'undefined') document.documentElement.lang = locale;
 }
-
-/** Saved locale, then browser locale (Portuguese becomes pt-BR); default is English. */
-function detectLocale(): Locale {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (isLocale(saved)) return saved;
-  } catch {
-    // No storage available: follow the browser language.
-  }
-  const preferred = typeof navigator === 'undefined' ? '' : navigator.language;
-  return preferred.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en';
-}
-
-let current: Locale = detectLocale();
-const listeners = new Set<() => void>();
-
-function applyDocumentLocale() {
-  if (typeof document !== 'undefined') document.documentElement.lang = current;
-}
-applyDocumentLocale();
+applyDocumentLocale(i18n.language);
+i18n.on('languageChanged', applyDocumentLocale);
 
 export function getLocale(): Locale {
-  return current;
+  return i18n.language === 'pt-BR' ? 'pt-BR' : 'en';
 }
 
 export function setLocale(next: Locale) {
-  if (next === current) return;
-  current = next;
+  if (next === getLocale()) return;
   try {
-    localStorage.setItem(STORAGE_KEY, next);
+    localStorage.setItem('homora-locale', next);
   } catch {
-    // Selection only applies to this page session.
+    // The choice remains active for this page when storage is unavailable.
   }
-  applyDocumentLocale();
-  listeners.forEach((listener) => listener());
+  void i18n.changeLanguage(next);
 }
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-};
 
 export type Params = Record<string, string | number>;
 
-/**
- * Translates a key. `{name}` is replaced by `params.name`. With `count`, uses
- * the variant `key_one` or `key_other` based on the language's plural rules.
- */
+/** Typed application keys; i18next resolves plurals and interpolates values. */
 export function t(key: MessageKey, params?: Params): string {
-  const dictionary = dictionaries[current];
-  let resolved: string = dictionary[key];
-  if (params && typeof params.count === 'number') {
-    const plural = new Intl.PluralRules(current).select(params.count);
-    const variant = `${key}_${plural === 'one' ? 'one' : 'other'}` as MessageKey;
-    resolved = dictionary[variant] ?? resolved;
-  }
-  if (!params) return resolved;
-  return resolved.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in params ? String(params[name]) : match,
-  );
+  return i18n.t(key, params ?? {});
 }
 
-/**
- * Like `t` for keys that come from data (integration definitions): an unknown key falls back to
- * the English default text, so a definition never needs a message in every locale to work.
- */
+/** Translate a dynamic integration key, or display the integration's default text. */
 export function tOr(key: string | undefined, fallback: string, params?: Params): string {
-  const dictionary: Record<string, string> = dictionaries[current];
-  const template =
-    key !== undefined && Object.hasOwn(dictionary, key) ? dictionary[key]! : fallback;
-  if (!params) return template;
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in params ? String(params[name]) : match,
-  );
+  return key
+    ? i18n.t(key, { ...params, defaultValue: fallback })
+    : i18n.services.interpolator.interpolate(fallback, params ?? {}, getLocale(), {});
 }
 
-/** Hook that re-renders on locale change and returns `t` and the current locale. */
 export function useI18n() {
-  const locale = useSyncExternalStore(subscribe, getLocale, () => 'en' as Locale);
-  return { t, locale, setLocale };
+  useTranslation(undefined, { i18n });
+  return { t, locale: getLocale(), setLocale };
 }
 
 export const formatDateTime = (value: Date | string | number) =>
-  new Intl.DateTimeFormat(current, { dateStyle: 'short', timeStyle: 'short' }).format(
+  new Intl.DateTimeFormat(getLocale(), { dateStyle: 'short', timeStyle: 'short' }).format(
     new Date(value),
   );
 
 /** "12/11 21:08": day, month and time, for events close enough that the year is obvious. */
 export const formatShortDateTime = (value: Date | string | number) =>
-  new Intl.DateTimeFormat(current, {
+  new Intl.DateTimeFormat(getLocale(), {
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
@@ -116,12 +90,12 @@ export const formatShortDateTime = (value: Date | string | number) =>
     .replace(',', '');
 
 export const formatTime = (value: Date | string | number) =>
-  new Intl.DateTimeFormat(current, { timeStyle: 'short' }).format(new Date(value));
+  new Intl.DateTimeFormat(getLocale(), { timeStyle: 'short' }).format(new Date(value));
 
 /** "3 minutes ago" for past instants; coarse on purpose (minutes, hours, days). */
 export function formatAgo(value: Date | string | number, now = Date.now()) {
   const seconds = Math.max(0, Math.round((now - new Date(value).getTime()) / 1000));
-  const rtf = new Intl.RelativeTimeFormat(current, { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat(getLocale(), { numeric: 'auto' });
   if (seconds < 60) return rtf.format(0, 'minute');
   if (seconds < 3600) return rtf.format(-Math.floor(seconds / 60), 'minute');
   if (seconds < 86_400) return rtf.format(-Math.floor(seconds / 3600), 'hour');
@@ -129,8 +103,8 @@ export function formatAgo(value: Date | string | number, now = Date.now()) {
 }
 
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) =>
-  value.toLocaleString(current, options);
+  value.toLocaleString(getLocale(), options);
 
-export const compareText = (a: string, b: string) => a.localeCompare(b, current);
-export const lower = (value: string) => value.toLocaleLowerCase(current);
-export const upper = (value: string) => value.toLocaleUpperCase(current);
+export const compareText = (a: string, b: string) => a.localeCompare(b, getLocale());
+export const lower = (value: string) => value.toLocaleLowerCase(getLocale());
+export const upper = (value: string) => value.toLocaleUpperCase(getLocale());
