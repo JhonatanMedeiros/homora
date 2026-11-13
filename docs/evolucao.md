@@ -1614,3 +1614,8 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Reviewed backend error boundaries and frontend translation helpers. Existing notification delivery diagnostics are translated at display time, with unknown values reduced to a generic message and HTTP status codes retained. MCP and upstream authentication errors remain separate protocol/client boundaries; not all runtime dependency errors have a localized code.
 - Kept typed application and integration adapters because they serve existing non-React call sites, dynamic fallback contracts and locale-aware formatting. The dynamic fallback now uses the public i18next translation API instead of its interpolator service.
 - Validation: `pnpm check` (1,357 application tests and 18 script tests) and `pnpm build` passed. Browser layout and live notification delivery remain unverified.
+
+### Shared localization catalogs
+
+- Moved application and notification catalogs into `packages/i18n`, with separate frontend and notification entry points and shared locale metadata. The frontend still combines integration-owned translations with the application catalog; i18next initialization remains specific to each app.
+- Updated Docker dependency-stage manifests and contributor guidance. Validation: `pnpm check` (1,363 application tests and 18 script tests), `pnpm build`, and a production backend Docker build with a runtime import of the notification catalog. Adding a language still requires configuring both apps, integration catalogs and appropriate plural, formatting and direction support.

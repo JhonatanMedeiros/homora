@@ -18,7 +18,8 @@ afterEach(() => {
 
 it('maintains the same keys in English and Portuguese, without empty text', () => {
   expect(Object.keys(ptBR).sort()).toEqual(Object.keys(en).sort());
-  for (const [key, value] of Object.entries({ ...en, ...ptBR })) expect(value, key).not.toBe('');
+  for (const dictionary of [en, ptBR])
+    for (const [key, value] of Object.entries(dictionary)) expect(value, key).not.toBe('');
 });
 
 it('maintains the same {name} placeholders in both languages', () => {
