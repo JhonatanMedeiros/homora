@@ -1,6 +1,6 @@
 import { stringify } from 'yaml';
 import type { Service } from '@homora/shared';
-import { TRANSFER_VERSION, type ExportedSettings } from './types.js';
+import { TRANSFER_VERSION, type PortableWidget, type ExportedSettings } from './types.js';
 
 /**
  * Serializes groups and cards in current order. Never includes secrets, connections or IDs.
@@ -11,7 +11,7 @@ export function serializeConfiguration(
   groups: { name: string; columns?: number | null; page?: string }[],
   services: Service[],
   format: 'yaml' | 'json',
-  settings: ExportedSettings & { pages?: string[] } = {},
+  settings: ExportedSettings & { pages?: string[]; widgets?: PortableWidget[] } = {},
 ): string {
   const names = [...new Set([...groups.map((g) => g.name), ...services.map((s) => s.category)])];
   const document = {
@@ -21,6 +21,7 @@ export function serializeConfiguration(
       ? { customCss: settings.customCss }
       : {}),
     ...(settings.pages && settings.pages.length > 0 ? { pages: settings.pages } : {}),
+    ...(settings.widgets?.length ? { widgets: settings.widgets } : {}),
     groups: names.map((name) => ({
       name,
       ...(groups.find((group) => group.name === name)?.columns

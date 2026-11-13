@@ -58,7 +58,7 @@ describe('parsing', () => {
     ['invalid syntax', 'groups: [unclosed', 'invalid-syntax'],
     ['document without groups', 'version: 1\n', 'invalid-document'],
     ['root that is not an object', '- a\n- b', 'invalid-document'],
-    ['unsupported version', 'version: 3\ngroups: []', 'unsupported-version'],
+    ['unsupported version', 'version: 4\ngroups: []', 'unsupported-version'],
   ])('rejects %s', (_name, content, code) => {
     const parsed = parseTransfer(content);
     expect(parsed.issues).toEqual([{ path: '', code, severity: 'error' }]);
@@ -212,5 +212,67 @@ describe('appearance and custom CSS in the export', () => {
     const parsed = parseTransfer(text);
     expect(parsed.issues).toEqual([]);
     expect(parsed.document).toEqual({ groups: [{ name: 'Media', services: [] }] });
+  });
+});
+
+it('round trips portable clocks and flags connected widgets without binding a local id', () => {
+  const config = { hourFormat: '24h' as const, timeZone: 'UTC', seconds: true, date: true };
+  const text = serializeConfiguration([], [], 'json', {
+    pages: ['Home'],
+    widgets: [
+      { page: 'Home', type: 'clock', name: 'Office', config },
+      {
+        page: 'Home',
+        type: 'proxmox',
+        name: 'Lab',
+        config: {},
+        source: { type: 'proxmox', name: 'Cluster' },
+      },
+    ],
+  });
+  expect(text).not.toContain('connectionId');
+  const parsed = parseTransfer(text);
+  expect(parsed.document.widgets).toHaveLength(2);
+  const plan = planImport(parsed, { groups: [], services: [], pages: ['Home'] });
+  expect(plan.widgets.map((widget) => widget.status)).toEqual(['new', 'skipped']);
+  expect(plan.issues).toContainEqual({
+    path: 'widgets[1]',
+    code: 'widget-source-unavailable',
+    severity: 'warning',
+  });
+  expect(plan.summary.newWidgets).toBe(1);
+});
+
+it('shows clocks beyond the page widget limit as skipped before applying', () => {
+  const content = JSON.stringify({
+    version: 3,
+    groups: [],
+    pages: ['Home'],
+    widgets: [
+      {
+        page: 'Home',
+        type: 'clock',
+        name: 'One',
+        config: { hourFormat: 'auto', timeZone: '', seconds: false, date: true },
+      },
+      {
+        page: 'Home',
+        type: 'clock',
+        name: 'Two',
+        config: { hourFormat: 'auto', timeZone: '', seconds: false, date: true },
+      },
+    ],
+  });
+  const plan = planImport(parseTransfer(content), {
+    groups: [],
+    services: [],
+    pages: ['Home'],
+    widgetCount: 199,
+  });
+  expect(plan.widgets.map((item) => item.status)).toEqual(['new', 'skipped']);
+  expect(plan.issues).toContainEqual({
+    path: 'widgets[1]',
+    code: 'widget-limit',
+    severity: 'warning',
   });
 });

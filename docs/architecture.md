@@ -60,8 +60,8 @@ flowchart LR
   dashboard, uptime and host views span pages, components, hooks and `lib` and need a
   separate dependency review before moving. UI primitives, shell, navigation, browser
   preferences and utilities shared across capabilities remain outside features. Application
-  translations are feature-grouped in `packages/i18n`; integration translations and
-  widgets belong to the integration SDK. Tests follow the code they exercise, while App
+  translations are feature-grouped in `packages/i18n`; integration-specific translations and
+  presentations stay in the integration SDK, while widget contracts live in `packages/widgets`. Tests follow the code they exercise, while App
   journey tests remain at the application boundary.
 - As a first slice, settings owns its notification, monitoring-default and appearance-draft
   hooks alongside their consuming components and tests. Its `sections.ts` is the lightweight
@@ -415,3 +415,7 @@ formats without a second consumer. Both are deferred. See [ADR 0005](decisions/0
 - Notification delivery persists a small set of sanitized English diagnostics for compatibility. The UI translates known historical values at display time, preserves HTTP status codes, and displays a generic translated message for unknown values. The database and API remain compatible.
 - The frontend `t` and `useI18n` adapters preserve typed message keys, existing call sites and re-render subscriptions; `tOr` bridges optional integration keys and their default strings to i18next. `apiError` implements the API-specific fallback policy. Locale persistence and the document `lang` attribute remain app configuration. Date, number and text helpers call native `Intl` with the active locale. These adapters do not implement a separate translation engine.
 - Catalog completeness and placeholders are checked in tests, but those tests cannot establish translation quality or prove that every possible runtime error from dependencies is localized.
+
+## Internal widget contract
+
+`@homora/widgets` defines configuration, localization, states, and source contracts without depending on integrations. `@homora/integrations` adapts its presentations and manifests to the contract; applications do not implement service-specific rules. Home page instances are stored separately from legacy rows. The host maintains credentials, transport, and caching; the top bar continues to use local browser preferences. See [ADR 0019](decisions/0019-widget-sdk.md) and the [widget inventory](issue-159-widget-inventory.md). Page widgets are not part of MCP.

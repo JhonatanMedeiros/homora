@@ -40,6 +40,8 @@ export function createPages(sqlite: DatabaseSync) {
         .prepare('SELECT id FROM pages WHERE name=? COLLATE NOCASE AND id IS NOT ?')
         .get(name, exceptId ?? null),
     );
+  const bumpVersion = () =>
+    sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
   const renumber = () => {
     const update = sqlite.prepare('UPDATE pages SET position=? WHERE id=?');
     list().forEach((page, position) => update.run(position, page.id));
@@ -67,6 +69,13 @@ export function createPages(sqlite: DatabaseSync) {
         .all() as { id: number; n: number }[];
       return new Map(rows.map((row) => [row.id, row.n]));
     },
+    widgetCount(id: number): number {
+      return (
+        sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets WHERE page_id=?').get(id) as {
+          n: number;
+        }
+      ).n;
+    },
     create(rawName: unknown): Result<Page> {
       const name = normalizePageName(rawName);
       if (!name) return fail('invalid-page-name');
@@ -77,6 +86,7 @@ export function createPages(sqlite: DatabaseSync) {
         const created = sqlite
           .prepare('INSERT INTO pages(name,position) VALUES(?,?)')
           .run(name, position);
+        bumpVersion();
         return ok(find(Number(created.lastInsertRowid))!);
       });
     },
@@ -87,6 +97,7 @@ export function createPages(sqlite: DatabaseSync) {
         if (!find(id)) return fail('page-not-found');
         if (nameTaken(name, id)) return fail('page-exists');
         sqlite.prepare('UPDATE pages SET name=? WHERE id=?').run(name, id);
+        bumpVersion();
         return ok(find(id)!);
       });
     },
@@ -101,13 +112,24 @@ export function createPages(sqlite: DatabaseSync) {
             n: number;
           }
         ).n;
-        if (groups > 0) {
+        const widgets = (
+          sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets WHERE page_id=?').get(id) as {
+            n: number;
+          }
+        ).n;
+        if (groups > 0 || widgets > 0) {
           if (moveTo === undefined) return fail('page-move-required');
           if (moveTo === id || !find(moveTo)) return fail('page-not-found');
           sqlite.prepare('UPDATE service_groups SET page_id=? WHERE page_id=?').run(moveTo, id);
+          sqlite
+            .prepare(
+              'UPDATE page_widgets SET page_id=?, position=position + (SELECT COALESCE(MAX(position), -1) + 1 FROM page_widgets WHERE page_id=?) WHERE page_id=?',
+            )
+            .run(moveTo, moveTo, id);
         }
         sqlite.prepare('DELETE FROM pages WHERE id=?').run(id);
         renumber();
+        bumpVersion();
         return ok({ movedGroups: groups, name: page.name });
       });
     },
@@ -123,6 +145,7 @@ export function createPages(sqlite: DatabaseSync) {
           return fail('invalid-page-order');
         const update = sqlite.prepare('UPDATE pages SET position=? WHERE id=?');
         ids.forEach((id, position) => update.run(position, id));
+        bumpVersion();
         return ok(list());
       });
     },
@@ -135,6 +158,7 @@ export function createPages(sqlite: DatabaseSync) {
           { name: string } | undefined;
         if (!group) return fail('page-not-found');
         sqlite.prepare('UPDATE service_groups SET page_id=? WHERE id=?').run(pageId, groupId);
+        bumpVersion();
         return ok({ name: group.name, page: page.name });
       });
     },

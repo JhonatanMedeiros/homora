@@ -477,3 +477,7 @@ Live validation still needs to cover the app password with `app_sudo` off, real 
 counts, expired credentials, session limits, private destination policy, certificate validation,
 and absence of secrets in logs and responses. The user report does not establish which of these
 checks were performed; a detailed validation record is still pending.
+
+## Home page widgets
+
+Integration presentations can also be placed on pages, using an existing connection chosen by the administrator. The source is verified against the type contract and continues using host transport and caching. Exports include neither connections nor credentials: the preview indicates that these widgets will be ignored and need to be recreated. Legacy rows without a card remain on the Integrations screen. See [ADR 0019](decisions/0019-widget-sdk.md).

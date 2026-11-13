@@ -12,6 +12,22 @@ export const pages = sqliteTable(
   (table) => [uniqueIndex('pages_name_nocase_idx').on(sql`${table.name} COLLATE NOCASE`)],
 );
 
+/** Widgets placed on a Home page; legacy integration widgets remain separate. */
+export const pageWidgets = sqliteTable('page_widgets', {
+  id: integer('id').primaryKey(),
+  pageId: integer('page_id')
+    .notNull()
+    .references(() => pages.id, { onDelete: 'restrict' }),
+  type: text('type').notNull(),
+  name: text('name').notNull().default(''),
+  config: text('config').notNull(),
+  version: integer('version').notNull().default(1),
+  connectionId: integer('connection_id').references(() => integrationInstances.id, {
+    onDelete: 'restrict',
+  }),
+  position: integer('position').notNull().default(0),
+});
+
 export const serviceGroups = sqliteTable('service_groups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull().unique(),

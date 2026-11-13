@@ -1,3 +1,4 @@
+import { PageWidgets } from '@/components/page-widgets';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -350,6 +351,7 @@ export function ServicesPage({
           }}
         />
       )}
+      {!managing && !hostView && !organizing && <PageWidgets pageId={activePageId} pages={pages} />}
       {managing && !organizing && services.length > 0 && (
         <Input
           type="search"

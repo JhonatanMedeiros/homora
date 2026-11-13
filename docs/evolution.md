@@ -1709,3 +1709,15 @@ stored per service, defaults to new tab for existing data, and travels in native
 imports. Service links in the dashboard and host views and the command palette respect it.
 Automated coverage checks the migration, form, card links, persistence and import/export;
 manual responsive and keyboard verification in a browser remains pending.
+
+### Independent widgets (issue #159)
+
+- Created an internal contract, clock, and additive storage for per-page instances; legacy rows
+  and local top-bar preferences retain their meaning. Native configuration transfer
+  includes clocks and marks connected widgets that need to be recreated with a selected source.
+  Decision and boundaries: [ADR 0019](decisions/0019-widget-sdk.md); inventory:
+  [widgets](issue-159-widget-inventory.md).
+- Validation: contract tests, API and frontend tests, migration and recovery on temporary databases,
+  transfer and full project checks; desktop and mobile browser passes covering creation,
+  editing, keyboard reordering, page switching, removal, and simulated telemetry. The backend
+  Docker image was built and the package loaded in the container. No live service was accessed.

@@ -195,7 +195,8 @@ export function createIntegrationConnections(
         if (
           sqlite
             .prepare('SELECT id FROM integration_widgets WHERE integration_id=? LIMIT 1')
-            .get(id)
+            .get(id) ||
+          sqlite.prepare('SELECT id FROM page_widgets WHERE connection_id=? LIMIT 1').get(id)
         ) {
           sqlite.exec('COMMIT');
           return 'has-widgets' as const;

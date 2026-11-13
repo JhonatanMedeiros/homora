@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 
-export type PageRow = { id: number; name: string; position: number; groups: number };
+export type PageRow = {
+  id: number;
+  name: string;
+  position: number;
+  groups: number;
+  widgets?: number;
+};
 
 const json = { 'Content-Type': 'application/json' };
 

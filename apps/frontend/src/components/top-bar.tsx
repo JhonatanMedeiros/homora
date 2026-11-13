@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { formatNumber, t, useI18n } from '@/i18n';
 import { useClockPreferences } from '@/hooks/use-clock-preferences';
 import { useSystemStats } from '@/hooks/use-system-stats';
-import { browserTimeZone, formatClock, type ClockPreferences } from '@/lib/clock';
+import { browserTimeZone, type ClockPreferences } from '@/lib/clock';
+import { clockPresentation } from '@homora/widgets/clock';
 
 function useNow(seconds: boolean) {
   const [now, setNow] = useState(() => new Date());
@@ -19,7 +20,7 @@ function useNow(seconds: boolean) {
 export function Clock({ preferences }: { preferences: ClockPreferences }) {
   const { locale } = useI18n();
   const now = useNow(preferences.seconds);
-  const { time, date, zone } = formatClock(locale, preferences, now);
+  const { time, date, zone } = clockPresentation.present({ locale, config: preferences, now });
   const custom = preferences.timeZone && preferences.timeZone !== browserTimeZone();
   return (
     <div className="flex items-baseline gap-2 sm:gap-3">

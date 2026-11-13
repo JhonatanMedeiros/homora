@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { hasSystemTelemetry } from '@homora/integrations';
+import { integrationTelemetrySource } from '@homora/integrations';
+import { supportsSource } from '@homora/widgets';
+import { systemTelemetryWidget } from '@homora/widgets/system-telemetry';
+
+const hasSystemTelemetry = (type: string) =>
+  supportsSource(systemTelemetryWidget.source, integrationTelemetrySource(type));
 import {
   widgetStats,
   type IntegrationWidget,

@@ -1,16 +1,10 @@
+import type { WidgetStat } from '@homora/widgets';
+export type { WidgetStat } from '@homora/widgets';
 import type { ManifestDisplay } from './integration-manifest.js';
 
-/** Presentation output is data, never HTML supplied by a remote service. */
-export type WidgetStat = { label: string; value: string; id?: 'cpu' | 'memory' | 'disk' };
-export type IntegrationPresentation = {
-  stats(value: unknown): WidgetStat[] | null;
-  placeholderCount?: number;
-};
-
-/** Explicitly registered code presentations complement the declarative manifest display. */
-export function definePresentation(presentation: IntegrationPresentation): IntegrationPresentation {
-  return presentation;
-}
+/** Compatibility exports for existing integrations and consumers. */
+export { definePresentation } from '@homora/widgets';
+export type { WidgetPresentation as IntegrationPresentation } from '@homora/widgets';
 
 export type Translate = (
   key: string | undefined,

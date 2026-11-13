@@ -1,3 +1,4 @@
+import { ptBR as pageWidgets } from './messages/page-widgets.js';
 import type { MessageKey } from './frontend-en.js';
 import { ptBR as core } from './messages/core.js';
 import { ptBR as appShell } from './messages/app-shell.js';
@@ -39,4 +40,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...uptimeStatus,
   ...serviceDetail,
   ...checks,
+  ...pageWidgets,
 };

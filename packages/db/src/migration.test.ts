@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -669,6 +669,100 @@ it('adds passkey storage without touching the existing account and removes it wi
     );
     expect(sqlite.prepare('SELECT COUNT(*) AS n FROM passkey').get()).toEqual({ n: 0 });
     database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds page widget storage without changing unlinked or card integration widgets across restart', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-page-widget-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    const first = MIGRATIONS.findIndex((migration) =>
+      migration.sql.join('').includes('CREATE TABLE `page_widgets`'),
+    );
+    expect(first).toBeGreaterThan(0);
+    for (const migration of MIGRATIONS.slice(0, first)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(`INSERT INTO service_groups(id,name,position) VALUES(1,'Apps',0);
+      INSERT INTO services(id,name,url,category,description) VALUES(1,'A','https://a.test','Apps','');
+      INSERT INTO integration_instances(id,type,name) VALUES(1,'proxmox','Lab');
+      INSERT INTO integration_widgets(id,integration_id,type,name,public_config,service_id) VALUES(4,1,'proxmox','Card','{}',1),(5,1,'proxmox','Unlinked','{}',NULL);
+      INSERT INTO service_proposals(id,author_id,diff,base_hash,expires_at,state,created_at,base_version) VALUES('proposal','agent','{}','fingerprint',9999999999,'pending',1,2);`);
+    old.close();
+    createDatabase(path).close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    expect(
+      check.prepare('SELECT id,name,service_id FROM integration_widgets ORDER BY id').all(),
+    ).toEqual([
+      { id: 4, name: 'Card', service_id: 1 },
+      { id: 5, name: 'Unlinked', service_id: null },
+    ]);
+    expect(check.prepare('SELECT COUNT(*) AS n FROM page_widgets').get()).toEqual({ n: 0 });
+    expect(
+      check
+        .prepare("SELECT state,base_hash,base_version FROM service_proposals WHERE id='proposal'")
+        .get(),
+    ).toEqual({ state: 'pending', base_hash: 'fingerprint', base_version: 2 });
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('rolls back a failed page widget migration and can migrate a restored backup', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-page-widget-recovery-'));
+  const path = join(dir, 'data.sqlite');
+  const backup = join(dir, 'backup.sqlite');
+  const restored = join(dir, 'restored.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    const first = MIGRATIONS.findIndex((migration) =>
+      migration.sql.join('').includes('CREATE TABLE `page_widgets`'),
+    );
+    for (const migration of MIGRATIONS.slice(0, first)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO integration_instances(id,type,name) VALUES(1,'proxmox','Lab'); INSERT INTO integration_widgets(id,integration_id,type,name,public_config,service_id) VALUES(5,1,'proxmox','Unlinked','{}',NULL)",
+    );
+    old.close();
+    copyFileSync(path, backup);
+    const broken = new DatabaseSync(path);
+    broken.exec('CREATE TABLE page_widgets (existing TEXT)');
+    broken.close();
+    expect(() => createDatabase(path)).toThrow();
+    const check = new DatabaseSync(path);
+    expect(check.prepare('SELECT name,service_id FROM integration_widgets').all()).toEqual([
+      { name: 'Unlinked', service_id: null },
+    ]);
+    expect(check.prepare('SELECT COUNT(*) AS n FROM __drizzle_migrations').get()).toEqual({
+      n: first,
+    });
+    check.close();
+    copyFileSync(backup, restored);
+    createDatabase(restored).close();
+    const recovered = new DatabaseSync(restored);
+    expect(recovered.prepare('SELECT name,service_id FROM integration_widgets').all()).toEqual([
+      { name: 'Unlinked', service_id: null },
+    ]);
+    expect(recovered.prepare('SELECT COUNT(*) AS n FROM page_widgets').get()).toEqual({ n: 0 });
+    recovered.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
