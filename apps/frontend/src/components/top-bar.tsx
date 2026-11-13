@@ -22,12 +22,15 @@ export function Clock({ preferences }: { preferences: ClockPreferences }) {
   const { time, date, zone } = formatClock(locale, preferences, now);
   const custom = preferences.timeZone && preferences.timeZone !== browserTimeZone();
   return (
-    <div className="flex items-baseline gap-3">
-      <time dateTime={now.toISOString()} className="font-mono text-xl font-medium tabular-nums">
+    <div className="flex items-baseline gap-2 sm:gap-3">
+      <time
+        dateTime={now.toISOString()}
+        className="font-mono text-base font-medium tabular-nums sm:text-xl"
+      >
         {time}
       </time>
       {(preferences.date || custom) && (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-xs text-muted-foreground sm:text-sm">
           {[preferences.date && date, custom && zone].filter(Boolean).join(' · ')}
         </span>
       )}
@@ -44,15 +47,15 @@ export function TopBar() {
       role="region"
       data-homora="top-bar"
       aria-label={t('topBar.label')}
-      className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-md border bg-card px-4 py-2"
+      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md border bg-card px-3 py-1.5 sm:gap-x-6 sm:gap-y-2 sm:px-4 sm:py-2"
     >
       <Clock preferences={preferences} />
       {system.status === 'ready' && (
-        <dl className="flex flex-wrap gap-x-5 gap-y-1">
+        <dl className="flex flex-wrap gap-x-3 gap-y-1 sm:gap-x-5">
           {system.stats.map((stat) => (
             <div key={stat.id} className="flex items-baseline gap-1.5">
               <dt className="font-mono text-[0.6875rem] text-muted-foreground">{stat.label}</dt>
-              <dd className="font-mono text-sm font-medium">
+              <dd className="font-mono text-xs font-medium sm:text-sm">
                 {formatNumber(Number.parseInt(stat.value, 10))}%
               </dd>
             </div>

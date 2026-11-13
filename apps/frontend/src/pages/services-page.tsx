@@ -12,6 +12,8 @@ import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
 import { StatusFilter } from '@/components/status-filter';
 import { StatusBanner } from '@/components/status-banner';
+import { ServiceOptionsSheet } from '@/components/service-options-sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useTags } from '@/hooks/use-tags';
 import { useStatusOverview } from '@/hooks/use-status-overview';
 import { activeWindows, useMaintenance } from '@/hooks/use-maintenance';
@@ -74,6 +76,7 @@ export function ServicesPage({
   const resourceLinks = useResourceLinks();
   const [resourceReview, setResourceReview] = useState<number | null>(null);
   const [topBar] = useTopBar();
+  const mobile = useIsMobile();
   const {
     view,
     setView,
@@ -190,6 +193,17 @@ export function ServicesPage({
     setSrNote,
   });
   const { message, confirming, setConfirming, remove, moveToGroup, reorder } = actions;
+  const toolbar = {
+    arrange,
+    onArrangeChange: setArrange,
+    view,
+    onViewChange: setView,
+    showDescriptions,
+    onShowDescriptionsChange: setShowDescriptions,
+    showHostSuggestions:
+      hostData.connections.length > 0 && services.some((service) => !service.host),
+    onHostSuggestions: () => setSuggestOpen(true),
+  };
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
@@ -200,15 +214,30 @@ export function ServicesPage({
     return () => document.removeEventListener('keydown', key);
   }, [cancelRename, setConfirming]);
 
+  const categoryFilter =
+    !organizing && !hostView && services.length > 0 && categories.length > 2 ? (
+      <CategoryFilter
+        categories={categories}
+        selected={selected}
+        onSelect={setSelected}
+        counts={(category) =>
+          category === null
+            ? services.filter(onPage).length
+            : services.filter((s) => s.category === category).length
+        }
+      />
+    ) : null;
+
   return (
     <section
       aria-label={t('nav.services')}
-      className={cn('flex flex-col gap-6', organizing && 'pb-20 md:pb-0')}
+      className={cn('flex flex-col gap-4 md:gap-6', organizing && 'pb-20 md:pb-0')}
     >
       <ServiceDashboardHeader
         managing={managing}
         organizing={organizing}
         topBar={topBar}
+        compact={mobile}
         banner={
           <StatusBanner
             services={services}
@@ -231,17 +260,7 @@ export function ServicesPage({
         }
         serviceCount={services.length}
         groupCount={allCategories.length}
-        toolbar={{
-          arrange,
-          onArrangeChange: setArrange,
-          view,
-          onViewChange: setView,
-          showDescriptions,
-          onShowDescriptionsChange: setShowDescriptions,
-          showHostSuggestions:
-            hostData.connections.length > 0 && services.some((service) => !service.host),
-          onHostSuggestions: () => setSuggestOpen(true),
-        }}
+        toolbar={toolbar}
         addButton={addButton}
         onToggleOrganizing={() => {
           setOrganizing(!organizing);
@@ -368,18 +387,20 @@ export function ServicesPage({
           ))}
         </div>
       )}
-      {!organizing && !hostView && services.length > 0 && categories.length > 2 && (
-        <CategoryFilter
-          categories={categories}
-          selected={selected}
-          onSelect={setSelected}
-          counts={(category) =>
-            category === null
-              ? services.filter(onPage).length
-              : services.filter((s) => s.category === category).length
-          }
-        />
+      {!managing && !organizing && mobile && services.length > 0 && (
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">{categoryFilter}</div>
+          <ServiceOptionsSheet
+            toolbar={toolbar}
+            status={
+              hostView
+                ? undefined
+                : { selected: statusFilter, counts: statusCounts, onSelect: setStatusFilter }
+            }
+          />
+        </div>
       )}
+      {!(mobile && !managing && !organizing) && categoryFilter}
       {mapView && services.length > 0 && (
         <Suspense fallback={<ServicesSkeleton label={t('common.loading')} list={list} />}>
           <HostMap
