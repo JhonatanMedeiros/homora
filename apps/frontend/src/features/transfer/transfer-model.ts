@@ -12,6 +12,7 @@ export type IssueCode =
   | 'duplicate-in-file'
   | 'icon-unsupported'
   | 'columns-ignored'
+  | 'open-target-ignored'
   | 'check-ignored'
   | 'widget-ignored'
   | 'pages-ignored'

@@ -258,10 +258,9 @@ it('offers Resources only on Coolify connections and explains links when removin
     })),
   );
   render(<Connections />);
-  fireEvent.keyDown(await screen.findByRole('button', { name: 'Ações de Coolify casa' }), {
-    key: 'Enter',
-  });
-  expect(await screen.findByRole('menuitem', { name: 'Recursos' })).toBeTruthy();
-  fireEvent.click(screen.getByRole('menuitem', { name: 'Remover' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Abrir Coolify casa' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Coolify casa' });
+  expect(within(dialog).getByRole('button', { name: 'Recursos' })).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remover' }));
   expect(await screen.findByText(/vínculos entre os recursos dela e os seus cards/)).toBeTruthy();
 });

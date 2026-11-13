@@ -124,7 +124,8 @@ export function CommandPalette({
   const openService = (service: Service) =>
     run(() => {
       remember(service.id);
-      window.open(service.url, '_blank', 'noopener,noreferrer');
+      if (service.openTarget === 'same-tab') window.location.assign(service.url);
+      else window.open(service.url, '_blank', 'noopener,noreferrer');
     });
   const goToCard = (service: Service) =>
     run(() => {
@@ -188,7 +189,7 @@ export function CommandPalette({
           const id = itemService(highlighted);
           const service = id && services.find((item) => item.id === Number(id));
           if (!service) return;
-          // Stops cmdk from also running the item's default action (open in a new tab).
+          // Stops cmdk from also running the item's default action (open the service).
           event.preventDefault();
           goToCard(service);
         },

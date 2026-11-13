@@ -33,6 +33,7 @@ export const services = sqliteTable('services', {
   position: integer('position').notNull().default(0),
   allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
   // 'http' (GET) or 'ping' (ICMP); interval in seconds is null for monitor default.
+  openTarget: text('open_target').notNull().default('new-tab'),
   checkType: text('check_type').notNull().default('http'),
   checkInterval: integer('check_interval'),
   expectedStatus: text('expected_status'),
@@ -65,6 +66,10 @@ export const integrationInstances = sqliteTable('integration_instances', {
   publicConfig: text('public_config').notNull().default('{}'),
   secretRef: text('secret_ref'),
   certificateRef: text('certificate_ref'),
+  /** When the last explicit test ran (epoch ms); cleared when the connection is edited. */
+  lastTestAt: integer('last_test_at'),
+  /** `ok` or a short reason code for the last explicit test. Never the service's own message. */
+  lastTestResult: text('last_test_result'),
 });
 
 /** Records application-level migrations that require decrypting legacy files. */

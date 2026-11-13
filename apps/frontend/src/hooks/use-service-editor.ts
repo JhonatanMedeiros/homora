@@ -27,6 +27,7 @@ function serviceDraft(service: Service | undefined, allowPrivateDefault: boolean
         icon: service.icon ?? '',
         position: service.position ?? 0,
         allowPrivate: service.allowPrivate === true,
+        openTarget: service.openTarget ?? 'new-tab',
         checkType: service.checkType ?? 'http',
         checkInterval: service.checkInterval ?? null,
         expectedStatus: service.expectedStatus ?? null,

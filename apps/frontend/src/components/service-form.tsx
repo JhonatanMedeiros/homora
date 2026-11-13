@@ -6,6 +6,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { FormError } from '@/components/form-error';
 import { ServiceFormAdvanced, type FormMonitoring } from '@/components/service-form-advanced';
 import { HostPicker } from '@/components/host-picker';
@@ -96,6 +97,21 @@ export function ServiceForm({
             onChange={(e) => set({ url: e.target.value })}
             placeholder="http://192.168.1.10:8096"
           />
+        </Field>
+        <Field>
+          <FieldLabel id="service-open-target-label">{t('form.openTarget')}</FieldLabel>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            aria-labelledby="service-open-target-label"
+            value={value.openTarget ?? 'new-tab'}
+            onValueChange={(next) => {
+              if (next === 'new-tab' || next === 'same-tab') set({ openTarget: next });
+            }}
+          >
+            <ToggleGroupItem value="new-tab">{t('form.openNewTab')}</ToggleGroupItem>
+            <ToggleGroupItem value="same-tab">{t('form.openSameTab')}</ToggleGroupItem>
+          </ToggleGroup>
         </Field>
         <Field>
           <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>

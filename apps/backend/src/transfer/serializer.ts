@@ -38,6 +38,7 @@ export function serializeConfiguration(
           ...(service.description ? { description: service.description } : {}),
           ...(service.icon ? { icon: service.icon } : {}),
           ...(service.allowPrivate ? { allowPrivate: true } : {}),
+          ...(service.openTarget === 'same-tab' ? { openTarget: 'same-tab' } : {}),
           ...(service.checkType && service.checkType !== 'http'
             ? { check: service.checkType }
             : {}),

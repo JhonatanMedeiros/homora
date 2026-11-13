@@ -15,6 +15,7 @@ import {
   prepareConnection,
   publicConnection,
   readConnectionCredentials,
+  testFailureReason,
   type ConnectionData,
   type ConnectionInput,
   type Credentials,
@@ -124,6 +125,9 @@ export function createIntegrationConnections(
       publicConfig: JSON.stringify(value.data),
       secretRef,
       certificateRef: hasSecret && hasCa ? 'both' : hasSecret ? 'secret' : hasCa ? 'ca' : null,
+      // A changed connection has not been tested yet.
+      lastTestAt: null,
+      lastTestResult: null,
     };
     const [result] = current
       ? await db
@@ -290,7 +294,18 @@ export function createIntegrationConnections(
       migrateLegacy();
       const row = await find(id);
       if (!row) return false;
-      await collect(id, true); // the explicit test ignores a backoff but still records a new one
+      const record = (lastTestResult: string) =>
+        db
+          .update(integrationInstances)
+          .set({ lastTestAt: clock(), lastTestResult })
+          .where(eq(integrationInstances.id, id));
+      try {
+        await collect(id, true); // the explicit test ignores a backoff but still records a new one
+      } catch (error) {
+        await record(testFailureReason(error));
+        throw error;
+      }
+      await record('ok');
       return true;
     },
   };

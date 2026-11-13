@@ -1689,8 +1689,8 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Added a built-in read-only Pi-hole summary and a host-owned session login capability
   ([ADR 0018](decisoes/0018-integration-session-auth.md)); session login is the only POST allowed
   for the integration and does not grant service writes.
-- Contract, network, session and connection tests cover mock responses. Live Pi-hole validation,
-  including app-password privileges and real payload compatibility, remains pending.
+- Contract, network, session and connection tests cover mock responses. A user reported a
+  successful live test; detailed validation of app-password privileges and payloads remains pending.
 
 ### Reusable integration session profiles
 
@@ -1701,3 +1701,11 @@ and failing cards, bar tooltip and detail, expanded history with incidents.
 - Validation: `pnpm check` (1,481 application tests and 25 script tests) and `pnpm build` passed.
   A user reported that Pi-hole worked in a live test on 2026-11-13; version and individual checks
   were not provided, so detailed live validation remains pending.
+
+### Per-service link opening (issue 165)
+
+The service form offers the existing new-tab behavior and same-tab navigation. The choice is
+stored per service, defaults to new tab for existing data, and travels in native exports and
+imports. Service links in the dashboard and host views and the command palette respect it.
+Automated coverage checks the migration, form, card links, persistence and import/export;
+manual responsive and keyboard verification in a browser remains pending.

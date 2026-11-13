@@ -79,6 +79,7 @@ export function createProposalService(
       if (d.op === 'create') {
         service.position = configuration.nextServicePosition(service.category);
         service.allowPrivate = d.service.allowPrivate === true;
+        service.openTarget ??= 'new-tab';
         service.checkType ??= 'http';
         service.checkInterval ??= null;
       } else {
@@ -89,6 +90,7 @@ export function createProposalService(
           d.service.allowPrivate === undefined
             ? Boolean(current.allowPrivate)
             : d.service.allowPrivate;
+        if (service.openTarget === undefined) service.openTarget = current.openTarget;
         if (service.checkType === undefined) service.checkType = current.checkType;
         if (service.checkInterval === undefined) service.checkInterval = current.checkInterval;
         if (service.expectedStatus === undefined) service.expectedStatus = current.expectedStatus;

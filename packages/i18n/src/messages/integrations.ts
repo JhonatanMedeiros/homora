@@ -1,6 +1,7 @@
 /** Text for the integrations catalog . */
 export const en = {
   'catalog.inventory': 'Infrastructure inventory',
+  'catalog.resource-links': 'Links to cards',
   'catalog.server-info': 'Server information',
   'catalog.entity-state': 'Device and entity state',
   'catalog.status-page': 'Service status',
@@ -15,6 +16,7 @@ export const en = {
 
 export const ptBR: Record<keyof typeof en, string> = {
   'catalog.inventory': 'Inventário da infraestrutura',
+  'catalog.resource-links': 'Vínculos com cards',
   'catalog.server-info': 'Informações do servidor',
   'catalog.entity-state': 'Estado de dispositivos e entidades',
   'catalog.status-page': 'Estado dos serviços',

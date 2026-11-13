@@ -85,12 +85,14 @@ export function ServiceCardTile({
             <ItemTitle className="w-full text-base">
               <a
                 href={service.url}
-                target="_blank"
+                target={service.openTarget === 'same-tab' ? undefined : '_blank'}
                 rel="noopener noreferrer"
                 className="truncate rounded-sm outline-none after:absolute after:inset-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {service.name}
-                <span className="sr-only">{t('card.opensNewTab')}</span>
+                {service.openTarget !== 'same-tab' && (
+                  <span className="sr-only">{t('card.opensNewTab')}</span>
+                )}
               </a>
             </ItemTitle>
             <span className="truncate font-mono text-[0.8125rem] text-muted-foreground">

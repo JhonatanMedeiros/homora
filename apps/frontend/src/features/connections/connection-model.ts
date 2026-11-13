@@ -1,8 +1,9 @@
-import { apiError, t, tOr } from '@/i18n';
+import { apiError, t, tOr, type MessageKey } from '@/i18n';
 import { createWidgetRenderer } from '@homora/integrations/frontend/catalog';
 import { integrationDefinition, integrationDefinitions, type ManifestField } from '@homora/shared';
 const widgets = createWidgetRenderer(tOr);
 export type Kind = string;
+export type LastTest = { at: number; result: string };
 export type Connection = {
   id: number;
   type: Kind;
@@ -11,8 +12,10 @@ export type Connection = {
   allowPrivate: boolean;
   hasSecret: boolean;
   hasCa: boolean;
+  /** Result of the last explicit test; null until the connection is tested. */
+  lastTest?: LastTest | null;
   /** Public fields declared by the integration definition (entityId, username, slug, ...). */
-  [field: string]: string | number | boolean | undefined;
+  [field: string]: string | number | boolean | LastTest | null | undefined;
 };
 /** Widget types are supplied by the integration catalog. */
 export type WidgetKind = Kind;
@@ -125,6 +128,21 @@ export async function request(url: string, init?: RequestInit): Promise<unknown>
 
 export const describeData = widgets.describe;
 export const widgetStats = widgets.stats;
+
+export type Health = 'ok' | 'failed' | 'untested';
+export const healthOf = (item: Pick<Connection, 'lastTest'>): Health =>
+  !item.lastTest ? 'untested' : item.lastTest.result === 'ok' ? 'ok' : 'failed';
+
+const REASONS: Record<string, MessageKey> = {
+  rejected: 'connections.reason.rejected',
+  'http-error': 'connections.reason.http-error',
+  timeout: 'connections.reason.timeout',
+  unavailable: 'connections.reason.unavailable',
+  'invalid-response': 'connections.reason.invalid-response',
+};
+/** Message for the reason code of a failed test; unknown codes read as a generic failure. */
+export const reasonKey = (result: string): MessageKey =>
+  REASONS[result] ?? 'connections.reason.failed';
 
 export function hostOf(url: string) {
   try {

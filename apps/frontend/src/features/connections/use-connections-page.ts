@@ -11,32 +11,37 @@ import {
 } from '@/features/connections/connection-model';
 import { t } from '@/i18n';
 
+export type WidgetFormState = { id: number | null; name: string; connection: string; card: string };
+
+const snapshot = (form: ConnectionFormState | null) => (form ? JSON.stringify(form) : '');
+
 export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
   const [items, setItems] = useState<Connection[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [widgets, setWidgets] = useState<IntegrationWidget[]>([]);
-  const [widgetName, setWidgetName] = useState('');
-  const [widgetConnection, setWidgetConnection] = useState('');
-  const [widgetCard, setWidgetCard] = useState('');
-  const [editingWidget, setEditingWidget] = useState<number | null>(null);
-  const [widgetEditName, setWidgetEditName] = useState('');
-  const [widgetEditCard, setWidgetEditCard] = useState('');
+  const [widgetForm, setWidgetForm] = useState<WidgetFormState | null>(null);
   const [cards, setCards] = useState<{ id: number; name: string }[]>([]);
   const [widgetResult, setWidgetResult] = useState<{ id: number; data: unknown } | null>(null);
   const [form, setForm] = useState<ConnectionFormState | null>(initialDraft ?? null);
+  const [formBase, setFormBase] = useState(snapshot(initialDraft ?? null));
   const [editing, setEditing] = useState<number | null>(null);
+  const [focusSecret, setFocusSecret] = useState(false);
   const [message, setMessage] = useState('');
   const [tab, setTab] = useState<'connections' | 'widgets'>('connections');
   const [picking, setPicking] = useState(false);
+  /** Connection whose details are open in the dialog. */
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [confirmingRemoval, setConfirmingRemoval] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
   const [resourcesOf, setResourcesOf] = useState<Connection | null>(null);
-  const [removing, setRemoving] = useState<
-    { kind: 'connection'; item: Connection } | { kind: 'widget'; item: IntegrationWidget } | null
-  >(null);
+  const [removingWidget, setRemovingWidget] = useState<IntegrationWidget | null>(null);
   const [result, setResult] = useState<{ id: number; data: unknown; checkedAt?: string } | null>(
     null,
   );
   const [busy, setBusy] = useState(false);
   const [saveTesting, setSaveTesting] = useState(false);
+  const [testing, setTesting] = useState(false);
+
   const load = useCallback(async () => {
     const [data, widgetData] = await Promise.all([
       request('/api/connections'),
@@ -59,7 +64,6 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
         if (!controller.signal.aborted) {
           setItems(data as Connection[]);
           setWidgets(widgetData as IntegrationWidget[]);
-          if (data.length) setWidgetConnection(String((data[0] as Connection).id));
         }
       })
       .catch(() => {
@@ -82,9 +86,27 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       });
     return () => controller.abort();
   }, []);
-  function edit(item: Connection) {
+
+  const openForm = (next: ConnectionFormState) => {
+    setForm(next);
+    setFormBase(snapshot(next));
+    setDiscarding(false);
+  };
+  /** Opens the add flow at the type picker. */
+  function startAdding() {
+    setEditing(null);
+    setMessage('');
+    setSelectedId(null);
+    setPicking(true);
+  }
+  function startForm(next: ConnectionFormState) {
+    setPicking(false);
+    openForm(next);
+  }
+  function edit(item: Connection, fromFailure = false) {
     setEditing(item.id);
-    setForm({
+    setFocusSecret(fromFailure);
+    openForm({
       ...emptyForm,
       type: item.type,
       name: item.name,
@@ -98,51 +120,80 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
     });
     setMessage('');
   }
-  const selectedConnection = widgetConnection || (items?.length ? String(items[0].id) : '');
-  async function createWidget(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
+  const dirty = form !== null && snapshot(form) !== formBase;
+  function leaveForm() {
+    setForm(null);
+    setEditing(null);
+    setDiscarding(false);
+    setFocusSecret(false);
     setMessage('');
-    try {
-      await request('/api/widgets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          integrationId: Number(selectedConnection),
-          name: widgetName,
-          ...(widgetCard ? { serviceId: Number(widgetCard) } : {}),
-        }),
-      });
-      setWidgetName('');
-      await load();
-      toast.success(t('widgets.created'));
-    } catch (error) {
-      const failure = error instanceof Error ? error.message : t('widgets.createFailed');
-      setMessage(failure);
-      toast.error(failure);
-    } finally {
-      setBusy(false);
-    }
   }
-  async function updateWidget(widget: IntegrationWidget, name: string, serviceId: string) {
+  /** Cancel or close from the form: asks first when something was typed. */
+  function cancelForm() {
+    if (dirty) setDiscarding(true);
+    else leaveForm();
+  }
+  /** Back to the details when editing, or closes when adding. */
+  function closeDialog() {
+    if (form) return cancelForm();
+    setPicking(false);
+    setSelectedId(null);
+    setConfirmingRemoval(false);
+  }
+  function select(item: Connection | null) {
+    setSelectedId(item?.id ?? null);
+    setConfirmingRemoval(false);
+    setMessage('');
+  }
+
+  const newWidget = () =>
+    setWidgetForm({ id: null, name: '', connection: String(items?.[0]?.id ?? ''), card: '' });
+  const editWidget = (widget: IntegrationWidget) =>
+    setWidgetForm({
+      id: widget.id,
+      name: widget.name,
+      connection: String(widget.integrationId),
+      card: widget.serviceId ? String(widget.serviceId) : '',
+    });
+  async function saveWidget(event: FormEvent) {
+    event.preventDefault();
+    if (!widgetForm) return;
+    const wasNew = widgetForm.id === null;
     setBusy(true);
     setMessage('');
     try {
-      await request(`/api/widgets/${widget.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          serviceId: serviceId ? Number(serviceId) : null,
-        }),
-      });
-      setEditingWidget(null);
+      if (wasNew) {
+        await request('/api/widgets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            integrationId: Number(widgetForm.connection),
+            name: widgetForm.name,
+            ...(widgetForm.card ? { serviceId: Number(widgetForm.card) } : {}),
+          }),
+        });
+      } else {
+        await request(`/api/widgets/${widgetForm.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: widgetForm.name.trim(),
+            serviceId: widgetForm.card ? Number(widgetForm.card) : null,
+          }),
+        });
+      }
+      setWidgetForm(null);
       await load();
-      toast.success(t('widgets.updated'));
+      toast.success(wasNew ? t('widgets.created') : t('widgets.updated'));
     } catch (error) {
-      const failure = error instanceof Error ? error.message : t('widgets.updateFailed');
-      setMessage(failure);
+      const failure =
+        error instanceof Error
+          ? error.message
+          : wasNew
+            ? t('widgets.createFailed')
+            : t('widgets.updateFailed');
       toast.error(failure);
+      setMessage(failure);
     } finally {
       setBusy(false);
     }
@@ -179,6 +230,7 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       setBusy(false);
     }
   }
+
   async function save(event?: FormEvent, testAfterSave = false) {
     event?.preventDefault();
     if (!form) return;
@@ -215,17 +267,23 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
           body: JSON.stringify(payload),
         },
       )) as Connection;
+      let testFailed = false;
       if (testAfterSave) {
-        await request(`/api/connections/${saved.id}/test`, { method: 'POST' });
-        toast.success(t('connections.testOk', { name: saved.name }));
+        try {
+          await request(`/api/connections/${saved.id}/test`, { method: 'POST' });
+          toast.success(t('connections.testOk', { name: saved.name }));
+        } catch (error) {
+          testFailed = true;
+          toast.error(error instanceof Error ? error.message : t('connections.operationFailed'));
+        }
       }
-      setForm(null);
-      setEditing(null);
+      leaveForm();
       setResult(null);
       await load();
-      if (!testAfterSave) {
-        toast.success(t('connections.saved'));
-      }
+      // The details show the saved connection and, when asked, how the test went.
+      setSelectedId(saved.id);
+      if (!testAfterSave) toast.success(t('connections.saved'));
+      else if (testFailed) toast.message(t('connections.saved'));
     } catch (error) {
       const failure = error instanceof Error ? error.message : t('connections.saveFailed');
       setMessage(failure);
@@ -235,18 +293,28 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       setSaveTesting(false);
     }
   }
+
   async function action(item: Connection, operation: 'test' | 'data' | 'delete') {
     setBusy(true);
+    setTesting(operation === 'test');
     setMessage('');
-    setResult(null);
+    if (operation !== 'data') setResult(null);
     try {
       if (operation === 'delete') {
         await request(`/api/connections/${item.id}`, { method: 'DELETE' });
+        setSelectedId(null);
+        setConfirmingRemoval(false);
         await load();
         toast.success(t('connections.removed'));
       } else if (operation === 'test') {
-        await request(`/api/connections/${item.id}/test`, { method: 'POST' });
-        toast.success(t('connections.testOk', { name: item.name }));
+        try {
+          await request(`/api/connections/${item.id}/test`, { method: 'POST' });
+          toast.success(t('connections.testOk', { name: item.name }));
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : t('connections.operationFailed'));
+        }
+        // The result of the test, success or failure, is stored; the list shows it.
+        await load();
       } else {
         const response = (await request(`/api/connections/${item.id}/data?refresh=true`)) as {
           data: unknown;
@@ -260,58 +328,60 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       toast.error(failure);
     } finally {
       setBusy(false);
+      setTesting(false);
     }
   }
   const editingItem = editing === null ? undefined : items?.find((item) => item.id === editing);
+  const selected = selectedId === null ? null : (items?.find((i) => i.id === selectedId) ?? null);
   const counts = (items ?? []).reduce<Partial<Record<Kind, number>>>((acc, item) => {
     acc[item.type] = (acc[item.type] ?? 0) + 1;
     return acc;
   }, {});
-  const browsing = !form && !picking;
   return {
     items,
     loadFailed,
     setLoadFailed,
     widgets,
-    widgetName,
-    setWidgetName,
-    widgetConnection,
-    setWidgetConnection,
-    widgetCard,
-    setWidgetCard,
-    editingWidget,
-    setEditingWidget,
-    widgetEditName,
-    setWidgetEditName,
-    widgetEditCard,
-    setWidgetEditCard,
+    widgetForm,
+    setWidgetForm,
     cards,
     widgetResult,
     form,
     setForm,
     editing,
     editingItem,
-    setEditing,
+    focusSecret,
     message,
     setMessage,
     tab,
     setTab,
     picking,
     setPicking,
+    selected,
+    select,
+    confirmingRemoval,
+    setConfirmingRemoval,
+    discarding,
+    setDiscarding,
     resourcesOf,
     setResourcesOf,
-    removing,
-    setRemoving,
+    removingWidget,
+    setRemovingWidget,
     result,
     busy,
+    testing,
     saveTesting,
-    selectedConnection,
     counts,
-    browsing,
     load,
+    startAdding,
+    startForm,
     edit,
-    createWidget,
-    updateWidget,
+    leaveForm,
+    cancelForm,
+    closeDialog,
+    newWidget,
+    editWidget,
+    saveWidget,
     removeWidget,
     queryWidget,
     save,
