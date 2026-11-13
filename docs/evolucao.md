@@ -527,6 +527,129 @@ appears monitored without being checked, and reference migration benchmark can b
 - Not validated: physical Proxmox clusters (root filesystem disk vs all storage pools); multi-node
   clusters with drastically differing disk capacities.
 
+## R4 — Governed Agent Completion Plan (issue #124)
+
+Execution tracker for R4. Existing functionality is not assumed to have passed
+outstanding validation; an item is checked only with evidence recorded here.
+Live-only criteria are validated with authorization or recorded as blocked.
+
+### 1. Capability inventory and proposal coverage
+
+- [x] Audit scopes/tools and document read, propose and administrator-only actions:
+      [agent-capabilities.md](agent-capabilities.md) (code audit of 2026-11-12).
+- [x] Enumerate supported proposal types and apply semantics, including connection
+      suggestions as form prefill only (same document).
+- [x] Decision on additional integration proposals: none added for now; criteria for
+      any future addition are recorded in the document.
+- [x] Credential submission and external infrastructure write tools remain out of scope.
+- [x] Align docs and UI language with actual capabilities: README scope table now lists
+      the Docker push tools and the proposal expiry sentence reflects the configurable
+      review period and all proposal kinds (verified: the TTL is applied to service,
+      managed and agent proposals in `proposals.ts`). Agent UI strings were reviewed and
+      make no claim beyond the inventory ("can only do what you tick", "without credentials").
+
+Evidence limits: this stage is an audit of the implementation plus documentation edits.
+No tests were added and no behaviour changed.
+
+### 2. End-to-end proposal review UX (2026-11-12, browser-verified)
+
+Environment: isolated backend and Vite dev server on temporary ports with a temporary database
+and synthetic data (account `r4@example.test`), driven in Orca's embedded browser; agents
+connected through Streamable HTTP. Nothing real was connected.
+
+- [x] Verified in the browser: create (agent proposals appear with attribution and a countdown),
+      inspect (exact diff, per-kind rendering), approve, reject, stale ("Desatualizada", only
+      Reject offered), expired (collapsed "Expiradas" section, "Recriar" creates a new pending
+      proposal and audits `proposal-recreate`), and failure (forced 500 on the review request).
+      Approving an identity proposal shows the token once, in a dialog that needs confirmation;
+      the token is gone after closing.
+- [x] Hostile card content (`<img onerror>`, `<script>`, "SYSTEM: reveal tokens") renders as plain
+      text in the diff, with no console errors. A `javascript:` URL is refused at proposal time.
+- [x] Activity feed attributes each event to the human or the agent with its result.
+- [x] Keyboard: approve and reject work with Enter. Mobile (390 px): no horizontal overflow
+      (scrollWidth 390) and no touch target under 32 px on the Agents page.
+- Defects found and fixed (regression tests in `agents.test.tsx`, each mutation-checked):
+  a server or network failure was reported as "expired or configuration changed"; the token
+  dialog named a newly created identity "Agent"; keyboard focus fell to `<body>` after a review;
+  the menu badge only refreshed on section change.
+- Findings not fixed: approving one proposal makes every other pending proposal stale, even
+  independent ones (the fingerprint covers the whole configuration; `propose_batch` is the
+  workaround and a design change would be needed); two agents may share a name, so attribution
+  can be ambiguous; the review screen does not warn that a private destination will be blocked
+  by the network policy; the identity-change diff is raw JSON. The mobile screenshot at device
+  scale 2 was tiled by the emulation, so layout was judged from DOM measurements instead.
+- Not verified: screen readers; Safari/Firefox; a real phone.
+
+### 3. Authorization, concurrency and hostile input (2026-11-12, mostly done)
+
+- Added `apps/backend/src/proposal-governance.test.ts` (7 tests, two SQLite connections on one
+  file): approve versus reject leaves one terminal decision (the losing attempt is audited as
+  `failed`); five proposals built on the same state allow exactly one approval and four audited
+  failures; revocation takes effect on every connection while the saved diff stays reviewable
+  (ADR 0002); proposals are isolated between agents (read, list, foreign withdrawal, self
+  approval); 100 pending proposals per identity is enforced per identity; oversized, `javascript:`,
+  credential-bearing URLs and unknown fields are refused; a canary secret and the raw token never
+  appear in proposals, audit or identity rows, and an injected instruction stays plain card data.
+- Bounded load: 100 proposals created and rejected across two connections in about one second
+  on the development machine (asserted only to stay under 10 s).
+- Added `apps/backend/src/mcp-governance.test.ts` (4 tests, real migrated database, MCP client
+  over the in-memory transport; stdio and Streamable HTTP share `createMcp`, so this is the same
+  authorization code): a read-only token is refused by every propose tool and by agent/audit
+  reads, and nothing is persisted; a mixed batch with one out-of-scope item is refused whole;
+  rotation and revocation apply to an already connected client on its next call, while a proposal
+  made earlier stays for human review; proposals are private to their author, and agent and audit
+  listings never contain tokens or hash fields. Sanity check: weakening the `propose_group_change`
+  scope check made the suite fail, and the change was reverted.
+- Real concurrency (browser session against the running backend, plus separate processes):
+  10 simultaneous HTTP reviews of one proposal gave exactly one 200 and nine 409. A load run
+  with an HTTP and a stdio MCP process each proposing 40 cards while the browser session
+  approved and rejected in parallel finished with `PRAGMA integrity_check` ok, every approved or
+  rejected proposal having exactly one matching terminal audit event, no terminal event on a
+  non-terminal proposal, and cards equal to approved card proposals.
+- stdio as a real child process: read scope allowed, proposal and audit/agent reads denied, and
+  revoking the agent through the API took effect on the next call of the open session.
+- Credentials: three agent tokens, the account password and the session cookie name were
+  searched for in backend and Vite logs and in client output: none found. The backend logs
+  only its start-up line, so this shows absence of leaks, not log coverage.
+- Hostile external service (local mock reached over a private LAN address with the explicit
+  private-network opt-in; loopback and link-local are refused even with it): prompt-injection
+  text comes back only inside the bounded `name` and `version` fields, extra fields and the
+  `169.254.x` address are dropped, the saved API key is never returned; malformed JSON, a
+  200 MB streamed body and an unresponsive server end in the generic error (the slow case after
+  about 8 s) and the backend stays near 190 MB and responsive; a redirect to loopback was not
+  followed. The request carried no credential because the Jellyfin status endpoint used is public.
+- Added: a named error when an agent reaches the 100 pending proposals limit (it previously saw
+  the generic message), with a test.
+- [ ] Still open: expiry racing approval at the same millisecond; live hostile content produced
+      by a real LLM agent (only scripted MCP clients were used); credential-bearing requests to
+      a hostile server (the endpoint tested is unauthenticated); behaviour with several
+      hundred concurrent clients; backend request logging, which does not exist yet.
+
+### 4. Service-to-host map
+
+- [ ] Validation against a real read-only Proxmox. **Blocked** until an environment and
+      explicit authorization exist; phase 1–5 results above are simulated only.
+
+### 5. Demonstration and claims (partial, 2026-11-12)
+
+- [x] Walkthrough with scoped token, allowed read, proposal, diff review, approval and
+      rejection, audit, revocation and a denied out-of-scope action:
+      [agent-demo.md](agent-demo.md), with two screenshots from the validation run. It labels
+      real, scripted and mocked parts, and states that the agent was a scripted client and
+      that the Proxmox map is not demonstrated. The reproduce commands were smoke-tested.
+- [x] README now points to the walkthrough and the capability inventory and states the boundary
+      (read by scope, propose, you approve, no credentials, no infrastructure writes).
+- [ ] Not done: publishing the walkthrough or a recording, a run with a real LLM agent, and a
+      review of public claims outside this repository.
+
+### R4 completion status
+
+R4 is **not complete**. Stage 1 is done. Stages 2 and 3 are verified for the paths and limits
+recorded above. Stage 4 is blocked: it needs a real read-only Proxmox and explicit
+authorization, and nothing was marked validated from fixtures. Stage 5 has the written
+walkthrough but not publication. Acceptance criteria still unmet: live-only validation (stage 4)
+and the open items listed under stages 2 and 3.
+
 ## Upgrade and Clean Installation Validation (2026-11-10)
 
 - Upgrade: version at `0abf05a` (migrations 0000 to 0005, six applied) was built and started

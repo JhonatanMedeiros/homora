@@ -288,3 +288,74 @@ it('shows an empty active list when all agents are revoked', async () => {
   expect(screen.getByText('Nenhum agente ativo.')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Agentes revogados (1)' })).toBeTruthy();
 });
+
+function reviewApi(review: () => unknown, diff: unknown) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/agents') return { ok: true, json: async () => [active] };
+      if (url === '/api/proposals')
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 'p1',
+              author: 'a1',
+              state: 'pending',
+              expiresAt: Date.now() + 60000,
+              diff: JSON.stringify(diff),
+            },
+          ],
+        };
+      return review();
+    }),
+  );
+}
+const cardDiff = { op: 'create', service: { name: 'Immich', url: 'http://x/' } };
+
+it('names the token dialog after the identity the proposal creates', async () => {
+  reviewApi(
+    () => ({ ok: true, json: async () => ({ state: 'approved', agentId: 'new', token: 'tok' }) }),
+    { kind: 'agent', change: { op: 'create', name: 'Child', scopes: ['services:read'] } },
+  );
+  render(<Harness />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Aprovar e aplicar' }));
+  expect(await screen.findByRole('dialog', { name: 'Token de "Child"' })).toBeTruthy();
+});
+
+it('does not blame expiry or a configuration change for a server or network failure', async () => {
+  reviewApi(() => ({ ok: false, status: 500, json: async () => ({ code: 'internal' }) }), cardDiff);
+  render(<Harness />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Aprovar e aplicar' }));
+  expect(await screen.findByText(/Não foi possível concluir a revisão/)).toBeTruthy();
+  cleanup();
+  reviewApi(() => Promise.reject(new TypeError('offline')), cardDiff);
+  render(<Harness />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Aprovar e aplicar' }));
+  expect(await screen.findByText(/Não foi possível concluir a revisão/)).toBeTruthy();
+});
+
+it('still reports an expired or changed proposal for a conflict', async () => {
+  reviewApi(
+    () => ({ ok: false, status: 409, json: async () => ({ code: 'config-changed' }) }),
+    cardDiff,
+  );
+  render(<Harness />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Aprovar e aplicar' }));
+  expect(await screen.findByText(/configuração mudou|configuração foi alterada/i)).toBeTruthy();
+});
+
+it('returns keyboard focus to the proposals panel and refreshes the menu count after a review', async () => {
+  const changed = vi.fn();
+  window.addEventListener('homora:proposals-changed', changed);
+  reviewApi(() => ({ ok: true, json: async () => ({ state: 'rejected' }) }), cardDiff);
+  render(<Harness />);
+  const reject = await screen.findByRole('button', { name: 'Rejeitar' });
+  reject.focus();
+  const before = changed.mock.calls.length;
+  fireEvent.click(reject);
+  await screen.findByText('Proposta rejeitada.');
+  await waitFor(() => expect(document.activeElement?.getAttribute('role')).toBe('tabpanel'));
+  expect(changed.mock.calls.length).toBeGreaterThan(before);
+  window.removeEventListener('homora:proposals-changed', changed);
+});

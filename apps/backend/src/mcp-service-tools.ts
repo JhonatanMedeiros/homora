@@ -65,8 +65,8 @@ export function registerMcpServiceTools(
       if (!authorize('services:read')) return unauthorized();
       try {
         return result(createObservationStore(database).list());
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -163,8 +163,8 @@ export function registerMcpServiceTools(
           .list()
           .find((item) => item.id === id);
         return status ? result(status) : failed();
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -187,8 +187,8 @@ export function registerMcpServiceTools(
       if (from > to) return failed();
       try {
         return result(createObservationStore(database).history(id, from, to, before, limit));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -202,8 +202,8 @@ export function registerMcpServiceTools(
       if (!authorize('agents:read')) return unauthorized();
       try {
         return result(proposalService.listAgents());
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -219,8 +219,8 @@ export function registerMcpServiceTools(
       try {
         const agent = proposalService.listAgents().find((row) => row.id === id);
         return agent ? result(agent) : failed();
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -262,8 +262,8 @@ export function registerMcpServiceTools(
           events: rows.slice(0, limit),
           nextBefore: rows.length > limit ? rows[limit - 1].id : null,
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );

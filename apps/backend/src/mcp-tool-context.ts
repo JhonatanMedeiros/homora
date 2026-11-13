@@ -15,7 +15,7 @@ export type McpToolContext = {
     content: { type: 'text'; text: string }[];
     isError: true;
   };
-  failed: () => {
+  failed: (error?: unknown) => {
     content: { type: 'text'; text: string }[];
     isError: true;
   };

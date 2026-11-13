@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { parseDiff, type Agent, type Proposal } from '@/features/agents/agent-model';
 import { apiError, t } from '@/i18n';
+import { PROPOSALS_CHANGED } from '@/hooks/use-pending-proposals';
 
 async function fetchAgentData(): Promise<[Agent[], Proposal[]]> {
   const [agentResponse, proposalResponse] = await Promise.all([
@@ -57,6 +58,8 @@ export function useAgentWorkspace(
       setAgents(agentData);
       setProposals(proposalData);
       setLoadFailed(false);
+      // The menu badge counts the same proposals; tell it they changed.
+      window.dispatchEvent(new Event(PROPOSALS_CHANGED));
     } catch {
       setLoadFailed(true);
     }
@@ -126,14 +129,17 @@ export function useAgentWorkspace(
     ).catch(() => null);
     if (response?.ok) {
       const result = (await response.json()) as { token?: string; agentId?: string };
+      const approved = proposals?.find((proposal) => proposal.id === id);
+      const diff = approved ? parseDiff(approved.diff) : null;
       if (result.token) {
+        // A newly created identity is not in the loaded list yet: name it from the proposal.
+        const proposedName = (diff?.change as { name?: unknown } | undefined)?.name;
         onToken(
-          agents?.find((agent) => agent.id === result.agentId)?.name ?? t('agents.fallbackName'),
+          agents?.find((agent) => agent.id === result.agentId)?.name ??
+            (typeof proposedName === 'string' ? proposedName : t('agents.fallbackName')),
           result.token,
         );
       }
-      const approved = proposals?.find((proposal) => proposal.id === id);
-      const diff = approved ? parseDiff(approved.diff) : null;
       setMessage(
         approve
           ? t(
@@ -147,15 +153,18 @@ export function useAgentWorkspace(
       await onApplied();
     } else {
       const body = (await response?.json().catch(() => null)) as { code?: string } | null;
+      const unexpected = !response || response.status >= 500;
       setMessage(
         t(
-          body?.code === 'batch-conflict'
-            ? 'agents.batchConflict'
-            : body?.code === 'config-changed'
-              ? 'agents.configChanged'
-              : body?.code === 'proposal-unavailable'
-                ? 'agents.proposalUnavailable'
-                : 'agents.reviewFailed',
+          unexpected
+            ? 'agents.reviewError'
+            : body?.code === 'batch-conflict'
+              ? 'agents.batchConflict'
+              : body?.code === 'config-changed'
+                ? 'agents.configChanged'
+                : body?.code === 'proposal-unavailable'
+                  ? 'agents.proposalUnavailable'
+                  : 'agents.reviewFailed',
         ),
       );
       await load();

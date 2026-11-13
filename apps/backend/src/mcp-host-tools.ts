@@ -59,8 +59,8 @@ export function registerMcpHostTools(
               dependsOnName: names.get(item.dependsOnId) ?? '',
             })),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -95,8 +95,8 @@ export function registerMcpHostTools(
               })),
             })),
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -143,8 +143,8 @@ export function registerMcpHostTools(
             },
           }),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -162,8 +162,8 @@ export function registerMcpHostTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'connection-setup', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );

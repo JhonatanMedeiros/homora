@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react';
 
+/** Dispatched on `window` after the proposal list changes, so the badge refreshes at once. */
+export const PROPOSALS_CHANGED = 'homora:proposals-changed';
+
 /** How many agent proposals wait for review. Refreshes when `refreshKey` changes (e.g. the section). */
 export function usePendingProposals(refreshKey: string, enabled: boolean) {
   const [count, setCount] = useState(0);
+  const [version, setVersion] = useState(0);
+  useEffect(() => {
+    const bump = () => setVersion((value) => value + 1);
+    window.addEventListener(PROPOSALS_CHANGED, bump);
+    return () => window.removeEventListener(PROPOSALS_CHANGED, bump);
+  }, []);
   useEffect(() => {
     if (!enabled) return;
     const controller = new AbortController();
@@ -22,6 +31,6 @@ export function usePendingProposals(refreshKey: string, enabled: boolean) {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [refreshKey, enabled]);
+  }, [refreshKey, enabled, version]);
   return count;
 }

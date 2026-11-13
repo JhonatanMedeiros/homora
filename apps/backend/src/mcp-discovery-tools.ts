@@ -45,8 +45,8 @@ export function registerMcpDiscoveryTools(
           entries: entries.map((entry) => ({ ...entry, url: publicUrl(entry.url) })),
           scanned,
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -80,8 +80,8 @@ export function registerMcpDiscoveryTools(
         );
         if (cards.length !== 1) return failed();
         return result(proposalService.propose(author, { op: 'create', service: cards[0] }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -158,8 +158,8 @@ export function registerMcpDiscoveryTools(
             dockerPush.isCurrent(sourceId, inventoryVersion),
           ),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );

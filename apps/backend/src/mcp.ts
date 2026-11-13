@@ -46,8 +46,17 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
     ],
     isError: true as const,
   });
-  const failed = () => ({
-    content: [{ type: 'text' as const, text: 'The request could not be completed.' }],
+  /** Only the pending-proposal limit is named: it is actionable for the agent and not sensitive. */
+  const failed = (error?: unknown) => ({
+    content: [
+      {
+        type: 'text' as const,
+        text:
+          error instanceof Error && error.message === 'Pending proposal limit reached'
+            ? 'Pending proposal limit reached (100). Wait for review or expiry, or withdraw one with withdraw_proposal.'
+            : 'The request could not be completed.',
+      },
+    ],
     isError: true as const,
   });
   const result = (value: unknown) => ({

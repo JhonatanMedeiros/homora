@@ -48,8 +48,8 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.withdraw(author, id));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -135,8 +135,8 @@ export function registerMcpProposalTools(
         return unauthorized();
       try {
         return result(proposalService.proposeBatch(author, items));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -153,8 +153,8 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'create', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -169,8 +169,8 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'update-scopes', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -182,8 +182,8 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'revoke', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -195,8 +195,8 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeAgent(author, { op: 'rotate', ...input }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -225,7 +225,9 @@ export function registerMcpProposalTools(
         return {
           content: [{ type: 'text', text: JSON.stringify(proposalService.propose(author, input)) }],
         };
-      } catch {
+      } catch (error) {
+        if (error instanceof Error && error.message === 'Pending proposal limit reached')
+          return failed(error);
         return {
           content: [
             { type: 'text', text: 'Proposal rejected: invalid or unavailable service data.' },
@@ -248,8 +250,8 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'group', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -266,8 +268,8 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'card-order', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );

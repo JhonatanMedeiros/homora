@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Service } from '@homora/shared';
 import { Plus } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -31,6 +31,7 @@ export function Agents({
   // Name shown in the token dialog; the token itself lives in the parent so it survives navigation.
   const [tokenFor, setTokenFor] = useState('');
   const [view, setView] = useState<'proposals' | 'agents'>('proposals');
+  const sectionRef = useRef<HTMLElement>(null);
   const workspace = useAgentWorkspace(onApplied, (name, value) => {
     setTokenFor(name);
     setToken(value);
@@ -48,7 +49,7 @@ export function Agents({
     create: createAgent,
     rotate: rotateAgent,
     revoke: revokeAgent,
-    review,
+    review: reviewProposal,
     recreate,
     saveTtl,
     pending,
@@ -57,6 +58,11 @@ export function Agents({
     expired,
     history,
   } = workspace;
+  /** The reviewed card leaves the list, so keyboard focus would fall back to the page start. */
+  const review = async (id: string, approve: boolean, batch = false) => {
+    await reviewProposal(id, approve, batch);
+    sectionRef.current?.querySelector<HTMLElement>('[role="tabpanel"]')?.focus();
+  };
   const agentName = (id: string) =>
     agents?.find((agent) => agent.id === id)?.name ?? t('agents.fallbackName');
 
@@ -105,7 +111,7 @@ export function Agents({
   };
 
   return (
-    <section aria-label={t('agents.title')} className="flex flex-col gap-8">
+    <section ref={sectionRef} aria-label={t('agents.title')} className="flex flex-col gap-8">
       <PageHeader
         title={t('agents.title')}
         description={t('agents.description')}

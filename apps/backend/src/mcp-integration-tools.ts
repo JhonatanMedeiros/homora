@@ -38,8 +38,8 @@ export function registerMcpIntegrationTools(
             )
             .all(),
         );
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -57,8 +57,8 @@ export function registerMcpIntegrationTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'widget', change }));
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -92,8 +92,8 @@ export function registerMcpIntegrationTools(
                 }[]
               ).filter((connection) => !isLegacyConnectionType(connection.type)),
         });
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
@@ -112,8 +112,8 @@ export function registerMcpIntegrationTools(
         if (!options.connections) return failed();
         const data = await options.connections.connectionData(id);
         return data ? result(data) : failed();
-      } catch {
-        return failed();
+      } catch (error) {
+        return failed(error);
       }
     },
   );
