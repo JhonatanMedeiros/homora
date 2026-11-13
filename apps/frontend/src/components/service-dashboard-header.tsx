@@ -20,6 +20,8 @@ type Props = {
   topBar: boolean;
   /** Health banner: the first thing the Home says. */
   banner?: ReactNode;
+  /** State filter, on the left of the view toolbar. */
+  stateFilter?: ReactNode;
   serviceCount: number;
   groupCount: number;
   toolbar: ToolbarProps;
@@ -37,6 +39,7 @@ export function ServiceDashboardHeader({
   organizing,
   topBar,
   banner,
+  stateFilter,
   serviceCount,
   groupCount,
   toolbar,
@@ -80,7 +83,7 @@ export function ServiceDashboardHeader({
       {!managing && !organizing && banner}
       {!managing && (
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          <span />
+          {stateFilter ?? <span />}
           {serviceCount > 0 && <ServiceViewToolbar {...toolbar} />}
         </div>
       )}
