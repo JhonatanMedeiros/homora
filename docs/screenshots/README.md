@@ -6,7 +6,9 @@ The images in this folder are used by the [README](../../README.md) and the [use
 
 Every screenshot comes from a **demo installation filled with synthetic data**: invented services on a private
 network, mock servers that answer with a chosen status code and latency, a mock Proxmox connection and a scripted
-agent proposal. The administrator "Alex Rivera", the status page title and the notification channel are fictional.
+agent proposal. Addresses shown are example addresses (`192.168.10.x`); the capture script rewrites the real test address in API
+responses before the page renders. The Proxmox nodes and guests on the Host view and map are a fictional inventory
+returned in place of the mock connection's. The administrator "Alex Rivera", the status page title and the notification channel are fictional.
 No real service, account or credential appears. Treat the numbers as an illustration, not a benchmark.
 
 Two parts of the history are generated for illustration, because a fresh installation has none: the 14 days of check
@@ -24,33 +26,35 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 
 ## Files
 
-| File                           | Screen                                       |
-| ------------------------------ | -------------------------------------------- |
-| `dashboard-dark.png`           | Dashboard, dark theme (hero image)           |
-| `dashboard-light.png`          | Dashboard, light theme                       |
-| `dashboard-cards.png`          | Dashboard with the Cards layout              |
-| `command-palette.png`          | Command palette filtering with `status:down` |
-| `service-detail.png`           | A service's uptime, latency and incidents    |
-| `service-form.png`             | Service form, Appearance tab                 |
-| `service-form-monitoring.png`  | Service form, Monitoring tab                 |
-| `service-form-connections.png` | Service form, Connections tab                |
-| `manage-services.png`          | Services and groups                          |
-| `organize-mode.png`            | Organize mode                                |
-| `integrations.png`             | Integrations page                            |
-| `agents.png`                   | Agents page with a pending proposal          |
-| `proposal-review.png`          | A proposal's diff with Approve and Reject    |
-| `proposal-review-mobile.png`   | The same review on a phone                   |
-| `activity.png`                 | Activity log                                 |
-| `account.png`                  | Account page                                 |
-| `login.png`                    | Sign-in page                                 |
-| `public-status.png`            | Public status page (anonymous view)          |
-| `settings-appearance.png`      | Settings → Appearance                        |
-| `settings-home.png`            | Settings → Home and pages                    |
-| `settings-topbar.png`          | Settings → Top bar and shortcuts             |
-| `settings-alerts.png`          | Settings → Alerts                            |
-| `settings-public.png`          | Settings → Public status                     |
-| `settings-backup.png`          | Settings → Export and import                 |
-| `mobile-dashboard.png`         | Dashboard on a phone                         |
+| File                           | Screen                                        |
+| ------------------------------ | --------------------------------------------- |
+| `dashboard-dark.png`           | Dashboard, dark theme (hero image)            |
+| `dashboard-light.png`          | Dashboard, light theme                        |
+| `dashboard-cards.png`          | Dashboard with the Cards layout               |
+| `command-palette.png`          | Command palette filtering with `status:down`  |
+| `service-detail.png`           | A service's uptime, latency and incidents     |
+| `service-form.png`             | Service form, Appearance tab                  |
+| `service-form-monitoring.png`  | Service form, Monitoring tab                  |
+| `service-form-connections.png` | Service form, Connections tab                 |
+| `manage-services.png`          | Services and groups                           |
+| `organize-mode.png`            | Organize mode                                 |
+| `host-view.png`                | Host view with a service that may be affected |
+| `host-map.png`                 | Service map of nodes, guests and services     |
+| `integrations.png`             | Integrations page                             |
+| `agents.png`                   | Agents page with a pending proposal           |
+| `proposal-review.png`          | A proposal's diff with Approve and Reject     |
+| `proposal-review-mobile.png`   | The same review on a phone                    |
+| `activity.png`                 | Activity log                                  |
+| `account.png`                  | Account page                                  |
+| `login.png`                    | Sign-in page                                  |
+| `public-status.png`            | Public status page (anonymous view)           |
+| `settings-appearance.png`      | Settings → Appearance                         |
+| `settings-home.png`            | Settings → Home and pages                     |
+| `settings-topbar.png`          | Settings → Top bar and shortcuts              |
+| `settings-alerts.png`          | Settings → Alerts                             |
+| `settings-public.png`          | Settings → Public status                      |
+| `settings-backup.png`          | Settings → Export and import                  |
+| `mobile-dashboard.png`         | Dashboard on a phone                          |
 
 ## How to refresh them
 

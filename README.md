@@ -153,6 +153,16 @@ to your first alert.
   </tr>
   <tr>
     <td width="50%">
+      <a href="docs/screenshots/host-view.png"><img src="docs/screenshots/host-view.png" alt="Host view grouping services under Proxmox guests"></a>
+      <br><b>Host view.</b> Services grouped by the guest they run on, with impact from failing dependencies.
+    </td>
+    <td width="50%">
+      <a href="docs/screenshots/host-map.png"><img src="docs/screenshots/host-map.png" alt="Service map of nodes, guests and services"></a>
+      <br><b>Service map.</b> See what runs where, and what a stopped guest takes with it.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
       <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Organize mode with drag handles and move controls"></a>
       <br><b>Organize mode.</b> Drag rows, use the arrows, or move a service to another group.
     </td>

@@ -50,6 +50,13 @@ Open **View** to choose how cards look. This is saved in your browser.
 
 ![Cards layout with descriptions and uptime bars](../screenshots/dashboard-cards.png)
 
+The **Host** view lists services under the node and guest they run on, and flags the ones that may be affected by a
+failing dependency. The **Map** shows the same relationships as boxes, and you can drag an unlinked service onto a guest.
+
+![Host view](../screenshots/host-view.png)
+
+![Service map](../screenshots/host-map.png)
+
 You can also change the layout, whether descriptions show, and the uptime period (24 h, 7 d or 30 d) in
 **Settings → Home and pages**.
 

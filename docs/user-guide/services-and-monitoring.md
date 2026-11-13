@@ -164,6 +164,7 @@ The **Connections** tab models your infrastructure without touching it.
   tied to that guest. A name match alone never counts. You accept or dismiss each suggestion.
 - **Depends on:** record the services this one needs. These links are manual, and Homora refuses a link that would
   create a cycle.
+- **Host view and map:** see the [dashboard guide](dashboard.md#layouts-and-views) for pictures of both.
 - **Impact:** a service whose host or dependency is impaired is flagged as _may be affected_, always worded as manual
   and as "may", never presented as a measured fact. The **Host** and **Map** views arrange your services by host.
 

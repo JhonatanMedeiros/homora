@@ -1740,12 +1740,12 @@ manual responsive and keyboard verification in a browser remains pending.
   services and monitoring, notifications and status page, integrations and widgets, Docker discovery, agents and MCP,
   appearance, import/export/backup, accounts and security, deployment and use cases.
 - All screenshots were deleted and retaken from a demo installation with synthetic data (mock HTTP servers, a mock
-  Proxmox connection, a scripted agent proposal, generated history); the method and file list are in
+  Proxmox connection with a fictional node and guest inventory for the Host and Map views, a scripted agent proposal,
+  generated history, and example `192.168.10.x` addresses substituted in API responses); the method and file list are in
   [screenshots](screenshots/README.md). The agent walkthrough now uses the new proposal review images.
 - Validation: relative links and anchors in the changed Markdown were checked with a script; Prettier was applied;
   every screenshot was inspected visually. Statements about behavior were taken from the code, ADRs and message
-  catalogs, not from running every flow. Not verified: the Host and Map views (the mock Proxmox connection has no
-  guests, so they are described from ADR 0008 but not pictured), live-service behavior of the integrations, and the
+  catalogs, not from running every flow. Not verified: live-service behavior of the integrations, and the
   wording of the Portuguese README beyond a direct translation.
 - Known gap: some interface messages still say "see the README" for Docker discovery; the guide is now
   [docker-discovery.md](user-guide/docker-discovery.md).

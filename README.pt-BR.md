@@ -157,6 +157,16 @@ card ao primeiro alerta.
   </tr>
   <tr>
     <td width="50%">
+      <a href="docs/screenshots/host-view.png"><img src="docs/screenshots/host-view.png" alt="Visão Host agrupando serviços por convidado do Proxmox"></a>
+      <br><b>Visão Host.</b> Serviços agrupados pelo convidado em que rodam, com o impacto de dependências com falha.
+    </td>
+    <td width="50%">
+      <a href="docs/screenshots/host-map.png"><img src="docs/screenshots/host-map.png" alt="Mapa de nós, convidados e serviços"></a>
+      <br><b>Mapa de serviços.</b> Veja o que roda onde e o que um convidado parado leva junto.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
       <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Modo organizar com alças de arrastar e controles de mover"></a>
       <br><b>Modo organizar.</b> Arraste linhas, use as setas ou mova um serviço para outro grupo.
     </td>
