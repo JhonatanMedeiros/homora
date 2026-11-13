@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { t } from '@/i18n';
 import type { PublicStatus } from '@/features/public-status/public-status-model';
@@ -16,7 +17,10 @@ export function usePublicStatusSettings() {
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/public-status/admin', { signal: controller.signal })
-      .then((response) => (response.ok ? (response.json() as Promise<Admin>) : null))
+      .then((response) => {
+        if (!response.ok) throw new Error();
+        return response.json() as Promise<Admin>;
+      })
       .then((data) => {
         if (data) {
           setAdmin(data);
@@ -24,7 +28,10 @@ export function usePublicStatusSettings() {
           setDescription(data.description ?? '');
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setMessage({ kind: 'error', text: t('settings.public.error') });
+      });
     return () => controller.abort();
   }, []);
 
@@ -42,9 +49,10 @@ export function usePublicStatusSettings() {
       setAdmin(data);
       setTitle(data.title);
       setDescription(data.description ?? '');
-      setMessage({ kind: 'ok', text: t('settings.public.saved') });
+      toast.success(t('settings.public.saved'));
     } catch {
       setMessage({ kind: 'error', text: t('settings.public.error') });
+      toast.error(t('settings.public.error'));
     } finally {
       setSaving(false);
     }

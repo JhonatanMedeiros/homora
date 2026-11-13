@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
 import type { IntegrationResource } from '@homora/shared';
 import { integrationDefinition } from '@homora/integrations';
@@ -94,6 +95,7 @@ export function ResourceDiscovery({
   async function confirm() {
     setBusy(true);
     let any = false;
+    let failed = false;
     for (const row of rows) {
       if (!row.include || row.outcome?.ok) continue;
       const uuid = row.resource.uuid;
@@ -138,6 +140,7 @@ export function ResourceDiscovery({
             cur.map((r) => (r.resource.uuid === uuid ? { ...r, outcome: { ok: true } } : r)),
           );
         } catch (failure) {
+          failed = true;
           const message = failure instanceof Error ? failure.message : t('resources.actionFailed');
           setRows((cur) =>
             cur.map((r) =>
@@ -157,6 +160,7 @@ export function ResourceDiscovery({
           );
         }
       } catch (failure) {
+        failed = true;
         const message = failure instanceof Error ? failure.message : t('resources.actionFailed');
         setRows((cur) =>
           cur.map((r) =>
@@ -166,6 +170,8 @@ export function ResourceDiscovery({
       }
     }
     setBusy(false);
+    if (failed) toast.warning(t('resources.partialResult'));
+    else if (any) toast.success(t('resources.changeSaved'));
     if (any) {
       setSaved(true);
       onDone();

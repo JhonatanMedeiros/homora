@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import type { IntegrationResource, ResourceLink } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -56,10 +57,13 @@ export function ResourceLinkDialog({
         name: resource.name,
         url: resource.urls.find((url) => url === target?.url) ?? resource.urls[0] ?? null,
       });
+      toast.success(t('resources.changeSaved'));
       onDone();
       onClose();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t('resources.actionFailed'));
+      const message = failure instanceof Error ? failure.message : t('resources.actionFailed');
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }

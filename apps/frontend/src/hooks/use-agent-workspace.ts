@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { parseDiff, type Agent, type Proposal } from '@/features/agents/agent-model';
 import { apiError, t } from '@/i18n';
@@ -103,6 +104,7 @@ export function useAgentWorkspace(
     );
     if (!response?.ok) {
       setMessage(t('agents.rotateFailed'));
+      toast.error(t('agents.rotateFailed'));
       return;
     }
     const result = (await response.json()) as { token: string };
@@ -114,8 +116,13 @@ export function useAgentWorkspace(
     const response = await fetch(`/api/agents/${agent.id}/revoke`, { method: 'POST' }).catch(
       () => null,
     );
-    if (!response?.ok) setMessage(t('agents.revokeFailed'));
-    else await load();
+    if (!response?.ok) {
+      setMessage(t('agents.revokeFailed'));
+      toast.error(t('agents.revokeFailed'));
+    } else {
+      await load();
+      toast.success(t('agents.revokeDone'));
+    }
   }
 
   async function review(id: string, approve: boolean, batch = false) {
@@ -140,33 +147,28 @@ export function useAgentWorkspace(
           result.token,
         );
       }
-      setMessage(
-        approve
-          ? t(
-              diff?.change?.kind === 'connection-setup'
-                ? 'agents.approvedSetup'
-                : 'agents.approved',
-            )
-          : t('agents.rejected'),
-      );
+      const feedback = approve
+        ? t(diff?.change?.kind === 'connection-setup' ? 'agents.approvedSetup' : 'agents.approved')
+        : t('agents.rejected');
+      toast.success(feedback);
       await load();
       await onApplied();
     } else {
       const body = (await response?.json().catch(() => null)) as { code?: string } | null;
       const unexpected = !response || response.status >= 500;
-      setMessage(
-        t(
-          unexpected
-            ? 'agents.reviewError'
-            : body?.code === 'batch-conflict'
-              ? 'agents.batchConflict'
-              : body?.code === 'config-changed'
-                ? 'agents.configChanged'
-                : body?.code === 'proposal-unavailable'
-                  ? 'agents.proposalUnavailable'
-                  : 'agents.reviewFailed',
-        ),
+      const feedback = t(
+        unexpected
+          ? 'agents.reviewError'
+          : body?.code === 'batch-conflict'
+            ? 'agents.batchConflict'
+            : body?.code === 'config-changed'
+              ? 'agents.configChanged'
+              : body?.code === 'proposal-unavailable'
+                ? 'agents.proposalUnavailable'
+                : 'agents.reviewFailed',
       );
+      setMessage(feedback);
+      toast.error(feedback);
       await load();
     }
   }
@@ -179,13 +181,16 @@ export function useAgentWorkspace(
     const body = !response?.ok
       ? ((await response?.json().catch(() => null)) as { code?: string } | null)
       : null;
-    setMessage(
-      response?.ok
-        ? t('agents.recreated')
-        : body?.code === 'config-changed'
-          ? t('agents.recreateChanged')
-          : apiError(body, t('agents.recreateFailed')),
-    );
+    const feedback = response?.ok
+      ? t('agents.recreated')
+      : body?.code === 'config-changed'
+        ? t('agents.recreateChanged')
+        : apiError(body, t('agents.recreateFailed'));
+    if (response?.ok) toast.success(feedback);
+    else {
+      setMessage(feedback);
+      toast.error(feedback);
+    }
     await load();
     setRecreating(false);
   }
@@ -197,8 +202,13 @@ export function useAgentWorkspace(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ttlMinutes: Number(ttl) }),
     }).catch(() => null);
-    if (!response?.ok) setMessage(t('agents.ttlFailed'));
-    else setMessage('');
+    if (!response?.ok) {
+      setMessage(t('agents.ttlFailed'));
+      toast.error(t('agents.ttlFailed'));
+    } else {
+      setMessage('');
+      toast.success(t('agents.ttlSaved'));
+    }
   }
 
   const effective = (proposals ?? []).map((proposal) =>

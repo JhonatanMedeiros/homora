@@ -16,7 +16,6 @@ import { t } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { settingsPath } from '@/features/settings/sections';
 import { useServices } from '@/hooks/use-services';
-import { Toaster } from '@/components/ui/sonner';
 import { ServicesPage, type FocusRequest } from '@/pages/services-page';
 import { ServiceDetailPage } from '@/pages/service-detail-page';
 import { SectionSkeleton } from '@/components/skeletons';
@@ -225,8 +224,6 @@ export function DashboardPage({
           />
         </Suspense>
       )}
-      {/* Above the fixed mobile bar of organize mode. */}
-      <Toaster position="bottom-center" mobileOffset={{ bottom: 136 }} />
     </AppShell>
   );
 }

@@ -45,7 +45,11 @@ export function CustomCssSettings() {
     setBusy(null);
     if (result.ok) {
       if (done) toast.success(done);
-    } else setError(result.message || t('css.error'));
+    } else {
+      const message = result.message || t('css.error');
+      setError(message);
+      toast.error(message);
+    }
   };
 
   return (

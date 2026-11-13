@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   emptyForm,
@@ -114,9 +115,11 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       });
       setWidgetName('');
       await load();
-      setMessage(t('widgets.created'));
+      toast.success(t('widgets.created'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('widgets.createFailed'));
+      const failure = error instanceof Error ? error.message : t('widgets.createFailed');
+      setMessage(failure);
+      toast.error(failure);
     } finally {
       setBusy(false);
     }
@@ -135,9 +138,11 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       });
       setEditingWidget(null);
       await load();
-      setMessage(t('widgets.updated'));
+      toast.success(t('widgets.updated'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('widgets.updateFailed'));
+      const failure = error instanceof Error ? error.message : t('widgets.updateFailed');
+      setMessage(failure);
+      toast.error(failure);
     } finally {
       setBusy(false);
     }
@@ -149,9 +154,11 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       await request(`/api/widgets/${widget.id}`, { method: 'DELETE' });
       setWidgets((current) => current.filter((item) => item.id !== widget.id));
       if (widgetResult?.id === widget.id) setWidgetResult(null);
-      setMessage(t('widgets.removed'));
+      toast.success(t('widgets.removed'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('widgets.removeFailed'));
+      const failure = error instanceof Error ? error.message : t('widgets.removeFailed');
+      setMessage(failure);
+      toast.error(failure);
     } finally {
       setBusy(false);
     }
@@ -165,7 +172,9 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       };
       setWidgetResult({ id: widget.id, data: response.data });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('widgets.queryFailed'));
+      const failure = error instanceof Error ? error.message : t('widgets.queryFailed');
+      setMessage(failure);
+      toast.error(failure);
     } finally {
       setBusy(false);
     }
@@ -208,15 +217,19 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       )) as Connection;
       if (testAfterSave) {
         await request(`/api/connections/${saved.id}/test`, { method: 'POST' });
-        setMessage(t('connections.testOk', { name: saved.name }));
+        toast.success(t('connections.testOk', { name: saved.name }));
       }
       setForm(null);
       setEditing(null);
       setResult(null);
       await load();
-      if (!testAfterSave) setMessage(t('connections.saved'));
+      if (!testAfterSave) {
+        toast.success(t('connections.saved'));
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('connections.saveFailed'));
+      const failure = error instanceof Error ? error.message : t('connections.saveFailed');
+      setMessage(failure);
+      toast.error(failure);
     } finally {
       setBusy(false);
       setSaveTesting(false);
@@ -230,10 +243,10 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
       if (operation === 'delete') {
         await request(`/api/connections/${item.id}`, { method: 'DELETE' });
         await load();
-        setMessage(t('connections.removed'));
+        toast.success(t('connections.removed'));
       } else if (operation === 'test') {
         await request(`/api/connections/${item.id}/test`, { method: 'POST' });
-        setMessage(t('connections.testOk', { name: item.name }));
+        toast.success(t('connections.testOk', { name: item.name }));
       } else {
         const response = (await request(`/api/connections/${item.id}/data?refresh=true`)) as {
           data: unknown;
@@ -242,7 +255,9 @@ export function useConnectionsPage(initialDraft?: ConnectionFormState | null) {
         setResult({ id: item.id, ...response });
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('connections.operationFailed'));
+      const failure = error instanceof Error ? error.message : t('connections.operationFailed');
+      setMessage(failure);
+      toast.error(failure);
     } finally {
       setBusy(false);
     }

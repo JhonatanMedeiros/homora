@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -229,7 +230,9 @@ export function useServiceEditor({
       await refresh();
       announce(wasNew ? t('page.added') : t('page.saved'));
     } catch (error) {
-      setFormError(error instanceof Error && error.message ? error.message : t('error.save'));
+      const message = error instanceof Error && error.message ? error.message : t('error.save');
+      setFormError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

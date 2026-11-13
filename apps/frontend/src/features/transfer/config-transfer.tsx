@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState, type ChangeEvent } from 'react';
 import { Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -41,6 +42,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
       setMessage(t('transfer.tooLarge'));
+      toast.warning(t('transfer.tooLarge'));
       event.target.value = '';
       return;
     }
@@ -49,6 +51,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
       text = await file.text();
     } catch {
       setMessage(t('transfer.readFailed'));
+      toast.error(t('transfer.readFailed'));
       return;
     }
     setContent(text);
@@ -65,6 +68,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
     } catch {
       setPreview(null);
       setMessage(t('transfer.previewFailed'));
+      toast.error(t('transfer.previewFailed'));
     } finally {
       setBusy(false);
     }
@@ -95,17 +99,19 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
       } | null;
       if (response.status === 409) {
         setMessage(t('transfer.stale'));
+        toast.warning(t('transfer.stale'));
         setPreview(null);
         return;
       }
       if (!response.ok) throw new Error(apiError(body, t('transfer.applyFailed')));
       reset();
-      setMessage(t('transfer.done', { count: body?.created ?? 0 }));
+      toast.success(t('transfer.done', { count: body?.created ?? 0 }));
       await onImported();
     } catch (error) {
-      setMessage(
-        error instanceof Error && error.message ? error.message : t('transfer.applyFailed'),
-      );
+      const failure =
+        error instanceof Error && error.message ? error.message : t('transfer.applyFailed');
+      setMessage(failure);
+      toast.error(failure);
     } finally {
       setBusy(false);
     }

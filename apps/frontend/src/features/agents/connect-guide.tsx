@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ export function ConnectGuide({ token }: { token?: string }) {
       setCopyFailed(false);
     } catch {
       setCopyFailed(true);
+      toast.error(t('agents.copyFailed'));
     }
   }
 

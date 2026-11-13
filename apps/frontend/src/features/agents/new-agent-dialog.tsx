@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +63,10 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
       setName('');
       setProfile('suggest');
       setCustom([...PROFILES.suggest]);
-    } else setFailed(true);
+    } else {
+      setFailed(true);
+      toast.error(t('agents.createFailed'));
+    }
   }
 
   return (

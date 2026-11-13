@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 import {
@@ -67,15 +68,18 @@ export function useLocalDiscovery(onImported: () => void | Promise<void>) {
       });
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) {
-        setMessage(apiError(body, t('discovery.failed')));
+        const failure = apiError(body, t('discovery.failed'));
+        setMessage(failure);
+        toast.error(failure);
         return;
       }
       const created = (body as { created?: number }).created ?? 0;
       await onImported();
-      setMessage(t('discovery.added', { count: created }));
+      toast.success(t('discovery.added', { count: created }));
       setReload((value) => value + 1);
     } catch {
       setMessage(t('discovery.failed'));
+      toast.error(t('discovery.failed'));
     } finally {
       setBusy(false);
     }

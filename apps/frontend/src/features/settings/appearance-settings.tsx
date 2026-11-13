@@ -66,7 +66,11 @@ export function AppearanceSettings() {
     setError('');
     const result = await save(candidate);
     setBusy(null);
-    if (!result.ok) setError(result.message || t('appearance.error'));
+    if (!result.ok) {
+      const message = result.message || t('appearance.error');
+      setError(message);
+      toast.error(message);
+    } else toast.success(t('appearance.status.saved'));
   };
   const send = async (file: File) => {
     if (file.size > IMAGE_MAX_BYTES) {
@@ -78,7 +82,11 @@ export function AppearanceSettings() {
     const result = await uploadImage(file);
     setBusy(null);
     if (result.ok) toast.success(t('appearance.imageSet'));
-    else setError(result.message || t('appearance.error'));
+    else {
+      const message = result.message || t('appearance.error');
+      setError(message);
+      toast.error(message);
+    }
   };
   const dropImage = async () => {
     setBusy('image');
@@ -86,7 +94,11 @@ export function AppearanceSettings() {
     const result = await removeImage();
     setBusy(null);
     if (result.ok) toast.success(t('appearance.imageRemoved'));
-    else setError(result.message || t('appearance.error'));
+    else {
+      const message = result.message || t('appearance.error');
+      setError(message);
+      toast.error(message);
+    }
   };
   const restore = async () => {
     setBusy('reset');
@@ -94,7 +106,11 @@ export function AppearanceSettings() {
     const result = await reset();
     setBusy(null);
     if (result.ok) toast.success(t('appearance.resetDone'));
-    else setError(result.message || t('appearance.error'));
+    else {
+      const message = result.message || t('appearance.error');
+      setError(message);
+      toast.error(message);
+    }
   };
 
   return (

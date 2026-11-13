@@ -1,10 +1,16 @@
+import { Toaster, toast } from 'sonner';
 // @vitest-environment happy-dom
 import { useState } from 'react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Agents } from './agents';
 
+beforeEach(() => {
+  render(<Toaster />);
+});
+
 afterEach(() => {
+  toast.dismiss();
   cleanup();
   vi.unstubAllGlobals();
   localStorage.clear();

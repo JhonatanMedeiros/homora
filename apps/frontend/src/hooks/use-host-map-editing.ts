@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import type { HostLink, Service } from '@homora/shared';
 import type { HostViewModel } from '@/lib/hosts';
@@ -28,30 +29,39 @@ export function useHostMapEditing({ edit, services, model }: Options) {
   async function link(service: Service, host: HostLink | null, guestName = '') {
     if (!edit) return;
     const ok = await edit.onLinkHost(service, host);
-    setMessage(
-      !ok
-        ? t('map.linkFailed')
-        : host
-          ? t('map.linked', { name: service.name, guest: guestName || String(host.vmid) })
-          : t('map.unlinked', { name: service.name }),
-    );
+    const feedback = !ok
+      ? t('map.linkFailed')
+      : host
+        ? t('map.linked', { name: service.name, guest: guestName || String(host.vmid) })
+        : t('map.unlinked', { name: service.name });
+    if (ok) toast.success(feedback);
+    else {
+      setMessage(feedback);
+      toast.error(feedback);
+    }
   }
 
   async function pick(service: Service, dependsOnId: number) {
     if (!edit) return;
     setPicking(null);
     const failure = await edit.onAddDependency(service.id, dependsOnId);
-    setMessage(
-      failure ?? t('dependencies.added', { name: service.name, other: nameOf(dependsOnId) }),
-    );
+    const feedback =
+      failure ?? t('dependencies.added', { name: service.name, other: nameOf(dependsOnId) });
+    if (failure) {
+      setMessage(feedback);
+      toast.error(feedback);
+    } else toast.success(feedback);
   }
 
   async function unpick(serviceId: number, dependsOnId: number) {
     if (!edit) return;
     const failure = await edit.onRemoveDependency(serviceId, dependsOnId);
-    setMessage(
-      failure ?? t('dependencies.removed', { name: nameOf(serviceId), other: nameOf(dependsOnId) }),
-    );
+    const feedback =
+      failure ?? t('dependencies.removed', { name: nameOf(serviceId), other: nameOf(dependsOnId) });
+    if (failure) {
+      setMessage(feedback);
+      toast.error(feedback);
+    } else toast.success(feedback);
   }
 
   const panelRunsOn = (service: Service) => {

@@ -1,3 +1,4 @@
+import { Toaster, toast } from 'sonner';
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
@@ -29,7 +30,12 @@ beforeEach(() => {
   );
   HTMLElement.prototype.scrollTo = vi.fn() as never;
 });
+beforeEach(() => {
+  render(<Toaster />);
+});
+
 afterEach(() => {
+  toast.dismiss();
   cleanup();
   vi.unstubAllGlobals();
 });

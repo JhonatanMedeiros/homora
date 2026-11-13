@@ -69,8 +69,11 @@ are documented in [architecture](arquitetura.md).
     `busy` flag, put the spinner only on the one that was pressed.
   - **Refreshing data already on screen** (polling): keep the current content; do not
     swap it back to a skeleton.
-  - **Outcome**: errors use `Alert` or `FormError`; transient confirmations use the
-    `sonner` toast. Do not skeleton a region whose absence is a valid state for users
+  - **Outcome**: use the shared `sonner` toaster for the result of explicit actions, with
+    success, error or warning according to the result. Keep field validation, load failures
+    and partial results inline when they need persistent context; avoid repeating transient
+    success messages inline. Never put credentials or tokens in a toast. Do not skeleton a
+    region whose absence is a valid state for users
     without Proxmox or integrations (for example the top bar telemetry), to avoid flicker.
   - Keep the skeleton shape close to the real component so the page does not shift when
     data arrives, and cover new compositions with a small test (see `skeletons.test.tsx`).

@@ -1,9 +1,15 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { Toaster, toast } from 'sonner';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Discovery } from './discovery';
 
+beforeEach(() => {
+  render(<Toaster />);
+});
+
 afterEach(() => {
+  toast.dismiss();
   cleanup();
   vi.unstubAllGlobals();
 });

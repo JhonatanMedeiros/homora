@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { t } from '@/i18n';
 
@@ -29,8 +30,10 @@ export function useMonitoringDefaults() {
       });
       if (!response.ok) throw new Error();
       setAllowPrivate(next);
+      toast.success(t('settings.monitoring.saved'));
     } catch {
       setError(t('settings.monitoring.saveError'));
+      toast.error(t('settings.monitoring.saveError'));
     }
   }
 

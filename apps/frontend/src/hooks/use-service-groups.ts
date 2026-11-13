@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useCallback, useState, type FormEvent } from 'react';
 import type { useServices } from '@/hooks/use-services';
 import { apiError, t } from '@/i18n';
@@ -60,7 +61,9 @@ export function useServiceGroups({ data, activePageId, announce, onSaved }: Opti
       );
       if (wasEditing) document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? error.message : t('error.saveGroup'));
+      const message = error instanceof Error ? error.message : t('error.saveGroup');
+      setGroupError(message);
+      toast.error(message);
     }
   }
 
@@ -74,7 +77,9 @@ export function useServiceGroups({ data, activePageId, announce, onSaved }: Opti
       if (name) announce(t('group.removed', { name }));
       document.querySelector<HTMLButtonElement>('[data-group-add]')?.focus();
     } catch (error) {
-      setGroupError(error instanceof Error ? error.message : t('error.removeGroup'));
+      const message = error instanceof Error ? error.message : t('error.removeGroup');
+      setGroupError(message);
+      toast.error(message);
     }
   }
 

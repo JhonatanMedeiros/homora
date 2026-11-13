@@ -14,6 +14,7 @@ import { isSettingsSection, settingsPath, settingsSections } from '@/features/se
 import { useAuth } from '@/hooks/use-auth';
 import { AuthPage } from '@/pages/auth-page';
 import { StatusPage } from '@/pages/status-page';
+import { Toaster } from '@/components/ui/sonner';
 import { DashboardPage } from '@/pages/dashboard-page';
 
 const validPaths = [
@@ -158,6 +159,7 @@ function AppRoutes() {
 export function App() {
   return (
     <BrowserRouter>
+      <Toaster position="bottom-center" mobileOffset={{ bottom: 136 }} />
       <Routes>
         {/* Anonymous and outside the authenticated shell: AppRoutes (and its auth calls) never mount here. */}
         <Route path="/status" element={<StatusPage />} />
