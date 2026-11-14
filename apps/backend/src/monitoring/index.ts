@@ -17,3 +17,4 @@ export type { IncidentTransition } from './incidents.js';
 export { createMaintenanceStore, MaintenanceError } from './maintenance.js';
 export { serviceSignature } from './signature.js';
 export { createMonitoringTrustStore } from './trust.js';
+export { createMonitoringSource, toMonitoringService } from './service-source.js';
