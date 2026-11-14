@@ -66,6 +66,7 @@ export function useServiceOrdering({
           checkInterval: service.checkInterval ?? null,
           expectedStatus: service.expectedStatus ?? null,
           checkPath: service.checkPath ?? null,
+          checkUrl: service.checkUrl ?? null,
           checkMatch: service.checkMatch ?? null,
         }),
       });

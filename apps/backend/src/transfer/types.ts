@@ -7,8 +7,8 @@ import type { Appearance, CheckType, LinkColor, OpenTarget } from '@homora/share
  * its type by name and color); version 5 adds service aliases. Versions 1 to 4 remain readable;
  * version 1 groups go to the first page.
  */
-export const TRANSFER_VERSION = 5;
-export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4, 5];
+export const TRANSFER_VERSION = 6;
+export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4, 5, 6];
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
 export const MAX_SERVICES = 1000;
@@ -36,6 +36,7 @@ export type ImportedService = {
   checkInterval?: number;
   expectedStatus?: string;
   checkPath?: string;
+  checkUrl?: string;
   checkMatch?: string;
   links?: ImportedLink[];
   pinned?: true;

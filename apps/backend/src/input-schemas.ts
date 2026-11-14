@@ -13,6 +13,7 @@ import {
   SERVICE_LINKS_MAX,
   isCheckMatch,
   isCheckPath,
+  isCheckUrl,
   isExpectedStatus,
   MAINTENANCE_NOTE_MAX,
   isNodeName,
@@ -46,6 +47,7 @@ export const serviceInputSchema = z
       .nullable()
       .optional(),
     checkPath: z.string().refine(isCheckPath).nullable().optional(),
+    checkUrl: z.string().refine(isCheckUrl).nullable().optional(),
     checkMatch: z.string().refine(isCheckMatch).nullable().optional(),
     checkInterval: z
       .number()

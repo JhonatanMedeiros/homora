@@ -108,6 +108,8 @@ export async function authorizeDestination(
       );
     })
   )
-    throw new Error('Destination points to disallowed address.');
+    throw Object.assign(new Error('Destination points to disallowed address.'), {
+      code: 'destination-disallowed',
+    });
   return { url, address: addresses[0] };
 }

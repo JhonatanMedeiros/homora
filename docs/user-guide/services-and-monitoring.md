@@ -64,6 +64,8 @@ Homora never stores response bodies. A keyword or JSON mismatch is recorded only
 
 ### HTTP options
 
+On the Monitoring tab, **Check URL** optionally sets a separate complete HTTP or HTTPS address for monitoring, for example a LAN health endpoint when the card opens a public address behind Cloudflare Access. It takes precedence over Check path for all check types; for host checks, the host and port are used. Credentials, query strings and fragments are not accepted. The private-network permission and destination policy apply to this address. The URL is configuration and is included in native exports and agent proposal reviews.
+
 On the Monitoring tab, **Check path** optionally replaces the path and query of the card URL for the HTTP probe, while keeping its origin. For example, use `/health` to check an endpoint while the card opens `/dashboard`. Leave it empty to check the full card URL. The path must start with a single `/`; a query string is allowed. The destination policy and the service's private-network permission still apply.
 
 **Expected HTTP status** accepts an exact code such as `200` or `302`, or `2xx` / `3xx`. A different response is reported as unavailable with the received and expected codes. Leave it empty to keep the default classification. Both settings are retained when using ping but only apply to HTTP checks, and are included in Homora exports. Checks are anonymous and do not follow redirects: a login page or an access proxy can respond successfully even when the underlying service is down. Use a suitable anonymous health endpoint if one is available.

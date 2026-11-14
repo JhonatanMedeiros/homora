@@ -61,6 +61,19 @@ export function MonitoringPanel({ value, onChange, monitoring }: Props) {
           {t(`check.hint.${checkType}`, { days: CERT_WARNING_DAYS })}
         </FieldDescription>
       </Field>
+      <Field className="sm:col-span-2">
+        <FieldLabel htmlFor="service-check-url">{t('form.checkUrl')}</FieldLabel>
+        <Input
+          id="service-check-url"
+          type="url"
+          pattern="https?://[^/?#@\s]+(/[^?#\s]*)?"
+          maxLength={2048}
+          value={value.checkUrl ?? ''}
+          onChange={(e) => set({ checkUrl: e.target.value || null })}
+          placeholder="https://192.168.1.10/health"
+        />
+        <FieldDescription>{t('form.checkUrlHint')}</FieldDescription>
+      </Field>
       {bodyCheck && (
         <Field className="sm:col-span-2">
           <FieldLabel htmlFor="service-check-match">

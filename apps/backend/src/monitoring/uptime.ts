@@ -23,6 +23,7 @@ type SignedService = Pick<
   | 'checkInterval'
   | 'expectedStatus'
   | 'checkPath'
+  | 'checkUrl'
   | 'checkMatch'
 >;
 type UptimeService = SignedService & { id: number };
@@ -32,7 +33,7 @@ export const signature = serviceSignature;
 export function uptimeServicesOf(db: DatabaseSync, serviceId?: number): UptimeService[] {
   return db
     .prepare(
-      `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_match AS checkMatch FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
+      `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
     )
     .all(serviceId ?? null, serviceId ?? null) as unknown as UptimeService[];
 }

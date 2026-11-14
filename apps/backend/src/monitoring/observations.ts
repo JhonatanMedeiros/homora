@@ -32,6 +32,7 @@ const observationSchema = z
       'error-status',
       'reachable',
       'no-response',
+      'destination-blocked',
       'content-mismatch',
       'cert-expired',
       'cert-invalid',
@@ -329,7 +330,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
     list(now = Date.now()) {
       const rows = db
         .prepare(
-          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,s.check_match AS checkMatch,o.signature,o.observation
+          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,s.check_url AS checkUrl,s.check_match AS checkMatch,o.signature,o.observation
         FROM services s LEFT JOIN service_observations o ON o.service_id=s.id ORDER BY s.id`,
         )
         .all() as unknown as Array<
@@ -342,6 +343,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
           | 'checkInterval'
           | 'expectedStatus'
           | 'checkPath'
+          | 'checkUrl'
           | 'checkMatch'
         > & {
           signature: string | null;

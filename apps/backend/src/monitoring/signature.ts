@@ -17,6 +17,7 @@ export function serviceSignature(
     | 'checkInterval'
     | 'expectedStatus'
     | 'checkPath'
+    | 'checkUrl'
     | 'checkMatch'
   >,
 ) {
@@ -31,6 +32,7 @@ export function serviceSignature(
         service.checkPath ?? null,
         // Appended only when set, so services without it keep the signature (and history) they had.
         ...(service.checkMatch ? [service.checkMatch] : []),
+        ...(service.checkUrl ? [{ checkUrl: service.checkUrl }] : []),
       ]),
     )
     .digest('hex')

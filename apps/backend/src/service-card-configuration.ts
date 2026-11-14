@@ -65,7 +65,7 @@ export function createServiceCardConfiguration({
       ensureGroup(service.category, null, pageForNewService(service.category, change.page));
       const created = sqlite
         .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         )
         .run(
           service.name,
@@ -79,6 +79,7 @@ export function createServiceCardConfiguration({
           service.checkInterval ?? null,
           service.expectedStatus ?? null,
           service.checkPath ?? null,
+          service.checkUrl ?? null,
           service.checkMatch ?? null,
           service.openTarget ?? 'new-tab',
           service.alias ?? null,
@@ -101,7 +102,7 @@ export function createServiceCardConfiguration({
     const position = change.service.position ?? current.position;
     sqlite
       .prepare(
-        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_match=?,open_target=?,alias=? WHERE id=?',
+        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_url=?,check_match=?,open_target=?,alias=? WHERE id=?',
       )
       .run(
         service.name,
@@ -117,6 +118,7 @@ export function createServiceCardConfiguration({
           ? (current.expectedStatus ?? null)
           : service.expectedStatus,
         service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
+        service.checkUrl === undefined ? (current.checkUrl ?? null) : service.checkUrl,
         service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
         service.openTarget ?? current.openTarget ?? 'new-tab',
         service.alias === undefined ? (current.alias ?? null) : service.alias,
@@ -138,7 +140,7 @@ export function createServiceCardConfiguration({
       service.position = nextServicePosition(service.category);
       const result = sqlite
         .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         )
         .run(
           service.name,
@@ -152,6 +154,7 @@ export function createServiceCardConfiguration({
           service.checkInterval ?? null,
           service.expectedStatus ?? null,
           service.checkPath ?? null,
+          service.checkUrl ?? null,
           service.checkMatch ?? null,
           service.openTarget ?? 'new-tab',
           service.alias ?? null,
@@ -183,7 +186,7 @@ export function createServiceCardConfiguration({
           : nextServicePosition(service.category);
       sqlite
         .prepare(
-          'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_match=?,open_target=?,alias=? WHERE id=?',
+          'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_url=?,check_match=?,open_target=?,alias=? WHERE id=?',
         )
         .run(
           service.name,
@@ -199,6 +202,7 @@ export function createServiceCardConfiguration({
             ? (current.expectedStatus ?? null)
             : service.expectedStatus,
           service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
+          service.checkUrl === undefined ? (current.checkUrl ?? null) : service.checkUrl,
           service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
           service.openTarget ?? current.openTarget ?? 'new-tab',
           service.alias === undefined ? (current.alias ?? null) : service.alias,
