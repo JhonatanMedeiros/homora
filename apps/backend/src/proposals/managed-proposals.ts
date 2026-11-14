@@ -17,6 +17,7 @@ import {
 import { resolveLegacyConnection } from '../integrations/legacy-integrations.js';
 import { createPages } from '../pages.js';
 import { createProbeStore } from '../probes.js';
+import { setMonitorPublic } from '../public-status.js';
 import { normalizeTags } from '../service-tags.js';
 import { createServiceAttention } from '../service-attention.js';
 import { createResourceLinks } from '../resource-links.js';
@@ -41,6 +42,13 @@ export const probeChangeSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('update'), id, probe: probeInput }).strict(),
   z.object({ op: z.literal('delete'), id }).strict(),
 ]);
+/**
+ * Public visibility lives in its own proposal on purpose: `isPublic` stays out of ServiceInput and
+ * ProbeInput so that creating or editing a monitor can never expose it as a side effect.
+ */
+export const publicVisibilityChangeSchema = z
+  .object({ serviceId: id, isPublic: z.boolean() })
+  .strict();
 export const serviceTagsChangeSchema = z
   .object({ serviceId: id, tags: z.array(z.string().max(80)).max(12) })
   .strict();
@@ -213,6 +221,7 @@ export const managedChangeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('connection-setup'), change: connectionSetupSchema }).strict(),
   z.object({ kind: z.literal('host-link'), change: hostLinkChangeSchema }).strict(),
   z.object({ kind: z.literal('maintenance'), change: maintenanceChangeSchema }).strict(),
+  z.object({ kind: z.literal('public-visibility'), change: publicVisibilityChangeSchema }).strict(),
 ]);
 export type ManagedChange = z.infer<typeof managedChangeSchema>;
 
@@ -227,6 +236,7 @@ export function isIndependentChange(change?: ManagedChange) {
     change.kind === 'tag' ||
     change.kind === 'link' ||
     change.kind === 'acknowledgement' ||
+    change.kind === 'public-visibility' ||
     (change.kind === 'pin' && change.change.op !== 'reorder')
   );
 }
@@ -292,6 +302,10 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
       if (!attention.acknowledge(change.serviceId, change.incidentId ?? null, change.muteMinutes))
         throw new Error('Monitor not found');
     } else if (!attention.clear(change.serviceId)) throw new Error('Monitor not found');
+    affectedId = change.serviceId;
+  } else if (kind === 'public-visibility') {
+    if (!setMonitorPublic(db, change.serviceId, change.isPublic))
+      throw new Error('Service not found');
     affectedId = change.serviceId;
   } else if (kind === 'tag') {
     if (!db.prepare('SELECT id FROM services WHERE id=?').get(change.serviceId))

@@ -2,14 +2,15 @@ import type { MessageKey } from '@/i18n';
 import { isDestructive, parseDiff, type Diff, type Proposal } from './agent-model';
 
 /** How much a proposal deserves a careful look, from the most routine to the most serious. */
-export type Risk = 'low' | 'attention' | 'access' | 'destructive';
+export type Risk = 'low' | 'attention' | 'access' | 'public' | 'destructive';
 
-const RANK: Record<Risk, number> = { low: 0, attention: 1, access: 2, destructive: 3 };
+const RANK: Record<Risk, number> = { low: 0, attention: 1, access: 2, public: 3, destructive: 4 };
 
 export const RISK_LABELS: Record<Risk, MessageKey> = {
   low: 'proposal.risk.low',
   attention: 'proposal.risk.attention',
   access: 'proposal.risk.access',
+  public: 'proposal.risk.public',
   destructive: 'proposal.risk.destructive',
 };
 
@@ -24,6 +25,11 @@ export function diffRisk(diff: Diff | null): Risk {
   if (diff.kind === 'managed') {
     const kind = diff.change?.kind;
     if (kind === 'connection-setup') return 'access';
+    // Showing something to anonymous visitors is the most sensitive reversible change; hiding it is not.
+    if (kind === 'public-visibility')
+      return (diff.change?.change as { isPublic?: unknown } | undefined)?.isPublic === true
+        ? 'public'
+        : 'attention';
     return kind && ROUTINE_MANAGED.has(kind) ? 'low' : 'attention';
   }
   if (diff.op === 'create' || diff.op === 'update') {
@@ -42,4 +48,5 @@ export function highestRisk(risks: Risk[]): Risk {
 }
 
 /** Removing something or widening an agent's access is confirmed by holding the button. */
-export const needsHold = (risk: Risk) => risk === 'destructive' || risk === 'access';
+export const needsHold = (risk: Risk) =>
+  risk === 'destructive' || risk === 'access' || risk === 'public';

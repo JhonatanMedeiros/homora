@@ -119,6 +119,22 @@ export function createProposalReviewService({
         );
       return;
     }
+    if (change.kind === 'public-visibility') {
+      // Same event the UI route records (routes/public-status.ts), so history reads the same either way.
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(
+          human,
+          'service-public',
+          proposalId,
+          'ok',
+          now,
+          `${affectedId}:${change.change.isPublic ? 'public' : 'private'}`,
+        );
+      return;
+    }
     if (change.kind === 'acknowledgement') {
       sqlite
         .prepare(

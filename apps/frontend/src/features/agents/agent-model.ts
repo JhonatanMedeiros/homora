@@ -87,6 +87,11 @@ export const SCOPES = [
     label: 'scope.maintenance:propose',
     hint: 'scope.maintenance:propose.hint',
   },
+  {
+    id: 'public-status:propose',
+    label: 'scope.public-status:propose',
+    hint: 'scope.public-status:propose.hint',
+  },
   { id: 'hosts:read', label: 'scope.hosts:read', hint: 'scope.hosts:read.hint' },
   { id: 'hosts:propose', label: 'scope.hosts:propose', hint: 'scope.hosts:propose.hint' },
   { id: 'widgets:read', label: 'scope.widgets:read', hint: 'scope.widgets:read.hint' },
@@ -188,7 +193,9 @@ export function proposalSummary(diff: Diff | null, current?: Service): string {
               ? 'proposal.managed.maintenance'
               : kind === 'host-link'
                 ? 'proposal.managed.host-link'
-                : 'proposal.managed.connection-setup',
+                : kind === 'public-visibility'
+                  ? 'proposal.managed.public-visibility'
+                  : 'proposal.managed.connection-setup',
     );
   }
   const name = diff.service?.name ?? current?.name;

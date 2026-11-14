@@ -47,6 +47,15 @@ export const en = {
   'proposal.risk.attention': 'Needs attention',
   'proposal.risk.destructive': 'Destructive',
   'proposal.risk.access': 'Access',
+  'proposal.risk.public': 'Makes it public',
+  'proposal.confirmPublicTitle': 'Make this public?',
+  'proposal.confirmPublicBody':
+    '“{name}” becomes visible to anyone who can open the public status page as soon as you confirm.',
+  'proposal.managed.public-visibility': 'Public visibility',
+  'managed.visibility.public': 'Public',
+  'managed.visibility.private': 'Private',
+  'managed.visibility.exposure':
+    'Anonymous visitors will see its name, category and coarse state. Never its address.',
   'proposal.holdApprove': 'Hold to approve',
   'proposal.holdHint': 'Hold the button for 1 second to approve.',
   'proposal.queue': 'Queue',
@@ -195,6 +204,15 @@ export const ptBR: Record<keyof typeof en, string> = {
   'proposal.risk.attention': 'Atenção',
   'proposal.risk.destructive': 'Destrutivo',
   'proposal.risk.access': 'Acesso',
+  'proposal.risk.public': 'Torna público',
+  'proposal.confirmPublicTitle': 'Tornar público?',
+  'proposal.confirmPublicBody':
+    '“{name}” passa a ser visível para qualquer pessoa que abra a página pública de status assim que você confirmar.',
+  'proposal.managed.public-visibility': 'Visibilidade pública',
+  'managed.visibility.public': 'Público',
+  'managed.visibility.private': 'Privado',
+  'managed.visibility.exposure':
+    'Visitantes anônimos verão nome, categoria e estado simplificado. Nunca o endereço.',
   'proposal.holdApprove': 'Segure para aprovar',
   'proposal.holdHint': 'Segure o botão por 1 segundo para aprovar.',
   'proposal.queue': 'Fila',

@@ -180,6 +180,58 @@ describe('managed proposals', () => {
       db.close();
     }
   });
+  it('publishes and hides a card or a probe only through its own reviewed proposal, with audit', () => {
+    const { db, api } = fixture();
+    try {
+      const agent = api.issue('publisher', ['public-status:propose', 'probes:propose']);
+      db.prepare(
+        "INSERT INTO monitors(id,name,check_url) VALUES(50,'WAN','https://wan.example')",
+      ).run();
+      const isPublic = (id: number) =>
+        (db.prepare('SELECT is_public AS v FROM monitors WHERE id=?').get(id) as { v: number }).v;
+      // Both a card (1) and a probe (50) are born private; creating or editing never publishes.
+      expect([isPublic(1), isPublic(50)]).toEqual([0, 0]);
+      expect(() =>
+        api.proposeManaged(agent.id, {
+          kind: 'probe',
+          change: {
+            op: 'create',
+            probe: { name: 'x', address: 'https://x.example', isPublic: true },
+          },
+        } as never),
+      ).toThrow();
+      expect(() =>
+        api.proposeManaged(agent.id, {
+          kind: 'public-visibility',
+          change: { serviceId: 999, isPublic: true },
+        }),
+      ).toThrow('Service not found');
+      for (const serviceId of [1, 50]) {
+        const proposal = api.proposeManaged(agent.id, {
+          kind: 'public-visibility',
+          change: { serviceId, isPublic: true },
+        });
+        expect(isPublic(serviceId)).toBe(0);
+        expect(api.decide(proposal.id, true, 'local-admin')).toBe('approved');
+        expect(isPublic(serviceId)).toBe(1);
+        expect(
+          db
+            .prepare(
+              "SELECT actor,detail FROM audit_events WHERE proposal_id=? AND action='service-public'",
+            )
+            .all(proposal.id),
+        ).toEqual([{ actor: 'local-admin', detail: `${serviceId}:public` }]);
+      }
+      const hide = api.proposeManaged(agent.id, {
+        kind: 'public-visibility',
+        change: { serviceId: 50, isPublic: false },
+      });
+      api.decide(hide.id, true, 'local-admin');
+      expect([isPublic(1), isPublic(50)]).toEqual([1, 0]);
+    } finally {
+      db.close();
+    }
+  });
   it('validates group changes without applying them, and applies once with audit', () => {
     const { db, api, agent } = fixture();
     try {

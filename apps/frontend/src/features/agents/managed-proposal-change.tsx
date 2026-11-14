@@ -101,6 +101,23 @@ function Value({ value, field }: { value: unknown; field?: string }) {
     return <span>{t(operations[value])}</span>;
   return <span>{String(value)}</span>;
 }
+/** Spells out the effect — private → public — and what anonymous visitors would see. */
+function PublicVisibilityNote({ diff }: { diff: Diff }) {
+  const next = (diff.change?.change as { isPublic?: boolean } | undefined)?.isPublic === true;
+  const before = diff.before as { monitor?: { name?: string; isPublic?: number | boolean } | null };
+  const current = Boolean(before?.monitor?.isPublic);
+  return (
+    <div className="flex flex-col gap-1 rounded-md border p-3">
+      <p className="font-semibold">
+        {before?.monitor?.name ? `${before.monitor.name}: ` : ''}
+        {t(current ? 'managed.visibility.public' : 'managed.visibility.private')}
+        {' → '}
+        {t(next ? 'managed.visibility.public' : 'managed.visibility.private')}
+      </p>
+      {next && <p>{t('managed.visibility.exposure')}</p>}
+    </div>
+  );
+}
 export function ManagedProposalChange({ diff }: { diff: Diff }) {
   const kind = diff.change?.kind;
   const title =
@@ -126,13 +143,16 @@ export function ManagedProposalChange({ diff }: { diff: Diff }) {
                         ? 'proposal.managed.maintenance'
                         : kind === 'host-link'
                           ? 'proposal.managed.host-link'
-                          : 'proposal.managed.connection-setup';
+                          : kind === 'public-visibility'
+                            ? 'proposal.managed.public-visibility'
+                            : 'proposal.managed.connection-setup';
   return (
     <div className="flex flex-col gap-3">
       <p className="font-label text-lg font-semibold">{t(title)}</p>
       {kind === 'connection-setup' && <p>{t('proposal.managed.connectionNote')}</p>}
       {kind === 'host-link' && <p>{t('managed.hostNote')}</p>}
       {kind === 'maintenance' && <p>{t('managed.maintenanceNote')}</p>}
+      {kind === 'public-visibility' && <PublicVisibilityNote diff={diff} />}
       {diff.before != null && (
         <section className="flex flex-col gap-2">
           <p className="font-semibold">{t('proposal.before')}</p>

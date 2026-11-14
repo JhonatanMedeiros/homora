@@ -16,6 +16,7 @@ import { createMaintenanceStore, MaintenanceError } from '../monitoring/index.js
 import {
   maintenanceChangeSchema,
   serviceTagsChangeSchema,
+  publicVisibilityChangeSchema,
 } from '../proposals/managed-proposals.js';
 import type { McpToolContext } from './tool-context.js';
 
@@ -207,6 +208,7 @@ export function registerMcpProposalTools(
                   'acknowledgement',
                   'link',
                   'pin',
+                  'public-visibility',
                 ]),
                 change: z.unknown(),
               })
@@ -231,6 +233,7 @@ export function registerMcpProposalTools(
         acknowledgement: 'incidents:propose',
         link: 'organization:propose',
         pin: 'organization:propose',
+        'public-visibility': 'public-status:propose',
       } as const;
       const author = proposalAuthor();
       if (!author || items.some((item) => authorize(scopes[item.kind]) !== author))
@@ -409,6 +412,26 @@ export function registerMcpProposalTools(
       if (!author) return unauthorized();
       try {
         return result(proposalService.proposeManaged(author, { kind: 'tag', change }));
+      } catch (error) {
+        return failed(error);
+      }
+    },
+  );
+  server.registerTool(
+    'propose_public_visibility',
+    {
+      description:
+        'Proposes showing or hiding a card or probe on the public status page. Publishing exposes its name and state to anonymous visitors, so it always needs explicit human review. Creating a card or probe never publishes it.',
+      inputSchema: publicVisibilityChangeSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    },
+    async (change) => {
+      const author = authorize('public-status:propose');
+      if (!author) return unauthorized();
+      try {
+        return result(
+          proposalService.proposeManaged(author, { kind: 'public-visibility', change }),
+        );
       } catch (error) {
         return failed(error);
       }
