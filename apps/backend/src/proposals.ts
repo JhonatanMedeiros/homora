@@ -58,7 +58,40 @@ export function createProposalService(
     if (count.count >= 100) throw new Error('Pending proposal limit reached');
   }
   // The trailing `null` keeps the hashes of pending proposals created before this change.
-  const managedBaseHash = () => hash([managedHash(sqlite), null]);
+  const managedBaseHash = (change?: import('./managed-proposals.js').ManagedChange) =>
+    hash([
+      managedHash(sqlite),
+      change?.kind === 'pin'
+        ? {
+            pins: sqlite.prepare('SELECT * FROM service_pins ORDER BY service_id').all(),
+            order:
+              sqlite
+                .prepare("SELECT value FROM app_settings WHERE key='service_pin_order'")
+                .get() ?? null,
+          }
+        : change?.kind === 'link'
+          ? sqlite.prepare('SELECT * FROM integration_resource_links ORDER BY id').all()
+          : change?.kind === 'acknowledgement'
+            ? {
+                acknowledgements: sqlite
+                  .prepare('SELECT * FROM service_acknowledgements ORDER BY service_id')
+                  .all(),
+                incidents: sqlite
+                  .prepare('SELECT id,service_id,ended_at FROM service_incidents ORDER BY id')
+                  .all(),
+              }
+            : change?.kind === 'tag'
+              ? sqlite
+                  .prepare('SELECT service_id,tag FROM service_tags ORDER BY service_id,tag')
+                  .all()
+              : change?.kind === 'probe'
+                ? sqlite
+                    .prepare(
+                      'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) ORDER BY m.id',
+                    )
+                    .all()
+                : null,
+    ]);
   const {
     issue,
     authenticate,
@@ -97,6 +130,7 @@ export function createProposalService(
         if (service.checkPath === undefined) service.checkPath = current.checkPath;
         if (service.checkUrl === undefined) service.checkUrl = current.checkUrl;
         if (service.checkMatch === undefined) service.checkMatch = current.checkMatch;
+        if (service.alias === undefined) service.alias = current.alias ?? null;
         if (service.checkInsecure === undefined)
           service.checkInsecure = Boolean(current.checkInsecure);
       }

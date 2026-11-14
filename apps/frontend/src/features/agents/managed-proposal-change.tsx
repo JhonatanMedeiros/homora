@@ -14,6 +14,17 @@ const labels: Record<string, MessageKey> = {
   integrationId: 'managed.integrationId',
   integration_id: 'managed.integrationId',
   serviceId: 'managed.serviceId',
+  pageId: 'managed.pageId',
+  moveTo: 'managed.moveTo',
+  probe: 'managed.probe',
+  address: 'managed.address',
+  tags: 'managed.tags',
+  incidentId: 'managed.incidentId',
+  muteMinutes: 'managed.muteMinutes',
+  resourceUuid: 'managed.resourceUuid',
+  resourceType: 'managed.resourceType',
+  pinned: 'managed.pinned',
+  order: 'managed.order',
   startsAt: 'managed.startsAt',
   endsAt: 'managed.endsAt',
   note: 'managed.note',
@@ -48,6 +59,12 @@ const operations: Record<string, MessageKey> = {
   reorder: 'managed.reorder',
   move: 'managed.move',
   link: 'managed.link',
+  unlink: 'managed.unlink',
+  pin: 'managed.pin',
+  unpin: 'managed.unpin',
+  ack: 'managed.ack',
+  clear: 'managed.clear',
+  'assign-group': 'managed.assignGroup',
 };
 function Value({ value, field }: { value: unknown; field?: string }) {
   if (value == null) return <span>{t('proposal.empty')}</span>;
@@ -87,17 +104,29 @@ function Value({ value, field }: { value: unknown; field?: string }) {
 export function ManagedProposalChange({ diff }: { diff: Diff }) {
   const kind = diff.change?.kind;
   const title =
-    kind === 'group'
-      ? 'proposal.managed.group'
-      : kind === 'card-order'
-        ? 'proposal.managed.card-order'
-        : kind === 'widget'
-          ? 'proposal.managed.widget'
-          : kind === 'maintenance'
-            ? 'proposal.managed.maintenance'
-            : kind === 'host-link'
-              ? 'proposal.managed.host-link'
-              : 'proposal.managed.connection-setup';
+    kind === 'pin'
+      ? 'proposal.managed.pin'
+      : kind === 'link'
+        ? 'proposal.managed.link'
+        : kind === 'acknowledgement'
+          ? 'proposal.managed.acknowledgement'
+          : kind === 'tag'
+            ? 'proposal.managed.tag'
+            : kind === 'probe'
+              ? 'proposal.managed.probe'
+              : kind === 'page'
+                ? 'proposal.managed.page'
+                : kind === 'group'
+                  ? 'proposal.managed.group'
+                  : kind === 'card-order'
+                    ? 'proposal.managed.card-order'
+                    : kind === 'widget'
+                      ? 'proposal.managed.widget'
+                      : kind === 'maintenance'
+                        ? 'proposal.managed.maintenance'
+                        : kind === 'host-link'
+                          ? 'proposal.managed.host-link'
+                          : 'proposal.managed.connection-setup';
   return (
     <div className="flex flex-col gap-3">
       <p className="font-label text-lg font-semibold">{t(title)}</p>

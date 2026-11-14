@@ -1,6 +1,7 @@
 import { clockWidget } from '@homora/widgets/clock';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { integrationDefinition } from '@homora/integrations';
+import { createServiceAttention } from './service-attention.js';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   MAX_PAGES,
@@ -277,9 +278,7 @@ export function createConfigurationTransfer({
             plan.services[index].alias ?? null,
           );
           if (service.pinned)
-            sqlite
-              .prepare('INSERT OR IGNORE INTO service_pins(service_id,pinned_at) VALUES(?,?)')
-              .run(Number(monitor.lastInsertRowid), Date.now());
+            createServiceAttention(sqlite).setPinned(Number(monitor.lastInsertRowid), true);
           if (service.links?.length)
             writeLinks(
               Number(monitor.lastInsertRowid),

@@ -21,6 +21,7 @@ export type Proposal = {
 export type ServiceFields = {
   name?: string;
   url?: string;
+  alias?: string | null;
   category?: string;
   description?: string;
   icon?: string;
@@ -48,6 +49,24 @@ export type Diff = {
 
 export const SCOPES = [
   { id: 'services:read', label: 'scope.services:read', hint: 'scope.services:read.hint' },
+  { id: 'probes:read', label: 'scope.probes:read', hint: 'scope.probes:read.hint' },
+  { id: 'incidents:read', label: 'scope.incidents:read', hint: 'scope.incidents:read.hint' },
+  {
+    id: 'notifications:read',
+    label: 'scope.notifications:read',
+    hint: 'scope.notifications:read.hint',
+  },
+  {
+    id: 'organization:propose',
+    label: 'scope.organization:propose',
+    hint: 'scope.organization:propose.hint',
+  },
+  { id: 'probes:propose', label: 'scope.probes:propose', hint: 'scope.probes:propose.hint' },
+  {
+    id: 'incidents:propose',
+    label: 'scope.incidents:propose',
+    hint: 'scope.incidents:propose.hint',
+  },
   { id: 'agents:read', label: 'scope.agents:read', hint: 'scope.agents:read.hint' },
   { id: 'agents:propose', label: 'scope.agents:propose', hint: 'scope.agents:propose.hint' },
   { id: 'audit:read', label: 'scope.audit:read', hint: 'scope.audit:read.hint' },
@@ -131,6 +150,7 @@ export function parseDiff(raw: string): Diff | null {
 export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['name', 'field.name'],
   ['url', 'field.url'],
+  ['alias', 'form.alias'],
   ['category', 'field.category'],
   ['description', 'field.description'],
   ['icon', 'field.icon'],

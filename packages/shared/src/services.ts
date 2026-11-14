@@ -96,6 +96,7 @@ export type Service = ServiceInput & {
   host?: HostLink | null;
   /** Favorite: shown in the Pinned row of the Home. Not part of the card's configuration version. */
   pinned?: boolean;
+  pinnedPosition?: number | null;
   /** Extra addresses, in order; empty or absent when the card has none. */
   links?: ServiceLink[];
 };

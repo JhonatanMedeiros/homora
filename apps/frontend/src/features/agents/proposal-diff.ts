@@ -9,7 +9,7 @@ export function diffRows(diff: Diff, current?: Service) {
   const after = diff.service;
   const rows: Row[] = FIELDS.map(([key, label]) => {
     const before = current?.[key as keyof Service];
-    const next = after?.[key];
+    const next = key === 'alias' && after?.alias === undefined ? before : after?.[key];
     return {
       key,
       label: t(label),

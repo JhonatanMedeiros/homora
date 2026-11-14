@@ -25,6 +25,10 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'service-host-link',
     'service-host-unlink',
     'service-pin',
+    'service-pin-order',
+    'service-tags-update',
+    'resource-link-set',
+    'resource-link-remove',
     'service-unpin',
     'service-acknowledge',
     'service-acknowledge-clear',
@@ -38,6 +42,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'custom-css-update',
     'custom-css-reset',
     'page-update',
+    'page-widget-move',
   ],
   proposal: [
     'proposal',

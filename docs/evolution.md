@@ -1902,3 +1902,11 @@ the HTTP and stdio transports were not manually verified.
   reconstructed historical incidents are excluded. The bell opens the inbox and supports reading
   individual or all entries.
 - Validation: focused incident, inbox, route, migration and interface tests; `pnpm check` and `pnpm build`. Chromium desktop and mobile with synthetic inbox data covered display, read actions and keyboard focus; a temporary database and real API verified read state across reload and backend restart. A screen reader and other browsers were not tested.
+
+### MCP route coverage (issue #195)
+
+- Added `list_trusted_ca` under `services:read`, exposing certificate subjects, validity and count without the PEM. Upload and removal remain human operations.
+- Added scoped operational reads for probes, incidents, notification channels, status overview, tags, link types and public status, and allowed aliases in card proposals with a visible review diff.
+- Added reviewable page changes with the `organization:propose` scope, batch support, version checks and audit events.
+- Added scoped, audited and human-reviewed probes, acknowledgements, tags, favorite cards, resource links and page-widget moves; batch proposals cover the new kinds. MCP responses omit maintenance notes, connection URLs and PEM. Connection tests use restricted transport without persisting results or changing shared backoff.
+- Validation: focused MCP, authorization and proposal tests; `pnpm check` passed (1,722 application tests and 31 script tests) and `pnpm build` passed. No live service was contacted. Browser review remains pending.

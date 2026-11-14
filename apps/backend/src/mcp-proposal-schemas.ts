@@ -5,6 +5,11 @@ import {
   groupChangeSchema,
   widgetChangeSchema,
   maintenanceChangeSchema,
+  pageChangeSchema,
+  probeChangeSchema,
+  acknowledgementChangeSchema,
+  resourceLinkChangeSchema,
+  pinChangeSchema,
 } from './managed-proposals.js';
 
 // The MCP SDK publishes an empty inputSchema for z.discriminatedUnion, so tools
@@ -20,6 +25,17 @@ export const groupChangeDiscoverySchema = discoverySchema(
   groupChangeSchema,
 );
 export const cardOrderDiscoverySchema = discoverySchema('propose_card_order', cardOrderSchema);
+export const pageChangeDiscoverySchema = discoverySchema('propose_page_change', pageChangeSchema);
+export const probeChangeDiscoverySchema = discoverySchema('propose_probe', probeChangeSchema);
+export const acknowledgementDiscoverySchema = discoverySchema(
+  'propose_acknowledgement',
+  acknowledgementChangeSchema,
+);
+export const resourceLinkDiscoverySchema = discoverySchema(
+  'propose_resource_link',
+  resourceLinkChangeSchema,
+);
+export const pinChangeDiscoverySchema = discoverySchema('propose_pin', pinChangeSchema);
 export const maintenanceDiscoverySchema = discoverySchema(
   'propose_maintenance',
   maintenanceChangeSchema,

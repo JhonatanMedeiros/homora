@@ -18,15 +18,15 @@ const fail = (code: PageFailure): Result<never> => ({ ok: false, code });
  * case, the last page cannot be deleted, and deleting a page moves its groups (and so its
  * services) to another page. The database enforces name uniqueness too (NOCASE index).
  */
-export function createPages(sqlite: DatabaseSync) {
+export function createPages(sqlite: DatabaseSync, nested = false) {
   const transaction = <T>(work: () => T): T => {
-    sqlite.exec('BEGIN IMMEDIATE');
+    sqlite.exec(nested ? 'SAVEPOINT page_change' : 'BEGIN IMMEDIATE');
     try {
       const result = work();
-      sqlite.exec('COMMIT');
+      sqlite.exec(nested ? 'RELEASE page_change' : 'COMMIT');
       return result;
     } catch (error) {
-      sqlite.exec('ROLLBACK');
+      sqlite.exec(nested ? 'ROLLBACK TO page_change; RELEASE page_change' : 'ROLLBACK');
       throw error;
     }
   };
