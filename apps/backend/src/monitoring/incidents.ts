@@ -57,7 +57,21 @@ const fresh = (): Streak => ({
  * incidents) and closes after `recoveryThreshold` successful checks in a row; `unknown` checks
  * change nothing. Everything is derived from the monitor's own observations.
  */
-export function createIncidentStore(db: DatabaseSync) {
+export type IncidentTransition = {
+  incidentId: number;
+  serviceId: number;
+  kind: 'down' | 'up';
+  confirmedAt: number;
+  startedAt: number;
+  endedAt: number | null;
+  reason: string;
+  httpStatus: number | null;
+};
+
+export function createIncidentStore(
+  db: DatabaseSync,
+  onTransition?: (transition: IncidentTransition) => void,
+) {
   const trust = monitoringTrustReader(db);
   const streaks = new Map<number, Streak>();
   let overviewCache: { at: number; body: StatusOverview } | null = null;
@@ -110,6 +124,7 @@ export function createIncidentStore(db: DatabaseSync) {
     reason: string,
     httpStatus: number | null,
     settings: MonitorSettings,
+    live = false,
   ) {
     streak.lastAt = at;
     if (status === 'unavailable') {
@@ -132,6 +147,17 @@ export function createIncidentStore(db: DatabaseSync) {
           streak.fails,
         );
         streak.incidentId = Number(created.lastInsertRowid);
+        if (live)
+          onTransition?.({
+            incidentId: streak.incidentId,
+            serviceId,
+            kind: 'down',
+            confirmedAt: at,
+            startedAt: streak.startedAt ?? at,
+            endedAt: null,
+            reason,
+            httpStatus,
+          });
         return true;
       }
       return false;
@@ -145,6 +171,17 @@ export function createIncidentStore(db: DatabaseSync) {
     streak.firstOkAt ??= at;
     if (streak.oks >= settings.recoveryThreshold) {
       close.run(streak.firstOkAt, streak.incidentId);
+      if (live)
+        onTransition?.({
+          incidentId: streak.incidentId,
+          serviceId,
+          kind: 'up',
+          confirmedAt: at,
+          startedAt: streak.startedAt ?? at,
+          endedAt: streak.firstOkAt,
+          reason: streak.reason,
+          httpStatus: streak.httpStatus,
+        });
       Object.assign(streak, fresh(), { lastAt: at });
       return true;
     }
@@ -176,6 +213,7 @@ export function createIncidentStore(db: DatabaseSync) {
               state.reason,
               state.httpStatus,
               settings.get(service.id) ?? DEFAULT_MONITOR_SETTINGS,
+              true,
             )
           )
             changed = true;

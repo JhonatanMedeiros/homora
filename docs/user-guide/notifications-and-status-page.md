@@ -25,3 +25,11 @@ Homora can publish a minimal, read-only page at `/status` so others can see what
 - Settings shows the page address (with copy and open buttons), an optional short description under the title (up to 160 characters, visible to anyone with the link) and a preview of exactly what visitors will see. Enabling or disabling the page, changing its title or description and marking a service are recorded in the activity feed. Importing a configuration and agent proposals never make a service public; the MCP only reports `publicStatusEnabled`.
 - The per-client limit needs the real client address: keep `HOMORA_TRUST_PROXY=true` behind a proxy that overwrites `X-Forwarded-For` (see above), or every visitor shares one limit.
 - If Homora sits behind Cloudflare Access (or a similar gateway), `/status` and `/api/public/status` must use a separate hostname or a bypass policy, otherwise visitors are still asked to sign in. Exposing it to the internet is your decision: review what is marked public first.
+
+### In-app notifications
+
+The bell shows unread service outage and recovery notifications, even without an external channel.
+Open it to review events and mark one or all as read. Reading does not acknowledge or mute an
+incident. The inbox keeps up to 90 days and 10,000 events, including unread events; older entries
+are removed. It starts empty after upgrading and does not currently include probes. The Activity
+page remains available for auditing.

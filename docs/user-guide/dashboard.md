@@ -32,7 +32,7 @@ not answer. The wording always says _likely_: Homora only reads what it already 
 
 For each group you can **Acknowledge** it (you saw it; it stays quiet until that incident ends, and a new incident
 speaks up again) or **Mute 1 h**. Both can be undone from the toast or with **Show again**. This only quiets the
-dashboard and the alerts bell: checks, incidents and notifications do not change. Each action is recorded in the
+dashboard: checks, incidents and notifications do not change. Each action is recorded in the
 audit log.
 
 ## Status filters
@@ -44,9 +44,10 @@ the limit you set for it (see [Services and monitoring](services-and-monitoring.
 
 ## Alerts bell
 
-The bell in the top bar counts offline services nobody has acknowledged or muted, and says the number in words for
-screen readers. Selecting it opens **Activity**. Services in maintenance and the ones Homora is not allowed to
-check are not counted.
+The bell counts unread notifications about confirmed service outages and recoveries. Open it to review the
+history and mark one or all as read. Reading is independent of acknowledging or muting an incident; **Activity**
+remains available for auditing. The inbox retains up to 90 days and 10,000 entries, and does not include probes.
+See [Notifications and status page](notifications-and-status-page.md#in-app-notifications).
 
 ## Pages, groups and cards
 
@@ -196,7 +197,7 @@ median and p95 lines and incident markers, a 90-day heatmap, and a breakdown of 
 The interface is responsive. The layout collapses to one column and the header keeps a single row (in the management
 area and on the account page, the back arrow takes the place of the logo). Navigation is a floating bar at the bottom:
 only the current item shows its name, the others are icons. The dashboard's bar has **Home**, **Search** (opens the
-palette), **Alerts** (with a count of open problems) and **Manage**. In the management area it has the main sections and
+palette), **Alerts** (opens the inbox, with the unread count) and **Manage**. In the management area it has the main sections and
 **More**, which opens a sheet with the rest and a way back to the dashboard. Background-image editing is only available on larger screens, and the
 service map shows a notice with a link to the host list on narrow screens.
 

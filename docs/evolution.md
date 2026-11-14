@@ -1895,6 +1895,14 @@ the HTTP and stdio transports were not manually verified.
 - Following DESIGN.md, the capsule has no shadow; a gradient fade behind it separates it from the content. `mobile-dashboard.png` was retaken (synthetic data, statuses fabricated in the browser); the other images were not.
 - Validation: `pnpm check` (1,709 application tests) and `pnpm build` passed; new tests cover the Home bar. Checked in a 390 px browser capture of the Home, a management page and the More sheet; not tried on a real phone, in the light theme or with a notch (safe-area inset).
 
+### In-app notification inbox (issue #197)
+
+- Added an inbox for confirmed service-card incident openings and recoveries, with persistent read
+  state, a 90-day/10,000-entry retention limit and no dependency on outbound channels. Probes and
+  reconstructed historical incidents are excluded. The bell opens the inbox and supports reading
+  individual or all entries.
+- Validation: focused incident, inbox, route, migration and interface tests; `pnpm check` and `pnpm build`. Chromium desktop and mobile with synthetic inbox data covered display, read actions and keyboard focus; a temporary database and real API verified read state across reload and backend restart. A screen reader and other browsers were not tested.
+
 ### MCP route coverage (issue #195)
 
 - Added `list_trusted_ca` under `services:read`, exposing certificate subjects, validity and count without the PEM. Upload and removal remain human operations.

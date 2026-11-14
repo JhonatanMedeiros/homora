@@ -431,3 +431,13 @@ formats without a second consumer. Both are deferred. See [ADR 0005](decisions/0
 ### Short service aliases
 
 An optional unique alias belongs to a service and resolves through the session-protected `/api/go/:alias` endpoint. The SPA handles `/go/:alias` and navigates to the validated current primary URL after authentication. The endpoint does not request the destination and responses are not cacheable. The public status page does not expose aliases.
+
+### In-app notification inbox
+
+Confirmed incident openings and recoveries for service cards are recorded in `inbox_notifications`
+within the incident transaction. Historical incident reconstruction does not create inbox entries;
+probes are excluded. The inbox is independent of outbound delivery and its cooldown, and reading an
+entry does not acknowledge or mute an incident. Names and incident details survive deletion while
+references are cleared. The current administrator shares a single read state. Entries are pruned
+at startup, insertion and listing after 90 days or beyond 10,000 entries, including unread entries. The
+inbox is not an audit log. The frontend polls the authenticated API every minute.

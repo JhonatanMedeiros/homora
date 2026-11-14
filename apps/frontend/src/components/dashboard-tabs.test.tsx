@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DashboardTabs } from './dashboard-tabs';
+import { setLocale } from '@/i18n';
 
+beforeEach(() => setLocale('pt-BR'));
 afterEach(cleanup);
 
 function show(alertCount?: number) {
@@ -35,9 +37,12 @@ it('shows the name only on the active item and calls the handlers', () => {
   expect(handlers.onManage).toHaveBeenCalled();
 });
 
-it('shows the count of open alerts over the bell, and nothing when there are none', () => {
+it('shows and announces the unread count, and nothing when there are none', () => {
   show(3);
   expect(screen.getByText('3')).toBeTruthy();
+  expect(
+    screen.getByRole('button', { name: 'Notificações: 3 não lidas' }).getAttribute('aria-haspopup'),
+  ).toBe('dialog');
   cleanup();
   show(0);
   expect(screen.queryByText('0')).toBeNull();

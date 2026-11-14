@@ -37,6 +37,8 @@ import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
 import { registerServiceIncidentRoutes } from './routes/service-incidents.js';
 import { createNotifications } from './notifications.js';
+import { createInbox } from './inbox.js';
+import { registerInboxRoutes } from './routes/inbox.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';
 import { registerResourceLinkRoutes } from './routes/resource-links.js';
 import { registerServiceDependencyRoutes } from './routes/service-dependencies.js';
@@ -85,7 +87,9 @@ export function createApp(
   const rollup = createRollupStore(sqlite);
   const observations = createObservationStore(sqlite, rollup);
   const notifications = createNotifications(sqlite, vault);
-  const incidents = createIncidentStore(sqlite);
+  const inbox = createInbox(sqlite);
+  inbox.prune();
+  const incidents = createIncidentStore(sqlite, inbox.record);
   const maintenance = createMaintenanceStore(sqlite);
   const tagStore = createTagStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
@@ -108,7 +112,15 @@ export function createApp(
     (rows, states) => {
       try {
         observations.publish(rows, states);
+      } catch {
+        /* Keep monitoring other capabilities on storage errors. */
+      }
+      try {
         notifications.publish(rows, states);
+      } catch {
+        /* Outbound delivery must not prevent the incident history from updating. */
+      }
+      try {
         incidents.observe(rows, states);
       } catch {
         /* Keep the dashboard usable on storage errors. */
@@ -196,6 +208,7 @@ export function createApp(
   app.get('/api/integrations/catalog', async () => integrationRegistry.describe());
   const connections = registerConnectionRoutes(app, db, vault, options.developmentMocks === true);
   registerNotificationRoutes(app, notifications);
+  registerInboxRoutes(app, inbox);
   registerPageRoutes(app, createPages(sqlite), auth, audit);
   registerPageWidgetRoutes(app, sqlite);
   registerCustomCssRoutes(app, customCss, auth, audit);

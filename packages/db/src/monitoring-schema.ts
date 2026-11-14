@@ -168,3 +168,28 @@ export const serviceTags = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.serviceId, table.tag] })],
 );
+
+/** Persisted in-app events; references are cleared when their source is removed. */
+export const inboxNotifications = sqliteTable(
+  'inbox_notifications',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    serviceId: integer('service_id').references(() => services.id, { onDelete: 'set null' }),
+    incidentId: integer('incident_id').references(() => serviceIncidents.id, {
+      onDelete: 'set null',
+    }),
+    kind: text('kind').notNull(),
+    serviceName: text('service_name').notNull(),
+    confirmedAt: integer('confirmed_at').notNull(),
+    startedAt: integer('started_at').notNull(),
+    endedAt: integer('ended_at'),
+    reason: text('reason'),
+    httpStatus: integer('http_status'),
+    readAt: integer('read_at'),
+  },
+  (table) => [
+    uniqueIndex('inbox_incident_kind_idx').on(table.incidentId, table.kind),
+    index('inbox_confirmed_idx').on(table.confirmedAt, table.id),
+    index('inbox_unread_idx').on(table.readAt),
+  ],
+);
