@@ -17,7 +17,23 @@ Open <http://localhost:8080> and create the administrator account: a name, an em
 
 The bind address comes from `HOMORA_BIND_IP` (default `127.0.0.1`). Override it, for example `HOMORA_BIND_IP=0.0.0.0`, only when a reverse proxy on the same private network terminates HTTPS — see the note below.
 
-Once release images are published, you can skip the build:
+Once release images are published, you can run Homora without cloning or building it:
+
+```bash
+docker run -d \
+  --name homora \
+  --restart unless-stopped \
+  -p 127.0.0.1:8080:8080 \
+  -v homora-data:/app/data \
+  ghcr.io/jhonatanmedeiros/homora:latest
+```
+
+The image contains the web interface and backend, and keeps the API on container loopback.
+The named volume holds the database and its encryption and session keys. For a host directory,
+ensure it is writable by the container's unprivileged user (UID 1000); do not make it public.
+The optional remote Docker discovery agent is a separate image.
+
+Alternatively, use Compose with the published image:
 
 ```bash
 HOMORA_VERSION=<version> docker compose -f compose.release.yml up -d
@@ -38,7 +54,7 @@ Images are built for `linux/amd64` and `linux/arm64` from base images pinned by 
 
 With a reverse proxy that terminates HTTPS in front of Homora:
 
-1. Keep the Homora port on a private network and publish only the proxy. Do not publish the backend (port 3000); in Compose it is not published.
+1. Keep the Homora port on a private network and publish only the proxy. The backend listens on container loopback (port 3000) and is not published.
 2. Set `HOMORA_ALLOWED_ORIGINS` to the public origin, for example `https://homora.example.home` (a comma-separated list; HTTPS only, plus `localhost`).
 3. Make the proxy forward `Host` and send the real client address in `X-Forwarded-For` (for example `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` in nginx).
 4. Set `HOMORA_TRUSTED_PROXY` to the proxy's address or network, for example `172.18.0.0/16` for a proxy container on the Compose network. This lets the per-client login limit (10 sign-in attempts per client in 15 minutes) tell clients apart. Without it, every client behind your proxy shares one counter, so someone else's failed attempts can lock you out.
@@ -46,7 +62,7 @@ With a reverse proxy that terminates HTTPS in front of Homora:
 
 Runtime logs are JSON lines on the container's output; set `HOMORA_LOG_LEVEL` to change their detail. See [Logs and health checks](logs.md), which also describes `/api/health`, the endpoint the backend container's healthcheck uses.
 
-`HOMORA_TRUST_PROXY=true` (already set in the Compose files) makes the backend read the client address from `X-Forwarded-For`; set it only if every request reaches the backend through a proxy that overwrites that header, as the bundled nginx does.
+The combined image runs the backend with `HOMORA_TRUST_PROXY=true` behind its bundled nginx, which overwrites `X-Forwarded-For`. The backend is bound to container loopback so that other containers cannot bypass this proxy.
 
 ## Upgrade
 
@@ -55,5 +71,7 @@ Runtime logs are JSON lines on the container's output; set `HOMORA_LOG_LEVEL` to
 3. Run `docker compose up -d --build` (or `docker compose -f compose.release.yml pull && docker compose -f compose.release.yml up -d`).
 
 The `homora-data` volume is preserved and database migrations run on startup inside a transaction. There is no automated downgrade: if a migration fails, keep the original volume and restore a backup into a working copy before resuming. Try the upgrade on a copy of your data if the installation holds anything important.
+
+When moving from the older two-container Compose setup, the old `frontend` container can still occupy port 8080. After backing up, use `docker compose up -d --build --remove-orphans` (or add `--remove-orphans` to the release Compose `up` command) to remove that old container. Include any Compose overrides you still use, such as `compose.docker-discovery.yml`, in the command so their services are not treated as orphans. Keep the same Compose project name and volume; do not remove the volume.
 
 The upgrade that shortened the monitoring signature (migration `0019`) rewrites existing history rows but does not shrink the database file by itself; space is reused as the 30-day retention deletes old rows. To reclaim it immediately, stop Homora and run `VACUUM` on a copy or after a backup (`sqlite3 data/homora.sqlite 'VACUUM'`); it needs free disk space about equal to the database size. Homora never runs it automatically.

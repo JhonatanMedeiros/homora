@@ -1989,3 +1989,8 @@ the HTTP and stdio transports were not manually verified.
 
 - `monitor_targets` separates the card link from the configured check URL; the monitoring engine resolves the effective target with the existing precedence and destination policy. Probes have no card link.
 - Monitoring signatures now identify the effective target and check settings. Changing only an unused link or path does not invalidate observations. The new signature format makes earlier raw observations invisible to signature-filtered uptime, latency and incident-history queries; records are retained until their usual retention expires. Hourly rollups remain available because they are independent of signatures. Current observations are refreshed by subsequent checks. Live-service and production-copy migration validation remain pending.
+
+### Single-image distribution
+
+- The default Docker image now runs the web interface and backend together; nginx listens on port 8080 and the backend listens only on container loopback. The optional Docker discovery agent remains a separate image. Compose retains the existing data volume and `backend` service name.
+- Validated locally with a single-image build, first account and service in a browser, container recreation with the same temporary volume, an in-container backup, and refusal of direct API connections on the container network interface. Multi-architecture publication, registry pulls and migration from an existing two-container installation remain pending.

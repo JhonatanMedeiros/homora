@@ -50,6 +50,14 @@ Abra <http://localhost:8080>, crie a conta de administrador (um nome, um e-mail 
 senha de pelo menos 8 caracteres) e clique em **Adicionar primeiro serviço**. Seus dados ficam no volume Docker `homora-data` e a
 porta fica ligada a `127.0.0.1` por padrão.
 
+Após a publicação da primeira imagem, também será possível iniciar o Homora com uma única imagem:
+
+```bash
+docker run -d --name homora --restart unless-stopped \
+  -p 127.0.0.1:8080:8080 -v homora-data:/app/data \
+  ghcr.io/jhonatanmedeiros/homora:latest
+```
+
 > **Não exponha o Homora a uma rede que você não controla.** Até a primeira conta existir, qualquer pessoa que alcance a
 > porta pode criá-la; por isso faça a configuração inicial na própria máquina. Leia
 > [Deployment and upgrades](docs/user-guide/deployment.md) antes de colocar um proxy reverso na frente.

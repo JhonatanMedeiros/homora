@@ -153,7 +153,8 @@ Service (name, URL, icon, group), group (name and position), integration (type, 
 ## Deployment and Open Decisions
 
 React, TypeScript, Node.js, SQLite, and Docker Compose are the active implementation choices.
-Compose uses a persistent volume and publishes to loopback. Upgrade and recovery procedures
+The default Docker image runs nginx and the backend together, with the backend bound to container
+loopback and nginx on port 8080. Compose uses a persistent volume and publishes to loopback. Upgrade and recovery procedures
 have documented validation, but reproducible releases and validated network exposure profiles
 remain open roadmap items. A Proxmox Community Helper script can be considered once stable
 releases exist.

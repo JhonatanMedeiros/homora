@@ -2,31 +2,16 @@ services:
   backend:
     build:
       context: .
-      target: backend
+      target: homora
     environment:
-      HOMORA_WEB_PORT: '8080'
-      # Only the bundled nginx reaches the backend and it overwrites X-Forwarded-For.
-      HOMORA_TRUST_PROXY: 'true'
-      # Public HTTPS origin(s) when a reverse proxy is in front, e.g. https://homora.example.home
       HOMORA_ALLOWED_ORIGINS: ${HOMORA_ALLOWED_ORIGINS:-}
-      # Domain passkeys are bound to when served over HTTPS (default: localhost only).
       HOMORA_PASSKEY_RP_ID: ${HOMORA_PASSKEY_RP_ID:-}
-      # debug | info | warn | error | fatal | silent (JSON lines on stdout; see docs/user-guide/logs.md).
       HOMORA_LOG_LEVEL: ${HOMORA_LOG_LEVEL:-info}
+      HOMORA_TRUSTED_PROXY: ${HOMORA_TRUSTED_PROXY:-127.0.0.1}
+    ports:
+      - '${HOMORA_BIND_IP:-127.0.0.1}:8080:8080'
     volumes:
       - homora-data:/app/data
-    restart: unless-stopped
-  frontend:
-    environment:
-      # Address or network of an HTTPS reverse proxy in front of this container (see docs/user-guide/deployment.md).
-      HOMORA_TRUSTED_PROXY: ${HOMORA_TRUSTED_PROXY:-127.0.0.1}
-    build:
-      context: .
-      target: frontend
-    ports:
-      - '${HOMORA_BIND_IP:-127.0.0.1}:8080:80'
-    depends_on:
-      - backend
     restart: unless-stopped
 volumes:
   homora-data:
