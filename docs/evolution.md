@@ -1943,3 +1943,11 @@ the HTTP and stdio transports were not manually verified.
 - A probe that is down joins "Needs attention" (grouped by cause, with acknowledge and mute, which already worked on monitors); opening it goes to Manage → Probes.
 - Probe outages and recoveries now reach the notification inbox. Migration `0043_inbox_probes` repoints `inbox_notifications.service_id` from `services` to `monitors` (table rebuilt, rows kept; probe deletion still clears the reference). The inbox list flags probe items and the bell opens Manage → Probes for them. Existing inboxes have no probe history.
 - Validation: new tests for the section, the bell routing, the inbox SQL and the migration (data preserved). Not checked in a browser.
+
+### Probes on the Home: follow-ups from a browser review
+
+- The health banner and its pulse now count probes (a probe that is down is a problem, and its pulse window opens Manage → Probes), so the banner no longer contradicts "Needs attention".
+- The status views (All, Offline, Degraded, Maintenance) count probes and filter the Probes section; the top-bar search matches probe names and addresses. Groups, tags and pages still apply to cards only. When probes match, the empty-state message is not shown.
+- Where there is no side rail (below 1,280 px and on phones) the Probes section sits right under "Needs attention" instead of at the bottom; with the rail the list stays in the rail and the duplicate section is gone.
+- The bell says "Probe unavailable" / "Probe recovered" for probe events.
+- Validation: `pnpm check` (1,751 tests) and `pnpm build` passed; checked in Chromium at 1,500, 1,024 and 390 px with synthetic data (see the follow-up message in the PR).

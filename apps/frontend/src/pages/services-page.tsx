@@ -33,7 +33,12 @@ import { useTags } from '@/hooks/use-tags';
 import { useStatusOverview } from '@/hooks/use-status-overview';
 import { activeWindows, useMaintenance } from '@/hooks/use-maintenance';
 import { useNow } from '@/hooks/use-now';
-import type { StatusFilter as StatusFilterValue } from '@/lib/status-filter';
+import {
+  matchesStatusFilter,
+  statusBucket,
+  STATUS_FILTERS,
+  type StatusFilter as StatusFilterValue,
+} from '@/lib/status-filter';
 import { FormError } from '@/components/form-error';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { ServicesSkeleton } from '@/components/skeletons';
@@ -258,20 +263,39 @@ export function ServicesPage({
     });
   }
   // Probes are monitors without a card: they get their own Home section and join "Needs attention".
-  const probeViews = (probeList.probes ?? []).map((probe) => {
+  const probeNeedle = !organizing && !hostView ? query.trim().toLowerCase() : '';
+  const allProbes = (probeList.probes ?? []).map((probe) => {
     const view = describeStatus(statuses[probe.id], false, { checkType: probe.checkType });
     return {
       id: probe.id,
       name: probe.name,
+      address: probe.address,
+      bucket: statusBucket(statuses[probe.id], overview?.settings[probe.id], false),
       state: view.state,
       label: view.label,
       meta: view.meta,
     };
   });
-  const downProbes = probeViews
+  // Search and the status views apply to probes too; groups, tags and pages do not.
+  const probeViews = allProbes.filter(
+    (probe) =>
+      (!probeNeedle ||
+        probe.name.toLowerCase().includes(probeNeedle) ||
+        probe.address.toLowerCase().includes(probeNeedle)) &&
+      matchesStatusFilter(!organizing && !hostView ? statusFilter : 'all', probe.bucket),
+  );
+  const countsWithProbes = Object.fromEntries(
+    STATUS_FILTERS.map((filter) => [
+      filter,
+      statusCounts[filter] +
+        allProbes.filter((probe) => matchesStatusFilter(filter, probe.bucket)).length,
+    ]),
+  ) as typeof statusCounts;
+  const downProbes = allProbes
     .filter((probe) => probe.state === 'unavailable')
     .map((probe) => ({ id: probe.id, name: probe.name }) as Service);
   const probeIds = new Set(downProbes.map((probe) => probe.id));
+  const probeStatusItems = allProbes.map((probe) => ({ id: probe.id, name: probe.name }));
   const downNow = [...services.filter(isDown), ...downProbes];
   const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
   async function acknowledge(members: Service[], minutes?: number) {
@@ -353,21 +377,25 @@ export function ServicesPage({
         compact={mobile}
         banner={
           <StatusBanner
-            services={services}
+            services={[...services, ...probeStatusItems]}
             statuses={statuses}
             blockedIds={blockedIds}
             overview={overview}
             maintenance={maintenance.windows}
             uptime={uptime}
             range={uptimeRange}
-            onOpenService={(id) => setDetailsId(id)}
+            onOpenService={(id) =>
+              allProbes.some((probe) => probe.id === id)
+                ? navigate('/manage/probes')
+                : setDetailsId(id)
+            }
           />
         }
         stateFilter={
           !organizing && !hostView && !railed && services.length > 0 ? (
             <StatusFilter
               selected={statusFilter}
-              counts={statusCounts}
+              counts={countsWithProbes}
               onSelect={setStatusFilter}
             />
           ) : undefined
@@ -416,6 +444,9 @@ export function ServicesPage({
           onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
           onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
         />
+      )}
+      {!railed && !organizing && !hostView && (
+        <HomeProbes probes={probeViews} onOpen={() => navigate('/manage/probes')} />
       )}
       <FormError>{groupError}</FormError>
       {typeof formRoute === 'number' &&
@@ -509,7 +540,7 @@ export function ServicesPage({
             status={
               hostView
                 ? undefined
-                : { selected: statusFilter, counts: statusCounts, onSelect: setStatusFilter }
+                : { selected: statusFilter, counts: countsWithProbes, onSelect: setStatusFilter }
             }
           />
         </div>
@@ -701,7 +732,8 @@ export function ServicesPage({
         !data.loadError &&
         !groups.length &&
         !hostView &&
-        !(paged && categories.length === 0) && (
+        !(paged && categories.length === 0) &&
+        !(services.length > 0 && probeViews.length > 0) && (
           <ServicesEmpty
             hasServices={services.length > 0}
             onAdd={onAddService}
@@ -719,9 +751,6 @@ export function ServicesPage({
             }
           />
         )}
-      {!organizing && !hostView && (
-        <HomeProbes probes={probeViews} onOpen={() => navigate('/manage/probes')} />
-      )}
     </section>
   );
   if (!railed) return body;
@@ -730,7 +759,7 @@ export function ServicesPage({
       <aside className="sticky top-4 self-start">
         <HomeRail
           statusFilter={statusFilter}
-          counts={statusCounts}
+          counts={countsWithProbes}
           onStatusFilter={setStatusFilter}
           groups={categories
             .filter((name): name is string => typeof name === 'string')
@@ -745,7 +774,7 @@ export function ServicesPage({
             active: favoritesOnly,
             onToggle: () => setFavoritesOnly(!favoritesOnly),
           }}
-          probes={{ items: probeViews, onOpen: () => navigate('/manage/probes') }}
+          probes={{ items: allProbes, onOpen: () => navigate('/manage/probes') }}
           widgetRail={widgetRail}
           onToggleWidgetRail={() => setWidgetRail(!widgetRail)}
         />
