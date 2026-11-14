@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { serviceProposalSchema } from './input-schemas.js';
-import type { createServiceConfiguration } from './service-configuration.js';
+import { serviceProposalSchema } from '../input-schemas.js';
+import type { createServiceConfiguration } from '../service-configuration.js';
 import {
   applyManagedChange,
   isIndependentChange,
