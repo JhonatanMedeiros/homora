@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import type { Service } from '@homora/shared';
+import type { MonitoringService } from './service-source.js';
+import { resolveCheckTarget } from './target.js';
 
 /**
  * Identifies the monitoring-relevant configuration of a service so results from an old
@@ -10,7 +11,7 @@ import type { Service } from '@homora/shared';
 export const SIGNATURE_LENGTH = 16;
 export function serviceSignature(
   service: Pick<
-    Service,
+    MonitoringService,
     | 'url'
     | 'allowPrivate'
     | 'checkInsecure'
@@ -23,18 +24,22 @@ export function serviceSignature(
   >,
   caHash?: string,
 ) {
+  // Invalid stored targets still get a stable signature; the probe reports the error per monitor.
+  let target: string;
+  try {
+    target = resolveCheckTarget(service);
+  } catch {
+    target = JSON.stringify([service.url, service.checkUrl, service.checkPath]);
+  }
   return createHash('sha256')
     .update(
       JSON.stringify([
-        service.url,
+        target,
         Boolean(service.allowPrivate),
         service.checkType ?? 'http',
         service.checkInterval ?? null,
         service.expectedStatus ?? null,
-        service.checkPath ?? null,
-        // Appended only when set, so services without it keep the signature (and history) they had.
         ...(service.checkMatch ? [service.checkMatch] : []),
-        ...(service.checkUrl ? [{ checkUrl: service.checkUrl }] : []),
         ...(service.checkInsecure ? [{ checkInsecure: true }] : []),
         ...(caHash &&
         service.allowPrivate &&

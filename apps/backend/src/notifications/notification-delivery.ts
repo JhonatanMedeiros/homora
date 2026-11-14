@@ -145,7 +145,10 @@ export function createNotificationDelivery(
     }
   }
 
-  function publish(events: NotificationEvent[], services: Service[]) {
+  function publish(
+    events: NotificationEvent[],
+    services: (Omit<Service, 'url'> & { url: string | null })[],
+  ) {
     const channels = db
       .prepare('SELECT id FROM notification_channels WHERE enabled=1 ORDER BY id')
       .all() as { id: number }[];

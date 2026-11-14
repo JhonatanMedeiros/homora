@@ -29,7 +29,10 @@ export function createNotifications(db: DatabaseSync, vault?: Vault, log: Log = 
     save: channels.save,
     remove: channels.remove,
     test: delivery.test,
-    publish(services: Service[], states: Record<number, ServiceStatus>) {
+    publish(
+      services: (Omit<Service, 'url'> & { url: string | null })[],
+      states: Record<number, ServiceStatus>,
+    ) {
       if (!services.length) return;
       const saved = (
         db.prepare('SELECT service_id,state FROM notification_states').all() as {

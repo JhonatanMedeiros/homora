@@ -21,7 +21,7 @@ const database = () => {
       check_match text
     );
     CREATE VIEW monitor_targets AS
-      SELECT m.id AS id, m.name AS name, COALESCE(s.url, m.check_url) AS url,
+      SELECT m.id AS id, m.name AS name, s.url AS link_url,
         m.allow_private AS allow_private, m.check_insecure AS check_insecure,
         m.check_type AS check_type, m.check_interval AS check_interval,
         m.expected_status AS expected_status, m.check_path AS check_path,
@@ -59,7 +59,8 @@ describe('monitoring source', () => {
     const [probe] = createMonitoringSource(sqlite).list();
 
     expect(probe.allowPrivate).toBe(false);
-    expect(probe.url).toBe('http://1.1.1.1/');
+    expect(probe.url).toBeNull();
+    expect(probe.checkUrl).toBe('http://1.1.1.1/');
   });
 
   it('coerces check_insecure the same way', () => {

@@ -1960,3 +1960,8 @@ the HTTP and stdio transports were not manually verified.
 - Docs: renumbered the duplicated ADRs (`0009-appearance-and-pages` is now 0023, `0011-incidents-and-alert-thresholds` is now 0024; the integration ADRs 0009 and 0011 keep their numbers because `AGENTS.md` and many documents cite them). `docs/architecture.md` dropped the per-component frontend inventory in favour of a module map and now shows monitoring and notifications in the diagram.
 - Not done: moving the monitor scheduler out of the API process. It was conditional on monitoring volume growing, and `monitoring/index.ts` already isolates it.
 - Validation: `pnpm check` (1,765 application tests, 31 script tests; 1,761 before) and `pnpm build` passed. No browser or live-service check.
+
+### Explicit monitoring targets (issue #224)
+
+- `monitor_targets` separates the card link from the configured check URL; the monitoring engine resolves the effective target with the existing precedence and destination policy. Probes have no card link.
+- Monitoring signatures now identify the effective target and check settings. Changing only an unused link or path does not invalidate observations. The new signature format makes earlier raw observations invisible to signature-filtered uptime, latency and incident-history queries; records are retained until their usual retention expires. Hourly rollups remain available because they are independent of signatures. Current observations are refreshed by subsequent checks. Live-service and production-copy migration validation remain pending.

@@ -595,3 +595,29 @@ describe('monitor logging', () => {
     expect(monitor.health().lastCycleAt).toBe(42);
   });
 });
+
+it('preserves a measurement when only an unused card link changes', async () => {
+  let current = { ...service(1, 'https://one.example'), checkUrl: 'http://192.168.1.10/health' };
+  const check = vi.fn(async () => ok);
+  const monitor = createServiceMonitor(async () => [current], check);
+  await monitor.run();
+  const previous = monitor.snapshot()[1];
+  current = { ...current, url: 'https://two.example' };
+  await monitor.run();
+  expect(monitor.snapshot()[1]).toEqual(previous);
+  expect(check).toHaveBeenCalledTimes(1);
+});
+
+it('isolates a target missing both a link and check URL', async () => {
+  const check = vi.fn(async () => ok);
+  const monitor = createServiceMonitor(
+    async () => [
+      { ...service(1, 'https://one.example'), url: null },
+      service(2, 'https://two.example'),
+    ],
+    check,
+  );
+  await monitor.run();
+  expect(monitor.snapshot()[1].status).toBe('unavailable');
+  expect(monitor.snapshot()[2].status).toBe('available');
+});
