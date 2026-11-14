@@ -3,18 +3,14 @@ import { useState } from 'react';
 import { Check, ChevronDown, RefreshCw, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Kbd } from '@/components/ui/kbd';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import {
-  formatDate,
-  isDestructive,
-  parseDiff,
-  proposalSummary,
-  STATES,
-  type Proposal,
-} from './agent-model';
+import { formatDate, parseDiff, proposalSummary, STATES, type Proposal } from './agent-model';
 import { ApproveButton } from './approve-button';
+import { diffRisk, needsHold } from './proposal-risk';
+import { confirmCopy, DETAIL_FOOTER_CLASS, validity } from './review-model';
+import { RiskLabel } from './risk-label';
 import { ProposalChange } from './proposal-change';
 import { changedFieldLabels } from './proposal-diff';
 import { ManagedProposalChange } from './managed-proposal-change';
@@ -42,22 +38,7 @@ type Props = {
   onRecreate?: () => void;
   /** Re-bases a stale proposal on the current configuration, keeping what was asked. */
   onRefresh?: () => void;
-  /**
-   * Whether the changes are shown at first. Open for a short queue and always for identity and
-   * connection proposals, so approving never happens without the values in front of you.
-   */
-  defaultOpen?: boolean;
 };
-
-/** The remaining validity of a pending proposal, or its date once it is decided. */
-function validity(proposal: Proposal, now: number | undefined, pending: boolean) {
-  if (!pending) return formatDate(proposal.expiresAt);
-  if (now === undefined) return t('proposal.expiresAt', { date: formatDate(proposal.expiresAt) });
-  const seconds = Math.max(0, Math.ceil((proposal.expiresAt - now) / 1000));
-  return seconds < 60
-    ? t('proposal.expiresSeconds', { count: seconds })
-    : t('proposal.expiresMinutes', { count: Math.ceil(seconds / 60) });
-}
 
 /** What the proposal changes, in full: the body of a proposal card or of one item of a batch. */
 export function ProposalBody({ proposal, current }: { proposal: Proposal; current?: Service }) {
@@ -114,7 +95,10 @@ export function ChangesToggle({ name, open }: { name: string; open: boolean }) {
   );
 }
 
-/** An agent proposal: what it changes, who suggested it, how long it is valid, and the decision. */
+/**
+ * An agent proposal in full: its risk, what it changes, who suggested it, how long it is valid,
+ * and the decision. The changes are always shown, so nothing is approved without being seen.
+ */
 export function ProposalCard({
   proposal,
   agentName,
@@ -126,120 +110,125 @@ export function ProposalCard({
   now,
   onRecreate,
   onRefresh,
-  defaultOpen = true,
 }: Props) {
   const diff = parseDiff(proposal.diff);
   const pending = proposal.state === 'pending';
   const summary = proposalSummary(diff, current);
-  // Identity and connection proposals widen what an agent can do: never start them collapsed.
-  const [open, setOpen] = useState(
-    defaultOpen || diff?.kind === 'agent' || diff?.kind === 'managed',
-  );
+  const risk = diffRisk(diff);
+  const hold = needsHold(risk);
   return (
-    <li>
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <Card className={cn(pending && 'border-primary')}>
-          <CardHeader className="grid-cols-[1fr_auto]">
-            <CardTitle className="font-label text-base">{summary}</CardTitle>
+    <article aria-label={summary} className="flex min-w-0 flex-col">
+      <header className="flex flex-col gap-1.5 border-b px-4 py-4 lg:px-6">
+        <div className="flex items-center justify-between gap-2">
+          <RiskLabel risk={risk} />
+          {!pending && (
             <Badge
-              className="row-span-2 self-start"
               variant={badgeVariant[proposal.state as keyof typeof badgeVariant] ?? 'secondary'}
             >
               {STATES[proposal.state] ? t(STATES[proposal.state]) : proposal.state}
             </Badge>
-            <p className="text-sm text-muted-foreground">
-              {agentName} · {validity(proposal, now, pending)}
-              {pending && proposal.refreshedAt
-                ? ` · ${t('proposal.refreshed', { date: formatDate(proposal.refreshedAt) })}`
-                : ''}
+          )}
+        </div>
+        <h3 className="font-label text-xl font-semibold">{summary}</h3>
+        <p className="text-sm text-muted-foreground">
+          {agentName} · {validity(proposal, now, pending)}
+          {pending && proposal.refreshedAt
+            ? ` · ${t('proposal.refreshed', { date: formatDate(proposal.refreshedAt) })}`
+            : ''}
+        </p>
+        {proposal.batchId && (
+          <p className="text-sm text-muted-foreground">
+            {t('proposal.batch', { id: proposal.batchId })}
+          </p>
+        )}
+      </header>
+      <div className="flex min-w-0 flex-col gap-4 px-4 py-4 lg:px-6">
+        <ProposalBody proposal={proposal} current={current} />
+      </div>
+      {!hideReview && (pending || proposal.state === 'stale') && (
+        <footer className={DETAIL_FOOTER_CLASS}>
+          {!pending ? (
+            <p className="mr-auto text-sm text-muted-foreground max-sm:basis-full">
+              {proposal.staleReason
+                ? t(`proposal.stale.${proposal.staleReason}`)
+                : t('proposal.staleHint')}
             </p>
-            {proposal.batchId && (
-              <p className="text-sm text-muted-foreground">
-                {t('proposal.batch', { id: proposal.batchId })}
+          ) : (
+            hold && (
+              <p className="mr-auto text-xs text-muted-foreground max-sm:basis-full">
+                {t('proposal.holdHint')}
               </p>
-            )}
-            <div className="col-span-2 flex flex-wrap items-center justify-between gap-2">
-              <ChangedFields proposal={proposal} current={current} />
-              <ChangesToggle name={summary} open={open} />
-            </div>
-          </CardHeader>
-          <CollapsibleContent>
-            <CardContent>
-              <ProposalBody proposal={proposal} current={current} />
-            </CardContent>
-          </CollapsibleContent>
-          {!hideReview && (pending || proposal.state === 'stale') && (
-            <CardFooter className="justify-end gap-2">
-              {!pending && (
-                <p className="mr-auto text-sm text-muted-foreground">
-                  {proposal.staleReason
-                    ? t(`proposal.stale.${proposal.staleReason}`)
-                    : t('proposal.staleHint')}
-                </p>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => onReview(false)}
-              >
-                <X data-icon="inline-start" />
-                {t(proposal.staleReason === 'target-gone' ? 'proposal.retire' : 'proposal.reject')}
-              </Button>
-              {!pending && onRefresh && proposal.staleReason === 'config-changed' && (
-                <ApproveButton
-                  confirm={isDestructive(diff)}
-                  title={t('proposal.refreshConfirmTitle')}
-                  actionLabel={t('proposal.refresh')}
-                  variant="outline"
-                  description={t('proposal.refreshConfirmBody', { name: summary })}
-                  disabled={busy}
-                  onApprove={onRefresh}
-                >
-                  <RefreshCw data-icon="inline-start" />
-                  {t('proposal.refresh')}
-                </ApproveButton>
-              )}
-              {/* Always present: the buttons keep their places when a proposal turns stale. */}
-              <ApproveButton
-                confirm={isDestructive(diff)}
-                description={t('proposal.confirmBody', { name: summary })}
-                disabled={busy || !pending}
-                onApprove={() => onReview(true)}
-              >
-                <Check data-icon="inline-start" />
-                {t(
+            )
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="max-sm:flex-1"
+            disabled={busy}
+            onClick={() => onReview(false)}
+          >
+            <X data-icon="inline-start" />
+            {t(proposal.staleReason === 'target-gone' ? 'proposal.retire' : 'proposal.reject')}
+            <Kbd aria-hidden="true" className="max-lg:hidden">
+              R
+            </Kbd>
+          </Button>
+          {!pending && onRefresh && proposal.staleReason === 'config-changed' && (
+            <ApproveButton
+              confirm={risk === 'destructive'}
+              title={t('proposal.refreshConfirmTitle')}
+              actionLabel={t('proposal.refresh')}
+              variant="outline"
+              description={t('proposal.refreshConfirmBody', { name: summary })}
+              disabled={busy}
+              onApprove={onRefresh}
+            >
+              <RefreshCw data-icon="inline-start" />
+              {t('proposal.refresh')}
+            </ApproveButton>
+          )}
+          {/* Always present: the buttons keep their places when a proposal turns stale. */}
+          <ApproveButton
+            confirm={hold}
+            {...confirmCopy(risk, summary)}
+            variant={risk === 'destructive' ? 'destructive' : 'default'}
+            disabled={busy || !pending}
+            shortcut="a"
+            onApprove={() => onReview(true)}
+          >
+            <Check data-icon="inline-start" />
+            {hold
+              ? t('proposal.holdApprove')
+              : t(
                   diff?.change?.kind === 'connection-setup'
                     ? 'proposal.managed.approveSetup'
                     : 'proposal.approve',
                 )}
-              </ApproveButton>
-            </CardFooter>
+          </ApproveButton>
+        </footer>
+      )}
+      {proposal.state === 'expired' && (
+        <footer className="flex items-center justify-between gap-2 border-t px-4 py-3 lg:px-6">
+          <p>{t('proposal.expiredHint')}</p>
+          {onRecreate && (
+            <Button type="button" variant="outline" onClick={onRecreate}>
+              {t(proposal.batchId ? 'proposal.recreateBatch' : 'proposal.recreate')}
+            </Button>
           )}
-          {proposal.state === 'expired' && (
-            <CardFooter className="justify-between gap-2">
-              <p>{t('proposal.expiredHint')}</p>
-              {onRecreate && (
-                <Button type="button" variant="outline" onClick={onRecreate}>
-                  {t(proposal.batchId ? 'proposal.recreateBatch' : 'proposal.recreate')}
-                </Button>
-              )}
-            </CardFooter>
-          )}
-          {proposal.state === 'approved' && diff?.change?.kind === 'connection-setup' && (
-            <CardFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onSetupConnection(diff.change?.change)}
-              >
-                {t('proposal.managed.openSetup')}
-              </Button>
-            </CardFooter>
-          )}
-        </Card>
-      </Collapsible>
-    </li>
+        </footer>
+      )}
+      {proposal.state === 'approved' && diff?.change?.kind === 'connection-setup' && (
+        <footer className="border-t px-4 py-3 lg:px-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onSetupConnection(diff.change?.change)}
+          >
+            {t('proposal.managed.openSetup')}
+          </Button>
+        </footer>
+      )}
+    </article>
   );
 }
 
@@ -265,6 +254,7 @@ export function BatchItem({
       <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-1.5">
+            <RiskLabel risk={diffRisk(diff)} />
             <p className="font-label font-medium">{summary}</p>
             <p className="text-sm text-muted-foreground">{agentName}</p>
             <ChangedFields proposal={proposal} current={current} />

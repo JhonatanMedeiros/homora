@@ -21,6 +21,14 @@ external infrastructure.
 
 New to this? [A ten-minute walkthrough](../agent-demo.md) shows scopes, proposals, review, audit, revocation and a denied action with synthetic data, and says which parts are mocked. What each tool does is in the [capability inventory](../agent-capabilities.md). In short: agents read what their scopes allow and propose changes; you approve each one; they never receive credentials and cannot write to external infrastructure.
 
+### Reviewing the queue
+
+Waiting proposals are a queue on the left and the selected one in full on the right (on a phone, one at a time with previous and next, and the queue in a sheet). Every proposal carries a risk: **Low risk** (ordinary card edits), **Needs attention** (private-network monitoring, skipped TLS validation, maintenance, widgets, host links), **Access** (agent identities and connection setup suggestions) and **Destructive** (removals and revocations). Changed fields show the old value struck through and the new one highlighted; unchanged fields are folded into a count. After a decision the next proposal opens.
+
+- **Hold to approve:** access and destructive changes are approved by holding the button for about a second. Activating it without a hold (for example with a screen reader) asks in a dialog instead.
+- **Approve low risk:** when two or more routine proposals wait, one button approves them in order after a confirmation. A failure stops the rest. Batches and riskier proposals are never included.
+- **Keyboard:** `J` and `K` move through the queue, `A` approves (hold it for risky changes) and `R` rejects. The shortcuts are off while typing or while a dialog is open.
+
 The Agents page shows how long each proposal has left. The review period defaults to 15 minutes and can be changed there to 1–120 minutes for new proposals; existing deadlines do not change. Expired proposals remain visible and an administrator can recreate them for another review. Expired batches are recreated together. Re-creation validates the original diff against the current configuration and may fail when it no longer matches; it never applies a change.
 
 Homora supports local stdio and stateless Streamable HTTP. Both use the same agent tokens, scopes and human approval rules. Create an agent on **Agents**, then choose the connection method under **Connect**.

@@ -100,16 +100,20 @@ it('applies each approval to the card that was on screen, as the list changes', 
     { id: 'p3', name: 'Tres' },
   ]);
   await openProposals();
-  await screen.findByText('Adicionar “Um”');
-  // The cards stay in the order they were created, whatever was decided before.
-  const titles = () => screen.getAllByText(/^Adicionar “/).map((node) => node.textContent);
+  await screen.findAllByText('Adicionar “Um”');
+  // The queue keeps the order the proposals were created, whatever was decided before.
+  const queue = screen.getByRole('list', { name: 'Propostas aguardando revisão' });
+  const titles = () =>
+    within(queue)
+      .getAllByRole('button')
+      .map((node) => /Adicionar “\w+”/.exec(node.textContent ?? '')?.[0]);
   expect(titles()).toEqual(['Adicionar “Um”', 'Adicionar “Dois”', 'Adicionar “Tres”']);
   fireEvent.click(approveButtons()[0]);
-  await waitFor(() => expect(screen.queryByText('Adicionar “Um”')).toBeNull());
+  await waitFor(() => expect(screen.queryAllByText('Adicionar “Um”')).toHaveLength(0));
   fireEvent.click(approveButtons()[0]);
-  await waitFor(() => expect(screen.queryByText('Adicionar “Dois”')).toBeNull());
+  await waitFor(() => expect(screen.queryAllByText('Adicionar “Dois”')).toHaveLength(0));
   fireEvent.click(approveButtons()[0]);
-  await waitFor(() => expect(screen.queryByText('Adicionar “Tres”')).toBeNull());
+  await waitFor(() => expect(screen.queryAllByText('Adicionar “Tres”')).toHaveLength(0));
   expect(calls).toEqual([
     'review:p1:{"approve":true}',
     'review:p2:{"approve":true}',
@@ -123,26 +127,25 @@ it('sends one decision for a double click and locks the other cards meanwhile', 
     { id: 'p2', name: 'Dois' },
   ]);
   await openProposals();
-  await screen.findByText('Adicionar “Um”');
+  await screen.findAllByText('Adicionar “Um”');
   gate.hold = true;
   const first = approveButtons()[0];
   fireEvent.click(first);
   fireEvent.click(first);
-  // The neighbour that would move under the cursor cannot be decided while one is in flight.
-  fireEvent.click(approveButtons()[1]);
-  fireEvent.click(screen.getAllByRole('button', { name: /Rejeitar/ })[1]);
+  // Nothing else can be decided while one decision is in flight.
+  fireEvent.click(screen.getByRole('button', { name: /Rejeitar/ }));
   await waitFor(() => expect(calls).toHaveLength(1));
   expect(approveButtons().every((button) => (button as HTMLButtonElement).disabled)).toBe(true);
   gate.hold = false;
   gate.release?.();
-  await waitFor(() => expect(screen.queryByText('Adicionar “Um”')).toBeNull());
+  await waitFor(() => expect(screen.queryAllByText('Adicionar “Um”')).toHaveLength(0));
   expect(calls).toEqual(['review:p1:{"approve":true}']);
 });
 
 it('keeps the approve button in place, disabled, when a proposal turns stale', async () => {
   setup([{ id: 'p1', name: 'Um', state: 'stale' }]);
   await openProposals();
-  await screen.findByText('Adicionar “Um”');
+  await screen.findAllByText('Adicionar “Um”');
   const [approve] = approveButtons() as HTMLButtonElement[];
   expect(approve.disabled).toBe(true);
   const reject = screen.getByRole('button', { name: /Rejeitar/ });
@@ -150,10 +153,10 @@ it('keeps the approve button in place, disabled, when a proposal turns stale', a
   expect(screen.getByText(/Desatualizada: a configuração mudou/)).toBeTruthy();
 });
 
-it('asks before applying a destructive proposal', async () => {
+it('asks before applying a destructive proposal when it is not held', async () => {
   const { calls } = setup([{ id: 'p1', name: 'Um', diff: { op: 'delete', id: 7 } }]);
   await openProposals();
-  fireEvent.click(await screen.findByRole('button', { name: /Aprovar e aplicar/ }));
+  fireEvent.click(await screen.findByRole('button', { name: /Segure para aprovar/ }));
   expect(calls).toEqual([]);
   const dialog = await screen.findByRole('alertdialog');
   fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, aplicar' }));
@@ -163,11 +166,11 @@ it('asks before applying a destructive proposal', async () => {
 it('undoes a rejection from the toast', async () => {
   const { calls } = setup([{ id: 'p1', name: 'Um' }]);
   await openProposals();
-  await screen.findByText('Adicionar “Um”');
+  await screen.findAllByText('Adicionar “Um”');
   fireEvent.click(screen.getByRole('button', { name: /Rejeitar/ }));
   fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }));
   await waitFor(() => expect(calls).toEqual(['review:p1:{"approve":false}', 'undo:p1']));
-  expect(await screen.findByText('Adicionar “Um”')).toBeTruthy();
+  expect(await screen.findAllByText('Adicionar “Um”')).toBeTruthy();
   expect(approveButtons()).toHaveLength(1);
 });
 
@@ -176,7 +179,7 @@ it('explains why a stale proposal is blocked and refreshes it to approve', async
     { id: 'p1', name: 'Um', state: 'stale', staleReason: 'config-changed' },
   ]);
   await openProposals();
-  await screen.findByText('Adicionar “Um”');
+  await screen.findAllByText('Adicionar “Um”');
   expect(screen.getByText(/A configuração mudou depois da proposta/)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /Atualizar proposta/ }));
   await waitFor(() => expect(calls).toEqual(['refresh:p1']));

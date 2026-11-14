@@ -157,19 +157,20 @@ export function useAgentWorkspace(
     await load();
   }
 
-  async function review(id: string, approve: boolean, batch = false) {
-    if (reviewLock.current) return;
+  /** Decides a proposal; false when it could not be decided. `quiet` leaves the success toast to the caller. */
+  async function review(id: string, approve: boolean, batch = false, quiet = false) {
+    if (reviewLock.current) return false;
     reviewLock.current = true;
     setReviewing(id);
     try {
-      await decide(id, approve, batch);
+      return await decide(id, approve, batch, quiet);
     } finally {
       reviewLock.current = false;
       setReviewing(null);
     }
   }
 
-  async function decide(id: string, approve: boolean, batch: boolean) {
+  async function decide(id: string, approve: boolean, batch: boolean, quiet: boolean) {
     const response = await fetch(
       batch ? `/api/proposal-batches/${id}/review` : `/api/proposals/${id}/review`,
       {
@@ -195,14 +196,16 @@ export function useAgentWorkspace(
         ? t(diff?.change?.kind === 'connection-setup' ? 'agents.approvedSetup' : 'agents.approved')
         : t('agents.rejected');
       // An approval already changed the configuration; a rejection can be taken back for a moment.
-      if (approve) toast.success(feedback);
-      else
+      if (approve) {
+        if (!quiet) toast.success(feedback);
+      } else
         toast.success(feedback, {
           duration: 8000,
           action: { label: t('proposal.undo'), onClick: () => void undo(id, batch) },
         });
       await load();
       await onApplied();
+      return true;
     } else {
       const body = (await response?.json().catch(() => null)) as { code?: string } | null;
       const unexpected = !response || response.status >= 500;
@@ -220,6 +223,7 @@ export function useAgentWorkspace(
       setMessage(feedback);
       toast.error(feedback);
       await load();
+      return false;
     }
   }
 

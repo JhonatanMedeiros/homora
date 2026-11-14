@@ -10,17 +10,9 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { RowListSkeleton } from '@/components/skeletons';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { t } from '@/i18n';
-import { isDestructive, parseDiff, type Proposal } from './agent-model';
-import { ApproveButton } from './approve-button';
+import type { Proposal, Service } from './agent-model';
+import { ReviewInbox } from './review-inbox';
 
 export function ProposalWorkspace({
   proposalsLoaded,
@@ -28,7 +20,11 @@ export function ProposalWorkspace({
   expired,
   history,
   reviewing,
+  now,
+  agentName,
+  serviceFor,
   onReview,
+  onApproveMany,
   renderProposal,
   renderBatchItem,
   renderRow,
@@ -39,14 +35,15 @@ export function ProposalWorkspace({
   history: Proposal[];
   /** The id being decided, if any: every decision button waits for it. */
   reviewing?: string | null;
+  now?: number;
+  agentName: (id: string) => string;
+  serviceFor: (proposal: Proposal) => Service | undefined;
   onReview: (id: string, approve: boolean, batch?: boolean) => void;
-  /** `open` tells whether the changes start visible: a short queue is shown in full. */
-  renderProposal: (proposal: Proposal, open: boolean) => ReactNode;
+  onApproveMany: (ids: string[]) => void;
+  renderProposal: (proposal: Proposal) => ReactNode;
   renderBatchItem: (proposal: Proposal, open: boolean) => ReactNode;
   renderRow: (proposal: Proposal) => ReactNode;
 }) {
-  // With a short queue every change is on screen, so nothing is approved without being seen.
-  const open = pending.length <= 3;
   return (
     <div className="flex flex-col gap-3">
       {!proposalsLoaded ? (
@@ -62,52 +59,17 @@ export function ProposalWorkspace({
           </EmptyHeader>
         </Empty>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {pending.map((proposal, index) => {
-            if (!proposal.batchId) return renderProposal(proposal, open);
-            if (pending.findIndex((item) => item.batchId === proposal.batchId) !== index)
-              return null;
-            const batch = pending.filter((item) => item.batchId === proposal.batchId);
-            const id = proposal.batchId;
-            return (
-              <li key={id}>
-                <Card className="border-primary">
-                  <CardHeader>
-                    <CardTitle className="font-label text-base">
-                      {t('proposal.batchTitle', { count: batch.length })}
-                    </CardTitle>
-                    <CardDescription>{t('proposal.batchHint')}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="flex flex-col divide-y">
-                      {batch.map((item) => renderBatchItem(item, open))}
-                    </ul>
-                  </CardContent>
-                  <CardFooter className="justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={Boolean(reviewing)}
-                      onClick={() => onReview(id, false, true)}
-                    >
-                      {t('proposal.batchReject')}
-                    </Button>
-                    <ApproveButton
-                      confirm={batch.some((item) => isDestructive(parseDiff(item.diff)))}
-                      description={t('proposal.confirmBatchBody')}
-                      disabled={
-                        Boolean(reviewing) || !batch.every((item) => item.state === 'pending')
-                      }
-                      onApprove={() => onReview(id, true, true)}
-                    >
-                      {t('proposal.batchApprove')} ({batch.length})
-                    </ApproveButton>
-                  </CardFooter>
-                </Card>
-              </li>
-            );
-          })}
-        </ul>
+        <ReviewInbox
+          pending={pending}
+          reviewing={reviewing}
+          now={now}
+          agentName={agentName}
+          serviceFor={serviceFor}
+          onReview={onReview}
+          onApproveMany={onApproveMany}
+          renderProposal={renderProposal}
+          renderBatchItem={renderBatchItem}
+        />
       )}
       {expired.length > 0 && (
         <Collapsible className="flex flex-col gap-3">

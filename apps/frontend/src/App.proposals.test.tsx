@@ -50,7 +50,7 @@ it('shows pending proposals in clear language and approves with a single click',
       name: 'Agentes',
     }),
   );
-  expect(await screen.findByText('Adicionar “Immich”')).toBeTruthy();
+  expect(await screen.findByRole('heading', { name: 'Adicionar “Immich”' })).toBeTruthy();
   expect(screen.getAllByText('Aguardando você').length).toBeGreaterThan(0);
   expect(screen.getByRole('tab', { name: /^Propostas\s*1$/ })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /Aprovar e aplicar/ }));
@@ -151,8 +151,11 @@ it('shows before and after of an update proposal', async () => {
       name: 'Agentes',
     }),
   );
-  expect(await screen.findByText('Alterar “Jellyfin”')).toBeTruthy();
-  expect(screen.getByText('http://antigo.local:8096/')).toBeTruthy();
-  expect(screen.getByText('http://novo.local:8096/')).toBeTruthy();
+  expect(await screen.findByRole('heading', { name: 'Alterar “Jellyfin”' })).toBeTruthy();
+  // The part that changed is emphasized, so a line is matched by its whole text.
+  const line = (text: string) =>
+    screen.getByText((_, node) => node?.tagName === 'SPAN' && node.textContent === text);
+  expect(line('−Antes:http://antigo.local:8096/')).toBeTruthy();
+  expect(line('+Depois:http://novo.local:8096/')).toBeTruthy();
   expect(screen.getByText('2 campos continuam iguais.')).toBeTruthy();
 });
