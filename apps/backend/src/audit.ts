@@ -20,6 +20,8 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'public-status-update',
     'service-public',
     'service-defaults-update',
+    'monitoring-tls-insecure',
+    'monitoring-ca-update',
     'service-host-link',
     'service-host-unlink',
     'service-pin',

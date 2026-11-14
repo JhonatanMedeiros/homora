@@ -10,10 +10,11 @@ import {
 
 export type ServiceRow = Omit<
   Service,
-  'position' | 'allowPrivate' | 'checkType' | 'checkInterval'
+  'position' | 'allowPrivate' | 'checkInsecure' | 'checkType' | 'checkInterval'
 > & {
   position: number;
   allowPrivate: number | boolean;
+  checkInsecure: number | boolean;
   checkType: CheckType;
   checkInterval: number | null;
 };
@@ -62,6 +63,7 @@ export function createServiceCardConfiguration({
   function applyProposal(change: ServiceChange) {
     if (change.op === 'create') {
       const service = validateService(change.service);
+      if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
       ensureGroup(service.category, null, pageForNewService(service.category, change.page));
       const created = sqlite
         .prepare(
@@ -87,7 +89,9 @@ export function createServiceCardConfiguration({
       bumpVersion();
       const row = selectService(Number(created.lastInsertRowid));
       if (!row) throw new Error('Created service could not be loaded');
-      return row;
+      if (service.checkInsecure)
+        sqlite.prepare('UPDATE services SET check_insecure=1 WHERE id=?').run(row.id);
+      return selectService(row.id);
     }
     if (change.op === 'delete') {
       const result = sqlite.prepare('DELETE FROM services WHERE id=?').run(change.id);
@@ -98,6 +102,8 @@ export function createServiceCardConfiguration({
     const current = selectService(change.id);
     if (!current) throw new Error('Service not found');
     const service = validateService(change.service);
+    const insecure = service.checkInsecure ?? Boolean(current.checkInsecure);
+    if (insecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
     ensureGroup(service.category);
     const position = change.service.position ?? current.position;
     sqlite
@@ -124,6 +130,9 @@ export function createServiceCardConfiguration({
         service.alias === undefined ? (current.alias ?? null) : service.alias,
         change.id,
       );
+    sqlite
+      .prepare('UPDATE services SET check_insecure=? WHERE id=?')
+      .run(insecure ? 1 : 0, change.id);
     bumpVersion();
     return selectService(change.id);
   }
@@ -136,6 +145,7 @@ export function createServiceCardConfiguration({
   ) {
     return transaction(() => {
       const service = validateService(input);
+      if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
       ensureGroup(service.category);
       service.position = nextServicePosition(service.category);
       const result = sqlite
@@ -161,10 +171,17 @@ export function createServiceCardConfiguration({
         );
       const created = selectService(Number(result.lastInsertRowid));
       if (!created) throw new Error('Created service could not be loaded');
+      if (service.checkInsecure)
+        sqlite.prepare('UPDATE services SET check_insecure=1 WHERE id=?').run(created.id);
       if (host) writeHost(created.id, host);
       if (links !== undefined) writeLinks(created.id, links);
       bumpVersion();
-      return { ...created, host, links: selectServiceLinks(created.id) };
+      return {
+        ...created,
+        checkInsecure: service.checkInsecure === true,
+        host,
+        links: selectServiceLinks(created.id),
+      };
     });
   }
 
@@ -179,6 +196,8 @@ export function createServiceCardConfiguration({
       const current = selectService(id);
       if (!current) return null;
       const service = validateService(input);
+      const insecure = service.checkInsecure ?? Boolean(current.checkInsecure);
+      if (insecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
       ensureGroup(service.category);
       service.position =
         service.category === current.category
@@ -209,6 +228,7 @@ export function createServiceCardConfiguration({
           id,
         );
       if (host !== undefined) writeHost(id, host);
+      sqlite.prepare('UPDATE services SET check_insecure=? WHERE id=?').run(insecure ? 1 : 0, id);
       if (links !== undefined) writeLinks(id, links);
       bumpVersion();
       const updated = selectService(id);

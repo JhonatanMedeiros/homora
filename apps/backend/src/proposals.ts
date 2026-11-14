@@ -97,7 +97,10 @@ export function createProposalService(
         if (service.checkPath === undefined) service.checkPath = current.checkPath;
         if (service.checkUrl === undefined) service.checkUrl = current.checkUrl;
         if (service.checkMatch === undefined) service.checkMatch = current.checkMatch;
+        if (service.checkInsecure === undefined)
+          service.checkInsecure = Boolean(current.checkInsecure);
       }
+      if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid proposal');
       if (d.op === 'create') configuration.checkNewServicePage(service.category, d.page);
       diff =
         d.op === 'create'

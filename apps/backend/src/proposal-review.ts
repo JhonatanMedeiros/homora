@@ -30,6 +30,32 @@ export function createProposalReviewService({
   revoke: (id: string) => void;
   rotate: (id: string) => string;
 }) {
+  function applyServiceChange(
+    change: ServiceChange,
+    human: string,
+    proposalId: string,
+    now: number,
+  ) {
+    const before = change.op === 'update' ? configuration.findService(change.id) : undefined;
+    const result = configuration.applyProposal(change);
+    if (change.op !== 'delete' && result && typeof result === 'object') {
+      const after = Boolean(result.checkInsecure);
+      if (Boolean(before?.checkInsecure) !== after) {
+        sqlite
+          .prepare(
+            'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+          )
+          .run(
+            human,
+            'monitoring-tls-insecure',
+            proposalId,
+            'ok',
+            now,
+            `service:${result.id}:${after ? 'on' : 'off'}`,
+          );
+      }
+    }
+  }
   function auditMaintenance(change: ManagedChange, human: string, proposalId: string, now: number) {
     if (change.kind !== 'maintenance') return;
     sqlite
@@ -150,7 +176,7 @@ export function createProposalReviewService({
           auditMaintenance(managedChange, human, id, now);
         } else {
           const d = serviceProposalSchema.parse(decoded);
-          configuration.applyProposal(d as ServiceChange);
+          applyServiceChange(d as ServiceChange, human, id, now);
         }
         sqlite
           .prepare(
@@ -223,7 +249,7 @@ export function createProposalReviewService({
                   change.service.position = configuration.nextServicePosition(
                     change.service.category,
                   );
-                configuration.applyProposal(change);
+                applyServiceChange(change, human, p.id, now);
               }
             }
           } catch (error) {

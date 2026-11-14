@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { BODY_CHECK_TYPES, CERT_WARNING_DAYS, type CheckType } from '@homora/shared';
 import { CONTENT_CHECK_MAX_BYTES, matchesJson, matchesKeyword } from './check-body.js';
 import { readCertificate, tcpConnect } from './network-checks.js';
-import { authorizeDestination } from '../network-policy.js';
+import { authorizeDestination, isPrivateDestination } from '../network-policy.js';
 import { getAuthorizedResponse } from '../network-request.js';
 
 /** Explains probe details beneath the monitor's high-level availability state. */
@@ -117,6 +117,7 @@ export async function checkService(
   type: CheckType = 'http',
   match: string | null = null,
   now: () => number = Date.now,
+  options: { ca?: string; insecureTls?: boolean } = {},
 ): Promise<CheckResult> {
   const policy = { origins: [new URL(url).origin], allowPrivate };
   if (isNonHttp(type)) {
@@ -129,16 +130,19 @@ export async function checkService(
     const port = portOf(target);
     if (type === 'tcp')
       return { httpStatus: null, latencyMs: await tcpConnect(address.address, port) };
-    const certificate = await readCertificate(
-      address.address,
-      target.hostname.replace(/^\[|\]$/g, ''),
-      port,
-    );
+    const privateCa =
+      options.ca && allowPrivate && isPrivateDestination(address.address) ? options.ca : undefined;
+    const insecureTls =
+      options.insecureTls === true && allowPrivate && isPrivateDestination(address.address);
+    const hostname = target.hostname.replace(/^\[|\]$/g, '');
+    const certificate = privateCa
+      ? await readCertificate(address.address, hostname, port, undefined, privateCa)
+      : await readCertificate(address.address, hostname, port);
     const daysLeft = (certificate.validTo - now()) / 86_400_000;
     const outcome: CheckResult['outcome'] =
-      certificate.validTo <= now() || certificate.error === 'CERT_HAS_EXPIRED'
+      !insecureTls && (certificate.validTo <= now() || certificate.error === 'CERT_HAS_EXPIRED')
         ? { status: 'unavailable', reason: 'cert-expired' }
-        : !certificate.authorized
+        : !certificate.authorized && !insecureTls
           ? { status: 'unavailable', reason: 'cert-invalid' }
           : daysLeft <= CERT_WARNING_DAYS
             ? { status: 'available', reason: 'cert-expiring' }
@@ -155,6 +159,8 @@ export async function checkService(
   const response = await getAuthorizedResponse(url, policy, {
     timeoutMs: 8000,
     reportRedirect: true,
+    ...(type === 'http' && options.ca ? { privateCa: options.ca } : {}),
+    ...(type === 'http' && options.insecureTls ? { privateInsecureTls: true } : {}),
     ...(body ? { maxBodyBytes: CONTENT_CHECK_MAX_BYTES } : {}),
   });
   const result: CheckResult = { httpStatus: response.status, latencyMs: Date.now() - startedAt };

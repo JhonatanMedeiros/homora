@@ -14,6 +14,8 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
+      if (url === '/api/monitoring/trust')
+        return new Response(JSON.stringify({ certificates: [], invalid: false }));
       if (init?.method === 'PUT') current = JSON.parse(String(init.body)).allowPrivate;
       return new Response(JSON.stringify({ allowPrivate: current }));
     }),
@@ -47,4 +49,35 @@ it('keeps the previous value and reports an error when saving fails', async () =
   fireEvent.click(toggle);
   expect(await screen.findByText('Could not save this setting.')).toBeTruthy();
   expect(toggle.getAttribute('aria-checked')).toBe('false');
+});
+
+it('uploads and removes a monitoring certificate bundle', async () => {
+  let certificates: { subject: string; validFrom: string; validTo: string }[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (url !== '/api/monitoring/trust')
+        return new Response(JSON.stringify({ allowPrivate: false }));
+      if (init?.method === 'PUT') {
+        expect(JSON.parse(String(init.body))).toEqual({ bundle: 'test certificate' });
+        certificates = [
+          {
+            subject: 'CN=Example',
+            validFrom: '2024-01-01T00:00:00.000Z',
+            validTo: '2030-01-01T00:00:00.000Z',
+          },
+        ];
+      }
+      if (init?.method === 'DELETE') certificates = [];
+      return new Response(JSON.stringify({ certificates, invalid: false }));
+    }),
+  );
+  render(<MonitoringSettings />);
+  await screen.findByRole('button', { name: 'Remove certificates' });
+  const file = new File(['test certificate'], 'ca.pem', { type: 'application/x-pem-file' });
+  fireEvent.change(screen.getByLabelText('Certificate bundle'), { target: { files: [file] } });
+  fireEvent.click(screen.getByRole('button', { name: 'Upload certificates' }));
+  expect(await screen.findByText('CN=Example')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Remove certificates' }));
+  await waitFor(() => expect(screen.queryByText('CN=Example')).toBeNull());
 });

@@ -281,6 +281,13 @@
       "when": 1794628327438,
       "tag": "0039_odd_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1794636355201,
+      "tag": "0040_flawless_gauntlet",
+      "breakpoints": true
     }
   ]
 }

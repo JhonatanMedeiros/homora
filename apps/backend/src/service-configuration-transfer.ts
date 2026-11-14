@@ -16,9 +16,13 @@ import {
   type PortableWidget,
 } from './transfer/index.js';
 
-type ServiceRow = Omit<Service, 'position' | 'allowPrivate' | 'checkType' | 'checkInterval'> & {
+type ServiceRow = Omit<
+  Service,
+  'position' | 'allowPrivate' | 'checkInsecure' | 'checkType' | 'checkInterval'
+> & {
   position: number;
   allowPrivate: number | boolean;
+  checkInsecure: number | boolean;
   checkType: CheckType;
   checkInterval: number | null;
 };
@@ -112,12 +116,15 @@ export function createConfigurationTransfer({
               sqlite.prepare('SELECT service_id AS id FROM service_pins').all() as { id: number }[]
             ).map((row) => row.id),
           );
-          return selectServices().map((row) => ({
-            ...row,
-            pinned: pins.has(row.id),
-            allowPrivate: Boolean(row.allowPrivate),
-            links: links.get(row.id) ?? [],
-          })) as Service[];
+          return selectServices().map(({ checkInsecure, ...row }) => {
+            void checkInsecure; // A TLS exception must be granted again after import.
+            return {
+              ...row,
+              pinned: pins.has(row.id),
+              allowPrivate: Boolean(row.allowPrivate),
+              links: links.get(row.id) ?? [],
+            };
+          }) as Service[];
         })(),
       };
     },

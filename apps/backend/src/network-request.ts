@@ -2,11 +2,19 @@ import http from 'node:http';
 import https from 'node:https';
 import type { LookupFunction } from 'node:net';
 import { getCACertificates } from 'node:tls';
-import { authorizeDestination, type DestinationPolicy } from './network-policy.js';
+import {
+  authorizeDestination,
+  isPrivateDestination,
+  type DestinationPolicy,
+} from './network-policy.js';
 
 export type RequestOptions = {
   headers?: Readonly<Record<string, string>>;
   ca?: string;
+  /** Additional trust only when the authorized, pinned address is private. */
+  privateCa?: string;
+  /** Disable certificate verification only for explicitly opted-in private monitoring targets. */
+  privateInsecureTls?: boolean;
   timeoutMs?: number;
   /** Maximum response size; adapters may lower or raise it up to 2 MB. */
   maxBodyBytes?: number;
@@ -76,6 +84,13 @@ export async function getAuthorizedResponse(
     if (lookupOptions.all) callback(null, [{ address: address.address, family: address.family }]);
     else callback(null, address.address, address.family);
   };
+  const ca =
+    options.ca ??
+    (policy.allowPrivate && isPrivateDestination(address.address) ? options.privateCa : undefined);
+  const insecureTls =
+    options.privateInsecureTls === true &&
+    policy.allowPrivate &&
+    isPrivateDestination(address.address);
   return new Promise((resolve, reject) => {
     const transport = url.protocol === 'https:' ? https : http;
     const request = options.jsonBody === undefined ? transport.get : transport.request;
@@ -93,9 +108,8 @@ export async function getAuthorizedResponse(
                 'content-type': 'application/json',
                 'content-length': Buffer.byteLength(options.jsonBody),
               },
-        ...(options.ca && url.protocol === 'https:'
-          ? { ca: [...getCACertificates('default'), options.ca] }
-          : {}),
+        ...(ca && url.protocol === 'https:' ? { ca: [...getCACertificates('default'), ca] } : {}),
+        ...(insecureTls && url.protocol === 'https:' ? { rejectUnauthorized: false } : {}),
       },
       (res) => {
         const status = res.statusCode ?? 0;

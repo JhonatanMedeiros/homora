@@ -15,3 +15,4 @@ export { createRollupStore } from './rollup.js';
 export { createIncidentStore } from './incidents.js';
 export { createMaintenanceStore, MaintenanceError } from './maintenance.js';
 export { serviceSignature } from './signature.js';
+export { createMonitoringTrustStore } from './trust.js';

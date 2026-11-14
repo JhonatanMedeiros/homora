@@ -4,9 +4,79 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { createDatabase } from '@homora/db';
+import { getSqliteHandle } from '@homora/db';
 import { createTestSession } from './test-auth.js';
 import { createApp } from './app.js';
 import { parseTransfer } from './transfer/index.js';
+
+it('requires private authorization for an audited per-service TLS exception', async () => {
+  const db = createDatabase(':memory:');
+  const { auth, cookie } = await createTestSession();
+  const headers = { origin: 'http://localhost:5173', cookie };
+  const app = createApp(db.db, 5173, auth);
+  const base = { name: 'Private', url: 'https://192.168.1.5', category: 'Home', description: '' };
+  try {
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/api/services',
+          headers,
+          payload: { ...base, checkInsecure: true },
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/api/services',
+          headers: { origin: 'http://localhost:5173' },
+          payload: { ...base, allowPrivate: true, checkInsecure: true },
+        })
+      ).statusCode,
+    ).toBe(401);
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/services',
+      headers,
+      payload: { ...base, allowPrivate: true, checkInsecure: true },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json().checkInsecure).toBe(true);
+    const exported = await app.inject({
+      method: 'GET',
+      url: '/api/config/export?format=json',
+      headers,
+    });
+    expect(exported.body).not.toContain('checkInsecure');
+    const id = created.json().id;
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: `/api/services/${id}`,
+          headers,
+          payload: { ...base, allowPrivate: false },
+        })
+      ).statusCode,
+    ).toBe(400);
+    const disabled = await app.inject({
+      method: 'PUT',
+      url: `/api/services/${id}`,
+      headers,
+      payload: { ...base, allowPrivate: false, checkInsecure: false },
+    });
+    expect(disabled.json().checkInsecure).toBe(false);
+    const events = getSqliteHandle(db.db)
+      .prepare("SELECT detail FROM audit_events WHERE action='monitoring-tls-insecure' ORDER BY id")
+      .all();
+    expect(events).toEqual([{ detail: `service:${id}:on` }, { detail: `service:${id}:off` }]);
+  } finally {
+    await app.close();
+    db.close();
+  }
+});
 
 it('stores check method and interval, validates bounds, and carries values in export/import', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-check-settings-'));

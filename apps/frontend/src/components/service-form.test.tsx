@@ -30,6 +30,24 @@ function setup(value: ServiceInput = emptyService) {
   return onChange;
 }
 
+it('requires private network access before allowing the TLS exception', () => {
+  setup();
+  openSection('Acesso');
+  const insecure = screen.getByRole('checkbox', {
+    name: 'Ignorar validação TLS para este serviço',
+  });
+  expect(insecure.hasAttribute('disabled')).toBe(true);
+  cleanup();
+  const onChange = setup({ ...emptyService, allowPrivate: true });
+  openSection('Acesso');
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Ignorar validação TLS para este serviço' }),
+  );
+  expect(onChange).toHaveBeenCalledWith(
+    expect.objectContaining({ allowPrivate: true, checkInsecure: true }),
+  );
+});
+
 it('allows selecting ping and interval, restoring default when empty', async () => {
   const onChange = setup();
   openSection('Monitoramento');

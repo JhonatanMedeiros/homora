@@ -16,6 +16,7 @@ function show(
     description?: string;
     onEdit?: () => void;
     openTarget?: 'new-tab' | 'same-tab';
+    checkInsecure?: boolean;
   } = {},
 ) {
   cleanup();
@@ -29,6 +30,7 @@ function show(
           category: 'Casa',
           description: extra.description ?? '',
           openTarget: extra.openTarget,
+          checkInsecure: extra.checkInsecure,
         }}
         status={status}
         blocked={blocked}
@@ -45,6 +47,14 @@ function show(
   );
 }
 const base = { lastAttempt: '2026-11-10T12:30:00.000Z' };
+
+it.each([{ compact: true }, { list: true }, {}])(
+  'marks unverified TLS in each layout',
+  (layout) => {
+    show(undefined, false, { ...layout, checkInsecure: true });
+    expect(screen.getByText('TLS não verificado')).toBeTruthy();
+  },
+);
 
 afterEach(() => vi.unstubAllGlobals());
 

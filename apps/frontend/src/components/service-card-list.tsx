@@ -80,6 +80,9 @@ export function ServiceCardList({
             <span className="truncate text-xs text-muted-foreground">{dependencyNote}</span>
           )}
           <CardWidgets widgets={widgets} layout="list" />
+          {service.checkInsecure && (
+            <span className="text-xs text-muted-foreground">{t('form.insecureTlsBadge')}</span>
+          )}
         </ItemContent>
         <StatusLight
           state={view.state}

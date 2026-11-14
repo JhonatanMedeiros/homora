@@ -1,5 +1,19 @@
 import { expect, it, vi } from 'vitest';
-import { authorizeDestination } from './network-policy.js';
+import { authorizeDestination, isPrivateDestination } from './network-policy.js';
+
+it.each([
+  ['10.0.0.1', true],
+  ['172.31.0.1', true],
+  ['192.168.1.1', true],
+  ['fd00::1', true],
+  ['8.8.8.8', false],
+  ['2606:4700:4700::1111', false],
+  ['::ffff:192.168.1.1', false],
+  ['127.0.0.1', false],
+  ['not-an-ip', false],
+])('classifies %s for private-only trust', (address, expected) => {
+  expect(isPrivateDestination(address)).toBe(expected);
+});
 
 const policy = { origins: ['https://service.example:443'], allowPrivate: true };
 it('requires exact origin, without credentials or unsafe schemes', async () => {

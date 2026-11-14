@@ -7,7 +7,7 @@ import { createProposalService } from './proposals.js';
 
 function fixture() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,check_insecure INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
@@ -23,6 +23,28 @@ const card = {
   category: 'Apps',
   description: 'Media server',
 };
+
+it('shows and audits a TLS exception in an approved proposal', () => {
+  const { db, api } = fixture();
+  try {
+    const agent = api.issue('bot', ['proposals:create']);
+    expect(() =>
+      api.propose(agent.id, { op: 'create', service: { ...card, checkInsecure: true } }),
+    ).toThrow();
+    const proposal = api.propose(agent.id, {
+      op: 'create',
+      service: { ...card, allowPrivate: true, checkInsecure: true },
+    });
+    expect(proposal.diff).toMatchObject({ service: { allowPrivate: true, checkInsecure: true } });
+    expect(api.decide(proposal.id, true, 'human')).toBe('approved');
+    expect(db.prepare('SELECT check_insecure FROM services').get()).toEqual({ check_insecure: 1 });
+    expect(
+      db.prepare("SELECT action FROM audit_events WHERE action='monitoring-tls-insecure'").get(),
+    ).toEqual({ action: 'monitoring-tls-insecure' });
+  } finally {
+    db.close();
+  }
+});
 
 it('authorizes explicit scopes, rotates/revokes credentials by invalidating old tokens', () => {
   const { db, api } = fixture();
@@ -88,7 +110,7 @@ it('serializes review across SQLite connections and prevents replay', () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-proposal-'));
   const path = join(dir, 'test.sqlite');
   const first = new DatabaseSync(path);
-  first.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
+  first.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,check_insecure INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);

@@ -7,7 +7,10 @@ import { checkService, createServiceMonitor, CERT_WARNING_DAYS } from './monitor
 import type { Service } from '@homora/shared';
 
 vi.mock('../network-request.js', () => ({ getAuthorizedResponse: vi.fn() }));
-vi.mock('../network-policy.js', () => ({ authorizeDestination: vi.fn() }));
+vi.mock('../network-policy.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../network-policy.js')>()),
+  authorizeDestination: vi.fn(),
+}));
 vi.mock('./network-checks.js', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./network-checks.js')>()),
   readCertificate: vi.fn(),
@@ -70,6 +73,54 @@ describe('content checks', () => {
 });
 
 describe('connection checks', () => {
+  it('relaxes TLS checks only for opted-in private destinations and keeps expiry', async () => {
+    const now = 1_800_000_000_000;
+    const validTo = now - DAY;
+    vi.mocked(readCertificate).mockResolvedValue({
+      validTo,
+      authorized: false,
+      error: 'CERT_HAS_EXPIRED',
+      latencyMs: 1,
+    });
+    authorize();
+    expect(
+      await checkService('https://nas.lan/', true, 'tls', null, () => now, { insecureTls: true }),
+    ).toMatchObject({ outcome: { status: 'available' }, certExpiresAt: validTo });
+    authorize('8.8.8.8');
+    expect(
+      await checkService('https://nas.lan/', true, 'tls', null, () => now, { insecureTls: true }),
+    ).toMatchObject({
+      outcome: { status: 'unavailable', reason: 'cert-expired' },
+      certExpiresAt: validTo,
+    });
+  });
+  it('supplies private trust only for HTTP and for TLS at private addresses', async () => {
+    vi.mocked(getAuthorizedResponse).mockResolvedValue({ status: 200, body: '' });
+    await checkService('https://nas.lan/', true, 'http', null, Date.now, { ca: 'test-ca' });
+    expect(getAuthorizedResponse).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ privateCa: 'test-ca' }),
+    );
+    authorize();
+    vi.mocked(readCertificate).mockResolvedValue({
+      validTo: Date.now() + 90 * DAY,
+      authorized: true,
+      error: null,
+      latencyMs: 1,
+    });
+    await checkService('https://nas.lan/', true, 'tls', null, Date.now, { ca: 'test-ca' });
+    expect(readCertificate).toHaveBeenLastCalledWith(
+      '10.0.0.5',
+      'nas.lan',
+      443,
+      undefined,
+      'test-ca',
+    );
+    authorize('8.8.8.8');
+    await checkService('https://nas.lan/', true, 'tls', null, Date.now, { ca: 'test-ca' });
+    expect(readCertificate).toHaveBeenLastCalledWith('8.8.8.8', 'nas.lan', 443);
+  });
   it('tcp: connects to the port of the URL through the destination policy', async () => {
     const server = net.createServer((socket) => socket.end());
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));

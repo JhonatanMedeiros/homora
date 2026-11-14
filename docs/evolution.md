@@ -1,5 +1,22 @@
 # Homora Evolution Plan
 
+### Monitoring trust and TLS exceptions (issue #191)
+
+- Added an administrator-managed, local PEM bundle for HTTP and TLS monitoring. Additional trust is
+  used only after destination authorization and private IP pinning. Its hash identifies the checks
+  made under that bundle; changes trigger new probes. Corrupt or expired bundles are reported.
+- Added the optional, audited per-service TLS verification exception, disabled by default and
+  restricted to private destinations, with a visible card marker and proposal diff. Bundles and
+  exceptions are not exported. See [ADR 0020](decisions/0020-monitoring-private-tls-trust.md).
+- The migration was checked with an isolated previous-version database; existing service data
+  survived and the new flag defaulted to off. `pnpm check` and `pnpm build` passed. An isolated
+  local HTTPS server with a temporary self-signed certificate verified rejection without trust,
+  successful HTTP and TLS checks with trust, and the per-service exception. An authenticated local
+  API flow also verified status changes when the CA was added and removed, then enabled the
+  exception and confirmed that the TLS check still reported the expiry.
+- The settings and card flows were covered by automated UI tests; a manual browser walkthrough and
+  checks against real homelab services remain pending.
+
 This plan translates the initial repository evaluation into concrete work phases.
 The core priority is a dependable, useful homelab homepage, configurable entirely via
 the web interface, and operational without Proxmox or AI agents. Infrastructure

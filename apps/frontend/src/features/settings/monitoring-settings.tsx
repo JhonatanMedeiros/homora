@@ -1,6 +1,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { useMonitoringDefaults } from './use-monitoring-defaults';
+import { MonitoringTrustSettings } from './monitoring-trust-settings';
 import { t } from '@/i18n';
 import { SettingRow, SettingsGroup } from './setting-row';
 
@@ -28,6 +29,7 @@ export function MonitoringSettings() {
           />
         </SettingRow>
       </SettingsGroup>
+      <MonitoringTrustSettings />
     </div>
   );
 }

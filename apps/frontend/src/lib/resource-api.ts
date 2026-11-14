@@ -61,6 +61,7 @@ export function updateCard(service: Service, change: { name: string; url: string
     'icon',
     'category',
     'allowPrivate',
+    'checkInsecure',
     'checkType',
     'expectedStatus',
     'checkPath',

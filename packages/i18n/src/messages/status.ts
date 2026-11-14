@@ -57,6 +57,8 @@ export const en = {
   'activity.event.public-status-update': 'Public status page changed',
   'activity.event.service-public': 'Service public visibility changed',
   'activity.event.service-defaults-update': 'New service defaults changed',
+  'activity.event.monitoring-tls-insecure': 'Service TLS verification changed',
+  'activity.event.monitoring-ca-update': 'Monitoring certificates changed',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -118,4 +120,6 @@ export const ptBR: Record<keyof typeof en, string> = {
   'activity.event.public-status-update': 'Página pública de status alterada',
   'activity.event.service-public': 'Visibilidade pública de serviço alterada',
   'activity.event.service-defaults-update': 'Padrões de novos serviços alterados',
+  'activity.event.monitoring-tls-insecure': 'Validação TLS do serviço alterada',
+  'activity.event.monitoring-ca-update': 'Certificados de monitoramento alterados',
 };

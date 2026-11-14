@@ -77,6 +77,7 @@ export type ServiceInput = {
   icon?: string;
   position?: number;
   allowPrivate?: boolean;
+  checkInsecure?: boolean;
   /** When omitted preserves current value (or `http` for a new card). */
   checkType?: CheckType;
   /** Seconds between checks; null restores default and omitted preserves the current value. */
@@ -275,6 +276,7 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
         ? Number(input.position)
         : 0,
     allowPrivate: input.allowPrivate === true,
+    ...(input.checkInsecure !== undefined ? { checkInsecure: input.checkInsecure === true } : {}),
     ...(OPEN_TARGETS.some((target) => target === input.openTarget)
       ? { openTarget: input.openTarget }
       : {}),

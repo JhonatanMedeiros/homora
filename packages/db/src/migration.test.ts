@@ -17,6 +17,34 @@ import {
 const MIGRATIONS = readMigrationFiles({
   migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
 });
+it('defaults insecure monitoring to off when upgrading existing services', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-insecure-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description,allow_private) VALUES(5,'Existing','https://example.test','Home','',1)",
+    );
+    old.close();
+    const database = createDatabase(path);
+    const row = getSqliteHandle(database.db)
+      .prepare('SELECT name,allow_private,check_insecure FROM services WHERE id=5')
+      .get();
+    expect(row).toMatchObject({ name: 'Existing', allow_private: 1, check_insecure: 0 });
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 it('adopts legacy database and preserves its data across restarts', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-migration-')),
     path = join(dir, 'data.sqlite');

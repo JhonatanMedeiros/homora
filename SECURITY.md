@@ -49,11 +49,16 @@ data or real credentials. There is no established response SLA or bug bounty pol
 - Service monitoring blocks RFC1918 and ULA destinations by default. An
   authenticated user can enable private network access on individual services; this
   authorizes only those ranges at the exact configured origin. DNS is pinned for
-  the connection, and mixed responses, special ranges, and redirects remain
+  the connection, and disallowed DNS answers, special ranges, and redirects remain
   blocked. The special ranges list does not cover every local network topology policy.
   The administrator setting **New services allow private network** (off by default,
   audited) only provides the initial value for services created in the web UI;
   existing services, imports, Docker discovery and agent proposals never inherit it.
+  A local monitoring CA bundle adds trust only to authorized private HTTP and TLS checks. An
+  administrator may instead opt an individual service into unverified TLS for private targets;
+  this is audited and visibly marked, but permits impersonation and expired certificates to appear
+  healthy. Neither the bundle nor this exception is included in configuration exports. See
+  [ADR 0020](docs/decisions/0020-monitoring-private-tls-trust.md).
 - The Proxmox guest inventory (names, ids, state) is more sensitive than the aggregate widget.
   It is returned only to authenticated web sessions, never by the public status page or
   MCP, and cards store only ids. Homora never writes to Proxmox.

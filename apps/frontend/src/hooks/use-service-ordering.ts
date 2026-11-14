@@ -68,6 +68,7 @@ export function useServiceOrdering({
           checkPath: service.checkPath ?? null,
           checkUrl: service.checkUrl ?? null,
           checkMatch: service.checkMatch ?? null,
+          checkInsecure: service.checkInsecure === true,
         }),
       });
       if (!response.ok) throw Error();

@@ -1,0 +1,1 @@
+ALTER TABLE `services` ADD `check_insecure` integer DEFAULT false NOT NULL;

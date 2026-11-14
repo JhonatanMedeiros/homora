@@ -33,13 +33,13 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   const selectServices = (order = 'category, position, name') =>
     sqlite
       .prepare(
-        `SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM services ORDER BY ${order}`,
+        `SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_insecure as checkInsecure,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM services ORDER BY ${order}`,
       )
       .all() as unknown as ServiceRow[];
   const selectService = (id: number) =>
     sqlite
       .prepare(
-        'SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM services WHERE id=?',
+        'SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_insecure as checkInsecure,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM services WHERE id=?',
       )
       .get(id) as ServiceRow | undefined;
   type HostRow = {
@@ -160,6 +160,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
       return selectServices().map((row) => ({
         ...row,
         allowPrivate: Boolean(row.allowPrivate),
+        checkInsecure: Boolean(row.checkInsecure),
         host: hosts.get(row.id) ?? null,
         links: links.get(row.id) ?? [],
       }));
@@ -202,9 +203,11 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     },
     configHash() {
       return hash(
-        selectServices('id').map(({ checkUrl, ...service }) =>
-          checkUrl ? { ...service, checkUrl } : service,
-        ),
+        selectServices('id').map(({ checkUrl, checkInsecure, ...service }) => ({
+          ...service,
+          ...(checkUrl ? { checkUrl } : {}),
+          ...(checkInsecure ? { checkInsecure: true } : {}),
+        })),
       );
     },
     transaction,

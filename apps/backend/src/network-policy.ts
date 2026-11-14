@@ -49,6 +49,18 @@ for (const [network, prefix] of [
   privateNetworks.addSubnet(network, prefix, 'ipv4');
 privateNetworks.addSubnet('fc00::', 7, 'ipv6');
 
+/** True only for the private ranges permitted by the per-service network policy. */
+export function isPrivateDestination(address: string): boolean {
+  const family = isIP(address);
+  if (family === 4) return privateNetworks.check(address, 'ipv4');
+  if (family === 6) {
+    // IPv4-mapped addresses are prohibited by the destination policy.
+    if (mappedIPv4Address(address)) return false;
+    return privateNetworks.check(address, 'ipv6');
+  }
+  return false;
+}
+
 function mappedIPv4Address(address: string): string | undefined {
   // URL canonicalizes IPv4-mapped IPv6 literals to ::ffff:hhhh:hhhh.
   const canonical = new URL(`http://[${address}]/`).hostname.slice(1, -1);

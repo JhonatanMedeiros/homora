@@ -1,5 +1,9 @@
 /** Service editor and icon selection text. */
 export const en = {
+  'form.insecureTls': 'Skip TLS verification for this service',
+  'form.insecureTlsHint':
+    'Private destinations only. An attacker on your network can impersonate the service; expired certificates may appear healthy.',
+  'form.insecureTlsBadge': 'TLS not verified',
   'form.dialogDescription':
     'Enter the details to organize and access this service on your dashboard.',
   'icon.browse': 'Choose icon',
@@ -85,6 +89,10 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
+  'form.insecureTls': 'Ignorar validação TLS para este serviço',
+  'form.insecureTlsHint':
+    'Somente destinos privados. Um invasor na rede pode se passar pelo serviço; certificados vencidos podem parecer válidos.',
+  'form.insecureTlsBadge': 'TLS não verificado',
   'form.dialogDescription': 'Preencha os dados para organizar e acessar o serviço no painel.',
   'icon.browse': 'Escolher ícone',
   'icon.search': 'Buscar ícones pelo nome',

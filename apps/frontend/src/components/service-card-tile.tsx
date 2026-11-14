@@ -67,6 +67,9 @@ export function ServiceCardTile({
           view.degraded && !isBlocked && 'border-warning/60 ring-1 ring-warning/40',
         )}
       >
+        {service.checkInsecure && (
+          <span className="text-xs text-muted-foreground">{t('form.insecureTlsBadge')}</span>
+        )}
         <div
           className={cn(
             'flex w-full min-w-0 items-start gap-3',

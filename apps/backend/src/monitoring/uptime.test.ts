@@ -8,7 +8,7 @@ const now = Date.parse('2026-11-12T12:00:00.000Z');
 
 function setup() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT);
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,check_insecure INTEGER DEFAULT 0,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT);
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
     CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,
       status TEXT GENERATED ALWAYS AS (json_extract(observation,'$.status')) VIRTUAL,

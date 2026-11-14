@@ -48,6 +48,8 @@ import { createAppearance } from './appearance.js';
 import { createBackgroundStore } from './background-image.js';
 import { registerAppearanceRoutes } from './routes/appearance.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
+import { createMonitoringTrustStore } from './monitoring/index.js';
+import { registerMonitoringTrustRoutes } from './routes/monitoring-trust.js';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -73,6 +75,7 @@ export function createApp(
   const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
+  const monitoringTrust = createMonitoringTrustStore(sqlite);
   const audit = createAuditLog(sqlite);
   const appearance = createAppearance(sqlite);
   const customCss = createCustomCss(sqlite);
@@ -105,7 +108,15 @@ export function createApp(
         return new Set<number>();
       }
     },
+    () => {
+      try {
+        return monitoringTrust.read().trust;
+      } catch {
+        return null;
+      }
+    },
   );
+  registerMonitoringTrustRoutes(app, monitoringTrust, serviceMonitor, auth, audit);
   try {
     rollup.backfill();
   } catch {
@@ -116,7 +127,7 @@ export function createApp(
     incidents.rebuildFromHistory(
       sqlite
         .prepare(
-          'SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_match AS checkMatch FROM services',
+          'SELECT id,url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM services',
         )
         .all() as unknown as Service[],
     );
