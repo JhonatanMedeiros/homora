@@ -36,7 +36,10 @@ LABEL org.opencontainers.image.title="Homora backend" \
       org.opencontainers.image.source="https://github.com/JhonatanMedeiros/homora" \
       org.opencontainers.image.licenses="MIT"
 WORKDIR /app
-ENV NODE_ENV=production HOMORA_BIND_HOST=0.0.0.0 HOMORA_DATABASE_PATH=/app/data/homora.sqlite
+# The commit is passed at build time (`--build-arg HOMORA_BUILD_COMMIT=$(git rev-parse HEAD)`) and
+# reported in the startup log and by /api/health.
+ARG HOMORA_BUILD_COMMIT=unknown
+ENV NODE_ENV=production HOMORA_BIND_HOST=0.0.0.0 HOMORA_DATABASE_PATH=/app/data/homora.sqlite HOMORA_BUILD_COMMIT=${HOMORA_BUILD_COMMIT}
 # Kept under apps/backend so `root` in config.ts (three levels above dist) is still /app.
 COPY --from=prod --chown=node:node /prod /app/apps/backend
 # `ping` backs the optional ICMP check; the monitor runs it as the unprivileged `node` user.
@@ -47,7 +50,7 @@ RUN apt-get update \
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD ["node", "-e", "fetch('http://127.0.0.1:3000/api/auth/status').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+  CMD ["node", "-e", "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 CMD ["node", "apps/backend/dist/server.js"]
 
 # Optional Docker inventory agent. Supply a socket, token file and HTTPS origin at runtime.

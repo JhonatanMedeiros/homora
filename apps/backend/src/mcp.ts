@@ -35,6 +35,7 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
         .get() as { value: string } | undefined;
       return row?.value === 'true';
     } catch {
+      // A settings table that cannot be read means the public status page is treated as disabled.
       return false;
     }
   };

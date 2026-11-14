@@ -46,6 +46,7 @@ export function registerConnectionRoutes(
         parsed.data.serviceId ?? null,
       );
     } catch (error) {
+      request.log.warn({ err: error }, 'could not create the integration widget');
       return reply
         .code(error instanceof InputError && isLegacyUnavailableCode(error.code) ? 404 : 502)
         .send(errorBody(error instanceof InputError ? error.code : 'integration-save-failed'));
@@ -121,6 +122,7 @@ export function registerConnectionRoutes(
         const result = await connections.connectionData(id, query.data.refresh === 'true');
         return result ?? reply.code(404).send(errorBody('integration-not-found'));
       } catch (error) {
+        request.log.warn({ err: error, connection: id }, 'integration data query failed');
         if (error instanceof IntegrationRowsLimitError)
           return reply.code(502).send(errorBody('integration-rows-limit'));
         return reply.code(502).send(errorBody('integration-query-failed'));
@@ -143,7 +145,8 @@ export function registerConnectionRoutes(
         if (result === 'unsupported-inventory')
           return reply.code(400).send(errorBody('invalid-data'));
         return result;
-      } catch {
+      } catch (error) {
+        request.log.warn({ err: error, connection: id }, 'integration inventory query failed');
         return reply.code(502).send(errorBody('integration-query-failed'));
       }
     },
@@ -164,7 +167,8 @@ export function registerConnectionRoutes(
         if (result === 'unsupported-inventory')
           return reply.code(400).send(errorBody('invalid-data'));
         return result;
-      } catch {
+      } catch (error) {
+        request.log.warn({ err: error, connection: id }, 'integration resources query failed');
         return reply.code(502).send(errorBody('integration-query-failed'));
       }
     },
@@ -177,7 +181,8 @@ export function registerConnectionRoutes(
       return (await connections.testConnection(id))
         ? { ok: true }
         : reply.code(404).send(errorBody('integration-not-found'));
-    } catch {
+    } catch (error) {
+      request.log.warn({ err: error, connection: id }, 'integration connection test failed');
       return reply.code(502).send(errorBody('integration-test-failed'));
     }
   });

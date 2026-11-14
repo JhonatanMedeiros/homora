@@ -15,7 +15,9 @@ export function tcpConnect(address: string, port: number, timeoutMs = TIMEOUT_MS
     };
     socket.once('connect', () => done());
     socket.once('timeout', () => done(new Error('Timeout exceeded.')));
-    socket.once('error', () => done(new Error('Connection failed.')));
+    socket.once('error', (error: NodeJS.ErrnoException) =>
+      done(Object.assign(new Error('Connection failed.'), { code: error.code })),
+    );
   });
 }
 
@@ -51,9 +53,9 @@ export function readCertificate(
       timeout: timeoutMs,
       ...(ca ? { ca: [...tls.getCACertificates('default'), ca] } : {}),
     });
-    const fail = () => {
+    const fail = (error?: NodeJS.ErrnoException) => {
       socket.destroy();
-      reject(new Error('Connection failed.'));
+      reject(Object.assign(new Error('Connection failed.'), { code: error?.code }));
     };
     socket.once('secureConnect', () => {
       const certificate = socket.getPeerCertificate();
@@ -64,7 +66,7 @@ export function readCertificate(
       if (Number.isNaN(validTo)) reject(new Error('No certificate.'));
       else resolve({ validTo, authorized, error, latencyMs: Date.now() - startedAt });
     });
-    socket.once('timeout', fail);
+    socket.once('timeout', () => fail());
     socket.once('error', fail);
   });
 }

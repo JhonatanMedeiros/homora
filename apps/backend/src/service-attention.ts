@@ -27,6 +27,7 @@ export function createServiceAttention(sqlite: DatabaseSync, now: () => number =
         return [];
       return value;
     } catch {
+      // Corrupt saved pin order is treated as "no manual order".
       return [];
     }
   };

@@ -462,3 +462,136 @@ it('reports a blocked separate destination distinctly', async () => {
     reason: 'destination-blocked',
   });
 });
+
+describe('monitor logging', () => {
+  const capture = () => {
+    const lines: {
+      level: 'debug' | 'info' | 'warn' | 'error';
+      fields: Record<string, unknown>;
+      msg: string;
+    }[] = [];
+    const log = Object.fromEntries(
+      (['debug', 'info', 'warn', 'error'] as const).map((level) => [
+        level,
+        (fields: Record<string, unknown>, msg: string) => lines.push({ level, fields, msg }),
+      ]),
+    ) as unknown as import('../logger.js').Log;
+    return { lines, log };
+  };
+  const failing = (code: string) => async () => {
+    throw Object.assign(new Error('Connection failed.'), { code });
+  };
+
+  it('logs the raw failure once per state change, not once per check', async () => {
+    const { lines, log } = capture();
+    let clock = 1_000_000;
+    let healthy = true;
+    const monitor = createServiceMonitor(
+      async () => [service(1, 'https://a.example')],
+      async () => {
+        if (healthy) return ok;
+        throw Object.assign(new Error('Connection failed.'), { code: 'ECONNREFUSED' });
+      },
+      () => clock,
+      undefined,
+      undefined,
+      undefined,
+      log,
+    );
+    await monitor.run(true);
+    healthy = false;
+    for (let i = 0; i < 5; i++) {
+      clock += 120_000;
+      await monitor.run(true);
+    }
+    const transitions = lines.filter((line) => line.msg.startsWith('service '));
+    expect(transitions.map((line) => line.msg)).toEqual([
+      'service unknown -> available: responding',
+      'service available -> unavailable: no-response',
+    ]);
+    expect(transitions[1]).toMatchObject({
+      level: 'warn',
+      fields: { service: 1, errorCode: 'ECONNREFUSED', errorMessage: 'Connection failed.' },
+    });
+    expect(monitor.lastFailure(1)).toEqual({ code: 'ECONNREFUSED', message: 'Connection failed.' });
+    // The public reason is unchanged.
+    expect(monitor.snapshot()[1]).toMatchObject({ status: 'unavailable', reason: 'no-response' });
+    healthy = true;
+    clock += 120_000;
+    await monitor.run(true);
+    expect(lines.filter((line) => line.msg.startsWith('service ')).at(-1)).toMatchObject({
+      level: 'info',
+      msg: 'service unavailable -> available: responding',
+    });
+    expect(monitor.lastFailure(1)).toBeUndefined();
+  });
+
+  it('warns once when most monitors fail for the same reason, and again only if it changes', async () => {
+    const { lines, log } = capture();
+    let check: () => Promise<{ httpStatus: number; latencyMs: number }> = failing(
+      'ENOTFOUND',
+    ) as never;
+    const monitor = createServiceMonitor(
+      async () => [1, 2, 3, 4].map((id) => service(id, `https://s${id}.example`)),
+      () => check(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      log,
+    );
+    await monitor.run(true);
+    await monitor.run(true);
+    const systemic = lines.filter((line) => line.msg.startsWith('systemic'));
+    expect(systemic).toHaveLength(1);
+    expect(systemic[0]).toMatchObject({
+      level: 'warn',
+      fields: { reason: 'ENOTFOUND', failing: 4, measured: 4 },
+    });
+    expect(lines.some((line) => line.level === 'debug' && line.msg === 'monitor cycle')).toBe(true);
+    check = async () => ok;
+    await monitor.run(true);
+    expect(lines.at(-1)?.msg).toBe('systemic monitoring failure cleared');
+  });
+
+  it('does not call a single failing service a systemic failure', async () => {
+    const { lines, log } = capture();
+    const monitor = createServiceMonitor(
+      async () => [1, 2, 3, 4].map((id) => service(id, `https://s${id}.example`)),
+      async (url) => {
+        if (url.includes('s1')) throw new Error('Connection failed.');
+        return ok;
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      log,
+    );
+    await monitor.run(true);
+    expect(lines.some((line) => line.msg.startsWith('systemic'))).toBe(false);
+  });
+
+  it('logs a failure to read the services and records when the last cycle finished', async () => {
+    const { lines, log } = capture();
+    let fail = true;
+    const monitor = createServiceMonitor(
+      async () => {
+        if (fail) throw new Error('database is locked');
+        return [];
+      },
+      undefined,
+      () => 42,
+      undefined,
+      undefined,
+      undefined,
+      log,
+    );
+    await monitor.run(true);
+    expect(lines[0]).toMatchObject({ level: 'error' });
+    expect(monitor.health().lastCycleAt).toBeNull();
+    fail = false;
+    await monitor.run(true);
+    expect(monitor.health().lastCycleAt).toBe(42);
+  });
+});

@@ -1,5 +1,5 @@
 import { registerPageWidgetRoutes } from './routes/page-widgets.js';
-import Fastify from 'fastify';
+import Fastify, { LogController, type FastifyBaseLogger, type FastifyServerOptions } from 'fastify';
 import type { Service } from '@homora/shared';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createAuth } from './auth.js';
@@ -25,6 +25,7 @@ import { registerDiscoveryRoutes } from './routes/discovery.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
+import { buildInfo, isQuietRequest } from './logger.js';
 import { createServiceAttention } from './service-attention.js';
 import { createTagStore } from './service-tags.js';
 import { registerServiceTagRoutes } from './routes/service-tags.js';
@@ -55,6 +56,10 @@ import { registerNotificationRoutes } from './routes/notifications.js';
 import { createMonitoringTrustStore } from './monitoring/index.js';
 import { registerMonitoringTrustRoutes } from './routes/monitoring-trust.js';
 
+export const HEALTH_PATH = '/api/health';
+/** The monitor ticks every 10 seconds; this many without a finished cycle means it stopped. */
+const MONITOR_STALE_MS = 120_000;
+
 type Database = ReturnType<typeof createDatabase>['db'];
 
 export function createApp(
@@ -74,22 +79,47 @@ export function createApp(
     apiPort?: number;
     backgroundPath?: string;
     developmentMocks?: boolean;
+    /** Process logger (see `createLogger`). Without one the application logs nothing, as in tests. */
+    logger?: FastifyBaseLogger;
   } = {},
 ) {
-  const app = Fastify({ bodyLimit: 100_000, trustProxy: options.trustProxy === true });
+  const serverOptions: FastifyServerOptions = {
+    bodyLimit: 100_000,
+    trustProxy: options.trustProxy === true,
+    ...(options.logger
+      ? {
+          loggerInstance: options.logger,
+          logController: new LogController({ disableRequestLogging: isQuietRequest }),
+        }
+      : {}),
+  };
+  const app = Fastify(serverOptions);
+  const log = app.log;
+  const startedAt = Date.now();
   const sqlite = getSqliteHandle(db);
   const configuration = createServiceConfiguration(sqlite);
   const monitoringTrust = createMonitoringTrustStore(sqlite);
-  const audit = createAuditLog(sqlite);
+  const audit = createAuditLog(sqlite, Date.now, log);
   const appearance = createAppearance(sqlite);
   const customCss = createCustomCss(sqlite);
   const proposals = createProposalService(sqlite, configuration);
   const rollup = createRollupStore(sqlite);
   const observations = createObservationStore(sqlite, rollup);
-  const notifications = createNotifications(sqlite, vault);
+  const notifications = createNotifications(sqlite, vault, log);
   const inbox = createInbox(sqlite);
   inbox.prune();
-  const incidents = createIncidentStore(sqlite, inbox.record);
+  const incidents = createIncidentStore(sqlite, (transition) => {
+    log.info(
+      {
+        incident: transition.incidentId,
+        service: transition.serviceId,
+        reason: transition.reason,
+        ...(transition.httpStatus !== null ? { httpStatus: transition.httpStatus } : {}),
+      },
+      transition.kind === 'down' ? 'incident opened' : 'incident closed',
+    );
+    inbox.record(transition);
+  });
   const maintenance = createMaintenanceStore(sqlite);
   const tagStore = createTagStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
@@ -110,42 +140,47 @@ export function createApp(
     undefined,
     undefined,
     (rows, states) => {
+      // Each step is isolated: a failure in one must not stop the others, but it is never silent.
       try {
         observations.publish(rows, states);
-      } catch {
-        /* Keep monitoring other capabilities on storage errors. */
+      } catch (error) {
+        log.error({ err: error }, 'could not publish service observations');
       }
       try {
         notifications.publish(rows, states);
-      } catch {
-        /* Outbound delivery must not prevent the incident history from updating. */
+      } catch (error) {
+        log.error({ err: error }, 'could not queue status notifications');
       }
       try {
         incidents.observe(rows, states);
-      } catch {
-        /* Keep the dashboard usable on storage errors. */
+      } catch (error) {
+        log.error({ err: error }, 'could not update incidents');
       }
     },
     (at) => {
       try {
         return new Set(maintenance.active(at).keys());
-      } catch {
+      } catch (error) {
+        log.error({ err: error }, 'could not read maintenance windows; checking every service');
         return new Set<number>();
       }
     },
     () => {
       try {
         return monitoringTrust.read().trust;
-      } catch {
+      } catch (error) {
+        log.error({ err: error }, 'could not read the monitoring trust bundle');
         return null;
       }
     },
+    log,
   );
   registerMonitoringTrustRoutes(app, monitoringTrust, serviceMonitor, auth, audit);
   try {
     rollup.backfill();
-  } catch {
-    /* The long-range charts stay empty; checks keep working. */
+  } catch (error) {
+    // The long-range charts stay empty; checks keep working.
+    log.error({ err: error }, 'could not backfill the uptime rollup');
   }
   const publicStatus = createPublicStatus(sqlite, observations);
   try {
@@ -156,8 +191,9 @@ export function createApp(
         )
         .all() as unknown as Service[],
     );
-  } catch {
-    /* Incidents are auxiliary: the dashboard stays usable without them. */
+  } catch (error) {
+    // Incidents are auxiliary: the dashboard stays usable without them.
+    log.error({ err: error }, 'could not rebuild incidents from history');
   }
   const stopServiceMonitor = startServiceMonitor(serviceMonitor);
   app.addHook('onClose', async () => {
@@ -186,6 +222,7 @@ export function createApp(
       !request.url.startsWith('/api/auth/') &&
       // The one anonymous exception: exact path, read-only.
       !(request.method === 'GET' && request.url.split('?')[0] === PUBLIC_STATUS_PATH) &&
+      !(request.method === 'GET' && request.url.split('?')[0] === HEALTH_PATH) &&
       !(await auth.session(request.headers))
     )
       return reply.code(401).send(errorBody('auth-required'));
@@ -201,6 +238,42 @@ export function createApp(
     allowedOrigins,
     options.apiPort ?? 3000,
   );
+
+  const build = buildInfo();
+  app.get(HEALTH_PATH, async (_request, reply) => {
+    let database: 'ok' | 'error' = 'ok';
+    let schemaVersion: number | null = null;
+    try {
+      schemaVersion = Number(
+        (sqlite.prepare('SELECT COUNT(*) AS n FROM __drizzle_migrations').get() as { n: number }).n,
+      );
+    } catch (error) {
+      database = 'error';
+      log.error({ err: error }, 'health check: database is not readable');
+    }
+    const { lastCycleAt } = serviceMonitor.health();
+    const age = lastCycleAt === null ? null : Date.now() - lastCycleAt;
+    const monitor =
+      age === null
+        ? Date.now() - startedAt > MONITOR_STALE_MS
+          ? 'stalled'
+          : 'starting'
+        : age > MONITOR_STALE_MS
+          ? 'stalled'
+          : 'ok';
+    const healthy = database === 'ok' && monitor !== 'stalled';
+    return reply.code(healthy ? 200 : 503).send({
+      status: healthy ? 'ok' : 'unhealthy',
+      version: build.version,
+      commit: build.commit,
+      schemaVersion,
+      database,
+      monitor: {
+        status: monitor,
+        lastCycleAgeSeconds: age === null ? null : Math.round(age / 1000),
+      },
+    });
+  });
 
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
   registerAuthRoutes(app, auth, webPort, audit);
@@ -246,7 +319,7 @@ export function createApp(
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);
 
-  app.setErrorHandler((error, _request, reply) => {
+  app.setErrorHandler((error, request, reply) => {
     const status =
       typeof error === 'object' &&
       error !== null &&
@@ -254,7 +327,19 @@ export function createApp(
       typeof error.statusCode === 'number'
         ? error.statusCode
         : 500;
-    if (status >= 500) return reply.code(status).send(errorBody('internal-error'));
+    if (status >= 500) {
+      // The client only learns `internal-error`; the original error stays in the log.
+      request.log.error(
+        {
+          err: error,
+          method: request.method,
+          url: request.url.split('?')[0],
+          route: request.routeOptions.url ?? null,
+        },
+        'request failed',
+      );
+      return reply.code(status).send(errorBody('internal-error'));
+    }
     return reply.send(error);
   });
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));

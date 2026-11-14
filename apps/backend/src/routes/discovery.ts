@@ -31,13 +31,14 @@ export function registerDiscoveryRoutes(
   monitor: Monitor,
   docker: DockerSource | undefined,
 ) {
-  app.get('/api/discovery', async (_request, reply) => {
+  app.get('/api/discovery', async (request, reply) => {
     if (!docker) return { enabled: false };
     try {
       const { parsed, entries, scanned } = parseDocker(await docker.list());
       const preview = configuration.previewImport(parsed);
       return { enabled: true, scanned, entries, ...preview };
     } catch (error) {
+      request.log.warn({ err: error }, 'docker discovery failed');
       if (error instanceof InputError) return reply.code(502).send(errorBody(error.code));
       return reply.code(502).send(errorBody('docker-unavailable'));
     }
@@ -51,6 +52,7 @@ export function registerDiscoveryRoutes(
     try {
       containers = await docker.list();
     } catch (error) {
+      request.log.warn({ err: error }, 'docker discovery failed');
       if (error instanceof InputError) return reply.code(502).send(errorBody(error.code));
       return reply.code(502).send(errorBody('docker-unavailable'));
     }

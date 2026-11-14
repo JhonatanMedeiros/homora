@@ -67,6 +67,7 @@ export function createMonitoringTrustStore(db: DatabaseSync) {
         }
         return { trust: cached, invalid: false };
       } catch {
+        // Reported to the caller as `invalid: true` (surfaced in the UI), not thrown.
         cachedValue = undefined;
         cached = null;
         return { trust: null, invalid: true };
@@ -96,6 +97,8 @@ export function monitoringTrustReader(db: DatabaseSync) {
     try {
       return store.read().trust;
     } catch {
+      // Documented above: a missing or corrupt store never supplies trust. `createApp` wraps the
+      // same read with its own logging, so the cause is not repeated here.
       return null;
     }
   };

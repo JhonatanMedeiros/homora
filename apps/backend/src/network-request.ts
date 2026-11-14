@@ -146,7 +146,11 @@ export async function getAuthorizedResponse(
     );
     const timer = setTimeout(() => req.destroy(new Error('Timeout exceeded.')), remainingMs);
     req.on('close', () => clearTimeout(timer));
-    req.on('error', () => reject(new Error('Connection failed.')));
+    // The message stays generic for callers; the system error code (ECONNREFUSED, ENOTFOUND, ...)
+    // travels along so the monitor can log why a check failed.
+    req.on('error', (error: NodeJS.ErrnoException) =>
+      reject(Object.assign(new Error('Connection failed.'), { code: error.code })),
+    );
     if (options.jsonBody !== undefined) req.end(options.jsonBody);
   });
 }

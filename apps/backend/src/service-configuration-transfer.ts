@@ -89,6 +89,7 @@ export function createConfigurationTransfer({
           try {
             raw = JSON.parse(row.config);
           } catch {
+            // A widget whose saved config is not JSON cannot be exported; it is left out.
             return [];
           }
           if (row.type === 'clock') {

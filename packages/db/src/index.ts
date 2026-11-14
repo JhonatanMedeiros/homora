@@ -21,6 +21,35 @@ export function getSqliteHandle(db: object) {
   return handle;
 }
 
+/** What the migrator did, for the startup log and `/api/health`. */
+export type MigrationReport = {
+  /** Migrations this build ships. */
+  known: number;
+  /** Migrations recorded in the database before this run. */
+  alreadyApplied: number;
+  /** Migrations applied by this run. */
+  appliedNow: number;
+  /** Creation time (ISO) of the newest migration recorded after this run. */
+  latest: string | null;
+};
+
+/** Raised when the database history does not match the migrations of this build. */
+export class MigrationHistoryError extends Error {
+  // No parameter properties: scripts load this file through Node's type stripping.
+  details: {
+    reason: 'schema-ahead' | 'diverged';
+    known: number;
+    recorded: number;
+    /** First position where the recorded history differs, when it diverged. */
+    divergedAt: number | null;
+  };
+  constructor(details: MigrationHistoryError['details']) {
+    super('Incompatible migration history.');
+    this.name = 'MigrationHistoryError';
+    this.details = details;
+  }
+}
+
 const foreignKeyViolations = (sqlite: DatabaseSync) =>
   sqlite.prepare('PRAGMA foreign_key_check').all().length;
 
@@ -32,13 +61,13 @@ const foreignKeyViolations = (sqlite: DatabaseSync) =>
  * hence it is set around it). Rows that reference a missing parent after the migrations, beyond
  * those the database already had, roll everything back.
  */
-function migrate(sqlite: DatabaseSync) {
+function migrate(sqlite: DatabaseSync): MigrationReport {
   const migrations = readMigrationFiles({
     migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
   });
   sqlite.exec('PRAGMA foreign_keys = OFF');
   try {
-    migrateWithoutForeignKeys(sqlite, migrations);
+    return migrateWithoutForeignKeys(sqlite, migrations);
   } finally {
     sqlite.exec('PRAGMA foreign_keys = ON');
   }
@@ -47,7 +76,7 @@ function migrate(sqlite: DatabaseSync) {
 function migrateWithoutForeignKeys(
   sqlite: DatabaseSync,
   migrations: ReturnType<typeof readMigrationFiles>,
-) {
+): MigrationReport {
   sqlite.exec('BEGIN IMMEDIATE');
   try {
     const violationsBefore = foreignKeyViolations(sqlite);
@@ -57,15 +86,19 @@ function migrateWithoutForeignKeys(
     const applied = sqlite
       .prepare('SELECT hash, created_at FROM __drizzle_migrations ORDER BY created_at')
       .all() as { hash: string; created_at: number }[];
-    if (
-      applied.length > migrations.length ||
-      applied.some(
-        (row, i) =>
-          row.hash !== migrations[i]?.hash ||
-          Number(row.created_at) !== migrations[i]?.folderMillis,
-      )
-    )
-      throw new Error('Incompatible migration history.');
+    const divergedAt = applied.findIndex(
+      (row, i) =>
+        row.hash !== migrations[i]?.hash || Number(row.created_at) !== migrations[i]?.folderMillis,
+    );
+    if (applied.length > migrations.length || divergedAt !== -1)
+      throw new MigrationHistoryError({
+        // More recorded migrations than this build knows, and the shared prefix matches: a newer
+        // build wrote to this database.
+        reason: divergedAt === -1 || divergedAt >= migrations.length ? 'schema-ahead' : 'diverged',
+        known: migrations.length,
+        recorded: applied.length,
+        divergedAt: divergedAt === -1 ? null : divergedAt,
+      });
     const tableExists = !!sqlite
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'services'")
       .get();
@@ -99,6 +132,7 @@ function migrateWithoutForeignKeys(
         .run(migrations[0].hash, migrations[0].folderMillis);
       applied.push({ hash: migrations[0].hash, created_at: migrations[0].folderMillis });
     }
+    const alreadyApplied = applied.length;
     for (const migration of migrations.slice(applied.length)) {
       for (const statement of migration.sql) sqlite.exec(statement);
       sqlite
@@ -108,6 +142,13 @@ function migrateWithoutForeignKeys(
     if (foreignKeyViolations(sqlite) > violationsBefore)
       throw new Error('Migration left rows that reference missing parents.');
     sqlite.exec('COMMIT');
+    const newest = migrations[migrations.length - 1];
+    return {
+      known: migrations.length,
+      alreadyApplied,
+      appliedNow: migrations.length - alreadyApplied,
+      latest: newest ? new Date(newest.folderMillis).toISOString() : null,
+    };
   } catch (error) {
     sqlite.exec('ROLLBACK');
     throw error;
@@ -115,8 +156,9 @@ function migrateWithoutForeignKeys(
 }
 export function createDatabase(path: string) {
   const sqlite = new DatabaseSync(path);
+  let migrations: MigrationReport;
   try {
-    migrate(sqlite);
+    migrations = migrate(sqlite);
   } catch (error) {
     sqlite.close();
     throw error;
@@ -133,5 +175,5 @@ export function createDatabase(path: string) {
     return { rows: statement.all(...(params as SQLInputValue[])) as unknown as unknown[][] };
   });
   sqliteHandles.set(db, sqlite);
-  return { db, close: () => sqlite.close() };
+  return { db, close: () => sqlite.close(), migrations };
 }

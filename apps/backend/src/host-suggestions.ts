@@ -1,4 +1,5 @@
 import { isIP } from 'node:net';
+import { noopLog, type Log } from './logger.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { GuestType, HostLink, Service } from '@homora/shared';
 import { hasInventoryDomain } from '@homora/integrations';
@@ -118,6 +119,7 @@ export async function cardAddresses(
   try {
     url = new URL(service.url);
   } catch {
+    // An unparseable card URL has no address to match; it simply gets no suggestion.
     return [];
   }
   const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
@@ -130,6 +132,7 @@ export async function cardAddresses(
     );
     return [address.address.toLowerCase()];
   } catch {
+    // Documented above: a blocked or failed lookup means no signal, not an error.
     return [];
   }
 }
@@ -141,8 +144,9 @@ export function createHostSuggestions(options: {
   listServices: () => Pick<Service, 'id' | 'url' | 'allowPrivate' | 'name'>[];
   listHosts: () => Map<number, HostLink>;
   resolver?: Resolver;
+  log?: Log;
 }) {
-  const { sqlite, connections } = options;
+  const { sqlite, connections, log = noopLog } = options;
   const dismissals = () =>
     new Set(
       (
@@ -188,7 +192,11 @@ export function createHostSuggestions(options: {
               agent: known?.agent ?? [],
             });
           }
-        } catch {
+        } catch (error) {
+          log.warn(
+            { err: error, connection: connection.id, integration: connection.type },
+            'host suggestions: integration inventory unavailable',
+          );
           unavailable.push(connection.id);
         }
       }
