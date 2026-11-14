@@ -4,13 +4,14 @@ import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import ts from 'typescript';
 
-async function sourceFiles(folder) {
+async function sourceFiles(folder, includeTests = false) {
   const entries = await readdir(folder, { withFileTypes: true });
   const files = await Promise.all(
     entries.map(async (entry) => {
       const path = join(folder, entry.name);
-      if (entry.isDirectory()) return sourceFiles(path);
-      return /\.[cm]?[jt]sx?$/.test(entry.name) && !/\.(test|spec)\./.test(entry.name)
+      if (entry.isDirectory()) return sourceFiles(path, includeTests);
+      return /\.[cm]?[jt]sx?$/.test(entry.name) &&
+        (includeTests || !/\.(test|spec)\./.test(entry.name))
         ? [path]
         : [];
     }),
@@ -173,8 +174,9 @@ test('application and integration runtime respect integration boundaries', async
     ['apps/backend/src', 'app'],
     ['apps/frontend/src', 'app'],
     ['packages/integrations/src', 'sdk'],
+    ['packages/integrations/test-support', 'sdk'],
   ]) {
-    for (const file of await sourceFiles(join(root, folder))) {
+    for (const file of await sourceFiles(join(root, folder), side === 'sdk')) {
       const problems = violations(await readFile(file, 'utf8'), file, root, types, side, symbols);
       assert.deepEqual(problems, [], `${file}: ${problems.join(', ')}`);
     }

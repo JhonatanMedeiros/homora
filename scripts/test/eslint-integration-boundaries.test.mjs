@@ -25,7 +25,7 @@ test('ESLint enforces integration imports without blocking test helpers or capab
         "import type { DB } from '../../../apps/backend/src/db.js';",
       )
     ).length,
-    0,
+    1,
   );
   assert.equal(
     (

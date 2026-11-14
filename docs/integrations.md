@@ -244,7 +244,7 @@ are currently used by Homora; consult the guide above for active functionality.
 ## Reference integrations (issue #98)
 
 Every integration below is **implemented, unvalidated**: it passes the adapter contract harness
-(`apps/backend/src/adapter-contract.test.ts`) against fixtures that follow the vendor's published API
+(`packages/integrations/src/adapter-contract.test.ts`) against fixtures that follow the vendor's published API
 documentation or source, and none has been tried against a live service. The fixtures say which. Fill
 in the [live validation template](adapters.md#live-validation-template) before calling one validated.
 All use the shared transport: GET only, destination policy, TLS validation, a 2 MB response cap, and

@@ -1,5 +1,5 @@
-import { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';
-import { fixture, urlCases } from '../../../../../apps/backend/src/integration-test-support.js';
+import { runAdapterContract } from '../../../test-support/adapter-contract.js';
+import { fixture, urlCases } from '../../../test-support/integration-test-support.js';
 import { createPiHoleAdapter } from './backend.js';
 const secret = 'test-app-password';
 const validConfig = { url: 'https://pihole.example.test', secret };

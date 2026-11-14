@@ -39,3 +39,7 @@ migration. Applications inject their error and validation policy into the generi
 The internal API can evolve with the monorepo; publishing it as a third-party SDK would require a
 separate versioning, compatibility and security decision. A mocked contract test and a build do not
 replace live-service validation.
+
+### Test harness follow-up
+
+The reusable adapter contract and fixture helpers now live under `packages/integrations/test-support` and do not import the applications. Host-owned cache, registry and transport behavior remains tested in the backend. This supersedes the earlier decision to keep the entire harness in the backend.

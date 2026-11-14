@@ -94,9 +94,8 @@ export default tseslint.config(
     },
   },
   {
-    // Runtime integrations are host-independent; their contract tests still use backend helpers.
-    files: ['packages/integrations/src/**/*.{ts,tsx,js,jsx,mjs,cjs}'],
-    ignores: ['**/*.test.*', '**/*.spec.*'],
+    // Integration runtime and tests are host-independent.
+    files: ['packages/integrations/{src,test-support}/**/*.{ts,tsx,js,jsx,mjs,cjs}'],
     rules: {
       'no-restricted-imports': [
         'error',

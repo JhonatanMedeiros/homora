@@ -289,7 +289,7 @@ releases exist.
   `backend-manifest-response.ts`; code adapters are registered through generated catalogs. Type enums, stored
   config keys, proposal schemas, the connection form, widget text and the catalog endpoint derive
   from the same definitions ([ADR 0009](decisions/0009-declarative-integration-adapters.md)).
-  `adapter-contract.ts` is the test every adapter must pass ([adapters](adapters.md)). All connection adapters use the shared
+  `packages/integrations/test-support/adapter-contract.ts` is the test every adapter must pass ([adapters](adapters.md)). All connection adapters use the shared
   network transport with destination policy. Legacy Proxmox credentials are copied once, at
   backend startup, into encrypted connection storage by `legacy-proxmox.ts`; the bridge row and
   widget references are preserved. That module also resolves only live migrated connection ids

@@ -3,6 +3,7 @@ import { defineBackendIntegration } from '@homora/integrations/backend';
 import { createCodeRegistrations } from '@homora/integrations/backend/catalog';
 import { hasInventoryDomain, hasSystemTelemetry, jellyfinManifest } from '@homora/shared';
 import { createIntegrationRegistry, createObservationCache } from './integrations.js';
+import { integrationRegistry } from './integration-registry.js';
 
 const proxmoxAdapter = { type: 'proxmox', label: 'Proxmox VE', capabilities: ['inventory'] };
 
@@ -102,4 +103,9 @@ it('discards previous value when forced refresh fails', async () => {
     }, true),
   ).rejects.toThrow('unavailable');
   expect((await cache.collect(async () => 2)).data).toBe(2);
+});
+
+it('lists registered integration metadata without exposing implementation or secrets', () => {
+  for (const entry of integrationRegistry.list())
+    expect(Object.keys(entry).sort()).toEqual(['capabilities', 'label', 'type']);
 });

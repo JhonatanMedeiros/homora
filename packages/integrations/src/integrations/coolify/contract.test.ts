@@ -1,9 +1,5 @@
-import { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';
-import {
-  fixture,
-  urlCases,
-  long,
-} from '../../../../../apps/backend/src/integration-test-support.js';
+import { runAdapterContract } from '../../../test-support/adapter-contract.js';
+import { fixture, urlCases, long } from '../../../test-support/integration-test-support.js';
 import { createCoolifyAdapter } from './testing.js';
 
 const coolifyToken = '1|coolify-SECRET456';

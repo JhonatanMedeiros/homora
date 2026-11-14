@@ -1,8 +1,5 @@
 import { expect, it } from 'vitest';
-import {
-  createManifestAdapter,
-  fixture,
-} from '../../../../../apps/backend/src/integration-test-support.js';
+import { createManifestAdapter, fixture } from '../../../test-support/integration-test-support.js';
 import { uptimeKumaManifest } from './definition.js';
 
 const collect = (page: unknown, heartbeat: unknown = fixture('uptime-kuma/heartbeat.json')) =>

@@ -7,16 +7,11 @@
  * The harness drives the adapter through a fake transport and enforces the security rules every
  * adapter must keep: validated input, GET-only requests through the shared transport, a path built
  * only from validated config, no secrets in data or errors, generic errors that never echo the
- * remote body, bounded output, and the observation cache semantics.
+ * remote body, and bounded output.
  */
 import { inspect } from 'node:util';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createIntegrationRegistry,
-  createObservationCache,
-  IntegrationInvalidatedError,
-  type IntegrationAdapter,
-} from './integrations.js';
+import type { IntegrationAdapter } from '../src/backend.js';
 
 export type FakeRequest = {
   origin: string;
@@ -82,8 +77,6 @@ export type AdapterContractOptions<Config, Data> = {
    * An adapter may opt out only when the shared transport already throws fixed strings; say why.
    */
   sanitizesTransportErrors?: boolean;
-  /** Cache TTL used for the cache checks (default 30 s). */
-  cacheTtlMs?: number;
 };
 
 /** Throws when the output is not bounded: long strings, huge arrays, non-finite numbers. */
@@ -162,8 +155,6 @@ export function runAdapterContract<Config, Data>(options: AdapterContractOptions
         expect(adapter.capabilities.length).toBeGreaterThan(0);
         const metadata = JSON.stringify([adapter.type, adapter.label, adapter.capabilities]);
         for (const secret of secrets) expect(metadata).not.toContain(secret);
-        const listed = JSON.stringify(createIntegrationRegistry([adapter]).list());
-        for (const secret of secrets) expect(listed).not.toContain(secret);
       });
     });
 
@@ -290,60 +281,6 @@ export function runAdapterContract<Config, Data>(options: AdapterContractOptions
           throw new Error('Invalid JSON response.');
         });
         expectGeneric(await rejection(adapter));
-      });
-    });
-
-    describe('observation cache', () => {
-      const ttl = options.cacheTtlMs ?? 30_000;
-      it('caches a success, never a failure, and drops a stale result after invalidation', async () => {
-        let now = 1_000;
-        const cache = createObservationCache<Data>(ttl, () => now);
-        let mode: 'ok' | 'fail' = 'fail';
-        const transport = vi.fn<FakeTransport>(async () =>
-          mode === 'ok'
-            ? { status: 200, body: fixtures.valid.body }
-            : { status: 500, body: { message: REMOTE_BODY_MARKER } },
-        );
-        const adapter = options.create(transport);
-        const read = () => cache.collect(() => adapter.collect(validConfig));
-
-        await expect(read()).rejects.toThrow();
-        const afterFailure = transport.mock.calls.length;
-        mode = 'ok';
-        const first = await read();
-        expect(first.data).toEqual(fixtures.valid.expected);
-        expect(transport.mock.calls.length).toBeGreaterThan(afterFailure);
-        const afterSuccess = transport.mock.calls.length;
-        await read();
-        expect(transport.mock.calls.length).toBe(afterSuccess);
-        now += ttl + 1;
-        await read();
-        expect(transport.mock.calls.length).toBeGreaterThan(afterSuccess);
-
-        // Invalidation while a request is in flight must not store the late result.
-        let release: (response: FakeResponse) => void = () => undefined;
-        let started = false;
-        let released = false;
-        const valid: FakeResponse = { status: 200, body: fixtures.valid.body };
-        // The first request waits; later ones (multi-request adapters) answer at once.
-        const slow = options.create(() =>
-          released
-            ? Promise.resolve(valid)
-            : new Promise<FakeResponse>((resolve) => {
-                started = true;
-                release = (response) => {
-                  released = true;
-                  resolve(response);
-                };
-              }),
-        );
-        const fresh = createObservationCache<Data>(ttl, () => now);
-        const pending = fresh.collect(() => slow.collect(validConfig));
-        const settled = expect(pending).rejects.toBeInstanceOf(IntegrationInvalidatedError);
-        await vi.waitFor(() => expect(started).toBe(true));
-        fresh.invalidate();
-        release({ status: 200, body: fixtures.valid.body });
-        await settled;
       });
     });
   });

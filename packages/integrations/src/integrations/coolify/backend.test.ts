@@ -6,10 +6,7 @@ import {
   normalizeCoolifyState,
   parseCoolifyUrls,
 } from './testing.js';
-import type {
-  FakeRequest,
-  FakeResponse,
-} from '../../../../../apps/backend/src/adapter-contract.js';
+import type { FakeRequest, FakeResponse } from '../../../test-support/adapter-contract.js';
 
 const read = (name: string) =>
   (
