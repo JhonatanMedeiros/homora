@@ -13,12 +13,46 @@ type AckRow = Acknowledgement & { serviceId: number };
  * timed mute. None of it changes how a service is checked or when notifications go out.
  */
 export function createServiceAttention(sqlite: DatabaseSync, now: () => number = Date.now) {
+  const orderKey = 'service_pin_order';
+  const order = (): number[] => {
+    const row = sqlite.prepare('SELECT value FROM app_settings WHERE key=?').get(orderKey) as
+      { value: string } | undefined;
+    try {
+      const value: unknown = JSON.parse(row?.value ?? '[]');
+      if (
+        !Array.isArray(value) ||
+        !value.every((id) => Number.isSafeInteger(id) && id > 0) ||
+        new Set(value).size !== value.length
+      )
+        return [];
+      return value;
+    } catch {
+      return [];
+    }
+  };
+  const saveOrder = (ids: number[]) =>
+    sqlite
+      .prepare(
+        'INSERT INTO app_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+      )
+      .run(orderKey, JSON.stringify(ids));
   // Favorites belong to the dashboard card; acknowledgements belong to whatever is monitored, probes included.
   const cardExists = (id: number) =>
     Boolean(sqlite.prepare('SELECT id FROM services WHERE id=?').get(id));
   const exists = (id: number) =>
     Boolean(sqlite.prepare('SELECT id FROM monitors WHERE id=?').get(id));
   return {
+    pinnedOrder: order,
+    setPinnedOrder(ids: number[]) {
+      const current = this.pinnedIds();
+      if (
+        ids.length !== current.size ||
+        new Set(ids).size !== ids.length ||
+        ids.some((id) => !current.has(id))
+      )
+        throw new Error('Invalid pin order');
+      saveOrder(ids);
+    },
     pinnedIds(): Set<number> {
       const rows = sqlite.prepare('SELECT service_id AS id FROM service_pins').all() as {
         id: number;
@@ -27,13 +61,25 @@ export function createServiceAttention(sqlite: DatabaseSync, now: () => number =
     },
     /** Returns false when the service does not exist. */
     setPinned(id: number, pinned: boolean): boolean {
-      if (!cardExists(id)) return false;
-      if (pinned)
-        sqlite
-          .prepare('INSERT OR IGNORE INTO service_pins(service_id,pinned_at) VALUES(?,?)')
-          .run(id, now());
-      else sqlite.prepare('DELETE FROM service_pins WHERE service_id=?').run(id);
-      return true;
+      sqlite.exec('SAVEPOINT pin_change');
+      try {
+        if (!cardExists(id)) {
+          sqlite.exec('RELEASE pin_change');
+          return false;
+        }
+        const wasPinned = this.pinnedIds().has(id);
+        if (pinned)
+          sqlite
+            .prepare('INSERT OR IGNORE INTO service_pins(service_id,pinned_at) VALUES(?,?)')
+            .run(id, now());
+        else sqlite.prepare('DELETE FROM service_pins WHERE service_id=?').run(id);
+        if (wasPinned !== pinned) saveOrder(order().filter((item) => item !== id));
+        sqlite.exec('RELEASE pin_change');
+        return true;
+      } catch (error) {
+        sqlite.exec('ROLLBACK TO pin_change; RELEASE pin_change');
+        throw error;
+      }
     },
     /** Marks pinned services (used by import); unknown ids are ignored. */
     replacePinned(ids: number[]) {
@@ -42,6 +88,7 @@ export function createServiceAttention(sqlite: DatabaseSync, now: () => number =
         'INSERT OR IGNORE INTO service_pins(service_id,pinned_at) SELECT id,? FROM services WHERE id=?',
       );
       for (const id of ids) insert.run(now(), id);
+      saveOrder([]);
     },
     list(): Record<number, Acknowledgement> {
       const rows = sqlite

@@ -1894,3 +1894,11 @@ the HTTP and stdio transports were not manually verified.
 - The phone header is one row: the Manage button is hidden on the Home (the bar has it), and outside the Home the back arrow replaces the logo (it was a second row). Fixed bars that sat above the old bar (Organize "Done", the appearance save bar) moved up with it.
 - Following DESIGN.md, the capsule has no shadow; a gradient fade behind it separates it from the content. `mobile-dashboard.png` was retaken (synthetic data, statuses fabricated in the browser); the other images were not.
 - Validation: `pnpm check` (1,709 application tests) and `pnpm build` passed; new tests cover the Home bar. Checked in a 390 px browser capture of the Home, a management page and the More sheet; not tried on a real phone, in the light theme or with a notch (safe-area inset).
+
+### MCP route coverage (issue #195)
+
+- Added `list_trusted_ca` under `services:read`, exposing certificate subjects, validity and count without the PEM. Upload and removal remain human operations.
+- Added scoped operational reads for probes, incidents, notification channels, status overview, tags, link types and public status, and allowed aliases in card proposals with a visible review diff.
+- Added reviewable page changes with the `organization:propose` scope, batch support, version checks and audit events.
+- Added scoped, audited and human-reviewed probes, acknowledgements, tags, favorite cards, resource links and page-widget moves; batch proposals cover the new kinds. MCP responses omit maintenance notes, connection URLs and PEM. Connection tests use restricted transport without persisting results or changing shared backoff.
+- Validation: focused MCP, authorization and proposal tests; `pnpm check` passed (1,722 application tests and 31 script tests) and `pnpm build` passed. No live service was contacted. Browser review remains pending.

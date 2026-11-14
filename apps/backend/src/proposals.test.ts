@@ -25,6 +25,33 @@ const card = {
   description: 'Media server',
 };
 
+it('reviews alias creation, preservation, and removal with the service proposal', () => {
+  const { db, api } = fixture();
+  try {
+    const agent = api.issue('bot', ['proposals:create']);
+    const created = api.propose(agent.id, { op: 'create', service: { ...card, alias: 'media' } });
+    expect(created.diff).toMatchObject({ service: { alias: 'media' } });
+    api.decide(created.id, true, 'human');
+    expect(db.prepare('SELECT alias FROM services WHERE id=1').get()).toEqual({ alias: 'media' });
+    const preserved = api.propose(agent.id, { op: 'update', id: 1, service: card });
+    expect(preserved.diff).toMatchObject({ service: { alias: 'media' } });
+    api.decide(preserved.id, true, 'human');
+    const removed = api.propose(agent.id, {
+      op: 'update',
+      id: 1,
+      service: { ...card, alias: null },
+    });
+    expect(removed.diff).toMatchObject({ service: { alias: null } });
+    api.decide(removed.id, true, 'human');
+    expect(db.prepare('SELECT alias FROM services WHERE id=1').get()).toEqual({ alias: null });
+    expect(() =>
+      api.propose(agent.id, { op: 'create', service: { ...card, alias: 'invalid alias' } }),
+    ).toThrow();
+  } finally {
+    db.close();
+  }
+});
+
 it('shows and audits a TLS exception in an approved proposal', () => {
   const { db, api } = fixture();
   try {

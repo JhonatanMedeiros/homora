@@ -35,6 +35,15 @@ it('queries only authorized non-Proxmox integrations through the controlled tran
   const [a, b] = InMemoryTransport.createLinkedPair();
   try {
     await Promise.all([client.connect(a), server.connect(b)]);
+    const capabilitiesResult = await client.callTool({ name: 'get_homora_capabilities' });
+    const capabilities = JSON.parse((capabilitiesResult.content as { text: string }[])[0].text);
+    expect(capabilities.tools).toContainEqual(
+      expect.objectContaining({
+        name: 'test_connection',
+        requiredScopes: ['integrations:read'],
+        available: true,
+      }),
+    );
     const response = await client.callTool({
       name: 'get_integration_status',
       arguments: { id: 1 },
@@ -46,11 +55,36 @@ it('queries only authorized non-Proxmox integrations through the controlled tran
       { origins: ['https://media.example'], allowPrivate: false },
       expect.any(Object),
     );
+    const beforeTest = db
+      .prepare('SELECT last_test_at,last_test_result FROM integration_instances WHERE id=1')
+      .get();
+    const test = await client.callTool({ name: 'test_connection', arguments: { id: 1 } });
+    expect(test.isError).not.toBe(true);
+    expect(
+      db
+        .prepare('SELECT last_test_at,last_test_result FROM integration_instances WHERE id=1')
+        .get(),
+    ).toEqual(beforeTest);
+    expect(JSON.stringify(await client.callTool({ name: 'list_integrations' }))).not.toContain(
+      'https://media.example',
+    );
+    vi.mocked(getAuthorizedResponse).mockRejectedValueOnce(new Error('upstream-secret'));
+    const failedTest = await client.callTool({ name: 'test_connection', arguments: { id: 1 } });
+    expect(failedTest.isError).toBe(true);
+    expect(JSON.stringify(failedTest)).not.toContain('upstream-secret');
+    expect(
+      db
+        .prepare('SELECT last_test_at,last_test_result FROM integration_instances WHERE id=1')
+        .get(),
+    ).toEqual(beforeTest);
     vi.mocked(getAuthorizedResponse).mockClear();
     const proxmox = await client.callTool({ name: 'get_integration_status', arguments: { id: 2 } });
     expect(proxmox.isError).toBe(true);
     expect(getAuthorizedResponse).not.toHaveBeenCalled();
     createProposalService(db).revoke(identity.id);
+    expect((await client.callTool({ name: 'test_connection', arguments: { id: 1 } })).isError).toBe(
+      true,
+    );
     expect((await client.callTool({ name: 'list_integrations', arguments: {} })).isError).toBe(
       true,
     );

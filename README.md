@@ -101,6 +101,17 @@ to your first alert.
   expires if ignored. Agents never see credentials and cannot write to external infrastructure.
 - **Complete audit trail** of sign-ins, proposals, approvals and settings changes in the Activity page.
 
+New MCP scopes are granted explicitly; existing tokens do not gain them automatically:
+
+| Scope                                 | Capability                                           |
+| ------------------------------------- | ---------------------------------------------------- |
+| `probes:read`, `probes:propose`       | Read and propose standalone monitors                 |
+| `incidents:read`, `incidents:propose` | Read incidents and propose acknowledgements or mutes |
+| `organization:propose`                | Propose pages, tags, favorites and resource links    |
+| `notifications:read`                  | Read channel metadata without credentials            |
+
+See the [complete agent capability inventory](docs/agent-capabilities.md) for all scopes and tools.
+
 ### Own your data
 
 - **Import** from Homora, Homepage (`services.yaml`, `bookmarks.yaml`) and Dashy (`conf.yml`) with a preview that

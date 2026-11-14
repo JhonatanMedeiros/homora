@@ -68,9 +68,13 @@ export function registerServiceConfigurationRoutes(
   app.get('/api/services', async () => {
     const shared = publicStatus.publicIds();
     const pinned = attention.pinnedIds();
-    return configuration
-      .listServices()
-      .map((row) => ({ ...row, isPublic: shared.has(row.id), pinned: pinned.has(row.id) }));
+    const pinOrder = new Map(attention.pinnedOrder().map((id, index) => [id, index]));
+    return configuration.listServices().map((row) => ({
+      ...row,
+      isPublic: shared.has(row.id),
+      pinned: pinned.has(row.id),
+      pinnedPosition: pinOrder.get(row.id) ?? null,
+    }));
   });
   app.get('/api/acknowledgements', async () => attention.list());
   const record = async (

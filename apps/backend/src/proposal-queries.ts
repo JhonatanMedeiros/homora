@@ -14,7 +14,7 @@ export function createProposalQueries({
   sqlite: DatabaseSync;
   configuration: Configuration;
   configHash: () => string;
-  managedBaseHash: () => string;
+  managedBaseHash: (change?: import('./managed-proposals.js').ManagedChange) => string;
 }) {
   function list() {
     const now = Date.now();
@@ -62,7 +62,7 @@ export function createProposalQueries({
         rows.some((other) => other.batchId === proposal.batchId && other.state !== 'pending');
       return incomplete ||
         proposal.baseVersion !== configuration.version() ||
-        proposal.baseHash !== (managed ? managedBaseHash() : configHash())
+        proposal.baseHash !== (managed ? managedBaseHash(managed) : configHash())
         ? { ...proposal, state: 'stale' }
         : proposal;
     });

@@ -1,7 +1,14 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { isNodeName, isVmid, MAINTENANCE_NOTE_MAX } from '@homora/shared';
+import {
+  CHECK_TYPES,
+  isNodeName,
+  isVmid,
+  MAINTENANCE_NOTE_MAX,
+  MAX_WIDGETS_PER_PAGE,
+  RESOURCE_ID_PATTERN,
+} from '@homora/shared';
 import { createMaintenanceStore } from './monitoring/index.js';
 import {
   hasInventoryDomain,
@@ -11,10 +18,88 @@ import {
 import { renumberGroups } from './group-order.js';
 import { definitionOf, integrationTypeSchema, publicFieldShape } from './integration-fields.js';
 import { resolveLegacyConnection } from './legacy-integrations.js';
+import { createPages } from './pages.js';
+import { createProbeStore } from './probes.js';
+import { normalizeTags } from './service-tags.js';
+import { createServiceAttention } from './service-attention.js';
+import { createResourceLinks } from './resource-links.js';
 
 const id = z.number().int().safe().positive();
 const name = z.string().trim().min(1).max(40);
 const widgetName = z.string().trim().min(1).max(80);
+const probeInput = z
+  .object({
+    name: z.string().max(200),
+    address: z.string().max(2100),
+    checkType: z.enum(CHECK_TYPES).optional(),
+    checkInterval: z.number().int().safe().nullable().optional(),
+    expectedStatus: z.string().max(10).nullable().optional(),
+    checkMatch: z.string().max(400).nullable().optional(),
+    allowPrivate: z.boolean().optional(),
+  })
+  .strict();
+export const probeChangeSchema = z.discriminatedUnion('op', [
+  z.object({ op: z.literal('create'), probe: probeInput }).strict(),
+  z.object({ op: z.literal('update'), id, probe: probeInput }).strict(),
+  z.object({ op: z.literal('delete'), id }).strict(),
+]);
+export const serviceTagsChangeSchema = z
+  .object({ serviceId: id, tags: z.array(z.string().max(80)).max(12) })
+  .strict();
+export const acknowledgementChangeSchema = z.discriminatedUnion('op', [
+  z
+    .object({
+      op: z.literal('ack'),
+      serviceId: id,
+      incidentId: id.nullable().optional(),
+      muteMinutes: z.number().int().min(1).max(10080).optional(),
+    })
+    .strict(),
+  z.object({ op: z.literal('clear'), serviceId: id }).strict(),
+]);
+const safeResourceUrl = z
+  .string()
+  .max(2048)
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return (
+        ['http:', 'https:'].includes(url.protocol) &&
+        !url.username &&
+        !url.password &&
+        !url.search &&
+        !url.hash
+      );
+    } catch {
+      return false;
+    }
+  });
+export const resourceLinkChangeSchema = z.discriminatedUnion('op', [
+  z
+    .object({
+      op: z.literal('link'),
+      serviceId: id,
+      integrationId: id,
+      resourceUuid: z.string().regex(RESOURCE_ID_PATTERN),
+      resourceType: z.enum(['application', 'service']),
+      name: z.string().trim().min(1).max(200),
+      url: safeResourceUrl.nullable(),
+    })
+    .strict(),
+  z.object({ op: z.literal('unlink'), serviceId: id }).strict(),
+]);
+export const pinChangeSchema = z.discriminatedUnion('op', [
+  z.object({ op: z.literal('pin'), serviceId: id }).strict(),
+  z.object({ op: z.literal('unpin'), serviceId: id }).strict(),
+  z.object({ op: z.literal('reorder'), ids: z.array(id).max(1000) }).strict(),
+]);
+export const pageChangeSchema = z.discriminatedUnion('op', [
+  z.object({ op: z.literal('create'), name }).strict(),
+  z.object({ op: z.literal('rename'), id, name }).strict(),
+  z.object({ op: z.literal('delete'), id, moveTo: id.optional() }).strict(),
+  z.object({ op: z.literal('reorder'), ids: z.array(id).max(50) }).strict(),
+  z.object({ op: z.literal('assign-group'), id, pageId: id }).strict(),
+]);
 export const groupChangeSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('create'), name }).strict(),
   z.object({ op: z.literal('rename'), id, name }).strict(),
@@ -45,6 +130,14 @@ export const widgetChangeSchema = z.discriminatedUnion('op', [
     .strict()
     .refine((value) => (value.integrationId === undefined) !== (value.source === undefined)),
   z.object({ op: z.literal('link'), id, serviceId: id.nullable() }).strict(),
+  z
+    .object({
+      op: z.literal('move'),
+      id,
+      pageId: id,
+      position: z.number().int().nonnegative().max(199),
+    })
+    .strict(),
   z.object({ op: z.literal('delete'), id }).strict(),
 ]);
 export const connectionSetupSchema = z
@@ -108,6 +201,12 @@ export const maintenanceChangeSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('cancel'), id, ...maintenanceWindow }).strict(),
 ]);
 export const managedChangeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('probe'), change: probeChangeSchema }).strict(),
+  z.object({ kind: z.literal('tag'), change: serviceTagsChangeSchema }).strict(),
+  z.object({ kind: z.literal('acknowledgement'), change: acknowledgementChangeSchema }).strict(),
+  z.object({ kind: z.literal('link'), change: resourceLinkChangeSchema }).strict(),
+  z.object({ kind: z.literal('pin'), change: pinChangeSchema }).strict(),
+  z.object({ kind: z.literal('page'), change: pageChangeSchema }).strict(),
   z.object({ kind: z.literal('group'), change: groupChangeSchema }).strict(),
   z.object({ kind: z.literal('card-order'), change: cardOrderSchema }).strict(),
   z.object({ kind: z.literal('widget'), change: widgetChangeSchema }).strict(),
@@ -153,7 +252,63 @@ function exactMembers(current: (string | number)[], requested: (string | number)
 /** Called inside an existing write transaction. All validation is repeated at approval. */
 export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
   const { kind, change } = managedChangeSchema.parse(input);
-  if (kind === 'maintenance') {
+  let affectedId: number | undefined;
+  if (kind === 'pin') {
+    const attention = createServiceAttention(db);
+    if (change.op === 'reorder') attention.setPinnedOrder(change.ids);
+    else if (!attention.setPinned(change.serviceId, change.op === 'pin'))
+      throw new Error('Service not found');
+    if (change.op !== 'reorder') affectedId = change.serviceId;
+  } else if (kind === 'link') {
+    const links = createResourceLinks(db);
+    if (change.op === 'link') links.set(change.serviceId, change);
+    else if (!links.remove(change.serviceId)) throw new Error('Resource link not found');
+    affectedId = change.serviceId;
+  } else if (kind === 'acknowledgement') {
+    const attention = createServiceAttention(db);
+    if (change.op === 'ack') {
+      if (
+        change.incidentId != null &&
+        !db
+          .prepare('SELECT id FROM service_incidents WHERE id=? AND service_id=?')
+          .get(change.incidentId, change.serviceId)
+      )
+        throw new Error('Incident not found');
+      if (!attention.acknowledge(change.serviceId, change.incidentId ?? null, change.muteMinutes))
+        throw new Error('Monitor not found');
+    } else if (!attention.clear(change.serviceId)) throw new Error('Monitor not found');
+    affectedId = change.serviceId;
+  } else if (kind === 'tag') {
+    if (!db.prepare('SELECT id FROM services WHERE id=?').get(change.serviceId))
+      throw new Error('Service not found');
+    db.prepare('DELETE FROM service_tags WHERE service_id=?').run(change.serviceId);
+    const insert = db.prepare('INSERT INTO service_tags(service_id,tag) VALUES(?,?)');
+    for (const tag of normalizeTags(change.tags)) insert.run(change.serviceId, tag);
+    affectedId = change.serviceId;
+  } else if (kind === 'probe') {
+    const probes = createProbeStore(db);
+    if (change.op === 'create') affectedId = probes.create(change.probe).id;
+    else if (change.op === 'update') {
+      if (!probes.update(change.id, change.probe)) throw new Error('Probe not found');
+      affectedId = change.id;
+    } else {
+      if (!probes.remove(change.id)) throw new Error('Probe not found');
+      affectedId = change.id;
+    }
+  } else if (kind === 'page') {
+    const pages = createPages(db, true);
+    const outcome =
+      change.op === 'create'
+        ? pages.create(change.name)
+        : change.op === 'rename'
+          ? pages.rename(change.id, change.name)
+          : change.op === 'delete'
+            ? pages.remove(change.id, change.moveTo)
+            : change.op === 'reorder'
+              ? pages.reorder(change.ids)
+              : pages.setGroupPage(change.id, change.pageId);
+    if (!outcome.ok) throw new Error(outcome.code);
+  } else if (kind === 'maintenance') {
     const store = createMaintenanceStore(db);
     if (change.op === 'create') {
       if (!change.note.trim()) throw new Error('invalid-window');
@@ -245,7 +400,28 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
       change.targetIds.forEach((item, index) => update.run(index, item));
     }
   } else if (kind === 'widget') {
-    if (change.op === 'create') {
+    if (change.op === 'move') {
+      const widget = db
+        .prepare('SELECT id,page_id AS pageId FROM page_widgets WHERE id=?')
+        .get(change.id) as { id: number; pageId: number } | undefined;
+      if (!widget || !db.prepare('SELECT id FROM pages WHERE id=?').get(change.pageId))
+        throw new Error('Widget or page not found');
+      const ids = (pageId: number) =>
+        (
+          db
+            .prepare('SELECT id FROM page_widgets WHERE page_id=? AND id<>? ORDER BY position,id')
+            .all(pageId, change.id) as { id: number }[]
+        ).map((row) => row.id);
+      const destination = ids(change.pageId);
+      if (destination.length >= MAX_WIDGETS_PER_PAGE || change.position > destination.length)
+        throw new Error('Invalid widget position');
+      const source = ids(widget.pageId);
+      destination.splice(change.position, 0, change.id);
+      db.prepare('UPDATE page_widgets SET page_id=? WHERE id=?').run(change.pageId, change.id);
+      const update = db.prepare('UPDATE page_widgets SET position=? WHERE id=?');
+      if (widget.pageId !== change.pageId) source.forEach((item, index) => update.run(index, item));
+      destination.forEach((item, index) => update.run(index, item));
+    } else if (change.op === 'create') {
       let connectionId = change.integrationId;
       if (change.source) {
         const legacyId = resolveLegacyConnection(db, change.source);
@@ -299,6 +475,7 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
     );
   }
   // Connection setup is an approved request for the human to finish in the integration form.
-  if (kind !== 'connection-setup')
+  if (kind !== 'connection-setup' && kind !== 'page')
     db.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
+  return affectedId;
 }
