@@ -55,3 +55,22 @@ it('shows Favorites only when something is pinned, and toggles the view', () => 
   show({ favorites: { count: 0, active: false, onToggle: vi.fn() } });
   expect(screen.queryByRole('button', { name: /Favoritos/ })).toBeNull();
 });
+
+it('lists probes with their state in words and opens the probes screen', () => {
+  const onOpen = vi.fn();
+  show({
+    probes: {
+      items: [{ id: 7, name: 'WAN', state: 'unavailable', label: 'Offline' }],
+      onOpen,
+    },
+  });
+  const wan = screen.getByRole('button', { name: /WAN/ });
+  expect(wan.textContent).toContain('Offline');
+  fireEvent.click(wan);
+  expect(onOpen).toHaveBeenCalled();
+});
+
+it('leaves the probes block out when there are none', () => {
+  show({ probes: { items: [], onOpen: vi.fn() } });
+  expect(screen.queryByRole('region', { name: 'Probes' })).toBeNull();
+});

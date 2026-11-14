@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { PROBES_GROUP } from '@homora/shared';
 import type { createObservationStore } from './monitoring/index.js';
 
 type Observations = ReturnType<typeof createObservationStore>;
@@ -53,10 +54,10 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
   function build(now: number) {
     const rows = sqlite
       .prepare(
-        `SELECT m.id,m.name,COALESCE(s.category,'Connectivity') AS category FROM monitors m LEFT JOIN services s ON s.id=m.id
+        `SELECT m.id,m.name,COALESCE(s.category,?) AS category FROM monitors m LEFT JOIN services s ON s.id=m.id
          WHERE m.is_public=1 ORDER BY s.id IS NOT NULL,category,s.position,m.name`,
       )
-      .all() as { id: number; name: string; category: string }[];
+      .all(PROBES_GROUP) as { id: number; name: string; category: string }[];
     const current = new Map(observations.list(now).map((row) => [row.id, row]));
     const start = now - BAR_COUNT * BAR_MS;
     const checks = sqlite
