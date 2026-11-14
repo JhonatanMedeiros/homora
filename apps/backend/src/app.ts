@@ -285,6 +285,7 @@ export function createApp(
       status: healthy ? 'ok' : 'unhealthy',
       version: build.version,
       commit: build.commit,
+      releaseTag: build.releaseTag,
       schemaVersion,
       database,
       monitor: {

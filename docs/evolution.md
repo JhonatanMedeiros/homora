@@ -1994,3 +1994,9 @@ the HTTP and stdio transports were not manually verified.
 
 - The default Docker image now runs the web interface and backend together; nginx listens on port 8080 and the backend listens only on container loopback. The optional Docker discovery agent remains a separate image. Compose retains the existing data volume and `backend` service name.
 - Validated locally with a single-image build, first account and service in a browser, container recreation with the same temporary volume, an in-container backup, and refusal of direct API connections on the container network interface. Multi-architecture publication, registry pulls and migration from an existing two-container installation remain pending.
+
+### Release automation (in preparation)
+
+- Release Please is configured to propose versions and changelogs, update the backend version and trigger the reusable image workflow. Stable and pre-release image tags are separated; the image workflow checks version consistency before publishing.
+- Local validation: the Release Please strategy created a simulated release PR, changelog and `v0.1.0` release against an in-memory GitHub substitute; stable and pre-release tags were checked using the pinned metadata action. Both images were built for amd64 and arm64 with SBOM and provenance, pushed to an isolated local registry and the application was pulled and started on both architectures (arm64 emulated). `pnpm check` and `pnpm build` passed. A repository credential and live GitHub Actions, pull request, release and GHCR publication have not been validated. The first release remains pending.
+- The account menu shows the backend version. Release image builds embed a matching release tag and link to that version's GitHub release; builds without such a tag display the version without a release link.

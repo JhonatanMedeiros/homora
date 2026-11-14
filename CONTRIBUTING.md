@@ -38,3 +38,5 @@ do not use personal data or production databases in tests.
 Pull requests should explain the problem, summarize the solution, and list
 the checks executed along with known limitations. There is no guaranteed review
 turnaround while the project is in early development.
+
+Maintainers can find the versioning and publication workflow in [the release guide](docs/maintainers/releases.md).

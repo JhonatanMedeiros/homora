@@ -40,7 +40,8 @@ WORKDIR /app
 # does not pass it, so the backend falls back to the SOURCE_COMMIT it injects at runtime. The commit is
 # reported in the startup log and by /api/health.
 ARG HOMORA_BUILD_COMMIT=
-ENV NODE_ENV=production HOMORA_BIND_HOST=0.0.0.0 HOMORA_DATABASE_PATH=/app/data/homora.sqlite HOMORA_BUILD_COMMIT=${HOMORA_BUILD_COMMIT}
+ARG HOMORA_RELEASE_TAG=
+ENV NODE_ENV=production HOMORA_BIND_HOST=0.0.0.0 HOMORA_DATABASE_PATH=/app/data/homora.sqlite HOMORA_BUILD_COMMIT=${HOMORA_BUILD_COMMIT} HOMORA_RELEASE_TAG=${HOMORA_RELEASE_TAG}
 # Kept under apps/backend so `root` in config.ts (three levels above dist) is still /app.
 COPY --from=prod --chown=node:node /prod /app/apps/backend
 # `ping` backs the optional ICMP check; the monitor runs it as the unprivileged `node` user.

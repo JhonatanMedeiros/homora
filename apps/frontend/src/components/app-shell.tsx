@@ -28,6 +28,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { navGroups, navItems, type Tab } from '@/components/app-nav';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
 import { MobileTabs } from '@/components/mobile-tabs';
+import { VersionMenuItem } from '@/components/version-menu-item';
 
 type Props = {
   tab: Tab;
@@ -128,6 +129,7 @@ export function AppShell({
                   <ExternalLink /> GitHub
                 </a>
               </DropdownMenuItem>
+              <VersionMenuItem />
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={onLogout}>
                 <LogOut /> {t('app.logout')}
