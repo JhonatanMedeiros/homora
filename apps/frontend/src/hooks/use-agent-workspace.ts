@@ -2,7 +2,7 @@ import { toast } from 'sonner';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { byNewest, parseDiff, type Agent, type Proposal } from '@/features/agents/agent-model';
 import { apiError, t } from '@/i18n';
-import { PROPOSALS_CHANGED } from '@/hooks/use-pending-proposals';
+import { PROPOSALS_CHANGED, PROPOSALS_POLL_MS } from '@/hooks/use-pending-proposals';
 
 async function fetchAgentData(): Promise<[Agent[], Proposal[]]> {
   const [agentResponse, proposalResponse] = await Promise.all([
@@ -28,6 +28,7 @@ export function useAgentWorkspace(
   /** The proposal being decided: one decision at a time, so a re-render never moves a click. */
   const [reviewing, setReviewing] = useState<string | null>(null);
   const reviewLock = useRef(false);
+  const loadVersion = useRef(0);
   const [ttl, setTtl] = useState('15');
   const [recreating, setRecreating] = useState(false);
 
@@ -57,33 +58,36 @@ export function useAgentWorkspace(
   }, [proposals, now]);
 
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     try {
       const [agentData, proposalData] = await fetchAgentData();
+      if (version !== loadVersion.current) return;
       setAgents(agentData);
       setProposals(proposalData);
       setLoadFailed(false);
       // The menu badge counts the same proposals; tell it they changed.
       window.dispatchEvent(new Event(PROPOSALS_CHANGED));
     } catch {
-      setLoadFailed(true);
+      if (version === loadVersion.current) setLoadFailed(true);
     }
   }, []);
 
   useEffect(() => {
     let active = true;
+    const version = ++loadVersion.current;
     // Opening the page renews the stale proposals that destroy nothing before they are listed.
     fetch('/api/proposals/refresh-stale', { method: 'POST' })
       .catch(() => null)
       .then(() => fetchAgentData())
       .then(([agentData, proposalData]) => {
-        if (active) {
+        if (active && version === loadVersion.current) {
           setAgents(agentData);
           setProposals(proposalData);
           setLoadFailed(false);
         }
       })
       .catch(() => {
-        if (active) setLoadFailed(true);
+        if (active && version === loadVersion.current) setLoadFailed(true);
       });
     return () => {
       active = false;
@@ -105,6 +109,28 @@ export function useAgentWorkspace(
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refreshStale]);
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible' || reviewLock.current) return;
+      const version = ++loadVersion.current;
+      fetchAgentData()
+        .then(([agentData, proposalData]) => {
+          if (!active || reviewLock.current || version !== loadVersion.current) return;
+          setAgents(agentData);
+          setProposals(proposalData);
+          setLoadFailed(false);
+        })
+        .catch(() => {
+          if (active && !reviewLock.current && version === loadVersion.current) setLoadFailed(true);
+        });
+    }, PROPOSALS_POLL_MS);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   async function create(name: string, scopes: string[]): Promise<boolean> {
     setMessage('');
@@ -161,6 +187,7 @@ export function useAgentWorkspace(
   async function review(id: string, approve: boolean, batch = false, quiet = false) {
     if (reviewLock.current) return false;
     reviewLock.current = true;
+    loadVersion.current += 1;
     setReviewing(id);
     try {
       return await decide(id, approve, batch, quiet);
