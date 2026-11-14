@@ -36,9 +36,10 @@ LABEL org.opencontainers.image.title="Homora backend" \
       org.opencontainers.image.source="https://github.com/JhonatanMedeiros/homora" \
       org.opencontainers.image.licenses="MIT"
 WORKDIR /app
-# The commit is passed at build time (`--build-arg HOMORA_BUILD_COMMIT=$(git rev-parse HEAD)`) and
+# Optional: `--build-arg HOMORA_BUILD_COMMIT=$(git rev-parse HEAD)` for builds outside Coolify. Coolify
+# does not pass it, so the backend falls back to the SOURCE_COMMIT it injects at runtime. The commit is
 # reported in the startup log and by /api/health.
-ARG HOMORA_BUILD_COMMIT=unknown
+ARG HOMORA_BUILD_COMMIT=
 ENV NODE_ENV=production HOMORA_BIND_HOST=0.0.0.0 HOMORA_DATABASE_PATH=/app/data/homora.sqlite HOMORA_BUILD_COMMIT=${HOMORA_BUILD_COMMIT}
 # Kept under apps/backend so `root` in config.ts (three levels above dist) is still /app.
 COPY --from=prod --chown=node:node /prod /app/apps/backend
