@@ -99,6 +99,8 @@ export const en = {
   'agents.ttlSave': 'Save period',
   'agents.ttlFailed': 'Could not save the review period.',
   'agents.recreated': 'A new proposal is ready for review.',
+  'agents.refreshed': 'Proposal updated. Review the changes before approving.',
+  'agents.refreshFailed': 'Could not update the proposal.',
   'agents.recreateFailed': 'Could not recreate the proposal.',
   'agents.recreateMissing': 'The target service no longer exists.',
   'agents.recreateChanged':
@@ -291,6 +293,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'agents.ttlSave': 'Salvar prazo',
   'agents.ttlFailed': 'Não foi possível salvar o prazo.',
   'agents.recreated': 'Uma nova proposta está pronta para revisão.',
+  'agents.refreshed': 'Proposta atualizada. Revise as mudanças antes de aprovar.',
+  'agents.refreshFailed': 'Não foi possível atualizar a proposta.',
   'agents.recreateFailed': 'Não foi possível recriar a proposta.',
   'agents.recreateMissing': 'O serviço alvo não existe mais.',
   'agents.recreateChanged':

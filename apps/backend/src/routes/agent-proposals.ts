@@ -85,6 +85,35 @@ export function registerAgentProposalRoutes(
       return reply.code(409).send(errorBody(code));
     }
   });
+  app.post('/api/proposals/refresh-stale', async (request, reply) => {
+    const session = await auth.session(request.headers);
+    if (!session) return reply.code(401).send(errorBody('auth-required'));
+    reply.header('Cache-Control', 'no-store');
+    return proposals.refreshStale(`user:${session.userId}`);
+  });
+  app.post<{ Params: { id: string } }>('/api/proposals/:id/refresh', async (request, reply) => {
+    const session = await auth.session(request.headers);
+    if (!session) return reply.code(401).send(errorBody('auth-required'));
+    if (!opaqueIdSchema.safeParse(request.params.id).success)
+      return reply.code(404).send(errorBody('proposal-unavailable'));
+    try {
+      reply.header('Cache-Control', 'no-store');
+      return proposals.refresh(request.params.id, `user:${session.userId}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      return reply
+        .code(409)
+        .send(
+          errorBody(
+            message === 'Target is gone'
+              ? 'proposal-target-gone'
+              : message === 'Proposal is not stale'
+                ? 'proposal-not-stale'
+                : 'proposal-unavailable',
+          ),
+        );
+    }
+  });
   app.post('/api/agents', async (request, reply) => {
     const parsed = createAgentSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('identity-invalid'));

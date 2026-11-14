@@ -7,6 +7,7 @@ import { serviceProposalSchema } from './input-schemas.js';
 import { createManagedProposalCreator } from './managed-proposal-creator.js';
 import { createProposalReviewService } from './proposal-review.js';
 import { managedHash } from './managed-proposals.js';
+import { createProposalRefresh } from './proposal-refresh.js';
 import { createProposalQueries } from './proposal-queries.js';
 import { createProposalBatches } from './proposal-batches.js';
 
@@ -309,11 +310,18 @@ export function createProposalService(
     revoke,
     rotate,
   });
+  const { refresh, refreshStale, reasonFor } = createProposalRefresh({
+    sqlite,
+    configuration,
+    configHash,
+    managedBaseHash,
+  });
   const { list, listOwn, getOwn, withdraw } = createProposalQueries({
     sqlite,
     configuration,
     configHash,
     managedBaseHash,
+    staleReason: reasonFor,
   });
   return {
     issue,
@@ -335,6 +343,8 @@ export function createProposalService(
     listOwn,
     getOwn,
     withdraw,
+    refresh,
+    refreshStale,
     configHash,
   };
 }

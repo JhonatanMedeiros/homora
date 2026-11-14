@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { createServiceConfiguration } from './service-configuration.js';
 import { isIndependentChange, managedChangeSchema } from './managed-proposals.js';
+import type { StaleReason } from './proposal-refresh.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 
@@ -10,11 +11,13 @@ export function createProposalQueries({
   configuration,
   configHash,
   managedBaseHash,
+  staleReason,
 }: {
   sqlite: DatabaseSync;
   configuration: Configuration;
   configHash: () => string;
   managedBaseHash: (change?: import('./managed-proposals.js').ManagedChange) => string;
+  staleReason: (decoded: Record<string, unknown>, batchId: string | null) => StaleReason;
 }) {
   function list() {
     const now = Date.now();
@@ -43,7 +46,7 @@ export function createProposalQueries({
     }
     const rows = sqlite
       .prepare(
-        'SELECT id,author_id as author,diff,base_hash as baseHash,base_version as baseVersion,expires_at as expiresAt,state,created_at as createdAt,reviewed_at as reviewedAt,reviewer,batch_id as batchId FROM service_proposals ORDER BY created_at DESC',
+        "SELECT id,author_id as author,diff,base_hash as baseHash,base_version as baseVersion,expires_at as expiresAt,state,created_at as createdAt,reviewed_at as reviewedAt,reviewer,batch_id as batchId,(SELECT MAX(created_at) FROM audit_events e WHERE e.proposal_id=service_proposals.id AND e.action='proposal-refresh') as refreshedAt FROM service_proposals ORDER BY created_at DESC",
       )
       .all() as {
       state: string;
@@ -60,12 +63,14 @@ export function createProposalQueries({
       const incomplete =
         proposal.batchId &&
         rows.some((other) => other.batchId === proposal.batchId && other.state !== 'pending');
-      return incomplete ||
+      const stale =
+        incomplete ||
         (proposal.baseVersion !== configuration.version() &&
           !isIndependentChange(managed ?? undefined)) ||
-        proposal.baseHash !== (managed ? managedBaseHash(managed) : configHash())
-        ? { ...proposal, state: 'stale' }
-        : proposal;
+        proposal.baseHash !== (managed ? managedBaseHash(managed) : configHash());
+      if (!stale) return proposal;
+      const reason = incomplete ? 'batch' : staleReason(decoded, proposal.batchId);
+      return { ...proposal, state: 'stale', staleReason: reason };
     });
   }
 

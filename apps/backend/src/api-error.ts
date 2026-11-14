@@ -113,6 +113,8 @@ export const ERROR_MESSAGES = {
   'identity-not-found': 'Identity not found.',
   'proposal-limit': 'The agent has reached its pending proposal limit.',
   'proposal-unavailable': 'Proposal unavailable.',
+  'proposal-target-gone': 'The target of this proposal no longer exists.',
+  'proposal-not-stale': 'The proposal is already up to date.',
   'batch-conflict': 'The changes in this batch conflict. No changes were applied.',
   'config-changed': 'The configuration changed. Review it again.',
   ...legacyApiErrorMessages,

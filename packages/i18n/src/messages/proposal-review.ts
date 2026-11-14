@@ -20,7 +20,20 @@ export const en = {
   'proposal.recreateBatch': 'Recreate batch',
   'proposal.reject': 'Reject',
   'proposal.approve': 'Approve and apply',
-  'proposal.staleHint': 'Out of date: the configuration changed. Ask the agent to propose again.',
+  'proposal.staleHint': 'Out of date: the configuration changed.',
+  'proposal.stale.config-changed':
+    'The configuration changed after this was proposed. Refresh it to review it against the current state.',
+  'proposal.stale.target-gone':
+    'The target no longer exists (it was removed or changed by another decision), so this change no longer makes sense.',
+  'proposal.stale.batch': 'Another change of this batch was already decided. Discard the batch.',
+  'proposal.stale.agent':
+    'The identity changed after this was proposed. Reject it and ask the agent to propose again.',
+  'proposal.refresh': 'Refresh proposal',
+  'proposal.refreshConfirmTitle': 'Refresh a destructive proposal?',
+  'proposal.refreshConfirmBody':
+    '“{name}” will be checked against the current state. Review the changes shown before approving.',
+  'proposal.refreshed': 'Updated {date}',
+  'proposal.retire': 'Withdraw',
   'proposal.undo': 'Undo',
   'proposal.confirmTitle': 'Apply a destructive change?',
   'proposal.confirmBody': '“{name}” is removed, revoked or cancelled as soon as you confirm.',
@@ -128,7 +141,20 @@ export const ptBR: Record<keyof typeof en, string> = {
   'proposal.recreateBatch': 'Recriar lote',
   'proposal.reject': 'Rejeitar',
   'proposal.approve': 'Aprovar e aplicar',
-  'proposal.staleHint': 'Desatualizada: a configuração mudou. Peça ao agente para propor de novo.',
+  'proposal.staleHint': 'Desatualizada: a configuração mudou.',
+  'proposal.stale.config-changed':
+    'A configuração mudou depois da proposta. Atualize para revisá-la contra o estado atual.',
+  'proposal.stale.target-gone':
+    'O alvo não existe mais (foi removido ou alterado por outra decisão), então esta mudança deixou de fazer sentido.',
+  'proposal.stale.batch': 'Outra mudança deste lote já foi decidida. Descarte o lote.',
+  'proposal.stale.agent':
+    'A identidade mudou depois da proposta. Rejeite e peça ao agente para propor de novo.',
+  'proposal.refresh': 'Atualizar proposta',
+  'proposal.refreshConfirmTitle': 'Atualizar uma proposta destrutiva?',
+  'proposal.refreshConfirmBody':
+    '“{name}” será verificada contra o estado atual. Revise as mudanças exibidas antes de aprovar.',
+  'proposal.refreshed': 'Atualizada em {date}',
+  'proposal.retire': 'Retirar',
   'proposal.undo': 'Desfazer',
   'proposal.confirmTitle': 'Aplicar uma mudança destrutiva?',
   'proposal.confirmBody': '“{name}” é removido, revogado ou cancelado assim que você confirmar.',

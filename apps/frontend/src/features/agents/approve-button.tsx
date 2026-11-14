@@ -20,37 +20,45 @@ import { t } from '@/i18n';
 export function ApproveButton({
   confirm,
   description,
+  title,
+  actionLabel,
+  variant,
   disabled,
   onApprove,
   children,
 }: {
   confirm: boolean;
   description: string;
+  title?: string;
+  actionLabel?: string;
+  variant?: 'default' | 'outline';
   disabled?: boolean;
   onApprove: () => void;
   children: ReactNode;
 }) {
   if (!confirm)
     return (
-      <Button type="button" disabled={disabled} onClick={onApprove}>
+      <Button type="button" variant={variant} disabled={disabled} onClick={onApprove}>
         {children}
       </Button>
     );
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button type="button" disabled={disabled}>
+        <Button type="button" variant={variant} disabled={disabled}>
           {children}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('proposal.confirmTitle')}</AlertDialogTitle>
+          <AlertDialogTitle>{title ?? t('proposal.confirmTitle')}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-          <AlertDialogAction onClick={onApprove}>{t('proposal.confirmAction')}</AlertDialogAction>
+          <AlertDialogAction onClick={onApprove}>
+            {actionLabel ?? t('proposal.confirmAction')}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

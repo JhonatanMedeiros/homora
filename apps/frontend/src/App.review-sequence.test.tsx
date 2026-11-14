@@ -11,7 +11,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-type Item = { id: string; name: string; state?: string; diff?: unknown };
+type Item = {
+  id: string;
+  name: string;
+  state?: string;
+  diff?: unknown;
+  staleReason?: string;
+};
 
 /** An API whose list shrinks as proposals are decided, like the real one. */
 function setup(items: Item[]) {
@@ -19,6 +25,7 @@ function setup(items: Item[]) {
     id: item.id,
     author: 'a1',
     state: item.state ?? 'pending',
+    staleReason: item.staleReason,
     expiresAt: Date.now() + 600_000,
     createdAt: 1000 - index,
     diff: JSON.stringify(
@@ -41,6 +48,14 @@ function setup(items: Item[]) {
         ],
       };
     if (url === '/api/proposals') return { ok: true, json: async () => proposals };
+    const refresh = /^\/api\/proposals\/(\w+)\/refresh$/.exec(url);
+    if (refresh && init?.method === 'POST') {
+      calls.push(`refresh:${refresh[1]}`);
+      proposals = proposals.map((p) =>
+        p.id === refresh[1] ? { ...p, state: 'pending', staleReason: undefined } : p,
+      );
+      return { ok: true, json: async () => ({}) };
+    }
     const review = /^\/api\/proposals\/(\w+)\/(review|undo)$/.exec(url);
     if (review && init?.method === 'POST') {
       calls.push(`${review[2]}:${review[1]}${init.body ? ':' + String(init.body) : ''}`);
@@ -154,4 +169,42 @@ it('undoes a rejection from the toast', async () => {
   await waitFor(() => expect(calls).toEqual(['review:p1:{"approve":false}', 'undo:p1']));
   expect(await screen.findByText('Adicionar “Um”')).toBeTruthy();
   expect(approveButtons()).toHaveLength(1);
+});
+
+it('explains why a stale proposal is blocked and refreshes it to approve', async () => {
+  const { calls } = setup([
+    { id: 'p1', name: 'Um', state: 'stale', staleReason: 'config-changed' },
+  ]);
+  await openProposals();
+  await screen.findByText('Adicionar “Um”');
+  expect(screen.getByText(/A configuração mudou depois da proposta/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /Atualizar proposta/ }));
+  await waitFor(() => expect(calls).toEqual(['refresh:p1']));
+  await waitFor(() => expect((approveButtons()[0] as HTMLButtonElement).disabled).toBe(false));
+});
+
+it('offers to withdraw a stale proposal whose target is gone', async () => {
+  setup([{ id: 'p1', name: 'Um', state: 'stale', staleReason: 'target-gone' }]);
+  await openProposals();
+  await screen.findByText(/O alvo não existe mais/);
+  expect(screen.getByRole('button', { name: /Retirar/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Atualizar proposta/ })).toBeNull();
+});
+
+it('asks before refreshing a destructive stale proposal', async () => {
+  const { calls } = setup([
+    {
+      id: 'p1',
+      name: 'Um',
+      diff: { op: 'delete', id: 7 },
+      state: 'stale',
+      staleReason: 'config-changed',
+    },
+  ]);
+  await openProposals();
+  fireEvent.click(await screen.findByRole('button', { name: /Atualizar proposta/ }));
+  expect(calls).toEqual([]);
+  const dialog = await screen.findByRole('alertdialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Atualizar proposta' }));
+  await waitFor(() => expect(calls).toEqual(['refresh:p1']));
 });

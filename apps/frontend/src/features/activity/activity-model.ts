@@ -55,6 +55,7 @@ const TITLES = new Set<string>([
   'review-undo',
   'expiry',
   'proposal-recreate',
+  'proposal-refresh',
   'proposal-ttl-update',
   'withdraw',
   'docker-source-create',

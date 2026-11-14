@@ -53,6 +53,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'expiry',
     'withdraw',
     'proposal-recreate',
+    'proposal-refresh',
     'proposal-ttl-update',
   ],
   agent: [

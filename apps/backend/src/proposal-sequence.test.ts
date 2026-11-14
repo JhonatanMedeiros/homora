@@ -14,7 +14,7 @@ function fixture() {
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
     CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
-    CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'immutable'); END;
+    CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,created_at,batch_id ON service_proposals BEGIN SELECT RAISE(ABORT,'immutable'); END;
     CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);
   `);
   const api = createProposalService(db);
@@ -100,5 +100,73 @@ describe('undoing a rejection', () => {
     );
     expect(() => api.undoRejection(rejected.id, false, 'user:1')).toThrow();
     db.close();
+  });
+});
+
+describe('refreshing a stale proposal', () => {
+  const svc = (db: DatabaseSync, name: string) =>
+    Number(
+      db
+        .prepare(
+          "INSERT INTO service_cards(name,url,category,position) VALUES(?,'https://x.example','Apps',0)",
+        )
+        .run(name).lastInsertRowid,
+    );
+
+  it('re-bases it on the current state, keeps the request and audits it', () => {
+    const { db, api, agent } = fixture();
+    const a = api.proposeManaged(agent.id, probe('A', 'https://a.example/'));
+    const id = svc(db, 'Card');
+    const upd = api.propose(agent.id, {
+      op: 'update',
+      id,
+      service: { name: 'Card', url: 'https://x.example', category: 'Apps', description: 'new' },
+    });
+    db.prepare('UPDATE config_version SET version=version+1').run();
+    db.prepare("UPDATE monitors SET name=name||'!' WHERE id=?").run(id);
+    const stale = (
+      api.list() as unknown as { id: string; state: string; staleReason?: string }[]
+    ).find((p) => p.id === upd.id);
+    expect(stale).toMatchObject({ state: 'stale', staleReason: 'config-changed' });
+    expect(() => api.decide(upd.id, true, 'user:1')).toThrow('Configuration has changed');
+    expect(api.refresh(upd.id, 'user:1')).toEqual({ id: upd.id, state: 'pending' });
+    expect(states(api)[upd.id]).toBe('pending');
+    expect(
+      db.prepare("SELECT detail FROM audit_events WHERE action='proposal-refresh'").get(),
+    ).toBeTruthy();
+    expect(api.decide(upd.id, true, 'user:1')).toBe('approved');
+    expect(a.id).toBeTruthy();
+  });
+
+  it('explains a proposal whose target is gone and refuses to refresh it', () => {
+    const { db, api, agent } = fixture();
+    const id = svc(db, 'Card');
+    const upd = api.propose(agent.id, {
+      op: 'update',
+      id,
+      service: { name: 'Card', url: 'https://x.example', category: 'Apps', description: 'new' },
+    });
+    db.prepare('DELETE FROM monitors WHERE id=?').run(id);
+    db.prepare('UPDATE config_version SET version=version+1').run();
+    const row = (api.list() as unknown as { id: string; staleReason?: string }[]).find(
+      (p) => p.id === upd.id,
+    );
+    expect(row?.staleReason).toBe('target-gone');
+    expect(() => api.refresh(upd.id, 'user:1')).toThrow('Target is gone');
+  });
+
+  it('refreshes non-destructive stale proposals in bulk and leaves destructive ones', () => {
+    const { db, api, agent } = fixture();
+    const id = svc(db, 'Card');
+    const del = api.propose(agent.id, { op: 'delete', id });
+    const upd = api.propose(agent.id, {
+      op: 'update',
+      id,
+      service: { name: 'Card', url: 'https://x.example', category: 'Apps', description: 'new' },
+    });
+    db.prepare('UPDATE config_version SET version=version+1').run();
+    db.prepare("UPDATE monitors SET name=name||'!' WHERE id=?").run(id);
+    expect(api.refreshStale('user:1')).toEqual({ refreshed: 1 });
+    expect(states(api)).toMatchObject({ [del.id]: 'stale', [upd.id]: 'pending' });
   });
 });
