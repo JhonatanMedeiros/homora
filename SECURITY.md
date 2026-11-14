@@ -9,8 +9,8 @@ hardened remote access model.
 ## Reporting a Vulnerability
 
 Do not publish details of an unpatched vulnerability in public issues or discussions.
-If the repository provides GitHub Security Advisories, submit a private report
-through that channel. Otherwise, seek a private contact channel with the maintainers
+Submit a private report through [GitHub Security Advisories](https://github.com/JhonatanMedeiros/homora/security/advisories/new).
+If private reporting is unavailable, seek a private contact channel with the maintainers
 before sending details; there is currently no documented security contact email.
 Include affected versions, impact, and minimal reproduction steps, without real
 data or real credentials. There is no established response SLA or bug bounty policy.

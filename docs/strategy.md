@@ -139,12 +139,11 @@ without sharing administrator credentials.
 
 **Done Definition:** the governing agent differentiator is demonstrable to people who have not read the source code.
 
-## Reference Case: Migrating a Real Homepage Instance (2026-11-10)
+## Reference Case: Migrating a Homepage Dashboard
 
-Origin: screenshot of a production Homepage setup maintained by the author (homelab with Proxmox,
-DNS, VPN, media, and security). Serves as a practical benchmark: "can I migrate to Homora?".
-The screenshot displays final visual results; underlying YAML was not inspected, so the scope
-below is inferred and must be cross-checked against actual `services.yaml` and `widgets.yaml`.
+This benchmark considers a representative dashboard and asks: "can I migrate to Homora?".
+The scope below describes possible features, not a validated import from a particular installation;
+the supported `services.yaml` and `widgets.yaml` formats still need real-world validation.
 
 | Element on Target Dashboard                                           | Homora Current State                                               | Phase |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------ | ----- |

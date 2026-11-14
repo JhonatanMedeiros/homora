@@ -3,6 +3,7 @@ import {
   Activity,
   ArrowLeft,
   ChevronDown,
+  ExternalLink,
   LogOut,
   Search,
   Settings,
@@ -117,6 +118,15 @@ export function AppShell({
               )}
               <DropdownMenuItem onSelect={() => onTabChange('activity')}>
                 <Activity /> {t('nav.activity')}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a
+                  href="https://github.com/JhonatanMedeiros/homora"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink /> GitHub
+                </a>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={onLogout}>
