@@ -189,7 +189,7 @@ it('provides quick search, cards view, and collapsible groups', async () => {
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.click(screen.getByRole('button', { name: 'Visualização' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Exibição' }));
   fireEvent.click(await screen.findByRole('radio', { name: 'Cards' }));
   expect(localStorage.getItem('homora-density')).toBe('cards');
   fireEvent.click(screen.getByRole('button', { name: 'Recolher grupo Mídia' }));

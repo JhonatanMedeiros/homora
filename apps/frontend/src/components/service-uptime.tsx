@@ -134,7 +134,31 @@ function Sparkline({ summary }: { summary: UptimeSummary }) {
   );
 }
 
-function UptimeBars({
+/**
+ * A quiet, non-interactive version of the bucket bar for dense tiles: no tooltip and no focus stop,
+ * because the percentage and the status next to it already say the same in words.
+ */
+export function UptimeMiniBar({
+  summary,
+  monitor,
+}: {
+  summary?: UptimeSummary;
+  monitor?: Pick<MonitorSettings, 'degradedLatencyMs'>;
+}) {
+  if (!summary) return <span className="min-w-0 flex-1" aria-hidden="true" />;
+  return (
+    <span aria-hidden="true" className="flex h-1.5 min-w-0 flex-1 items-stretch gap-px">
+      {summary.buckets.map((bucket) => (
+        <span
+          key={bucket.start}
+          className={cn('min-w-px flex-1 rounded-[1px]', BAR_COLOR[barState(bucket, monitor)])}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function UptimeBars({
   summary,
   monitor,
 }: {
@@ -283,9 +307,12 @@ export function ServiceUptime({
   range,
   onRangeChange,
   monitor,
+  onDetails,
 }: {
   service: Service;
   summary?: UptimeSummary;
+  /** Opens the details drawer; without it the link goes to the full page. */
+  onDetails?: () => void;
   range: UptimeRange;
   onRangeChange: (range: UptimeRange) => void;
   /** Alert settings of the service: bars slower than its limit read as degraded. */
@@ -339,7 +366,16 @@ export function ServiceUptime({
       </div>
       <UptimeBars summary={summary} monitor={monitor} />
       <div className="flex justify-end text-xs">
-        {inRouter ? (
+        {onDetails ? (
+          <button
+            type="button"
+            onClick={onDetails}
+            aria-label={t('card.detailsFor', { name: service.name })}
+            className="text-primary hover:underline"
+          >
+            {t('card.details')} →
+          </button>
+        ) : inRouter ? (
           <Link to={detailPath} className="text-primary hover:underline">
             {t('detail.link')} →
           </Link>
@@ -429,7 +465,7 @@ function RecentIncidents({ serviceId, refreshKey }: { serviceId: number; refresh
   );
 }
 
-function UptimeDetails({
+export function UptimeDetails({
   id,
   service,
   summary,

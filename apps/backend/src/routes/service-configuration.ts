@@ -10,6 +10,8 @@ import {
   groupOrderSchema,
   parseId,
   hostBodySchema,
+  pinBodySchema,
+  acknowledgeBodySchema,
   serviceFormSchema,
   serviceDefaultsSchema,
   serviceOrderSchema,
@@ -18,6 +20,7 @@ import { errorBody } from '../api-error.js';
 import type { createPublicStatus } from '../public-status.js';
 import type { createAuth } from '../auth.js';
 import type { AuditLog } from '../audit.js';
+import type { createServiceAttention } from '../service-attention.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
@@ -35,11 +38,73 @@ export function registerServiceConfigurationRoutes(
   publicStatus: ReturnType<typeof createPublicStatus>,
   auth: ReturnType<typeof createAuth>,
   audit: AuditLog,
+  attention: ReturnType<typeof createServiceAttention>,
 ) {
   app.get('/api/services', async () => {
     const shared = publicStatus.publicIds();
-    return configuration.listServices().map((row) => ({ ...row, isPublic: shared.has(row.id) }));
+    const pinned = attention.pinnedIds();
+    return configuration
+      .listServices()
+      .map((row) => ({ ...row, isPublic: shared.has(row.id), pinned: pinned.has(row.id) }));
   });
+  app.get('/api/acknowledgements', async () => attention.list());
+  const record = async (
+    request: { headers: Parameters<typeof auth.session>[0]; ip: string },
+    action: 'service-pin' | 'service-unpin' | 'service-acknowledge' | 'service-acknowledge-clear',
+    id: number,
+    detail = '',
+  ) => {
+    const session = await auth.session(request.headers);
+    audit.record({
+      actor: session ? `user:${session.userId}` : 'user:unknown',
+      action,
+      result: 'ok',
+      detail: `service:${id}${detail}`,
+      ipAddress: request.ip,
+    });
+  };
+  app.put<{ Params: { id: string } }>('/api/services/:id/pin', async (request, reply) => {
+    const id = parseId(request.params.id);
+    if (id === null) return reply.code(404).send(errorBody('service-not-found'));
+    const parsed = pinBodySchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
+    if (!attention.setPinned(id, parsed.data.pinned))
+      return reply.code(404).send(errorBody('service-not-found'));
+    await record(request, parsed.data.pinned ? 'service-pin' : 'service-unpin', id);
+    return { pinned: parsed.data.pinned };
+  });
+  app.put<{ Params: { id: string } }>(
+    '/api/services/:id/acknowledgement',
+    async (request, reply) => {
+      const id = parseId(request.params.id);
+      if (id === null) return reply.code(404).send(errorBody('service-not-found'));
+      const parsed = acknowledgeBodySchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
+      const state = attention.acknowledge(
+        id,
+        parsed.data.incidentId ?? null,
+        parsed.data.muteMinutes,
+      );
+      if (!state) return reply.code(404).send(errorBody('service-not-found'));
+      await record(
+        request,
+        'service-acknowledge',
+        id,
+        parsed.data.muteMinutes ? ` mute:${parsed.data.muteMinutes}m` : '',
+      );
+      return state;
+    },
+  );
+  app.delete<{ Params: { id: string } }>(
+    '/api/services/:id/acknowledgement',
+    async (request, reply) => {
+      const id = parseId(request.params.id);
+      if (id === null) return reply.code(404).send(errorBody('service-not-found'));
+      if (!attention.clear(id)) return reply.code(404).send(errorBody('service-not-found'));
+      await record(request, 'service-acknowledge-clear', id);
+      return reply.code(204).send();
+    },
+  );
   app.get('/api/service-defaults', async () => ({
     allowPrivate: configuration.newServicesAllowPrivate(),
   }));

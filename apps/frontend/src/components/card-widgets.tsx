@@ -1,5 +1,5 @@
 import { createPresentationCatalog } from '@homora/integrations/frontend/catalog';
-import { t } from '@/i18n';
+import { formatTime, t } from '@/i18n';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
 import { WidgetSkeleton } from '@/components/skeletons';
@@ -28,16 +28,29 @@ export function CardWidgets({
             }
           >
             {entry.status === 'ready' ? (
-              <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                {entry.stats.map((stat) => (
-                  <div key={stat.label} className="flex min-w-0 items-baseline gap-1.5">
-                    <dt className="shrink-0 text-xs text-muted-foreground">{stat.label}</dt>
-                    <dd className="min-w-0 truncate font-mono text-sm font-medium tabular-nums">
-                      {stat.value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <>
+                <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  {entry.stats.map((stat) => (
+                    <div key={stat.label} className="flex min-w-0 items-baseline gap-1.5">
+                      <dt className="shrink-0 text-xs text-muted-foreground">{stat.label}</dt>
+                      <dd className="min-w-0 truncate font-mono text-sm font-medium tabular-nums">
+                        {stat.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                {entry.stale && (
+                  <p role="status" className="mt-1.5 text-xs text-warning">
+                    {entry.checkedAt
+                      ? t('cardWidget.staleSince', {
+                          time: formatTime(Date.parse(entry.checkedAt)),
+                        })
+                      : t('cardWidget.stale')}
+                  </p>
+                )}
+              </>
+            ) : entry.status === 'unconfigured' ? (
+              <p className="text-xs text-muted-foreground">{t('cardWidget.unconfigured')}</p>
             ) : entry.status === 'loading' ? (
               <WidgetSkeleton
                 label={t('cardWidget.loading')}

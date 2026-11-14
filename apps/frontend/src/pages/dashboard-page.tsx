@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
+import { AlertsBell } from '@/components/alerts-bell';
+import { requestProblemsView } from '@/lib/home-intent';
 import { useNavigate } from 'react-router';
 import { AppShell } from '@/components/app-shell';
 import { CommandPalette } from '@/components/command-palette';
@@ -88,6 +90,10 @@ export function DashboardPage({
     onOpenHelp: () => setHelpOpen(true),
     onGo: (target) => navigate(target === 'services' ? '/' : tabPath(target)),
     onNewService: () => navigate('/manage/services/new'),
+    onShowProblems: () => {
+      requestProblemsView();
+      navigate('/');
+    },
     // Pages are the tabs of the dashboard only: not in manage mode, not on other sections.
     onGoPage: (index) => {
       const page = data.pages[index];
@@ -110,6 +116,14 @@ export function DashboardPage({
       onLogout={onLogout}
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
+      alerts={
+        <AlertsBell
+          services={data.services}
+          statuses={data.statuses}
+          blockedIds={data.blockedIds}
+          onOpen={() => navigate(tabPath('activity'))}
+        />
+      }
     >
       <SafeModeBanner
         onEdit={() => {

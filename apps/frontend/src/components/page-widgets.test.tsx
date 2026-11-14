@@ -123,7 +123,8 @@ it('isolates a failed connection from a clock on the same page', async () => {
   );
   render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
   await waitFor(() => expect(screen.getByText('Clock')).toBeTruthy());
-  await waitFor(() => expect(screen.getByText('Dados indisponíveis')).toBeTruthy());
+  // The Proxmox widget points at a connection that is not listed, so it says what is missing.
+  await waitFor(() => expect(screen.getByText(/Precisa de uma conexão/)).toBeTruthy());
   expect(document.querySelector('time')).toBeTruthy();
 });
 

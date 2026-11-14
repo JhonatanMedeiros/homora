@@ -260,6 +260,13 @@
       "when": 1794610256662,
       "tag": "0036_service_links",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1794621315532,
+      "tag": "0037_service_pins_and_acknowledgements",
+      "breakpoints": true
     }
   ]
 }

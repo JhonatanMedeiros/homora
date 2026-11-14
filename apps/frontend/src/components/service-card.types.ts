@@ -38,8 +38,12 @@ export type ServiceCardProps = {
   blocked: boolean;
   managing: boolean;
   list?: boolean;
+  /** Dense tile of the Home: icon, name, host, state and a quiet bar. */
+  compact?: boolean;
   showDescription: boolean;
   confirmingRemoval: boolean;
+  /** Opens the details drawer of this service. */
+  onDetails?: () => void;
   onEdit: () => void;
   onRemove: () => void;
   onCancelRemoval: () => void;

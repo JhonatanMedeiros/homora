@@ -106,8 +106,14 @@ export function createConfigurationTransfer({
         })),
         services: (() => {
           const links = selectLinks();
+          const pins = new Set(
+            (
+              sqlite.prepare('SELECT service_id AS id FROM service_pins').all() as { id: number }[]
+            ).map((row) => row.id),
+          );
           return selectServices().map((row) => ({
             ...row,
+            pinned: pins.has(row.id),
             allowPrivate: Boolean(row.allowPrivate),
             links: links.get(row.id) ?? [],
           })) as Service[];
@@ -250,6 +256,10 @@ export function createConfigurationTransfer({
             valid.checkMatch ?? null,
             valid.openTarget ?? 'new-tab',
           );
+          if (service.pinned)
+            sqlite
+              .prepare('INSERT OR IGNORE INTO service_pins(service_id,pinned_at) VALUES(?,?)')
+              .run(Number(inserted.lastInsertRowid), Date.now());
           if (service.links?.length)
             writeLinks(
               Number(inserted.lastInsertRowid),

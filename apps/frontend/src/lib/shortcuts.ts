@@ -8,6 +8,7 @@ export type ShortcutAction =
   | { type: 'palette' }
   | { type: 'help' }
   | { type: 'go'; tab: Exclude<Tab, 'account'> }
+  | { type: 'problems' }
   | { type: 'newService' }
   | { type: 'page'; index: number };
 
@@ -30,6 +31,7 @@ export const SHORTCUTS: Shortcut[] = [
     label: 'shortcuts.goIntegrations',
     action: { type: 'go', tab: 'integrations' },
   },
+  { keys: ['g', 'p'], label: 'shortcuts.goProblems', action: { type: 'problems' } },
   { keys: ['g', 'a'], label: 'shortcuts.goAgents', action: { type: 'go', tab: 'agents' } },
   { keys: ['g', 't'], label: 'shortcuts.goActivity', action: { type: 'go', tab: 'activity' } },
   { keys: ['g', 's'], label: 'shortcuts.goSettings', action: { type: 'go', tab: 'settings' } },

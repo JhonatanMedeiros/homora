@@ -20,33 +20,56 @@ how long they have been down. It also summarizes:
 Services you have not authorized for private-network monitoring are reported in the banner as _not monitored_
 rather than as failures.
 
+Under the headline there is one small window per service, colored by state and named for screen readers.
+Clicking a window opens that service's details.
+
+## Needs attention
+
+When services are offline, **Needs attention** groups them by what they probably share: a stopped guest or an
+offline host (from a linked Proxmox connection), the same error starting within ten minutes, or an address that does
+not answer. The wording always says _likely_: Homora only reads what it already knows and never names a fix.
+
+For each group you can **Acknowledge** it (you saw it; it stays quiet until that incident ends, and a new incident
+speaks up again) or **Mute 1 h**. Both can be undone from the toast or with **Show again**. This only quiets the
+dashboard and the alerts bell: checks, incidents and notifications do not change. Each action is recorded in the
+audit log.
+
 ## Status filters
 
-Below the banner, the chips **All**, **Offline**, **Degraded** and **Maintenance** narrow the view to services in
-that state. The numbers beside them are live counts. **Degraded** is an online service that answers slower than
+On wide screens the **Views** list in the left rail has **All**, **Offline**, **Degraded** and **Maintenance**, and
+the **Groups** list shows the health of each group. On smaller screens the same filters are chips under the banner
+(or in **Options** on a phone). The numbers beside them are live counts. **Degraded** is an online service that answers slower than
 the limit you set for it (see [Services and monitoring](services-and-monitoring.md#alerts-and-states)).
+
+## Alerts bell
+
+The bell in the top bar counts offline services nobody has acknowledged or muted, and says the number in words for
+screen readers. Selecting it opens **Activity**. Services in maintenance and the ones Homora is not allowed to
+check are not counted.
 
 ## Pages, groups and cards
 
 - **Pages** are the tabs along the top of the dashboard. Use them to separate concerns, for example _Home_,
-  _Media_ and _Lab_. Each shows how many of its services are down. Press `1` to `9` to switch pages. Manage pages in
+  _Media_ and _Lab_. Each shows how many of its services are down. The `⋯` button next to the selected tab renames it,
+  moves it earlier or later, or deletes it (a page with groups or widgets asks where they go first). Press `1` to `9` to switch pages. Manage pages in
   **Settings → Home and pages** (up to 12, with unique names).
-- **Groups** organize cards inside a page. The tabs under the widgets filter to one group. Each group has a column
+- **Groups** organize cards inside a page. The **Groups** list in the left rail (chips on smaller screens) filters to one group. Each group has a column
   count from 1 to 6, so a short group can sit in two wide columns while a long one uses six.
 - **Cards** show the icon, name, address, current state, latency and the availability for the selected period.
   A failing card is highlighted and explains why it failed and since when.
 
 ## Layouts and views
 
-Open **View** to choose how cards look. This is saved in your browser.
+Open **Display** to choose how cards look. This is saved in your browser. **Compact** is the default.
 
-| Choice    | What you get                                                                                                                                        |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **List**  | A dense row per service. Best for many services.                                                                                                    |
-| **Cards** | Larger cards with the description, a 24-hour uptime bar and a link to incidents and charts.                                                         |
-| **Group** | Cards organized by your groups (the default).                                                                                                       |
-| **Host**  | Cards organized by the machine or guest they run on, for services you have linked to a host.                                                        |
-| **Map**   | A map of hosts and the services running on them. See [linking a card to a host](services-and-monitoring.md#where-a-service-runs-and-what-it-needs). |
+| Choice      | What you get                                                                                                                                                                                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Compact** | A small tile per service: icon, name, host, the state in words and a thin bar for the period. Groups with only healthy services can collapse, and groups with problems can come first (both in **Settings → Home and pages**). The `i` button opens the details drawer. |
+| **List**    | A dense row per service. Best for many services.                                                                                                                                                                                                                        |
+| **Cards**   | Larger cards with the description, a 24-hour uptime bar and a link to incidents and charts.                                                                                                                                                                             |
+| **Group**   | Cards organized by your groups (the default).                                                                                                                                                                                                                           |
+| **Host**    | Cards organized by the machine or guest they run on, for services you have linked to a host.                                                                                                                                                                            |
+| **Map**     | A map of hosts and the services running on them. See [linking a card to a host](services-and-monitoring.md#where-a-service-runs-and-what-it-needs).                                                                                                                     |
 
 ![Cards layout with descriptions and uptime bars](../screenshots/dashboard-cards.png)
 
@@ -57,8 +80,25 @@ failing dependency. The **Map** shows the same relationships as boxes, and you c
 
 ![Service map](../screenshots/host-map.png)
 
-You can also change the layout, whether descriptions show, and the uptime period (24 h, 7 d or 30 d) in
-**Settings → Home and pages**.
+The **Display** popover also sets whether descriptions show and the uptime period (24 h, 7 d or 30 d); the same
+options are in **Settings → Home and pages**. **Organize** is a button on the Home toolbar (the Manage page keeps its own).
+
+### Details drawer
+
+The `i` button on a tile, **Details** on a card, a Pulse window or a name in **Needs attention** opens a side panel
+(a bottom sheet on a phone) with the state, **Open** and **Copy address**, the availability bar, latency, recent
+incidents, and a link to the full page. Escape closes it.
+
+### Favorites
+
+**Pin** a service from its drawer to show it in the **Pinned** row above the groups, the same on every page.
+**Favorites** in the left rail shows only pinned services. Pins are included in export and import.
+
+### Widget panel
+
+On screens wider than 1440 px the widgets of the page sit in a panel on the right; **Hide widget panel** (left rail)
+puts them back in a row under the banner. A widget that cannot refresh keeps its last reading and says how old it is,
+and a widget whose connection is missing says so.
 
 ## Searching: the command palette
 
@@ -72,6 +112,8 @@ Press `Ctrl K` (`⌘ K` on macOS) or `/` from anywhere to open the palette.
 - Sort results by **Relevance**, **Name** or **Status**.
 - Press `Enter` to open the service, or `Shift Enter` to jump to its card on the dashboard.
 - The palette also lists settings pages and actions under **Go to**, such as Import / Export.
+- The **Filter services** field in the top bar narrows the dashboard as you type (Escape clears it); the palette is still
+  the way to jump to a service, a setting or an action.
 - Optional **web search**: turn it on in **Settings → Top bar and shortcuts** to add "Search the web" to the
   palette. It is off by default; nothing is sent until you choose it, and then only the text you typed goes to the search engine.
 
@@ -86,6 +128,7 @@ Press `?` to see the list in the app. Single-key shortcuts can be turned off in
 | `/`          | Open the palette                  |
 | `?`          | Show all shortcuts                |
 | `g` then `h` | Go to the dashboard and services  |
+| `g` then `p` | Show what is offline              |
 | `g` then `i` | Go to Integrations                |
 | `g` then `a` | Go to Agents                      |
 | `g` then `t` | Go to Activity                    |
@@ -142,7 +185,8 @@ median and p95 lines and incident markers, a 90-day heatmap, and a breakdown of 
 ## On a phone
 
 The interface is responsive. The layout collapses to one column and, in the management area, navigation moves
-to a bottom bar with the main sections and a **More** menu. Background-image editing is only available on larger screens, and the
+to a bottom bar with the main sections and a **More** menu. The dashboard has its own bottom bar: **Home**, **Search**
+(opens the palette), **Alerts** and **Manage**. Background-image editing is only available on larger screens, and the
 service map shows a notice with a link to the host list on narrow screens.
 
 <p align="center"><img src="../screenshots/mobile-dashboard.png" alt="The dashboard on a phone" width="260"></p>

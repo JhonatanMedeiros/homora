@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { copyAddress } from '@/lib/copy-address';
 import { ChevronDown, Copy, ExternalLink, Link2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { linkLabel, linkOpenTarget, type OpenTarget, type Service } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -19,16 +19,6 @@ import { t } from '@/i18n';
 
 const targetWord = (target: OpenTarget) =>
   target === 'same-tab' ? t('links.sameTab') : t('links.newTab');
-
-/** Copies an address; falls back to a message with the text when the browser refuses. */
-async function copyAddress(url: string) {
-  try {
-    await navigator.clipboard.writeText(url);
-    toast.success(t('links.copied'));
-  } catch {
-    toast(t('links.copyFailed', { url }));
-  }
-}
 
 function AddressRow({
   url,

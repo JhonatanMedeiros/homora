@@ -86,6 +86,8 @@ export function ServiceOptionsSheet({ toolbar, status }: Props) {
                 onViewChange={toolbar.onViewChange}
                 showDescriptions={toolbar.showDescriptions}
                 onShowDescriptionsChange={toolbar.onShowDescriptionsChange}
+                uptimeRange={toolbar.uptimeRange}
+                onUptimeRangeChange={toolbar.onUptimeRangeChange}
               />
             </div>
             {toolbar.showHostSuggestions && (

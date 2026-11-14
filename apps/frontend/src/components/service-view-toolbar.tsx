@@ -1,4 +1,5 @@
-import { LayoutGrid, Map as MapIcon, Server, Sparkles } from 'lucide-react';
+import { LayoutGrid, Map as MapIcon, Server, SlidersHorizontal, Sparkles } from 'lucide-react';
+import type { UptimeRange } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ViewOptions } from '@/components/view-options';
@@ -15,6 +16,10 @@ export function ServiceViewToolbar({
   onShowDescriptionsChange,
   showHostSuggestions,
   onHostSuggestions,
+  uptimeRange,
+  onUptimeRangeChange,
+  organizing,
+  onToggleOrganizing,
 }: {
   arrange: Arrange;
   onArrangeChange: (value: Arrange) => void;
@@ -24,6 +29,11 @@ export function ServiceViewToolbar({
   onShowDescriptionsChange: (value: boolean) => void;
   showHostSuggestions: boolean;
   onHostSuggestions: () => void;
+  uptimeRange?: UptimeRange;
+  onUptimeRangeChange?: (range: UptimeRange) => void;
+  /** Organize lives here on the Home; the Manage page keeps its own button. */
+  organizing?: boolean;
+  onToggleOrganizing?: () => void;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -45,7 +55,22 @@ export function ServiceViewToolbar({
         onViewChange={onViewChange}
         showDescriptions={showDescriptions}
         onShowDescriptionsChange={onShowDescriptionsChange}
+        uptimeRange={uptimeRange}
+        onUptimeRangeChange={onUptimeRangeChange}
       />
+      {onToggleOrganizing && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          aria-pressed={organizing}
+          className="pointer-coarse:h-11"
+          onClick={onToggleOrganizing}
+        >
+          <SlidersHorizontal aria-hidden="true" />
+          {organizing ? t('page.done') : t('page.organize')}
+        </Button>
+      )}
     </div>
   );
 }

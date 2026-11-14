@@ -30,9 +30,27 @@ type Props = {
   uptime: Record<number, UptimeSummary>;
   range: UptimeRange;
   now?: number;
+  /** Opens the details of a service; when set, the pulse shows one clickable window per service. */
+  onOpenService?: (id: number) => void;
 };
 
 const MAX_NAMED = 2;
+
+type WindowState = 'down' | 'degraded' | 'ok' | 'maintenance' | 'unknown';
+const WINDOW_COLOR: Record<WindowState, string> = {
+  down: 'bg-destructive',
+  degraded: 'bg-warning',
+  ok: 'bg-success',
+  maintenance: 'bg-info',
+  unknown: 'bg-muted-foreground/40',
+};
+const WINDOW_LABEL = {
+  down: 'status.unavailable',
+  degraded: 'status.degraded',
+  ok: 'status.available',
+  maintenance: 'status.maintenance',
+  unknown: 'status.unknown',
+} as const satisfies Record<WindowState, string>;
 const pct = (value: number) => formatNumber(value, { maximumFractionDigits: 2 });
 
 function Stat({ label, value, note }: { label: string; value: ReactNode; note: ReactNode }) {
@@ -94,6 +112,7 @@ export function StatusBanner({
   uptime,
   range,
   now: fixedNow,
+  onOpenService,
 }: Props) {
   const clock = useNow();
   const now = fixedNow ?? clock;
@@ -106,6 +125,7 @@ export function StatusBanner({
   let unknown = 0;
   let blocked = 0;
   const certs: { name: string; days: number }[] = [];
+  const windows: { id: number; name: string; state: WindowState }[] = [];
   for (const service of services) {
     const status = statuses[service.id];
     if (typeof status?.certExpiresAt === 'number')
@@ -114,8 +134,27 @@ export function StatusBanner({
         days: Math.floor((status.certExpiresAt - now) / 86_400_000),
       });
     // Maintenance is planned: neither a problem nor missing information.
-    if (status?.reason === 'maintenance') continue;
+    if (status?.reason === 'maintenance') {
+      windows.push({ id: service.id, name: service.name, state: 'maintenance' });
+      continue;
+    }
     const isBlocked = blockedIds.has(service.id) && status?.status !== 'available';
+    const slowNow =
+      status?.status === 'available' &&
+      isDegraded(overview?.settings[service.id], status.status, status.latencyMs);
+    windows.push({
+      id: service.id,
+      name: service.name,
+      state: isBlocked
+        ? 'unknown'
+        : status?.status === 'unavailable'
+          ? 'down'
+          : slowNow
+            ? 'degraded'
+            : status?.status === 'available'
+              ? 'ok'
+              : 'unknown',
+    });
     if (isBlocked) blocked++;
     else if (status?.status === 'unavailable') {
       const since = overview?.open[service.id]?.startedAt;
@@ -276,6 +315,23 @@ export function StatusBanner({
             {certs.length > 0 && <CertStat certs={certs} />}
           </dl>
         </div>
+        {onOpenService && windows.length > 1 && (
+          <ul aria-label={t('banner.windows')} className="m-0 flex list-none flex-wrap gap-1 p-0">
+            {windows.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpenService(item.id)}
+                  aria-label={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
+                  title={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
+                  className="grid size-4 place-items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-6"
+                >
+                  <span className={cn('block size-3 rounded-sm', WINDOW_COLOR[item.state])} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {(upcoming || sla) && (
           <div
             className={cn(

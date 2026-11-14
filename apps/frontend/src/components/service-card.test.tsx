@@ -12,6 +12,7 @@ function show(
   blocked = false,
   extra: {
     list?: boolean;
+    compact?: boolean;
     description?: string;
     onEdit?: () => void;
     openTarget?: 'new-tab' | 'same-tab';
@@ -33,6 +34,7 @@ function show(
         blocked={blocked}
         managing={false}
         list={extra.list}
+        compact={extra.compact}
         showDescription
         confirmingRemoval={false}
         onEdit={extra.onEdit ?? noop}
@@ -198,4 +200,34 @@ it('respects the opening preference in list and card views', () => {
     expect(link.getAttribute('target')).toBeNull();
     expect(link.textContent).not.toContain('abre em nova aba');
   }
+});
+
+it('shows the compact tile with the state in words, latency and no history controls', () => {
+  show(
+    { ...base, status: 'available', reason: 'responding', httpStatus: 200, latencyMs: 72 },
+    false,
+    { compact: true, description: 'Documentação da casa' },
+  );
+  expect(document.querySelector('[data-layout="compact"]')).toBeTruthy();
+  expect(screen.getByRole('link', { name: /Wiki/ })).toBeTruthy();
+  expect(screen.getByText('No ar')).toBeTruthy();
+  expect(screen.getByText('72 ms')).toBeTruthy();
+  // History, incidents and the period toggle belong to the cards layout and the detail page.
+  expect(screen.queryByRole('button', { name: /Histórico|History/ })).toBeNull();
+  expect(screen.queryByText('Documentação da casa')).toBeNull();
+});
+
+it('explains a failure in the compact tile and keeps the list layout winning over compact', () => {
+  show({ ...base, status: 'unavailable', reason: 'no-response', httpStatus: null }, false, {
+    compact: true,
+  });
+  expect(screen.getByText('Fora do ar')).toBeTruthy();
+  expect(document.querySelector('[data-layout="compact"]')?.className).toContain(
+    'border-destructive',
+  );
+  show({ ...base, status: 'available', reason: 'responding', httpStatus: 200 }, false, {
+    compact: true,
+    list: true,
+  });
+  expect(document.querySelector('[data-layout="compact"]')).toBeNull();
 });

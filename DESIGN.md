@@ -111,7 +111,11 @@ Geist Variable for interface and headings, Geist Mono Variable for hosts, counts
 
 Content up to 72rem, 16px side margins (32px from `md`). Homepage: search (`/` focuses it), availability summary, then groups. **Ctrl or Cmd K** opens the command palette (`CommandPalette`): open any service, toggle theme, or switch to management. Management lives behind a single entry.
 
-Services default to a **list** view: one dense row per service (icon, name, host in mono, status light), two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "View" button in the summary row (`ViewOptions`, a popover) switches between them; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`list` or `cards`; the older `comfortable` maps to cards, `compact` to list). Group filter tabs appear only with three or more groups.
+Services default to **compact tiles** (`ServiceCardCompact`): icon, name, host in mono, the state in words, a 6px bar of the period (`UptimeMiniBar`) and the latency, with an `i` button that opens the details drawer. **List** is one dense row per service, two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "Display" button in the toolbar (`ViewOptions`, a popover) switches the layout and sets descriptions and the uptime period; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`tiles`, `list` or `cards`; nothing stored means tiles, the older `comfortable` maps to cards and `compact` to list).
+
+From 1280px the Home has a **left rail** (`HomeRail`: Views with the four status filters and their counts, Favorites when something is pinned, Groups with their health, and the widget panel toggle) and from 1440px a **right rail** with the page widgets (`PageWidgets layout="rail"`); the content column widens to 90rem. Below that the filters are chips and the widgets a row under the banner. The pulse card (`StatusBanner`) gains one 12px window per service, colored by state with the name in its label. **Needs attention** (`ProbableCauses`) is a destructive-tinted bordered section, not a card with a shadow; every cause says "likely". Quiet services are named in one muted line, never hidden.
+
+The details drawer (`ServiceDrawer`) is a right side sheet and a bottom sheet under 768px. Empty states use the `Empty` primitive: first run, no result (with a clear-filters action) and a calm Offline view with a check icon, which is good news and is not styled as an error. Phones get a dashboard bottom bar (`DashboardTabs`: Home, Search, Alerts, Manage). Group filter tabs appear only with three or more groups.
 
 On phones (under 768px) the status filter, the arrangement (Group, Host, Map), the layout and Suggested hosts move into one **Options** button that opens a bottom sheet (`ServiceOptionsSheet`), next to the category chips. The health banner shows only its headline until "Details" is opened, and the optional top bar (clock and system resources) stays governed by its setting, only more compact.
 
@@ -134,6 +138,8 @@ Base radius 8px (`--radius`), steps of 6, 10, and 14. Icons are Lucide, 16px in 
 `src/components/status-light.tsx`. 8px dot plus text. Up: green with a soft glow. Down: solid red (the service card also gets a red border and tint). Unknown and blocked: empty ring in muted ink. Replaces the old label-tape StatusTag.
 
 ### ServiceCard
+
+The compact tile follows the same rules in less space: no description, tags or history, state always in words next to the light.
 
 Bordered card, 16px padding; whole card is the link. Icon tile turns ember-tinted when the service is up. Host in Geist Mono. Edit and remove sit in the corner on hover or focus.
 

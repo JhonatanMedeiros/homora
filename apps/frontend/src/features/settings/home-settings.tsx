@@ -8,8 +8,18 @@ import { SettingRow, SettingsGroup } from './setting-row';
 
 /** How the dashboard lists services, and its pages. */
 export function HomeSettings({ onChanged }: { onChanged?: () => void | Promise<void> }) {
-  const { view, setView, showDescriptions, setShowDescriptions, uptimeRange, setUptimeRange } =
-    useViewPreferences();
+  const {
+    view,
+    setView,
+    showDescriptions,
+    setShowDescriptions,
+    uptimeRange,
+    setUptimeRange,
+    collapseHealthy,
+    setCollapseHealthy,
+    problemsFirst,
+    setProblemsFirst,
+  } = useViewPreferences();
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup
@@ -23,6 +33,7 @@ export function HomeSettings({ onChanged }: { onChanged?: () => void | Promise<v
             value={view}
             onChange={setView}
             options={[
+              { value: 'tiles', label: t('view.compact') },
               { value: 'list', label: t('view.list') },
               { value: 'cards', label: t('view.cards') },
             ]}
@@ -38,6 +49,28 @@ export function HomeSettings({ onChanged }: { onChanged?: () => void | Promise<v
             checked={showDescriptions}
             disabled={view !== 'cards'}
             onCheckedChange={setShowDescriptions}
+          />
+        </SettingRow>
+        <SettingRow
+          htmlFor="ui-collapse-healthy"
+          label={t('settings.ui.collapseHealthy')}
+          description={t('settings.ui.collapseHealthyHint')}
+        >
+          <Switch
+            id="ui-collapse-healthy"
+            checked={collapseHealthy}
+            onCheckedChange={setCollapseHealthy}
+          />
+        </SettingRow>
+        <SettingRow
+          htmlFor="ui-problems-first"
+          label={t('settings.ui.problemsFirst')}
+          description={t('settings.ui.problemsFirstHint')}
+        >
+          <Switch
+            id="ui-problems-first"
+            checked={problemsFirst}
+            onCheckedChange={setProblemsFirst}
           />
         </SettingRow>
         <SettingRow label={t('settings.ui.uptime')} description={t('settings.ui.uptimeHint')}>

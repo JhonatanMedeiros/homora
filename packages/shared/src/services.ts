@@ -68,6 +68,8 @@ export type Service = ServiceInput & {
   id: number;
   isPublic?: boolean;
   host?: HostLink | null;
+  /** Favorite: shown in the Pinned row of the Home. Not part of the card's configuration version. */
+  pinned?: boolean;
   /** Extra addresses, in order; empty or absent when the card has none. */
   links?: ServiceLink[];
 };

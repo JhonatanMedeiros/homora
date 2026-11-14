@@ -20,6 +20,8 @@ type Handlers = {
   onOpenHelp: () => void;
   onGo: (tab: Exclude<Tab, 'account'>) => void;
   onNewService: () => void;
+  /** `g` then `p`: the Home, filtered to what is offline. */
+  onShowProblems: () => void;
   /** Digits switch pages on Home; return true when the key was used so it is not passed on. */
   onGoPage?: (index: number) => boolean;
 };
@@ -48,6 +50,7 @@ export function useShortcuts(handlers: Handlers) {
       if (action.type === 'palette') current.onOpenPalette();
       else if (action.type === 'help') current.onOpenHelp();
       else if (action.type === 'go') current.onGo(action.tab);
+      else if (action.type === 'problems') current.onShowProblems();
       else current.onNewService();
     };
 

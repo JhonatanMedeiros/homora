@@ -1,13 +1,17 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 
-export type View = 'list' | 'cards';
+/** Compact tiles (default), dense rows, or full cards. Compact is saved as `tiles`: `compact` is a legacy name for list. */
+export type View = 'tiles' | 'list' | 'cards';
 /** How Home arranges services: by group (default) or by the infrastructure host they run on. */
 export type Arrange = 'group' | 'host' | 'map';
 const VIEW_KEY = 'homora-density';
 const DESCRIPTIONS_KEY = 'homora-descriptions';
 const UPTIME_RANGE_KEY = 'homora-uptime-range';
 const ARRANGE_KEY = 'homora-arrange';
+const COLLAPSE_HEALTHY_KEY = 'homora-collapse-healthy';
+const PROBLEMS_FIRST_KEY = 'homora-problems-first';
+const WIDGET_RAIL_KEY = 'homora-widget-rail';
 
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => {
@@ -31,9 +35,10 @@ function write(key: string, value: string) {
   }
 }
 
-/** Reads the saved view; 'comfortable' (older value) maps to cards, anything else to list. */
+/** Reads the saved view; 'comfortable' (older value) maps to cards, an old 'compact' to list, nothing saved to tiles. */
 function currentView(): View {
   const saved = read(VIEW_KEY);
+  if (saved === null || saved === 'tiles') return 'tiles';
   return saved === 'cards' || saved === 'comfortable' ? 'cards' : 'list';
 }
 const currentRange = (): UptimeRange =>
@@ -43,10 +48,14 @@ const currentArrange = (): Arrange => {
   return saved === 'host' || saved === 'map' ? saved : 'group';
 };
 const currentDescriptions = () => read(DESCRIPTIONS_KEY) !== 'hidden';
+const currentCollapseHealthy = () => read(COLLAPSE_HEALTHY_KEY) === 'on';
+const currentProblemsFirst = () => read(PROBLEMS_FIRST_KEY) === 'on';
+/** The widgets sit in a side rail unless the person moved them back above the services. */
+const currentWidgetRail = () => read(WIDGET_RAIL_KEY) !== 'off';
 
-/** Home view preferences (list or cards, descriptions, uptime period), saved in this browser. */
+/** Home view preferences (tiles, list or cards, descriptions, uptime period, group handling), saved in this browser. */
 export function useViewPreferences() {
-  const view = useSyncExternalStore(subscribe, currentView, () => 'list' as View);
+  const view = useSyncExternalStore(subscribe, currentView, () => 'tiles' as View);
   const showDescriptions = useSyncExternalStore(subscribe, currentDescriptions, () => true);
   const arrange = useSyncExternalStore(subscribe, currentArrange, () => 'group' as Arrange);
   const setArrange = useCallback((next: Arrange) => {
@@ -66,9 +75,30 @@ export function useViewPreferences() {
     write(DESCRIPTIONS_KEY, next ? 'visible' : 'hidden');
     notify();
   }, []);
+  const collapseHealthy = useSyncExternalStore(subscribe, currentCollapseHealthy, () => false);
+  const setCollapseHealthy = useCallback((next: boolean) => {
+    write(COLLAPSE_HEALTHY_KEY, next ? 'on' : 'off');
+    notify();
+  }, []);
+  const problemsFirst = useSyncExternalStore(subscribe, currentProblemsFirst, () => false);
+  const setProblemsFirst = useCallback((next: boolean) => {
+    write(PROBLEMS_FIRST_KEY, next ? 'on' : 'off');
+    notify();
+  }, []);
+  const widgetRail = useSyncExternalStore(subscribe, currentWidgetRail, () => true);
+  const setWidgetRail = useCallback((next: boolean) => {
+    write(WIDGET_RAIL_KEY, next ? 'on' : 'off');
+    notify();
+  }, []);
   return {
     view,
     setView,
+    widgetRail,
+    setWidgetRail,
+    collapseHealthy,
+    setCollapseHealthy,
+    problemsFirst,
+    setProblemsFirst,
     arrange,
     setArrange,
     showDescriptions,

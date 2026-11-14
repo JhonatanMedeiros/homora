@@ -1749,6 +1749,26 @@ manual responsive and keyboard verification in a browser remains pending.
   preview; name and page are collapsed. Editing skips the gallery and does not change the type.
 - Validation: component interface tests; browser verification pending.
 
+### Home redesign: compact tiles, rails, causes, drawer and favorites (2026-11-14)
+
+Delivered as one change for issue #179 (mockup linked there); items are named by their issue ids.
+
+- Compact tile is the default layout (N6), with groups that collapse when healthy and a problems-first order (N8). The
+  layout toggle is Compact, List, Cards; the **Display** popover also holds descriptions and the uptime period (C4).
+- Left rail with the four status filters and the groups with their health (N4, C2, C3), right widget panel (N9, C7,
+  C1), widget panel off switch, stale and not-configured widget states (N10).
+- Pulse windows (N1), **Needs attention** with probable causes (N2), acknowledge and mute with Undo and an audit trail
+  (N3), alerts bell (N12), `g` then `p` (C8), top-bar filter field (C9).
+- Details drawer and bottom sheet (N7, C5, C10), favorites with a Pinned row and a Favorites view (N5; migration `0037`,
+  export and import), page tab menu (N13), empty states (N16), Organize on the Home toolbar (C6), phone bottom bar (N14),
+  distinct unknown, not monitored and degraded tiles (N15), undo toasts for pin, acknowledge and moves (N11).
+- Decisions taken with the author: causes are computed in the browser as a tested pure function; acknowledging does not
+  pause notifications; favorites and Pinned share one field and the row is global.
+- Not done or different from the mockup: the History menu and axis labels were kept on the Cards layout (the drawer adds
+  the same detail rather than replacing it); Bangs (`!g`) and a widget limit per page were not added.
+- Validation: see the pull request for the commands and results; interface behavior was covered by component and
+  API tests, and was not verified in a real browser at every breakpoint.
+
 ### Documentation: showcase README, user guide and fresh screenshots (2026-11-13)
 
 - The README is now a showcase (value, quick start, features, screenshots, use cases, integrations, security

@@ -21,6 +21,10 @@ type Props = {
   count: number;
   organizing: boolean;
   list?: boolean;
+  /** Dense tiles: more columns than cards, tighter gaps. */
+  compact?: boolean;
+  /** Collapses the group on its own (no saved preference); the person can still open it. */
+  autoCollapse?: boolean;
   /** Management shows one editable row per line; the home packs two columns. */
   managing?: boolean;
   /** Changes each time something inside the group must be shown; expands the group without saving. */
@@ -64,6 +68,12 @@ const ROW_COLUMN_CLASSES: Record<number, string> = {
   2: 'grid grid-cols-1 gap-1.5 sm:grid-cols-2',
   3: 'grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3',
 };
+/** Dense tiles keep the same counts as cards with a tighter gap. */
+const TILE_COLUMN_CLASSES: Record<number, string> = {
+  1: 'grid grid-cols-1 gap-2',
+  2: 'grid grid-cols-1 gap-2 sm:grid-cols-2',
+  3: 'grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3',
+};
 const effectiveColumns = (columns?: number | null) =>
   columns ? Math.min(Math.max(Math.trunc(columns), 1), MAX_COLUMNS) : null;
 
@@ -72,6 +82,8 @@ export function GroupSection({
   count,
   organizing,
   list = false,
+  compact = false,
+  autoCollapse = false,
   managing = false,
   revealSignal,
   canEdit,
@@ -98,11 +110,13 @@ export function GroupSection({
     rowLayout && managing
       ? 'grid grid-cols-1 gap-1.5'
       : cols
-        ? (rowLayout ? ROW_COLUMN_CLASSES : COLUMN_CLASSES)[cols]
+        ? (rowLayout ? ROW_COLUMN_CLASSES : compact ? TILE_COLUMN_CLASSES : COLUMN_CLASSES)[cols]
         : rowLayout
           ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
-          : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
-  const { collapsed, toggleCollapsed } = useGroupCollapse(category, revealSignal);
+          : compact
+            ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3'
+            : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
+  const { collapsed, toggleCollapsed } = useGroupCollapse(category, revealSignal, autoCollapse);
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3">
       <div className="flex min-w-0 flex-wrap items-center gap-3">
