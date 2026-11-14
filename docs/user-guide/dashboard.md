@@ -195,10 +195,7 @@ median and p95 lines and incident markers, a 90-day heatmap, and a breakdown of 
 ## On a phone
 
 The interface is responsive. The layout collapses to one column and the header keeps a single row (in the management
-area and on the account page, the back arrow takes the place of the logo). Navigation is a floating bar at the bottom:
-only the current item shows its name, the others are icons. The dashboard's bar has **Home**, **Search** (opens the
-palette) and **Manage** (the notifications bell stays in the header). In the management area it has the main sections and
-**More**, which opens a sheet with the rest and a way back to the dashboard. Background-image editing is only available on larger screens, and the
+area and on the account page, the back arrow takes the place of the logo). The Home has no bottom bar: search, notifications and the theme are in the header, and **Manage** is in the user menu (the avatar). In the management area navigation is a floating bar at the bottom: only the current item shows its name, the others are icons, with the main sections and **More**, which opens a sheet with the rest and a way back to the dashboard. Background-image editing is only available on larger screens, and the
 service map shows a notice with a link to the host list on narrow screens.
 
 <p align="center"><img src="../screenshots/mobile-dashboard.png" alt="The dashboard on a phone" width="260"></p>

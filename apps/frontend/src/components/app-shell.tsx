@@ -27,8 +27,6 @@ import { t } from '@/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { navGroups, navItems, type Tab } from '@/components/app-nav';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { DashboardTabs } from '@/components/dashboard-tabs';
 import { MobileTabs } from '@/components/mobile-tabs';
 
 type Props = {
@@ -59,7 +57,6 @@ export function AppShell({
   // The account is a page of its own: no sidebar and no search, just a way back.
   const standalone = tab === 'account' && !managing;
   const pendingProposals = usePendingProposals(tab, managing);
-  const mobile = useIsMobile();
   return (
     <div className="min-h-svh">
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
@@ -115,6 +112,11 @@ export function AppShell({
               <DropdownMenuItem onSelect={() => onTabChange('account')}>
                 <UserRound /> {t('nav.account')}
               </DropdownMenuItem>
+              {!managing && !standalone && (
+                <DropdownMenuItem onSelect={() => onManageChange(true)} className="md:hidden">
+                  <Settings /> {t('manage.open')}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onSelect={() => onTabChange('activity')}>
                 <Activity /> {t('nav.activity')}
               </DropdownMenuItem>
@@ -144,7 +146,7 @@ export function AppShell({
         className={
           managing
             ? 'flex w-full flex-col pb-28 md:pb-0'
-            : `mx-auto flex w-full ${tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'} flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${tab === 'services' ? 'pb-28 md:pb-8' : ''}`
+            : `mx-auto flex w-full ${tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'} flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${tab === 'services' ? 'pb-24 md:pb-8' : ''}`
         }
       >
         {!managing && !standalone && (
@@ -202,13 +204,6 @@ export function AppShell({
       </main>
       {managing && (
         <MobileTabs tab={tab} onTabChange={onTabChange} onHome={() => onManageChange(false)} />
-      )}
-      {tab === 'services' && !managing && mobile && (
-        <DashboardTabs
-          onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          onSearch={onOpenPalette}
-          onManage={() => onManageChange(true)}
-        />
       )}
     </div>
   );
