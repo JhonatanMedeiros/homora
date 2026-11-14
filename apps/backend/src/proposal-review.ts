@@ -24,7 +24,7 @@ export function createProposalReviewService({
   sqlite: DatabaseSync;
   configuration: ReturnType<typeof createServiceConfiguration>;
   agentChangeSchema: AgentChangeSchema;
-  managedBaseHash: () => string;
+  managedBaseHash: (change?: ManagedChange) => string;
   configHash: () => string;
   issue: (name: string, scopes: string[]) => { id: string; token: string };
   revoke: (id: string) => void;
@@ -56,7 +56,101 @@ export function createProposalReviewService({
       }
     }
   }
-  function auditMaintenance(change: ManagedChange, human: string, proposalId: string, now: number) {
+  function auditManagedChange(
+    change: ManagedChange,
+    human: string,
+    proposalId: string,
+    now: number,
+    affectedId?: number,
+  ) {
+    if (change.kind === 'widget' && change.change.op === 'move') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(
+          human,
+          'page-widget-move',
+          proposalId,
+          'ok',
+          now,
+          `widget:${change.change.id} page:${change.change.pageId}`,
+        );
+      return;
+    }
+    if (change.kind === 'pin') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(
+          human,
+          change.change.op === 'reorder'
+            ? 'service-pin-order'
+            : change.change.op === 'pin'
+              ? 'service-pin'
+              : 'service-unpin',
+          proposalId,
+          'ok',
+          now,
+          change.change.op === 'reorder' ? 'reordered' : `service:${affectedId}`,
+        );
+      return;
+    }
+    if (change.kind === 'link') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(
+          human,
+          change.change.op === 'link' ? 'resource-link-set' : 'resource-link-remove',
+          proposalId,
+          'ok',
+          now,
+          `service:${affectedId}`,
+        );
+      return;
+    }
+    if (change.kind === 'acknowledgement') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(
+          human,
+          change.change.op === 'ack' ? 'service-acknowledge' : 'service-acknowledge-clear',
+          proposalId,
+          'ok',
+          now,
+          `service:${affectedId}`,
+        );
+      return;
+    }
+    if (change.kind === 'tag') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(human, 'service-tags-update', proposalId, 'ok', now, `service:${affectedId}`);
+      return;
+    }
+    if (change.kind === 'probe') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(human, `probe-${change.change.op}`, proposalId, 'ok', now, `probe:${affectedId}`);
+      return;
+    }
+    if (change.kind === 'page') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(human, 'page-update', proposalId, 'ok', now, change.change.op);
+      return;
+    }
     if (change.kind !== 'maintenance') return;
     sqlite
       .prepare(
@@ -168,12 +262,12 @@ export function createProposalReviewService({
           isManaged && 'change' in decoded ? managedChangeSchema.parse(decoded.change) : null;
         if (
           version !== p.base_version ||
-          (managedChange ? managedBaseHash() : configHash()) !== p.base_hash
+          (managedChange ? managedBaseHash(managedChange) : configHash()) !== p.base_hash
         )
           throw new Error('Configuration has changed');
         if (managedChange) {
-          applyManagedChange(sqlite, managedChange);
-          auditMaintenance(managedChange, human, id, now);
+          const affectedId = applyManagedChange(sqlite, managedChange);
+          auditManagedChange(managedChange, human, id, now, affectedId);
         } else {
           const d = serviceProposalSchema.parse(decoded);
           applyServiceChange(d as ServiceChange, human, id, now);
@@ -232,7 +326,7 @@ export function createProposalReviewService({
               decoded.kind === 'managed' ? managedChangeSchema.parse(decoded.change) : null;
             if (
               version !== p.base_version ||
-              (managed ? managedBaseHash() : configHash()) !== p.base_hash
+              (managed ? managedBaseHash(managed) : configHash()) !== p.base_hash
             )
               throw new Error('Configuration has changed');
           }
@@ -241,8 +335,8 @@ export function createProposalReviewService({
               const decoded = JSON.parse(p.diff) as Record<string, unknown>;
               if (decoded.kind === 'managed') {
                 const change = managedChangeSchema.parse(decoded.change);
-                applyManagedChange(sqlite, change);
-                auditMaintenance(change, human, p.id, now);
+                const affectedId = applyManagedChange(sqlite, change);
+                auditManagedChange(change, human, p.id, now, affectedId);
               } else {
                 const change = serviceProposalSchema.parse(decoded) as ServiceChange;
                 if (change.op === 'create')

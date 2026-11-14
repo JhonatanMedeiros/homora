@@ -1,6 +1,8 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { X509Certificate } from 'node:crypto';
+import { getCACertificates } from 'node:tls';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createDatabase, getSqliteHandle } from '@homora/db';
@@ -21,6 +23,53 @@ async function connect(db: ReturnType<typeof getSqliteHandle>, token: string) {
   await Promise.all([server.connect(s), client.connect(c)]);
   return client;
 }
+
+it('exposes only trusted CA metadata to an authorized agent', async () => {
+  const storage = createDatabase(':memory:');
+  const db = getSqliteHandle(storage.db);
+  const ca = getCACertificates('bundled').find((pem) => {
+    const cert = new X509Certificate(pem);
+    return Date.parse(cert.validFrom) <= Date.now() && Date.parse(cert.validTo) > Date.now();
+  });
+  if (!ca) throw new Error('No valid bundled certificate');
+  const identities = createProposalService(db);
+  const reader = await connect(db, identities.issue('reader', ['services:read']).token);
+  const other = await connect(db, identities.issue('other', ['audit:read']).token);
+  try {
+    expect(JSON.parse(text(await reader.callTool({ name: 'list_trusted_ca' })))).toEqual({
+      certificates: [],
+      count: 0,
+      invalid: false,
+    });
+    db.prepare("INSERT INTO app_settings(key,value) VALUES('monitoring_ca',?)").run(ca);
+    const response = await reader.callTool({ name: 'list_trusted_ca' });
+    expect(JSON.parse(text(response))).toMatchObject({
+      count: 1,
+      invalid: false,
+      certificates: [
+        { subject: expect.any(String), validFrom: expect.any(String), validTo: expect.any(String) },
+      ],
+    });
+    expect(text(response)).not.toContain('BEGIN CERTIFICATE');
+    expect(failed(await other.callTool({ name: 'list_trusted_ca' }))).toBe(true);
+    const caps = JSON.parse(text(await reader.callTool({ name: 'get_homora_capabilities' })));
+    expect(caps.tools).toContainEqual({
+      name: 'list_trusted_ca',
+      requiredScopes: ['services:read'],
+      available: true,
+    });
+    db.prepare("UPDATE app_settings SET value='invalid' WHERE key='monitoring_ca'").run();
+    expect(JSON.parse(text(await reader.callTool({ name: 'list_trusted_ca' })))).toEqual({
+      certificates: [],
+      count: 0,
+      invalid: true,
+    });
+  } finally {
+    await reader.close();
+    await other.close();
+    storage.close();
+  }
+});
 
 it('refuses every write for a read-only agent and persists nothing', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-gov-'));
@@ -94,19 +143,53 @@ it('allows a dedicated maintenance scope to propose and list windows without app
       arguments: { op: 'create', serviceId: 1, startsAt: now, endsAt: now + 3600000, note: 'Work' },
     });
     expect(failed(proposed)).toBe(false);
+    expect(text(proposed)).not.toContain('Work');
     expect(db.prepare('SELECT * FROM service_maintenance').all()).toHaveLength(0);
     const proposal = JSON.parse(text(proposed)) as { id: string };
-    expect(failed(await client.callTool({ name: 'list_proposals' }))).toBe(false);
+    const own = await client.callTool({ name: 'list_proposals' });
+    expect(failed(own)).toBe(false);
+    expect(text(own)).not.toContain('Work');
+    expect(
+      text(await client.callTool({ name: 'get_proposal', arguments: { id: proposal.id } })),
+    ).not.toContain('Work');
     service.decide(proposal.id, true, 'user:admin');
     const windows = JSON.parse(
       text(await client.callTool({ name: 'list_maintenance', arguments: { serviceId: 1 } })),
     ) as unknown[];
     expect(windows).toHaveLength(1);
+    expect(JSON.stringify(windows)).not.toContain('Work');
     const cancel = await client.callTool({
       name: 'propose_maintenance',
       arguments: { op: 'cancel', ...(windows[0] as object) },
     });
     expect(failed(cancel)).toBe(false);
+    expect(text(cancel)).not.toContain('Work');
+    const cancelProposal = JSON.parse(text(cancel)) as { id: string };
+    service.decide(cancelProposal.id, true, 'user:admin');
+    const ended = db.prepare('SELECT ends_at AS endsAt FROM service_maintenance').get() as {
+      endsAt: number;
+    };
+    expect(ended.endsAt).toBeLessThanOrEqual(Date.now());
+    const nextStart = Date.now() + 60_000;
+    const batch = await client.callTool({
+      name: 'propose_batch',
+      arguments: {
+        items: [
+          {
+            kind: 'maintenance',
+            change: {
+              op: 'create',
+              serviceId: 1,
+              startsAt: nextStart,
+              endsAt: nextStart + 3600000,
+              note: 'Another sensitive note',
+            },
+          },
+        ],
+      },
+    });
+    expect(failed(batch)).toBe(false);
+    expect(text(batch)).not.toContain('Another sensitive note');
     await client.close();
   } finally {
     db.close();

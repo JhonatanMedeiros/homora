@@ -1,6 +1,11 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { normalizeTag, TAGS_MAX_PER_SERVICE } from '@homora/shared';
 
+export const normalizeTags = (input: string[]) =>
+  [...new Set(input.map(normalizeTag).filter((tag): tag is string => tag !== null))]
+    .slice(0, TAGS_MAX_PER_SERVICE)
+    .sort();
+
 /** Labels on services. Pure presentation: never part of the check signature or the monitor. */
 export function createTagStore(db: DatabaseSync) {
   return {
@@ -15,11 +20,7 @@ export function createTagStore(db: DatabaseSync) {
     /** Replaces the tags of a service; returns them normalised, or `null` if the service is gone. */
     set(serviceId: number, input: string[]): string[] | null {
       if (!db.prepare('SELECT 1 FROM services WHERE id=?').get(serviceId)) return null;
-      const tags = [
-        ...new Set(input.map(normalizeTag).filter((tag): tag is string => tag !== null)),
-      ]
-        .slice(0, TAGS_MAX_PER_SERVICE)
-        .sort();
+      const tags = normalizeTags(input);
       db.exec('BEGIN');
       try {
         db.prepare('DELETE FROM service_tags WHERE service_id=?').run(serviceId);

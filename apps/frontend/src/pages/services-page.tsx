@@ -229,7 +229,9 @@ export function ServicesPage({
           .map(({ group }) => group)
       : groups;
   const activePage = pages.find((page) => page.id === activePageId);
-  const pinnedServices = services.filter((service) => service.pinned);
+  const pinnedServices = services
+    .filter((service) => service.pinned)
+    .sort((a, b) => (a.pinnedPosition ?? Infinity) - (b.pinnedPosition ?? Infinity));
   // The Favorites view keeps only pinned services, and drops groups left empty by that.
   const shownGroups =
     favoritesOnly && !organizing

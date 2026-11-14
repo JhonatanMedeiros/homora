@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { createProposalService } from './proposals.js';
 import { createServiceConfiguration } from './service-configuration.js';
+import { registerMcpOperationalTools } from './mcp-operational-tools.js';
 import { registerMcpServiceTools } from './mcp-service-tools.js';
 import { registerMcpProposalTools } from './mcp-proposal-tools.js';
 import { registerMcpCapabilitiesTool } from './mcp-capabilities-tools.js';
@@ -62,6 +63,14 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
     publicUrl,
     groupsWithPage,
   });
+  registerMcpOperationalTools(server, {
+    database,
+    authorize,
+    unauthorized,
+    failed,
+    result,
+    publicUrl,
+  });
   registerMcpProposalTools(server, {
     database,
     proposalService,
@@ -79,7 +88,6 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
     unauthorized,
     failed,
     result,
-    publicUrl,
     proposalService,
   });
   registerMcpHostTools(server, {

@@ -106,6 +106,17 @@ card ao primeiro alerta.
   ignorada. Agentes nunca veem credenciais e não escrevem em infraestrutura externa.
 - **Trilha de auditoria completa** de acessos, propostas, aprovações e mudanças de configuração na página Atividade.
 
+Os novos escopos MCP são concedidos explicitamente; tokens existentes não os recebem automaticamente:
+
+| Escopo                                | Capacidade                                             |
+| ------------------------------------- | ------------------------------------------------------ |
+| `probes:read`, `probes:propose`       | Ler e propor monitores independentes                   |
+| `incidents:read`, `incidents:propose` | Ler incidentes e propor reconhecimento ou silêncio     |
+| `organization:propose`                | Propor páginas, tags, favoritos e vínculos de recursos |
+| `notifications:read`                  | Ler metadados de canais sem credenciais                |
+
+Veja o [inventário completo de capacidades](docs/agent-capabilities.md) para todos os escopos e ferramentas.
+
 ### Seus dados são seus
 
 - **Importe** do Homora, do Homepage (`services.yaml`, `bookmarks.yaml`) e do Dashy (`conf.yml`) com uma pré-visualização

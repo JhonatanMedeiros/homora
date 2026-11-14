@@ -309,5 +309,12 @@ export function createIntegrationConnections(
       await record('ok');
       return true;
     },
+    /** Probe without changing persisted test metadata, shared backoff, or session caches. */
+    async testConnectionReadOnly(id: number) {
+      const row = await find(id);
+      if (!row) return false;
+      await prepareAdapter(row.type, parseData(row), credentials(row))();
+      return true;
+    },
   };
 }

@@ -113,16 +113,21 @@ export const acknowledgeBodySchema = z
 export const hostBodySchema = z.object({ host: hostLinkSchema.nullable() }).strict();
 
 const serviceIdSchema = z.number().int().safe().positive();
+const proposedServiceSchema = serviceInputSchema.extend({
+  alias: z.string().nullable().optional(),
+});
 export const serviceProposalSchema = z.discriminatedUnion('op', [
   z
     .object({
       op: z.literal('create'),
-      service: serviceInputSchema,
+      service: proposedServiceSchema,
       // Only used when the card's group does not exist yet; the first page when omitted.
       page: z.string().trim().min(1).max(40).optional(),
     })
     .strict(),
-  z.object({ op: z.literal('update'), id: serviceIdSchema, service: serviceInputSchema }).strict(),
+  z
+    .object({ op: z.literal('update'), id: serviceIdSchema, service: proposedServiceSchema })
+    .strict(),
   z.object({ op: z.literal('delete'), id: serviceIdSchema }).strict(),
 ]);
 
