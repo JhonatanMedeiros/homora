@@ -11,7 +11,9 @@ import {
 import { SectionSkeleton } from '@/components/skeletons';
 import { t } from '@/i18n';
 import { ImportPreview } from '@/features/transfer/import-preview';
-import { PrivateOption, SuggestionList } from './suggestion-list';
+import { SuggestionList } from './suggestion-list';
+import { DiscoveryReviewDialog } from './review-dialog';
+import { SkippedContainers } from './skipped-containers';
 import { useLocalDiscovery } from '@/hooks/use-local-discovery';
 
 /**
@@ -19,19 +21,8 @@ import { useLocalDiscovery } from '@/hooks/use-local-discovery';
  * review: the user selects containers and confirms, and the server re-queries Docker.
  */
 export function LocalDiscovery({ onImported }: { onImported: () => void | Promise<void> }) {
-  const {
-    state,
-    selected,
-    setSelected,
-    allowPrivate,
-    setAllowPrivate,
-    message,
-    busy,
-    rescan,
-    add,
-    items,
-    newCount,
-  } = useLocalDiscovery(onImported);
+  const { state, selected, setSelected, busy, rescan, review, startReview, items, newCount } =
+    useLocalDiscovery(onImported);
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,24 +80,17 @@ export function LocalDiscovery({ onImported }: { onImported: () => void | Promis
           {state.found.plan.issues.length > 0 && (
             <ImportPreview plan={{ ...state.found.plan, services: [] }} />
           )}
+          <SkippedContainers
+            skipped={state.found.skipped ?? []}
+            total={state.found.skippedTotal ?? 0}
+          />
           {newCount > 0 && (
-            <div className="flex flex-col gap-4 rounded-lg border bg-card p-4">
-              <PrivateOption
-                id="discovery-private"
-                checked={allowPrivate}
-                onChange={setAllowPrivate}
-              />
-              <div>
-                <Button
-                  type="button"
-                  disabled={busy || selected.size === 0}
-                  onClick={() => void add()}
-                >
-                  {selected.size > 0
-                    ? `${t('discovery.add')} (${selected.size})`
-                    : t('discovery.add')}
-                </Button>
-              </div>
+            <div>
+              <Button type="button" disabled={busy || selected.size === 0} onClick={startReview}>
+                {selected.size > 0
+                  ? `${t('discovery.review')} (${selected.size})`
+                  : t('discovery.review')}
+              </Button>
             </div>
           )}
         </>
@@ -119,13 +103,7 @@ export function LocalDiscovery({ onImported }: { onImported: () => void | Promis
           </Button>
         </div>
       )}
-      <div role="status" className="empty:hidden">
-        {message && (
-          <Alert>
-            <AlertDescription className="text-foreground">{message}</AlertDescription>
-          </Alert>
-        )}
-      </div>
+      <DiscoveryReviewDialog review={review} />
     </div>
   );
 }

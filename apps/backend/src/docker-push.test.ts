@@ -410,3 +410,66 @@ it('returns a distinct source limit error and audits only successful operations'
     db.close();
   }
 }, 15000);
+
+it('previews remote edits without creating anything and rejects a changed inventory before applying', async () => {
+  const { createTestSession } = await import('./test-auth.js');
+  const { createApp } = await import('./app.js');
+  const db = createDatabase(':memory:');
+  const { auth, cookie } = await createTestSession();
+  const app = createApp(db.db, 5173, auth);
+  const headers = { origin: 'http://localhost:5173', cookie };
+  const send = (method: 'GET' | 'POST', url: string, payload?: object) =>
+    app.inject({ method, url, headers, payload });
+  const inventory = (url: string) => ({
+    containers: [
+      { Id: 'a'.repeat(64), Names: ['/app'], Labels: { 'homora.url': url } },
+      { Id: 'b'.repeat(64), Names: ['/plain'], Labels: {} },
+    ],
+  });
+  try {
+    const source = (await send('POST', '/api/discovery/sources', { name: 'A' })).json();
+    const push = (url: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/docker-push/inventory',
+        headers: { authorization: `Bearer ${source.token}` },
+        payload: inventory(url),
+      });
+    expect((await push('http://app:8080')).statusCode).toBe(204);
+    const found = (await send('GET', `/api/discovery/sources/${source.id}/suggestions`)).json();
+    expect(found.entries[0]).toMatchObject({ container: 'app', note: 'internal-name' });
+    expect(found.skipped).toEqual([{ id: 'b'.repeat(12), container: 'plain' }]);
+    const body = {
+      ids: [found.entries[0].id],
+      overrides: { [found.entries[0].id]: { url: 'http://192.168.1.5:8080', name: 'App' } },
+      inventoryVersion: found.source.version,
+      expectedVersion: found.version,
+    };
+    const url = `/api/discovery/sources/${source.id}/import`;
+    const preview = (await send('POST', url, { ...body, preview: true })).json();
+    expect(preview.results).toEqual([
+      { id: found.entries[0].id, container: 'app', status: 'created' },
+    ]);
+    expect(preview.plan.services[0]).toMatchObject({
+      name: 'App',
+      url: 'http://192.168.1.5:8080/',
+    });
+    expect((await send('GET', '/api/services')).json()).toEqual([]);
+    // A selected container the snapshot does not hold is never applied or silently skipped
+    expect(
+      (await send('POST', url, { ...body, ids: ['c'.repeat(12)], overrides: {} })).statusCode,
+    ).toBe(409);
+    // A different edit than the reviewed one is refused by the fingerprint
+    const edited = { ...body, fingerprint: preview.fingerprint };
+    edited.overrides[found.entries[0].id].name = 'Other';
+    expect((await send('POST', url, edited)).statusCode).toBe(409);
+    expect((await send('GET', '/api/services')).json()).toEqual([]);
+    edited.overrides[found.entries[0].id].name = 'App';
+    const applied = (await send('POST', url, edited)).json();
+    expect(applied.created).toBe(1);
+    expect(applied.results[0].status).toBe('created');
+  } finally {
+    await app.close();
+    db.close();
+  }
+});

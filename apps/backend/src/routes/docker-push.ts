@@ -1,7 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { errorBody } from '../api-error.js';
-import { parseDocker } from '../discovery/index.js';
+import {
+  fingerprintReview,
+  importResults,
+  overridesSchema,
+  parseDocker,
+  toOverrides,
+} from '../discovery/index.js';
 import type { createDockerPush } from '../discovery/index.js';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createServiceMonitor } from '../monitoring/index.js';
@@ -18,6 +24,12 @@ const importSchema = z
     inventoryVersion: z.number().int().safe().positive(),
     expectedVersion: z.number().int().safe().nonnegative(),
     keepPrivate: z.boolean().optional(),
+    overrides: overridesSchema,
+    preview: z.boolean().optional(),
+    fingerprint: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/)
+      .optional(),
   })
   .strict();
 
@@ -77,7 +89,9 @@ export function registerDockerPushRoutes(
     if (!params.success) return reply.code(400).send(errorBody('invalid-data'));
     const source = push.snapshot(params.data.id);
     if (!source) return reply.code(409).send(errorBody('discovery-stale'));
-    const { parsed, entries, scanned } = parseDocker(source.containers);
+    const { parsed, entries, scanned, skipped, skippedTotal, rejected } = parseDocker(
+      source.containers,
+    );
     return {
       source: {
         id: source.id,
@@ -87,6 +101,9 @@ export function registerDockerPushRoutes(
       },
       entries,
       scanned,
+      skipped,
+      skippedTotal,
+      rejected,
       ...configuration.previewImport(parsed),
     };
   });
@@ -97,9 +114,26 @@ export function registerDockerPushRoutes(
     const source = push.snapshot(params.data.id);
     if (!source || source.version !== body.data.inventoryVersion)
       return reply.code(409).send(errorBody('discovery-stale'));
-    const selected = new Set(body.data.ids);
-    const { parsed, entries } = parseDocker(source.containers, selected);
-    if (entries.length !== selected.size) return reply.code(409).send(errorBody('discovery-stale'));
+    const ids = [...new Set(body.data.ids)];
+    const selected = new Set(ids);
+    const { parsed, entries, rejected } = parseDocker(
+      source.containers,
+      selected,
+      toOverrides(body.data.overrides),
+    );
+    if (entries.length + rejected.length !== selected.size)
+      return reply.code(409).send(errorBody('discovery-stale'));
+    const digest = fingerprintReview(parsed);
+    if (body.data.preview) {
+      const review = configuration.previewImport(parsed);
+      return {
+        ...review,
+        fingerprint: digest,
+        results: importResults(ids, entries, rejected, review.plan),
+      };
+    }
+    if (body.data.fingerprint !== undefined && body.data.fingerprint !== digest)
+      return reply.code(409).send(errorBody('discovery-stale'));
     const result = configuration.applyImport(parsed, {
       keepPrivate: false,
       grantPrivate: body.data.keepPrivate === true,
@@ -108,7 +142,11 @@ export function registerDockerPushRoutes(
     });
     if (result.status === 'stale') return reply.code(409).send(errorBody('config-changed'));
     void monitor.invalidate();
-    return { created: result.created, plan: result.plan };
+    return {
+      created: result.created,
+      plan: result.plan,
+      results: importResults(ids, entries, rejected, result.plan),
+    };
   });
   const attempts = new Map<string, { count: number; until: number }>();
   app.post(

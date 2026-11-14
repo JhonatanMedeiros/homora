@@ -48,38 +48,104 @@ it('explains how to enable discovery when disabled', async () => {
   expect(screen.queryByRole('button', { name: /Adicionar selecionados/ })).toBeNull();
 });
 
-it('lists suggestions, allows checking only new items, and sends selected IDs', async () => {
-  const calls: { url: string; body?: string }[] = [];
+it('lists suggestions, reviews and edits before confirming, then reports each result', async () => {
+  const calls: { url: string; body: Record<string, unknown> }[] = [];
+  const fingerprint = 'f'.repeat(64);
+  const created = { id: 'aaaaaaaaaaa1', container: 'jellyfin', status: 'created' };
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
-      calls.push({ url, body: init?.body as string | undefined });
-      return url === '/api/discovery' ? ok(found) : ok({ created: 1, plan: found.plan });
+      const body = init?.body ? JSON.parse(init.body as string) : {};
+      calls.push({ url, body });
+      if (url === '/api/discovery') return ok(found);
+      return body.preview
+        ? ok({ version: 7, fingerprint, plan: found.plan, results: [created] })
+        : ok({ created: 1, plan: found.plan, results: [created] });
     }),
   );
   const onImported = vi.fn();
   render(<Discovery onImported={onImported} />);
   const boxes = await screen.findAllByRole('checkbox');
   expect(screen.getByText('Contêiner: jellyfin')).toBeTruthy();
-  // [0] jellyfin (new), [1] sonarr (duplicate, disabled), [2] private network
-  expect(boxes[1].hasAttribute('disabled') || boxes[1].getAttribute('data-disabled') !== null).toBe(
+  // [0] select all or jellyfin (new), duplicate stays disabled
+  const jellyfin = screen.getByRole('checkbox', { name: /jellyfin/ });
+  expect(
+    boxes.some((box) => box.hasAttribute('disabled') || box.dataset.disabled !== undefined),
+  ).toBe(true);
+  expect(screen.getByRole('button', { name: 'Revisar e adicionar' }).hasAttribute('disabled')).toBe(
     true,
   );
-  expect(
-    screen.getByRole('button', { name: 'Adicionar selecionados' }).hasAttribute('disabled'),
-  ).toBe(true);
 
-  fireEvent.click(boxes[0]);
-  fireEvent.click(screen.getByRole('checkbox', { name: /rede privada nos cards selecionados/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar selecionados (1)' }));
+  fireEvent.click(jellyfin);
+  fireEvent.click(screen.getByRole('button', { name: 'Revisar e adicionar (1)' }));
+  // Nothing is created by opening the review; the server only evaluates it
+  const name = await screen.findByLabelText('Nome');
+  fireEvent.change(name, { target: { value: 'Cinema' } });
+  expect(calls.some((call) => call.url === '/api/discovery/import' && !call.body.preview)).toBe(
+    false,
+  );
+  fireEvent.click(await screen.findByRole('checkbox', { name: /rede privada nos cards/ }));
+  const confirm = await screen.findByRole('button', { name: 'Adicionar 1 cards' });
+  await waitFor(() => expect(confirm.hasAttribute('disabled')).toBe(false));
+  fireEvent.click(confirm);
   await waitFor(() => expect(onImported).toHaveBeenCalled());
-  const post = calls.find((call) => call.url === '/api/discovery/import');
-  expect(JSON.parse(post?.body ?? '{}')).toEqual({
+  const post = calls.filter((call) => call.url === '/api/discovery/import' && !call.body.preview);
+  expect(post).toHaveLength(1);
+  expect(post[0].body).toEqual({
     ids: ['aaaaaaaaaaa1'],
-    keepPrivate: true,
+    overrides: { aaaaaaaaaaa1: { name: 'Cinema' } },
     expectedVersion: 7,
+    fingerprint,
+    keepPrivate: true,
   });
-  expect(await screen.findByText('1 cards adicionados.')).toBeTruthy();
+  expect(await screen.findByText('Concluído: 1 criados, 0 não criados.')).toBeTruthy();
+});
+
+it('shows containers without an address label as information and flags unreachable addresses', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      ok({
+        ...found,
+        entries: [{ ...found.entries[0], url: 'http://localhost:8096/', note: 'loopback' }],
+        skipped: [{ id: 'aaaaaaaaaaa3', container: 'db' }],
+        skippedTotal: 3,
+      }),
+    ),
+  );
+  render(<Discovery onImported={() => {}} />);
+  expect(await screen.findByText(/localhost se refere ao dispositivo/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /Contêineres sem label de endereço \(3\)/ }));
+  expect(await screen.findByText('db')).toBeTruthy();
+  expect(screen.getByText('E mais 2.')).toBeTruthy();
+  expect(screen.getByText(/não adivinha endereços nem portas/)).toBeTruthy();
+});
+
+it('asks for a new review when the data changed before confirmation', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      const body = init?.body ? JSON.parse(init.body as string) : {};
+      if (url === '/api/discovery') return ok(found);
+      if (body.preview)
+        return ok({
+          version: 7,
+          fingerprint: 'f'.repeat(64),
+          plan: found.plan,
+          results: [{ id: 'aaaaaaaaaaa1', container: 'jellyfin', status: 'created' }],
+        });
+      return ok({ code: 'discovery-stale', error: 'x' }, 409);
+    }),
+  );
+  const onImported = vi.fn();
+  render(<Discovery onImported={onImported} />);
+  fireEvent.click(await screen.findByRole('checkbox', { name: /jellyfin/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Revisar e adicionar (1)' }));
+  const confirm = await screen.findByRole('button', { name: 'Adicionar 1 cards' });
+  await waitFor(() => expect(confirm.hasAttribute('disabled')).toBe(false));
+  fireEvent.click(confirm);
+  expect(await screen.findByText(/Os dados mudaram durante a revisão/)).toBeTruthy();
+  expect(onImported).not.toHaveBeenCalled();
 });
 
 it('displays translated error when Docker daemon does not respond', async () => {

@@ -3,11 +3,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 import type { Plan } from '@/features/transfer/transfer-model';
 import type { PushSource, SourceChange } from '@/features/discovery/push-source-model';
+import type { Skipped } from '@/features/discovery/local-discovery-model';
+import type { AddressNote } from '@/features/discovery/review-model';
+import { useDiscoveryReview } from '@/hooks/use-discovery-review';
 
 type Preview = {
   source: { id: string; version: number };
   version: number;
-  entries: { id: string; container: string }[];
+  entries: { id: string; container: string; note?: AddressNote }[];
+  skipped?: Skipped[];
+  skippedTotal?: number;
   plan: Plan;
 };
 
@@ -22,7 +27,6 @@ export function usePushSources(onImported: () => void | Promise<void>) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState<{ source: PushSource; action: SourceChange } | null>(null);
-  const [allowPrivate, setAllowPrivate] = useState(false);
   const [message, setMessage] = useState('');
 
   const load = useCallback(async () => {
@@ -107,22 +111,16 @@ export function usePushSources(onImported: () => void | Promise<void>) {
     });
   }
 
-  async function importSelected() {
-    if (!preview) return;
-    await run(async () => {
-      const result = await call(`/api/discovery/sources/${preview.source.id}/import`, 'POST', {
-        ids: [...selected],
-        inventoryVersion: preview.source.version,
-        expectedVersion: preview.version,
-        ...(allowPrivate ? { keepPrivate: true } : {}),
-      });
-      toast.success(t('discovery.added', { count: result.created }));
+  const reviewing = useDiscoveryReview({
+    endpoint: preview ? `/api/discovery/sources/${preview.source.id}/import` : '',
+    extra: preview ? { inventoryVersion: preview.source.version } : {},
+    onDone: async () => {
       setPreview(null);
       setSelected(new Set());
       await onImported();
       await load();
-    });
-  }
+    },
+  });
 
   const previewName = preview
     ? sources.find((source) => source.id === preview.source.id)?.name
@@ -136,10 +134,17 @@ export function usePushSources(onImported: () => void | Promise<void>) {
           group: service.group,
           url: service.url,
           container: entry?.container,
+          note: entry?.note,
           isNew: service.status === 'new',
         };
       })
     : [];
+
+  function startReview() {
+    reviewing.open(
+      items.flatMap((item) => (item.id && selected.has(item.id) ? [{ ...item, id: item.id }] : [])),
+    );
+  }
 
   return {
     sources,
@@ -157,15 +162,14 @@ export function usePushSources(onImported: () => void | Promise<void>) {
     setSelected,
     confirm,
     setConfirm,
-    allowPrivate,
-    setAllowPrivate,
     message,
     load,
     run,
     change,
     review,
     createSource,
-    importSelected,
+    reviewing,
+    startReview,
     previewName,
     items,
   };

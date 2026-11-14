@@ -24,7 +24,9 @@ import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/copy-button';
 import { t } from '@/i18n';
 import { ImportPreview } from '@/features/transfer/import-preview';
-import { PrivateOption, SuggestionList } from './suggestion-list';
+import { SuggestionList } from './suggestion-list';
+import { DiscoveryReviewDialog } from './review-dialog';
+import { SkippedContainers } from './skipped-containers';
 import { usePushSources } from '@/hooks/use-push-sources';
 
 type DialogState = Pick<
@@ -42,11 +44,10 @@ type DialogState = Pick<
   | 'setSelected'
   | 'confirm'
   | 'setConfirm'
-  | 'allowPrivate'
-  | 'setAllowPrivate'
   | 'change'
   | 'createSource'
-  | 'importSelected'
+  | 'reviewing'
+  | 'startReview'
   | 'previewName'
   | 'items'
 >;
@@ -72,11 +73,10 @@ export function PushSourceDialogs({ state }: { state: DialogState }) {
     setSelected,
     confirm,
     setConfirm,
-    allowPrivate,
-    setAllowPrivate,
     change,
     createSource,
-    importSelected,
+    reviewing,
+    startReview,
     previewName,
     items,
   } = state;
@@ -178,29 +178,24 @@ export function PushSourceDialogs({ state }: { state: DialogState }) {
                   onChange={setSelected}
                 />
               )}
-              {items.some((item) => item.isNew) && (
-                <PrivateOption
-                  id="push-private"
-                  checked={allowPrivate}
-                  onChange={setAllowPrivate}
-                />
-              )}
+              <SkippedContainers
+                skipped={preview.skipped ?? []}
+                total={preview.skippedTotal ?? 0}
+              />
             </div>
           )}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setPreview(null)}>
               {t('push.cancel')}
             </Button>
-            <Button
-              type="button"
-              disabled={busy || selected.size === 0}
-              onClick={() => void importSelected()}
-            >
-              {t('discovery.add')} ({selected.size})
+            <Button type="button" disabled={busy || selected.size === 0} onClick={startReview}>
+              {t('discovery.review')} ({selected.size})
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DiscoveryReviewDialog review={reviewing} />
 
       <AlertDialog
         open={confirm !== null}

@@ -18,6 +18,20 @@ services:
 
 The Homepage labels `homepage.href`, `homepage.name`, `homepage.group`, `homepage.description` and `homepage.icon` also work, and `homora.*` wins when both are set. Labels never turn on monitoring of private addresses; you choose that for the cards you add.
 
+### Review before adding
+
+Select the suggestions you want and choose **Review and add**. Nothing is created until you confirm in the review dialog:
+
+- Adjust the **name**, **group** or **address** of each card. Your edits are checked by the server with the same rules as labels (name up to 80 characters, group up to 40, `http` or `https` address without credentials), and each row shows whether it will be created, already exists, or is not valid and why.
+- Rows that would duplicate an existing card are shown as _already exists_ and are not created. If you edit an address so it matches another card, the row changes to _already exists_.
+- The address comes from a label (or from your edit) and is only a suggestion. Homora does not check that your browser can open it. `localhost`, `127.x`, and names without a dot (such as `http://web:8080`, which often only resolve inside Docker) are flagged, but not blocked.
+- Allowing monitoring on a private network is a separate, explicit choice made in this dialog. Labels and edits never grant it.
+- After you confirm, the same dialog lists the result for every selected container: created, already exists, not valid, or no longer found. Nothing is partially applied silently.
+
+If the cards, the labels or the remote inventory change while you review (or the inventory becomes stale or its source is revoked), the confirmation is rejected, nothing is created, and you are asked to review again. Review edits only change the name, group and address of the containers you selected; the browser still never submits arbitrary card data.
+
+Running containers without a `homora.url` or `homepage.href` label are not suggested. A collapsed list under the suggestions names them (up to 100) so you can see why they are missing. Homora does not guess addresses or ports for them. Add the label, or create the card by hand.
+
 ### Remote Docker agents
 
 Remote agents complement the existing local source; neither mode creates cards without review. In **Integrations → Docker discovery → Remote agents**, create a named source and copy its token immediately. It is shown only once; generate a replacement if lost. Homora stores a hash, and revocation permanently invalidates the source. To use that host again, remove the revoked source and create a new one. There is a maximum of ten remote sources, including revoked sources until removed. Rotating a token discards that source's last inventory. Removing a source deletes its inventory, not cards already imported.

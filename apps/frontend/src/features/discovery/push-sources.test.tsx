@@ -40,7 +40,15 @@ it('creates a source, shows its token once and imports only reviewed suggestions
         body = { id: source.id, token: 'synthetic-token' };
       } else if (url === '/api/discovery/sources') body = { sources: created ? [source] : [] };
       else if (url.endsWith('/suggestions')) body = preview;
-      else if (url.endsWith('/import')) body = { created: 1 };
+      else if (url.endsWith('/import'))
+        body = JSON.parse(init?.body as string).preview
+          ? {
+              version: 7,
+              fingerprint: 'e'.repeat(64),
+              plan: preview.plan,
+              results: [{ id: 'a'.repeat(12), container: 'app', status: 'created' }],
+            }
+          : { created: 1, results: [{ id: 'a'.repeat(12), container: 'app', status: 'created' }] };
       return { ok: true, status: 200, json: async () => body };
     }),
   );
@@ -54,13 +62,21 @@ it('creates a source, shows its token once and imports only reviewed suggestions
   expect(screen.queryByText('synthetic-token')).toBeNull();
   fireEvent.click(await screen.findByRole('button', { name: 'Revisar sugestões' }));
   fireEvent.click(await screen.findByRole('checkbox', { name: /App · Home/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar selecionados (1)' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Revisar e adicionar (1)' }));
+  const confirm = await screen.findByRole('button', { name: 'Adicionar 1 cards' });
+  await waitFor(() => expect(confirm.hasAttribute('disabled')).toBe(false));
+  fireEvent.click(confirm);
   await waitFor(() => expect(onImported).toHaveBeenCalled());
-  const request = calls.find((call) => call.url.endsWith('/import'));
-  expect(JSON.parse(request?.body ?? '{}')).toEqual({
+  const request = calls
+    .filter((call) => call.url.endsWith('/import'))
+    .map((call) => JSON.parse(call.body ?? '{}'))
+    .find((body) => !body.preview);
+  expect(request).toEqual({
     ids: ['a'.repeat(12)],
+    overrides: {},
     inventoryVersion: 2,
     expectedVersion: 7,
+    fingerprint: 'e'.repeat(64),
   });
 });
 

@@ -72,3 +72,21 @@ existing discovery and need no agent.
 - Test the packaged agent against simulated Docker and HTTPS, including rejected
   certificates and restart. Test a deployment across isolated hosts when an
   authorized environment exists; simulated loopback is not evidence of this.
+
+## Amendment — review edits and per-item results
+
+Review may edit the name, group and address of selected suggestions. The browser still never
+submits a card document: it sends container IDs plus overrides for those three fields only,
+keyed by container ID, strictly validated and bounded. The server applies them through the same
+parser and collector as labels, so no rule is bypassed, and overrides for containers outside the
+selection are ignored. Local and push imports share this behavior; the push snapshot rules above
+are unchanged.
+
+A `preview` request evaluates the selection and edits without persisting and returns the
+configuration version, a per-container result and a fingerprint of exactly what a confirmation
+would create. The confirmation sends the version and fingerprint back; a different current
+evaluation (labels, inventory, edits) or version is rejected with no change. Results are returned
+for every selected container (`created`, `duplicate`, `rejected`, `missing`). Containers without
+an address label are listed informationally and are never selectable; no address or port is
+inferred. Private network monitoring remains a separate explicit choice and Docker access and the
+data collected by the agent are unchanged.
