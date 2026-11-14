@@ -52,6 +52,7 @@ const TITLES = new Set<string>([
   'review.success',
   'review.refused',
   'review.failure',
+  'review-undo',
   'expiry',
   'proposal-recreate',
   'proposal-ttl-update',

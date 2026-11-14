@@ -6,7 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { formatDate, parseDiff, proposalSummary, STATES, type Proposal } from './agent-model';
+import {
+  formatDate,
+  isDestructive,
+  parseDiff,
+  proposalSummary,
+  STATES,
+  type Proposal,
+} from './agent-model';
+import { ApproveButton } from './approve-button';
 import { ProposalChange } from './proposal-change';
 import { changedFieldLabels } from './proposal-diff';
 import { ManagedProposalChange } from './managed-proposal-change';
@@ -28,6 +36,8 @@ type Props = {
   onReview: (approve: boolean) => void;
   onSetupConnection: (draft: unknown) => void;
   hideReview?: boolean;
+  /** A decision is in flight (this card's or another's): nothing can be decided until it ends. */
+  busy?: boolean;
   now?: number;
   onRecreate?: () => void;
   /**
@@ -110,6 +120,7 @@ export function ProposalCard({
   onReview,
   onSetupConnection,
   hideReview,
+  busy,
   now,
   onRecreate,
   defaultOpen = true,
@@ -153,20 +164,32 @@ export function ProposalCard({
           </CollapsibleContent>
           {!hideReview && (pending || proposal.state === 'stale') && (
             <CardFooter className="justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => onReview(false)}>
+              {!pending && (
+                <p className="mr-auto text-sm text-muted-foreground">{t('proposal.staleHint')}</p>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => onReview(false)}
+              >
                 <X data-icon="inline-start" />
                 {t('proposal.reject')}
               </Button>
-              {pending && (
-                <Button type="button" onClick={() => onReview(true)}>
-                  <Check data-icon="inline-start" />
-                  {t(
-                    diff?.change?.kind === 'connection-setup'
-                      ? 'proposal.managed.approveSetup'
-                      : 'proposal.approve',
-                  )}
-                </Button>
-              )}
+              {/* Always present: the buttons keep their places when a proposal turns stale. */}
+              <ApproveButton
+                confirm={isDestructive(diff)}
+                description={t('proposal.confirmBody', { name: summary })}
+                disabled={busy || !pending}
+                onApprove={() => onReview(true)}
+              >
+                <Check data-icon="inline-start" />
+                {t(
+                  diff?.change?.kind === 'connection-setup'
+                    ? 'proposal.managed.approveSetup'
+                    : 'proposal.approve',
+                )}
+              </ApproveButton>
             </CardFooter>
           )}
           {proposal.state === 'expired' && (

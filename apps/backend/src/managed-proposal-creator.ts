@@ -4,7 +4,12 @@ import { normalizeTags } from './service-tags.js';
 import { createProbeStore } from './probes.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { createServiceConfiguration } from './service-configuration.js';
-import { applyManagedChange, managedChangeSchema, managedSnapshot } from './managed-proposals.js';
+import {
+  applyManagedChange,
+  isIndependentChange,
+  managedChangeSchema,
+  managedSnapshot,
+} from './managed-proposals.js';
 
 export function createManagedProposalCreator({
   sqlite,
@@ -14,6 +19,7 @@ export function createManagedProposalCreator({
   managedBaseHash,
   proposalTtlMinutes,
   getBatchId,
+  findDuplicate,
 }: {
   sqlite: DatabaseSync;
   configuration: ReturnType<typeof createServiceConfiguration>;
@@ -22,6 +28,11 @@ export function createManagedProposalCreator({
   managedBaseHash: (change?: import('./managed-proposals.js').ManagedChange) => string;
   proposalTtlMinutes: () => number;
   getBatchId: () => string | null;
+  findDuplicate: (
+    diff: unknown,
+    baseHash: string,
+    baseVersion?: number,
+  ) => { id: string; diff: unknown; expiresAt: number; state: 'pending' } | null;
 }) {
   return function proposeManaged(authorId: string, input: unknown) {
     let parsedChange = managedChangeSchema.parse(input);
@@ -241,6 +252,12 @@ export function createManagedProposalCreator({
                                 }
                               : null;
       const diff = { kind: 'managed', change, before };
+      const duplicate = findDuplicate(
+        diff,
+        baseHash,
+        isIndependentChange(change) ? undefined : baseVersion,
+      );
+      if (duplicate) return duplicate;
       const id = randomBytes(16).toString('hex');
       const now = Date.now();
       const expiresAt = now + proposalTtlMinutes() * 60_000;

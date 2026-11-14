@@ -13,6 +13,8 @@ export const en = {
   'agents.revokeFailed': 'Could not revoke the identity.',
   'agents.approved': 'Proposal approved and applied.',
   'agents.rejected': 'Proposal rejected.',
+  'agents.undone': 'Rejection undone: the proposal is waiting again.',
+  'agents.undoFailed': 'The rejection could not be undone.',
   'agents.reviewFailed':
     'The proposal expired or the configuration changed. Ask the agent for a new one.',
   'agents.reviewError': 'The review could not be completed. The proposal is unchanged; try again.',
@@ -204,6 +206,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'agents.revokeFailed': 'Não foi possível revogar a identidade.',
   'agents.approved': 'Proposta aprovada e aplicada.',
   'agents.rejected': 'Proposta rejeitada.',
+  'agents.undone': 'Rejeição desfeita: a proposta voltou a aguardar.',
+  'agents.undoFailed': 'Não foi possível desfazer a rejeição.',
   'agents.reviewFailed': 'A proposta expirou ou a configuração mudou. Peça ao agente uma nova.',
   'agents.reviewError':
     'Não foi possível concluir a revisão. A proposta não mudou; tente novamente.',

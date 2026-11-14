@@ -19,13 +19,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { t } from '@/i18n';
-import type { Proposal } from './agent-model';
+import { isDestructive, parseDiff, type Proposal } from './agent-model';
+import { ApproveButton } from './approve-button';
 
 export function ProposalWorkspace({
   proposalsLoaded,
   pending,
   expired,
   history,
+  reviewing,
   onReview,
   renderProposal,
   renderBatchItem,
@@ -35,6 +37,8 @@ export function ProposalWorkspace({
   pending: Proposal[];
   expired: Proposal[];
   history: Proposal[];
+  /** The id being decided, if any: every decision button waits for it. */
+  reviewing?: string | null;
   onReview: (id: string, approve: boolean, batch?: boolean) => void;
   /** `open` tells whether the changes start visible: a short queue is shown in full. */
   renderProposal: (proposal: Proposal, open: boolean) => ReactNode;
@@ -83,15 +87,21 @@ export function ProposalWorkspace({
                     <Button
                       type="button"
                       variant="outline"
+                      disabled={Boolean(reviewing)}
                       onClick={() => onReview(id, false, true)}
                     >
                       {t('proposal.batchReject')}
                     </Button>
-                    {batch.every((item) => item.state === 'pending') && (
-                      <Button type="button" onClick={() => onReview(id, true, true)}>
-                        {t('proposal.batchApprove')} ({batch.length})
-                      </Button>
-                    )}
+                    <ApproveButton
+                      confirm={batch.some((item) => isDestructive(parseDiff(item.diff)))}
+                      description={t('proposal.confirmBatchBody')}
+                      disabled={
+                        Boolean(reviewing) || !batch.every((item) => item.state === 'pending')
+                      }
+                      onApprove={() => onReview(id, true, true)}
+                    >
+                      {t('proposal.batchApprove')} ({batch.length})
+                    </ApproveButton>
                   </CardFooter>
                 </Card>
               </li>

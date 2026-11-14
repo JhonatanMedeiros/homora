@@ -62,36 +62,88 @@ export function createProposalService(
     hash([
       managedHash(sqlite),
       change?.kind === 'pin'
-        ? {
-            pins: sqlite.prepare('SELECT * FROM service_pins ORDER BY service_id').all(),
-            order:
-              sqlite
-                .prepare("SELECT value FROM app_settings WHERE key='service_pin_order'")
-                .get() ?? null,
-          }
+        ? change.change.op === 'reorder'
+          ? {
+              pins: sqlite.prepare('SELECT * FROM service_pins ORDER BY service_id').all(),
+              order:
+                sqlite
+                  .prepare("SELECT value FROM app_settings WHERE key='service_pin_order'")
+                  .get() ?? null,
+            }
+          : (sqlite
+              .prepare('SELECT * FROM service_pins WHERE service_id=?')
+              .get(change.change.serviceId) ?? null)
         : change?.kind === 'link'
-          ? sqlite.prepare('SELECT * FROM integration_resource_links ORDER BY id').all()
+          ? sqlite
+              .prepare('SELECT * FROM integration_resource_links WHERE service_id=?')
+              .all(change.change.serviceId)
           : change?.kind === 'acknowledgement'
             ? {
                 acknowledgements: sqlite
-                  .prepare('SELECT * FROM service_acknowledgements ORDER BY service_id')
-                  .all(),
+                  .prepare('SELECT * FROM service_acknowledgements WHERE service_id=?')
+                  .all(change.change.serviceId),
                 incidents: sqlite
-                  .prepare('SELECT id,service_id,ended_at FROM service_incidents ORDER BY id')
-                  .all(),
+                  .prepare(
+                    'SELECT id,service_id,ended_at FROM service_incidents WHERE service_id=? ORDER BY id',
+                  )
+                  .all(change.change.serviceId),
               }
             : change?.kind === 'tag'
               ? sqlite
-                  .prepare('SELECT service_id,tag FROM service_tags ORDER BY service_id,tag')
-                  .all()
+                  .prepare(
+                    'SELECT service_id,tag FROM service_tags WHERE service_id=? ORDER BY tag',
+                  )
+                  .all(change.change.serviceId)
               : change?.kind === 'probe'
-                ? sqlite
-                    .prepare(
-                      'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) ORDER BY m.id',
-                    )
-                    .all()
+                ? change.change.op === 'create'
+                  ? // Only an identical probe already in place matters to a new one.
+                    sqlite
+                      .prepare(
+                        'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) AND m.name=? AND m.check_url=? ORDER BY m.id',
+                      )
+                      .all(change.change.probe.name, change.change.probe.address)
+                  : sqlite
+                      .prepare(
+                        'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) AND m.id=?',
+                      )
+                      .all(change.change.id)
                 : null,
     ]);
+  /**
+   * A pending proposal that already asks for exactly this (same kind, same change, same base), so
+   * a repeated suggestion returns it instead of queueing a second creation. Batch items never match.
+   */
+  function findDuplicate(diff: unknown, baseHash: string, baseVersion?: number) {
+    if (batchContext.currentBatchId) return null;
+    const effect = (value: unknown) => {
+      const d = value as { kind?: unknown; change?: unknown } | null;
+      return JSON.stringify(d && typeof d === 'object' && 'kind' in d ? [d.kind, d.change] : value);
+    };
+    const wanted = effect(diff);
+    const rows = sqlite
+      .prepare(
+        "SELECT id,diff,expires_at AS expiresAt,base_version AS baseVersion FROM service_proposals WHERE state='pending' AND batch_id IS NULL AND expires_at>? AND base_hash=? ORDER BY created_at DESC",
+      )
+      .all(Date.now(), baseHash) as {
+      id: string;
+      diff: string;
+      expiresAt: number;
+      baseVersion: number;
+    }[];
+    const match = rows.find(
+      (row) =>
+        (baseVersion === undefined || row.baseVersion === baseVersion) &&
+        effect(JSON.parse(row.diff)) === wanted,
+    );
+    return match
+      ? {
+          id: match.id,
+          diff: JSON.parse(match.diff) as unknown,
+          expiresAt: match.expiresAt,
+          state: 'pending' as const,
+        }
+      : null;
+  }
   const {
     issue,
     authenticate,
@@ -146,6 +198,8 @@ export function createProposalService(
     const baseVersion = configuration.version();
     return transaction(() => {
       if (guard && !guard()) throw new Error('Source unavailable');
+      const duplicate = findDuplicate(diff, configHash(), baseVersion);
+      if (duplicate) return duplicate;
       checkPending(authorId);
       const expiresAt = now + proposalTtlMinutes() * 60_000;
       sqlite
@@ -179,6 +233,7 @@ export function createProposalService(
     managedBaseHash,
     proposalTtlMinutes,
     getBatchId: () => batchContext.currentBatchId,
+    findDuplicate,
   });
   function proposeAgent(authorId: string, input: unknown) {
     const change = agentChangeSchema.parse(input);
@@ -209,6 +264,8 @@ export function createProposalService(
         ? { id: target.id, name: target.name, scopes: JSON.parse(String(target.scopes)) as unknown }
         : null;
       const diff = { kind: 'agent', change, before };
+      const duplicate = findDuplicate(diff, hash(target));
+      if (duplicate) return duplicate;
       const id = randomBytes(16).toString('hex');
       const now = Date.now();
       const expiresAt = now + proposalTtlMinutes() * 60_000;
@@ -242,7 +299,7 @@ export function createProposalService(
     proposeManaged,
     proposeAgent,
   });
-  const { decide, decideBatch } = createProposalReviewService({
+  const { decide, decideBatch, undoRejection } = createProposalReviewService({
     sqlite,
     configuration,
     agentChangeSchema,
@@ -272,6 +329,7 @@ export function createProposalService(
     setProposalTtlMinutes,
     decide,
     decideBatch,
+    undoRejection,
     list,
     listAgents,
     listOwn,
