@@ -1769,8 +1769,11 @@ Delivered as one change for issue #179 (mockup linked there); items are named by
 - Bangs (`!g`, `!w`, `!gh`…) work only while the opt-in web search is on and send only the text after the prefix (N/A in
   the issue list: decision 8). A page holds at most 12 widgets (`MAX_WIDGETS_PER_PAGE`; decision 2): creating or moving
   into a full page is refused with `widget-limit`, and an import skips the widgets that do not fit.
-- Validation: see the pull request for the commands and results; interface behavior was covered by component and
-  API tests, and was not verified in a real browser at every breakpoint.
+- Screenshots retaken for the changed Home: dashboard (dark, light, Cards), details drawer (new), command palette, organize
+  mode, Settings → Home and pages, and the phone view. They use synthetic data; statuses and uptime were fabricated in the
+  browser because the sandbox cannot reach monitored services. Host view, host map, service detail, integrations, agents and
+  activity were not retaken and still show the old top bar.
+- Validation: see the pull request for the commands and results.
 
 ### Documentation: showcase README, user guide and fresh screenshots (2026-11-13)
 

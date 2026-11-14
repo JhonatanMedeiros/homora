@@ -31,6 +31,7 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 | `dashboard-dark.png`           | Dashboard, dark theme (hero image)            |
 | `dashboard-light.png`          | Dashboard, light theme                        |
 | `dashboard-cards.png`          | Dashboard with the Cards layout               |
+| `dashboard-drawer.png`         | Details drawer of a failing service           |
 | `command-palette.png`          | Command palette filtering with `status:down`  |
 | `service-detail.png`           | A service's uptime, latency and incidents     |
 | `service-form.png`             | Service form, Appearance tab                  |

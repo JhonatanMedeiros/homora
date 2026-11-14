@@ -89,6 +89,8 @@ The `i` button on a tile, **Details** on a card, a Pulse window or a name in **N
 (a bottom sheet on a phone) with the state, **Open** and **Copy address**, the availability bar, latency, recent
 incidents, and a link to the full page. Escape closes it.
 
+![The details drawer of a failing service](../screenshots/dashboard-drawer.png)
+
 ### Favorites
 
 **Pin** a service from its drawer to show it in the **Pinned** row above the groups, the same on every page.
