@@ -20,6 +20,8 @@ type Item = {
   reason: string | null;
   httpStatus: number | null;
   readAt: number | null;
+  /** Monitored without a dashboard card. */
+  probe?: boolean;
 };
 type Result = { items: Item[]; unread: number; nextBefore: number | null };
 
@@ -27,7 +29,7 @@ export function AlertsBell({
   onService,
   onProposals,
 }: {
-  onService: (id: number) => void;
+  onService: (id: number, probe: boolean) => void;
   onProposals?: () => void;
 }) {
   const pendingProposals = usePendingProposals('bell', true);
@@ -175,7 +177,7 @@ export function AlertsBell({
                     className="h-auto min-h-10 justify-start whitespace-normal break-all p-0 text-left"
                     onClick={() => {
                       setOpen(false);
-                      onService(item.serviceId!);
+                      onService(item.serviceId!, item.probe === true);
                     }}
                   >
                     {item.serviceName}

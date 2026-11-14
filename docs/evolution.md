@@ -1915,3 +1915,10 @@ the HTTP and stdio transports were not manually verified.
 
 - The Home's phone bar is gone. With notifications (header bell) and search (header) already in the header, the bar was down to Home and Manage and added nothing. Manage moved to the user menu (shown on phones only; the header button stays on larger screens). The Home keeps the full height; the Organize "Done" bar now sits at the bottom edge. `DashboardTabs`, its test and its texts were removed. The management area keeps the floating bar (Probes, Integrations, Agents, More).
 - Validation: `pnpm check` (1,727 application tests) and `pnpm build` passed. Not checked in a browser or on a phone.
+
+### Probes on the Home, in Needs attention and in the bell
+
+- Probes (monitors without a card) only showed in the Home's side rail, so they disappeared under 1,280 px and on phones. The Home now has a "Probes" section at any width: light, name, state in words and latency, opening Manage → Probes. The rail block stays.
+- A probe that is down joins "Needs attention" (grouped by cause, with acknowledge and mute, which already worked on monitors); opening it goes to Manage → Probes.
+- Probe outages and recoveries now reach the notification inbox. Migration `0043_inbox_probes` repoints `inbox_notifications.service_id` from `services` to `monitors` (table rebuilt, rows kept; probe deletion still clears the reference). The inbox list flags probe items and the bell opens Manage → Probes for them. Existing inboxes have no probe history.
+- Validation: new tests for the section, the bell routing, the inbox SQL and the migration (data preserved). Not checked in a browser.

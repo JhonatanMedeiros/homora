@@ -174,7 +174,7 @@ export const inboxNotifications = sqliteTable(
   'inbox_notifications',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    serviceId: integer('service_id').references(() => services.id, { onDelete: 'set null' }),
+    serviceId: integer('service_id').references(() => monitors.id, { onDelete: 'set null' }),
     incidentId: integer('incident_id').references(() => serviceIncidents.id, {
       onDelete: 'set null',
     }),

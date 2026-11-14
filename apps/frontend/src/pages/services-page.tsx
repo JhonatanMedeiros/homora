@@ -26,6 +26,7 @@ import { describeStatus } from '@/lib/status-text';
 import { useMinWidth } from '@/hooks/use-min-width';
 import { ServiceDrawer } from '@/components/service-drawer';
 import { ProbableCauses } from '@/components/probable-causes';
+import { HomeProbes } from '@/components/home-probes';
 import { ServiceOptionsSheet } from '@/components/service-options-sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTags } from '@/hooks/use-tags';
@@ -256,7 +257,22 @@ export function ServicesPage({
       },
     });
   }
-  const downNow = services.filter(isDown);
+  // Probes are monitors without a card: they get their own Home section and join "Needs attention".
+  const probeViews = (probeList.probes ?? []).map((probe) => {
+    const view = describeStatus(statuses[probe.id], false, { checkType: probe.checkType });
+    return {
+      id: probe.id,
+      name: probe.name,
+      state: view.state,
+      label: view.label,
+      meta: view.meta,
+    };
+  });
+  const downProbes = probeViews
+    .filter((probe) => probe.state === 'unavailable')
+    .map((probe) => ({ id: probe.id, name: probe.name }) as Service);
+  const probeIds = new Set(downProbes.map((probe) => probe.id));
+  const downNow = [...services.filter(isDown), ...downProbes];
   const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
   async function acknowledge(members: Service[], minutes?: number) {
     const ids = members.map((member) => member.id);
@@ -394,7 +410,9 @@ export function ServicesPage({
           quiet={downNow.filter((service) => quietNow(service.id))}
           incidents={overview?.open}
           impacts={impacts}
-          onOpen={(service) => setDetailsId(service.id)}
+          onOpen={(service) =>
+            probeIds.has(service.id) ? navigate('/manage/probes') : setDetailsId(service.id)
+          }
           onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
           onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
         />
@@ -701,6 +719,9 @@ export function ServicesPage({
             }
           />
         )}
+      {!organizing && !hostView && (
+        <HomeProbes probes={probeViews} onOpen={() => navigate('/manage/probes')} />
+      )}
     </section>
   );
   if (!railed) return body;
@@ -724,15 +745,7 @@ export function ServicesPage({
             active: favoritesOnly,
             onToggle: () => setFavoritesOnly(!favoritesOnly),
           }}
-          probes={{
-            items: (probeList.probes ?? []).map((probe) => {
-              const view = describeStatus(statuses[probe.id], false, {
-                checkType: probe.checkType,
-              });
-              return { id: probe.id, name: probe.name, state: view.state, label: view.label };
-            }),
-            onOpen: () => navigate('/manage/probes'),
-          }}
+          probes={{ items: probeViews, onOpen: () => navigate('/manage/probes') }}
           widgetRail={widgetRail}
           onToggleWidgetRail={() => setWidgetRail(!widgetRail)}
         />

@@ -4,6 +4,21 @@ import type { IncidentTransition } from './monitoring/index.js';
 const RETENTION_MS = 90 * 24 * 60 * 60_000;
 const MAX_ITEMS = 10_000;
 
+type InboxRow = {
+  id: number;
+  serviceId: number | null;
+  incidentId: number | null;
+  kind: 'down' | 'up';
+  serviceName: string;
+  confirmedAt: number;
+  startedAt: number;
+  endedAt: number | null;
+  reason: string | null;
+  httpStatus: number | null;
+  readAt: number | null;
+  probe: number;
+};
+
 /** The caller records transitions inside the incident transaction. */
 export function createInbox(db: DatabaseSync) {
   function prune(now = Date.now()) {
@@ -21,8 +36,7 @@ export function createInbox(db: DatabaseSync) {
         .prepare(
           `INSERT OR IGNORE INTO inbox_notifications
         (service_id, incident_id, kind, service_name, confirmed_at, started_at, ended_at, reason, http_status)
-        SELECT services.id, ?, ?, monitors.name, ?, ?, ?, ?, ? FROM services
-        JOIN monitors ON monitors.id = services.id WHERE services.id = ?`,
+        SELECT monitors.id, ?, ?, monitors.name, ?, ?, ?, ?, ? FROM monitors WHERE monitors.id = ?`,
         )
         .run(
           event.incidentId,
@@ -40,15 +54,17 @@ export function createInbox(db: DatabaseSync) {
       prune();
       const rows = db
         .prepare(
-          `SELECT id, service_id AS serviceId, incident_id AS incidentId,
-        kind, service_name AS serviceName, confirmed_at AS confirmedAt, started_at AS startedAt,
-        ended_at AS endedAt, reason, http_status AS httpStatus, read_at AS readAt
-        FROM inbox_notifications WHERE (? IS NULL OR (confirmed_at, id) <
+          `SELECT n.id, n.service_id AS serviceId, n.incident_id AS incidentId,
+        n.kind, n.service_name AS serviceName, n.confirmed_at AS confirmedAt, n.started_at AS startedAt,
+        n.ended_at AS endedAt, n.reason, n.http_status AS httpStatus, n.read_at AS readAt,
+        (n.service_id IS NOT NULL AND services.id IS NULL) AS probe
+        FROM inbox_notifications n LEFT JOIN services ON services.id = n.service_id
+        WHERE (? IS NULL OR (n.confirmed_at, n.id) <
           (SELECT confirmed_at, id FROM inbox_notifications WHERE id = ?))
-        ORDER BY confirmed_at DESC, id DESC LIMIT ?`,
+        ORDER BY n.confirmed_at DESC, n.id DESC LIMIT ?`,
         )
-        .all(before ?? null, before ?? null, limit + 1);
-      const items = rows.slice(0, limit);
+        .all(before ?? null, before ?? null, limit + 1) as InboxRow[];
+      const items = rows.slice(0, limit).map((row) => ({ ...row, probe: Boolean(row.probe) }));
       return {
         items,
         nextBefore: rows.length > limit ? items.at(-1)?.id : null,

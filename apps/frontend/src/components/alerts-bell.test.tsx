@@ -124,3 +124,39 @@ it('counts pending agent proposals in the bell and links to them', async () => {
   fireEvent.click(await screen.findByRole('button', { name: /1 agent proposals/ }));
   expect(onProposals).toHaveBeenCalled();
 });
+
+it('tells the opener when an event comes from a probe', async () => {
+  setLocale('en');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            unread: 1,
+            nextBefore: null,
+            items: [
+              {
+                id: 1,
+                serviceId: 9,
+                serviceName: 'Internet',
+                kind: 'down',
+                confirmedAt: 1700000000000,
+                startedAt: 1700000000000,
+                endedAt: null,
+                reason: 'no-response',
+                httpStatus: null,
+                readAt: null,
+                probe: true,
+              },
+            ],
+          }),
+        ),
+    ),
+  );
+  const onService = vi.fn();
+  render(<AlertsBell onService={onService} />);
+  fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Internet' }));
+  expect(onService).toHaveBeenCalledWith(9, true);
+});

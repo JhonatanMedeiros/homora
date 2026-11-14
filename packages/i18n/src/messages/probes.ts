@@ -2,6 +2,7 @@
 export const en = {
   'nav.probes': 'Probes',
   'rail.probes': 'Probes',
+  'home.probes.manage': 'Manage probes',
   'probes.title': 'Probes',
   'probes.description':
     'Addresses Homora checks that have no card on the Home: your internet connection, a DNS name, a port.',
@@ -44,6 +45,7 @@ export const en = {
 export const ptBR: Record<keyof typeof en, string> = {
   'nav.probes': 'Probes',
   'rail.probes': 'Probes',
+  'home.probes.manage': 'Gerenciar probes',
   'probes.title': 'Probes',
   'probes.description':
     'Endereços que o Homora verifica sem ter um card na Home: sua conexão com a internet, um nome DNS, uma porta.',

@@ -121,7 +121,7 @@ export function DashboardPage({
       profile={profile}
       alerts={
         <AlertsBell
-          onService={(id) => routerNavigate(`/services/${id}`)}
+          onService={(id, probe) => routerNavigate(probe ? '/manage/probes' : `/services/${id}`)}
           onProposals={() => navigate(tabPath('agents'))}
         />
       }

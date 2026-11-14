@@ -1194,7 +1194,7 @@ it('adds an empty inbox without changing existing cards and incidents', () => {
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
-    for (const migration of MIGRATIONS.slice(0, -1)) {
+    for (const migration of MIGRATIONS.slice(0, -2)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -1211,6 +1211,53 @@ it('adds an empty inbox without changing existing cards and incidents', () => {
     });
     expect(db.prepare('SELECT count(*) AS n FROM service_incidents').get()).toEqual({ n: 1 });
     expect(db.prepare('SELECT count(*) AS n FROM inbox_notifications').get()).toEqual({ n: 0 });
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('lets inbox notifications point at probes and keeps the ones already stored', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-inbox-probes-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO monitors(id,name) VALUES(5,'Card'); INSERT INTO services(id,url,category,description) VALUES(5,'https://example.test','Home',''); INSERT INTO inbox_notifications(service_id,kind,service_name,confirmed_at,started_at) VALUES(5,'down','Card',10,9)",
+    );
+    old.close();
+    const database = createDatabase(path);
+    const db = getSqliteHandle(database.db);
+    db.exec('PRAGMA foreign_keys=ON');
+    db.exec("INSERT INTO monitors(id,name) VALUES(6,'Probe')");
+    db.exec(
+      "INSERT INTO inbox_notifications(service_id,kind,service_name,confirmed_at,started_at) VALUES(6,'down','Probe',11,10)",
+    );
+    expect(
+      db
+        .prepare(
+          'SELECT service_id AS id, service_name AS name FROM inbox_notifications ORDER BY id',
+        )
+        .all(),
+    ).toEqual([
+      { id: 5, name: 'Card' },
+      { id: 6, name: 'Probe' },
+    ]);
+    db.exec('DELETE FROM monitors WHERE id=6');
+    expect(
+      db
+        .prepare("SELECT service_id AS id FROM inbox_notifications WHERE service_name='Probe'")
+        .get(),
+    ).toEqual({ id: null });
     database.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });

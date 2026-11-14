@@ -14,7 +14,7 @@ function setup() {
     CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
     CREATE TABLE service_monitor_settings(service_id INTEGER PRIMARY KEY,failure_threshold INTEGER NOT NULL,recovery_threshold INTEGER NOT NULL,degraded_latency_ms INTEGER);
     CREATE TABLE service_incidents(id INTEGER PRIMARY KEY AUTOINCREMENT,service_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,started_at INTEGER NOT NULL,ended_at INTEGER,reason TEXT NOT NULL,http_status INTEGER,failed_checks INTEGER NOT NULL DEFAULT 1);
-    CREATE TABLE inbox_notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,service_id INTEGER REFERENCES services(id) ON DELETE SET NULL,incident_id INTEGER REFERENCES service_incidents(id) ON DELETE SET NULL,kind TEXT NOT NULL,service_name TEXT NOT NULL,confirmed_at INTEGER NOT NULL,started_at INTEGER NOT NULL,ended_at INTEGER,reason TEXT,http_status INTEGER,read_at INTEGER,UNIQUE(incident_id,kind));`);
+    CREATE TABLE inbox_notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,service_id INTEGER REFERENCES monitors(id) ON DELETE SET NULL,incident_id INTEGER REFERENCES service_incidents(id) ON DELETE SET NULL,kind TEXT NOT NULL,service_name TEXT NOT NULL,confirmed_at INTEGER NOT NULL,started_at INTEGER NOT NULL,ended_at INTEGER,reason TEXT,http_status INTEGER,read_at INTEGER,UNIQUE(incident_id,kind));`);
   const inbox = createInbox(db);
   return { db, inbox, store: createIncidentStore(db, inbox.record) };
 }
@@ -55,10 +55,13 @@ describe('inbox incident events', () => {
     expect(inbox.list(20).items).toHaveLength(2);
     expect(inbox.list(20).items[0]).toMatchObject({ serviceId: null, serviceName: 'Example' });
   });
-  it('does not record probes and rolls back incident when notification storage fails', () => {
+  it('records probes and flags them, and rolls back incident when notification storage fails', () => {
     const { db, inbox, store } = setup();
     store.observe([{ id: 2 } as Service], { 2: state('unavailable', 0) });
-    expect(inbox.list(20).items).toEqual([]);
+    expect(inbox.list(20).items).toMatchObject([
+      { serviceId: 2, serviceName: 'Probe', probe: true },
+    ]);
+    db.exec('DELETE FROM inbox_notifications');
     db.exec(
       "CREATE TRIGGER fail_inbox BEFORE INSERT ON inbox_notifications BEGIN SELECT RAISE(ABORT, 'failure'); END;",
     );

@@ -28,8 +28,8 @@ Homora can publish a minimal, read-only page at `/status` so others can see what
 
 ### In-app notifications
 
-The bell shows unread service outage and recovery notifications, even without an external channel.
+The bell shows unread service and probe outage and recovery notifications, even without an external channel.
 Open it to review events and mark one or all as read. Reading does not acknowledge or mute an
 incident. The inbox keeps up to 90 days and 10,000 events, including unread events; older entries
-are removed. It starts empty after upgrading and does not currently include probes. The Activity
+are removed. It starts empty after upgrading. The Activity
 page remains available for auditing.
