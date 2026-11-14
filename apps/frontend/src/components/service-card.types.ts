@@ -36,17 +36,14 @@ export type ServiceCardProps = {
   /** "May be affected" through manual dependencies; always labelled as manual. */
   dependencyNote?: string;
   blocked: boolean;
-  managing: boolean;
   list?: boolean;
   /** Dense tile of the Home: icon, name, host, state and a quiet bar. */
   compact?: boolean;
   showDescription: boolean;
-  confirmingRemoval: boolean;
   /** Opens the details drawer of this service. */
   onDetails?: () => void;
+  /** Opens the edit form (used by the failure details). */
   onEdit: () => void;
-  onRemove: () => void;
-  onCancelRemoval: () => void;
 };
 
 export type ServiceCardLayoutProps = ServiceCardProps & { view: StatusView };

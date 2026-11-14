@@ -274,7 +274,7 @@ backend; contratos compartilhados; Drizzle ORM com SQLite. Rode `pnpm check` (li
 `pnpm build` antes de enviar mudanças. Os commits seguem Conventional Commits (`feat: ...`), validados por Husky e
 Commitlint. Veja [CONTRIBUTING.md](CONTRIBUTING.md) e [docs/standards.md](docs/standards.md).
 
-Rotas: o painel é `/`, o acesso é `/login`, as seções de gestão são `/manage/services`, `/manage/integrations`,
+Rotas: o painel é `/`, o acesso é `/login`, as seções de gestão são `/manage/probes`, `/manage/integrations`,
 `/manage/agents`, `/manage/activity` e `/manage/settings`, os formulários de serviço são `/manage/services/new` e
 `/manage/services/:id/edit`, e a página de detalhes de um serviço é `/services/:id`. Ao hospedar o frontend separadamente,
 configure o servidor para devolver `index.html` nessas rotas.

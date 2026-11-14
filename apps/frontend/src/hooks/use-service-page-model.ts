@@ -19,13 +19,12 @@ type Options = {
   data: ServicesData;
   hostData: HostData;
   dependencies: Dependency[];
-  managing: boolean;
   hostView: boolean;
   paged: boolean;
   query: string;
   selected: string | null;
   organizing: boolean;
-  /** Home filters: by state and by tag. Ignored while managing, organizing or in a host view. */
+  /** Home filters: by state and by tag. Ignored while organizing or in a host view. */
   statusFilter: StatusFilter;
   tagFilter: string | null;
   tags: Record<number, string[]>;
@@ -38,7 +37,6 @@ export function useServicePageModel({
   data,
   hostData,
   dependencies,
-  managing,
   hostView,
   paged,
   query,
@@ -99,14 +97,15 @@ export function useServicePageModel({
       ? pages.find((page) => page.id === pageIdOf(service.category))?.name
       : undefined;
   const onPage = (service: Service) => !paged || hostView || categories.includes(service.category);
-  const needle = managing ? query.trim().toLowerCase() : '';
+  // The top bar's search and the filters below only apply to the plain Home view.
+  const filtering = !organizing && !hostView;
+  const needle = filtering ? query.trim().toLowerCase() : '';
   const matches = (service: Service) =>
     !needle ||
     service.name.toLowerCase().includes(needle) ||
     service.url.toLowerCase().includes(needle);
   const bucketOf = (service: Service) =>
     statusBucket(statuses[service.id], monitorSettings?.[service.id], blockedIds.has(service.id));
-  const filtering = !managing && !organizing && !hostView;
   const activeStatusFilter = filtering ? statusFilter : 'all';
   const activeTag = filtering ? tagFilter : null;
   const filteredIds = new Set(

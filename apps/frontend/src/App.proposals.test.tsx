@@ -47,11 +47,6 @@ it('shows pending proposals in clear language and approves with a single click',
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Serviços',
-    }),
-  );
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
       name: 'Agentes',
     }),
   );
@@ -150,11 +145,6 @@ it('shows before and after of an update proposal', async () => {
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Serviços',
-    }),
-  );
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
       name: 'Agentes',

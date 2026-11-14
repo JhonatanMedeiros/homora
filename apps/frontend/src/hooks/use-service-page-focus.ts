@@ -18,7 +18,7 @@ export function useServicePageFocus({
   focusRequest,
   onFocusHandled,
   setSelected,
-  managing,
+  organizing,
   formRoute,
   loaded,
 }: {
@@ -26,7 +26,8 @@ export function useServicePageFocus({
   focusRequest?: FocusRequest | null;
   onFocusHandled?: () => void;
   setSelected: Dispatch<SetStateAction<string | null>>;
-  managing: boolean;
+  /** Focus returns to the Add or Edit control, which only exist in Organize mode. */
+  organizing: boolean;
   formRoute: 'new' | number | null;
   loaded: boolean;
 }): {
@@ -74,7 +75,7 @@ export function useServicePageFocus({
   }, [focusNonce, focusService?.id]);
 
   useEffect(() => {
-    if (!managing || formRoute !== null) return;
+    if (!organizing || formRoute !== null) return;
     try {
       const value = sessionStorage.getItem('homora-focus-service');
       if (!value || (value !== 'new' && !loaded)) return;
@@ -90,7 +91,7 @@ export function useServicePageFocus({
     } catch {
       /* storage unavailable */
     }
-  }, [managing, formRoute, loaded, services]);
+  }, [organizing, formRoute, loaded, services]);
 
   function announce(text: string) {
     toast.success(text);

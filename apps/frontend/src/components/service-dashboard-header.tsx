@@ -1,14 +1,10 @@
 import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
-import type { ReactNode, RefObject } from 'react';
-import { Plus, SlidersHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { ReactNode } from 'react';
 import { HostImpactBanner } from '@/components/host-impact-banner';
 import { OrganizePanel } from '@/components/organize-panel';
-import { PageHeader } from '@/components/page-header';
 import { TopBar } from '@/components/top-bar';
 import { ServiceViewToolbar } from '@/components/service-view-toolbar';
 import type { ComponentProps } from 'react';
-import { t } from '@/i18n';
 
 type ToolbarProps = ComponentProps<typeof ServiceViewToolbar> & {
   showHostSuggestions: boolean;
@@ -16,7 +12,6 @@ type ToolbarProps = ComponentProps<typeof ServiceViewToolbar> & {
 };
 
 type Props = {
-  managing: boolean;
   organizing: boolean;
   topBar: boolean;
   /** Phones: the state filter and the view toolbar live in the options sheet instead. */
@@ -26,11 +21,7 @@ type Props = {
   /** State filter, on the left of the view toolbar. */
   stateFilter?: ReactNode;
   serviceCount: number;
-  groupCount: number;
   toolbar: ToolbarProps;
-  addButton: RefObject<HTMLButtonElement | null>;
-  onToggleOrganizing: () => void;
-  onAddService: () => void;
   showImpact: boolean;
   impact: ComponentProps<typeof HostImpactBanner>;
   groupEditor: ComponentProps<typeof OrganizePanel>;
@@ -38,58 +29,26 @@ type Props = {
 
 /** Dashboard summary and its view/organize controls. */
 export function ServiceDashboardHeader({
-  managing,
   organizing,
   topBar,
   compact = false,
   banner,
   stateFilter,
   serviceCount,
-  groupCount,
   toolbar,
-  addButton,
-  onToggleOrganizing,
-  onAddService,
   showImpact,
   impact,
   groupEditor,
 }: Props) {
   return (
     <>
-      {managing && (
-        <PageHeader
-          title={t('manage.services')}
-          description={
-            serviceCount
-              ? `${t('page.summary', { services: t('page.servicesCount', { count: serviceCount }), groups: t('page.groupsCount', { count: groupCount }) })} ${t('manage.serviceDescription')}`
-              : t('page.emptyDescription')
-          }
-          actions={
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                aria-pressed={organizing}
-                onClick={onToggleOrganizing}
-              >
-                <SlidersHorizontal />
-                {organizing ? t('page.done') : t('page.organize')}
-              </Button>
-              <Button ref={addButton} type="button" onClick={onAddService}>
-                <Plus />
-                {t('page.add')}
-              </Button>
-            </>
-          }
-        />
-      )}
-      {!managing && !organizing && topBar && (
+      {!organizing && topBar && (
         <WidgetErrorBoundary>
           <TopBar />
         </WidgetErrorBoundary>
       )}
-      {!managing && !organizing && banner}
-      {!managing && !compact && (
+      {!organizing && banner}
+      {!compact && (
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           {stateFilter ?? <span />}
           {serviceCount > 0 && <ServiceViewToolbar {...toolbar} />}

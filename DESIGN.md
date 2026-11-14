@@ -121,7 +121,7 @@ On phones (under 768px) the status filter, the arrangement (Group, Host, Map), t
 
 ### Organize mode
 
-Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top" and "Move to group". Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only, after a confirmation dialog). A one-line hint and a "New group" button replace the old form; on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group; while dragging, empty groups show a drop zone.
+Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top", "Move to group", "Edit" and "Remove" (removal asks to confirm in the row). Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only, after a confirmation dialog). A one-line hint with "Add service" and "New group" buttons replaces the old form; services are added, edited and removed here (there is no Manage → Services page); on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group; while dragging, empty groups show a drop zone.
 
 ## Elevation & Depth
 

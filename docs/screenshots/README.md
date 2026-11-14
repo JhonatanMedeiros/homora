@@ -37,7 +37,6 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 | `service-form.png`             | Service form, Appearance tab                  |
 | `service-form-monitoring.png`  | Service form, Monitoring tab                  |
 | `service-form-connections.png` | Service form, Connections tab                 |
-| `manage-services.png`          | Services and groups                           |
 | `organize-mode.png`            | Organize mode                                 |
 | `host-view.png`                | Host view with a service that may be affected |
 | `host-map.png`                 | Service map of nodes, guests and services     |

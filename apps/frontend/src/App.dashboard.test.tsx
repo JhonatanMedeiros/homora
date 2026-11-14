@@ -26,12 +26,7 @@ it('displays services, filters, and submits a new entry', async () => {
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   expect(await screen.findByRole('link', { name: /Jellyfin/ })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Serviços',
-    }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
   fireEvent.click(screen.getByRole('button', { name: /Adicionar serviço/ }));
   expect(screen.getByRole('dialog', { name: 'Novo serviço' })).toBeTruthy();
   const dialog = screen.getByRole('form', { name: 'Novo serviço' });
@@ -55,7 +50,45 @@ it('displays services, filters, and submits a new entry', async () => {
       expect.objectContaining({ method: 'POST' }),
     ),
   );
-  expect(await screen.findByRole('link', { name: /Proxmox/ })).toBeTruthy();
+  // Organize mode lists rows without links.
+  expect(await screen.findByLabelText('Opções de Proxmox')).toBeTruthy();
+});
+
+it('filters the Home as you type in the top bar search', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      if (url === '/api/connections') return { ok: true, json: async () => [] };
+      return {
+        ok: true,
+        json: async () => [
+          {
+            id: 1,
+            name: 'Jellyfin',
+            url: 'http://jelly.local/',
+            category: 'Mídia',
+            description: '',
+          },
+          {
+            id: 2,
+            name: 'Router',
+            url: 'http://gateway.local/',
+            category: 'Rede',
+            description: '',
+          },
+        ],
+      };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('link', { name: /Jellyfin/ });
+  fireEvent.change(screen.getByLabelText('Filtrar serviços no painel'), {
+    target: { value: 'gateway' },
+  });
+  expect(screen.queryByRole('link', { name: /Jellyfin/ })).toBeNull();
+  expect(screen.getByRole('link', { name: /Router/ })).toBeTruthy();
 });
 
 it('shows unknown status and timestamp of last attempt without depending on status', async () => {
@@ -139,15 +172,11 @@ it('only removes a service after inline confirmation', async () => {
   await screen.findByRole('link', { name: /Immich/ });
   const deleted = () => fetchMock.mock.calls.filter(([, init]) => init?.method === 'DELETE');
   expect(screen.queryByRole('button', { name: 'Remover Immich' })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Serviços',
-    }),
-  );
-  fireEvent.click(await screen.findByRole('button', { name: 'Remover Immich' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  fireEvent.keyDown(await screen.findByLabelText('Opções de Immich'), { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
   expect(deleted()).toHaveLength(0);
-  fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção de Immich' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção' }));
   await waitFor(() => expect(deleted()).toHaveLength(1));
   expect(deleted()[0][0]).toBe('/api/services/7');
 });
@@ -174,17 +203,12 @@ it('edits an existing service in the page form', async () => {
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Serviços',
-    }),
-  );
-  const editButton = await screen.findByRole('button', { name: 'Editar Jellyfin' });
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  const editButton = await screen.findByLabelText('Opções de Jellyfin');
   const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
-  fireEvent.click(editButton);
+  fireEvent.keyDown(editButton, { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Editar' }));
   expect(await screen.findByRole('dialog', { name: 'Editar serviço' })).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Editar Jellyfin', hidden: true })).toBe(editButton);
   expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
     serviceRequests,
   );

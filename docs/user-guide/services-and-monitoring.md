@@ -8,7 +8,7 @@ types, how failures, incidents and uptime are calculated, and how to plan mainte
 
 ## The service form
 
-Open it from **Manage → Services → Add service**, from a card's edit button, by pressing `n`, or at
+Open it from **Organize → Add service** on the Home, from **Edit** in a row's menu in Organize mode, by pressing `n`, or at
 `/manage/services/new` and `/manage/services/:id/edit`. The essentials are always visible; the rest is grouped in
 four tabs, each with a one-line summary of what it currently holds.
 

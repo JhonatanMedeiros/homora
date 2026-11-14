@@ -103,19 +103,19 @@ it('renames and removes from the group menu', async () => {
   expect(onRemove).toHaveBeenCalled();
 });
 
-it('lists one row per line in management and always uses rows in organize mode', () => {
+it('packs rows in two columns on wide screens, and keeps rows in organize mode', () => {
   const { container, rerender } = render(
-    <GroupSection {...base} list managing>
+    <GroupSection {...base} list>
       <li>a</li>
     </GroupSection>,
   );
-  expect(container.querySelector('ul')?.className).toBe('grid grid-cols-1 gap-1.5');
+  expect(container.querySelector('ul')?.className).toBe('grid grid-cols-1 gap-1.5 lg:grid-cols-2');
   rerender(
-    <GroupSection {...base} organizing managing columns={3}>
+    <GroupSection {...base} organizing>
       <li>a</li>
     </GroupSection>,
   );
-  expect(container.querySelector('ul')?.className).toBe('grid grid-cols-1 gap-1.5');
+  expect(container.querySelector('ul')?.className).toBe('grid grid-cols-1 gap-1.5 lg:grid-cols-2');
 });
 
 it('auto-collapses a healthy group without saving it, and lets the person open it', () => {

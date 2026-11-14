@@ -1,14 +1,7 @@
 import { useId, useState } from 'react';
-import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from '@/components/ui/item';
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
@@ -38,19 +31,14 @@ export function ServiceCardTile({
   host = null,
   impact = 'none',
   dependencyNote,
-  managing,
   showDescription,
-  confirmingRemoval,
   onDetails,
   onEdit,
-  onRemove,
-  onCancelRemoval,
   view,
 }: ServiceCardLayoutProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
   const isBlocked = view.blocked;
-  const inline = confirmingRemoval;
   return (
     <li id={`service-${service.id}`} className={SERVICE_CARD_LI}>
       <Item
@@ -70,12 +58,7 @@ export function ServiceCardTile({
         {service.checkInsecure && (
           <span className="text-xs text-muted-foreground">{t('form.insecureTlsBadge')}</span>
         )}
-        <div
-          className={cn(
-            'flex w-full min-w-0 items-start gap-3',
-            managing && 'pr-20 pointer-coarse:pr-24',
-          )}
-        >
+        <div className="flex w-full min-w-0 items-start gap-3">
           <ItemMedia
             variant="icon"
             aria-hidden="true"
@@ -194,41 +177,6 @@ export function ServiceCardTile({
             <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
           </div>
         </div>
-        {managing && (
-          <ItemActions
-            className={cn(
-              'z-10 gap-0.5',
-              inline
-                ? 'relative -mb-1 justify-end gap-1'
-                : 'absolute top-2 right-2 pointer-fine:opacity-50 pointer-fine:transition-opacity pointer-fine:group-hover/service:opacity-100 pointer-fine:group-focus-within/service:opacity-100',
-            )}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size={inline ? 'sm' : 'icon-sm'}
-              data-service-edit={service.id}
-              aria-label={t('card.edit', { name: service.name })}
-              onClick={onEdit}
-            >
-              <Pencil />
-              {inline && t('common.edit')}
-            </Button>
-            <Button
-              type="button"
-              variant={confirmingRemoval ? 'destructive' : 'ghost'}
-              size={inline ? 'sm' : 'icon-sm'}
-              aria-label={t(confirmingRemoval ? 'card.confirmRemove' : 'card.remove', {
-                name: service.name,
-              })}
-              onClick={onRemove}
-              onBlur={onCancelRemoval}
-            >
-              <Trash2 />
-              {inline && t(confirmingRemoval ? 'card.confirmRemoveShort' : 'common.remove')}
-            </Button>
-          </ItemActions>
-        )}
       </Item>
     </li>
   );

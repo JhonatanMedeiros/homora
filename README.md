@@ -268,7 +268,7 @@ TypeScript and Fastify on the backend; shared contracts; Drizzle ORM with SQLite
 types and tests) and `pnpm build` before sending changes. Commits follow Conventional Commits (`feat: ...`),
 enforced by Husky and Commitlint. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/standards.md](docs/standards.md).
 
-Routes: the dashboard is `/`, sign-in is `/login`, management sections are `/manage/services`,
+Routes: the dashboard is `/`, sign-in is `/login`, management sections are `/manage/probes`,
 `/manage/integrations`, `/manage/agents`, `/manage/activity` and `/manage/settings`, service forms are
 `/manage/services/new` and `/manage/services/:id/edit`, and a service's detail page is `/services/:id`. When
 hosting the frontend separately, configure the server to return `index.html` for these routes.

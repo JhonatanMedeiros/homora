@@ -82,7 +82,7 @@ failing dependency. The **Map** shows the same relationships as boxes, and you c
 ![Service map](../screenshots/host-map.png)
 
 The **Display** popover also sets whether descriptions show and the uptime period (24 h, 7 d or 30 d); the same
-options are in **Settings → Home and pages**. **Organize** is a button on the Home toolbar (the Manage page keeps its own).
+options are in **Settings → Home and pages**. **Organize** is a button on the Home toolbar; it is also where you add, edit and delete services.
 
 ### Details drawer
 
@@ -144,12 +144,15 @@ Press `?` to see the list in the app. Single-key shortcuts can be turned off in
 
 ## Organizing cards and groups
 
-Open **Manage → Services** and press **Organize**.
+Press **Organize** on the Home toolbar. The same mode is where you manage services and groups; there is no separate
+list under Manage.
 
 ![Organize mode](../screenshots/organize-mode.png)
 
 - **Drag** a row by its handle to reorder, or use the **up and down arrows**, which work from the keyboard.
-- Open the **⋯** menu on a row to move a service to another group.
+- Open the **⋯** menu on a row to move a service to the top or to another group, **Edit** it, or **Remove** it (the
+  row asks you to confirm the removal).
+- **Add service** opens the new service form (the `n` key and the command palette do the same).
 - Use **New group** to create a group, and the controls beside a group name to move or rename it.
 - Press **Done** when you are finished.
 

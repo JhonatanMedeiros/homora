@@ -111,7 +111,7 @@ export function DashboardPage({
       tab={tab}
       managing={managing}
       onManageChange={(value) => {
-        navigate(value ? '/manage/services' : '/');
+        navigate(value ? tabPath('integrations') : '/');
       }}
       onTabChange={(next) => {
         navigate(tabPath(next));
@@ -151,7 +151,7 @@ export function DashboardPage({
         blockedIds={data.blockedIds}
         managing={managing}
         onManageChange={(value) => {
-          navigate(value ? '/manage/services' : '/');
+          navigate(value ? tabPath('integrations') : '/');
         }}
         onAddService={() => {
           navigate('/manage/services/new');
@@ -195,11 +195,9 @@ export function DashboardPage({
           />
         ) : (
           <ServicesPage
-            key={String(managing)}
             data={data}
             focusRequest={focusRequest}
             onFocusHandled={() => setFocusRequest(null)}
-            managing={managing}
             formRoute={route.form}
             navigate={navigate}
             onAddService={() => {

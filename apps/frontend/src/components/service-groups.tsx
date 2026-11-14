@@ -37,7 +37,6 @@ type GroupData = {
 };
 
 type GroupPresentation = {
-  managing: boolean;
   organizing: boolean;
   list: boolean;
   compact?: boolean;
@@ -96,7 +95,6 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
     dependencyNotes,
   } = data;
   const {
-    managing,
     organizing,
     list,
     compact = false,
@@ -139,7 +137,6 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
         list={list}
         compact={compact}
         autoCollapse={collapseHealthy && !!isDown && !items.some(isDown)}
-        managing={managing}
         revealSignal={
           revealServiceId !== undefined && items.some((item) => item.id === revealServiceId)
             ? revealNonce
@@ -221,6 +218,10 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
                 onMove={(direction) => onPlaceService(service, index + direction, items.length)}
                 onMoveToTop={() => onPlaceService(service, 0, items.length)}
                 onMoveToGroup={(group) => onMoveServiceToGroup(service, group)}
+                onEdit={() => onEditService(service)}
+                confirmingRemoval={confirming === service.id}
+                onRemove={() => onRemoveService(service)}
+                onCancelRemoval={() => onCancelRemoval(service.id)}
                 dragProps={dragProps}
               />
             );
@@ -245,15 +246,11 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
               impact={impacts.get(service.id)}
               dependencyNote={dependencyNotes[service.id]}
               blocked={blockedIds.has(service.id)}
-              managing={managing}
               list={list}
               compact={compact}
-              showDescription={showDescriptions || managing}
-              confirmingRemoval={confirming === service.id}
+              showDescription={showDescriptions}
               onDetails={onDetails ? () => onDetails(service) : undefined}
               onEdit={() => onEditService(service)}
-              onRemove={() => onRemoveService(service)}
-              onCancelRemoval={() => onCancelRemoval(service.id)}
             />
           );
         })}

@@ -49,12 +49,8 @@ const card = (resourceLink: CardResource) =>
       service={service}
       resourceLink={resourceLink}
       blocked={false}
-      managing={false}
       showDescription={false}
-      confirmingRemoval={false}
       onEdit={() => {}}
-      onRemove={() => {}}
-      onCancelRemoval={() => {}}
     />,
   );
 

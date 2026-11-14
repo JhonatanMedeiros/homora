@@ -37,13 +37,13 @@ it('opens service management directly and returns to dashboard', async () => {
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
   const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
   fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
-  expect(window.location.pathname).toBe('/manage/services');
-  expect(screen.getByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
+  expect(window.location.pathname).toBe('/manage/integrations');
   const navigation = screen.getByRole('navigation', { name: 'Gerenciamento' });
+  // Services and groups are managed on the Home (Organize), so they are not a section here.
+  expect(within(navigation).queryByRole('button', { name: 'Serviços' })).toBeNull();
   expect(
-    within(navigation).getByRole('button', { name: 'Serviços' }).getAttribute('aria-current'),
+    within(navigation).getByRole('button', { name: 'Integrações' }).getAttribute('aria-current'),
   ).toBe('page');
-  expect(within(navigation).getByRole('button', { name: 'Integrações' })).toBeTruthy();
   expect(within(navigation).getByRole('button', { name: 'Agentes' })).toBeTruthy();
   fireEvent.click(within(navigation).getByRole('button', { name: 'Agentes' }));
   expect(window.location.pathname).toBe('/manage/agents');
@@ -76,9 +76,11 @@ it('opens a management route directly and responds to browser history', async ()
   window.history.replaceState(null, '', '/');
   fireEvent.popState(window);
   expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  // The old services list sends people to the Home.
   window.history.replaceState(null, '', '/manage/services');
   fireEvent.popState(window);
-  expect(await screen.findByRole('heading', { name: 'Serviços e grupos' })).toBeTruthy();
+  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  await waitFor(() => expect(window.location.pathname).toBe('/'));
 });
 
 it('displays error for unknown pages and missing service', async () => {
@@ -205,11 +207,11 @@ it('keeps old /manage/account links working by redirecting to /account', async (
 
 it('does not list the account among the management sections', async () => {
   stubSignedIn();
-  window.history.replaceState(null, '', '/manage/services');
+  window.history.replaceState(null, '', '/manage/integrations');
   render(<App />);
   const nav = await screen.findByRole('navigation', { name: 'Gerenciamento' });
   expect(within(nav).queryByRole('button', { name: 'Conta' })).toBeNull();
-  for (const name of ['Serviços', 'Integrações', 'Agentes', 'Atividade', 'Configurações'])
+  for (const name of ['Integrações', 'Agentes', 'Atividade', 'Configurações'])
     expect(within(nav).getByRole('button', { name })).toBeTruthy();
 });
 
@@ -258,14 +260,14 @@ it('shows not found for an unknown settings subpage', async () => {
 
 it('reaches Activity and Settings from "More" in the phone bottom bar', async () => {
   stubSignedIn();
-  window.history.replaceState(null, '', '/manage/services');
+  window.history.replaceState(null, '', '/manage/integrations');
   render(<App />);
   const bar = await screen.findByRole('navigation', { name: 'Seções' });
   expect(
     within(bar)
       .getAllByRole('button')
       .map((button) => button.textContent),
-  ).toEqual(['Serviços', 'Integrações', 'Agentes', 'Mais']);
+  ).toEqual(['Probes', 'Integrações', 'Agentes', 'Mais']);
   fireEvent.click(within(bar).getByRole('button', { name: 'Mais' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
   await waitFor(() => expect(window.location.pathname).toBe('/manage/settings'));

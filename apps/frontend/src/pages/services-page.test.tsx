@@ -50,13 +50,7 @@ afterEach(() => {
 const open = (formRoute: 'new' | number) =>
   render(
     <MemoryRouter>
-      <ServicesPage
-        data={data}
-        managing
-        formRoute={formRoute}
-        navigate={() => {}}
-        onAddService={() => {}}
-      />
+      <ServicesPage data={data} formRoute={formRoute} navigate={() => {}} onAddService={() => {}} />
     </MemoryRouter>,
   );
 const checkbox = () => screen.getByRole('checkbox', { name: /Allow monitoring on a private/ });

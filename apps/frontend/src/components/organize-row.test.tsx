@@ -17,6 +17,10 @@ function setup(overrides: Partial<Parameters<typeof OrganizeRow>[0]> = {}) {
     onMove: vi.fn(),
     onMoveToTop: vi.fn(),
     onMoveToGroup: vi.fn(),
+    onEdit: vi.fn(),
+    confirmingRemoval: false,
+    onRemove: vi.fn(),
+    onCancelRemoval: vi.fn(),
     dragProps: { onDragStart: noop, onDragEnd: noop, onDragOver: noop, onDrop: noop },
     ...overrides,
   };
@@ -57,4 +61,20 @@ it('hides the group move when there is no other group', async () => {
   fireEvent.keyDown(screen.getByLabelText('Opções de Wiki'), { key: 'Enter' });
   await screen.findByRole('menuitem', { name: 'Mover para o topo' });
   expect(screen.queryByRole('menuitem', { name: 'Mover para o grupo' })).toBeNull();
+});
+
+it('edits and removes from the menu, with a confirmation step for removal', async () => {
+  const props = setup();
+  fireEvent.keyDown(screen.getByLabelText('Opções de Wiki'), { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Editar' }));
+  expect(props.onEdit).toHaveBeenCalled();
+  fireEvent.keyDown(screen.getByLabelText('Opções de Wiki'), { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Remover' }));
+  expect(props.onRemove).toHaveBeenCalledTimes(1);
+  cleanup();
+  const confirming = setup({ confirmingRemoval: true });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção' }));
+  expect(confirming.onRemove).toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  expect(confirming.onCancelRemoval).toHaveBeenCalled();
 });
