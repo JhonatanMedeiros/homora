@@ -1839,3 +1839,8 @@ the HTTP and stdio transports were not manually verified.
 
 - Extended the runtime boundary check to inspect imports, literal dynamic imports, reexports, named integration exports, comparisons and switches using syntax trees. It also checks integration SDK runtime imports and declared dependencies for application packages; test files remain excluded for the existing contract harness. The adapter guide requires a second synthetic domain for new shared SDK or widget capabilities. Static checks do not establish semantic genericity or catch all indirect or computed dependencies; design review remains necessary.
 - Validation: boundary checker examples and repository scan, `pnpm check` (1,671 application tests and 27 script tests) and `pnpm build` passed.
+
+### ESLint integration boundaries
+
+- Added editor-visible import restrictions for integration runtime code and applications, using registered integration descriptors and retaining the backend capability rules. Test files remain exempt from integration-specific import restrictions for contract helpers. Automated ESLint tests cover both allowed and rejected imports.
+- Validation: `pnpm check` (1,671 application tests and 28 script tests) and `pnpm build` passed.

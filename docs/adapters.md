@@ -117,7 +117,7 @@ service-neutral contract and add a synthetic test for a second domain with diffe
 and data. This demonstrates reuse but does not replace design review; expand transport methods,
 permissions or network capabilities only through the separate review described above.
 
-`pnpm check` runs the integration boundary tests. They inspect runtime source for direct and
+ESLint reports forbidden static imports in runtime integration and application code; test files are exempt to allow the existing contract helpers. The integration types come from registered descriptors, and backend capability entry-point restrictions remain in force. `pnpm check` also runs the integration boundary tests. They inspect runtime source for direct and
 literal dynamic imports, reexports and comparisons or switches over known integration types, and
 for SDK dependencies on application packages. Test files are excluded because the current contract
 harness lives in the backend. The static check cannot prove independence or discover every indirect
