@@ -1910,3 +1910,8 @@ the HTTP and stdio transports were not manually verified.
 - Added reviewable page changes with the `organization:propose` scope, batch support, version checks and audit events.
 - Added scoped, audited and human-reviewed probes, acknowledgements, tags, favorite cards, resource links and page-widget moves; batch proposals cover the new kinds. MCP responses omit maintenance notes, connection URLs and PEM. Connection tests use restricted transport without persisting results or changing shared backoff.
 - Validation: focused MCP, authorization and proposal tests; `pnpm check` passed (1,722 application tests and 31 script tests) and `pnpm build` passed. No live service was contacted. Browser review remains pending.
+
+### Phone bar without the notifications item
+
+- The Home's phone bar no longer has an Alerts item: the notifications bell (popup inbox) is already in the header. The bar is Home, Search and Manage. The plumbing that only fed that item (the unread count passed to the shell, the controlled open state and focus return of the bell, the badge and accessible-name options of the bar item) was removed, as was the `dashTabs.alerts` text.
+- Validation: `pnpm check` (1,729 application tests) and `pnpm build` passed. Not checked in a browser or on a phone.

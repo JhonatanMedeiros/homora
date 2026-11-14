@@ -42,8 +42,6 @@ type Props = {
   /** The alerts bell, when the dashboard has data to count. */
   alerts?: ReactNode;
   /** Open alerts, for the count over the bell in the phone's bottom bar. */
-  alertCount?: number;
-  onAlerts?: () => void;
   children: ReactNode;
 };
 
@@ -56,8 +54,6 @@ export function AppShell({
   onOpenPalette,
   profile,
   alerts,
-  alertCount,
-  onAlerts,
   children,
 }: Props) {
   // The account is a page of its own: no sidebar and no search, just a way back.
@@ -211,9 +207,7 @@ export function AppShell({
         <DashboardTabs
           onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           onSearch={onOpenPalette}
-          onAlerts={onAlerts ?? (() => onTabChange('activity'))}
           onManage={() => onManageChange(true)}
-          alertCount={alertCount}
         />
       )}
     </div>

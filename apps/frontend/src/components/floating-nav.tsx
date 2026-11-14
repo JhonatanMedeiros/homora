@@ -35,29 +35,17 @@ export function FloatingNav({
 type ItemProps = {
   icon: ComponentType<{ 'aria-hidden'?: boolean | 'true' | 'false'; className?: string }>;
   label: string;
-  accessibleLabel?: string;
   active?: boolean;
   onClick: () => void;
   /** Haspopup for items that open a sheet. */
   popup?: boolean;
-  /** Open alerts and the like: a small count over the icon. */
-  badge?: number;
 };
 
 /** One item. Only the active one shows its name; the others keep it for screen readers. */
-export function FloatingNavItem({
-  icon: Icon,
-  label,
-  accessibleLabel,
-  active,
-  onClick,
-  popup,
-  badge,
-}: ItemProps) {
+export function FloatingNavItem({ icon: Icon, label, active, onClick, popup }: ItemProps) {
   return (
     <button
       type="button"
-      aria-label={accessibleLabel}
       aria-current={active ? 'page' : undefined}
       aria-haspopup={popup ? 'dialog' : undefined}
       onClick={onClick}
@@ -70,14 +58,6 @@ export function FloatingNavItem({
     >
       <Icon aria-hidden="true" />
       <span className={active ? undefined : 'sr-only'}>{label}</span>
-      {badge ? (
-        <span
-          aria-hidden="true"
-          className="absolute top-1 right-2 min-w-4 rounded-full bg-destructive px-1 text-center font-mono text-[0.625rem] leading-4 text-white"
-        >
-          {badge}
-        </span>
-      ) : null}
     </button>
   );
 }
