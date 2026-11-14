@@ -247,7 +247,7 @@ describe('export and import', () => {
       version: number;
       groups: { services: { links: unknown[] }[] }[];
     };
-    expect(document.version).toBe(5);
+    expect(document.version).toBe(6);
     expect(document.groups[0].services[0].links).toHaveLength(3);
     expect(exported).toContain('"alias": "cloud"');
     expect(exported).not.toContain('typeId');

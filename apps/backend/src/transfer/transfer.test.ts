@@ -58,7 +58,7 @@ describe('parsing', () => {
     ['invalid syntax', 'groups: [unclosed', 'invalid-syntax'],
     ['document without groups', 'version: 1\n', 'invalid-document'],
     ['root that is not an object', '- a\n- b', 'invalid-document'],
-    ['unsupported version', 'version: 6\ngroups: []', 'unsupported-version'],
+    ['unsupported version', 'version: 7\ngroups: []', 'unsupported-version'],
   ])('rejects %s', (_name, content, code) => {
     const parsed = parseTransfer(content);
     expect(parsed.issues).toEqual([{ path: '', code, severity: 'error' }]);
@@ -324,4 +324,15 @@ it('preserves valid aliases in exports and reports invalid or conflicting aliase
     'json',
   );
   expect(parseTransfer(exported).document.groups[0].services[0].alias).toBe('free');
+});
+
+it('round trips a separate check URL and ignores invalid imported targets', () => {
+  const target = 'http://192.168.1.5:8080/health';
+  const text = serializeConfiguration([{ name: 'Media' }], [service({ checkUrl: target })], 'json');
+  expect(parseTransfer(text).document.groups[0].services[0].checkUrl).toBe(target);
+  const parsed = parseTransfer(
+    'version: 5\ngroups:\n  - name: Media\n    services:\n      - { name: App, url: "https://app.example", checkUrl: "http://user:pass@example.com/" }',
+  );
+  expect(parsed.document.groups[0].services[0].checkUrl).toBeUndefined();
+  expect(parsed.issues).toContainEqual(expect.objectContaining({ code: 'check-ignored' }));
 });

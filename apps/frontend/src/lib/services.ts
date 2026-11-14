@@ -32,6 +32,7 @@ export type StatusReason =
   | 'not-found'
   | 'error-status'
   | 'reachable'
+  | 'destination-blocked'
   | 'no-response'
   | 'content-mismatch'
   | 'cert-expired'

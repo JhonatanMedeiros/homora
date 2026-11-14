@@ -29,6 +29,7 @@ it('adopts legacy database and preserves its data across restarts', async () => 
     let database = createDatabase(path);
     expect((await database.db.select().from(services))[0].name).toBe('Jellyfin');
     expect((await database.db.select().from(services))[0].alias).toBeNull();
+    expect((await database.db.select().from(services))[0].checkUrl).toBeNull();
     expect((await database.db.select().from(serviceGroups)).map(({ name }) => name)).toEqual([
       'Media',
     ]);

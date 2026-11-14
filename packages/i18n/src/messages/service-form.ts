@@ -42,6 +42,9 @@ export const en = {
   'form.checkHttpHint': 'Opens the address and reads the HTTP status code.',
   'form.checkPingHint':
     'Only checks that the host answers ping; it says nothing about the service itself.',
+  'form.checkUrl': 'Check URL (optional)',
+  'form.checkUrlHint':
+    'Use a separate address to check the origin behind a public link. Overrides the check path; private addresses require private network access. No credentials, query, or fragment.',
   'form.checkPath': 'Check path (optional)',
   'form.checkPathHint':
     'Uses this path on the same origin. Leave empty to check the service URL. HTTP only.',
@@ -123,6 +126,9 @@ export const ptBR: Record<keyof typeof en, string> = {
   'form.checkHttpHint': 'Abre o endereço e lê o código de status HTTP.',
   'form.checkPingHint':
     'Só confirma que o host responde ao ping; não diz nada sobre o serviço em si.',
+  'form.checkUrl': 'URL de verificação (opcional)',
+  'form.checkUrlHint':
+    'Use outro endereço para verificar a origem por trás de um link público. Substitui o caminho de verificação; endereços privados exigem acesso à rede privada. Sem credenciais, parâmetros ou fragmento.',
   'form.checkPath': 'Caminho de verificação (opcional)',
   'form.checkPathHint':
     'Usa este caminho na mesma origem. Vazio verifica a URL do serviço. Apenas HTTP.',

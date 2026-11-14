@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createObservationStore } from './observations.js';
 import type { ServiceStatus } from './monitor.js';
 
-const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT);
+const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT);
   CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER);
   INSERT INTO config_version VALUES(1,1);
   CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);

@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 import { createProposalService } from './proposals.js';
 
 // R4 stage 3: regression tests for the proposal lifecycle under competing actors.
-const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
+const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
   CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
   CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
   CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);

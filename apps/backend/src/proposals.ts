@@ -95,6 +95,7 @@ export function createProposalService(
         if (service.checkInterval === undefined) service.checkInterval = current.checkInterval;
         if (service.expectedStatus === undefined) service.expectedStatus = current.expectedStatus;
         if (service.checkPath === undefined) service.checkPath = current.checkPath;
+        if (service.checkUrl === undefined) service.checkUrl = current.checkUrl;
         if (service.checkMatch === undefined) service.checkMatch = current.checkMatch;
       }
       if (d.op === 'create') configuration.checkNewServicePage(service.category, d.page);

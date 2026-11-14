@@ -1824,3 +1824,8 @@ revalidated transactionally. Existing tokens do not acquire the scope automatica
 Validation: focused MCP and proposal tests, `pnpm check` (1,661 application tests and
 25 script tests) and `pnpm build` passed. Browser review and a live MCP client using
 the HTTP and stdio transports were not manually verified.
+
+### Separate monitoring address (issue #184)
+
+- Added an optional check URL, taking precedence over the card URL and check path for all check types. It uses the existing destination policy and per-service private-network permission. Native exports use version 6; earlier versions remain readable. Existing services retain their monitoring signatures when the field is absent.
+- Validation: `pnpm check` (1,663 application tests and 25 script tests) and `pnpm build` passed. Browser layout and a live origin behind Cloudflare Access were not verified.

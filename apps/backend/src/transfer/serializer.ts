@@ -46,6 +46,7 @@ export function serializeConfiguration(
             ? { check: service.checkType }
             : {}),
           ...(service.expectedStatus ? { expectedStatus: service.expectedStatus } : {}),
+          ...(service.checkUrl ? { checkUrl: service.checkUrl } : {}),
           ...(service.checkPath ? { checkPath: service.checkPath } : {}),
           ...(service.checkMatch ? { checkMatch: service.checkMatch } : {}),
           ...(service.checkInterval ? { interval: service.checkInterval } : {}),
