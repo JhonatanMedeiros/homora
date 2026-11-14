@@ -89,6 +89,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'propose_resource_link',
       'propose_acknowledgement',
       'propose_service_tags',
+      'propose_public_visibility',
       'propose_probe',
       'propose_page_change',
       'propose_group_change',

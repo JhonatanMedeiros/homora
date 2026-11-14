@@ -19,6 +19,11 @@ export const DETAIL_FOOTER_CLASS =
 
 /** Confirmation texts for a risky approval: removing is not the same as widening access. */
 export function confirmCopy(risk: Risk, name: string) {
+  if (risk === 'public')
+    return {
+      title: t('proposal.confirmPublicTitle'),
+      description: t('proposal.confirmPublicBody', { name }),
+    };
   return risk === 'access'
     ? {
         title: t('proposal.confirmAccessTitle'),

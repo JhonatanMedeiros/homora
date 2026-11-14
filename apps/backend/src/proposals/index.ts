@@ -89,26 +89,30 @@ export function createProposalService(
                   )
                   .all(change.change.serviceId),
               }
-            : change?.kind === 'tag'
-              ? sqlite
-                  .prepare(
-                    'SELECT service_id,tag FROM service_tags WHERE service_id=? ORDER BY tag',
-                  )
-                  .all(change.change.serviceId)
-              : change?.kind === 'probe'
-                ? change.change.op === 'create'
-                  ? // Only an identical probe already in place matters to a new one.
-                    sqlite
-                      .prepare(
-                        'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) AND m.name=? AND m.check_url=? ORDER BY m.id',
-                      )
-                      .all(change.change.probe.name, change.change.probe.address)
-                  : sqlite
-                      .prepare(
-                        'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) AND m.id=?',
-                      )
-                      .all(change.change.id)
-                : null,
+            : change?.kind === 'public-visibility'
+              ? (sqlite
+                  .prepare('SELECT id,is_public FROM monitors WHERE id=?')
+                  .get(change.change.serviceId) ?? null)
+              : change?.kind === 'tag'
+                ? sqlite
+                    .prepare(
+                      'SELECT service_id,tag FROM service_tags WHERE service_id=? ORDER BY tag',
+                    )
+                    .all(change.change.serviceId)
+                : change?.kind === 'probe'
+                  ? change.change.op === 'create'
+                    ? // Only an identical probe already in place matters to a new one.
+                      sqlite
+                        .prepare(
+                          'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) AND m.name=? AND m.check_url=? ORDER BY m.id',
+                        )
+                        .all(change.change.probe.name, change.change.probe.address)
+                    : sqlite
+                        .prepare(
+                          'SELECT m.* FROM monitors m WHERE NOT EXISTS (SELECT 1 FROM services s WHERE s.id=m.id) AND m.id=?',
+                        )
+                        .all(change.change.id)
+                  : null,
     ]);
   /**
    * A pending proposal that already asks for exactly this (same kind, same change, same base), so

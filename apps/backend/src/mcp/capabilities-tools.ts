@@ -83,6 +83,7 @@ export function registerMcpCapabilitiesTool(
         { name: 'propose_service_tags', scopes: ['organization:propose'] },
         { name: 'propose_resource_link', scopes: ['organization:propose'] },
         { name: 'propose_pin', scopes: ['organization:propose'] },
+        { name: 'propose_public_visibility', scopes: ['public-status:propose'] },
         ...['list_maintenance', 'propose_maintenance'].map((name) => ({
           name,
           scopes: ['maintenance:propose'],

@@ -6,6 +6,7 @@ const TONE: Record<Risk, { text: string; dot: string }> = {
   low: { text: 'text-success', dot: 'bg-success' },
   attention: { text: 'text-warning', dot: 'bg-warning' },
   access: { text: 'text-info', dot: 'bg-info' },
+  public: { text: 'text-destructive', dot: 'bg-destructive' },
   destructive: { text: 'text-destructive', dot: 'bg-destructive' },
 };
 

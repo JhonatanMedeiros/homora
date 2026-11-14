@@ -20,6 +20,14 @@ export const PUBLIC_DAYS = 90;
 const INCIDENT_WINDOW_MS = 30 * DAY_MS;
 const INCIDENT_LIMIT = 20;
 
+/** The one place `monitors.is_public` is written: the UI route and approved proposals both use it. */
+export function setMonitorPublic(sqlite: DatabaseSync, id: number, isPublic: boolean) {
+  return (
+    sqlite.prepare('UPDATE monitors SET is_public=? WHERE id=?').run(isPublic ? 1 : 0, id).changes >
+    0
+  );
+}
+
 /**
  * Opt-in public status page. The payload is deliberately minimal: name, category, a coarse
  * state, a last-checked time, hourly bars, 90 daily bars, and when incidents and maintenance
@@ -42,7 +50,13 @@ export function createPublicStatus(
         'INSERT INTO app_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
       )
       .run(key, value);
-  let cache: { at: number; body: ReturnType<typeof build> } | null = null;
+  let cache: { at: number; version: number; body: ReturnType<typeof build> } | null = null;
+  // An approved proposal changes visibility without this instance: its version bump drops the cache.
+  const configVersion = () =>
+    (
+      sqlite.prepare('SELECT version FROM config_version WHERE id=1').get() as
+        { version: number } | undefined
+    )?.version ?? 0;
 
   const settings = () => ({
     enabled: getSetting(ENABLED_KEY) === 'true',
@@ -197,17 +211,16 @@ export function createPublicStatus(
       );
     },
     setServicePublic(id: number, isPublic: boolean) {
-      const result = sqlite
-        .prepare('UPDATE monitors SET is_public=? WHERE id=?')
-        .run(isPublic ? 1 : 0, id);
+      const changed = setMonitorPublic(sqlite, id, isPublic);
       cache = null;
-      return result.changes > 0;
+      return changed;
     },
     /** Exactly what anonymous visitors receive right now; null when the page is off. */
     snapshot(now = Date.now()) {
       if (!settings().enabled) return null;
-      if (!cache || now - cache.at > CACHE_MS || now < cache.at)
-        cache = { at: now, body: build(now) };
+      const version = configVersion();
+      if (!cache || cache.version !== version || now - cache.at > CACHE_MS || now < cache.at)
+        cache = { at: now, version, body: build(now) };
       const { body } = cache;
       return body.services.length ? body : null;
     },

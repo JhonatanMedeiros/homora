@@ -15,6 +15,7 @@ export const AGENT_SCOPES = [
   ...integrationAgentScopeIds,
   'proposals:create',
   'maintenance:propose',
+  'public-status:propose',
   'groups:propose',
   'widgets:read',
   'widgets:propose',

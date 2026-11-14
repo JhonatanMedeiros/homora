@@ -7,6 +7,7 @@ export const PROPOSAL_SCOPES = [
   'probes:propose',
   'incidents:propose',
   'maintenance:propose',
+  'public-status:propose',
   'groups:propose',
   'widgets:propose',
   'connections:propose',
