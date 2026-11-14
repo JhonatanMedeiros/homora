@@ -6,7 +6,12 @@ import { ProbableCauses } from './probable-causes';
 
 const service = (id: number, name: string) => ({ id, name }) as Service;
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
+
+const expand = () => fireEvent.click(screen.getByRole('button', { expanded: false }));
 
 it('renders nothing when no service is down', () => {
   const { container } = render(
@@ -30,6 +35,9 @@ it('says "likely" and opens the chosen service', () => {
       onOpen={onOpen}
     />,
   );
+  // Collapsed by default: only the summary line takes room on the Home.
+  expect(screen.queryByRole('button', { name: /Plex/ })).toBeNull();
+  expand();
   expect(screen.getAllByText(/Likely cause|Causa provável/).length).toBeGreaterThan(0);
   fireEvent.click(screen.getByRole('button', { name: /Plex/ }));
   expect(onOpen).toHaveBeenCalledWith(down[0]);
@@ -50,6 +58,7 @@ it('offers to acknowledge or mute a cause, and to bring acknowledged services ba
       onShowAgain={onShowAgain}
     />,
   );
+  expand();
   fireEvent.click(screen.getByRole('button', { name: 'Reconhecer' }));
   expect(onAcknowledge).toHaveBeenLastCalledWith(down);
   fireEvent.click(screen.getByRole('button', { name: 'Silenciar 1 h' }));
