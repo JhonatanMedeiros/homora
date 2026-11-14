@@ -7,7 +7,7 @@ import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import { RowListSkeleton } from '@/components/skeletons';
 import { formatDateTime, t } from '@/i18n';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
-import { formatDuration, reasonText } from '@/lib/uptime-view';
+import { formatDuration, reasonText } from '@/features/uptime/uptime-view';
 
 type Item = {
   id: number;

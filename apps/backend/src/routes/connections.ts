@@ -3,7 +3,7 @@ import { developmentMockData } from '@homora/integrations/backend/development';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '@homora/db';
 import { createVault } from '../vault.js';
-import { createIntegrationConnections } from '../integration-connections.js';
+import { createIntegrationConnections } from '../integrations/integration-connections.js';
 import {
   createConnectionSchema,
   createWidgetSchema,

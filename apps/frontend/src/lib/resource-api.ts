@@ -1,5 +1,6 @@
-import type { ResourceType, Service } from '@homora/shared';
+import type { Service } from '@homora/shared';
 import { apiError, t } from '@/i18n';
+import type { ResourceType } from '@homora/integrations';
 
 const json = { 'Content-Type': 'application/json' };
 

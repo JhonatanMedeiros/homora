@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { expect, it, vi } from 'vitest';
-import { createIntegrationConnections } from './integration-connections.js';
-import { migrateLegacyConnectionsAtStartup } from './legacy-integrations.js';
+import { createIntegrationConnections } from './integrations/integration-connections.js';
+import { migrateLegacyConnectionsAtStartup } from './integrations/legacy-integrations.js';
 import { createVault } from './vault.js';
 import { getAuthorizedResponse } from './network-request.js';
 

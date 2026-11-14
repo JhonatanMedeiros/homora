@@ -1,6 +1,6 @@
 import type { Service } from '@homora/shared';
 import { ServiceEditorDialog } from '@/components/service-editor-dialog';
-import { dependsOn, type Dependency } from '@/lib/dependencies';
+import { dependsOn, type Dependency } from '@/features/hosts/dependencies';
 import { useServiceEditor } from '@/hooks/use-service-editor';
 
 type Editor = ReturnType<typeof useServiceEditor>;

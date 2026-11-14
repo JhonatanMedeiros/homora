@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { PublicState, PublicStatus } from '@/features/public-status/public-status-model';
 import { StatusLight } from '@/components/status-light';
 import { formatAgo, formatDateTime, formatShortDateTime, t, useI18n } from '@/i18n';
-import { formatDuration } from '@/lib/uptime-view';
+import { formatDuration } from '@/features/uptime/uptime-view';
 import type { Availability } from '@/lib/services';
 import { cn } from '@/lib/utils';
 import { PublicStatusSkeleton } from '@/components/skeletons';

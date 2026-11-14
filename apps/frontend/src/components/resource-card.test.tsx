@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { IntegrationResource, ResourceLink, Service } from '@homora/shared';
-import { ServiceCard } from '@/components/service-card';
+import type { Service } from '@homora/shared';
+import { ServiceCard } from '@/features/dashboard/service-card';
 import { ResourceReviewDialog } from '@/components/resource-review-dialog';
 import { useResourceLinks, type CardResource } from '@/hooks/use-resource-links';
 import { viewLink } from '@homora/integrations/resources/client';
+import type { IntegrationResource, ResourceLink } from '@homora/integrations';
 
 afterEach(() => {
   cleanup();

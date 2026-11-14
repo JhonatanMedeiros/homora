@@ -15,8 +15,8 @@ import { ServiceFormSections } from '@/components/service-form-sections';
 import type { Section } from '@/components/service-form-summary';
 import { ServiceIcon } from '@/components/service-icon';
 import { suggestBrandIcon } from '@/lib/icons';
-import { DependencyPicker } from '@/components/dependency-picker';
-import type { HostConnection, HostInventories } from '@/lib/hosts';
+import { DependencyPicker } from '@/features/hosts/dependency-picker';
+import type { HostConnection, HostInventories } from '@/features/hosts/hosts';
 import { t } from '@/i18n';
 
 /** Host inventory data for the "Runs on" section; omitted when the form is used without hosts. */

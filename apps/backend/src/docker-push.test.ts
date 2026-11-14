@@ -170,8 +170,8 @@ it('supports scoped MCP reads and proposals without leaking URL query secrets', 
   const { join } = await import('node:path');
   const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
   const { InMemoryTransport } = await import('@modelcontextprotocol/sdk/inMemory.js');
-  const { createMcp } = await import('./mcp.js');
-  const { createProposalService } = await import('./proposals.js');
+  const { createMcp } = await import('./mcp/index.js');
+  const { createProposalService } = await import('./proposals/index.js');
   const dir = mkdtempSync(join(tmpdir(), 'homora-push-mcp-'));
   const db = createDatabase(':memory:');
   const sqlite = getSqliteHandle(db.db);

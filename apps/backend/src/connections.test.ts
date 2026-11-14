@@ -216,7 +216,7 @@ it('records the result of an explicit test as a short reason and clears it when 
 });
 
 it('classifies test failures without keeping the service message', async () => {
-  const { testFailureReason } = await import('./integration-connection-config.js');
+  const { testFailureReason } = await import('./integrations/integration-connection-config.js');
   expect(testFailureReason(new Error('HTTP response 401.'))).toBe('rejected');
   expect(testFailureReason(new Error('HTTP response 403.'))).toBe('rejected');
   expect(testFailureReason(new Error('HTTP response 500.'))).toBe('http-error');

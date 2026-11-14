@@ -12,7 +12,7 @@ differences between HTTP and MCP execution models are detailed further down.
 ```mermaid
 flowchart LR
   U[User] --> UI[Web Interface]
-  A[MCP Agent] --> MCP[MCP Server]
+  A[MCP Agent] --> MCP[MCP: stdio and HTTP]
   UI --> HTTP[HTTP Routes]
   HTTP --> SC[Configuration Module]
   HTTP --> PS
@@ -33,64 +33,58 @@ flowchart LR
   HTTP --> PUSH
   MCP --> PUSH
   REG --> EXT[Proxmox and External Services]
+  MON[Monitoring: scheduler, probes, incidents] --> NP[Network policy]
+  NP --> TARGETS[Monitored targets]
+  MON --> DB
+  MON --> NOTI[Notifications: transitions and delivery]
+  NOTI --> VAULT
+  NOTI --> NP
+  NOTI --> OUT[Telegram, ntfy, Discord, webhook]
+  HTTP --> MON
+  MCP -. reads observations only .-> DB
 ```
+
+## Module map
+
+Backend (`apps/backend/src`). Folders are capabilities; the first group has an ESLint-enforced entry point
+(`index.ts`), the others are organised by convention.
+
+| Folder                                   | Responsibility                                                                                                        |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `monitoring/`, `transfer/`, `discovery/` | Health checks and incidents; import/export formats; Docker discovery. Imported only through `index.ts`.               |
+| `mcp/`                                   | MCP tools, scope binding (`identity.ts`), response filtering (`responses.ts`) and the HTTP transport (`http.ts`).     |
+| `proposals/`                             | Proposal creation, review and application, batches, queries, managed (typed) proposals.                               |
+| `agents/`                                | Agent identities and tokens, scopes, agent-driven changes.                                                            |
+| `notifications/`                         | Transition rules, channels, delivery and localisation of outbound messages.                                           |
+| `integrations/`                          | Connections, credential configuration, registry, transport, widget persistence and the legacy Proxmox migration.      |
+| `routes/`                                | HTTP route modules per capability; they parse, authorise and translate, and hold no business rules.                   |
+| root                                     | Composition (`server.ts`, `app.ts`), configuration domain (`service-*`), auth, vault, network policy, audit, logging. |
+
+`mcp-server.ts` stays at the root because `dist/mcp-server.js` is the stdio entry point users configure in their clients.
+
+Packages: `@homora/db` (schema, migrations), `@homora/shared` (contracts and validation shared by both apps; it does
+**not** re-export the integration SDK or icons, so import those from `@homora/integrations` and `@homora/icons`),
+`@homora/integrations` (SDK and one folder per service), `@homora/widgets` (widget contract), `@homora/i18n`,
+`@homora/icons`. `@homora/shared` still imports the guest-name helpers of `@homora/integrations` in `hosts.ts`;
+moving them is future work.
+
+Frontend (`apps/frontend/src`): `pages/` compose routes, `features/<name>/` own presentation, hooks and models of one
+capability (account, activity, agents, auth, connections, dashboard, discovery, hosts, probes, public-status,
+settings, transfer, uptime), and `components/`, `hooks/`, `lib/` keep only what several capabilities share
+(UI primitives in `components/ui`, shell and navigation, preferences, formatting). `dashboard` holds the Home (cards,
+groups, filters, organize mode); `hosts` the service-to-host map, suggestions and dependencies; `uptime` the detail
+view, maintenance and failure causes. A move out of the shared folders needs a single consuming capability; a new
+workspace package needs an independent consumer. Route composers stay in `pages/`; `services-page.tsx` still
+assembles most Home state and is the next candidate to split. Tests live next to the code, and App journey tests stay
+at the application boundary. Feature-to-feature imports exist (for example settings composes public status and transfer
+views); do not route them through a barrel.
+
+Entry points: `App.tsx` owns authentication and URL routing, `dashboard-page.tsx` the authenticated shell, and the
+Integrations, agents, activity, account and settings pages load on demand.
 
 ## Components and Direction
 
 - Web interface: dashboard, settings, proposal review, and agent management.
-- Frontend feature boundaries: pages and feature components compose views; focused hooks
-  used only by a feature can live with it, while shared lifecycle state stays in
-  `apps/frontend/src/hooks`. Proposal
-  lists/dialogs and other substantial presentation areas stay in dedicated components. Agent API
-  state and proposal lifecycle are coordinated by `use-agent-workspace.ts`; the Agents page opens with a summary
-  (`agents-summary.tsx`), shows proposals as compact cards (a batch is one card) and agents as cards
-  that open `agent-dialog.tsx`, where rotation and revocation are confirmed. Each agent's recent
-  activity comes from the audited proposal events (`use-agent-activity.ts`), matched by the agent id
-  that `/api/activity` now exposes on agent actors; agent reads are not audited, so they do not
-  appear. Reviewing is serial and stable: pending proposals are ordered by creation, one decision is in
-  flight at a time (every decision button waits for it), a stale proposal keeps its disabled approve
-  button in place, a destructive approval asks for confirmation (`approve-button.tsx`), and a rejection
-  can be undone for 60 s (`POST /api/proposals/:id/undo`, `/api/proposal-batches/:id/undo`, audited as
-  `review-undo`; approvals are not undone). A proposal identical to a pending one (same kind, change and
-  base) is returned instead of queued again. Probe, tag, link, acknowledgement and single-pin proposals
-  hash only the row they touch and skip the global configuration version, so approving one does not
-  make the others stale. Token and setup dialogs live in `agent-identity-workspace.tsx`. Service page
-  derived data and focus/announcement effects live in `use-service-page-model.ts` and
-  `use-service-page-focus.ts`; the page composes them with the editor and group hooks.
-  `service-page-editor.tsx` maps the editor hook state to the shared service form dialog,
-  including host inventory and dependency edits. `service-form.tsx` presents the essential service
-  fields (name, URL, category) and the sticky footer, while `service-form-sections.tsx` lays out
-  the rest as four sections (tabs on wide screens, an accordion on phones) with a one-line summary
-  each (`service-form-summary.ts`): appearance (`service-form-look.tsx`), monitoring
-  (`service-form-monitoring.tsx`), connections (host and dependencies) and access. Every section
-  stays mounted, so native validation still works, and the form opens the section of an invalid
-  field before the browser reports it. Host and Map presentations load on demand when selected.
-- Frontend ownership inventory (issue #140): account, activity, agents, connections,
-  discovery, public status, settings and transfer already own presentation and some
-  models/tests under `features`; their route composers remain in `pages`. The service
-  dashboard, uptime and host views span pages, components, hooks and `lib` and need a
-  separate dependency review before moving. UI primitives, shell, navigation, browser
-  preferences and utilities shared across capabilities remain outside features. Application
-  translations are feature-grouped in `packages/i18n`; integration-specific translations and
-  presentations stay in the integration SDK, while widget contracts live in `packages/widgets`. Tests follow the code they exercise, while App
-  journey tests remain at the application boundary.
-- As a first slice, settings owns its notification, monitoring-default and appearance-draft
-  hooks alongside their consuming components and tests. Its `sections.ts` is the lightweight
-  navigation entry used by App, the shell and command palette; individual view modules are
-  the settings page's entry points. Public status currently reuses settings' `setting-row`
-  presentation, and settings composes public status and transfer views. These existing
-  cross-feature edges merit review before further moves; do not route them through a single
-  eager barrel. Shared appearance and custom CSS stores are also consumed by the shell and
-  stay in shared hooks. Other feature hooks have not yet been audited for relocation.
-- No frontend workspace package is warranted by this slice: these views and hooks have only
-  the frontend as a consumer. Existing shared contracts, catalogs, icons and integration SDK
-  already have independent consumers; a new package requires a concrete consumer and boundary.
-- `App.tsx` owns authentication and URL routing; `dashboard-page.tsx` owns the authenticated
-  shell, dashboard-wide preferences, shortcuts, and command palette composition. Integrations,
-  agents, activity, account, and settings pages are loaded on demand with a shared skeleton fallback.
-- App-level UI journey tests are grouped by responsibility in `App.dashboard.test.tsx`,
-  `App.groups.test.tsx`, `App.proposals.test.tsx`, `App.auth.test.tsx`, and
-  `App.navigation.test.tsx`; these exercise user flows across the composed application.
 - Application message catalogs live in `packages/i18n/src/messages`, grouped by feature. The package assembles and type-checks the English and Portuguese catalogs and separately exports notification messages and supported locales; the frontend combines them with integration-owned translations. See `packages/i18n/README.md` for adding a language.
 - Frontend localization uses i18next and react-i18next with the browser language detector. The existing `homora-locale` preference, English fallback, flat keys and single-brace interpolation are retained. Integration message catalogs are registered as resources; notification catalogs are imported by the backend without loading frontend messages, and the backend returns stable error codes and English defaults, which the frontend translates. The frontend keeps typed convenience functions and locale-aware formatting around the libraries.
 
@@ -99,8 +93,8 @@ flowchart LR
   delegated to the configuration module; connections employ a dedicated module for
   configuration, credentials, persistence, and observations. See [ADR 0004](decisions/0004-better-auth-web-authentication.md) for web authentication.
 - Proposal services separate creation, review/application, and query/expiry/withdrawal
-  workflows (`managed-proposal-creator.ts`, `proposal-review.ts`, and
-  `proposal-queries.ts`); `proposals.ts` composes these with service proposal and batch
+  workflows (`proposals/managed-proposal-creator.ts`, `proposals/proposal-review.ts`, and
+  `proposals/proposal-queries.ts`); `proposals/index.ts` composes these with service proposal and batch
   lifecycle rules.
 - Adapters: validate configuration and query external systems. The central registry
   exposes metadata and execution; each integration encapsulates credential structures
@@ -108,9 +102,9 @@ flowchart LR
   `integration-manifest-shared.ts`; each built-in definition has a focused module under
   `packages/integrations/src/integrations/`, exported through the integration SDK.
 - Current MCP: local stdio process and stateless Streamable HTTP endpoint with scoped token authentication. The stdio process accesses SQLite
-  and the credential vault directly. MCP tool registration is composed by capability in `mcp.ts`;
-  the `mcp-*-tools.ts` modules own tool groups, while shared authorization and response helpers
-  are passed through `mcp-tool-context.ts`. Scope binding (`mcp-identity.ts`), response filtering (`mcp-responses.ts`) and discovery schemas (`mcp-proposal-schemas.ts`) are separate from transports and from the proposal domain; see [ADR 0014](decisions/0014-mcp-agent-proposal-boundaries.md). MCP tools validate inputs with Zod and provide queries
+  and the credential vault directly. MCP tool registration is composed by capability in `mcp/index.ts`;
+  the `mcp/*-tools.ts` modules own tool groups, while shared authorization and response helpers
+  are passed through `mcp/tool-context.ts`. Scope binding (`mcp/identity.ts`), response filtering (`mcp/responses.ts`) and discovery schemas (`mcp/proposal-schemas.ts`) are separate from transports and from the proposal domain; see [ADR 0014](decisions/0014-mcp-agent-proposal-boundaries.md). MCP tools validate inputs with Zod and provide queries
   and proposal creation without going through HTTP routes or web session cookies. They never
   persist card, group, or widget changes without human approval. Connection suggestions open a human-completed form and do not create a connection; integration queries do not return credentials.
 - Persistence: SQLite, migrations, and database restore scripts are implemented.
@@ -151,7 +145,7 @@ Service (name, URL, icon, group), group (name and position), integration (type, 
 - The signed-in administrator manages their own account through Homora's own routes (`/api/account`, `/api/account/email`, `/api/account/password`, `/api/account/sessions`), not through extra Better Auth paths: profile name, sign-in email, password change and active sessions, which are listed without their tokens and ended by id. Changing the email and the password both require the current password and share the same throttle (10 attempts per account in 15 minutes); the email change keeps every session, is audited as `email-change` and never writes the address to the audit log. When a request that needs a session answers 401, the frontend returns to the sign-in screen with a notice and keeps the page the person was on; a tab coming back to the foreground re-checks the session.
 - The Activity feed (`GET /api/activity`) reads `audit_events`, extended with `detail` and `ip_address`: sign-ins and sign-outs, failed sign-ins, password changes, session revocations, profile changes, proposal creation/review/expiry and agent identity events. A failed sign-in stores only the client address and the attempt count, never the typed email or password. Events are kept for 365 days. Each event exposes `proposalId` when it refers to a proposal; the UI links it to the Agents tab. Agent actors carry the agent `id` besides its name. Audit writes never fail the audited action.
 - Integration credentials are encrypted with AES-256-GCM using an encryption key in a separate file. `.key`, `.proxmox` and the session secret are created with file mode 0600 (the session secret also encrypts the two-step verification secret); backup and disaster recovery requires preserving and securing these files together. There is no automated key rotation or host-compromise protection. Protect the SQLite database file, backups, and persistent volumes using operating system permissions.
-- Appearance is a server setting (`app_settings`), validated for contrast on write. The optional background image is processed by `sharp` (type sniffing, no animation, pixel limit, metadata stripped), stored next to the database and served behind the session with `nosniff`. Custom CSS is validated (no imports, external URLs or script features, 20 KB) and served same-origin as a stylesheet; `?safe=1` and `pnpm css:reset` recover from a broken one. No CSP header is shipped yet. Pages (`pages`, `service_groups.page_id`) group the Home into tabs; see [ADR 0009](decisions/0009-appearance-and-pages.md).
+- Appearance is a server setting (`app_settings`), validated for contrast on write. The optional background image is processed by `sharp` (type sniffing, no animation, pixel limit, metadata stripped), stored next to the database and served behind the session with `nosniff`. Custom CSS is validated (no imports, external URLs or script features, 20 KB) and served same-origin as a stylesheet; `?safe=1` and `pnpm css:reset` recover from a broken one. No CSP header is shipped yet. Pages (`pages`, `service_groups.page_id`) group the Home into tabs; see [ADR 0023](decisions/0023-appearance-and-pages.md).
 - Secrets are excluded from application logs, backups, and audit trails by default; logs have configurable retention. Backups must be encrypted if they contain credentials.
 - CSRF protection, secure sessions, request rate limiting, and input validation; never execute arbitrary shell commands or scripts received from AI agents.
 - Content fetched from external services is untrusted: never interpret external responses as prompt instructions for agents. Test prompt injection defenses and authorization boundaries regularly.
@@ -209,78 +203,19 @@ releases exist.
   Frontend discovery components and hooks own presentation and API interaction. A separate package
   was deferred: no independent consumer needs these backend-specific source and storage boundaries.
   No new socket or network access is introduced.
-- `proposals.ts` composes proposal creation and lifecycle operations. Managed proposal preparation
-  lives in `managed-proposal-creator.ts`; approval and batch review live in `proposal-review.ts`.
-  Atomic batch creation and recreation of expired batches live in `proposal-batches.ts`.
+- `proposals/index.ts` composes proposal creation and lifecycle operations. Managed proposal preparation
+  lives in `proposals/managed-proposal-creator.ts`; approval and batch review live in `proposals/proposal-review.ts`.
+  Atomic batch creation and recreation of expired batches live in `proposals/proposal-batches.ts`.
   Agent token issuance, authentication, rotation, revocation, and safe listing live in
-  `agent-identities.ts`. Transaction, authorization and version checks are supplied by the
+  `agents/agent-identities.ts`. Transaction, authorization and version checks are supplied by the
   proposal service.
-- The service editor state and persistence flow live in `use-service-editor.ts`; group editing
-  state, save/delete actions, and rename focus restoration live in `use-service-groups.ts`. `use-service-page-model.ts` derives page
-  filtering, grouped service items, availability summaries, and host/dependency impact. The
-  `service-dashboard-header.tsx` owns dashboard summary, view controls, host impact, and organize
-  controls. `use-service-page-actions.ts` owns removal, group movement/undo, and order feedback. The
-  `service-groups.tsx` component renders grouped cards and organize rows, keeping drag/drop state
-  with the list; its input separates service data, presentation state, and user actions.
-  `use-group-collapse.ts` owns persisted collapse preferences and temporary reveal requests for a group.
-  `service-card.tsx` is the shared list/tile facade; the two layouts live in
-  `service-card-list.tsx` and `service-card-tile.tsx`. The page owns dashboard composition. The host
-  view toolbar lives in `service-view-toolbar.tsx`. The host map selection and canvas interaction
-  live in `host-map.tsx`; host-link and dependency edits live in `use-host-map-editing.ts`, and
-  viewport controls and mouse-pan state live in `use-host-map-viewport.ts`. Breadcrumb and navigation
-  actions live in `host-map-header.tsx`, and
-  rendering in `host-map-diagram.tsx`. The service details panel and selected service/guest panel
-  live in `host-map-service-panel.tsx` and `host-map-selection-panel.tsx`, respectively.
-  The service page's host-suggestion, Coolify review, and group-removal overlays live in
-  `service-page-overlays.tsx`.
-- `command-palette.tsx` owns query parsing, service result ordering, and palette selection state;
-  navigation, common actions, and web-search rows live in `command-palette-commands.tsx`.
-- `use-services.ts` loads service, group, and page state and owns deletion/host-link API calls;
-  `use-service-ordering.ts` owns optimistic card/group ordering, cross-group movement, and undo.
-  The page action hook coordinates removal confirmation, move/undo feedback, and order announcements;
-  the page refreshes displayed data after host edits.
-- Agent management composes the identity and token dialogs with proposal actions in `agents.tsx`;
-  `proposal-workspace.tsx` owns the TTL form and pending, expired, and historical proposal lists.
-  Its initial load and subsequent refreshes share one data-fetch operation.
-- Appearance editing is coordinated in `appearance-settings.tsx`; local draft, custom-color
-  validation, and contrast state live in `use-appearance-draft.ts`. Accent, custom HEX, and page
-  background controls live in `appearance-colors.tsx`; image upload/removal and the advanced image,
-  opacity, and blur controls live in `appearance-advanced-settings.tsx`.
 - Appearance parsing, shared color math, and server/client contrast policy live in
   `packages/shared/src/appearance.ts`; CSS custom-property generation and DOM application are
   frontend concerns in `appearance-tokens.ts` and `appearance.ts`, respectively.
-- Settings pages are split by route: `interface-settings.tsx` owns theme/language/appearance,
-  `home-settings.tsx` owns dashboard layout and pages, and `top-bar-settings.tsx` owns clock,
-  search, and shortcut preferences.
-- Coolify resource discovery is coordinated in `coolify-discovery.tsx`; `coolify-discovery-row.tsx`
-  owns per-resource review controls, and `coolify-discovery-model.ts` owns row validation and
-  address/group normalization.
-- The Coolify inventory sheet is coordinated in `coolify-resources.tsx`; `coolify-resource-table.tsx`
-  owns the inventory rows, selection controls, linked-card labels, and row actions.
-- `host-suggestions-panel.tsx` coordinates suggestion loading and sheet states; review, bulk accept,
-  dismissal, and undo state live in `use-host-suggestion-review.ts`. The shared suggestion and
-  decision DTOs live in `features/hosts/host-suggestion-model.ts`; evidence and manual-only rows are
-  composed in `host-suggestion-rows.tsx`.
-- The connections page is composed in `connections.tsx`; its loading, connection/widget actions,
-  and page state live in `use-connections-page.ts`. Connection forms, row lists, and widgets remain
-  separate feature components.
-- Notification channel loading and CRUD/test actions live in `use-notification-settings.ts`; the
-  settings component owns channel grouping and form presentation.
-- Local Docker discovery requests and import actions live in `use-local-discovery.ts`; the
-  component renders its state, while `local-discovery-model.ts` derives suggested rows from the
-  validated import plan.
-- Failure history and expanded uptime percentile requests live in `use-service-failure-details.ts`
-  and `use-uptime-details.ts`; their components render the results and loading/error states.
-- Proxmox node-option loading lives in `use-proxmox-node-options.ts`; `node-picker.tsx` owns the
-  select and its text-input fallback.
-- Remote Docker source loading, token lifecycle, inventory review, and import actions live in
-  `use-push-sources.ts`; `push-source-dialogs.tsx` owns source creation, token reveal,
-  inventory review, and lifecycle confirmations; `push-sources.tsx` composes those dialogs
-  with the source list and agent setup instructions.
-- `integration-connection-config.ts` validates stored public config and credentials and applies
-  update rules for retaining or replacing secrets and certificates. `integration-widgets.ts`
-  owns widget persistence and service references; `integration-connections.ts` owns connection
-  persistence/encryption, observation caches, and adapter dispatch. `integration-transport.ts`
+- `integrations/integration-connection-config.ts` validates stored public config and credentials and applies
+  update rules for retaining or replacing secrets and certificates. `integrations/integration-widgets.ts`
+  owns widget persistence and service references; `integrations/integration-connections.ts` owns connection
+  persistence/encryption, observation caches, and adapter dispatch. `integrations/integration-transport.ts`
   builds the policy-bound JSON transport shared by adapter reads and Proxmox address lookups.
   Declared session profiles may perform a fixed authentication POST; session IDs remain in memory
   per connection and revision, with renewal and invalidation as described in
@@ -289,7 +224,7 @@ releases exist.
 - The monitoring capability lives in `apps/backend/src/monitoring/` (see "Monitoring capability"
   below). `observations.ts` persists and serves current observations and failure history; uptime
   SQL aggregation and summary calculations live in `uptime.ts`.
-- `integration-registry.ts` builds the registry from `integrationDefinitions`
+- `integrations/integration-registry.ts` builds the registry from `integrationDefinitions`
   (`packages/integrations/src/integration-manifest.ts`). Simple read-only integrations are
   **manifests**, validated at startup (`backend-manifest-validation.ts`) and run by one SDK interpreter
   (`backend-manifest-adapter.ts`); untrusted response traversal and extraction live in
@@ -298,7 +233,7 @@ releases exist.
   from the same definitions ([ADR 0009](decisions/0009-declarative-integration-adapters.md)).
   `packages/integrations/test-support/adapter-contract.ts` is the test every adapter must pass ([adapters](adapters.md)). All connection adapters use the shared
   network transport with destination policy. Legacy Proxmox credentials are copied once, at
-  backend startup, into encrypted connection storage by `legacy-proxmox.ts`; the bridge row and
+  backend startup, into encrypted connection storage by `integrations/legacy-integrations.ts`; the bridge row and
   widget references are preserved. That module also resolves only live migrated connection ids
   for proposal validation and review. Nothing outside the migrator reads the legacy file.
   The module also owns the startup wrapper, which logs a fixed message and leaves failed
@@ -399,17 +334,17 @@ in an Architecture Decision Record (ADR) alongside documentation updates.
 Proposal review deadlines default to 15 minutes and are configurable from 1 to 120 minutes in SQLite. Changes affect new proposals only and are shared by the web API and both MCP transports. An authenticated administrator can recreate an expired proposal or its complete expired batch; the original diff is revalidated, no change is applied, and recreation and TTL changes are audited. Recreated proposals retain the original agent attribution; the audit records the human requester and source proposal.
 
 Notification flow stays in the backend. `app.ts` wires the monitor publication callback to
-`notifications.ts`, which loads and validates persisted transition state and thresholds, runs
-`notification-transitions.ts`, commits the new state in a transaction, then publishes its events
+`notifications/index.ts`, which loads and validates persisted transition state and thresholds, runs
+`notifications/notification-transitions.ts`, commits the new state in a transaction, then publishes its events
 to delivery. The transition tracker is an in-memory rules engine; it consumes the monitoring
 public `ServiceStatus` and `serviceSignature` contract, ignores duplicate attempts and unknown
 checks, and applies thresholds and cooldown. An empty publication does not delete state. A
 storage failure in the callback is caught by `app.ts`; delivery is not queued if the state commit
 fails. State is separate from the startup-cleared observation cache.
 
-`notification-channels.ts` owns channel validation, CRUD, public DTOs and vault access;
-`notification-delivery.ts` loads enabled channels and credentials at attempt time, formats events
-with `notification-i18n.ts`, and sends through the authorized network transport. Routes expose the
+`notifications/notification-channels.ts` owns channel validation, CRUD, public DTOs and vault access;
+`notifications/notification-delivery.ts` loads enabled channels and credentials at attempt time, formats events
+with `notifications/notification-i18n.ts`, and sends through the authorized network transport. Routes expose the
 facade after the application session checks. Credentials and destinations are encrypted with the
 integration vault key and are never returned by the channel API. The transport resolves and pins
 an authorized address, forbids redirects and validates TLS; private webhook and ntfy access needs

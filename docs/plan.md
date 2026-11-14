@@ -36,7 +36,7 @@ are tracked in [strategy](strategy.md) and [evolution plan](evolution.md), not r
       against simulated Proxmox responses, so the real-environment item below stays open.
 - [x] Personalization (R3): accent, gradients, translucent cards, background image, custom CSS
       with safe mode, and pages on the Home (issue #97,
-      [ADR 0009](decisions/0009-appearance-and-pages.md)).
+      [ADR 0023](decisions/0023-appearance-and-pages.md)).
 - [x] Test destination protection (network policy).
 - [ ] Test unavailability, invalid credentials, and reduced permissions against a real Proxmox.
 

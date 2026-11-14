@@ -8,8 +8,8 @@ import {
   type Service,
   type ServiceInput,
 } from '@homora/shared';
-import { useHostInventory } from '@/hooks/use-host-inventory';
-import { useDependencies } from '@/hooks/use-dependencies';
+import { useHostInventory } from '@/features/hosts/use-host-inventory';
+import { useDependencies } from '@/features/hosts/use-dependencies';
 import { useLinkTypes } from '@/hooks/use-link-types';
 import type { useServices } from '@/hooks/use-services';
 import { apiError, t } from '@/i18n';

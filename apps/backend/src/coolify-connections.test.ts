@@ -6,7 +6,7 @@ import { createDatabase } from '@homora/db';
 import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
-import { createIntegrationConnections } from './integration-connections.js';
+import { createIntegrationConnections } from './integrations/integration-connections.js';
 import * as networkRequest from './network-request.js';
 
 const token = '1|coolify-SECRET456';

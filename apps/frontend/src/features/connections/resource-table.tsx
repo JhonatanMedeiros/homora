@@ -1,4 +1,3 @@
-import type { IntegrationResource, ResourceLink } from '@homora/shared';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import {
@@ -13,6 +12,7 @@ import { ResourceStateBadge } from '@/components/resource-state';
 import { t } from '@/i18n';
 import { RowMenu } from './row-menu';
 import type { CardRef } from './connection-model';
+import type { IntegrationResource, ResourceLink } from '@homora/integrations';
 
 type Props = {
   connectionId: number;

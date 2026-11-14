@@ -6,5 +6,3 @@ export * from './probes.js';
 export * from './service-links.js';
 export * from './services.js';
 export * from './uptime.js';
-export * from '@homora/integrations';
-export { BRAND_ICON_NAMES } from '@homora/icons';

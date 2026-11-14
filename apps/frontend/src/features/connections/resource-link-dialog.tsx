@@ -1,6 +1,5 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
-import type { IntegrationResource, ResourceLink } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +16,7 @@ import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { putLink } from '@/lib/resource-api';
 import type { CardRef } from '@/hooks/use-resource-inventory';
 import { t } from '@/i18n';
+import type { IntegrationResource, ResourceLink } from '@homora/integrations';
 
 type Props = {
   connectionId: number;

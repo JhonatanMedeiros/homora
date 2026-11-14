@@ -1,6 +1,6 @@
-import type { ResourceState } from '@homora/shared';
 import { Badge } from '@/components/ui/badge';
 import { t, type MessageKey } from '@/i18n';
+import type { ResourceState } from '@homora/integrations';
 
 export type ResourceDisplayState = ResourceState | 'unavailable' | 'missing';
 

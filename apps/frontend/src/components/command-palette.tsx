@@ -17,7 +17,7 @@ import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
 import { buildSearchUrl, parseBang } from '@/lib/web-search';
 import { t } from '@/i18n';
 import { useRecentServices } from '@/hooks/use-recent-services';
-import type { View } from '@/hooks/use-view-preferences';
+import type { View } from '@/features/dashboard/use-view-preferences';
 import {
   filterServices,
   parseQuery,

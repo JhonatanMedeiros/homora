@@ -116,7 +116,7 @@ and prioritized adapters are verified against live production services.
 - [ ] Finalize and document supported network topology scenarios (P2) before advertising access
       outside localhost.
 - [x] Theming, custom CSS, background images, translucent cards, and multi-page/tab views
-      (issue #97, [ADR 0009](decisions/0009-appearance-and-pages.md)); not yet checked in a real browser.
+      (issue #97, [ADR 0023](decisions/0023-appearance-and-pages.md)); not yet checked in a real browser.
 - [x] Keyboard shortcuts and optional web search redirection (configurable engine, without leaking
       Homora internal data).
 

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { createTestSession } from './test-auth.js';
-import { createProposalService } from './proposals.js';
+import { createProposalService } from './proposals/index.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import type { DockerSource } from './discovery/index.js';
 

@@ -1,6 +1,6 @@
-import type { IntegrationResource } from '@homora/shared';
 import { isHttpUrl } from '@homora/integrations/resources/client';
 import { t } from '@/i18n';
+import type { IntegrationResource } from '@homora/integrations';
 
 export const MANUAL = '__manual__';
 export const NEW_GROUP = '__new__';
