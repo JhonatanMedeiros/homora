@@ -4,10 +4,11 @@ import { createObservationStore } from './observations.js';
 import { createRollupStore } from './rollup.js';
 import { serviceSignature } from './signature.js';
 import type { ServiceStatus } from './monitor.js';
+import { CARD_SCHEMA } from '../test-card-schema.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
-const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT);
+const schema = `${CARD_SCHEMA}
   CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER);
   INSERT INTO config_version VALUES(1,1);
   CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
@@ -36,7 +37,7 @@ function open() {
   const db = new DatabaseSync(':memory:');
   db.exec(schema);
   db.prepare(
-    "INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(1,'https://s.test',0,'http',30)",
+    "INSERT INTO service_cards(id,url,allow_private,check_type,check_interval) VALUES(1,'https://s.test',0,'http',30)",
   ).run();
   const rollup = createRollupStore(db);
   return { db, rollup, store: createObservationStore(db, rollup) };

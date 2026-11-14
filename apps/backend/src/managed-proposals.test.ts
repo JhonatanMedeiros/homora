@@ -1,12 +1,13 @@
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { createProposalService } from './proposals.js';
+import { CARD_SCHEMA } from './test-card-schema.js';
 
 function fixture() {
   const db = new DatabaseSync(':memory:');
   db.exec(`
     PRAGMA foreign_keys=ON;
-    CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT NOT NULL,url TEXT NOT NULL,category TEXT NOT NULL,description TEXT NOT NULL,icon TEXT NOT NULL DEFAULT '',position INTEGER NOT NULL DEFAULT 0,allow_private INTEGER NOT NULL DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
+    ${CARD_SCHEMA}
     CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
     CREATE TABLE integration_instances(id INTEGER PRIMARY KEY,type TEXT NOT NULL,name TEXT NOT NULL,public_config TEXT NOT NULL,secret_ref TEXT,certificate_ref TEXT);
@@ -19,7 +20,7 @@ function fixture() {
     CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);
     CREATE TABLE service_maintenance(id INTEGER PRIMARY KEY AUTOINCREMENT,service_id INTEGER NOT NULL,starts_at INTEGER NOT NULL,ends_at INTEGER NOT NULL,note TEXT NOT NULL DEFAULT '');
     INSERT INTO service_groups VALUES(1,'Media',0,NULL,1),(2,'Apps',1,NULL,1);
-    INSERT INTO services(id,name,url,category,description,position) VALUES(1,'A','https://a.example','Media','',0),(2,'B','https://b.example','Media','',1),(3,'C','https://c.example','Apps','',0);
+    INSERT INTO service_cards(id,name,url,category,description,position) VALUES(1,'A','https://a.example','Media','',0),(2,'B','https://b.example','Media','',1),(3,'C','https://c.example','Apps','',0);
     INSERT INTO integration_instances VALUES(1,'jellyfin','Media','{"url":"https://media.example","allowPrivate":false}','encrypted-secret',NULL);
   `);
   const api = createProposalService(db);

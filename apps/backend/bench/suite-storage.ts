@@ -121,12 +121,16 @@ export async function suiteMonitor() {
   // 1. Pure scheduler cost: the check returns immediately, so this is CPU/memory of bookkeeping + publish.
   for (const count of profile!.monitorInstant) {
     const list = makeServices(count);
-    sqlite.exec('DELETE FROM services');
-    const insert = sqlite.prepare(
-      'INSERT INTO services(id,name,url,category,description,position) VALUES (?,?,?,?,?,?)',
+    sqlite.exec('DELETE FROM monitors');
+    const insertMonitor = sqlite.prepare('INSERT INTO monitors(id,name) VALUES (?,?)');
+    const insertCard = sqlite.prepare(
+      'INSERT INTO services(id,url,category,description,position) VALUES (?,?,?,?,?)',
     );
     sqlite.exec('BEGIN');
-    for (const s of list) insert.run(s.id, s.name, s.url, s.category, '', s.position ?? 0);
+    for (const s of list) {
+      insertMonitor.run(s.id, s.name);
+      insertCard.run(s.id, s.url, s.category, '', s.position ?? 0);
+    }
     sqlite.exec('COMMIT');
     let publishMs = 0;
     const monitor = createServiceMonitor(

@@ -1,7 +1,7 @@
 import { registerPageWidgetRoutes } from './routes/page-widgets.js';
 import Fastify from 'fastify';
 import type { Service } from '@homora/shared';
-import { createDatabase, getSqliteHandle, services } from '@homora/db';
+import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
 import {
@@ -86,7 +86,12 @@ export function createApp(
   // An old backend process may have stopped without clearing its last observation.
   observations.clear();
   const serviceMonitor = createServiceMonitor(
-    () => db.select().from(services).orderBy(services.id) as Promise<Service[]>,
+    async () =>
+      sqlite
+        .prepare(
+          'SELECT id,name,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets ORDER BY id',
+        )
+        .all() as unknown as Service[],
     undefined,
     undefined,
     (rows, states) => {
@@ -116,7 +121,7 @@ export function createApp(
     incidents.rebuildFromHistory(
       sqlite
         .prepare(
-          'SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_match AS checkMatch FROM services',
+          'SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets',
         )
         .all() as unknown as Service[],
     );

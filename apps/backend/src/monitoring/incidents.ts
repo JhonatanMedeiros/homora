@@ -270,7 +270,7 @@ export function createIncidentStore(db: DatabaseSync) {
     },
 
     serviceExists(serviceId: number) {
-      return db.prepare('SELECT 1 FROM services WHERE id=?').get(serviceId) !== undefined;
+      return db.prepare('SELECT 1 FROM monitors WHERE id=?').get(serviceId) !== undefined;
     },
     settingsOf(serviceId: number): MonitorSettings {
       return readSettings().get(serviceId) ?? DEFAULT_MONITOR_SETTINGS;

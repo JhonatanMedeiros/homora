@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Service } from '@homora/shared';
 import { createMaintenanceStore, MaintenanceError } from './maintenance.js';
 import { createServiceMonitor } from './monitor.js';
+import { CARD_SCHEMA } from '../test-card-schema.js';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -10,8 +11,8 @@ const now = Date.parse('2026-11-12T12:00:00.000Z');
 
 function setup() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY);
-    INSERT INTO services(id) VALUES(1),(2);
+  db.exec(`${CARD_SCHEMA}
+    INSERT INTO service_cards(id) VALUES(1),(2);
     CREATE TABLE service_maintenance(id INTEGER PRIMARY KEY AUTOINCREMENT,service_id INTEGER NOT NULL,starts_at INTEGER NOT NULL,ends_at INTEGER NOT NULL,note TEXT NOT NULL DEFAULT '');`);
   return createMaintenanceStore(db);
 }

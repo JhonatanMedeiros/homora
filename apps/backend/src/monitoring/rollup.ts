@@ -42,7 +42,7 @@ export function createRollupStore(db: DatabaseSync) {
              SELECT h.service_id,(h.observed_at/${HOUR})*${HOUR},
                SUM(h.status='available'),SUM(h.status='unavailable'),
                SUM(h.status IS NOT 'available' AND h.status IS NOT 'unavailable')
-             FROM service_observation_history h JOIN services s ON s.id=h.service_id
+             FROM service_observation_history h JOIN monitors s ON s.id=h.service_id
              GROUP BY h.service_id,(h.observed_at/${HOUR})`,
           )
           .run().changes,

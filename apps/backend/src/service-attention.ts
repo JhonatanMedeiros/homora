@@ -13,8 +13,11 @@ type AckRow = Acknowledgement & { serviceId: number };
  * timed mute. None of it changes how a service is checked or when notifications go out.
  */
 export function createServiceAttention(sqlite: DatabaseSync, now: () => number = Date.now) {
-  const exists = (id: number) =>
+  // Favorites belong to the dashboard card; acknowledgements belong to whatever is monitored, probes included.
+  const cardExists = (id: number) =>
     Boolean(sqlite.prepare('SELECT id FROM services WHERE id=?').get(id));
+  const exists = (id: number) =>
+    Boolean(sqlite.prepare('SELECT id FROM monitors WHERE id=?').get(id));
   return {
     pinnedIds(): Set<number> {
       const rows = sqlite.prepare('SELECT service_id AS id FROM service_pins').all() as {
@@ -24,7 +27,7 @@ export function createServiceAttention(sqlite: DatabaseSync, now: () => number =
     },
     /** Returns false when the service does not exist. */
     setPinned(id: number, pinned: boolean): boolean {
-      if (!exists(id)) return false;
+      if (!cardExists(id)) return false;
       if (pinned)
         sqlite
           .prepare('INSERT OR IGNORE INTO service_pins(service_id,pinned_at) VALUES(?,?)')

@@ -21,24 +21,30 @@ export function seedDatabase(sqlite: DatabaseSync, options: SeedOptions) {
   const port = options.target?.port ?? 18000;
   sqlite.exec('BEGIN');
   const insertGroup = sqlite.prepare('INSERT INTO service_groups(name, position) VALUES (?, ?)');
-  const insertService = sqlite.prepare(
-    'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval) VALUES (?,?,?,?,?,?,?,?,?)',
+  const insertMonitor = sqlite.prepare(
+    'INSERT INTO monitors(name,allow_private,check_type,check_interval) VALUES (?,?,?,?)',
+  );
+  const insertCard = sqlite.prepare(
+    'INSERT INTO services(id,url,category,description,icon,position) VALUES (?,?,?,?,?,?)',
   );
   for (let g = 0; g < options.groups; g++) insertGroup.run(`Group ${g}`, g);
   const rows: { id: number; signature: string }[] = [];
   for (let i = 0; i < options.services; i++) {
     const url = `http://${host}:${port}/svc/${i}`;
     const allowPrivate = options.allowPrivate ? 1 : 0;
-    const result = insertService.run(
+    const result = insertMonitor.run(
       `Service ${i}`,
+      allowPrivate,
+      'http',
+      options.checkInterval ?? null,
+    );
+    insertCard.run(
+      Number(result.lastInsertRowid),
       url,
       `Group ${i % options.groups}`,
       `Benchmark service number ${i}`,
       'brand:nextcloud',
       Math.floor(i / options.groups),
-      allowPrivate,
-      'http',
-      options.checkInterval ?? null,
     );
     rows.push({
       id: Number(result.lastInsertRowid),

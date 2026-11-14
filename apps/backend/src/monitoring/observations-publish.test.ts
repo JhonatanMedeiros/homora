@@ -2,8 +2,9 @@ import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { createObservationStore } from './observations.js';
 import type { ServiceStatus } from './monitor.js';
+import { CARD_SCHEMA } from '../test-card-schema.js';
 
-const schema = `CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT);
+const schema = `${CARD_SCHEMA}
   CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER);
   INSERT INTO config_version VALUES(1,1);
   CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
@@ -32,7 +33,7 @@ const open = () => {
   db.exec(schema);
   for (const id of [1, 2, 3])
     db.prepare(
-      "INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(?,?,0,'http',30)",
+      "INSERT INTO service_cards(id,url,allow_private,check_type,check_interval) VALUES(?,?,0,'http',30)",
     ).run(id, `https://s${id}.test`);
   return db;
 };
@@ -107,7 +108,7 @@ describe('cached uptime', () => {
       expect(await store.uptimeBody('24h', now + 11_000)).not.toBe(a);
       // A configuration change drops it at once.
       db.prepare('UPDATE config_version SET version=version+1').run();
-      db.prepare('DELETE FROM services WHERE id=1').run();
+      db.prepare('DELETE FROM monitors WHERE id=1').run();
       expect(
         Object.keys(JSON.parse((await store.uptimeBody('24h', now + 1500)).toString()) as object),
       ).toEqual(['2', '3']);
