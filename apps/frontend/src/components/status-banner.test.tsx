@@ -135,3 +135,29 @@ it('hides the windows when nothing can open them', () => {
   show({ statuses: { 1: ok, 2: ok, 3: ok } });
   expect(screen.queryByRole('list', { name: /janela por serviço/i })).toBeNull();
 });
+
+it('says the monitor cannot measure, instead of listing services as down', () => {
+  const onConnections = vi.fn();
+  render(
+    <StatusBanner
+      services={services}
+      statuses={{
+        1: { ...down, reason: 'no-response' },
+        2: { ...down, reason: 'no-response' },
+        3: { ...down, reason: 'no-response' },
+      }}
+      blockedIds={new Set()}
+      overview={overview({
+        measurement: { startedAt: now - 60_000, reason: 'no-response', failing: 3, measured: 3 },
+      })}
+      uptime={{}}
+      range="24h"
+      now={now}
+      onOpenConnections={onConnections}
+    />,
+  );
+  expect(screen.getByRole('status').textContent).toBe('O monitoramento não consegue medir agora');
+  expect(screen.queryByText(/problema/i)).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Revisar conexões' }));
+  expect(onConnections).toHaveBeenCalledOnce();
+});

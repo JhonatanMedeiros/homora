@@ -1,9 +1,12 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { PROBES_GROUP } from '@homora/shared';
-import type { createObservationStore } from './monitoring/index.js';
+import type { createMeasurementGuard, createObservationStore } from './monitoring/index.js';
 
 type Observations = ReturnType<typeof createObservationStore>;
+type Measurement = Pick<ReturnType<typeof createMeasurementGuard>, 'current'>;
 export type PublicState = 'up' | 'down' | 'unknown';
+/** `unavailable`: the monitor could not measure, so no service is reported up or down. */
+export type PublicMonitoring = 'ok' | 'unavailable';
 export const PUBLIC_NAME_MAX = 60;
 export const PUBLIC_DESCRIPTION_MAX = 160;
 const ENABLED_KEY = 'public_status_enabled';
@@ -23,7 +26,11 @@ const INCIDENT_LIMIT = 20;
  * happened. Never URLs, descriptions, addresses, latency, HTTP codes, failure reasons, maintenance
  * notes or internal ids.
  */
-export function createPublicStatus(sqlite: DatabaseSync, observations: Observations) {
+export function createPublicStatus(
+  sqlite: DatabaseSync,
+  observations: Observations,
+  measurement?: Measurement,
+) {
   const getSetting = (key: string) =>
     (
       sqlite.prepare('SELECT value FROM app_settings WHERE key=?').get(key) as
@@ -52,6 +59,9 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
           : 'unknown';
 
   function build(now: number) {
+    // While the measurer is the one failing, nothing it reported since then says anything about
+    // the services: they are never shown as down, and never as up either.
+    const blind = measurement?.current()?.startedAt ?? null;
     const rows = sqlite
       .prepare(
         `SELECT m.id,m.name,COALESCE(s.category,?) AS category FROM monitors m LEFT JOIN services s ON s.id=m.id
@@ -123,6 +133,7 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
       active: row.startsAt <= now,
     }));
     return {
+      monitoring: (blind === null ? 'ok' : 'unavailable') as PublicMonitoring,
       incidents,
       maintenance,
       title: settings().title,
@@ -143,13 +154,20 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
             longUp + longDown ? Math.round((longUp / (longUp + longDown)) * 1000) / 10 : null,
           days: Array.from({ length: PUBLIC_DAYS }, (_, index): PublicState => {
             const day = days?.get(dayStart + index * DAY_MS);
+            if (blind !== null && dayStart + (index + 1) * DAY_MS > blind && day && day.down > 0)
+              return 'unknown';
             return !day || day.up + day.down === 0 ? 'unknown' : day.down > 0 ? 'down' : 'up';
           }),
-          status: observation ? stateOf(observation.status, observation.stale) : 'unknown',
+          status:
+            blind === null && observation
+              ? stateOf(observation.status, observation.stale)
+              : ('unknown' as PublicState),
           checkedAt: observation?.lastAttempt ?? null,
           uptime: total ? Math.round((up / total) * 1000) / 10 : null,
           bars: Array.from({ length: BAR_COUNT }, (_, index): PublicState => {
             const bar = bars[index];
+            if (blind !== null && start + (index + 1) * BAR_MS > blind && bar && bar.down > 0)
+              return 'unknown';
             return !bar || bar.up + bar.down === 0 ? 'unknown' : bar.down > 0 ? 'down' : 'up';
           }),
         };

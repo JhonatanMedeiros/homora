@@ -323,6 +323,7 @@ export function ServicesPage({
             maintenance={maintenance.windows}
             uptime={uptime}
             range={uptimeRange}
+            onOpenConnections={() => navigate('/manage/integrations')}
             onOpenService={(id) =>
               allProbes.some((probe) => probe.id === id)
                 ? navigate('/manage/probes')

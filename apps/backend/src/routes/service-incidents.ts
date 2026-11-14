@@ -1,5 +1,9 @@
 import type { FastifyInstance } from 'fastify';
-import type { createIncidentStore, createObservationStore } from '../monitoring/index.js';
+import type {
+  createIncidentStore,
+  createMeasurementGuard,
+  createObservationStore,
+} from '../monitoring/index.js';
 import { errorBody } from '../api-error.js';
 import {
   incidentQuerySchema,
@@ -15,10 +19,25 @@ export function registerServiceIncidentRoutes(
   app: FastifyInstance,
   incidents: ReturnType<typeof createIncidentStore>,
   observations: ReturnType<typeof createObservationStore>,
+  measurement: Pick<ReturnType<typeof createMeasurementGuard>, 'current'>,
   auth: ReturnType<typeof createAuth>,
   audit: AuditLog,
 ) {
-  app.get('/api/status-overview', async () => incidents.overview(() => observations.uptime('30d')));
+  app.get('/api/status-overview', async () => {
+    const open = measurement.current();
+    return {
+      ...incidents.overview(() => observations.uptime('30d')),
+      // Never cached with the rest: it must show up and clear as soon as it happens.
+      measurement: open
+        ? {
+            startedAt: open.startedAt,
+            reason: open.reason,
+            failing: open.failing,
+            measured: open.measured,
+          }
+        : null,
+    };
+  });
   app.get<{ Params: { id: string }; Querystring: Record<string, string> }>(
     '/api/services/:id/incidents',
     async (request, reply) => {

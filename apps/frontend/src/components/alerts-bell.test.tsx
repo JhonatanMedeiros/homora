@@ -194,3 +194,38 @@ it('names a probe event as a probe', async () => {
   fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
   expect(await screen.findByText('Probe recovered')).toBeTruthy();
 });
+
+it('shows one measurement alert that says it is not a service outage', async () => {
+  setLocale('en');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            unread: 1,
+            nextBefore: null,
+            items: [
+              {
+                id: 1,
+                serviceId: null,
+                serviceName: '',
+                kind: 'measurement-down',
+                confirmedAt: 1700000000000,
+                startedAt: 1700000000000,
+                endedAt: null,
+                reason: 'destination-blocked',
+                httpStatus: null,
+                readAt: null,
+              },
+            ],
+          }),
+        ),
+    ),
+  );
+  render(<AlertsBell onService={vi.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
+  expect(await screen.findByText('Monitoring cannot measure')).toBeTruthy();
+  expect(screen.getByText(/Not a service outage/)).toBeTruthy();
+  expect(screen.queryByText(/removed/i)).toBeNull();
+});

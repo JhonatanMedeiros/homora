@@ -5,6 +5,7 @@ import { createTestSession } from './test-auth.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { createObservationStore, type ServiceStatus } from './monitoring/index.js';
 import type { Service } from '@homora/shared';
+import { createPublicStatus } from './public-status.js';
 
 // The real monitor would probe the fake URLs and overwrite the observations set up below.
 vi.mock('./monitoring/monitor.js', () => ({
@@ -107,6 +108,36 @@ describe('public status', () => {
     ]);
     for (const leak of ['secret-note-marker', 'Hidden-one', 'no-response'])
       expect(response.body).not.toContain(leak);
+    await app.close();
+  });
+
+  it('says monitoring is unavailable, and shows nothing as down or up, while the measurer fails', async () => {
+    const { app, sqlite, create, observe, configure, share } = await setup();
+    const id = await create('Jellyfin');
+    observe(id, 'unavailable');
+    await share(id, true);
+    await configure({ enabled: true });
+    const store = createObservationStore(sqlite);
+    const now = Date.now();
+    sqlite
+      .prepare(
+        'INSERT INTO service_uptime_rollup(service_id,hour,up,down,unknown) VALUES(?,?,?,?,0)',
+      )
+      .run(id, Math.floor(now / 3_600_000) * 3_600_000, 0, 5);
+    const incident = { startedAt: now - 3_600_000 };
+    const blind = createPublicStatus(sqlite, store, { current: () => incident as never });
+    const body = blind.snapshot()!;
+    expect(body.monitoring).toBe('unavailable');
+    expect(body.services[0].status).toBe('unknown');
+    for (const list of [body.services[0].bars, body.services[0].days])
+      expect(list).not.toContain('down');
+    // Short and without internals: no reason, address or counts.
+    for (const leak of ['destination', 'no-response', SECRET_URL, 'failing'])
+      expect(JSON.stringify(body)).not.toContain(leak);
+
+    const healthy = createPublicStatus(sqlite, store, { current: () => null }).preview();
+    expect(healthy.monitoring).toBe('ok');
+    expect(healthy.services[0].status).toBe('down');
     await app.close();
   });
 

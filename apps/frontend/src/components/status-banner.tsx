@@ -32,6 +32,8 @@ type Props = {
   now?: number;
   /** Opens the details of a service; when set, the pulse shows one clickable window per service. */
   onOpenService?: (id: number) => void;
+  /** Where to look when the monitor itself cannot measure. */
+  onOpenConnections?: () => void;
 };
 
 const MAX_NAMED = 2;
@@ -113,6 +115,7 @@ export function StatusBanner({
   range,
   now: fixedNow,
   onOpenService,
+  onOpenConnections,
 }: Props) {
   const clock = useNow();
   const now = fixedNow ?? clock;
@@ -138,7 +141,13 @@ export function StatusBanner({
       windows.push({ id: service.id, name: service.name, state: 'maintenance' });
       continue;
     }
-    const isBlocked = blockedIds.has(service.id) && status?.status !== 'available';
+    // Failures that belong to the monitor's own failure say nothing about the service.
+    const isBlocked =
+      (blockedIds.has(service.id) && status?.status !== 'available') ||
+      (overview?.measurement !== undefined &&
+        overview.measurement !== null &&
+        status?.status === 'unavailable' &&
+        status.reason === overview.measurement.reason);
     const slowNow =
       status?.status === 'available' &&
       isDegraded(overview?.settings[service.id], status.status, status.latencyMs);
@@ -174,8 +183,10 @@ export function StatusBanner({
     } else unknown++;
   }
   const problems = down.length + slow.length;
-  const title =
-    problems > 0
+  const measurement = overview?.measurement ?? null;
+  const title = measurement
+    ? t('banner.measurement.title')
+    : problems > 0
       ? problems === 1
         ? t('banner.problem.one')
         : t('banner.problem.other', { count: problems })
@@ -187,15 +198,28 @@ export function StatusBanner({
           ? t('banner.allMonitoredUp')
           : t('banner.allUp');
   const named = [...down, ...slow];
-  const subtitle = [
-    ...named.slice(0, MAX_NAMED),
-    ...(named.length > MAX_NAMED ? [t('banner.more', { count: named.length - MAX_NAMED })] : []),
-    ...(blocked > 0
-      ? [blocked === 1 ? t('banner.blocked.one') : t('banner.blocked.other', { count: blocked })]
-      : []),
-  ].join(' · ');
-  const tone =
-    down.length > 0 ? 'down' : problems > 0 || unknown > 0 || blocked > 0 ? 'warn' : 'ok';
+  const subtitle = measurement
+    ? t('banner.measurement.detail')
+    : [
+        ...named.slice(0, MAX_NAMED),
+        ...(named.length > MAX_NAMED
+          ? [t('banner.more', { count: named.length - MAX_NAMED })]
+          : []),
+        ...(blocked > 0
+          ? [
+              blocked === 1
+                ? t('banner.blocked.one')
+                : t('banner.blocked.other', { count: blocked }),
+            ]
+          : []),
+      ].join(' · ');
+  const tone = measurement
+    ? 'warn'
+    : down.length > 0
+      ? 'down'
+      : problems > 0 || unknown > 0 || blocked > 0
+        ? 'warn'
+        : 'ok';
 
   const values = services
     .map((service) => uptime[service.id]?.uptimePct)
@@ -256,6 +280,17 @@ export function StatusBanner({
                 >
                   {subtitle}
                 </p>
+              )}
+              {measurement && onOpenConnections && (
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="mt-1 h-auto p-0"
+                  onClick={onOpenConnections}
+                >
+                  {t('banner.measurement.action')}
+                </Button>
               )}
             </div>
             <Button

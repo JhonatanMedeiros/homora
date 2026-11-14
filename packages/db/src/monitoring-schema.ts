@@ -121,6 +121,25 @@ export const serviceIncidents = sqliteTable(
 );
 
 /**
+ * Periods in which the monitor itself could not measure: most monitors failed for the same reason,
+ * so the failure is the measurer's, not the services'. Global scope; `monitors` lists who failed.
+ */
+export const measurementIncidents = sqliteTable(
+  'measurement_incidents',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    startedAt: integer('started_at').notNull(),
+    endedAt: integer('ended_at'),
+    reason: text('reason').notNull(),
+    failing: integer('failing').notNull(),
+    measured: integer('measured').notNull(),
+    /** JSON array of `{ id, name, reason }` for each monitor that failed. */
+    monitors: text('monitors').notNull().default('[]'),
+  },
+  (table) => [index('measurement_incidents_started_idx').on(table.startedAt)],
+);
+
+/**
  * Scheduled maintenance of one service. While a window is open the service is not probed and its
  * checks are recorded as unknown, so they count neither as downtime nor as uptime and raise no alert.
  */

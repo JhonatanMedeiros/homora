@@ -38,6 +38,10 @@ export const en = {
   'banner.problem.one': '1 service has a problem',
   'banner.problem.other': '{count} services have problems',
   'banner.unknown.one': '1 service has no recent information',
+  'banner.measurement.title': 'Monitoring cannot measure right now',
+  'banner.measurement.detail':
+    'Most monitors failed for the same reason, so this is not a service outage. Individual incidents are held back until it measures again.',
+  'banner.measurement.action': 'Review connections',
   'banner.unknown.other': '{count} services have no recent information',
   'banner.allMonitoredUp': 'All monitored services are up',
   'banner.blocked.one': '1 service not monitored (private network not authorized)',
@@ -116,6 +120,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'banner.problem.one': '1 serviço com problema',
   'banner.problem.other': '{count} serviços com problema',
   'banner.unknown.one': '1 serviço sem informação recente',
+  'banner.measurement.title': 'O monitoramento não consegue medir agora',
+  'banner.measurement.detail':
+    'A maioria dos monitores falhou pelo mesmo motivo, então isto não é queda de serviço. Incidentes individuais ficam em espera até voltar a medir.',
+  'banner.measurement.action': 'Revisar conexões',
   'banner.unknown.other': '{count} serviços sem informação recente',
   'banner.allMonitoredUp': 'Todos os serviços monitorados no ar',
   'banner.blocked.one': '1 serviço sem monitoramento (rede privada não autorizada)',

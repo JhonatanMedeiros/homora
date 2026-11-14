@@ -61,3 +61,20 @@ it('still renders for a server without the 90-day data', () => {
   expect(screen.queryByRole('img', { name: /90 days/ })).toBeNull();
   expect(screen.queryByText('Incidents in the last 30 days')).toBeNull();
 });
+
+it('says monitoring is unavailable, in neutral words, when the monitor cannot measure', () => {
+  setLocale('en');
+  render(
+    <PublicStatusView
+      data={{
+        ...base,
+        monitoring: 'unavailable',
+        services: [{ ...base.services[0], status: 'unknown' }],
+      }}
+    />,
+  );
+  expect(screen.getByRole('status').textContent).toContain('Monitoring unavailable');
+  expect(screen.getByRole('status').textContent).toContain('not a report that they are down');
+  expect(screen.queryByText('All systems operational')).toBeNull();
+  expect(screen.queryByText('Some services are down')).toBeNull();
+});

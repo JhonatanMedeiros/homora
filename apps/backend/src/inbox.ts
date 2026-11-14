@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { IncidentTransition } from './monitoring/index.js';
+import type { IncidentTransition, MeasurementTransition } from './monitoring/index.js';
 
 const RETENTION_MS = 90 * 24 * 60 * 60_000;
 const MAX_ITEMS = 10_000;
@@ -8,7 +8,7 @@ type InboxRow = {
   id: number;
   serviceId: number | null;
   incidentId: number | null;
-  kind: 'down' | 'up';
+  kind: 'down' | 'up' | 'measurement-down' | 'measurement-up';
   serviceName: string;
   confirmedAt: number;
   startedAt: number;
@@ -49,6 +49,21 @@ export function createInbox(db: DatabaseSync) {
           event.serviceId,
         );
       if (inserted.changes) prune();
+    },
+    /** One entry for a measurement failure, not one per monitor; it has no service. */
+    recordMeasurement(event: MeasurementTransition) {
+      db.prepare(
+        `INSERT INTO inbox_notifications
+        (service_id, incident_id, kind, service_name, confirmed_at, started_at, ended_at, reason, http_status)
+        VALUES (NULL, NULL, ?, '', ?, ?, ?, ?, NULL)`,
+      ).run(
+        event.kind === 'down' ? 'measurement-down' : 'measurement-up',
+        event.at,
+        event.incident.startedAt,
+        event.incident.endedAt,
+        event.incident.reason,
+      );
+      prune();
     },
     list(limit: number, before?: number) {
       prune();

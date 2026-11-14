@@ -290,6 +290,17 @@ which feeds `rollup.ts` hourly rows) and to the notification callback wired in `
 notifications. Imports inside the folder are acyclic (`probe` <- `monitor`; `rollup` <- `observations`;
 `signature` is a leaf); `observations` and `incidents` take only types from `monitor`.
 
+`measurement.ts` tells a failing measurer from failing services. When at least 80% of the measured monitors
+(and at least four) fail with the same `reason` in two consecutive cycles, `app.ts` stops feeding those checks
+to incidents and notifications (they see them as `unknown`; the first such cycle is held back, so a real outage
+that is not widespread is delayed by one cycle at most) and one global row in `measurement_incidents` is opened.
+Monitors failing for another reason keep their own incidents. The first cycle that is no longer widespread
+closes it; checks made while blind are never counted afterwards. It adds one inbox entry (`measurement-down`/
+`measurement-up`, no service) and one audit event (`monitoring-measurement`, actor `system`), exposes
+`measurement` on `GET /api/status-overview` (Home banner) and makes the public status payload carry
+`monitoring: 'unavailable'` with every service `unknown` and no `down` bar since the failure started. The
+observation history and uptime still record the raw failures: the uptime series is not corrected yet.
+
 Pure versus I/O: `check-body.ts`, `signature.ts` and the classification functions in `probe.ts` are pure;
 `network-checks.ts` and the probe execution do network I/O; `observations`, `rollup`, `uptime`,
 `incidents` and `maintenance` take a `DatabaseSync` and do SQLite I/O; `monitor.ts` owns timers.

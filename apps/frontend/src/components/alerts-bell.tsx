@@ -12,7 +12,7 @@ import { formatDuration, reasonText } from '@/features/uptime/uptime-view';
 type Item = {
   id: number;
   serviceId: number | null;
-  kind: 'down' | 'up';
+  kind: 'down' | 'up' | 'measurement-down' | 'measurement-up';
   serviceName: string;
   confirmedAt: number;
   startedAt: number;
@@ -170,18 +170,24 @@ export function AlertsBell({
                 <div className="flex justify-between gap-2">
                   <strong>
                     {t(
-                      item.probe
-                        ? item.kind === 'down'
-                          ? 'bell.probeDown'
-                          : 'bell.probeUp'
-                        : item.kind === 'down'
-                          ? 'bell.down'
-                          : 'bell.up',
+                      item.kind === 'measurement-down'
+                        ? 'bell.measurementDown'
+                        : item.kind === 'measurement-up'
+                          ? 'bell.measurementUp'
+                          : item.probe
+                            ? item.kind === 'down'
+                              ? 'bell.probeDown'
+                              : 'bell.probeUp'
+                            : item.kind === 'down'
+                              ? 'bell.down'
+                              : 'bell.up',
                     )}
                   </strong>
                   {item.readAt === null && <span>{t('bell.unread')}</span>}
                 </div>
-                {item.serviceId !== null ? (
+                {item.kind.startsWith('measurement') ? (
+                  <span>{t('bell.measurementNote')}</span>
+                ) : item.serviceId !== null ? (
                   <Button
                     variant="link"
                     className="h-auto min-h-10 justify-start whitespace-normal break-all p-0 text-left"
@@ -203,7 +209,9 @@ export function AlertsBell({
                 >
                   {formatDateTime(item.confirmedAt)}
                 </time>
-                {item.reason && <span>{reasonText(item.reason, item.httpStatus)}</span>}
+                {item.reason && !item.kind.startsWith('measurement') && (
+                  <span>{reasonText(item.reason, item.httpStatus)}</span>
+                )}
                 {item.endedAt !== null && (
                   <span>
                     {t('bell.duration', {
@@ -216,7 +224,9 @@ export function AlertsBell({
                     variant="outline"
                     size="sm"
                     disabled={busy}
-                    aria-label={t('bell.readService', { service: item.serviceName })}
+                    aria-label={t('bell.readService', {
+                      service: item.serviceName || t('bell.measurementDown'),
+                    })}
                     onClick={() => void mark(`/api/inbox/${item.id}/read`)}
                   >
                     {t('bell.read')}

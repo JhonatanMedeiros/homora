@@ -10,12 +10,16 @@ export type PublicService = {
   days?: PublicState[];
   uptime90?: number | null;
 };
+/** `unavailable`: the monitor could not measure; no service is reported up or down. */
+export type PublicMonitoring = 'ok' | 'unavailable';
 export type PublicIncident = { name: string; startedAt: string; endedAt: string | null };
 export type PublicMaintenance = { name: string; startsAt: string; endsAt: string; active: boolean };
 export type PublicStatus = {
   title: string;
   description?: string;
   updatedAt: string;
+  /** Absent on a server that predates the measurement guard. */
+  monitoring?: PublicMonitoring;
   services: PublicService[];
   incidents?: PublicIncident[];
   maintenance?: PublicMaintenance[];
