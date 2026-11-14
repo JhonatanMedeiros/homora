@@ -77,3 +77,20 @@ COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/geist/LIC
 COPY --from=build /app/apps/frontend/node_modules/@fontsource-variable/geist-mono/LICENSE /usr/share/doc/homora/fonts/geist-mono-OFL.txt
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+
+# Single-container distribution: the backend stays on loopback behind unprivileged nginx.
+FROM backend AS homora
+LABEL org.opencontainers.image.title="Homora" \
+      org.opencontainers.image.description="Self-hosted dashboard and API"
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends nginx \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
+COPY --from=frontend /usr/share/doc/homora /usr/share/doc/homora
+COPY --chown=node:node docker/start.mjs /app/docker/start.mjs
+COPY --chown=node:node scripts/backup.mjs /app/scripts/backup.mjs
+USER node
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:8080/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+CMD ["node", "docker/start.mjs"]
