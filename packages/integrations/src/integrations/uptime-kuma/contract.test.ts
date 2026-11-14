@@ -1,7 +1,7 @@
-import { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';
-import { fixture, urlCases } from '../../../../../apps/backend/src/integration-test-support.js';
+import { runAdapterContract } from '../../../test-support/adapter-contract.js';
+import { fixture, urlCases } from '../../../test-support/integration-test-support.js';
 import { uptimeKumaManifest } from './definition.js';
-import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';
+import { createManifestAdapter } from '../../../test-support/integration-test-support.js';
 
 runAdapterContract({
   name: 'uptime-kuma',

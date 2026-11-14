@@ -94,9 +94,8 @@ export default tseslint.config(
     },
   },
   {
-    // Runtime integrations are host-independent; their contract tests still use backend helpers.
-    files: ['packages/integrations/src/**/*.{ts,tsx,js,jsx,mjs,cjs}'],
-    ignores: ['**/*.test.*', '**/*.spec.*'],
+    // Integration runtime and tests are host-independent.
+    files: ['packages/integrations/{src,test-support}/**/*.{ts,tsx,js,jsx,mjs,cjs}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -109,6 +108,31 @@ export default tseslint.config(
             {
               regex: '(^|/)apps/(backend|frontend)(/|$)',
               message: 'Integration runtime must not depend on application source.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Widget contracts, presentations and their tests are independent of host and integrations.
+    files: ['packages/widgets/{src,test-support}/**/*.{ts,tsx,js,jsx,mjs,cjs}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^@homora/(backend|frontend|db|shared|integrations)(/|$)',
+              message: 'Widgets must not depend on applications or integrations.',
+            },
+            {
+              regex: '(^|/)apps/(backend|frontend)(/|$)',
+              message: 'Widgets must not depend on application source.',
+            },
+            {
+              regex: '^\\.{1,2}/(?:.*/)?integrations(/|$)',
+              message: 'Widgets must not depend on integration source.',
             },
           ],
         },

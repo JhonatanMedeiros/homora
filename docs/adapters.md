@@ -117,11 +117,15 @@ service-neutral contract and add a synthetic test for a second domain with diffe
 and data. This demonstrates reuse but does not replace design review; expand transport methods,
 permissions or network capabilities only through the separate review described above.
 
-ESLint reports forbidden static imports in runtime integration and application code; test files are exempt to allow the existing contract helpers. The integration types come from registered descriptors, and backend capability entry-point restrictions remain in force. `pnpm check` also runs the integration boundary tests. They inspect runtime source for direct and
-literal dynamic imports, reexports and comparisons or switches over known integration types, and
-for SDK dependencies on application packages. Test files are excluded because the current contract
-harness lives in the backend. The static check cannot prove independence or discover every indirect
-or dynamically constructed dependency, so reviewers must still inspect the design and widget code.
+ESLint reports forbidden static imports in integration and widget runtime and test code and in application
+runtime code; application test files retain an exception for test helpers. `pnpm check` also
+inspects integration and widget source and test support for forbidden direct imports, and application runtime
+for direct and literal dynamic imports, reexports and common type dispatch. A workspace graph checks
+runtime dependencies, optional and peer dependencies and literal source imports for transitive paths
+from either SDK to application, database or shared packages, and from the widget SDK to integrations. The graph excludes test and development
+dependencies and only follows declared workspaces, not external packages, computed imports or
+TypeScript aliases. These checks cannot establish semantic genericity; review the design and widget
+code, and validate actual network policy separately.
 
 The SDK owns manifest validation, parsing, adapter execution and widget presentation. The host still
 owns configuration, authentication, persistence, route handling, the injected error policy and the
@@ -177,14 +181,11 @@ runAdapterContract({
 ```
 
 Run `pnpm exec vitest run packages/integrations/src/integrations/<type>/contract.test.ts`, then
-`pnpm check` and `pnpm build`. The backend owns the shared test harness and restricted transport implementation;
-integration-specific cases and fixtures live with each integration.
+`pnpm check` and `pnpm build`. The shared adapter contract and fixture helpers live in `packages/integrations/test-support` and do not depend on the applications. Integration-specific cases and fixtures live with each integration. The backend owns the restricted transport and its observation cache; their tests remain in the backend.
 The harness checks, with a fake transport: input validation, request shape (only `origin`, `path`
 and `authorization`; a safe path built from validated config; hostile values such as `../`, `?`, `#`,
-`%2f`, whitespace and control characters rejected), secrets absent from data, errors and the registry
-listing, every response class (valid, wrong shape, oversized, 401/403, 404, 429, 5xx, network error,
-timeout, non-JSON), bounded output and the observation cache (success cached, failure not cached,
-invalidation during a request). `sanitizesTransportErrors: false` is a documented opt-out for adapters
+`%2f`, whitespace and control characters rejected), secrets absent from data and errors, every response class (valid, wrong shape, oversized, 401/403, 404, 429, 5xx, network error,
+timeout, non-JSON), and bounded output. `sanitizesTransportErrors: false` is a documented opt-out for adapters
 whose transport already throws fixed strings; justify it in the test.
 
 ## Live validation template
@@ -222,3 +223,19 @@ Notes / deviations:
 ### Bounded grouped rows
 
 The `rows` extraction projects explicitly named and typed fields from grouped arrays and joins a state from the latest item in an object keyed by a string or integer. The manifest fixes the paths, state mapping, text length and row limit; no expressions or arbitrary output fields are supported. Duplicate keys keep the first row. External names are untrusted data. Exceeding the row limit raises `integration-rows-limit`; malformed input fails closed.
+
+### Minimal host verification
+
+`packages/integrations/src/minimal-host.test.ts` registers a synthetic integration through the
+SDK backend API, checks a widget source contract and renders the declared presentation through the
+SDK frontend API. It covers generic valid and invalid observations without importing Homora apps or
+real service implementations. It exercises the low-level contracts, not the built-in catalog, a
+browser, live transport or a full host implementation; those remain covered by their own tests.
+
+### Independent widget host verification
+
+`packages/widgets/src/minimal-host.test.ts` uses the public widget SDK to register a synthetic
+widget in a minimal host, validate configuration, check source contract and version compatibility,
+and present data. Widget runtime, tests and test support cannot import application or integration
+code; the workspace graph independently starts at `@homora/widgets`. This does not exercise the
+production host, browser rendering, storage, or computed imports.

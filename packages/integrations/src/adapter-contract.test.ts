@@ -1,16 +1,16 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { assertBounded, assertRequestIsSafe, HOSTILE_PATH_VALUES } from './adapter-contract.js';
-import { fixture, fixtureDir } from './integration-test-support.js';
-import { integrationRegistry } from './integration-registry.js';
+import {
+  assertBounded,
+  assertRequestIsSafe,
+  HOSTILE_PATH_VALUES,
+} from '../test-support/adapter-contract.js';
+import { fixture, fixtureDir } from '../test-support/integration-test-support.js';
+import { integrationDefinitions } from '@homora/integrations';
 
 describe('contract coverage', () => {
-  it('lists no secrets and exposes only type, label and capabilities', () => {
-    for (const entry of integrationRegistry.list())
-      expect(Object.keys(entry).sort()).toEqual(['capabilities', 'label', 'type']);
-  });
   it('has a contract run for every registered integration type', () => {
-    for (const { type } of integrationRegistry.list())
+    for (const { type } of integrationDefinitions)
       expect(existsSync(new URL(`${type}/contract.test.ts`, fixtureDir)), type).toBe(true);
   });
   it('requires a source on every fixture', () => {

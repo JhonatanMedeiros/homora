@@ -11,9 +11,19 @@ async function restricted(file, source) {
 
 test('ESLint enforces integration imports without blocking test helpers or capability rules', async () => {
   const sdk = 'packages/integrations/src/boundary-probe.ts';
+  const widget = 'packages/widgets/src/boundary-probe.test.ts';
   const backend = 'apps/backend/src/boundary-probe.ts';
   const frontend = 'apps/frontend/src/boundary-probe.ts';
   assert.equal((await restricted(sdk, "import type { DB } from '@homora/db';")).length, 1);
+  assert.equal(
+    (await restricted(widget, "import type { X } from '@homora/integrations';")).length,
+    1,
+  );
+  assert.equal(
+    (await restricted(widget, "import type { X } from '../../integrations/src/index.js';")).length,
+    1,
+  );
+  assert.equal((await restricted(widget, "import type { X } from './index.js';")).length, 0);
   assert.equal(
     (await restricted(sdk, "import type { DB } from '../../../apps/backend/src/db.js';")).length,
     1,
@@ -25,7 +35,7 @@ test('ESLint enforces integration imports without blocking test helpers or capab
         "import type { DB } from '../../../apps/backend/src/db.js';",
       )
     ).length,
-    0,
+    1,
   );
   assert.equal(
     (

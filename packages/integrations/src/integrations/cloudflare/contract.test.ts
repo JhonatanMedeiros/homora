@@ -1,11 +1,7 @@
-import { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';
-import {
-  fixture,
-  urlCases,
-  long,
-} from '../../../../../apps/backend/src/integration-test-support.js';
+import { runAdapterContract } from '../../../test-support/adapter-contract.js';
+import { fixture, urlCases, long } from '../../../test-support/integration-test-support.js';
 import { cloudflareManifest } from './definition.js';
-import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';
+import { createManifestAdapter } from '../../../test-support/integration-test-support.js';
 
 const cloudflareToken = 'cf-token-SECRET753';
 runAdapterContract({

@@ -58,3 +58,11 @@ generic statistics list would erase semantic guarantees; specific contracts prev
 compatibility. An independent package avoids dependency cycles, but requires inclusion in the
 build and Docker images. The catalog is internal and compiled with the product: this decision
 does not provide a public SDK, dynamic loading, third-party plugins, or expanded network access.
+
+### Boundary verification follow-up
+
+Widget runtime and test code are subject to the same application-import boundary, and also cannot
+depend on integration code. A workspace graph checks transitive runtime dependencies starting at
+`@homora/widgets`, while a synthetic minimal-host test exercises the public widget contracts.
+The graph does not resolve computed imports, TypeScript aliases, development dependencies or external
+packages; the synthetic host does not replace real host, browser or live-service validation.

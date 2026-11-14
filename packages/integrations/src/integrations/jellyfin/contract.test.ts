@@ -1,11 +1,7 @@
-import { runAdapterContract } from '../../../../../apps/backend/src/adapter-contract.js';
-import {
-  fixture,
-  urlCases,
-  long,
-} from '../../../../../apps/backend/src/integration-test-support.js';
+import { runAdapterContract } from '../../../test-support/adapter-contract.js';
+import { fixture, urlCases, long } from '../../../test-support/integration-test-support.js';
 import { jellyfinManifest } from './definition.js';
-import { createManifestAdapter } from '../../../../../apps/backend/src/integration-test-support.js';
+import { createManifestAdapter } from '../../../test-support/integration-test-support.js';
 
 const jellyfin = fixture('jellyfin/system-info-public.json') as Record<string, unknown>;
 runAdapterContract({
