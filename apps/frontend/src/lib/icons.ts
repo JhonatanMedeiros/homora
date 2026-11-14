@@ -208,6 +208,17 @@ const brandNames: ReadonlySet<string> = new Set(BRAND_ICON_NAMES);
 export const brandIconNames: readonly string[] = BRAND_ICON_NAMES;
 export const brandIconUrl = (name: string) => `/brand-icons/${name}.svg`;
 
+/** Use the service origin only; never include credentials, paths, or query parameters. */
+export function faviconUrl(serviceUrl: string): string | null {
+  try {
+    const url = new URL(serviceUrl);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return null;
+    return new URL('/favicon.ico', url.origin).href;
+  } catch {
+    return null;
+  }
+}
+
 const compact = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
 const brandByCompactName = new Map(BRAND_ICON_NAMES.map((name) => [compact(name), name]));
 
