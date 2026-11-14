@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { createServiceConfiguration } from './service-configuration.js';
-import { managedChangeSchema } from './managed-proposals.js';
+import { isIndependentChange, managedChangeSchema } from './managed-proposals.js';
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 
@@ -61,7 +61,8 @@ export function createProposalQueries({
         proposal.batchId &&
         rows.some((other) => other.batchId === proposal.batchId && other.state !== 'pending');
       return incomplete ||
-        proposal.baseVersion !== configuration.version() ||
+        (proposal.baseVersion !== configuration.version() &&
+          !isIndependentChange(managed ?? undefined)) ||
         proposal.baseHash !== (managed ? managedBaseHash(managed) : configHash())
         ? { ...proposal, state: 'stale' }
         : proposal;

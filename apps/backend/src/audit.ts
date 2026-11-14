@@ -49,6 +49,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
   proposal: [
     'proposal',
     'review',
+    'review-undo',
     'expiry',
     'withdraw',
     'proposal-recreate',

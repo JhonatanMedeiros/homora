@@ -151,6 +151,25 @@ export function registerAgentProposalRoutes(
       }
     },
   );
+  const undoRoute = (batch: boolean) =>
+    app.post<{ Params: { id: string } }>(
+      batch ? '/api/proposal-batches/:id/undo' : '/api/proposals/:id/undo',
+      async (request, reply) => {
+        if (!opaqueIdSchema.safeParse(request.params.id).success)
+          return reply.code(404).send(errorBody('proposal-unavailable'));
+        const session = await auth.session(request.headers);
+        if (!session) return reply.code(401).send(errorBody('auth-required'));
+        try {
+          const state = proposals.undoRejection(request.params.id, batch, `user:${session.userId}`);
+          reply.header('Cache-Control', 'no-store');
+          return { state };
+        } catch {
+          return reply.code(409).send(errorBody('proposal-unavailable'));
+        }
+      },
+    );
+  undoRoute(true);
+  undoRoute(false);
   app.post<{ Params: { id: string } }>('/api/proposals/:id/review', async (request, reply) => {
     if (!opaqueIdSchema.safeParse(request.params.id).success)
       return reply.code(404).send(errorBody('proposal-unavailable'));

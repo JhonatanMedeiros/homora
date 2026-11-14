@@ -218,6 +218,21 @@ export const managedChangeSchema = z.discriminatedUnion('kind', [
 ]);
 export type ManagedChange = z.infer<typeof managedChangeSchema>;
 
+/**
+ * Changes that touch one row on their own: their base hash covers only that row, so approving one
+ * does not invalidate the others waiting in the queue (a global configuration version would).
+ */
+export function isIndependentChange(change?: ManagedChange) {
+  if (!change) return false;
+  return (
+    change.kind === 'probe' ||
+    change.kind === 'tag' ||
+    change.kind === 'link' ||
+    change.kind === 'acknowledgement' ||
+    (change.kind === 'pin' && change.change.op !== 'reorder')
+  );
+}
+
 /** This covers every row involved in these changes, including changes made by the web API. */
 export function managedSnapshot(db: DatabaseSync) {
   return {

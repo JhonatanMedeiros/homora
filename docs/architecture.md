@@ -47,7 +47,14 @@ flowchart LR
   that open `agent-dialog.tsx`, where rotation and revocation are confirmed. Each agent's recent
   activity comes from the audited proposal events (`use-agent-activity.ts`), matched by the agent id
   that `/api/activity` now exposes on agent actors; agent reads are not audited, so they do not
-  appear. Token and setup dialogs live in `agent-identity-workspace.tsx`. Service page
+  appear. Reviewing is serial and stable: pending proposals are ordered by creation, one decision is in
+  flight at a time (every decision button waits for it), a stale proposal keeps its disabled approve
+  button in place, a destructive approval asks for confirmation (`approve-button.tsx`), and a rejection
+  can be undone for 60 s (`POST /api/proposals/:id/undo`, `/api/proposal-batches/:id/undo`, audited as
+  `review-undo`; approvals are not undone). A proposal identical to a pending one (same kind, change and
+  base) is returned instead of queued again. Probe, tag, link, acknowledgement and single-pin proposals
+  hash only the row they touch and skip the global configuration version, so approving one does not
+  make the others stale. Token and setup dialogs live in `agent-identity-workspace.tsx`. Service page
   derived data and focus/announcement effects live in `use-service-page-model.ts` and
   `use-service-page-focus.ts`; the page composes them with the editor and group hooks.
   `service-page-editor.tsx` maps the editor hook state to the shared service form dialog,

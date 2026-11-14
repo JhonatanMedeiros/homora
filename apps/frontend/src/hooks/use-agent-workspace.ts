@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { parseDiff, type Agent, type Proposal } from '@/features/agents/agent-model';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { byNewest, parseDiff, type Agent, type Proposal } from '@/features/agents/agent-model';
 import { apiError, t } from '@/i18n';
 import { PROPOSALS_CHANGED } from '@/hooks/use-pending-proposals';
 
@@ -25,6 +25,9 @@ export function useAgentWorkspace(
   const [message, setMessage] = useState('');
   const [loadFailed, setLoadFailed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  /** The proposal being decided: one decision at a time, so a re-render never moves a click. */
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const reviewLock = useRef(false);
   const [ttl, setTtl] = useState('15');
   const [recreating, setRecreating] = useState(false);
 
@@ -125,7 +128,29 @@ export function useAgentWorkspace(
     }
   }
 
+  async function undo(id: string, batch: boolean) {
+    const response = await fetch(
+      batch ? `/api/proposal-batches/${id}/undo` : `/api/proposals/${id}/undo`,
+      { method: 'POST' },
+    ).catch(() => null);
+    if (response?.ok) toast.success(t('agents.undone'));
+    else toast.error(t('agents.undoFailed'));
+    await load();
+  }
+
   async function review(id: string, approve: boolean, batch = false) {
+    if (reviewLock.current) return;
+    reviewLock.current = true;
+    setReviewing(id);
+    try {
+      await decide(id, approve, batch);
+    } finally {
+      reviewLock.current = false;
+      setReviewing(null);
+    }
+  }
+
+  async function decide(id: string, approve: boolean, batch: boolean) {
     const response = await fetch(
       batch ? `/api/proposal-batches/${id}/review` : `/api/proposals/${id}/review`,
       {
@@ -150,7 +175,13 @@ export function useAgentWorkspace(
       const feedback = approve
         ? t(diff?.change?.kind === 'connection-setup' ? 'agents.approvedSetup' : 'agents.approved')
         : t('agents.rejected');
-      toast.success(feedback);
+      // An approval already changed the configuration; a rejection can be taken back for a moment.
+      if (approve) toast.success(feedback);
+      else
+        toast.success(feedback, {
+          duration: 8000,
+          action: { label: t('proposal.undo'), onClick: () => void undo(id, batch) },
+        });
       await load();
       await onApplied();
     } else {
@@ -217,9 +248,9 @@ export function useAgentWorkspace(
       ? { ...proposal, state: 'expired' }
       : proposal,
   );
-  const pending = effective.filter(
-    (proposal) => proposal.state === 'pending' || proposal.state === 'stale',
-  );
+  const pending = effective
+    .filter((proposal) => proposal.state === 'pending' || proposal.state === 'stale')
+    .sort(byNewest);
   const activeAgents = (agents ?? []).filter((agent) => !agent.revokedAt);
   const revokedAgents = (agents ?? []).filter((agent) => agent.revokedAt);
   const expired = effective.filter((proposal) => proposal.state === 'expired');
@@ -238,6 +269,7 @@ export function useAgentWorkspace(
     ttl,
     setTtl,
     recreating,
+    reviewing,
     load,
     create,
     rotate,

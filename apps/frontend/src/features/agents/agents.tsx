@@ -49,6 +49,7 @@ export function Agents({
     ttl,
     setTtl,
     recreating,
+    reviewing,
     create: createAgent,
     rotate: rotateAgent,
     revoke: revokeAgent,
@@ -101,6 +102,7 @@ export function Agents({
         defaultOpen={open}
         agentName={agentName(proposal.author)}
         current={services.find((service) => service.id === diff?.id)}
+        busy={reviewing !== null}
         onReview={(approve) => void review(proposal.id, approve)}
         onSetupConnection={onSetupConnection}
       />
@@ -199,6 +201,7 @@ export function Agents({
             pending={pending}
             expired={expired}
             history={history}
+            reviewing={reviewing}
             onReview={(id, approve, batch) => void review(id, approve, batch)}
             renderProposal={renderProposal}
             renderBatchItem={renderBatchItem}

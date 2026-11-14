@@ -17,6 +17,7 @@ export type Proposal = {
   state: string;
   author: string;
   batchId?: string | null;
+  createdAt?: number;
 };
 export type ServiceFields = {
   name?: string;
@@ -192,6 +193,20 @@ export function proposalSummary(diff: Diff | null, current?: Service): string {
   if (diff.op === 'update') return t('proposal.update', { name: label });
   if (diff.op === 'delete') return t('proposal.remove', { name: label });
   return t('proposal.unknown');
+}
+
+/** Removes, revokes or cancels something: approving it asks for an explicit confirmation. */
+export function isDestructive(diff: Diff | null): boolean {
+  if (!diff) return false;
+  if (diff.op === 'delete') return true;
+  const inner = diff.change as { op?: unknown; change?: { op?: unknown } } | undefined;
+  const op = diff.kind === 'agent' ? inner?.op : inner?.change?.op;
+  return op === 'delete' || op === 'revoke' || op === 'unlink' || op === 'cancel';
+}
+
+/** Newest first, with the id as tiebreaker: the order never depends on what was decided before. */
+export function byNewest(a: Proposal, b: Proposal) {
+  return (b.createdAt ?? 0) - (a.createdAt ?? 0) || a.id.localeCompare(b.id);
 }
 
 export const formatDate = formatDateTime;

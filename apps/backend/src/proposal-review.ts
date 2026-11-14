@@ -3,11 +3,18 @@ import type { DatabaseSync } from 'node:sqlite';
 import { serviceProposalSchema } from './input-schemas.js';
 import type { agentChangeSchema } from './agent-changes.js';
 import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
-import { applyManagedChange, managedChangeSchema } from './managed-proposals.js';
+import {
+  applyManagedChange,
+  isIndependentChange,
+  managedChangeSchema,
+} from './managed-proposals.js';
 import type { ManagedChange } from './managed-proposals.js';
 import { MaintenanceError } from './monitoring/index.js';
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+
+/** How long a rejection can be taken back. */
+export const UNDO_WINDOW_MS = 60_000;
 
 type AgentChangeSchema = typeof agentChangeSchema;
 
@@ -261,7 +268,7 @@ export function createProposalReviewService({
         const managedChange =
           isManaged && 'change' in decoded ? managedChangeSchema.parse(decoded.change) : null;
         if (
-          version !== p.base_version ||
+          (version !== p.base_version && !isIndependentChange(managedChange ?? undefined)) ||
           (managedChange ? managedBaseHash(managedChange) : configHash()) !== p.base_hash
         )
           throw new Error('Configuration has changed');
@@ -385,5 +392,33 @@ export function createProposalReviewService({
       throw error;
     }
   }
-  return { decide, decideBatch };
+  /**
+   * Takes back a rejection made moments ago by the same reviewer: the proposal waits again.
+   * Approvals are not undone, since they already changed the configuration.
+   */
+  function undoRejection(idOrBatch: string, batch: boolean, human: string) {
+    return configuration.transaction(() => {
+      const now = Date.now();
+      const rows = sqlite
+        .prepare(
+          `SELECT id FROM service_proposals WHERE ${batch ? 'batch_id' : 'id'}=? AND state='rejected' AND reviewer=? AND reviewed_at>=? AND expires_at>?`,
+        )
+        .all(idOrBatch, human, now - UNDO_WINDOW_MS, now) as { id: string }[];
+      if (!rows.length) throw new Error('Proposal is unavailable');
+      for (const { id } of rows) {
+        sqlite
+          .prepare(
+            "UPDATE service_proposals SET state='pending',reviewed_at=NULL,reviewer=NULL WHERE id=? AND state='rejected'",
+          )
+          .run(id);
+        sqlite
+          .prepare(
+            'INSERT INTO audit_events(actor,action,proposal_id,result,created_at) VALUES(?,?,?,?,?)',
+          )
+          .run(human, 'review-undo', id, 'ok', now);
+      }
+      return 'pending' as const;
+    });
+  }
+  return { decide, decideBatch, undoRejection };
 }
