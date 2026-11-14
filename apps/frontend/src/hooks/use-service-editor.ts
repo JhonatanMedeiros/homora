@@ -43,7 +43,6 @@ function serviceDraft(service: Service | undefined, allowPrivateDefault: boolean
 }
 
 type Options = {
-  managing: boolean;
   formRoute: 'new' | number | null;
   hostView: boolean;
   data: ServicesData;
@@ -61,7 +60,6 @@ type Options = {
 };
 
 export function useServiceEditor({
-  managing,
   formRoute,
   hostView,
   data,
@@ -107,7 +105,6 @@ export function useServiceEditor({
   const linkTypes = useLinkTypes(formOpen, () => void refresh());
 
   useEffect(() => {
-    if (!managing) return;
     const controller = new AbortController();
     fetch('/api/service-defaults', { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
@@ -124,7 +121,7 @@ export function useServiceEditor({
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [managing]);
+  }, []);
 
   function openForm(service?: Service) {
     onOpenForm();
@@ -150,7 +147,7 @@ export function useServiceEditor({
       /* storage unavailable */
     }
     setFormOpen(false);
-    navigate('/manage/services', true);
+    navigate('/', true);
   }
 
   useEffect(() => {

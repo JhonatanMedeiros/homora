@@ -60,7 +60,7 @@ and opens a **Details** panel with the recent checks.
 | ------------------------- | -------------------------------------------------------------------------------------- |
 | **Dashboard** (`/`)       | Your cards, grouped and organized in pages. The banner at the top summarizes health.   |
 | **Search** (`Ctrl K`)     | Jump to any card, filter by status or group, and reach any settings page.              |
-| **Manage → Services**     | Add, edit, organize and delete cards and groups.                                       |
+| **Organize** (Dashboard)  | Add, edit, organize and delete cards and groups, right on the Home.                    |
 | **Manage → Integrations** | Connect Proxmox and other tools, attach widgets to cards, and set up Docker discovery. |
 | **Manage → Agents**       | Create AI agent identities and review their proposals.                                 |
 | **Manage → Activity**     | A log of sign-ins, proposals, approvals and settings changes.                          |

@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import type { Service } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useDependencies } from '@/hooks/use-dependencies';
 import { dependentsOf } from '@/lib/dependencies';
 import { hostLabel } from '@/lib/hosts';
@@ -48,6 +47,7 @@ import { useServiceGroups } from '@/hooks/use-service-groups';
 import { useServicePageModel } from '@/hooks/use-service-page-model';
 import { useServicePageFocus, type FocusRequest } from '@/hooks/use-service-page-focus';
 import { ServicesEmpty } from '@/components/services-empty';
+import { OrganizeToggle } from '@/components/service-view-toolbar';
 import type { useServices } from '@/hooks/use-services';
 import { useServicePageActions } from '@/hooks/use-service-page-actions';
 import { t } from '@/i18n';
@@ -61,7 +61,6 @@ const HostMap = lazy(() =>
 
 /** Main screen: service groups with status, search, edit, and Organize mode. */
 type Props = {
-  managing: boolean;
   formRoute: 'new' | number | null;
   navigate: (path: string, replace?: boolean) => void;
   onAddService: () => void;
@@ -76,7 +75,6 @@ export type { FocusRequest } from '@/hooks/use-service-page-focus';
 
 export function ServicesPage({
   data,
-  managing,
   onAddService,
   formRoute,
   navigate,
@@ -86,7 +84,7 @@ export function ServicesPage({
   const { services, groupRows, statuses, sortedIn, blockedIds, refresh, pages } = data;
   const { activePageId, pageIdOf } = data;
   // Group view shows one page at a time; Host and Map views show every page.
-  const paged = pages.length > 1 && !managing;
+  const paged = pages.length > 1;
   const cardWidgets = useCardWidgets();
   const resourceLinks = useResourceLinks();
   const [resourceReview, setResourceReview] = useState<number | null>(null);
@@ -126,11 +124,9 @@ export function ServicesPage({
     show();
     return onProblemsRequest(show);
   }, []);
-  const list = view === 'list' || managing;
-  const [manageQuery, setQuery] = useState('');
-  const homeQuery = useHomeSearch();
-  // The top bar filters the Home; the manage list has its own field.
-  const query = managing ? manageQuery : homeQuery;
+  const list = view === 'list';
+  // The top bar filters the Home.
+  const query = useHomeSearch();
   const [selected, setSelected] = useState<string | null>(null);
   const deps = useDependencies();
   // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
@@ -140,21 +136,21 @@ export function ServicesPage({
     setLocalFocus(null);
     handledFocus?.();
   };
+  const [organizing, setOrganizing] = useState(false);
   const { addButton, srNote, setSrNote, focusService, focusNonce, announce, focusEditTrigger } =
     useServicePageFocus({
       services,
       focusRequest,
       onFocusHandled,
       setSelected,
-      managing,
+      organizing,
       formRoute,
       loaded: data.loaded,
     });
-  const mapView = arrange === 'map' && !managing;
-  const hostList = arrange === 'host' && !managing;
+  const mapView = arrange === 'map';
+  const hostList = arrange === 'host';
   const hostView = hostList || mapView;
   const editor = useServiceEditor({
-    managing,
     formRoute,
     hostView,
     data,
@@ -189,17 +185,15 @@ export function ServicesPage({
   } = groupActions;
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [nodeFilter, setNodeFilter] = useState<{ connectionId: number; node: string } | null>(null);
-  const [organizing, setOrganizing] = useState(false);
   const [detailsId, setDetailsId] = useState<number | null>(null);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const detailsService = services.find((item) => item.id === detailsId) ?? null;
   // Dense tiles are the Home default; management and organize mode always show rows.
-  const compact = view === 'tiles' && !managing && !organizing;
+  const compact = view === 'tiles' && !organizing;
   const pageModel = useServicePageModel({
     data,
     hostData,
     dependencies: deps.dependencies,
-    managing,
     hostView,
     paged,
     query,
@@ -224,11 +218,11 @@ export function ServicesPage({
     offline,
   } = pageModel;
   // Wide Home: views and groups on the left, page widgets on the right.
-  const railed = wide && !mobile && !managing && !organizing && !hostView && services.length > 0;
+  const railed = wide && !mobile && !organizing && !hostView && services.length > 0;
   const widgetsInRail = railed && widgetRail && wider;
   // 'Problems first' only reorders what is shown; it never changes the saved order of groups.
   const ordered =
-    problemsFirst && !managing && !organizing
+    problemsFirst && !organizing
       ? groups
           .map((group, index) => ({ group, index, down: group.items.filter(isDown).length }))
           .sort((a, b) => (b.down > 0 ? 1 : 0) - (a.down > 0 ? 1 : 0) || a.index - b.index)
@@ -238,7 +232,7 @@ export function ServicesPage({
   const pinnedServices = services.filter((service) => service.pinned);
   // The Favorites view keeps only pinned services, and drops groups left empty by that.
   const shownGroups =
-    favoritesOnly && !managing && !organizing
+    favoritesOnly && !organizing
       ? ordered
           .map((group) => ({ ...group, items: group.items.filter((item) => item.pinned) }))
           .filter((group) => group.items.length > 0)
@@ -336,7 +330,6 @@ export function ServicesPage({
       className={cn('flex flex-col gap-4 md:gap-6', organizing && 'pb-20 md:pb-0')}
     >
       <ServiceDashboardHeader
-        managing={managing}
         organizing={organizing}
         topBar={topBar}
         compact={mobile}
@@ -362,15 +355,8 @@ export function ServicesPage({
           ) : undefined
         }
         serviceCount={services.length}
-        groupCount={allCategories.length}
         toolbar={toolbar}
-        addButton={addButton}
-        onToggleOrganizing={() => {
-          setOrganizing(!organizing);
-          setConfirming(null);
-        }}
-        onAddService={() => openForm()}
-        showImpact={!managing}
+        showImpact
         impact={{
           nodes: offline,
           pageCount: (node) =>
@@ -391,14 +377,16 @@ export function ServicesPage({
           onDraftChange: setGroupDraft,
           onSubmit: (event) => void saveGroup(event),
           onCancelRename: cancelRename,
+          onAddService: () => openForm(),
+          addButton,
         }}
       />
-      {!managing && data.statusError && (
+      {data.statusError && (
         <p role="status" className="text-xs text-muted-foreground">
           {t('status.stale')}
         </p>
       )}
-      {!managing && !organizing && !hostView && (
+      {!organizing && !hostView && (
         <ProbableCauses
           down={downNow.filter((service) => !quietNow(service.id))}
           quiet={downNow.filter((service) => quietNow(service.id))}
@@ -416,11 +404,7 @@ export function ServicesPage({
           <Alert>
             <AlertDescription>
               {t('route.serviceNotFound')}{' '}
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => navigate('/manage/services', true)}
-              >
+              <Button type="button" variant="link" onClick={() => navigate('/', true)}>
                 {t('route.services')}
               </Button>
             </AlertDescription>
@@ -469,20 +453,8 @@ export function ServicesPage({
           }}
         />
       )}
-      {!managing && !hostView && !widgetsInRail && (
-        <PageWidgets pageId={activePageId} pages={pages} />
-      )}
-      {managing && !organizing && services.length > 0 && (
-        <Input
-          type="search"
-          aria-label={t('manage.filter')}
-          placeholder={t('manage.filter')}
-          value={manageQuery}
-          onChange={(event) => setQuery(event.target.value)}
-          className="max-w-sm"
-        />
-      )}
-      {!managing && !organizing && !hostView && allTags.length > 0 && (
+      {!hostView && !widgetsInRail && <PageWidgets pageId={activePageId} pages={pages} />}
+      {!organizing && !hostView && allTags.length > 0 && (
         <div
           role="group"
           aria-label={t('filter.byTag')}
@@ -509,7 +481,7 @@ export function ServicesPage({
           ))}
         </div>
       )}
-      {!managing && !organizing && mobile && services.length > 0 && (
+      {!organizing && mobile && services.length > 0 && (
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">{categoryFilter}</div>
           <ServiceOptionsSheet
@@ -522,7 +494,10 @@ export function ServicesPage({
           />
         </div>
       )}
-      {!(mobile && !managing && !organizing) && categoryFilter}
+      {!organizing && mobile && services.length === 0 && (
+        <OrganizeToggle organizing={organizing} onToggle={toolbar.onToggleOrganizing} />
+      )}
+      {!(mobile && !organizing) && categoryFilter}
       {mapView && services.length > 0 && (
         <Suspense fallback={<ServicesSkeleton label={t('common.loading')} list={list} />}>
           <HostMap
@@ -583,7 +558,7 @@ export function ServicesPage({
           />
         </Suspense>
       )}
-      {!managing && !organizing && !hostView && !favoritesOnly && (
+      {!organizing && !hostView && !favoritesOnly && (
         <PinnedRow
           services={pinnedServices}
           statuses={statuses}
@@ -617,11 +592,10 @@ export function ServicesPage({
             dependencyNotes,
           }}
           presentation={{
-            managing,
             organizing,
             list,
             compact,
-            collapseHealthy: collapseHealthy && !managing,
+            collapseHealthy,
             isDown,
             showDescriptions,
             revealServiceId: focusService?.id,
@@ -633,7 +607,7 @@ export function ServicesPage({
             onTag: setTagFilter,
             hostOf: (service) => hostLabel(service, hostData.connections, hostData.inventories),
             onEditService: openForm,
-            onDetails: managing ? undefined : (service) => setDetailsId(service.id),
+            onDetails: (service) => setDetailsId(service.id),
             onRemoveService: (service) => void remove(service),
             onCancelRemoval: (id) => setConfirming((current) => (current === id ? null : current)),
             onResource: setResourceReview,
@@ -662,7 +636,7 @@ export function ServicesPage({
         maintenanceUntil={detailsService ? inMaintenance[detailsService.id]?.endsAt : undefined}
         range={uptimeRange}
         onRangeChange={setUptimeRange}
-        onTogglePinned={managing ? undefined : (item) => void togglePinned(item)}
+        onTogglePinned={(item) => void togglePinned(item)}
         onClose={() => setDetailsId(null)}
       />
       <ServicePageOverlays
@@ -710,10 +684,10 @@ export function ServicesPage({
         !(paged && categories.length === 0) && (
           <ServicesEmpty
             hasServices={services.length > 0}
-            onAdd={() => (managing ? openForm() : onAddService())}
-            calm={!managing && statusFilter === 'down' && !query && !tagFilter && !selected}
+            onAdd={onAddService}
+            calm={statusFilter === 'down' && !query && !tagFilter && !selected}
             onClearFilters={
-              !managing && (statusFilter !== 'all' || tagFilter || selected || favoritesOnly)
+              statusFilter !== 'all' || tagFilter || selected || favoritesOnly
                 ? () => {
                     setStatusFilter('all');
                     setHomeSearch('');

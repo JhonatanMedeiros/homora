@@ -6,7 +6,7 @@ Practical recipes for common homelab goals. Each one lists the steps and links t
 
 **Goal:** one page that opens everything, with search.
 
-1. Add your services in **Manage → Services**, or import an existing Homepage or Dashy file from
+1. Add your services with **Organize → Add service** on the Home, or import an existing Homepage or Dashy file from
    **Settings → Export and import** ([guide](import-export-backup.md)).
 2. Split them into **pages** (for example _Home_, _Media_, _Lab_) in **Settings → Home and pages**, and into
    **groups** by purpose.

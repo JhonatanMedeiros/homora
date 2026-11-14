@@ -34,14 +34,10 @@ function show(
         }}
         status={status}
         blocked={blocked}
-        managing={false}
         list={extra.list}
         compact={extra.compact}
         showDescription
-        confirmingRemoval={false}
         onEdit={extra.onEdit ?? noop}
-        onRemove={noop}
-        onCancelRemoval={noop}
       />
     </ul>,
   );

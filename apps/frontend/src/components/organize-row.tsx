@@ -1,6 +1,6 @@
 import type { DragEvent } from 'react';
 import type { Service } from '@homora/shared';
-import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -32,6 +32,12 @@ type Props = {
   onMove: (direction: -1 | 1) => void;
   onMoveToTop: () => void;
   onMoveToGroup: (group: string) => void;
+  /** Opens the edit form. */
+  onEdit: () => void;
+  /** First call asks for confirmation (`confirmingRemoval`), the second removes. */
+  confirmingRemoval: boolean;
+  onRemove: () => void;
+  onCancelRemoval: () => void;
   dragProps: {
     onDragStart: (event: DragEvent) => void;
     onDragEnd: () => void;
@@ -55,6 +61,10 @@ export function OrganizeRow({
   onMove,
   onMoveToTop,
   onMoveToGroup,
+  onEdit,
+  confirmingRemoval,
+  onRemove,
+  onCancelRemoval,
   dragProps,
 }: Props) {
   return (
@@ -88,6 +98,17 @@ export function OrganizeRow({
         </ItemContent>
         {/* aria-disabled (not disabled) so focus stays on the arrow when the row reaches an end. */}
         <ItemActions className="gap-0.5">
+          {confirmingRemoval && (
+            <>
+              <Button type="button" variant="destructive" size="sm" onClick={onRemove}>
+                <Trash2 />
+                {t('card.confirmRemoveShort')}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={onCancelRemoval}>
+                {t('common.cancel')}
+              </Button>
+            </>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -117,6 +138,7 @@ export function OrganizeRow({
                 variant="ghost"
                 size="icon-sm"
                 className="pointer-coarse:size-11"
+                data-service-edit={s.id}
                 aria-label={t('card.options', { name: s.name })}
               >
                 <MoreHorizontal />
@@ -124,6 +146,10 @@ export function OrganizeRow({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel className="truncate">{s.name}</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={onEdit}>
+                <Pencil />
+                {t('common.edit')}
+              </DropdownMenuItem>
               <DropdownMenuItem disabled={first} onSelect={onMoveToTop}>
                 {t('card.moveTop')}
               </DropdownMenuItem>
@@ -147,6 +173,11 @@ export function OrganizeRow({
                   </DropdownMenuSub>
                 </>
               )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onSelect={onRemove}>
+                <Trash2 />
+                {t('common.remove')}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </ItemActions>

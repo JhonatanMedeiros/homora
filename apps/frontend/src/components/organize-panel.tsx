@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type RefObject } from 'react';
 import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,21 @@ type Props = {
   onDraftChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
   onCancelRename: () => void;
+  /** Opens the new service form; the button takes focus back when the form closes. */
+  onAddService: () => void;
+  addButton?: RefObject<HTMLButtonElement | null>;
 };
 
 /** Organize mode panel: a one-line hint, a button that opens the new group form, and group renaming. */
-export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCancelRename }: Props) {
+export function OrganizePanel({
+  renaming,
+  draft,
+  onDraftChange,
+  onSubmit,
+  onCancelRename,
+  onAddService,
+  addButton,
+}: Props) {
   const [adding, setAdding] = useState(false);
   return (
     <>
@@ -29,16 +40,22 @@ export function OrganizePanel({ renaming, draft, onDraftChange, onSubmit, onCanc
         <AlertDescription className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-foreground">
           <span>{t('organize.help')}</span>
           {!renaming && !adding && (
-            <Button
-              data-group-add
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => setAdding(true)}
-            >
-              <Plus />
-              {t('organize.newGroup')}
-            </Button>
+            <span className="flex flex-wrap items-center gap-2">
+              <Button ref={addButton} type="button" size="sm" onClick={onAddService}>
+                <Plus />
+                {t('page.add')}
+              </Button>
+              <Button
+                data-group-add
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setAdding(true)}
+              >
+                <Plus />
+                {t('organize.newGroup')}
+              </Button>
+            </span>
           )}
         </AlertDescription>
       </Alert>

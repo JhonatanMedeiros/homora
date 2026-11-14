@@ -90,13 +90,9 @@ it.each([false, true])('shows the button on cards without disturbing them (list:
       <ServiceCard
         service={service}
         blocked={false}
-        managing={false}
         list={list}
         showDescription
-        confirmingRemoval={false}
         onEdit={() => {}}
-        onRemove={() => {}}
-        onCancelRemoval={() => {}}
       />
     </ul>,
   );
@@ -113,12 +109,8 @@ it('leaves cards without extra addresses exactly as before', () => {
       <ServiceCard
         service={{ ...service, links: [] }}
         blocked={false}
-        managing={false}
         showDescription
-        confirmingRemoval={false}
         onEdit={() => {}}
-        onRemove={() => {}}
-        onCancelRemoval={() => {}}
       />
     </ul>,
   );

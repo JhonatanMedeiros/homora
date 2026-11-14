@@ -25,8 +25,6 @@ type Props = {
   compact?: boolean;
   /** Collapses the group on its own (no saved preference); the person can still open it. */
   autoCollapse?: boolean;
-  /** Management shows one editable row per line; the home packs two columns. */
-  managing?: boolean;
   /** Changes each time something inside the group must be shown; expands the group without saving. */
   revealSignal?: number;
   /** Present only for registered groups (can be renamed and removed). */
@@ -84,7 +82,6 @@ export function GroupSection({
   list = false,
   compact = false,
   autoCollapse = false,
-  managing = false,
   revealSignal,
   canEdit,
   canRemove,
@@ -106,16 +103,13 @@ export function GroupSection({
   // Organize mode shows rows even when the saved view is cards; management lists one row per line.
   const rowLayout = list || organizing;
   const cols = effectiveColumns(columns);
-  const gridClass =
-    rowLayout && managing
-      ? 'grid grid-cols-1 gap-1.5'
-      : cols
-        ? (rowLayout ? ROW_COLUMN_CLASSES : compact ? TILE_COLUMN_CLASSES : COLUMN_CLASSES)[cols]
-        : rowLayout
-          ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
-          : compact
-            ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3'
-            : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
+  const gridClass = cols
+    ? (rowLayout ? ROW_COLUMN_CLASSES : compact ? TILE_COLUMN_CLASSES : COLUMN_CLASSES)[cols]
+    : rowLayout
+      ? 'grid grid-cols-1 gap-1.5 lg:grid-cols-2'
+      : compact
+        ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3'
+        : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
   const { collapsed, toggleCollapsed } = useGroupCollapse(category, revealSignal, autoCollapse);
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3">

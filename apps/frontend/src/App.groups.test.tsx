@@ -18,7 +18,13 @@ it('creates, displays, and removes an empty group via UI', async () => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
     if (url === '/api/connections') return { ok: true, json: async () => [] };
-    if (url === '/api/services') return { ok: true, json: async () => [] };
+    if (url === '/api/services')
+      return {
+        ok: true,
+        json: async () => [
+          { id: 1, name: 'Wiki', url: 'http://localhost:1/', category: 'Casa', description: '' },
+        ],
+      };
     if (url === '/api/groups' && init?.method === 'POST') {
       const group = {
         id: groups.length + 1,
@@ -44,13 +50,7 @@ it('creates, displays, and removes an empty group via UI', async () => {
   });
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
-  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Serviços',
-    }),
-  );
+  await screen.findByRole('link', { name: /Wiki/ });
   expect(screen.queryByLabelText('Novo grupo')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
   // The new group form stays closed until its button is used.
@@ -135,12 +135,6 @@ it('reorders cards and closes form with Escape restoring focus', async () => {
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('link', { name: /A/ });
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Serviços',
-    }),
-  );
   expect(screen.queryByRole('button', { name: 'Mover A para baixo' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Mover A para baixo' }));
@@ -153,7 +147,7 @@ it('reorders cards and closes form with Escape restoring focus', async () => {
       }),
     ),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
+  // Adding a service lives in Organize mode.
   const add = screen.getByRole('button', { name: /Adicionar serviço/ });
   fireEvent.click(add);
   expect(document.activeElement).toBe(screen.getByLabelText('Nome'));
@@ -400,4 +394,23 @@ it('undoes a move to another group, restoring group and order', async () => {
   const puts = calls.filter((call) => call.url === '/api/services/1' && call.method === 'PUT');
   expect(puts.map((call) => JSON.parse(call.body ?? '{}').category)).toEqual(['Infra', 'Casa']);
   window.history.replaceState(null, '', '/');
+});
+
+it('offers Organize on a Home with no services, to add the first service or group', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  expect(screen.getByRole('button', { name: 'Novo grupo' })).toBeTruthy();
+  expect(screen.getAllByRole('button', { name: /Adicionar serviço/ }).length).toBeGreaterThan(0);
+  expect(screen.getByRole('button', { name: 'Concluir' })).toBeTruthy();
 });

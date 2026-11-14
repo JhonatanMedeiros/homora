@@ -31,7 +31,7 @@ export function ServiceViewToolbar({
   onHostSuggestions: () => void;
   uptimeRange?: UptimeRange;
   onUptimeRangeChange?: (range: UptimeRange) => void;
-  /** Organize lives here on the Home; the Manage page keeps its own button. */
+  /** Organize is also where services are added, edited and removed. */
   organizing?: boolean;
   onToggleOrganizing?: () => void;
 }) {
@@ -59,19 +59,32 @@ export function ServiceViewToolbar({
         onUptimeRangeChange={onUptimeRangeChange}
       />
       {onToggleOrganizing && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          aria-pressed={organizing}
-          className="pointer-coarse:h-11"
-          onClick={onToggleOrganizing}
-        >
-          <SlidersHorizontal aria-hidden="true" />
-          {organizing ? t('page.done') : t('page.organize')}
-        </Button>
+        <OrganizeToggle organizing={organizing} onToggle={onToggleOrganizing} />
       )}
     </div>
+  );
+}
+
+/** The Organize / Done button. It also stands alone on a Home with no services yet. */
+export function OrganizeToggle({
+  organizing,
+  onToggle,
+}: {
+  organizing?: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      aria-pressed={organizing}
+      className="pointer-coarse:h-11"
+      onClick={onToggle}
+    >
+      <SlidersHorizontal aria-hidden="true" />
+      {organizing ? t('page.done') : t('page.organize')}
+    </Button>
   );
 }
 

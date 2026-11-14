@@ -1,6 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
+import { Item, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
@@ -23,11 +21,6 @@ export function ServiceCardList({
   host = null,
   impact = 'none',
   dependencyNote,
-  managing,
-  confirmingRemoval,
-  onEdit,
-  onRemove,
-  onCancelRemoval,
   view,
 }: ServiceCardLayoutProps) {
   const isBlocked = view.blocked;
@@ -56,9 +49,7 @@ export function ServiceCardList({
         >
           <ServiceIcon icon={service.icon} name={service.name} />
         </ItemMedia>
-        <ItemContent
-          className={cn('min-w-0 gap-0', managing && 'max-sm:basis-[calc(100%_-_2.75rem)]')}
-        >
+        <ItemContent className="min-w-0 gap-0">
           <ItemTitle className="w-full text-sm">
             <a
               href={service.url}
@@ -95,33 +86,6 @@ export function ServiceCardList({
         <span className="relative z-10 shrink-0 empty:hidden">
           <ServiceLinksMenu service={service} variant="icon" />
         </span>
-        {managing && (
-          <ItemActions className="z-10 ml-auto shrink-0 gap-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              data-service-edit={service.id}
-              aria-label={t('card.edit', { name: service.name })}
-              onClick={onEdit}
-            >
-              <Pencil />
-            </Button>
-            <Button
-              type="button"
-              variant={confirmingRemoval ? 'destructive' : 'ghost'}
-              size={confirmingRemoval ? 'sm' : 'icon-sm'}
-              aria-label={t(confirmingRemoval ? 'card.confirmRemove' : 'card.remove', {
-                name: service.name,
-              })}
-              onClick={onRemove}
-              onBlur={onCancelRemoval}
-            >
-              <Trash2 />
-              {confirmingRemoval && t('card.confirmRemoveShort')}
-            </Button>
-          </ItemActions>
-        )}
         {view.note && (
           <p
             className={cn(

@@ -1879,3 +1879,11 @@ the HTTP and stdio transports were not manually verified.
 - Added probes: monitors without a card, managed under Manage > Probes (list, examples, form, delete confirmation) with a Probes block in the Home rail. They are checked, charted, acknowledged and can be shared on the public status page under Connectivity. API: `/api/probes`.
 - Not done: probes in configuration export/import, agent proposals and MCP tools; a mobile chip row and an alerts-bell entry for probes; per-probe alert settings screen; the Uptime Kuma cutover itself.
 - Validation: `pnpm check` (1,674 application tests and 31 script tests) and `pnpm build` passed. The migration was tested on a database with history, links and dependencies, not on a copy of a real installation. The new screens were not exercised in a browser.
+
+### Services managed from the Home; Manage → Services removed
+
+- Adding, editing and deleting services now happens in Organize mode on the Home: **Add service** sits beside **New group** in the Organize panel, and each row's menu has **Edit** and **Remove** (removal asks to confirm in the row). The Manage → Services list is gone; `/manage` opens Integrations, `/manage/services` redirects to the Home, and the form routes (`/manage/services/new`, `/manage/services/:id/edit`) still open the form over the Home. The Manage side bar and the phone bottom bar lose "Services" (the bar now shows Probes, Integrations, Agents and More).
+- Removed the `managing` mode from the services page and its cards, and the unused texts that went with it.
+- The top bar's filter field now filters the Home. From reading the code, the filter was only applied in the old manage list, so typing in the top bar did not narrow the Home before this change; a test now covers it.
+- Organize now also shows on a Home with no services (desktop toolbar and phone), so the first group or service can be created there. The Organize screenshot was retaken with the Add service button and the row menu open; `manage-services.png` was deleted. The other Home images were not retaken.
+- Validation: `pnpm check` (1,707 application tests) and `pnpm build` passed. New tests cover edit and remove from the Organize row menu, the Home search filter, and the old route redirects. The Organize flow was not exercised in a real browser or on a phone.

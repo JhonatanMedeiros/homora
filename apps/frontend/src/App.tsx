@@ -23,7 +23,6 @@ const validPaths = [
   '/',
   '/services/:id',
   '/manage',
-  '/manage/services',
   '/manage/services/new',
   '/manage/services/:id/edit',
   '/manage/probes',
@@ -57,7 +56,9 @@ function DashboardForRoute({
   setToken: (token: string) => void;
 }) {
   const { pathname } = useLocation();
-  if (matchPath('/manage', pathname)) return <Navigate replace to="/manage/services" />;
+  // Services and groups are managed on the Home (Organize); the old list is gone.
+  if (matchPath('/manage', pathname)) return <Navigate replace to="/manage/integrations" />;
+  if (matchPath('/manage/services', pathname)) return <Navigate replace to="/" />;
   // The account used to be a management tab; keep old links working.
   if (matchPath('/manage/account', pathname)) return <Navigate replace to="/account" />;
   // Settings pages that moved: Docker discovery now lives under Integrations; alerts are one page.
@@ -68,7 +69,6 @@ function DashboardForRoute({
   )
     return <Navigate replace to={settingsPath('alerts')} />;
   const home = Boolean(matchPath('/', pathname));
-  const isList = Boolean(matchPath('/manage/services', pathname));
   const isNew = Boolean(matchPath('/manage/services/new', pathname));
   const id = matchPath('/manage/services/:id/edit', pathname)?.params.id;
   const number = Number(id);
@@ -97,12 +97,7 @@ function DashboardForRoute({
       ? Number(detailId)
       : null;
   const valid =
-    home ||
-    detail !== null ||
-    isList ||
-    isNew ||
-    isEdit ||
-    (tab !== 'services' && !unknownSettings);
+    home || detail !== null || isNew || isEdit || (tab !== 'services' && !unknownSettings);
   const account = tab === 'account';
   return (
     <DashboardPage
@@ -110,7 +105,7 @@ function DashboardForRoute({
       setToken={setToken}
       onLogout={onLogout}
       tab={tab}
-      managing={valid && !home && !account && detail === null}
+      managing={valid && !home && !account && detail === null && tab !== 'services'}
       valid={valid}
       form={isNew ? 'new' : isEdit ? number : null}
       detail={detail}

@@ -169,8 +169,8 @@ card ao primeiro alerta.
   </tr>
   <tr>
     <td width="50%">
-      <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Modo organizar com alças de arrastar e controles de mover"></a>
-      <br><b>Modo organizar.</b> Arraste linhas, use as setas ou mova um serviço para outro grupo.
+      <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Modo organizar com Adicionar serviço, menu da linha para editar, remover ou mover, e alças de arrastar"></a>
+      <br><b>Modo organizar.</b> Adicione, edite, remova, reordene ou mova serviços, tudo na Home.
     </td>
     <td width="50%">
       <a href="docs/screenshots/settings-appearance.png"><img src="docs/screenshots/settings-appearance.png" alt="Configurações de aparência com cores de destaque e fundos de página"></a>
@@ -274,7 +274,7 @@ backend; contratos compartilhados; Drizzle ORM com SQLite. Rode `pnpm check` (li
 `pnpm build` antes de enviar mudanças. Os commits seguem Conventional Commits (`feat: ...`), validados por Husky e
 Commitlint. Veja [CONTRIBUTING.md](CONTRIBUTING.md) e [docs/standards.md](docs/standards.md).
 
-Rotas: o painel é `/`, o acesso é `/login`, as seções de gestão são `/manage/services`, `/manage/integrations`,
+Rotas: o painel é `/`, o acesso é `/login`, as seções de gestão são `/manage/probes`, `/manage/integrations`,
 `/manage/agents`, `/manage/activity` e `/manage/settings`, os formulários de serviço são `/manage/services/new` e
 `/manage/services/:id/edit`, e a página de detalhes de um serviço é `/services/:id`. Ao hospedar o frontend separadamente,
 configure o servidor para devolver `index.html` nessas rotas.
