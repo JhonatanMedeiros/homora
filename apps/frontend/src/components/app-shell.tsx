@@ -41,6 +41,8 @@ type Props = {
   profile: Profile | null;
   /** The alerts bell, when the dashboard has data to count. */
   alerts?: ReactNode;
+  /** Open alerts, for the count over the bell in the phone's bottom bar. */
+  alertCount?: number;
   children: ReactNode;
 };
 
@@ -53,6 +55,7 @@ export function AppShell({
   onOpenPalette,
   profile,
   alerts,
+  alertCount,
   children,
 }: Props) {
   // The account is a page of its own: no sidebar and no search, just a way back.
@@ -65,7 +68,10 @@ export function AppShell({
         <div
           className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8 ${managing ? 'max-w-none md:px-6' : tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
         >
-          <BrandMark compact className="text-sidebar-foreground" />
+          <BrandMark
+            compact
+            className={`text-sidebar-foreground ${managing || standalone ? 'max-md:hidden' : ''}`}
+          />
           <span className="mr-auto" />
           {tab === 'services' && !managing && <HomeSearchField />}
           <Button
@@ -123,10 +129,14 @@ export function AppShell({
           <Button
             variant="outline"
             onClick={() => onManageChange(!(managing || standalone))}
-            className="border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground max-sm:size-11 max-sm:px-0"
+            className={`border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${
+              managing || standalone
+                ? 'max-md:order-first max-md:-ml-2 max-md:size-11 max-md:border-0 max-md:px-0'
+                : 'max-md:hidden'
+            }`}
           >
             {managing || standalone ? <ArrowLeft /> : <Settings />}{' '}
-            <span className="max-sm:sr-only">
+            <span className="max-md:sr-only">
               {managing || standalone ? t('manage.back') : t('manage.open')}
             </span>
           </Button>
@@ -135,8 +145,8 @@ export function AppShell({
       <main
         className={
           managing
-            ? 'flex w-full flex-col pb-24 md:pb-0'
-            : `mx-auto flex w-full ${tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'} flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${tab === 'services' ? 'pb-24 md:pb-8' : ''}`
+            ? 'flex w-full flex-col pb-28 md:pb-0'
+            : `mx-auto flex w-full ${tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'} flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${tab === 'services' ? 'pb-28 md:pb-8' : ''}`
         }
       >
         {!managing && !standalone && (
@@ -192,13 +202,16 @@ export function AppShell({
           children
         )}
       </main>
-      {managing && <MobileTabs tab={tab} onTabChange={onTabChange} />}
+      {managing && (
+        <MobileTabs tab={tab} onTabChange={onTabChange} onHome={() => onManageChange(false)} />
+      )}
       {tab === 'services' && !managing && mobile && (
         <DashboardTabs
           onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           onSearch={onOpenPalette}
           onAlerts={() => onTabChange('activity')}
           onManage={() => onManageChange(true)}
+          alertCount={alertCount}
         />
       )}
     </div>

@@ -1887,3 +1887,10 @@ the HTTP and stdio transports were not manually verified.
 - The top bar's filter field now filters the Home. From reading the code, the filter was only applied in the old manage list, so typing in the top bar did not narrow the Home before this change; a test now covers it.
 - Organize now also shows on a Home with no services (desktop toolbar and phone), so the first group or service can be created there. The Organize screenshot was retaken with the Add service button and the row menu open; `manage-services.png` was deleted. The other Home images were not retaken.
 - Validation: `pnpm check` (1,707 application tests) and `pnpm build` passed. New tests cover edit and remove from the Organize row menu, the Home search filter, and the old route redirects. The Organize flow was not exercised in a real browser or on a phone.
+
+### Floating bottom bar on phones
+
+- The phone bottom bars (Home: Home, Search, Alerts, Manage; management: sections and More) are now one floating capsule (`FloatingNav`) instead of a full-width bar of square, filled buttons. Only the active item shows its name, on a soft ember pill; the others are icons with a 48px target and an accessible name. The alerts item shows the open-problems count (`useAlertCount`, shared with the bell). The More sheet gained a "Back to dashboard" row.
+- The phone header is one row: the Manage button is hidden on the Home (the bar has it), and outside the Home the back arrow replaces the logo (it was a second row). Fixed bars that sat above the old bar (Organize "Done", the appearance save bar) moved up with it.
+- Following DESIGN.md, the capsule has no shadow; a gradient fade behind it separates it from the content. `mobile-dashboard.png` was retaken (synthetic data, statuses fabricated in the browser); the other images were not.
+- Validation: `pnpm check` (1,709 application tests) and `pnpm build` passed; new tests cover the Home bar. Checked in a 390 px browser capture of the Home, a management page and the More sheet; not tried on a real phone, in the light theme or with a notch (safe-area inset).

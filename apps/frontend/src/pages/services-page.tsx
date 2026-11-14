@@ -657,7 +657,7 @@ export function ServicesPage({
         onDeleteGroup={deleteGroup}
       />
       {organizing && (
-        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex items-center justify-between gap-3 border-t bg-card px-4 py-3 md:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 flex items-center justify-between gap-3 border-t bg-card px-4 py-3 md:hidden">
           <span className="font-mono text-xs text-muted-foreground">{t('organize.bar')}</span>
           <Button
             type="button"
