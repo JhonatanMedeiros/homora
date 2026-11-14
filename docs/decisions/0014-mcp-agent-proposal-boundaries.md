@@ -10,15 +10,15 @@
 
 Direction is always downward; a static import scan of `apps/backend/src` found no cycles after the changes below.
 
-| Layer                | Modules                                                                                                                                   | Owns                                                                                                           |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Transports           | `server.ts`/`mcp-server.ts` (stdio), `mcp-http.ts`                                                                                        | Token source, host/origin checks, rate limit. Create one `createMcp` per connection or request.                |
-| MCP composition      | `mcp.ts`, `mcp-tool-context.ts`                                                                                                           | Builds the context and registers tools.                                                                        |
-| MCP boundary helpers | `mcp-identity.ts`, `mcp-responses.ts`, `mcp-proposal-schemas.ts`, `mcp-discovery-schema.ts`                                               | Scope enforcement bound to a token, response filtering (`publicUrl`, generic errors), advertised tool schemas. |
-| Tools                | `mcp-*-tools.ts`, `mcp-integration-extensions.ts`                                                                                         | Tool names, inputs and scope per tool. They never import each other.                                           |
-| Agent identity       | `agent-scopes.ts`, `agent-identities.ts`, `agent-changes.ts`                                                                              | Scopes, issue/authenticate/rotate/revoke, reviewable identity changes.                                         |
-| Proposal domain      | `proposals.ts`, `managed-proposal-creator.ts`, `managed-proposals.ts`, `proposal-review.ts`, `proposal-batches.ts`, `proposal-queries.ts` | Creation, expiry, review, batches, audit. Shared by the web routes and MCP.                                    |
-| Domain services      | `service-configuration.ts`, `integration-connections.ts`, `docker-push.ts`                                                                | Versioned configuration and connections.                                                                       |
+| Layer                | Modules                                                                                                                                                                                           | Owns                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Transports           | `server.ts`/`mcp-server.ts` (stdio), `mcp/http.ts`                                                                                                                                                | Token source, host/origin checks, rate limit. Create one `createMcp` per connection or request.                |
+| MCP composition      | `mcp/index.ts`, `mcp/tool-context.ts`                                                                                                                                                             | Builds the context and registers tools.                                                                        |
+| MCP boundary helpers | `mcp/identity.ts`, `mcp/responses.ts`, `mcp/proposal-schemas.ts`, `mcp/discovery-schema.ts`                                                                                                       | Scope enforcement bound to a token, response filtering (`publicUrl`, generic errors), advertised tool schemas. |
+| Tools                | `mcp/*-tools.ts`, `mcp/integration-extensions.ts`                                                                                                                                                 | Tool names, inputs and scope per tool. They never import each other.                                           |
+| Agent identity       | `agents/agent-scopes.ts`, `agents/agent-identities.ts`, `agents/agent-changes.ts`                                                                                                                 | Scopes, issue/authenticate/rotate/revoke, reviewable identity changes.                                         |
+| Proposal domain      | `proposals/index.ts`, `proposals/managed-proposal-creator.ts`, `proposals/managed-proposals.ts`, `proposals/proposal-review.ts`, `proposals/proposal-batches.ts`, `proposals/proposal-queries.ts` | Creation, expiry, review, batches, audit. Shared by the web routes and MCP.                                    |
+| Domain services      | `service-configuration.ts`, `integrations/integration-connections.ts`, `docker-push.ts`                                                                                                           | Versioned configuration and connections.                                                                       |
 
 Boundaries:
 
@@ -28,9 +28,9 @@ Boundaries:
 
 ## Changes
 
-- `mcp.ts` is composition only: response helpers moved to `mcp-responses.ts`, token/scope binding and the list of proposal scopes to `mcp-identity.ts`.
-- Discovery schemas moved to `mcp-proposal-schemas.ts`, removing the import from `mcp-integration-tools.ts` into `mcp-proposal-tools.ts`.
-- `agentChangeSchema` moved to `agent-changes.ts`, removing the `proposals.ts` ↔ `proposal-review.ts` cycle. `proposals.ts` still re-exports it. Tool names, schemas, scopes and behavior are unchanged.
+- `mcp/index.ts` is composition only: response helpers moved to `mcp/responses.ts`, token/scope binding and the list of proposal scopes to `mcp/identity.ts`.
+- Discovery schemas moved to `mcp/proposal-schemas.ts`, removing the import from `mcp/integration-tools.ts` into `mcp/proposal-tools.ts`.
+- `agentChangeSchema` moved to `agents/agent-changes.ts`, removing the `proposals/index.ts` ↔ `proposals/proposal-review.ts` cycle. `proposals/index.ts` still re-exports it. Tool names, schemas, scopes and behavior are unchanged.
 
 ## Decision on a separate package
 

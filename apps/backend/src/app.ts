@@ -13,8 +13,8 @@ import {
   createMaintenanceStore,
 } from './monitoring/index.js';
 import { registerConnectionRoutes } from './routes/connections.js';
-import { createProposalService } from './proposals.js';
-import { integrationRegistry } from './integration-registry.js';
+import { createProposalService } from './proposals/index.js';
+import { integrationRegistry } from './integrations/integration-registry.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAccountRoutes } from './routes/account.js';
@@ -33,11 +33,11 @@ import { registerServiceLinkTypeRoutes } from './routes/service-link-types.js';
 import { registerServiceMaintenanceRoutes } from './routes/service-maintenance.js';
 import { createDockerPush } from './discovery/index.js';
 import { registerDockerPushRoutes } from './routes/docker-push.js';
-import { registerMcpHttp } from './mcp-http.js';
+import { registerMcpHttp } from './mcp/http.js';
 import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
 import { registerServiceIncidentRoutes } from './routes/service-incidents.js';
-import { createNotifications } from './notifications.js';
+import { createNotifications } from './notifications/index.js';
 import { createInbox } from './inbox.js';
 import { registerInboxRoutes } from './routes/inbox.js';
 import { registerHostSuggestionRoutes } from './routes/host-suggestions.js';

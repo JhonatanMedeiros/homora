@@ -29,7 +29,7 @@ import { StatusLight } from '@/components/status-light';
 import { ProbeDialog } from '@/features/probes/probe-dialog';
 import { draftOf, probeTemplates, type ProbeDraft } from '@/features/probes/probe-model';
 import { useProbes } from '@/hooks/use-probes';
-import { useUptime } from '@/hooks/use-uptime';
+import { useUptime } from '@/features/uptime/use-uptime';
 import { t } from '@/i18n';
 import { isPrivateHost } from '@/lib/services';
 import { describeStatus } from '@/lib/status-text';

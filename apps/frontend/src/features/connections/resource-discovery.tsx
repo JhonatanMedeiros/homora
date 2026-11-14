@@ -1,6 +1,5 @@
 import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
-import type { IntegrationResource } from '@homora/shared';
 import { integrationDefinition } from '@homora/integrations';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +14,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { createCard, putLink } from '@/lib/resource-api';
 import { sameUrl } from '@homora/integrations/resources/client';
 import type { CardRef, GroupRef } from '@/hooks/use-resource-inventory';
-import type { ResourceLink } from '@homora/shared';
 import { t } from '@/i18n';
 import { ResourceDiscoveryRow } from './resource-discovery-row';
 import {
@@ -26,6 +24,7 @@ import {
   problem,
   type Row,
 } from './resource-discovery-model';
+import type { IntegrationResource, ResourceLink } from '@homora/integrations';
 
 type Props = {
   connectionId: number;

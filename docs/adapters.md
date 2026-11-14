@@ -34,8 +34,8 @@ presentation contracts from `@homora/integrations/frontend`. It does not load pl
 | Docs                    | the integration entry in `docs/integrations.md` with required permissions                                                        |
 
 Type enums, stored fields, the connection form, widget text, the picker and the catalog endpoint derive
-from the manifest. You do not edit `input-schemas.ts`, `managed-proposals.ts`,
-`integration-connections.ts` or the frontend connection files.
+from the manifest. You do not edit `input-schemas.ts`, `proposals/managed-proposals.ts`,
+`integrations/integration-connections.ts` or the frontend connection files.
 
 ### Generate a starting point
 

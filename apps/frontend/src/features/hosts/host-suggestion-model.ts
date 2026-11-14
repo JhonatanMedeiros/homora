@@ -1,4 +1,5 @@
-import type { GuestType, HostLink } from '@homora/shared';
+import type { HostLink } from '@homora/shared';
+import type { GuestType } from '@homora/integrations';
 
 export type SuggestionEvidence = {
   kind: 'config-address' | 'guest-agent' | 'docker-source';

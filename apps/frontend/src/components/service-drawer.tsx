@@ -16,7 +16,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { StatusLight } from '@/components/status-light';
-import { UptimeBars, UptimeDetails, UptimePercent } from '@/components/service-uptime';
+import { UptimeBars, UptimeDetails, UptimePercent } from '@/features/uptime/service-uptime';
 import { copyAddress } from '@/lib/copy-address';
 import { describeStatus } from '@/lib/status-text';
 import type { ServiceStatus } from '@/lib/services';

@@ -1,6 +1,6 @@
-import { integrationDefinitions } from '@homora/shared';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { createAppTestContext } from './app-test-context.js';
+import { integrationDefinitions } from '@homora/integrations';
 const context = await createAppTestContext();
 const { app, cookie } = context;
 afterAll(context.close);

@@ -9,8 +9,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DependencyPicker } from '@/components/dependency-picker';
-import { HostPicker } from '@/components/host-picker';
+import { DependencyPicker } from '@/features/hosts/dependency-picker';
+import { HostPicker } from '@/features/hosts/host-picker';
 import { LookPanel } from '@/components/service-form-look';
 import { MonitoringPanel, type FormMonitoring } from '@/components/service-form-monitoring';
 import { sectionSummary, type Section } from '@/components/service-form-summary';

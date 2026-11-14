@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { createNotifications } from '../notifications.js';
+import type { createNotifications } from '../notifications/index.js';
 import { parseId } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
 

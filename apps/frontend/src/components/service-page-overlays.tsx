@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ResourceReviewDialog } from '@/components/resource-review-dialog';
-import { HostSuggestionsPanel } from '@/components/host-suggestions-panel';
+import { HostSuggestionsPanel } from '@/features/hosts/host-suggestions-panel';
 import type { CardResource } from '@/hooks/use-resource-links';
 import { t } from '@/i18n';
 

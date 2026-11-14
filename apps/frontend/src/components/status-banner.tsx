@@ -15,7 +15,7 @@ import { useNow } from '@/hooks/use-now';
 import { Progress } from '@/components/ui/progress';
 import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
 import type { ServiceStatus } from '@/lib/services';
-import { formatDuration } from '@/lib/uptime-view';
+import { formatDuration } from '@/features/uptime/uptime-view';
 import { cn } from '@/lib/utils';
 
 type Props = {

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { createHostSuggestions } from '../host-suggestions.js';
-import type { createIntegrationConnections } from '../integration-connections.js';
+import type { createIntegrationConnections } from '../integrations/integration-connections.js';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import { dismissalBodySchema, parseId } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';

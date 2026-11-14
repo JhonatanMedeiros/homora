@@ -1,13 +1,13 @@
 import { expect, it, vi } from 'vitest';
+import { createManifestAdapter } from './integrations/integration-test-support.js';
+import type { IntegrationTransport } from './integrations/index.js';
 import {
   adguardManifest,
   homeAssistantManifest,
   jellyfinManifest,
   uptimeKumaManifest,
   type IntegrationManifest,
-} from '@homora/shared';
-import { createManifestAdapter } from './integration-test-support.js';
-import type { IntegrationTransport } from './integrations.js';
+} from '@homora/integrations';
 
 /**
  * These expectations were captured from the hand-written adapters (jellyfin.ts, uptime-kuma.ts,

@@ -1,6 +1,10 @@
 import { apiError, t, tOr, type MessageKey } from '@/i18n';
 import { createWidgetRenderer } from '@homora/integrations/frontend/catalog';
-import { integrationDefinition, integrationDefinitions, type ManifestField } from '@homora/shared';
+import {
+  integrationDefinition,
+  integrationDefinitions,
+  type ManifestField,
+} from '@homora/integrations';
 const widgets = createWidgetRenderer(tOr);
 export type Kind = string;
 export type LastTest = { at: number; result: string };

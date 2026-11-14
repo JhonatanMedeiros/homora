@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Service } from '@homora/shared';
 import { setLocale } from '@/i18n';
-import { ServiceCard } from './service-card';
+import { ServiceCard } from '../features/dashboard/service-card';
 import { ServiceLinksMenu } from './service-links-menu';
 
 beforeEach(() => setLocale('en'));

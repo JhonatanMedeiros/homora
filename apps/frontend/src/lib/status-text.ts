@@ -2,7 +2,7 @@ import { isDegraded, type MonitorSettings } from '@homora/shared';
 import type { CheckType } from '@homora/shared';
 import { formatDateTime, formatTime, t } from '@/i18n';
 import type { LightState, ServiceStatus } from '@/lib/services';
-import { formatDuration, reasonText } from '@/lib/uptime-view';
+import { formatDuration, reasonText } from '@/features/uptime/uptime-view';
 
 /** What a service card or list row says about a service's health. */
 export type StatusView = {

@@ -2,11 +2,11 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { setLocale } from '@/i18n';
-import type { IntegrationResource, ResourceLink } from '@homora/shared';
 import { Connections } from './connections';
 import { ResourceInventoryPanel } from './resource-inventory';
 import { filterResources } from '@homora/integrations/resources/client';
 import type { Connection } from './connection-model';
+import type { IntegrationResource, ResourceLink } from '@homora/integrations';
 
 afterEach(() => {
   cleanup();

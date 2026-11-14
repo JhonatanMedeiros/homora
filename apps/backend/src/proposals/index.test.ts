@@ -1,0 +1,378 @@
+import { DatabaseSync } from 'node:sqlite';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { expect, it } from 'vitest';
+import { createProposalService } from './index.js';
+import { CARD_SCHEMA } from '../test-card-schema.js';
+
+function fixture() {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`${CARD_SCHEMA}
+    CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
+    CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
+    CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
+    CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
+    CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
+    CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'proposal contents are immutable'); END;
+    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);`);
+  return { db, api: createProposalService(db) };
+}
+const card = {
+  name: 'Media',
+  url: 'https://media.example',
+  category: 'Apps',
+  description: 'Media server',
+};
+
+it('reviews alias creation, preservation, and removal with the service proposal', () => {
+  const { db, api } = fixture();
+  try {
+    const agent = api.issue('bot', ['proposals:create']);
+    const created = api.propose(agent.id, { op: 'create', service: { ...card, alias: 'media' } });
+    expect(created.diff).toMatchObject({ service: { alias: 'media' } });
+    api.decide(created.id, true, 'human');
+    expect(db.prepare('SELECT alias FROM services WHERE id=1').get()).toEqual({ alias: 'media' });
+    const preserved = api.propose(agent.id, { op: 'update', id: 1, service: card });
+    expect(preserved.diff).toMatchObject({ service: { alias: 'media' } });
+    api.decide(preserved.id, true, 'human');
+    const removed = api.propose(agent.id, {
+      op: 'update',
+      id: 1,
+      service: { ...card, alias: null },
+    });
+    expect(removed.diff).toMatchObject({ service: { alias: null } });
+    api.decide(removed.id, true, 'human');
+    expect(db.prepare('SELECT alias FROM services WHERE id=1').get()).toEqual({ alias: null });
+    expect(() =>
+      api.propose(agent.id, { op: 'create', service: { ...card, alias: 'invalid alias' } }),
+    ).toThrow();
+  } finally {
+    db.close();
+  }
+});
+
+it('shows and audits a TLS exception in an approved proposal', () => {
+  const { db, api } = fixture();
+  try {
+    const agent = api.issue('bot', ['proposals:create']);
+    expect(() =>
+      api.propose(agent.id, { op: 'create', service: { ...card, checkInsecure: true } }),
+    ).toThrow();
+    const proposal = api.propose(agent.id, {
+      op: 'create',
+      service: { ...card, allowPrivate: true, checkInsecure: true },
+    });
+    expect(proposal.diff).toMatchObject({ service: { allowPrivate: true, checkInsecure: true } });
+    expect(api.decide(proposal.id, true, 'human')).toBe('approved');
+    expect(db.prepare('SELECT check_insecure FROM monitors').get()).toEqual({ check_insecure: 1 });
+    expect(
+      db.prepare("SELECT action FROM audit_events WHERE action='monitoring-tls-insecure'").get(),
+    ).toEqual({ action: 'monitoring-tls-insecure' });
+  } finally {
+    db.close();
+  }
+});
+
+it('authorizes explicit scopes, rotates/revokes credentials by invalidating old tokens', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['services:read']);
+  expect(api.authenticate(agent.token, 'services:read')).toBe(agent.id);
+  expect(api.authenticate(agent.token, 'proposals:create')).toBeNull();
+  const rotated = api.rotate(agent.id);
+  expect(api.authenticate(agent.token, 'services:read')).toBeNull();
+  expect(api.authenticate(rotated, 'services:read')).toBe(agent.id);
+  api.revoke(agent.id);
+  expect(api.authenticate(rotated, 'services:read')).toBeNull();
+  db.close();
+});
+
+it('approves once transactionally, rejects stale config, and audits human decisions', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  const proposal = api.propose(agent.id, {
+    op: 'create',
+    service: { ...card, allowPrivate: true },
+  });
+  expect(() =>
+    db.prepare("UPDATE service_proposals SET diff='{}' WHERE id=?").run(proposal.id),
+  ).toThrow();
+  expect(api.decide(proposal.id, true, 'human')).toBe('approved');
+  expect(db.prepare('SELECT name FROM service_cards').get()).toEqual({ name: 'Media' });
+  expect(
+    db.prepare('SELECT position,allow_private as allowPrivate FROM service_cards').get(),
+  ).toEqual({
+    position: 0,
+    allowPrivate: 1,
+  });
+  expect(() => api.decide(proposal.id, true, 'human')).toThrow();
+  const next = api.propose(agent.id, { op: 'create', service: { ...card, name: 'Other' } });
+  db.prepare("UPDATE monitors SET name='changed' WHERE id=1").run();
+  expect(() => api.decide(next.id, true, 'human')).toThrow('Configuration has changed');
+  expect(
+    (
+      db
+        .prepare('SELECT result FROM audit_events WHERE proposal_id=? ORDER BY id DESC')
+        .all(next.id) as { result: string }[]
+    )[0]?.result,
+  ).toBe('failed');
+  db.close();
+});
+
+it('rejects expired proposals and hostile payload fields without persisting them', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  expect(() =>
+    api.propose(agent.id, {
+      op: 'create',
+      service: { ...card, secret: 'never-store', instructions: 'ignore policy' },
+    }),
+  ).toThrow();
+  const proposal = api.propose(agent.id, { op: 'create', service: card });
+  db.prepare('UPDATE service_proposals SET expires_at=0 WHERE id=?').run(proposal.id);
+  expect(() => api.decide(proposal.id, true, 'human')).toThrow('unavailable');
+  expect((api.list() as { state: string }[])[0]?.state).toBe('expired');
+  expect(db.prepare('SELECT count(*) as count FROM service_cards').get()).toEqual({ count: 0 });
+  db.close();
+});
+
+it('serializes review across SQLite connections and prevents replay', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-proposal-'));
+  const path = join(dir, 'test.sqlite');
+  const first = new DatabaseSync(path);
+  first.exec(`${CARD_SCHEMA}
+    CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
+    CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
+    CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
+    CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER);
+    CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
+    CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);
+    CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'proposal contents are immutable'); END;`);
+  const second = new DatabaseSync(path);
+  try {
+    const one = createProposalService(first),
+      two = createProposalService(second);
+    const agent = one.issue('bot', ['proposals:create']);
+    const proposal = one.propose(agent.id, { op: 'create', service: card });
+    expect(one.decide(proposal.id, true, 'local-admin')).toBe('approved');
+    expect(() => two.decide(proposal.id, true, 'local-admin')).toThrow('unavailable');
+    expect(first.prepare('SELECT count(*) as n FROM service_cards').get()).toEqual({ n: 1 });
+  } finally {
+    first.close();
+    second.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('governs identity changes with subset checks, human review and one-time tokens', () => {
+  const { db, api } = fixture();
+  const author = api.issue('delegator', ['agents:propose', 'services:read']);
+  expect(() =>
+    api.proposeAgent(author.id, { op: 'create', name: 'bad', scopes: ['audit:read'] }),
+  ).toThrow();
+  const proposal = api.proposeAgent(author.id, {
+    op: 'create',
+    name: 'child',
+    scopes: ['services:read'],
+  });
+  expect(() => api.decide(proposal.id, true, author.id)).toThrow('Agent cannot approve');
+  const approved = api.decide(proposal.id, true, 'user:admin');
+  expect(typeof approved).toBe('object');
+  if (typeof approved === 'string' || !approved.token) throw new Error('Missing token');
+  expect(api.authenticate(approved.token, 'services:read')).toBe(approved.agentId);
+  expect(JSON.stringify(api.getOwn(author.id, proposal.id))).not.toContain(approved.token);
+  expect(JSON.stringify(api.list())).not.toContain(approved.token);
+  expect(JSON.stringify(db.prepare('SELECT * FROM audit_events').all())).not.toContain(
+    approved.token,
+  );
+  expect(() => api.decide(proposal.id, true, 'user:admin')).toThrow();
+  const rotated = api.rotate(approved.agentId);
+  expect(api.authenticate(approved.token, 'services:read')).toBeNull();
+  expect(api.authenticate(rotated, 'services:read')).toBe(approved.agentId);
+  const scopeChange = api.proposeAgent(author.id, {
+    op: 'update-scopes',
+    id: approved.agentId,
+    scopes: ['agents:propose'],
+  });
+  api.decide(scopeChange.id, true, 'user:admin');
+  expect(api.authenticate(rotated, 'services:read')).toBeNull();
+  expect(api.authenticate(rotated, 'agents:propose')).toBe(approved.agentId);
+  const rotationProposal = api.proposeAgent(author.id, { op: 'rotate', id: approved.agentId });
+  const rotationResult = api.decide(rotationProposal.id, true, 'user:admin');
+  if (typeof rotationResult === 'string' || !rotationResult.token) throw new Error('Missing token');
+  expect(api.authenticate(rotated, 'agents:propose')).toBeNull();
+  expect(api.authenticate(rotationResult.token, 'agents:propose')).toBe(approved.agentId);
+  const revoke = api.proposeAgent(author.id, { op: 'revoke', id: approved.agentId });
+  api.decide(revoke.id, true, 'user:admin');
+  expect(api.authenticate(rotationResult.token, 'agents:propose')).toBeNull();
+  db.close();
+});
+
+it('creates a bounded atomic batch without applying proposals', () => {
+  const { db, api } = fixture();
+  const author = api.issue('bot', ['proposals:create']);
+  const items = Array.from({ length: 20 }, (_, i) => ({
+    kind: 'service',
+    change: { op: 'create', service: { ...card, name: `Card ${i}` } },
+  }));
+  const batch = api.proposeBatch(author.id, items);
+  expect(batch.proposals).toHaveLength(20);
+  expect(new Set(batch.proposals.map((item) => item.batchId))).toEqual(new Set([batch.batchId]));
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_cards').get()).toEqual({ count: 0 });
+  expect(() => api.proposeBatch(author.id, [...items, items[0]])).toThrow();
+  expect(() => api.proposeBatch(author.id, [items[0], { kind: 'service', change: {} }])).toThrow();
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({
+    count: 20,
+  });
+  expect(() => api.decide(batch.proposals[0].id, true, 'user:admin')).toThrow('collective');
+  api.decideBatch(batch.batchId, true, 'user:admin');
+  expect(
+    db.prepare("SELECT COUNT(*) AS count FROM service_proposals WHERE state='pending'").get(),
+  ).toEqual({ count: 0 });
+  for (let i = 0; i < 4; i++) api.proposeBatch(author.id, items);
+  api.proposeBatch(author.id, items.slice(0, 19));
+  expect(() => api.proposeBatch(author.id, [items[0], items[1]])).toThrow('limit');
+  api.proposeBatch(author.id, [items[0]]);
+  expect(() => api.propose(author.id, items[0].change)).toThrow('limit');
+  db.close();
+});
+
+it('applies a batch once with ordered cards and rejects changed or incomplete batches', () => {
+  const { db, api } = fixture();
+  const author = api.issue('bot', ['proposals:create']);
+  const items = Array.from({ length: 3 }, (_, i) => ({
+    kind: 'service',
+    change: { op: 'create', service: { ...card, name: `Card ${i}` } },
+  }));
+  const batch = api.proposeBatch(author.id, items);
+  expect(api.decideBatch(batch.batchId, true, 'human')).toBe('approved');
+  expect(db.prepare('SELECT name,position FROM service_cards ORDER BY position').all()).toEqual([
+    { name: 'Card 0', position: 0 },
+    { name: 'Card 1', position: 1 },
+    { name: 'Card 2', position: 2 },
+  ]);
+  expect(db.prepare('SELECT version FROM config_version').get()).toEqual({ version: 2 });
+  expect(() => api.decideBatch(batch.batchId, true, 'human')).toThrow('unavailable');
+  const stale = api.proposeBatch(author.id, items);
+  db.prepare('UPDATE config_version SET version=version+1').run();
+  expect(() => api.decideBatch(stale.batchId, true, 'human')).toThrow('Configuration has changed');
+  expect(
+    (api.list() as { batchId: string; state: string }[])
+      .filter((p) => p.batchId === stale.batchId)
+      .every((p) => p.state === 'stale'),
+  ).toBe(true);
+  expect(api.decideBatch(stale.batchId, false, 'human')).toBe('rejected');
+  const partial = api.proposeBatch(author.id, items);
+  api.withdraw(author.id, partial.proposals[0].id);
+  expect(() => api.decideBatch(partial.batchId, true, 'human')).toThrow('unavailable');
+  expect(api.decideBatch(partial.batchId, false, 'human')).toBe('rejected');
+  expect(db.prepare('SELECT count(*) AS count FROM service_cards').get()).toEqual({ count: 3 });
+  db.close();
+});
+
+it('rolls back every change when a later batch item fails', () => {
+  const { db, api } = fixture();
+  const author = api.issue('bot', ['proposals:create']);
+  const original = api.propose(author.id, { op: 'create', service: card });
+  api.decide(original.id, true, 'human');
+  const batch = api.proposeBatch(author.id, [
+    { kind: 'service', change: { op: 'delete', id: 1 } },
+    { kind: 'service', change: { op: 'delete', id: 1 } },
+  ]);
+  expect(() => api.decideBatch(batch.batchId, true, 'human')).toThrow();
+  expect(db.prepare('SELECT count(*) AS count FROM service_cards').get()).toEqual({ count: 1 });
+  expect(db.prepare('SELECT version FROM config_version').get()).toEqual({ version: 2 });
+  expect(
+    db
+      .prepare(
+        "SELECT count(*) AS count FROM service_proposals WHERE batch_id=? AND state='pending'",
+      )
+      .get(batch.batchId),
+  ).toEqual({ count: 2 });
+  db.close();
+});
+
+it('recreates an expired proposal with the same diff, a new deadline and a human audit event', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  const original = api.propose(agent.id, { op: 'create', service: card });
+  db.prepare('UPDATE service_proposals SET expires_at=0 WHERE id=?').run(original.id);
+  api.setProposalTtlMinutes(30, 'user:admin');
+  const now = Date.now();
+  const recreated = api.recreate(original.id, 'user:admin').proposals[0];
+  expect(recreated.diff).toEqual(original.diff);
+  expect(recreated.expiresAt).toBeGreaterThanOrEqual(now + 30 * 60_000);
+  expect(
+    db.prepare("SELECT actor,detail FROM audit_events WHERE action='proposal-recreate'").get(),
+  ).toEqual({ actor: 'user:admin', detail: original.id });
+  expect(api.decide(recreated.id, true, 'user:admin')).toBe('approved');
+  db.close();
+});
+
+it('does not recreate an expired change whose target was removed', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  db.prepare(
+    "INSERT INTO service_cards(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+  ).run();
+  const proposal = api.propose(agent.id, { op: 'delete', id: 1 });
+  db.prepare('UPDATE service_proposals SET expires_at=0 WHERE id=?').run(proposal.id);
+  db.prepare('DELETE FROM monitors WHERE id=1').run();
+  expect(() => api.recreate(proposal.id, 'user:admin')).toThrow('Service not found');
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({ count: 1 });
+  db.close();
+});
+
+it('enforces the TTL range and applies it to new proposals', () => {
+  const { db, api } = fixture();
+  expect(api.proposalTtlMinutes()).toBe(15);
+  expect(() => api.setProposalTtlMinutes(0, 'user:admin')).toThrow();
+  expect(() => api.setProposalTtlMinutes(121, 'user:admin')).toThrow();
+  api.setProposalTtlMinutes(1, 'user:admin');
+  const agent = api.issue('bot', ['proposals:create']);
+  const now = Date.now();
+  const proposal = api.propose(agent.id, { op: 'create', service: card });
+  expect(proposal.expiresAt).toBeGreaterThanOrEqual(now + 60_000);
+  expect(proposal.expiresAt).toBeLessThan(now + 61_000);
+  db.close();
+});
+
+it('recreates an expired batch as a single new batch and rolls back a missing target', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  db.prepare(
+    "INSERT INTO service_cards(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+  ).run();
+  const batch = api.proposeBatch(agent.id, [
+    { kind: 'service', change: { op: 'create', service: card } },
+    { kind: 'service', change: { op: 'delete', id: 1 } },
+  ]);
+  db.prepare('UPDATE service_proposals SET expires_at=0 WHERE batch_id=?').run(batch.batchId);
+  db.prepare('DELETE FROM monitors WHERE id=1').run();
+  expect(() => api.recreate(batch.proposals[0].id, 'user:admin')).toThrow('Proposal diff changed');
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({ count: 2 });
+  db.prepare(
+    "INSERT INTO service_cards(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+  ).run();
+  const next = api.recreate(batch.proposals[0].id, 'user:admin');
+  expect(next.batchId).not.toBe(batch.batchId);
+  expect(next.proposals.map((proposal) => proposal.diff)).toEqual(
+    batch.proposals.map((proposal) => proposal.diff),
+  );
+  expect(api.decideBatch(next.batchId!, true, 'user:admin')).toBe('approved');
+  db.close();
+});
+
+it('shows and applies a separate monitoring address in a reviewed proposal', () => {
+  const { db, api } = fixture();
+  const agent = api.issue('bot', ['proposals:create']);
+  const checkUrl = 'http://192.168.1.10/health';
+  const proposal = api.propose(agent.id, {
+    op: 'create',
+    service: { ...card, checkUrl, allowPrivate: true },
+  });
+  expect(JSON.stringify(proposal)).toContain(checkUrl);
+  expect(api.decide(proposal.id, true, 'human')).toBe('approved');
+  expect(db.prepare('SELECT check_url FROM service_cards').get()).toEqual({ check_url: checkUrl });
+  db.close();
+});

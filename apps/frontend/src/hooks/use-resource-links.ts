@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ResourceLink } from '@homora/shared';
 import {
   parseInventory,
   parseLinks,
   viewLink,
   type LinkView,
 } from '@homora/integrations/resources/client';
+import type { ResourceLink } from '@homora/integrations';
 
 export type CardResource = { link: ResourceLink; view: LinkView; checkedAt?: string };
 
