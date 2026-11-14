@@ -117,3 +117,7 @@ Still outside the format, so these services were **skipped** (see `docs/integrat
   login flow with POST. Not supported.
 - **TrueNAS:** the current API (25.04 and later) is JSON-RPC 2.0 over WebSocket. The REST `/api/v2.0`
   API is deprecated by the vendor. Not supported (WebSocket-only).
+
+### Bounded grouped rows (issue #188)
+
+The interpreter also supports a closed `rows` extraction for grouped public monitors and a latest-state lookup by numeric id. Paths, state mapping, text and row limits are declared by the built-in manifest. It retains the first occurrence of duplicate ids and rejects malformed or oversized data; it does not provide general expressions or arbitrary transformations.

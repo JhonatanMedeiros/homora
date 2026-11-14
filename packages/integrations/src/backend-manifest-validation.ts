@@ -132,6 +132,29 @@ const extraction = z.discriminatedUnion('op', [
     .strict(),
   z
     .object({
+      op: z.literal('rows'),
+      out: z.string().regex(keyName),
+      request: z.string().optional(),
+      path,
+      items: path,
+      id: path,
+      name: path,
+      group: path,
+      max: z.number().int().min(1).max(1000),
+      maxText: z.number().int().min(1).max(4096),
+      lookup: z
+        .object({
+          request: z.string(),
+          path,
+          field: path,
+          states,
+          other: z.string().regex(keyName),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
       op: z.literal('tally'),
       request: z.string().optional(),
       path,
@@ -320,6 +343,8 @@ export function assertValidDefinition(
   if (new Set(outputs).size !== outputs.length) fail('duplicate output key');
   for (const step of definition.extract) {
     if (step.op !== 'config' && !known(step.request)) fail(`unknown request ${step.request}`);
+    if (step.op === 'rows' && !ids.has(step.lookup.request))
+      fail(`unknown request ${step.lookup.request}`);
     if (step.op === 'config' && !publicKeys.has(step.key))
       fail(`config key ${step.key} is not a public field`);
   }

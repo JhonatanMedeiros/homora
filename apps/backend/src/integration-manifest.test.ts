@@ -115,7 +115,7 @@ describe('template injection', () => {
     manifest.fields[1]!.pattern = '[^\\s]+';
     const transport = vi.fn<IntegrationTransport>(async () => ({
       status: 200,
-      body: { heartbeatList: {} },
+      body: { heartbeatList: {}, publicGroupList: [] },
     }));
     await createManifestAdapter(manifest, transport).collect({
       url: 'https://k.test',

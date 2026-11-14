@@ -1,3 +1,5 @@
+import { IntegrationRowsLimitError } from '@homora/integrations/backend/manifest';
+
 /**
  * Transport-independent MCP response helpers. They hold no state and never see
  * credentials: every message returned to an agent is built here.
@@ -18,9 +20,11 @@ export const failed = (error?: unknown) => ({
     {
       type: 'text' as const,
       text:
-        error instanceof Error && error.message === 'Pending proposal limit reached'
-          ? 'Pending proposal limit reached (100). Wait for review or expiry, or withdraw one with withdraw_proposal.'
-          : 'The request could not be completed.',
+        error instanceof IntegrationRowsLimitError
+          ? 'integration-rows-limit: The integration returned too many monitors.'
+          : error instanceof Error && error.message === 'Pending proposal limit reached'
+            ? 'Pending proposal limit reached (100). Wait for review or expiry, or withdraw one with withdraw_proposal.'
+            : 'The request could not be completed.',
     },
   ],
   isError: true as const,

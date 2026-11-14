@@ -86,6 +86,26 @@ export type Extraction =
       other: string;
     }
   | {
+      /** Project bounded grouped rows and join a latest state by row id. */
+      op: 'rows';
+      out: string;
+      request?: string;
+      path: JsonPath;
+      items: JsonPath;
+      id: JsonPath;
+      name: JsonPath;
+      group: JsonPath;
+      max: number;
+      maxText: number;
+      lookup: {
+        request: string;
+        path: JsonPath;
+        field: JsonPath;
+        states: Readonly<Record<string, readonly Literal[]>>;
+        other: string;
+      };
+    }
+  | {
       /** Counts the latest item of each entry per named state; `other` collects the rest. */
       op: 'tally';
       request?: string;

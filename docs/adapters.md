@@ -206,3 +206,7 @@ Notes / deviations:
 ## Internal widget contract
 
 `@homora/widgets` contains host-independent definitions, states, and source contracts; `clock.ts` is the example of a networkless local widget. For a connected presentation, keep the definition, validated data, translations, fixtures, and presentation under the integration, and register it through the generated catalog as described above. `integrationWidgetDefinition` declares the specific output contract; only a declared capability can provide a shared source. The presentation receives data, never credentials or direct network access. Configuration, placement, updates, and persistence belong to the host. The current version provides neither custom mutable storage nor external plugins. See [ADR 0019](decisions/0019-widget-sdk.md) and the [widget inventory](issue-159-widget-inventory.md).
+
+### Bounded grouped rows
+
+The `rows` extraction projects explicitly named, bounded id, name and group fields from a grouped array and joins a state from the latest item in an object keyed by id. The manifest fixes the paths, state mapping, text length and row limit; no expressions or arbitrary output fields are supported. Duplicate ids keep the first row. External names are untrusted data. Exceeding the row limit raises `integration-rows-limit`; malformed input fails closed.

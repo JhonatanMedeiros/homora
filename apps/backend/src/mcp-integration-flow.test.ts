@@ -120,3 +120,65 @@ it('lists and queries independent Proxmox connections without exposing their cre
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('returns public Kuma monitor details and a distinct limit error through MCP', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-kuma-'));
+  const database = createDatabase(join(dir, 'db.sqlite'));
+  const db = getSqliteHandle(database.db);
+  const vault = createVault(join(dir, 'db.sqlite'));
+  const connections = createIntegrationConnections(database.db, vault);
+  const connection = await connections.createConnection({
+    type: 'uptime-kuma',
+    name: 'Kuma',
+    url: 'https://kuma.example',
+    slug: 'home',
+  });
+  const identity = createProposalService(db).issue('integration-reader', ['integrations:read']);
+  process.env.HOMORA_AGENT_TOKEN = identity.token;
+  let count = 1;
+  vi.mocked(getAuthorizedResponse).mockImplementation(async (url) => ({
+    status: 200,
+    body: JSON.stringify(
+      url.includes('/heartbeat/')
+        ? { heartbeatList: { 1: [] } }
+        : {
+            publicGroupList: [
+              {
+                name: 'Home',
+                monitorList: Array.from({ length: count }, (_, i) => ({
+                  id: i + 1,
+                  name: `Monitor ${i + 1}`,
+                })),
+              },
+            ],
+          },
+    ),
+  }));
+  const server = createMcp(db, { connections });
+  const client = new Client({ name: 'test', version: '1' });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  try {
+    await Promise.all([client.connect(a), server.connect(b)]);
+    const response = await client.callTool({
+      name: 'get_integration_status',
+      arguments: { id: connection.id },
+    });
+    expect(response.isError).not.toBe(true);
+    expect(JSON.stringify(response)).toContain('Monitor 1');
+    expect(JSON.stringify(response)).toContain('unknown');
+    count = 51;
+    await connections.connectionData(connection.id, true).catch(() => {});
+    const error = await client.callTool({
+      name: 'get_integration_status',
+      arguments: { id: connection.id },
+    });
+    expect(error.isError).toBe(true);
+    expect(JSON.stringify(error)).toContain('integration-rows-limit');
+  } finally {
+    await client.close();
+    await server.close();
+    database.close();
+    delete process.env.HOMORA_AGENT_TOKEN;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

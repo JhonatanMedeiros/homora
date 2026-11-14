@@ -31,6 +31,7 @@ export const ERROR_MESSAGES = {
   'invalid-group-order': 'Invalid group order.',
   'invalid-columns': 'Choose between 1 and 6 columns, or automatic.',
   'invalid-group-name': 'Provide a group name with up to 40 characters.',
+  'integration-rows-limit': 'The integration returned too many monitors.',
   'inventory-too-large': 'The inventory exceeds the 1 MiB limit.',
   'source-limit': 'Remove a source before adding another (maximum 10).',
   'discovery-stale': 'The inventory is unavailable or changed. Review it again.',

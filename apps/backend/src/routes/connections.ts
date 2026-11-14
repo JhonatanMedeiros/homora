@@ -1,3 +1,4 @@
+import { IntegrationRowsLimitError } from '@homora/integrations/backend/manifest';
 import { developmentMockData } from '@homora/integrations/backend/development';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '@homora/db';
@@ -119,7 +120,9 @@ export function registerConnectionRoutes(
         }
         const result = await connections.connectionData(id, query.data.refresh === 'true');
         return result ?? reply.code(404).send(errorBody('integration-not-found'));
-      } catch {
+      } catch (error) {
+        if (error instanceof IntegrationRowsLimitError)
+          return reply.code(502).send(errorBody('integration-rows-limit'));
         return reply.code(502).send(errorBody('integration-query-failed'));
       }
     },

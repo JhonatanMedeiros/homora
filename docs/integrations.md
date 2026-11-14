@@ -184,8 +184,7 @@ grant trust to other endpoints.
 
 - Provide an HTTP or HTTPS origin and the slug of a **published** status page (e.g. `homelab`).
   Only monitors included on this public status page are read; private monitors are not exposed.
-- Reads `GET /api/status-page/heartbeat/<slug>` without requiring an API key. Summarizes
-  the latest heartbeat for each monitor; does not replace authenticated inventory or Prometheus metrics.
+- Reads `GET /api/status-page/heartbeat/<slug>` and `GET /api/status-page/<slug>` without an API key. The existing aggregate counts the latest heartbeat per entry. The status data also includes up to 50 published monitors with id, untrusted name, group and latest state. Missing heartbeats are `unknown`; the public data does not establish whether a monitor is paused. Duplicates use the first group. The list and aggregate can differ because their source sets differ. More than 50 distinct monitors fails with `integration-rows-limit`; either request failing prevents the observation, including the widget summary. This does not replace authenticated inventory or Prometheus metrics.
   Uptime Kuma caches status pages internally; empty results do not imply all systems are operational.
 - Leverages the [documented internal API](https://github.com/louislam/uptime-kuma/wiki/Internal-API/6f150dae98532c8b4e2228990505e45cbd5d34e8),
   which is subject to upstream breaking changes; real-world behavior pending validation.

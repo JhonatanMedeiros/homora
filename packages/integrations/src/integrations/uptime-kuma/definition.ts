@@ -22,8 +22,30 @@ export const uptimeKumaManifest: IntegrationManifest = {
     },
   ],
   auth: { type: 'none' },
-  requests: [{ id: 'heartbeat', path: '/api/status-page/heartbeat/{slug}' }],
+  requests: [
+    { id: 'heartbeat', path: '/api/status-page/heartbeat/{slug}' },
+    { id: 'page', path: '/api/status-page/{slug}' },
+  ],
   extract: [
+    {
+      op: 'rows',
+      out: 'monitors',
+      request: 'page',
+      path: ['publicGroupList'],
+      items: ['monitorList'],
+      id: ['id'],
+      name: ['name'],
+      group: ['name'],
+      max: 50,
+      maxText: 256,
+      lookup: {
+        request: 'heartbeat',
+        path: ['heartbeatList'],
+        field: ['status'],
+        states: { up: [1], down: [0], pending: [2], maintenance: [3] },
+        other: 'unknown',
+      },
+    },
     {
       op: 'tally',
       path: ['heartbeatList'],

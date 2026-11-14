@@ -42,6 +42,7 @@ it('uptime-kuma keeps its request and tally', async () => {
     uptimeKumaManifest,
     { url: 'https://kuma.example', slug: 'home' },
     {
+      publicGroupList: [],
       heartbeatList: {
         a: [{ status: 0 }, { status: 1 }],
         b: [{ status: 0 }],
@@ -52,9 +53,17 @@ it('uptime-kuma keeps its request and tally', async () => {
       },
     },
   );
-  expect(result.data).toEqual({ up: 1, down: 1, pending: 1, maintenance: 1, unknown: 2 });
+  expect(result.data).toEqual({
+    up: 1,
+    down: 1,
+    pending: 1,
+    maintenance: 1,
+    unknown: 2,
+    monitors: [],
+  });
   expect(result.calls).toEqual([
     { origin: 'https://kuma.example', path: '/api/status-page/heartbeat/home' },
+    { origin: 'https://kuma.example', path: '/api/status-page/home' },
   ]);
 });
 

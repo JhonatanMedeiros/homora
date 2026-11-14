@@ -1,6 +1,14 @@
 import type { Extraction, IntegrationManifest, JsonPath, Literal } from './integration-manifest.js';
 
-export type ManifestData = Record<string, string | number | boolean | null>;
+export type ManifestRow = { id: number; name: string; group: string; status: string };
+export type ManifestData = Record<string, string | number | boolean | null | ManifestRow[]>;
+
+export class IntegrationRowsLimitError extends Error {
+  constructor() {
+    super('Integration monitor limit exceeded.');
+    this.name = 'IntegrationRowsLimitError';
+  }
+}
 export type ManifestConfig = Record<string, string>;
 
 /** Reads only own properties and valid array indexes from an untrusted response body. */
@@ -114,6 +122,54 @@ export function extractManifestStep(
     case 'state':
       out[step.out] = stateOf(source, step.states, step.other);
       return;
+    case 'rows': {
+      if (!Array.isArray(source) || source.length > maxEntries) return fail();
+      const lookup = walkManifestPath(body(step.lookup.request), step.lookup.path);
+      if (!lookup || typeof lookup !== 'object' || Array.isArray(lookup)) return fail();
+      const rows: ManifestRow[] = [];
+      const seen = new Set<number>();
+      let examined = 0;
+      for (const group of source) {
+        const groupName = typed(walkManifestPath(group, step.group), 'string', {
+          maxLength: step.maxText,
+        });
+        const items = walkManifestPath(group, step.items);
+        if (typeof groupName !== 'string' || !Array.isArray(items) || items.length > maxEntries)
+          return fail();
+        for (const item of items) {
+          if (++examined > maxEntries) return fail();
+          const id = typed(walkManifestPath(item, step.id), 'integer', {
+            min: 1,
+            max: Number.MAX_SAFE_INTEGER,
+          });
+          const name = typed(walkManifestPath(item, step.name), 'string', {
+            maxLength: step.maxText,
+          });
+          if (typeof id !== 'number' || typeof name !== 'string') return fail();
+          if (seen.has(id)) continue;
+          seen.add(id);
+          if (rows.length >= step.max) throw new IntegrationRowsLimitError();
+          const history = Object.hasOwn(lookup, String(id))
+            ? (lookup as Record<string, unknown>)[String(id)]
+            : undefined;
+          if (history !== undefined && (!Array.isArray(history) || history.length > maxEntries))
+            return fail();
+          const latest = Array.isArray(history) ? history.at(-1) : undefined;
+          rows.push({
+            id,
+            name,
+            group: groupName,
+            status: stateOf(
+              walkManifestPath(latest, step.lookup.field),
+              step.lookup.states,
+              step.lookup.other,
+            ),
+          });
+        }
+      }
+      out[step.out] = rows;
+      return;
+    }
     case 'tally': {
       const groups =
         source && typeof source === 'object' && !Array.isArray(source)
