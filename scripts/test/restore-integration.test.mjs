@@ -45,9 +45,11 @@ test('restores database (with its administrator account), key and integration to
   };
   try {
     const db = createDatabase(source);
-    getSqliteHandle(db.db)
-      .prepare('INSERT INTO services (name, url, category, description) VALUES (?, ?, ?, ?)')
-      .run('test', 'https://service.example', 'tests', '');
+    const sqlite = getSqliteHandle(db.db);
+    const monitor = sqlite.prepare('INSERT INTO monitors (name) VALUES (?)').run('test');
+    sqlite
+      .prepare('INSERT INTO services (id, url, category, description) VALUES (?, ?, ?, ?)')
+      .run(Number(monitor.lastInsertRowid), 'https://service.example', 'tests', '');
     await createAuth(authOptions(db)).setup({ name: 'Administrator', email, password });
     db.close();
     await createVault(source).save(integration);
@@ -82,7 +84,7 @@ test('restores database (with its administrator account), key and integration to
     for (const suffix of ['.key', '.proxmox']) await copyFile(backup + suffix, restored + suffix);
     const restoredDb = new DatabaseSync(restored, { readOnly: true });
     try {
-      assert.equal(restoredDb.prepare('SELECT name FROM services').get().name, 'test');
+      assert.equal(restoredDb.prepare('SELECT name FROM service_cards').get().name, 'test');
     } finally {
       restoredDb.close();
     }

@@ -31,9 +31,11 @@ test('removes the account and sessions only after confirmation and keeps other d
   const path = join(dir, 'homora.sqlite');
   try {
     const database = createDatabase(path);
-    getSqliteHandle(database.db)
-      .prepare('INSERT INTO services (name, url, category, description) VALUES (?, ?, ?, ?)')
-      .run('kept', 'https://service.example', 'tests', '');
+    const sqlite = getSqliteHandle(database.db);
+    const monitor = sqlite.prepare('INSERT INTO monitors (name) VALUES (?)').run('kept');
+    sqlite
+      .prepare('INSERT INTO services (id, url, category, description) VALUES (?, ?, ?, ?)')
+      .run(Number(monitor.lastInsertRowid), 'https://service.example', 'tests', '');
     const auth = createAuth({
       sqlite: getSqliteHandle(database.db),
       secret: 'reset-test-secret'.repeat(3),
@@ -58,7 +60,7 @@ test('removes the account and sessions only after confirmation and keeps other d
     try {
       for (const table of ['"user"', 'account', 'session'])
         assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n, 0, table);
-      assert.equal(db.prepare('SELECT name FROM services').get().name, 'kept');
+      assert.equal(db.prepare('SELECT name FROM service_cards').get().name, 'kept');
     } finally {
       db.close();
     }

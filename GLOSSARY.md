@@ -1,7 +1,11 @@
 # Homora Glossary
 
-- **Service**: a shortcut configured on the dashboard, with name, URL, group, and
-  display properties. Does not imply a configured integration or monitoring.
+- **Service** (card): a shortcut configured on the dashboard, with name, URL, group, and
+  display properties. Every card has a monitor, which holds what is checked.
+- **Monitor**: what Homora checks (address, check type, interval) and keeps history for. A
+  card presents a monitor; a monitor can also exist without a card (see Probe).
+- **Probe**: a monitor without a dashboard card, such as the internet connection, a DNS name or
+  a TCP port. Managed under Manage > Probes.
 - **Integration**: an adapter type that queries an external system, such as
   Jellyfin, Home Assistant, or Proxmox.
 - **Connection**: configuration for an integration instance, including address,
