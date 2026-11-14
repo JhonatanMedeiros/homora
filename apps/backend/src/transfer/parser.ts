@@ -9,6 +9,7 @@ import {
   isServiceAlias,
   isCheckMatch,
   isCheckPath,
+  isCheckUrl,
   isCheckType,
   type CheckType,
   isExpectedStatus,
@@ -131,6 +132,8 @@ export function parseService(
     issues.push({ path: `${path}.expectedStatus`, code: 'check-ignored', severity: 'warning' });
   if (raw.checkPath !== undefined && !isCheckPath(raw.checkPath))
     issues.push({ path: `${path}.checkPath`, code: 'check-ignored', severity: 'warning' });
+  if (raw.checkUrl !== undefined && !isCheckUrl(raw.checkUrl))
+    issues.push({ path: `${path}.checkUrl`, code: 'check-ignored', severity: 'warning' });
   if (raw.checkMatch !== undefined && !isCheckMatch(raw.checkMatch))
     issues.push({ path: `${path}.checkMatch`, code: 'check-ignored', severity: 'warning' });
   const links = parseLinks(raw.links, path, issues);
@@ -145,6 +148,7 @@ export function parseService(
     allowPrivate: raw.allowPrivate === true,
     ...(openTarget ? { openTarget } : {}),
     ...(isExpectedStatus(expectedStatus) ? { expectedStatus: String(expectedStatus) } : {}),
+    ...(isCheckUrl(raw.checkUrl) ? { checkUrl: raw.checkUrl } : {}),
     ...(isCheckPath(raw.checkPath) ? { checkPath: raw.checkPath } : {}),
     ...(isCheckMatch(raw.checkMatch) ? { checkMatch: raw.checkMatch } : {}),
     ...(checkType ? { checkType } : {}),

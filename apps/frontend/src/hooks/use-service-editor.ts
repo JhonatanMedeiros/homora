@@ -35,6 +35,7 @@ function serviceDraft(service: Service | undefined, allowPrivateDefault: boolean
         checkInterval: service.checkInterval ?? null,
         expectedStatus: service.expectedStatus ?? null,
         checkPath: service.checkPath ?? null,
+        checkUrl: service.checkUrl ?? null,
         checkMatch: service.checkMatch ?? null,
       }
     : { ...emptyService, allowPrivate: allowPrivateDefault };

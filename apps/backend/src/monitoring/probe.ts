@@ -14,6 +14,7 @@ export type StatusReason =
   | 'not-found'
   | 'error-status'
   | 'reachable'
+  | 'destination-blocked'
   | 'no-response'
   | 'content-mismatch' // answered, but the expected keyword or JSON value is missing
   | 'cert-expired' // the TLS certificate is past its expiry

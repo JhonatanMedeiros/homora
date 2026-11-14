@@ -167,3 +167,22 @@ it('links, resolves, unlinks and validates the card-to-guest link', async () => 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('accepts a safe separate monitoring target in service proposals', () => {
+  const service = { name: 'App', url: 'https://app.example', category: 'Home', description: '' };
+  expect(
+    serviceProposalSchema.safeParse({
+      op: 'create',
+      service: { ...service, checkUrl: 'http://192.168.1.10/health' },
+    }).success,
+  ).toBe(true);
+  for (const checkUrl of [
+    'http://user:pass@example.com/',
+    'http://example.com/?token=secret',
+    'file:///etc/passwd',
+  ]) {
+    expect(
+      serviceProposalSchema.safeParse({ op: 'create', service: { ...service, checkUrl } }).success,
+    ).toBe(false);
+  }
+});

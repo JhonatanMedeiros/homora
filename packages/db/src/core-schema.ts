@@ -55,6 +55,7 @@ export const services = sqliteTable('services', {
   checkInterval: integer('check_interval'),
   expectedStatus: text('expected_status'),
   checkPath: text('check_path'),
+  checkUrl: text('check_url'),
   checkMatch: text('check_match'),
   // Opt-in to the read-only public status page. Never set by imports or agent proposals.
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),

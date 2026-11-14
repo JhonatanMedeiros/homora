@@ -50,7 +50,7 @@ it('requires explicit permission for private destinations and rejects mixed DNS'
       { ...policy, allowPrivate: false },
       async () => [privateAddress],
     ),
-  ).rejects.toThrow();
+  ).rejects.toMatchObject({ code: 'destination-disallowed' });
   await expect(
     authorizeDestination('https://service.example', policy, async () => [
       privateAddress,

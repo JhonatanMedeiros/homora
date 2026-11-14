@@ -222,7 +222,7 @@ export function createConfigurationTransfer({
           }
         }
         const insert = sqlite.prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         );
         const queue = parsed.document.groups.flatMap((group) =>
           group.services.map((service) => ({ group: group.name, service })),
@@ -258,6 +258,7 @@ export function createConfigurationTransfer({
             valid.checkInterval ?? null,
             valid.expectedStatus ?? null,
             valid.checkPath ?? null,
+            valid.checkUrl ?? null,
             valid.checkMatch ?? null,
             valid.openTarget ?? 'new-tab',
             plan.services[index].alias ?? null,

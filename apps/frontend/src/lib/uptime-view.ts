@@ -35,6 +35,8 @@ export function formatDuration(ms: number): string {
 export function reasonText(reason: string | undefined, httpStatus?: number | null): string {
   const code = typeof httpStatus === 'number' ? httpStatus : null;
   switch (reason) {
+    case 'destination-blocked':
+      return t('uptime.reason.destination-blocked');
     case 'no-response':
       return t('uptime.reason.no-response');
     case 'not-found':

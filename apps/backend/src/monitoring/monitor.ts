@@ -130,9 +130,10 @@ export function createServiceMonitor(
             }
             try {
               const result = await check(
-                !isNonHttp(service.checkType) && service.checkPath
-                  ? new URL(service.checkPath, new URL(service.url).origin).href
-                  : service.url,
+                service.checkUrl ??
+                  (!isNonHttp(service.checkType) && service.checkPath
+                    ? new URL(service.checkPath, new URL(service.url).origin).href
+                    : service.url),
                 service.allowPrivate === true,
                 service.checkType ?? 'http',
                 service.checkMatch ?? null,
@@ -158,7 +159,13 @@ export function createServiceMonitor(
                 states.set(service.id, {
                   status: 'unavailable',
                   lastAttempt: attemptedAt,
-                  reason: 'no-response',
+                  reason:
+                    service.checkUrl &&
+                    error instanceof Error &&
+                    'code' in error &&
+                    error.code === 'destination-disallowed'
+                      ? 'destination-blocked'
+                      : 'no-response',
                   httpStatus: null,
                   latencyMs: null,
                 });

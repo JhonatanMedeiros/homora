@@ -31,6 +31,7 @@ export type ServiceFields = {
   checkInterval?: number | null;
   expectedStatus?: string | null;
   checkPath?: string | null;
+  checkUrl?: string | null;
   checkMatch?: string | null;
 };
 export type Diff = {
@@ -134,6 +135,7 @@ export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['checkInterval', 'field.checkInterval'],
   ['expectedStatus', 'form.expectedStatus'],
   ['checkPath', 'form.checkPath'],
+  ['checkUrl', 'form.checkUrl'],
   ['checkMatch', 'check.match.keyword'],
 ];
 

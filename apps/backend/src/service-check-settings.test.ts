@@ -159,12 +159,18 @@ it('validates HTTP expectations and paths and preserves them through export and 
       await send('POST', '/api/services', {
         ...base,
         checkPath: '/health?full=1',
+        checkUrl: 'http://192.168.1.20:8080/health',
         expectedStatus: '2xx',
       })
     ).json();
-    expect(created).toMatchObject({ checkPath: '/health?full=1', expectedStatus: '2xx' });
+    expect(created).toMatchObject({
+      checkPath: '/health?full=1',
+      checkUrl: 'http://192.168.1.20:8080/health',
+      expectedStatus: '2xx',
+    });
     expect((await send('PUT', `/api/services/${created.id}`, base)).json()).toMatchObject({
       checkPath: '/health?full=1',
+      checkUrl: 'http://192.168.1.20:8080/health',
       expectedStatus: '2xx',
     });
     for (const format of ['yaml', 'json']) {

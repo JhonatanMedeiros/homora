@@ -36,6 +36,25 @@ export const isCheckPath = (value: unknown): value is string =>
   !Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127) &&
   !value.includes('://');
 
+/** A complete monitoring target, without credentials, query, or fragment. */
+export const isCheckUrl = (value: unknown): value is string => {
+  if (typeof value !== 'string' || value.length > 2048 || /[\s\\]/.test(value)) return false;
+  try {
+    const url = new URL(value);
+    return (
+      ['http:', 'https:'].includes(url.protocol) &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash &&
+      !value.includes('?') &&
+      !value.includes('#')
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const CHECK_INTERVAL_MIN = 30;
 export const CHECK_INTERVAL_MAX = 3600;
 export const CHECK_INTERVAL_DEFAULT = 60;
@@ -64,6 +83,7 @@ export type ServiceInput = {
   checkInterval?: number | null;
   expectedStatus?: ExpectedStatus | null;
   checkPath?: string | null;
+  checkUrl?: string | null;
   /** What `keyword` and `json` checks look for in the response; null clears it. */
   checkMatch?: string | null;
 };
@@ -225,6 +245,8 @@ export function normalizeIcon(value: unknown): string {
 }
 
 export function validateService(input: Partial<ServiceInput>): ServiceInput {
+  if (input.checkUrl != null && !isCheckUrl(input.checkUrl))
+    throw new ServiceValidationError('invalid-url');
   if (input.alias !== undefined && input.alias !== null && !isServiceAlias(input.alias))
     throw new ServiceValidationError('invalid-alias');
   const name = String(input.name ?? '').trim();
@@ -260,6 +282,7 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
     ...(input.expectedStatus === null || isExpectedStatus(input.expectedStatus)
       ? { expectedStatus: input.expectedStatus === null ? null : String(input.expectedStatus) }
       : {}),
+    ...(input.checkUrl === null || isCheckUrl(input.checkUrl) ? { checkUrl: input.checkUrl } : {}),
     ...(input.checkPath === null || isCheckPath(input.checkPath)
       ? { checkPath: input.checkPath }
       : {}),

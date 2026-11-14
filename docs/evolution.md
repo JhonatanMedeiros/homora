@@ -1813,3 +1813,8 @@ Delivered as one change for issue #179 (mockup linked there); items are named by
 ## Short service aliases (issue #164)
 
 Optional aliases use authenticated `/go/<alias>` navigation and travel in Homora exports (version 5). Import previews warn and omit invalid or conflicting aliases. Homepage and Dashy aliases are not imported. HTTP routing and authenticated resolution were checked through local Vite and an isolated Compose stack. Interactive browser validation remains pending.
+
+### Separate monitoring address (issue #184)
+
+- Added an optional check URL, taking precedence over the card URL and check path for all check types. It uses the existing destination policy and per-service private-network permission. Native exports use version 6; earlier versions remain readable. Existing services retain their monitoring signatures when the field is absent.
+- Validation: `pnpm check` (1,663 application tests and 25 script tests) and `pnpm build` passed. Browser layout and a live origin behind Cloudflare Access were not verified.

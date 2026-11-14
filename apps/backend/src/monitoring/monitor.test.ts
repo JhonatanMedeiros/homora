@@ -4,6 +4,7 @@ import { getAuthorizedResponse } from '../network-request.js';
 import { authorizeDestination } from '../network-policy.js';
 import { checkService, classify, createServiceMonitor, PingUnavailableError } from './monitor.js';
 import type { Service } from '@homora/shared';
+import { serviceSignature } from './signature.js';
 
 vi.mock('../network-request.js', () => ({
   getAuthorizedResponse: vi.fn(),
@@ -379,5 +380,50 @@ it('checks the configured path on the same origin and applies the expectation', 
     reason: 'unexpected-status',
     httpStatus: 302,
     expectedStatus: '200',
+  });
+});
+
+it('checks the separate target in preference to the link and check path', async () => {
+  const check = vi.fn(async () => ({ httpStatus: 200, latencyMs: 10 }));
+  const monitor = createServiceMonitor(
+    async () => [
+      {
+        ...service(1, 'https://public.example/'),
+        checkPath: '/old',
+        checkUrl: 'http://192.168.1.10:8080/health',
+        allowPrivate: true,
+      },
+    ],
+    check,
+  );
+  await monitor.run();
+  expect(check).toHaveBeenCalledWith('http://192.168.1.10:8080/health', true, 'http', null);
+  expect(monitor.snapshot()[1].status).toBe('available');
+});
+
+it('preserves old signatures without a target and distinguishes target changes', () => {
+  const base = service(1, 'https://example.test');
+  expect(serviceSignature(base)).toBe(serviceSignature({ ...base, checkUrl: null }));
+  expect(serviceSignature({ ...base, checkUrl: 'http://192.168.1.10/health' })).not.toBe(
+    serviceSignature(base),
+  );
+  expect(serviceSignature({ ...base, checkUrl: 'http://192.168.1.10/health' })).not.toBe(
+    serviceSignature({ ...base, checkUrl: 'http://192.168.1.11/health' }),
+  );
+});
+
+it('reports a blocked separate destination distinctly', async () => {
+  const monitor = createServiceMonitor(
+    async () => [
+      { ...service(1, 'https://public.example'), checkUrl: 'http://192.168.1.10/health' },
+    ],
+    async () => {
+      throw Object.assign(new Error('blocked'), { code: 'destination-disallowed' });
+    },
+  );
+  await monitor.run();
+  expect(monitor.snapshot()[1]).toMatchObject({
+    status: 'unavailable',
+    reason: 'destination-blocked',
   });
 });
