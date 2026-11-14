@@ -1,6 +1,7 @@
 import { MoreHorizontal, Plus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
+import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -170,6 +171,14 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
     };
   }, [widgets, connections]);
   const current = widgets.filter((item) => item.pageId === pageId);
+  const full = current.length >= MAX_WIDGETS_PER_PAGE;
+  const fullPages = new Set(
+    pages
+      .filter(
+        (page) => widgets.filter((item) => item.pageId === page.id).length >= MAX_WIDGETS_PER_PAGE,
+      )
+      .map((page) => page.id),
+  );
   async function change(url: string, method: string, body?: unknown) {
     if (busy) return false;
     setBusy(true);
@@ -374,7 +383,7 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                             .map((page) => (
                               <DropdownMenuItem
                                 key={page.id}
-                                disabled={item.version !== 1}
+                                disabled={item.version !== 1 || fullPages.has(page.id)}
                                 onSelect={() => movePage(page.id)}
                               >
                                 {page.name}
@@ -408,24 +417,30 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
               </article>
             );
           })}
-          <Button
-            type="button"
-            variant="outline"
-            className="h-auto min-h-24 border-dashed text-muted-foreground"
-            onClick={openAdd}
-            onDragOver={(event) => {
-              if (dragId === null) return;
-              event.preventDefault();
-              setDropAt(current.length);
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              dropHere();
-            }}
-          >
-            <Plus />
-            {t('pageWidgets.addTile')}
-          </Button>
+          {full ? (
+            <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">
+              {t('pageWidgets.limit', { max: MAX_WIDGETS_PER_PAGE })}
+            </p>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto min-h-24 border-dashed text-muted-foreground"
+              onClick={openAdd}
+              onDragOver={(event) => {
+                if (dragId === null) return;
+                event.preventDefault();
+                setDropAt(current.length);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                dropHere();
+              }}
+            >
+              <Plus />
+              {t('pageWidgets.addTile')}
+            </Button>
+          )}
         </div>
       )}
       <AlertDialog

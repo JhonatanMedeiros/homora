@@ -1,4 +1,5 @@
 import { clockWidget } from '@homora/widgets/clock';
+import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { integrationDefinition } from '@homora/integrations';
 import type { DatabaseSync } from 'node:sqlite';
 import {
@@ -277,6 +278,15 @@ export function createConfigurationTransfer({
           if (plan.widgets[index]?.status !== 'new') continue;
           const pageId = options.pageId ?? pageIds.get(widget.page.toLocaleLowerCase());
           if (!pageId) continue;
+          const onPage = (
+            sqlite
+              .prepare('SELECT COUNT(*) AS n FROM page_widgets WHERE page_id=?')
+              .get(pageId) as {
+              n: number;
+            }
+          ).n;
+          // A page holds a limited number of widgets; the rest of the file's widgets are skipped.
+          if (onPage >= MAX_WIDGETS_PER_PAGE) continue;
           sqlite
             .prepare(
               'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position) VALUES(?,?,?,?,1,NULL,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',

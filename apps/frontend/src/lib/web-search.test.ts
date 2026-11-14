@@ -40,3 +40,15 @@ it('uses the custom URL only when it is valid', () => {
   expect(engineTemplate('custom', 'http://example.com/?q=%s')).toBeNull();
   expect(engineTemplate('google', '')).toContain('google.com');
 });
+
+it('reads a bang and the text after it, case-insensitively, and nothing else', async () => {
+  const { parseBang, BANGS, templateProblem: problem } = await import('./web-search');
+  expect(parseBang('!g jelly fin')).toMatchObject({ label: 'Google', text: 'jelly fin' });
+  expect(parseBang('  !GH  homora ')).toMatchObject({ label: 'GitHub', text: 'homora' });
+  expect(parseBang('!g')).toBeNull();
+  expect(parseBang('!g   ')).toBeNull();
+  expect(parseBang('!unknown text')).toBeNull();
+  expect(parseBang('hello !g text')).toBeNull();
+  // Every built-in bang obeys the same safety rules as an engine template.
+  for (const item of BANGS) expect(problem(item.template)).toBeNull();
+});

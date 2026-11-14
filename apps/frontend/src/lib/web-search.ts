@@ -50,3 +50,26 @@ export function engineTemplate(engine: EngineChoice, customUrl: string): string 
   if (engine === CUSTOM_ENGINE) return templateProblem(customUrl) ? null : customUrl;
   return SEARCH_ENGINES.find((item) => item.id === engine)?.template ?? null;
 }
+
+/**
+ * Short prefixes for the optional web search: `!g text` searches Google, `!w text` Wikipedia. They
+ * only work while web search is on, and send nothing but the text after the prefix. Same rules as
+ * the engine templates: https only, and the text can never pick the host.
+ */
+export const BANGS = [
+  { bang: 'g', label: 'Google', template: 'https://www.google.com/search?q=%s' },
+  { bang: 'ddg', label: 'DuckDuckGo', template: 'https://duckduckgo.com/?q=%s' },
+  { bang: 'b', label: 'Brave', template: 'https://search.brave.com/search?q=%s' },
+  { bang: 'bing', label: 'Bing', template: 'https://www.bing.com/search?q=%s' },
+  { bang: 'w', label: 'Wikipedia', template: 'https://en.wikipedia.org/w/index.php?search=%s' },
+  { bang: 'gh', label: 'GitHub', template: 'https://github.com/search?q=%s' },
+  { bang: 'yt', label: 'YouTube', template: 'https://www.youtube.com/results?search_query=%s' },
+] as const;
+
+/** `!g text` into its engine and text; null when the text does not start with a known bang and a query. */
+export function parseBang(input: string): { label: string; template: string; text: string } | null {
+  const match = /^!([a-z]+)\s+(\S[\s\S]*)$/i.exec(input.trim());
+  if (!match) return null;
+  const found = BANGS.find((item) => item.bang === match[1]!.toLowerCase());
+  return found ? { label: found.label, template: found.template, text: match[2]!.trim() } : null;
+}

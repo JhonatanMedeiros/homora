@@ -1764,8 +1764,11 @@ Delivered as one change for issue #179 (mockup linked there); items are named by
   distinct unknown, not monitored and degraded tiles (N15), undo toasts for pin, acknowledge and moves (N11).
 - Decisions taken with the author: causes are computed in the browser as a tested pure function; acknowledging does not
   pause notifications; favorites and Pinned share one field and the row is global.
-- Not done or different from the mockup: the History menu and axis labels were kept on the Cards layout (the drawer adds
-  the same detail rather than replacing it); Bangs (`!g`) and a widget limit per page were not added.
+- C5 completed: with the drawer, the card drops the History toggle, the axis labels and the "Incidents and charts" link;
+  the drawer shows the period selector, latency, incidents and the axis. Cards outside the Home (no drawer) keep the old controls.
+- Bangs (`!g`, `!w`, `!gh`…) work only while the opt-in web search is on and send only the text after the prefix (N/A in
+  the issue list: decision 8). A page holds at most 12 widgets (`MAX_WIDGETS_PER_PAGE`; decision 2): creating or moving
+  into a full page is refused with `widget-limit`, and an import skips the widgets that do not fit.
 - Validation: see the pull request for the commands and results; interface behavior was covered by component and
   API tests, and was not verified in a real browser at every breakpoint.
 

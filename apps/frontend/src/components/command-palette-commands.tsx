@@ -30,6 +30,8 @@ type Props = {
     showDescriptions: boolean;
     searchUrl: string | null;
     searchText: string;
+    /** Set when a bang picked the engine (`!g text`). */
+    searchEngine?: string;
   };
   actions: {
     run: (action: () => void) => void;
@@ -63,6 +65,7 @@ export function CommandPaletteCommands({ state, actions }: Props) {
     showDescriptions,
     searchUrl,
     searchText,
+    searchEngine,
   } = state;
   const {
     run,
@@ -155,7 +158,9 @@ export function CommandPaletteCommands({ state, actions }: Props) {
           >
             <Search />
             <span className="min-w-0 flex-1 truncate">
-              {t('palette.webSearch', { text: searchText })}
+              {searchEngine
+                ? t('palette.webSearchWith', { engine: searchEngine, text: searchText })
+                : t('palette.webSearch', { text: searchText })}
             </span>
           </CommandItem>
         </CommandGroup>

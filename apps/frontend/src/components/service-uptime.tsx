@@ -161,9 +161,12 @@ export function UptimeMiniBar({
 export function UptimeBars({
   summary,
   monitor,
+  axis = true,
 }: {
   summary: UptimeSummary;
   monitor?: Pick<MonitorSettings, 'degradedLatencyMs'>;
+  /** Start and end labels under the bar. The card leaves them out; the drawer shows them. */
+  axis?: boolean;
 }) {
   const range = summary.range;
   const count = summary.buckets.length;
@@ -260,13 +263,15 @@ export function UptimeBars({
           </div>
         )}
       </div>
-      <div
-        aria-hidden="true"
-        className="flex justify-between font-mono text-[0.6875rem] text-muted-foreground"
-      >
-        <span>{t('uptime.axis.start', { range: rangeLabel(range) })}</span>
-        <span>{t('uptime.axis.now')}</span>
-      </div>
+      {axis && (
+        <div
+          aria-hidden="true"
+          className="flex justify-between font-mono text-[0.6875rem] text-muted-foreground"
+        >
+          <span>{t('uptime.axis.start', { range: rangeLabel(range) })}</span>
+          <span>{t('uptime.axis.now')}</span>
+        </div>
+      )}
       <div aria-live="polite">
         {picked && selected !== null && (
           <div
@@ -347,30 +352,32 @@ export function ServiceUptime({
           )}
         </span>
         <Sparkline summary={summary} />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="-my-1 -mr-2 shrink-0"
-          aria-expanded={open}
-          aria-controls={panelId}
-          aria-label={t('uptime.toggleFor', { name: service.name })}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {t('uptime.toggle')}
-          <ChevronDown
-            aria-hidden="true"
-            className={cn('transition-transform', open && 'rotate-180')}
-          />
-        </Button>
+        {!onDetails && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="-my-1 -mr-2 shrink-0"
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={t('uptime.toggleFor', { name: service.name })}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {t('uptime.toggle')}
+            <ChevronDown
+              aria-hidden="true"
+              className={cn('transition-transform', open && 'rotate-180')}
+            />
+          </Button>
+        )}
       </div>
-      <UptimeBars summary={summary} monitor={monitor} />
+      <UptimeBars summary={summary} monitor={monitor} axis={!onDetails} />
       <div className="flex justify-end text-xs">
         {onDetails ? (
           <button
             type="button"
             onClick={onDetails}
-            aria-label={t('card.detailsFor', { name: service.name })}
+            aria-label={t('drawer.openFor', { name: service.name })}
             className="text-primary hover:underline"
           >
             {t('card.details')} →
@@ -385,7 +392,7 @@ export function ServiceUptime({
           </a>
         )}
       </div>
-      {open && (
+      {!onDetails && open && (
         <UptimeDetails
           id={panelId}
           service={service}

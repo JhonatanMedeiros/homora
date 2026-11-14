@@ -66,7 +66,7 @@ Open **Display** to choose how cards look. This is saved in your browser. **Comp
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Compact** | A small tile per service: icon, name, host, the state in words and a thin bar for the period. Groups with only healthy services can collapse, and groups with problems can come first (both in **Settings → Home and pages**). The `i` button opens the details drawer. |
 | **List**    | A dense row per service. Best for many services.                                                                                                                                                                                                                        |
-| **Cards**   | Larger cards with the description, a 24-hour uptime bar and a link to incidents and charts.                                                                                                                                                                             |
+| **Cards**   | Larger cards with the description, the uptime bar for the period and a **Details** link that opens the drawer (history, incidents and charts live there).                                                                                                               |
 | **Group**   | Cards organized by your groups (the default).                                                                                                                                                                                                                           |
 | **Host**    | Cards organized by the machine or guest they run on, for services you have linked to a host.                                                                                                                                                                            |
 | **Map**     | A map of hosts and the services running on them. See [linking a card to a host](services-and-monitoring.md#where-a-service-runs-and-what-it-needs).                                                                                                                     |
@@ -116,6 +116,8 @@ Press `Ctrl K` (`⌘ K` on macOS) or `/` from anywhere to open the palette.
   the way to jump to a service, a setting or an action.
 - Optional **web search**: turn it on in **Settings → Top bar and shortcuts** to add "Search the web" to the
   palette. It is off by default; nothing is sent until you choose it, and then only the text you typed goes to the search engine.
+  With it on, a prefix picks the engine: `!g` Google, `!ddg` DuckDuckGo, `!b` Brave, `!bing` Bing, `!w` Wikipedia, `!gh` GitHub,
+  `!yt` YouTube (for example `!w jellyfin`). Only the text after the prefix is sent.
 
 ## Keyboard shortcuts
 
@@ -153,7 +155,8 @@ Everything you can do by dragging is also possible with buttons and menus.
 ## Widgets on the dashboard
 
 Between the banner and your groups, the dashboard can show **page widgets**: a clock, or live readings from an
-integration such as Proxmox. The dashed **Add widget** tile after the last widget opens a searchable gallery.
+integration such as Proxmox. A page holds up to 12 widgets; at the limit the **Add widget** tile says so and the
+other pages in **Move to page** that are full are disabled. The dashed **Add widget** tile after the last widget opens a searchable gallery.
 Each widget has a **⋯** menu to edit it, move it earlier or later, move it to another page or remove it, and widgets
 can be dragged to reorder. Widgets can also be attached _inside_ a card. See
 [Integrations and widgets](integrations-and-widgets.md).

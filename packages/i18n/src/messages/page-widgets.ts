@@ -16,6 +16,8 @@ export const en = {
   'pageWidgets.movePage': 'Move to page',
   'pageWidgets.moveBefore': 'Move earlier',
   'pageWidgets.moveAfter': 'Move later',
+  'pageWidgets.limit':
+    'This page has the most widgets it can hold ({max}). Remove one to add another.',
   'pageWidgets.addTile': 'Add widget',
   'pageWidgets.pick': 'Choose what to show on {page}.',
   'pageWidgets.search': 'Search widgets or connections',
@@ -52,6 +54,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'pageWidgets.movePage': 'Mover para outra página',
   'pageWidgets.moveBefore': 'Mover para antes',
   'pageWidgets.moveAfter': 'Mover para depois',
+  'pageWidgets.limit':
+    'Esta página tem o máximo de widgets que cabem nela ({max}). Remova um para adicionar outro.',
   'pageWidgets.addTile': 'Adicionar widget',
   'pageWidgets.pick': 'Escolha o que mostrar em {page}.',
   'pageWidgets.search': 'Buscar widget ou conexão',

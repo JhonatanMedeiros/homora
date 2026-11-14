@@ -142,6 +142,7 @@ export const en = {
   'shortcuts.newService': 'Add a service (on the services pages)',
   'shortcuts.sidebar': 'Show or hide the sidebar',
   'palette.webSearch': 'Search the web for “{text}”',
+  'palette.webSearchWith': 'Search {engine} for “{text}”',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -290,4 +291,5 @@ export const ptBR: Record<keyof typeof en, string> = {
   'shortcuts.newService': 'Adicionar serviço (nas páginas de serviços)',
   'shortcuts.sidebar': 'Mostrar ou ocultar a barra lateral',
   'palette.webSearch': 'Buscar na web por “{text}”',
+  'palette.webSearchWith': 'Buscar no {engine} por “{text}”',
 };
