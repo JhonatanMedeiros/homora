@@ -1,6 +1,14 @@
 import type { Extraction, IntegrationManifest, JsonPath, Literal } from './integration-manifest.js';
 
-export type ManifestData = Record<string, string | number | boolean | null>;
+export type ManifestRow = Record<string, string | number | boolean>;
+export type ManifestData = Record<string, string | number | boolean | null | ManifestRow[]>;
+
+export class IntegrationRowsLimitError extends Error {
+  constructor() {
+    super('Integration row limit exceeded.');
+    this.name = 'IntegrationRowsLimitError';
+  }
+}
 export type ManifestConfig = Record<string, string>;
 
 /** Reads only own properties and valid array indexes from an untrusted response body. */
@@ -114,6 +122,54 @@ export function extractManifestStep(
     case 'state':
       out[step.out] = stateOf(source, step.states, step.other);
       return;
+    case 'rows': {
+      if (!Array.isArray(source) || source.length > maxEntries) return fail();
+      const lookup = walkManifestPath(body(step.lookup.request), step.lookup.path);
+      if (!lookup || typeof lookup !== 'object' || Array.isArray(lookup)) return fail();
+      const rows: ManifestRow[] = [];
+      const seen = new Set<string | number>();
+      let examined = 0;
+      for (const group of source) {
+        const items = walkManifestPath(group, step.items);
+        if (!Array.isArray(items) || items.length > maxEntries) return fail();
+        for (const item of items) {
+          if (++examined > maxEntries) return fail();
+          const key = typed(walkManifestPath(item, step.key), step.keyType, {
+            maxLength: step.maxKeyLength,
+            min: -Number.MAX_SAFE_INTEGER,
+            max: Number.MAX_SAFE_INTEGER,
+          });
+          if (typeof key !== 'number' && typeof key !== 'string') return fail();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (rows.length >= step.max) throw new IntegrationRowsLimitError();
+          const history = Object.hasOwn(lookup, String(key))
+            ? (lookup as Record<string, unknown>)[String(key)]
+            : undefined;
+          if (history !== undefined && (!Array.isArray(history) || history.length > maxEntries))
+            return fail();
+          const latest = Array.isArray(history) ? history.at(-1) : undefined;
+          const row: ManifestRow = {};
+          for (const [name, spec] of Object.entries(step.fields)) {
+            const value = typed(
+              walkManifestPath(spec.source === 'item' ? item : group, spec.path),
+              spec.type,
+              spec,
+            );
+            if (value === undefined) return fail();
+            row[name] = value;
+          }
+          row[step.lookup.out] = stateOf(
+            walkManifestPath(latest, step.lookup.field),
+            step.lookup.states,
+            step.lookup.other,
+          );
+          rows.push(row);
+        }
+      }
+      out[step.out] = rows;
+      return;
+    }
     case 'tally': {
       const groups =
         source && typeof source === 'object' && !Array.isArray(source)

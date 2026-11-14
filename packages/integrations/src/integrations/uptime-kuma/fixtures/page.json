@@ -1,0 +1,36 @@
+{
+  "_source": {
+    "kind": "hand-written minimal sample",
+    "docs": "https://github.com/louislam/uptime-kuma/wiki/Status-Page",
+    "note": "Public page shape is synthetic; live version compatibility is unverified."
+  },
+  "body": {
+    "publicGroupList": [
+      {
+        "name": "Services",
+        "monitorList": [
+          {
+            "id": 1,
+            "name": "Web"
+          },
+          {
+            "id": 2,
+            "name": "DB"
+          },
+          {
+            "id": 3,
+            "name": "Queue"
+          },
+          {
+            "id": 4,
+            "name": "Worker"
+          },
+          {
+            "id": 5,
+            "name": "New"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -160,8 +160,15 @@ export function createManifestAdapter(
       const out: ManifestData = {};
       for (const step of manifest.extract) extractManifestStep(step, body, config, fail, out);
       // A credential reflected by the remote service must never reach a response.
-      for (const value of Object.values(out))
-        if (typeof value === 'string' && secrets.some((secret) => value.includes(secret))) fail();
+      const containsSecret = (value: unknown): boolean =>
+        typeof value === 'string'
+          ? secrets.some((secret) => value.includes(secret))
+          : Array.isArray(value)
+            ? value.some(containsSecret)
+            : value !== null && typeof value === 'object'
+              ? Object.values(value).some(containsSecret)
+              : false;
+      if (containsSecret(out)) fail();
       return out;
     },
   };

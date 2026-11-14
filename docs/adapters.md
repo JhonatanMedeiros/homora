@@ -111,6 +111,18 @@ Follow this workflow when adding or changing an integration or its widgets:
    icon catalog and production build. Update the integration reference, permissions and live
    validation status. Mocked fixtures demonstrate contract behavior, not real service compatibility.
 
+When adding a shared SDK operation or widget capability, keep service-specific paths, names,
+state mappings and presentation in the integration definition. Give the capability a bounded,
+service-neutral contract and add a synthetic test for a second domain with different field names
+and data. This demonstrates reuse but does not replace design review; expand transport methods,
+permissions or network capabilities only through the separate review described above.
+
+ESLint reports forbidden static imports in runtime integration and application code; test files are exempt to allow the existing contract helpers. The integration types come from registered descriptors, and backend capability entry-point restrictions remain in force. `pnpm check` also runs the integration boundary tests. They inspect runtime source for direct and
+literal dynamic imports, reexports and comparisons or switches over known integration types, and
+for SDK dependencies on application packages. Test files are excluded because the current contract
+harness lives in the backend. The static check cannot prove independence or discover every indirect
+or dynamically constructed dependency, so reviewers must still inspect the design and widget code.
+
 The SDK owns manifest validation, parsing, adapter execution and widget presentation. The host still
 owns configuration, authentication, persistence, route handling, the injected error policy and the
 restricted transport. It provides generic forms and screens for supported contracts; entirely new
@@ -206,3 +218,7 @@ Notes / deviations:
 ## Internal widget contract
 
 `@homora/widgets` contains host-independent definitions, states, and source contracts; `clock.ts` is the example of a networkless local widget. For a connected presentation, keep the definition, validated data, translations, fixtures, and presentation under the integration, and register it through the generated catalog as described above. `integrationWidgetDefinition` declares the specific output contract; only a declared capability can provide a shared source. The presentation receives data, never credentials or direct network access. Configuration, placement, updates, and persistence belong to the host. The current version provides neither custom mutable storage nor external plugins. See [ADR 0019](decisions/0019-widget-sdk.md) and the [widget inventory](issue-159-widget-inventory.md).
+
+### Bounded grouped rows
+
+The `rows` extraction projects explicitly named and typed fields from grouped arrays and joins a state from the latest item in an object keyed by a string or integer. The manifest fixes the paths, state mapping, text length and row limit; no expressions or arbitrary output fields are supported. Duplicate keys keep the first row. External names are untrusted data. Exceeding the row limit raises `integration-rows-limit`; malformed input fails closed.

@@ -1829,3 +1829,18 @@ the HTTP and stdio transports were not manually verified.
 
 - Added an optional check URL, taking precedence over the card URL and check path for all check types. It uses the existing destination policy and per-service private-network permission. Native exports use version 6; earlier versions remain readable. Existing services retain their monitoring signatures when the field is absent.
 - Validation: `pnpm check` (1,663 application tests and 25 script tests) and `pnpm build` passed. Browser layout and a live origin behind Cloudflare Access were not verified.
+
+### Uptime Kuma monitor details (issue #188)
+
+- Added a reusable bounded grouped-row extraction with named typed fields and a second public status-page request. Status data includes published monitor ids, names, groups and latest heartbeat states while preserving the existing aggregate and widget summary. Missing heartbeats remain unknown; duplicate ids keep the first group. The limit is 50 distinct monitors, and a failure of either request prevents the observation.
+- Validation: focused contract and interpreter tests; live Uptime Kuma version compatibility remains unverified.
+
+### Integration boundary checks
+
+- Extended the runtime boundary check to inspect imports, literal dynamic imports, reexports, named integration exports, comparisons and switches using syntax trees. It also checks integration SDK runtime imports and declared dependencies for application packages; test files remain excluded for the existing contract harness. The adapter guide requires a second synthetic domain for new shared SDK or widget capabilities. Static checks do not establish semantic genericity or catch all indirect or computed dependencies; design review remains necessary.
+- Validation: boundary checker examples and repository scan, `pnpm check` (1,671 application tests and 27 script tests) and `pnpm build` passed.
+
+### ESLint integration boundaries
+
+- Added editor-visible import restrictions for integration runtime code and applications, using registered integration descriptors and retaining the backend capability rules. Test files remain exempt from integration-specific import restrictions for contract helpers. Automated ESLint tests cover both allowed and rejected imports.
+- Validation: `pnpm check` (1,671 application tests and 28 script tests) and `pnpm build` passed.

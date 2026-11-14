@@ -5,7 +5,13 @@ import { createManifestAdapter } from '../../../../../apps/backend/src/integrati
 
 runAdapterContract({
   name: 'uptime-kuma',
-  create: (transport) => createManifestAdapter(uptimeKumaManifest, transport),
+  create: (transport) =>
+    createManifestAdapter(uptimeKumaManifest, async (request) => {
+      const response = await transport(request);
+      if (request.path === '/api/status-page/home' && response.status === 200)
+        return { ...response, body: fixture('uptime-kuma/page.json') };
+      return response;
+    }),
   validConfig: { url: 'https://kuma.example.test', slug: 'home' },
   secrets: [],
   invalidConfigs: [
@@ -22,7 +28,20 @@ runAdapterContract({
   fixtures: {
     valid: {
       body: fixture('uptime-kuma/heartbeat.json'),
-      expected: { up: 1, down: 1, pending: 1, maintenance: 1, unknown: 1 },
+      expected: {
+        up: 1,
+        down: 1,
+        pending: 1,
+        maintenance: 1,
+        unknown: 1,
+        monitors: [
+          { id: 1, name: 'Web', group: 'Services', status: 'up' },
+          { id: 2, name: 'DB', group: 'Services', status: 'down' },
+          { id: 3, name: 'Queue', group: 'Services', status: 'pending' },
+          { id: 4, name: 'Worker', group: 'Services', status: 'maintenance' },
+          { id: 5, name: 'New', group: 'Services', status: 'unknown' },
+        ],
+      },
     },
     wrongShape: [
       { label: 'no list', body: {} },
