@@ -34,6 +34,8 @@ do not use personal data or production databases in tests.
   before submitting.
 - Use commit messages following Conventional Commits, for example
   `fix: preserve data on migration`.
+- Use `deps:` for dependency updates and `security:` for security changes so
+  they appear in the corresponding release notes.
 
 Pull requests should explain the problem, summarize the solution, and list
 the checks executed along with known limitations. There is no guaranteed review
