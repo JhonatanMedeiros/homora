@@ -657,6 +657,16 @@ authorization, and nothing was marked validated from fixtures. Stage 5 has the w
 walkthrough but not publication. Acceptance criteria still unmet: live-only validation (stage 4)
 and the open items listed under stages 2 and 3.
 
+### MCP coverage follow-up (2026-11-13)
+
+The dashboard's pages were not fully discoverable over MCP: groups include their
+page name, but empty pages were invisible. `list_pages` now returns page IDs and
+names in dashboard order under the existing `services:read` scope, without writes
+or network access. The capability inventory records other UI areas without MCP
+equivalents; exposing them requires a specific use case and explicit data and
+permission boundaries. The existing R4 validation and live-environment limits above
+remain unchanged.
+
 ## Upgrade and Clean Installation Validation (2026-11-10)
 
 - Upgrade: version at `0abf05a` (migrations 0000 to 0005, six applied) was built and started

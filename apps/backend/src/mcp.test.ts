@@ -20,7 +20,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
     "UPDATE services SET url='http://localhost/?api_key=synthetic-secret' WHERE id=1",
   ).run();
   db.exec(
-    "CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0); CREATE TABLE service_groups (id INTEGER PRIMARY KEY, name TEXT, position INTEGER, columns INTEGER,page_id INTEGER); INSERT INTO service_groups VALUES (1,'Mídia',0,NULL,1)",
+    "CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0),(2,'Empty',1); CREATE TABLE service_groups (id INTEGER PRIMARY KEY, name TEXT, position INTEGER, columns INTEGER,page_id INTEGER); INSERT INTO service_groups VALUES (1,'Mídia',0,NULL,1)",
   );
   db.exec(`CREATE TABLE integration_instances(id INTEGER PRIMARY KEY,type TEXT,name TEXT,public_config TEXT,secret_ref TEXT,certificate_ref TEXT);
     CREATE TABLE integration_widgets(id INTEGER PRIMARY KEY,integration_id INTEGER,type TEXT,name TEXT,public_config TEXT,service_id INTEGER);
@@ -49,6 +49,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'list_services',
       'list_service_status',
       'get_service',
+      'list_pages',
       'list_groups',
       'get_group',
       'list_group_services',
@@ -109,6 +110,9 @@ it('validates proposal inputs and lists services without secrets', async () => {
       expect((published.op as { enum: string[] }).enum, name).toEqual(ops);
     }
     const result = await client.callTool({ name: 'list_services', arguments: {} });
+    expect(JSON.stringify(await client.callTool({ name: 'list_pages', arguments: {} }))).toContain(
+      'Empty',
+    );
     expect(JSON.stringify(result)).toContain('Jellyfin');
     expect(JSON.stringify(result)).not.toContain('synthetic-secret');
     expect(
@@ -144,6 +148,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
     }
     const reader = createProposalService(db).issue('reader', ['agents:read', 'audit:read']);
     process.env.HOMORA_AGENT_TOKEN = reader.token;
+    expect((await client.callTool({ name: 'list_pages', arguments: {} })).isError).toBe(true);
     const agents = JSON.stringify(await client.callTool({ name: 'list_agents', arguments: {} }));
     expect(agents).toContain('reader');
     expect(agents).not.toContain(reader.token);

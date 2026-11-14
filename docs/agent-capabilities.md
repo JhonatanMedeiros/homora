@@ -2,7 +2,8 @@
 
 What an agent can read, what it can only propose, and what only a signed-in
 administrator can do. Derived from the code (`agent-scopes.ts`, `mcp.ts` and `mcp-*-tools.ts`,
-`managed-proposals.ts`, `proposals.ts`, `routes/agent-proposals.ts`) on 2026-11-12.
+`managed-proposals.ts`, `proposals.ts`, `routes/agent-proposals.ts`) on 2026-11-12;
+page coverage was revisited on 2026-11-13.
 This is an audit of the implementation, not a validation: see the R4 section of
 [evolution.md](evolution.md) for what has evidence.
 
@@ -20,18 +21,18 @@ This is an audit of the implementation, not a validation: see the R4 section of
 
 ## Read tools
 
-| Scope                  | Tools                                                                                                                                                                              | Returns                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| none (any valid token) | `get_homora_capabilities`                                                                                                                                                          | Granted scopes, tool availability, discovery status, `publicStatusEnabled`                       |
-| `services:read`        | `list_services`, `get_service`, `list_groups`, `get_group`, `list_group_services`, `list_service_status`, `get_service_status`, `list_status_history`, `list_service_dependencies` | Cards, groups, observed status (URL query/fragment omitted), 30-day history, manual dependencies |
-| `agents:read`          | `list_agents`, `get_agent`                                                                                                                                                         | Identities without tokens or hashes                                                              |
-| `audit:read`           | `list_audit_history`                                                                                                                                                               | Paginated events; no IP addresses or event details                                               |
-| `proxmox:read`         | `list_proxmox_resources`                                                                                                                                                           | Aggregate data, single Proxmox connection only                                                   |
-| `widgets:read`         | `list_widgets`                                                                                                                                                                     | Widget definitions                                                                               |
-| `integrations:read`    | `list_integrations`, `get_integration_status`                                                                                                                                      | Connection metadata and status (read-only network request under destination policy)              |
-| `discovery:read`       | `list_discovery_suggestions`, `list_docker_push_sources`, `list_docker_push_suggestions`                                                                                           | Docker label suggestions; local scan needs `HOMORA_DOCKER_HOST`                                  |
-| `hosts:read`           | `list_host_suggestions`                                                                                                                                                            | Evidence-based service-to-guest suggestions (guest names are sensitive)                          |
-| any proposal scope     | `list_proposals`, `get_proposal`                                                                                                                                                   | Only the caller's own proposals                                                                  |
+| Scope                  | Tools                                                                                                                                                                                            | Returns                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| none (any valid token) | `get_homora_capabilities`                                                                                                                                                                        | Granted scopes, tool availability, discovery status, `publicStatusEnabled`                                                      |
+| `services:read`        | `list_services`, `get_service`, `list_pages`, `list_groups`, `get_group`, `list_group_services`, `list_service_status`, `get_service_status`, `list_status_history`, `list_service_dependencies` | Cards, pages (including empty pages), groups, observed status (URL query/fragment omitted), 30-day history, manual dependencies |
+| `agents:read`          | `list_agents`, `get_agent`                                                                                                                                                                       | Identities without tokens or hashes                                                                                             |
+| `audit:read`           | `list_audit_history`                                                                                                                                                                             | Paginated events; no IP addresses or event details                                                                              |
+| `proxmox:read`         | `list_proxmox_resources`                                                                                                                                                                         | Aggregate data, single Proxmox connection only                                                                                  |
+| `widgets:read`         | `list_widgets`                                                                                                                                                                                   | Widget definitions                                                                                                              |
+| `integrations:read`    | `list_integrations`, `get_integration_status`                                                                                                                                                    | Connection metadata and status (read-only network request under destination policy)                                             |
+| `discovery:read`       | `list_discovery_suggestions`, `list_docker_push_sources`, `list_docker_push_suggestions`                                                                                                         | Docker label suggestions; local scan needs `HOMORA_DOCKER_HOST`                                                                 |
+| `hosts:read`           | `list_host_suggestions`                                                                                                                                                                          | Evidence-based service-to-guest suggestions (guest names are sensitive)                                                         |
+| any proposal scope     | `list_proposals`, `get_proposal`                                                                                                                                                                 | Only the caller's own proposals                                                                                                 |
 
 ## Proposal tools and exact apply semantics
 
@@ -57,6 +58,14 @@ proposal, changing the review period, creating/revoking/rotating agents directly
 (`/api/agents`), creating or editing integration connections and their
 credentials, public status page settings, service defaults, import/export, and
 all monitoring settings. Agents cannot change what is public.
+
+Pages and their widgets can be managed in the UI but cannot be created, edited or
+reordered through MCP proposals. Incident summaries, maintenance windows, alert
+channels, uptime aggregates and appearance settings also lack dedicated MCP tools.
+Existing status and history tools provide observations, not full parity with the
+monitoring UI. These are capability gaps, not an authorization to expose sensitive
+configuration or add unreviewed writes; prioritize new tools based on concrete user
+needs and define their data and scope boundaries first.
 
 ## Out of scope (by decision)
 
