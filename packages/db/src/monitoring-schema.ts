@@ -8,7 +8,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-import { services } from './core-schema.js';
+import { monitors, services } from './core-schema.js';
 
 /** Notification destinations and Telegram credentials are encrypted with the integration key. */
 export const notificationChannels = sqliteTable('notification_channels', {
@@ -29,7 +29,7 @@ export const notificationChannels = sqliteTable('notification_channels', {
 export const notificationStates = sqliteTable('notification_states', {
   serviceId: integer('service_id')
     .primaryKey()
-    .references(() => services.id, { onDelete: 'cascade' }),
+    .references(() => monitors.id, { onDelete: 'cascade' }),
   state: text('state').notNull(),
 });
 
@@ -38,7 +38,7 @@ export const notificationStates = sqliteTable('notification_states', {
 export const serviceObservations = sqliteTable('service_observations', {
   serviceId: integer('service_id')
     .primaryKey()
-    .references(() => services.id, { onDelete: 'cascade' }),
+    .references(() => monitors.id, { onDelete: 'cascade' }),
   signature: text('signature').notNull(),
   observation: text('observation').notNull(),
 });
@@ -49,7 +49,7 @@ export const serviceObservationHistory = sqliteTable(
     id: integer('id').primaryKey({ autoIncrement: true }),
     serviceId: integer('service_id')
       .notNull()
-      .references(() => services.id, { onDelete: 'cascade' }),
+      .references(() => monitors.id, { onDelete: 'cascade' }),
     signature: text('signature').notNull(),
     observedAt: integer('observed_at').notNull(),
     observation: text('observation').notNull(),
@@ -86,7 +86,7 @@ export const serviceObservationHistory = sqliteTable(
 export const serviceMonitorSettings = sqliteTable('service_monitor_settings', {
   serviceId: integer('service_id')
     .primaryKey()
-    .references(() => services.id, { onDelete: 'cascade' }),
+    .references(() => monitors.id, { onDelete: 'cascade' }),
   // Consecutive failed checks before an incident opens and an alert is sent (anti-flapping).
   failureThreshold: integer('failure_threshold').notNull().default(1),
   // Consecutive successful checks before an open incident counts as recovered.
@@ -107,7 +107,7 @@ export const serviceIncidents = sqliteTable(
     id: integer('id').primaryKey({ autoIncrement: true }),
     serviceId: integer('service_id')
       .notNull()
-      .references(() => services.id, { onDelete: 'cascade' }),
+      .references(() => monitors.id, { onDelete: 'cascade' }),
     startedAt: integer('started_at').notNull(),
     endedAt: integer('ended_at'),
     reason: text('reason').notNull(),
@@ -130,7 +130,7 @@ export const serviceMaintenance = sqliteTable(
     id: integer('id').primaryKey({ autoIncrement: true }),
     serviceId: integer('service_id')
       .notNull()
-      .references(() => services.id, { onDelete: 'cascade' }),
+      .references(() => monitors.id, { onDelete: 'cascade' }),
     startsAt: integer('starts_at').notNull(),
     endsAt: integer('ends_at').notNull(),
     note: text('note').notNull().default(''),
@@ -148,7 +148,7 @@ export const serviceUptimeRollup = sqliteTable(
   {
     serviceId: integer('service_id')
       .notNull()
-      .references(() => services.id, { onDelete: 'cascade' }),
+      .references(() => monitors.id, { onDelete: 'cascade' }),
     hour: integer('hour').notNull(),
     up: integer('up').notNull().default(0),
     down: integer('down').notNull().default(0),
