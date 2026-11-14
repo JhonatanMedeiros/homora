@@ -14,7 +14,7 @@ describe('development data', () => {
         { name: 'Entertainment' },
         { name: 'Infrastructure' },
       ]);
-      const rows = sqlite.prepare('SELECT url, icon, allow_private FROM services').all();
+      const rows = sqlite.prepare('SELECT url, icon, allow_private FROM service_cards').all();
       expect(rows.every((row) => row.icon !== '' && normalizeIcon(row.icon) === row.icon)).toBe(
         true,
       );

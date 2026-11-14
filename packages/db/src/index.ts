@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
 export {
+  monitors,
   services,
   serviceGroups,
   pages,
@@ -20,13 +21,36 @@ export function getSqliteHandle(db: object) {
   return handle;
 }
 
-/** Apply generated Drizzle migrations atomically, adopting only the known legacy schema. */
+const foreignKeyViolations = (sqlite: DatabaseSync) =>
+  sqlite.prepare('PRAGMA foreign_key_check').all().length;
+
+/**
+ * Apply generated Drizzle migrations atomically, adopting only the known legacy schema.
+ *
+ * Foreign keys are off while the migrations run, so a migration can rebuild a table that others
+ * reference without cascading deletes into them (SQLite ignores that pragma inside a transaction,
+ * hence it is set around it). Rows that reference a missing parent after the migrations, beyond
+ * those the database already had, roll everything back.
+ */
 function migrate(sqlite: DatabaseSync) {
   const migrations = readMigrationFiles({
     migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
   });
+  sqlite.exec('PRAGMA foreign_keys = OFF');
+  try {
+    migrateWithoutForeignKeys(sqlite, migrations);
+  } finally {
+    sqlite.exec('PRAGMA foreign_keys = ON');
+  }
+}
+
+function migrateWithoutForeignKeys(
+  sqlite: DatabaseSync,
+  migrations: ReturnType<typeof readMigrationFiles>,
+) {
   sqlite.exec('BEGIN IMMEDIATE');
   try {
+    const violationsBefore = foreignKeyViolations(sqlite);
     sqlite.exec(
       'CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
@@ -81,6 +105,8 @@ function migrate(sqlite: DatabaseSync) {
         .prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)')
         .run(migration.hash, migration.folderMillis);
     }
+    if (foreignKeyViolations(sqlite) > violationsBefore)
+      throw new Error('Migration left rows that reference missing parents.');
     sqlite.exec('COMMIT');
   } catch (error) {
     sqlite.exec('ROLLBACK');

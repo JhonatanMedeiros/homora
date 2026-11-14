@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { integrationInstances, services } from './core-schema.js';
+import { integrationInstances, monitors, services } from './core-schema.js';
 
 export const agentIdentities = sqliteTable('agent_identities', {
   id: text('id').primaryKey(),
@@ -89,10 +89,10 @@ export const serviceDependencies = sqliteTable(
   {
     serviceId: integer('service_id')
       .notNull()
-      .references(() => services.id, { onDelete: 'cascade' }),
+      .references(() => monitors.id, { onDelete: 'cascade' }),
     dependsOnId: integer('depends_on_id')
       .notNull()
-      .references(() => services.id, { onDelete: 'cascade' }),
+      .references(() => monitors.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at').notNull(),
   },
   (table) => [

@@ -1,11 +1,14 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { createTagStore } from './service-tags.js';
+import { CARD_SCHEMA } from './test-card-schema.js';
 
 function setup() {
   const db = new DatabaseSync(':memory:');
   db.exec(
-    'PRAGMA foreign_keys=ON; CREATE TABLE services(id INTEGER PRIMARY KEY); INSERT INTO services VALUES(1),(2);' +
+    'PRAGMA foreign_keys=ON;' +
+      CARD_SCHEMA +
+      'INSERT INTO service_cards(id) VALUES(1),(2);' +
       'CREATE TABLE service_tags(service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE, tag TEXT NOT NULL, PRIMARY KEY(service_id,tag));',
   );
   return { db, tags: createTagStore(db) };

@@ -26,6 +26,7 @@ const validPaths = [
   '/manage/services',
   '/manage/services/new',
   '/manage/services/:id/edit',
+  '/manage/probes',
   '/manage/integrations',
   '/manage/agents',
   '/manage/activity',
@@ -74,15 +75,17 @@ function DashboardForRoute({
   const isEdit = Boolean(id && /^[1-9]\d*$/.test(id) && Number.isSafeInteger(number));
   const tab: Tab = matchPath('/manage/integrations', pathname)
     ? 'integrations'
-    : matchPath('/manage/agents', pathname)
-      ? 'agents'
-      : matchPath('/manage/activity', pathname)
-        ? 'activity'
-        : matchPath('/account', pathname)
-          ? 'account'
-          : matchPath({ path: '/manage/settings', end: false }, pathname)
-            ? 'settings'
-            : 'services';
+    : matchPath('/manage/probes', pathname)
+      ? 'probes'
+      : matchPath('/manage/agents', pathname)
+        ? 'agents'
+        : matchPath('/manage/activity', pathname)
+          ? 'activity'
+          : matchPath('/account', pathname)
+            ? 'account'
+            : matchPath({ path: '/manage/settings', end: false }, pathname)
+              ? 'settings'
+              : 'services';
   const settingsSection = matchPath('/manage/settings/:section', pathname)?.params.section;
   const unknownSettings =
     Boolean(matchPath('/manage/settings/*', pathname)) &&

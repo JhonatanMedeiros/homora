@@ -1,10 +1,13 @@
 import { PanelRight, Star } from 'lucide-react';
+import type { LightState } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 import { STATUS_FILTERS, type StatusFilter } from '@/lib/status-filter';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
 type Group = { name: string; total: number; down: number };
+/** A monitor without a card: shown by name and state, and opens the probes screen. */
+export type RailProbe = { id: number; name: string; state: LightState; label: string };
 
 type Props = {
   statusFilter: StatusFilter;
@@ -15,8 +18,18 @@ type Props = {
   onSelectGroup: (name: string | null) => void;
   /** Favorites: shown only when something is pinned, or while the view is on. */
   favorites: { count: number; active: boolean; onToggle: () => void };
+  /** Probes to list under the groups; hidden when there are none. */
+  probes?: { items: RailProbe[]; onOpen: () => void };
   widgetRail: boolean;
   onToggleWidgetRail: () => void;
+};
+
+const PROBE_DOT: Record<LightState, string> = {
+  available: 'bg-success',
+  degraded: 'bg-warning',
+  maintenance: 'bg-info',
+  unavailable: 'bg-destructive',
+  unknown: 'ring-[1.5px] ring-inset ring-muted-foreground',
 };
 
 const DOT: Record<StatusFilter, string | null> = {
@@ -41,6 +54,7 @@ export function HomeRail({
   selectedGroup,
   onSelectGroup,
   favorites,
+  probes,
   widgetRail,
   onToggleWidgetRail,
 }: Props) {
@@ -123,6 +137,30 @@ export function HomeRail({
               </button>
             );
           })}
+        </section>
+      )}
+      {probes && probes.items.length > 0 && (
+        <section aria-label={t('rail.probes')} className="flex flex-col gap-0.5">
+          <h2 className="px-2.5 pb-1 text-xs font-medium text-muted-foreground">
+            {t('rail.probes')}
+          </h2>
+          {probes.items.map((probe) => (
+            <button
+              key={probe.id}
+              type="button"
+              onClick={probes.onOpen}
+              className={cn(ITEM, 'text-muted-foreground')}
+            >
+              <span className="truncate">{probe.name}</span>
+              <span className="flex shrink-0 items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className={cn('size-2 rounded-full', PROBE_DOT[probe.state])}
+                />
+                <span className="sr-only">{probe.label}</span>
+              </span>
+            </button>
+          ))}
         </section>
       )}
       <Button

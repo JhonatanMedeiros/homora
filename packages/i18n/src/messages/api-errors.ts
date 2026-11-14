@@ -37,6 +37,11 @@ export const en = {
   'apiError.invalid-ca': 'Invalid CA certificate.',
   'apiError.secret-required': 'Enter the secret again when changing the address or its identity.',
   'apiError.service-not-found': 'Service not found.',
+  'apiError.probe-not-found': 'Probe not found.',
+  'apiError.invalid-probe-name': 'Provide a name for the probe.',
+  'apiError.invalid-probe-address':
+    'Provide an HTTP or HTTPS address without credentials, query or fragment.',
+  'apiError.invalid-probe-option': 'One of the probe options is not valid.',
   'apiError.maintenance-overlap': 'This service already has maintenance scheduled in that period.',
   'apiError.maintenance-not-found': 'Maintenance window not found.',
   'apiError.group-not-found': 'Group not found.',
@@ -120,6 +125,11 @@ export const ptBR = {
   'apiError.invalid-ca': 'Certificado de CA inválido.',
   'apiError.secret-required': 'Informe novamente o segredo ao alterar o endereço ou a identidade.',
   'apiError.service-not-found': 'Serviço não encontrado.',
+  'apiError.probe-not-found': 'Probe não encontrada.',
+  'apiError.invalid-probe-name': 'Informe um nome para a probe.',
+  'apiError.invalid-probe-address':
+    'Informe um endereço HTTP ou HTTPS sem credenciais, query ou fragmento.',
+  'apiError.invalid-probe-option': 'Alguma opção da probe não é válida.',
   'apiError.maintenance-overlap': 'Este serviço já tem manutenção agendada nesse período.',
   'apiError.maintenance-not-found': 'Janela de manutenção não encontrada.',
   'apiError.group-not-found': 'Grupo não encontrado.',

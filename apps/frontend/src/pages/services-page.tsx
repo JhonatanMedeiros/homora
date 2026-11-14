@@ -22,6 +22,8 @@ import { setHomeSearch, useHomeSearch } from '@/lib/home-search';
 import { PageTabMenu } from '@/components/page-tab-menu';
 import { PinnedRow } from '@/components/pinned-row';
 import { HomeRail } from '@/components/home-rail';
+import { useProbeList } from '@/hooks/use-probes';
+import { describeStatus } from '@/lib/status-text';
 import { useMinWidth } from '@/hooks/use-min-width';
 import { ServiceDrawer } from '@/components/service-drawer';
 import { ProbableCauses } from '@/components/probable-causes';
@@ -107,6 +109,7 @@ export function ServicesPage({
   const wide = useMinWidth(1280);
   const wider = useMinWidth(1440);
   const uptime = useUptime(uptimeRange);
+  const probeList = useProbeList();
   const [overviewVersion, setOverviewVersion] = useState(0);
   const overview = useStatusOverview(overviewVersion);
   const maintenance = useMaintenance();
@@ -744,6 +747,15 @@ export function ServicesPage({
             count: pinnedServices.length,
             active: favoritesOnly,
             onToggle: () => setFavoritesOnly(!favoritesOnly),
+          }}
+          probes={{
+            items: (probeList.probes ?? []).map((probe) => {
+              const view = describeStatus(statuses[probe.id], false, {
+                checkType: probe.checkType,
+              });
+              return { id: probe.id, name: probe.name, state: view.state, label: view.label };
+            }),
+            onOpen: () => navigate('/manage/probes'),
           }}
           widgetRail={widgetRail}
           onToggleWidgetRail={() => setWidgetRail(!widgetRail)}

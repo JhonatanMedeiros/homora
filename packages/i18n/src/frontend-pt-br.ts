@@ -20,6 +20,7 @@ import { ptBR as resourceLink } from './messages/resources.js';
 import { ptBR as uptimeStatus } from './messages/uptime-status.js';
 import { ptBR as serviceDetail } from './messages/service-detail.js';
 import { ptBR as checks } from './messages/checks.js';
+import { ptBR as probes } from './messages/probes.js';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -42,5 +43,6 @@ export const ptBR: Record<MessageKey, string> = {
   ...uptimeStatus,
   ...serviceDetail,
   ...checks,
+  ...probes,
   ...pageWidgets,
 };

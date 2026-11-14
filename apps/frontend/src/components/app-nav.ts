@@ -1,11 +1,13 @@
 import type { MessageKey } from '@/i18n';
-import { Activity, Bot, LayoutGrid, Server, Settings, type LucideIcon } from 'lucide-react';
+import { Activity, Bot, LayoutGrid, Radar, Server, Settings, type LucideIcon } from 'lucide-react';
 
-export type Tab = 'services' | 'integrations' | 'agents' | 'activity' | 'settings' | 'account';
+export type Tab =
+  'services' | 'probes' | 'integrations' | 'agents' | 'activity' | 'settings' | 'account';
 
 /** Sections of the management area. The account lives outside it, under the user menu. */
 export const navItems: { id: Exclude<Tab, 'account'>; label: MessageKey; icon: LucideIcon }[] = [
   { id: 'services', label: 'nav.services', icon: LayoutGrid },
+  { id: 'probes', label: 'nav.probes', icon: Radar },
   { id: 'integrations', label: 'nav.integrations', icon: Server },
   { id: 'agents', label: 'nav.agents', icon: Bot },
   { id: 'activity', label: 'nav.activity', icon: Activity },
@@ -24,7 +26,7 @@ export const navGroups: {
   label: MessageKey;
   items: Exclude<Tab, 'account'>[];
 }[] = [
-  { id: 'manage', label: 'nav.group.manage', items: ['services', 'integrations'] },
+  { id: 'manage', label: 'nav.group.manage', items: ['services', 'probes', 'integrations'] },
   { id: 'automation', label: 'nav.group.automation', items: ['agents', 'activity'] },
   { id: 'system', label: 'nav.group.system', items: ['settings'] },
 ];

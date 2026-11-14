@@ -4,6 +4,7 @@ import type { Service, UptimeSummary } from '@homora/shared';
 import type { ServiceStatus } from './monitor.js';
 import { serviceSignature } from './signature.js';
 import { createIncidentStore } from './incidents.js';
+import { CARD_SCHEMA } from '../test-card-schema.js';
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
@@ -24,8 +25,8 @@ const service = {
 
 function setup() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY);
-    INSERT INTO services(id) VALUES(1),(2);
+  db.exec(`${CARD_SCHEMA}
+    INSERT INTO service_cards(id) VALUES(1),(2);
     CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
     CREATE TABLE service_monitor_settings(service_id INTEGER PRIMARY KEY,failure_threshold INTEGER NOT NULL DEFAULT 1,recovery_threshold INTEGER NOT NULL DEFAULT 1,degraded_latency_ms INTEGER);
     CREATE TABLE service_incidents(id INTEGER PRIMARY KEY AUTOINCREMENT,service_id INTEGER NOT NULL,started_at INTEGER NOT NULL,ended_at INTEGER,reason TEXT NOT NULL,http_status INTEGER,failed_checks INTEGER NOT NULL DEFAULT 1);

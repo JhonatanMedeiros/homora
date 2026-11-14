@@ -19,6 +19,7 @@ import { en as resourceLink } from './messages/resources.js';
 import { en as uptimeStatus } from './messages/uptime-status.js';
 import { en as serviceDetail } from './messages/service-detail.js';
 import { en as checks } from './messages/checks.js';
+import { en as probes } from './messages/probes.js';
 
 /** Source of truth for translation keys: every language must provide these exact keys. */
 export const en = {
@@ -42,6 +43,7 @@ export const en = {
   ...uptimeStatus,
   ...serviceDetail,
   ...checks,
+  ...probes,
   ...pageWidgets,
 } as const;
 export type MessageKey = keyof typeof en;

@@ -31,6 +31,9 @@ const Agents = lazy(() =>
 const AccountPage = lazy(() =>
   import('@/pages/account-page').then((module) => ({ default: module.AccountPage })),
 );
+const ProbesPage = lazy(() =>
+  import('@/pages/probes-page').then((module) => ({ default: module.ProbesPage })),
+);
 const ActivityPage = lazy(() =>
   import('@/pages/activity-page').then((module) => ({ default: module.ActivityPage })),
 );
@@ -208,6 +211,11 @@ export function DashboardPage({
       {managing && tab === 'integrations' && (
         <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
           <IntegrationsPage onImported={data.refresh} />
+        </Suspense>
+      )}
+      {managing && tab === 'probes' && (
+        <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
+          <ProbesPage />
         </Suspense>
       )}
       {managing && tab === 'activity' && (

@@ -4,10 +4,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { createProposalService } from './proposals.js';
+import { CARD_SCHEMA } from './test-card-schema.js';
 
 function fixture() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
+  db.exec(`${CARD_SCHEMA}
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
@@ -48,14 +49,16 @@ it('approves once transactionally, rejects stale config, and audits human decisi
     db.prepare("UPDATE service_proposals SET diff='{}' WHERE id=?").run(proposal.id),
   ).toThrow();
   expect(api.decide(proposal.id, true, 'human')).toBe('approved');
-  expect(db.prepare('SELECT name FROM services').get()).toEqual({ name: 'Media' });
-  expect(db.prepare('SELECT position,allow_private as allowPrivate FROM services').get()).toEqual({
+  expect(db.prepare('SELECT name FROM service_cards').get()).toEqual({ name: 'Media' });
+  expect(
+    db.prepare('SELECT position,allow_private as allowPrivate FROM service_cards').get(),
+  ).toEqual({
     position: 0,
     allowPrivate: 1,
   });
   expect(() => api.decide(proposal.id, true, 'human')).toThrow();
   const next = api.propose(agent.id, { op: 'create', service: { ...card, name: 'Other' } });
-  db.prepare("UPDATE services SET name='changed' WHERE id=1").run();
+  db.prepare("UPDATE monitors SET name='changed' WHERE id=1").run();
   expect(() => api.decide(next.id, true, 'human')).toThrow('Configuration has changed');
   expect(
     (
@@ -80,7 +83,7 @@ it('rejects expired proposals and hostile payload fields without persisting them
   db.prepare('UPDATE service_proposals SET expires_at=0 WHERE id=?').run(proposal.id);
   expect(() => api.decide(proposal.id, true, 'human')).toThrow('unavailable');
   expect((api.list() as { state: string }[])[0]?.state).toBe('expired');
-  expect(db.prepare('SELECT count(*) as count FROM services').get()).toEqual({ count: 0 });
+  expect(db.prepare('SELECT count(*) as count FROM service_cards').get()).toEqual({ count: 0 });
   db.close();
 });
 
@@ -88,7 +91,7 @@ it('serializes review across SQLite connections and prevents replay', () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-proposal-'));
   const path = join(dir, 'test.sqlite');
   const first = new DatabaseSync(path);
-  first.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,name TEXT,url TEXT,category TEXT,description TEXT,icon TEXT DEFAULT '',position INTEGER DEFAULT 0,allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE);
+  first.exec(`${CARD_SCHEMA}
     CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); INSERT INTO config_version VALUES(1,1);
     CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0);
     CREATE TABLE service_groups(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,position INTEGER NOT NULL DEFAULT 0,columns INTEGER,page_id INTEGER);
@@ -104,7 +107,7 @@ it('serializes review across SQLite connections and prevents replay', () => {
     const proposal = one.propose(agent.id, { op: 'create', service: card });
     expect(one.decide(proposal.id, true, 'local-admin')).toBe('approved');
     expect(() => two.decide(proposal.id, true, 'local-admin')).toThrow('unavailable');
-    expect(first.prepare('SELECT count(*) as n FROM services').get()).toEqual({ n: 1 });
+    expect(first.prepare('SELECT count(*) as n FROM service_cards').get()).toEqual({ n: 1 });
   } finally {
     first.close();
     second.close();
@@ -166,7 +169,7 @@ it('creates a bounded atomic batch without applying proposals', () => {
   const batch = api.proposeBatch(author.id, items);
   expect(batch.proposals).toHaveLength(20);
   expect(new Set(batch.proposals.map((item) => item.batchId))).toEqual(new Set([batch.batchId]));
-  expect(db.prepare('SELECT COUNT(*) AS count FROM services').get()).toEqual({ count: 0 });
+  expect(db.prepare('SELECT COUNT(*) AS count FROM service_cards').get()).toEqual({ count: 0 });
   expect(() => api.proposeBatch(author.id, [...items, items[0]])).toThrow();
   expect(() => api.proposeBatch(author.id, [items[0], { kind: 'service', change: {} }])).toThrow();
   expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({
@@ -194,7 +197,7 @@ it('applies a batch once with ordered cards and rejects changed or incomplete ba
   }));
   const batch = api.proposeBatch(author.id, items);
   expect(api.decideBatch(batch.batchId, true, 'human')).toBe('approved');
-  expect(db.prepare('SELECT name,position FROM services ORDER BY position').all()).toEqual([
+  expect(db.prepare('SELECT name,position FROM service_cards ORDER BY position').all()).toEqual([
     { name: 'Card 0', position: 0 },
     { name: 'Card 1', position: 1 },
     { name: 'Card 2', position: 2 },
@@ -214,7 +217,7 @@ it('applies a batch once with ordered cards and rejects changed or incomplete ba
   api.withdraw(author.id, partial.proposals[0].id);
   expect(() => api.decideBatch(partial.batchId, true, 'human')).toThrow('unavailable');
   expect(api.decideBatch(partial.batchId, false, 'human')).toBe('rejected');
-  expect(db.prepare('SELECT count(*) AS count FROM services').get()).toEqual({ count: 3 });
+  expect(db.prepare('SELECT count(*) AS count FROM service_cards').get()).toEqual({ count: 3 });
   db.close();
 });
 
@@ -228,7 +231,7 @@ it('rolls back every change when a later batch item fails', () => {
     { kind: 'service', change: { op: 'delete', id: 1 } },
   ]);
   expect(() => api.decideBatch(batch.batchId, true, 'human')).toThrow();
-  expect(db.prepare('SELECT count(*) AS count FROM services').get()).toEqual({ count: 1 });
+  expect(db.prepare('SELECT count(*) AS count FROM service_cards').get()).toEqual({ count: 1 });
   expect(db.prepare('SELECT version FROM config_version').get()).toEqual({ version: 2 });
   expect(
     db
@@ -261,11 +264,11 @@ it('does not recreate an expired change whose target was removed', () => {
   const { db, api } = fixture();
   const agent = api.issue('bot', ['proposals:create']);
   db.prepare(
-    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+    "INSERT INTO service_cards(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
   ).run();
   const proposal = api.propose(agent.id, { op: 'delete', id: 1 });
   db.prepare('UPDATE service_proposals SET expires_at=0 WHERE id=?').run(proposal.id);
-  db.prepare('DELETE FROM services WHERE id=1').run();
+  db.prepare('DELETE FROM monitors WHERE id=1').run();
   expect(() => api.recreate(proposal.id, 'user:admin')).toThrow('Service not found');
   expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({ count: 1 });
   db.close();
@@ -289,18 +292,18 @@ it('recreates an expired batch as a single new batch and rolls back a missing ta
   const { db, api } = fixture();
   const agent = api.issue('bot', ['proposals:create']);
   db.prepare(
-    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+    "INSERT INTO service_cards(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
   ).run();
   const batch = api.proposeBatch(agent.id, [
     { kind: 'service', change: { op: 'create', service: card } },
     { kind: 'service', change: { op: 'delete', id: 1 } },
   ]);
   db.prepare('UPDATE service_proposals SET expires_at=0 WHERE batch_id=?').run(batch.batchId);
-  db.prepare('DELETE FROM services WHERE id=1').run();
+  db.prepare('DELETE FROM monitors WHERE id=1').run();
   expect(() => api.recreate(batch.proposals[0].id, 'user:admin')).toThrow('Proposal diff changed');
   expect(db.prepare('SELECT COUNT(*) AS count FROM service_proposals').get()).toEqual({ count: 2 });
   db.prepare(
-    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
+    "INSERT INTO service_cards(id,name,url,category,description) VALUES(1,'Old','https://old.example','Apps','')",
   ).run();
   const next = api.recreate(batch.proposals[0].id, 'user:admin');
   expect(next.batchId).not.toBe(batch.batchId);
@@ -321,6 +324,6 @@ it('shows and applies a separate monitoring address in a reviewed proposal', () 
   });
   expect(JSON.stringify(proposal)).toContain(checkUrl);
   expect(api.decide(proposal.id, true, 'human')).toBe('approved');
-  expect(db.prepare('SELECT check_url FROM services').get()).toEqual({ check_url: checkUrl });
+  expect(db.prepare('SELECT check_url FROM service_cards').get()).toEqual({ check_url: checkUrl });
   db.close();
 });

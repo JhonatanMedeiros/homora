@@ -33,13 +33,13 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   const selectServices = (order = 'category, position, name') =>
     sqlite
       .prepare(
-        `SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM services ORDER BY ${order}`,
+        `SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM service_cards ORDER BY ${order}`,
       )
       .all() as unknown as ServiceRow[];
   const selectService = (id: number) =>
     sqlite
       .prepare(
-        'SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM services WHERE id=?',
+        'SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_url as checkUrl,check_match as checkMatch,open_target as openTarget FROM service_cards WHERE id=?',
       )
       .get(id) as ServiceRow | undefined;
   type HostRow = {
@@ -175,7 +175,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         .prepare(
           `SELECT s.id,s.name,s.url,s.category,s.description,
              (SELECT p.name FROM pages p WHERE p.id=COALESCE(g.page_id,(SELECT id FROM pages ORDER BY position,id LIMIT 1))) AS page
-           FROM services s LEFT JOIN service_groups g ON g.name=s.category ORDER BY s.category,s.name`,
+           FROM service_cards s LEFT JOIN service_groups g ON g.name=s.category ORDER BY s.category,s.name`,
         )
         .all();
     },
