@@ -1832,5 +1832,5 @@ the HTTP and stdio transports were not manually verified.
 
 ### Uptime Kuma monitor details (issue #188)
 
-- Added a bounded grouped-row extraction and a second public status-page request. Status data includes published monitor ids, names, groups and latest heartbeat states while preserving the existing aggregate and widget summary. Missing heartbeats remain unknown; duplicate ids keep the first group. The limit is 50 distinct monitors, and a failure of either request prevents the observation.
+- Added a reusable bounded grouped-row extraction with named typed fields and a second public status-page request. Status data includes published monitor ids, names, groups and latest heartbeat states while preserving the existing aggregate and widget summary. Missing heartbeats remain unknown; duplicate ids keep the first group. The limit is 50 distinct monitors, and a failure of either request prevents the observation.
 - Validation: focused contract and interpreter tests; live Uptime Kuma version compatibility remains unverified.

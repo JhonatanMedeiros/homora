@@ -137,13 +137,32 @@ const extraction = z.discriminatedUnion('op', [
       request: z.string().optional(),
       path,
       items: path,
-      id: path,
-      name: path,
-      group: path,
+      key: path,
+      keyType: z.enum(['integer', 'string']),
+      maxKeyLength: z.number().int().min(1).max(4096).optional(),
+      fields: z.record(
+        z.string().regex(keyName),
+        z
+          .object({
+            source: z.enum(['item', 'group']),
+            path,
+            type: z.enum(['string', 'integer', 'number', 'boolean']),
+            maxLength: z.number().int().min(1).max(4096).optional(),
+            min: z.number().finite().optional(),
+            max: z.number().finite().optional(),
+          })
+          .strict()
+          .refine((v) => v.type !== 'string' || v.maxLength !== undefined)
+          .refine(
+            (v) =>
+              !['integer', 'number'].includes(v.type) ||
+              (v.min !== undefined && v.max !== undefined),
+          ),
+      ),
       max: z.number().int().min(1).max(1000),
-      maxText: z.number().int().min(1).max(4096),
       lookup: z
         .object({
+          out: z.string().regex(keyName),
           request: z.string(),
           path,
           field: path,
@@ -343,6 +362,14 @@ export function assertValidDefinition(
   if (new Set(outputs).size !== outputs.length) fail('duplicate output key');
   for (const step of definition.extract) {
     if (step.op !== 'config' && !known(step.request)) fail(`unknown request ${step.request}`);
+    if (
+      step.op === 'rows' &&
+      (Object.keys(step.fields).length === 0 ||
+        Object.keys(step.fields).length > 16 ||
+        Object.hasOwn(step.fields, step.lookup.out) ||
+        (step.keyType === 'string' && step.maxKeyLength === undefined))
+    )
+      fail('invalid rows fields');
     if (step.op === 'rows' && !ids.has(step.lookup.request))
       fail(`unknown request ${step.lookup.request}`);
     if (step.op === 'config' && !publicKeys.has(step.key))

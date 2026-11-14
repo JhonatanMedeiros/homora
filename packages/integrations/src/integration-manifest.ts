@@ -86,18 +86,31 @@ export type Extraction =
       other: string;
     }
   | {
-      /** Project bounded grouped rows and join a latest state by row id. */
+      /** Project named, bounded fields from grouped items, with a keyed state lookup. */
       op: 'rows';
       out: string;
       request?: string;
       path: JsonPath;
       items: JsonPath;
-      id: JsonPath;
-      name: JsonPath;
-      group: JsonPath;
+      key: JsonPath;
+      keyType: 'integer' | 'string';
+      maxKeyLength?: number;
+      fields: Readonly<
+        Record<
+          string,
+          {
+            source: 'item' | 'group';
+            path: JsonPath;
+            type: 'string' | 'integer' | 'number' | 'boolean';
+            maxLength?: number;
+            min?: number;
+            max?: number;
+          }
+        >
+      >;
       max: number;
-      maxText: number;
       lookup: {
+        out: string;
         request: string;
         path: JsonPath;
         field: JsonPath;

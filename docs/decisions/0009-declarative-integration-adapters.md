@@ -120,4 +120,4 @@ Still outside the format, so these services were **skipped** (see `docs/integrat
 
 ### Bounded grouped rows (issue #188)
 
-The interpreter also supports a closed `rows` extraction for grouped public monitors and a latest-state lookup by numeric id. Paths, state mapping, text and row limits are declared by the built-in manifest. It retains the first occurrence of duplicate ids and rejects malformed or oversized data; it does not provide general expressions or arbitrary transformations.
+The interpreter also supports a closed `rows` extraction for grouped data and a latest-state lookup by string or integer key. Paths, state mapping, text and row limits are declared by the built-in manifest. It retains the first occurrence of duplicate keys and rejects malformed or oversized data; it does not provide general expressions or arbitrary transformations.

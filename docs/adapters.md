@@ -209,4 +209,4 @@ Notes / deviations:
 
 ### Bounded grouped rows
 
-The `rows` extraction projects explicitly named, bounded id, name and group fields from a grouped array and joins a state from the latest item in an object keyed by id. The manifest fixes the paths, state mapping, text length and row limit; no expressions or arbitrary output fields are supported. Duplicate ids keep the first row. External names are untrusted data. Exceeding the row limit raises `integration-rows-limit`; malformed input fails closed.
+The `rows` extraction projects explicitly named and typed fields from grouped arrays and joins a state from the latest item in an object keyed by a string or integer. The manifest fixes the paths, state mapping, text length and row limit; no expressions or arbitrary output fields are supported. Duplicate keys keep the first row. External names are untrusted data. Exceeding the row limit raises `integration-rows-limit`; malformed input fails closed.

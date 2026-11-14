@@ -241,3 +241,51 @@ describe('registry as the single source of truth', () => {
     ).toBe(true);
   });
 });
+
+it('projects independently named fields and joins keyed states for a different domain', async () => {
+  const manifest: IntegrationManifest = {
+    ...clone(jellyfinManifest),
+    requests: [
+      { id: 'catalog', path: '/catalog' },
+      { id: 'measurements', path: '/measurements' },
+    ],
+    extract: [
+      {
+        op: 'rows',
+        out: 'sensors',
+        request: 'catalog',
+        path: ['rooms'],
+        items: ['devices'],
+        key: ['serial'],
+        keyType: 'string',
+        maxKeyLength: 32,
+        max: 3,
+        fields: {
+          serial: { source: 'item', path: ['serial'], type: 'string', maxLength: 32 },
+          room: { source: 'group', path: ['label'], type: 'string', maxLength: 32 },
+          battery: { source: 'item', path: ['battery'], type: 'integer', min: 0, max: 100 },
+        },
+        lookup: {
+          out: 'condition',
+          request: 'measurements',
+          path: ['readings'],
+          field: ['value'],
+          states: { normal: [1] },
+          other: 'unavailable',
+        },
+      },
+    ],
+    display: { summary: { text: 'Sensors' }, stats: [{ label: 'Sensors', value: 'Sensors' }] },
+  };
+  assertValidDefinition(manifest);
+  const adapter = createManifestAdapter(manifest, async ({ path }) => ({
+    status: 200,
+    body:
+      path === '/catalog'
+        ? { rooms: [{ label: 'Kitchen', devices: [{ serial: 'sensor-a', battery: 80 }] }] }
+        : { readings: { 'sensor-a': [{ value: 1 }] } },
+  }));
+  await expect(adapter.collect({ url: 'https://sensors.example' })).resolves.toEqual({
+    sensors: [{ serial: 'sensor-a', room: 'Kitchen', battery: 80, condition: 'normal' }],
+  });
+});
