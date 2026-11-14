@@ -1,6 +1,11 @@
 import { serviceProposalSchema } from './input-schemas.js';
 import { discoverySchema } from './mcp-discovery-schema.js';
-import { cardOrderSchema, groupChangeSchema, widgetChangeSchema } from './managed-proposals.js';
+import {
+  cardOrderSchema,
+  groupChangeSchema,
+  widgetChangeSchema,
+  maintenanceChangeSchema,
+} from './managed-proposals.js';
 
 // The MCP SDK publishes an empty inputSchema for z.discriminatedUnion, so tools
 // advertise these flat object schemas for discovery. The strict discriminated
@@ -15,6 +20,10 @@ export const groupChangeDiscoverySchema = discoverySchema(
   groupChangeSchema,
 );
 export const cardOrderDiscoverySchema = discoverySchema('propose_card_order', cardOrderSchema);
+export const maintenanceDiscoverySchema = discoverySchema(
+  'propose_maintenance',
+  maintenanceChangeSchema,
+);
 export const widgetChangeDiscoverySchema = discoverySchema(
   'propose_widget_change',
   widgetChangeSchema,

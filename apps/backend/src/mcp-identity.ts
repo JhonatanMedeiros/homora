@@ -3,6 +3,7 @@ import type { createProposalService } from './proposals.js';
 /** Scopes that let an agent author a reviewable proposal. */
 export const PROPOSAL_SCOPES = [
   'proposals:create',
+  'maintenance:propose',
   'groups:propose',
   'widgets:propose',
   'connections:propose',

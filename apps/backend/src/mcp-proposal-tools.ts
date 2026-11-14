@@ -5,7 +5,9 @@ import {
   cardOrderDiscoverySchema,
   groupChangeDiscoverySchema,
   serviceProposalDiscoverySchema,
+  maintenanceDiscoverySchema,
 } from './mcp-proposal-schemas.js';
+import { createMaintenanceStore, MaintenanceError } from './monitoring/index.js';
 import type { McpToolContext } from './mcp-tool-context.js';
 
 export function registerMcpProposalTools(
@@ -19,10 +21,58 @@ export function registerMcpProposalTools(
     | 'failed'
     | 'result'
     | 'proposalAuthor'
+    | 'database'
   >,
 ) {
-  const { proposalService, token, authorize, unauthorized, failed, result, proposalAuthor } =
-    context;
+  const {
+    proposalService,
+    token,
+    authorize,
+    unauthorized,
+    failed,
+    result,
+    proposalAuthor,
+    database,
+  } = context;
+  server.registerTool(
+    'list_maintenance',
+    {
+      description: 'List active and upcoming maintenance windows for one service.',
+      inputSchema: { serviceId: z.number().int().safe().positive() },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    },
+    async ({ serviceId }) => {
+      if (!authorize('maintenance:propose')) return unauthorized();
+      return result(createMaintenanceStore(database).upcoming(Date.now(), serviceId));
+    },
+  );
+  server.registerTool(
+    'propose_maintenance',
+    {
+      description:
+        'Propose a maintenance window or cancel an exact listed window. Requires human review. Times are epoch milliseconds.',
+      inputSchema: maintenanceDiscoverySchema,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    },
+    async (change) => {
+      const author = authorize('maintenance:propose');
+      if (!author) return unauthorized();
+      try {
+        return result(proposalService.proposeManaged(author, { kind: 'maintenance', change }));
+      } catch (error) {
+        if (
+          error instanceof MaintenanceError ||
+          (error instanceof Error &&
+            ['maintenance-not-found', 'invalid-window'].includes(error.message))
+        )
+          return {
+            content: [{ type: 'text' as const, text: error.message }],
+            isError: true as const,
+          };
+        return failed(error);
+      }
+    },
+  );
   server.registerTool(
     'withdraw_proposal',
     {
@@ -99,7 +149,14 @@ export function registerMcpProposalTools(
           .array(
             z
               .object({
-                kind: z.enum(['service', 'group', 'card-order', 'widget', 'connection-setup']),
+                kind: z.enum([
+                  'service',
+                  'group',
+                  'card-order',
+                  'widget',
+                  'connection-setup',
+                  'maintenance',
+                ]),
                 change: z.unknown(),
               })
               .strict(),
@@ -116,6 +173,7 @@ export function registerMcpProposalTools(
         'card-order': 'proposals:create',
         widget: 'widgets:propose',
         'connection-setup': 'connections:propose',
+        maintenance: 'maintenance:propose',
       } as const;
       const author = proposalAuthor();
       if (!author || items.some((item) => authorize(scopes[item.kind]) !== author))

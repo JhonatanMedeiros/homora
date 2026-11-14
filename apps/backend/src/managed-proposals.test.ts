@@ -17,6 +17,7 @@ function fixture() {
     CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT);
     CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'immutable'); END;
     CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);
+    CREATE TABLE service_maintenance(id INTEGER PRIMARY KEY AUTOINCREMENT,service_id INTEGER NOT NULL,starts_at INTEGER NOT NULL,ends_at INTEGER NOT NULL,note TEXT NOT NULL DEFAULT '');
     INSERT INTO service_groups VALUES(1,'Media',0,NULL,1),(2,'Apps',1,NULL,1);
     INSERT INTO services(id,name,url,category,description,position) VALUES(1,'A','https://a.example','Media','',0),(2,'B','https://b.example','Media','',1),(3,'C','https://c.example','Apps','',0);
     INSERT INTO integration_instances VALUES(1,'jellyfin','Media','{"url":"https://media.example","allowPrivate":false}','encrypted-secret',NULL);
@@ -27,6 +28,116 @@ function fixture() {
 }
 
 describe('managed proposals', () => {
+  it('rejects invalid or obsolete windows without applying a proposal', () => {
+    const { db, api, agent } = fixture();
+    try {
+      const now = Date.now();
+      const change = {
+        op: 'create',
+        serviceId: 1,
+        startsAt: now,
+        endsAt: now + 3600000,
+        note: 'Work',
+      };
+      expect(() =>
+        api.proposeManaged(agent.id, {
+          kind: 'maintenance',
+          change: { ...change, endsAt: now + 1000 },
+        }),
+      ).toThrow('invalid-window');
+      expect(() =>
+        api.proposeManaged(agent.id, {
+          kind: 'maintenance',
+          change: { ...change, serviceId: 999 },
+        }),
+      ).toThrow('service-not-found');
+      expect(() =>
+        api.proposeManaged(agent.id, { kind: 'maintenance', change: { ...change, note: ' ' } }),
+      ).toThrow('invalid-window');
+      const proposal = api.proposeManaged(agent.id, { kind: 'maintenance', change });
+      db.prepare(
+        'INSERT INTO service_maintenance(service_id,starts_at,ends_at,note) VALUES(?,?,?,?)',
+      ).run(1, now, now + 3600000, 'Other');
+      expect(() => api.decide(proposal.id, true, 'user:admin')).toThrow('overlap');
+      expect(db.prepare('SELECT * FROM service_maintenance').all()).toHaveLength(1);
+    } finally {
+      db.close();
+    }
+  });
+  it('reviews maintenance creation and cancellation, rechecking conflicts and auditing the reviewer', () => {
+    const { db, api, agent } = fixture();
+    try {
+      const now = Date.now();
+      const change = {
+        op: 'create',
+        serviceId: 1,
+        startsAt: now,
+        endsAt: now + 3600000,
+        note: 'Planned work',
+      };
+      const proposal = api.proposeManaged(agent.id, { kind: 'maintenance', change });
+      expect(db.prepare('SELECT * FROM service_maintenance').all()).toHaveLength(0);
+      expect(api.decide(proposal.id, true, 'user:admin')).toBe('approved');
+      const row = db
+        .prepare(
+          'SELECT id,service_id AS serviceId,starts_at AS startsAt,ends_at AS endsAt,note FROM service_maintenance',
+        )
+        .get();
+      expect(row).toMatchObject({ serviceId: 1, note: 'Planned work' });
+      expect(
+        db
+          .prepare(
+            "SELECT actor FROM audit_events WHERE proposal_id=? AND action='service-maintenance-create'",
+          )
+          .get(proposal.id),
+      ).toEqual({ actor: 'user:admin' });
+      expect(() => api.proposeManaged(agent.id, { kind: 'maintenance', change })).toThrow(
+        'overlap',
+      );
+      const cancel = api.proposeManaged(agent.id, {
+        kind: 'maintenance',
+        change: { ...row, op: 'cancel' },
+      });
+      api.decide(cancel.id, true, 'user:admin');
+      expect(
+        db
+          .prepare(
+            "SELECT actor FROM audit_events WHERE proposal_id=? AND action='service-maintenance-delete'",
+          )
+          .get(cancel.id),
+      ).toEqual({ actor: 'user:admin' });
+      expect(
+        (db.prepare('SELECT ends_at FROM service_maintenance').get() as { ends_at: number })
+          .ends_at,
+      ).toBeLessThan(change.endsAt);
+    } finally {
+      db.close();
+    }
+  });
+  it('rolls back a batch when maintenance windows overlap at approval', () => {
+    const { db, api, agent } = fixture();
+    try {
+      const now = Date.now();
+      const change = {
+        op: 'create',
+        serviceId: 1,
+        startsAt: now,
+        endsAt: now + 3600000,
+        note: 'Planned work',
+      };
+      const batch = api.proposeBatch(agent.id, [
+        { kind: 'maintenance', change },
+        { kind: 'maintenance', change },
+      ]);
+      expect(() => api.decideBatch(batch.batchId, true, 'user:admin')).toThrow('overlap');
+      expect(db.prepare('SELECT * FROM service_maintenance').all()).toHaveLength(0);
+      expect(
+        db.prepare("SELECT * FROM audit_events WHERE action='service-maintenance-create'").all(),
+      ).toHaveLength(0);
+    } finally {
+      db.close();
+    }
+  });
   it.each([3, 4, 5])('renumbers groups after approving deletion of group %i', (id) => {
     const { db, api, agent } = fixture();
     try {

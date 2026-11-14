@@ -1,4 +1,4 @@
-import { t, type MessageKey } from '@/i18n';
+import { formatDateTime, t, type MessageKey } from '@/i18n';
 import type { Diff } from './agent-model';
 
 const labels: Record<string, MessageKey> = {
@@ -14,6 +14,9 @@ const labels: Record<string, MessageKey> = {
   integrationId: 'managed.integrationId',
   integration_id: 'managed.integrationId',
   serviceId: 'managed.serviceId',
+  startsAt: 'managed.startsAt',
+  endsAt: 'managed.endsAt',
+  note: 'managed.note',
   service_id: 'managed.serviceId',
   type: 'managed.type',
   url: 'field.url',
@@ -41,6 +44,7 @@ const operations: Record<string, MessageKey> = {
   create: 'managed.create',
   rename: 'managed.rename',
   delete: 'managed.delete',
+  cancel: 'managed.cancel',
   reorder: 'managed.reorder',
   move: 'managed.move',
   link: 'managed.link',
@@ -74,6 +78,8 @@ function Value({ value, field }: { value: unknown; field?: string }) {
     );
   if (field === 'strength' && (value === 'strong' || value === 'medium'))
     return <span>{t(`hosts.strength.${value}`)}</span>;
+  if ((field === 'startsAt' || field === 'endsAt') && typeof value === 'number')
+    return <span>{formatDateTime(value)}</span>;
   if (field === 'op' && typeof value === 'string' && operations[value])
     return <span>{t(operations[value])}</span>;
   return <span>{String(value)}</span>;
@@ -87,14 +93,17 @@ export function ManagedProposalChange({ diff }: { diff: Diff }) {
         ? 'proposal.managed.card-order'
         : kind === 'widget'
           ? 'proposal.managed.widget'
-          : kind === 'host-link'
-            ? 'proposal.managed.host-link'
-            : 'proposal.managed.connection-setup';
+          : kind === 'maintenance'
+            ? 'proposal.managed.maintenance'
+            : kind === 'host-link'
+              ? 'proposal.managed.host-link'
+              : 'proposal.managed.connection-setup';
   return (
     <div className="flex flex-col gap-3">
       <p className="font-label text-lg font-semibold">{t(title)}</p>
       {kind === 'connection-setup' && <p>{t('proposal.managed.connectionNote')}</p>}
       {kind === 'host-link' && <p>{t('managed.hostNote')}</p>}
+      {kind === 'maintenance' && <p>{t('managed.maintenanceNote')}</p>}
       {diff.before != null && (
         <section className="flex flex-col gap-2">
           <p className="font-semibold">{t('proposal.before')}</p>

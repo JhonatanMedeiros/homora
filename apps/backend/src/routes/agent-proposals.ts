@@ -5,6 +5,16 @@ import { errorBody } from '../api-error.js';
 import type { createServiceMonitor } from '../monitoring/index.js';
 import type { createAuth } from '../auth.js';
 import type { AuditLog } from '../audit.js';
+import { MaintenanceError } from '../monitoring/index.js';
+
+function maintenanceError(error: unknown) {
+  const code =
+    error instanceof MaintenanceError ? error.code : error instanceof Error ? error.message : '';
+  if (code === 'overlap') return 'maintenance-overlap' as const;
+  if (code === 'invalid-window') return 'invalid-data' as const;
+  if (code === 'service-not-found' || code === 'maintenance-not-found') return code;
+  return null;
+}
 
 type Proposals = ReturnType<typeof createProposalService>;
 
@@ -130,11 +140,12 @@ export function registerAgentProposalRoutes(
           .code(409)
           .send(
             errorBody(
-              error instanceof Error && error.message === 'Configuration has changed'
-                ? 'config-changed'
-                : error instanceof Error && error.message === 'Batch changes conflict'
-                  ? 'batch-conflict'
-                  : 'proposal-unavailable',
+              maintenanceError(error) ??
+                (error instanceof Error && error.message === 'Configuration has changed'
+                  ? 'config-changed'
+                  : error instanceof Error && error.message === 'Batch changes conflict'
+                    ? 'batch-conflict'
+                    : 'proposal-unavailable'),
             ),
           );
       }
@@ -162,9 +173,10 @@ export function registerAgentProposalRoutes(
         .code(409)
         .send(
           errorBody(
-            error instanceof Error && error.message === 'Configuration has changed'
-              ? 'config-changed'
-              : 'proposal-unavailable',
+            maintenanceError(error) ??
+              (error instanceof Error && error.message === 'Configuration has changed'
+                ? 'config-changed'
+                : 'proposal-unavailable'),
           ),
         );
     }

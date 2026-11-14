@@ -36,6 +36,17 @@ it('refuses every write for a read-only agent and persists nothing', async () =>
       ['propose_group_change', { op: 'create', name: 'G' }],
       ['propose_card_order', { op: 'reorder', category: 'X', ids: [] }],
       ['propose_widget_change', { op: 'delete', id: 1 }],
+      [
+        'propose_maintenance',
+        {
+          op: 'create',
+          serviceId: 1,
+          startsAt: Date.now(),
+          endsAt: Date.now() + 3600000,
+          note: 'Work',
+        },
+      ],
+      ['list_maintenance', { serviceId: 1 }],
       ['propose_host_link', { serviceId: 1, connectionId: 1, node: 'n', vmid: 100, type: 'lxc' }],
       ['propose_agent_create', { name: 'evil', scopes: ['services:read'] }],
       ['propose_agent_update_scopes', { id: reader.id, scopes: ['agents:propose'] }],
@@ -61,6 +72,43 @@ it('refuses every write for a read-only agent and persists nothing', async () =>
     expect(available.filter((n) => n.startsWith('propose_') && n !== 'propose_batch')).toEqual([]);
     await client.close();
   } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('allows a dedicated maintenance scope to propose and list windows without applying them', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-maintenance-'));
+  const storage = createDatabase(join(dir, 'db.sqlite'));
+  const db = getSqliteHandle(storage.db);
+  try {
+    db.prepare(
+      "INSERT INTO services(name,url,category,description) VALUES('Example','https://example.com','Apps','')",
+    ).run();
+    const service = createProposalService(db);
+    const agent = service.issue('maintenance', ['maintenance:propose']);
+    const client = await connect(db, agent.token);
+    const now = Date.now();
+    const proposed = await client.callTool({
+      name: 'propose_maintenance',
+      arguments: { op: 'create', serviceId: 1, startsAt: now, endsAt: now + 3600000, note: 'Work' },
+    });
+    expect(failed(proposed)).toBe(false);
+    expect(db.prepare('SELECT * FROM service_maintenance').all()).toHaveLength(0);
+    const proposal = JSON.parse(text(proposed)) as { id: string };
+    expect(failed(await client.callTool({ name: 'list_proposals' }))).toBe(false);
+    service.decide(proposal.id, true, 'user:admin');
+    const windows = JSON.parse(
+      text(await client.callTool({ name: 'list_maintenance', arguments: { serviceId: 1 } })),
+    ) as unknown[];
+    expect(windows).toHaveLength(1);
+    const cancel = await client.callTool({
+      name: 'propose_maintenance',
+      arguments: { op: 'cancel', ...(windows[0] as object) },
+    });
+    expect(failed(cancel)).toBe(false);
+    await client.close();
+  } finally {
+    db.close();
     rmSync(dir, { recursive: true, force: true });
   }
 });

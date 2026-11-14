@@ -58,6 +58,8 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'list_agents',
       'get_agent',
       'list_audit_history',
+      'list_maintenance',
+      'propose_maintenance',
       'withdraw_proposal',
       'list_proposals',
       'get_proposal',
@@ -89,6 +91,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'propose_group_change',
       'propose_card_order',
       'propose_widget_change',
+      'propose_maintenance',
     ]) {
       const tool = tools.tools.find((t) => t.name === name);
       expect(Object.keys(tool?.inputSchema.properties ?? {})).toContain('op');

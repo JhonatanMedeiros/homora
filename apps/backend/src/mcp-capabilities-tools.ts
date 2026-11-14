@@ -68,6 +68,10 @@ export function registerMcpCapabilitiesTool(
           scopes: ['proposals:create'],
         })),
         { name: 'propose_group_change', scopes: ['groups:propose'] },
+        ...['list_maintenance', 'propose_maintenance'].map((name) => ({
+          name,
+          scopes: ['maintenance:propose'],
+        })),
         { name: 'list_widgets', scopes: ['widgets:read'] },
         { name: 'propose_widget_change', scopes: ['widgets:propose'] },
         ...['list_integrations', 'get_integration_status'].map((name) => ({
