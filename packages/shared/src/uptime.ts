@@ -88,6 +88,11 @@ export type StatusOverview = {
   generatedAt: string;
   /** Only services whose settings differ from the defaults. */
   settings: Record<number, MonitorSettings>;
+  /**
+   * Set while the monitor itself cannot measure (most monitors fail for the same reason). The
+   * services are then neither up nor down: their failures are not incidents.
+   */
+  measurement?: { startedAt: number; reason: string; failing: number; measured: number } | null;
   /** The incident each service is in right now. */
   open: Record<number, Incident>;
   /** Incidents that started in the last 7 days, and in the 7 days before that. */

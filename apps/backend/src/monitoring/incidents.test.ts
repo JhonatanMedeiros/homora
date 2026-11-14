@@ -4,6 +4,7 @@ import type { Service, UptimeSummary } from '@homora/shared';
 import type { ServiceStatus } from './monitor.js';
 import { serviceSignature } from './signature.js';
 import { createIncidentStore } from './incidents.js';
+import { createMeasurementGuard } from './measurement.js';
 import { CARD_SCHEMA } from '../test-card-schema.js';
 
 const MIN = 60_000;
@@ -228,5 +229,36 @@ describe('overview', () => {
       degradedLatencyMs: 800,
     });
     expect(body.sla.actualPct).toBe(90.91);
+  });
+
+  it('opens no service incident when the monitor itself cannot measure, and one when only a service fails', () => {
+    const { db, store } = setup();
+    db.exec(
+      "CREATE TABLE measurement_incidents(id INTEGER PRIMARY KEY AUTOINCREMENT,started_at INTEGER NOT NULL,ended_at INTEGER,reason TEXT NOT NULL,failing INTEGER NOT NULL,measured INTEGER NOT NULL,monitors TEXT NOT NULL DEFAULT '[]')",
+    );
+    const guard = createMeasurementGuard(db);
+    const fleet = Array.from({ length: 6 }, (_, index) => ({ ...service, id: index + 1 }));
+    const publish = (outcomes: ServiceStatus['status'][], minute: number) => {
+      const states = Object.fromEntries(
+        outcomes.map((status, index) => [
+          index + 1,
+          state(status, minute, status === 'available' ? 'reachable' : 'no-response', null),
+        ]),
+      );
+      guard.observe(fleet, states, t0 + minute * MIN);
+      store.observe(fleet, guard.mask(states));
+    };
+    publish(Array(6).fill('unavailable'), 0);
+    publish(Array(6).fill('unavailable'), 1);
+    publish(Array(6).fill('unavailable'), 2);
+    expect(store.open()).toEqual({});
+    expect(db.prepare('SELECT COUNT(*) AS n FROM service_incidents').get()).toEqual({ n: 0 });
+    expect(guard.current()).not.toBeNull();
+
+    // Measuring again: the first cycle after recovery decides, and nothing is inherited.
+    publish(['unavailable', ...Array(5).fill('available')], 3);
+    expect(guard.current()).toBeNull();
+    expect(store.open()[1]).toMatchObject({ failedChecks: 1 });
+    expect(Object.keys(store.open())).toEqual(['1']);
   });
 });

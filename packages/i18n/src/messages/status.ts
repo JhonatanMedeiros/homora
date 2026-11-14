@@ -12,6 +12,9 @@ export const en = {
   'publicStatus.allUp': 'All systems operational',
   'publicStatus.someDown': 'Some services are down',
   'publicStatus.someUnknown': 'Some services have no recent information',
+  'publicStatus.monitoringDown': 'Monitoring unavailable',
+  'publicStatus.monitoringDown.detail':
+    'We cannot confirm the state of the services right now. This is not a report that they are down.',
   'publicStatus.uptime': '{value}% in the last 24 hours',
   'publicStatus.barsLabel': 'Last 24 hours, one bar per hour',
   'publicStatus.barUp': 'online',
@@ -59,6 +62,8 @@ export const en = {
   'activity.event.service-defaults-update': 'New service defaults changed',
   'activity.event.monitoring-tls-insecure': 'Service TLS verification changed',
   'activity.event.monitoring-ca-update': 'Monitoring certificates changed',
+  'activity.event.monitoring-measurement.failure': 'Monitoring could not measure the services',
+  'activity.event.monitoring-measurement.success': 'Monitoring is measuring the services again',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -74,6 +79,9 @@ export const ptBR: Record<keyof typeof en, string> = {
   'publicStatus.allUp': 'Todos os sistemas operacionais',
   'publicStatus.someDown': 'Alguns serviços estão fora do ar',
   'publicStatus.someUnknown': 'Alguns serviços estão sem informação recente',
+  'publicStatus.monitoringDown': 'Monitoramento indisponível',
+  'publicStatus.monitoringDown.detail':
+    'Não conseguimos confirmar o estado dos serviços agora. Isto não é um aviso de que estejam fora do ar.',
   'publicStatus.uptime': '{value}% nas últimas 24 horas',
   'publicStatus.barsLabel': 'Últimas 24 horas, uma barra por hora',
   'publicStatus.barUp': 'no ar',
@@ -122,4 +130,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'activity.event.service-defaults-update': 'Padrões de novos serviços alterados',
   'activity.event.monitoring-tls-insecure': 'Validação TLS do serviço alterada',
   'activity.event.monitoring-ca-update': 'Certificados de monitoramento alterados',
+  'activity.event.monitoring-measurement.failure':
+    'O monitoramento não conseguiu medir os serviços',
+  'activity.event.monitoring-measurement.success': 'O monitoramento voltou a medir os serviços',
 };

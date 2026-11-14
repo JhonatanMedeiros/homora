@@ -8,6 +8,7 @@ import {
   startServiceMonitor,
   createObservationStore,
   createIncidentStore,
+  createMeasurementGuard,
   createRollupStore,
   createMaintenanceStore,
   createMonitoringSource,
@@ -18,7 +19,7 @@ import { integrationRegistry } from './integrations/integration-registry.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAccountRoutes } from './routes/account.js';
-import { createAuditLog } from './audit.js';
+import { createAuditLog, SYSTEM_ACTOR } from './audit.js';
 import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
 import type { DockerSource } from './discovery/index.js';
 import { registerDiscoveryRoutes } from './routes/discovery.js';
@@ -120,6 +121,31 @@ export function createApp(
     );
     inbox.record(transition);
   });
+  const measurement = createMeasurementGuard(sqlite, (transition) => {
+    const { incident } = transition;
+    log.warn(
+      {
+        measurementIncident: incident.id,
+        reason: incident.reason,
+        failing: incident.failing,
+        measured: incident.measured,
+      },
+      transition.kind === 'down'
+        ? 'monitoring cannot measure: service failures are held back'
+        : 'monitoring measures again',
+    );
+    try {
+      inbox.recordMeasurement(transition);
+    } catch (error) {
+      log.error({ err: error }, 'could not record the measurement failure in the inbox');
+    }
+    audit.record({
+      actor: SYSTEM_ACTOR,
+      action: 'monitoring-measurement',
+      result: transition.kind === 'down' ? 'failed' : 'ok',
+      detail: `${incident.reason}:${incident.failing}/${incident.measured}`,
+    });
+  });
   const maintenance = createMaintenanceStore(sqlite);
   const tagStore = createTagStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
@@ -136,13 +162,22 @@ export function createApp(
       } catch (error) {
         log.error({ err: error }, 'could not publish service observations');
       }
+      // What the monitor measured is kept as it is, but a failure that is the measurer's must not
+      // become alerts or incidents of the services: those two see the masked states.
+      let judged = states;
       try {
-        notifications.publish(rows, states);
+        measurement.observe(rows, states);
+        judged = measurement.mask(states);
+      } catch (error) {
+        log.error({ err: error }, 'could not evaluate whether monitoring can measure');
+      }
+      try {
+        notifications.publish(rows, judged);
       } catch (error) {
         log.error({ err: error }, 'could not queue status notifications');
       }
       try {
-        incidents.observe(rows, states);
+        incidents.observe(rows, judged);
       } catch (error) {
         log.error({ err: error }, 'could not update incidents');
       }
@@ -172,7 +207,7 @@ export function createApp(
     // The long-range charts stay empty; checks keep working.
     log.error({ err: error }, 'could not backfill the uptime rollup');
   }
-  const publicStatus = createPublicStatus(sqlite, observations);
+  const publicStatus = createPublicStatus(sqlite, observations, measurement);
   try {
     incidents.rebuildFromHistory(monitoringSource.list());
   } catch (error) {
@@ -278,7 +313,7 @@ export function createApp(
   );
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
-  registerServiceIncidentRoutes(app, incidents, observations, auth, audit);
+  registerServiceIncidentRoutes(app, incidents, observations, measurement, auth, audit);
   registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
   registerServiceTagRoutes(app, tagStore);
   registerServiceConfigurationRoutes(

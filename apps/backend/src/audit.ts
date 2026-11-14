@@ -24,6 +24,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'service-defaults-update',
     'monitoring-tls-insecure',
     'monitoring-ca-update',
+    'monitoring-measurement',
     'service-host-link',
     'service-host-unlink',
     'service-pin',
@@ -85,6 +86,8 @@ const outcomeOf = (result: string): AuditOutcome =>
       : 'success';
 
 export const ANONYMOUS_ACTOR = 'anonymous';
+/** Events Homora records on its own, such as the monitor declaring that it cannot measure. */
+export const SYSTEM_ACTOR = 'system';
 export const FAILED_LOGIN_WINDOW_MS = 15 * 60_000;
 const RETENTION_MS = 365 * 24 * 60 * 60_000;
 
@@ -204,7 +207,9 @@ export function createAuditLog(
             ? { type: 'user' as const, name: row.user_name }
             : row.actor === ANONYMOUS_ACTOR
               ? { type: 'anonymous' as const, name: null }
-              : { type: 'agent' as const, name: row.agent_name, id: row.actor },
+              : row.actor === SYSTEM_ACTOR
+                ? { type: 'system' as const, name: null }
+                : { type: 'agent' as const, name: row.agent_name, id: row.actor },
           detail: row.detail,
           ipAddress: row.ip_address,
           proposalId: row.proposal_id,

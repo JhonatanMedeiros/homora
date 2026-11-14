@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { CircleHelp } from 'lucide-react';
 import type { PublicState, PublicStatus } from '@/features/public-status/public-status-model';
 import { StatusLight } from '@/components/status-light';
 import { formatAgo, formatDateTime, formatShortDateTime, t, useI18n } from '@/i18n';
@@ -65,18 +66,29 @@ export function UptimeBars({
 /** Read-only content shared by the public page and the administrator's preview. */
 export function PublicStatusView({ data }: { data: PublicStatus }) {
   const categories = [...new Set(data.services.map((service) => service.category))];
-  const summary = data.services.some((s) => s.status === 'down')
-    ? 'publicStatus.someDown'
-    : data.services.some((s) => s.status === 'unknown')
-      ? 'publicStatus.someUnknown'
-      : 'publicStatus.allUp';
+  const blind = data.monitoring === 'unavailable';
+  const summary = blind
+    ? 'publicStatus.monitoringDown'
+    : data.services.some((s) => s.status === 'down')
+      ? 'publicStatus.someDown'
+      : data.services.some((s) => s.status === 'unknown')
+        ? 'publicStatus.someUnknown'
+        : 'publicStatus.allUp';
   const maintenance = data.maintenance ?? [];
   const incidents = data.incidents ?? [];
   return (
     <div className="flex flex-col gap-8">
-      <p role="status" className="text-lg font-medium">
-        {t(summary)}
-      </p>
+      <div role="status" className="flex flex-col gap-1">
+        <p className="flex items-center gap-2 text-lg font-medium">
+          {blind && <CircleHelp aria-hidden="true" className="size-5 text-warning" />}
+          {t(summary)}
+        </p>
+        {blind && (
+          <p className="max-w-[65ch] text-sm text-muted-foreground">
+            {t('publicStatus.monitoringDown.detail')}
+          </p>
+        )}
+      </div>
       {maintenance.length > 0 && (
         <section
           aria-label={t(

@@ -10,7 +10,7 @@ export type ActivityEvent = {
   action: string;
   outcome: ActivityOutcome;
   /** `id` is set for agents, so their events can be matched without relying on the name. */
-  actor: { type: 'user' | 'agent' | 'anonymous'; name: string | null; id?: string };
+  actor: { type: 'user' | 'agent' | 'anonymous' | 'system'; name: string | null; id?: string };
   detail: string | null;
   ipAddress: string | null;
   proposalId: string | null;
@@ -43,6 +43,8 @@ const TITLES = new Set<string>([
   'profile-update',
   'public-status-update',
   'service-public',
+  'monitoring-measurement.failure',
+  'monitoring-measurement.success',
   'appearance-update',
   'appearance-reset',
   'custom-css-update',

@@ -11,6 +11,7 @@ const time = (value: number) =>
 
 function actorName(event: ActivityEvent) {
   if (event.actor.type === 'anonymous') return t('activity.actorAnonymous');
+  if (event.actor.type === 'system') return t('activity.actorSystem');
   if (event.actor.name) return event.actor.name;
   return event.actor.type === 'agent'
     ? t('activity.actorAgentUnknown')
