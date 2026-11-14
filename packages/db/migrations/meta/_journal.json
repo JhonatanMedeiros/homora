@@ -260,6 +260,13 @@
       "when": 1794610256662,
       "tag": "0036_service_links",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1794618371927,
+      "tag": "0037_talented_princess_powerful",
+      "breakpoints": true
     }
   ]
 }

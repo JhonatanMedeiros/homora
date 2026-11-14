@@ -4,10 +4,11 @@ import type { Appearance, CheckType, LinkColor, OpenTarget } from '@homora/share
 /**
  * Homora export format version. Version 2 added pages (`pages` and a `page` on each group);
  * version 3 adds page widgets; version 4 adds the extra addresses of a service (`links`, each with
- * its type by name and color). Versions 1 to 3 remain readable; version 1 groups go to the first page.
+ * its type by name and color); version 5 adds service aliases. Versions 1 to 4 remain readable;
+ * version 1 groups go to the first page.
  */
-export const TRANSFER_VERSION = 4;
-export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4];
+export const TRANSFER_VERSION = 5;
+export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4, 5];
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
 export const MAX_SERVICES = 1000;
@@ -24,6 +25,7 @@ export type ImportedLink = {
   type?: { name: string; color: LinkColor };
 };
 export type ImportedService = {
+  alias?: string;
   name: string;
   url: string;
   description: string;
@@ -59,6 +61,8 @@ export type ImportDocument = {
 
 /** Stable codes: the UI translates them; the server returns no language-specific text. */
 export type IssueCode =
+  | 'alias-ignored'
+  | 'alias-conflict'
   | 'invalid-syntax'
   | 'invalid-document'
   | 'unsupported-version'
@@ -91,7 +95,13 @@ export type ImportPlan = {
   groups: { name: string; status: 'new' | 'existing'; page?: string }[];
   /** Pages the file asks for, and whether they exist already. */
   pages: { name: string; status: 'new' | 'existing' }[];
-  services: { group: string; name: string; url: string; status: 'new' | 'duplicate' }[];
+  services: {
+    group: string;
+    name: string;
+    url: string;
+    alias?: string;
+    status: 'new' | 'duplicate';
+  }[];
   widgets: { page: string; name: string; type: string; status: 'new' | 'skipped' }[];
   issues: ImportIssue[];
   summary: {

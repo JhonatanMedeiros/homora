@@ -1783,3 +1783,7 @@ manual responsive and keyboard verification in a browser remains pending.
   wording of the Portuguese README beyond a direct translation.
 - Known gap: some interface messages still say "see the README" for Docker discovery; the guide is now
   [docker-discovery.md](user-guide/docker-discovery.md).
+
+## Short service aliases (issue #164)
+
+Optional aliases use authenticated `/go/<alias>` navigation and travel in Homora exports (version 5). Import previews warn and omit invalid or conflicting aliases. Homepage and Dashy aliases are not imported. HTTP routing and authenticated resolution were checked through local Vite and an isolated Compose stack. Interactive browser validation remains pending.

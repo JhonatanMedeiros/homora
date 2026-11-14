@@ -68,6 +68,8 @@ export const en = {
   'apiError.link-type-exists': 'A type with this name already exists.',
   'apiError.link-type-limit': 'The limit of 20 address types was reached.',
   'apiError.link-type-not-found': 'Address type not found.',
+  'transfer.issue.alias-ignored': 'Invalid alias ignored.',
+  'transfer.issue.alias-conflict': 'Alias already in use; the card will be imported without it.',
   'transfer.issue.link-ignored':
     'An extra address was invalid (HTTP or HTTPS without credentials, name up to 80 characters); it was skipped.',
   'transfer.issue.link-limit': 'A card can have up to 10 extra addresses; the rest were skipped.',
@@ -142,6 +144,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'apiError.link-type-exists': 'Já existe um tipo com este nome.',
   'apiError.link-type-limit': 'O limite de 20 tipos de endereço foi atingido.',
   'apiError.link-type-not-found': 'Tipo de endereço não encontrado.',
+  'transfer.issue.alias-ignored': 'Alias inválido ignorado.',
+  'transfer.issue.alias-conflict': 'Alias já utilizado; o card será importado sem ele.',
   'transfer.issue.link-ignored':
     'Um endereço extra era inválido (HTTP ou HTTPS sem usuário e senha, nome de até 80 caracteres) e foi ignorado.',
   'transfer.issue.link-limit': 'Um card pode ter até 10 endereços extras; o restante foi ignorado.',

@@ -36,6 +36,7 @@ export function serializeConfiguration(
         .map((service) => ({
           name: service.name,
           url: service.url,
+          ...(service.alias ? { alias: service.alias } : {}),
           ...(service.description ? { description: service.description } : {}),
           ...(service.icon ? { icon: service.icon } : {}),
           ...(service.allowPrivate ? { allowPrivate: true } : {}),

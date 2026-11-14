@@ -158,6 +158,7 @@ it('does not open the app after the password alone when a second step is require
 });
 
 it('returns to the password step when the sign-in challenge expired', async () => {
+  window.history.replaceState(null, '', '/go/plex');
   const fetchMock = vi.fn(async (url: string) => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: false }) };
@@ -179,6 +180,8 @@ it('returns to the password step when the sign-in challenge expired', async () =
   });
   expect(await screen.findByText('Bem-vindo de volta.')).toBeTruthy();
   expect((await screen.findByRole('alert')).textContent).toContain('expirou');
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/go/plex')).toBe(false);
+  expect(new URLSearchParams(window.location.search).get('returnTo')).toBe('/go/plex');
 });
 
 it('shows how long to wait when sign-in is rate limited', async () => {
@@ -322,4 +325,58 @@ it('offers the theme toggle next to the language switcher on the sign-in page', 
   render(<App />);
   await screen.findByLabelText('E-mail');
   expect(screen.getByRole('button', { name: 'Alternar tema' })).toBeTruthy();
+});
+
+it('resolves a short address only after completing the recovery-code challenge', async () => {
+  window.history.replaceState(null, '', '/go/plex?ignored=1');
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: false }) };
+    if (url === '/api/auth/sign-in/email')
+      return {
+        ok: true,
+        json: async () => ({ twoFactorRedirect: true, twoFactorMethods: ['totp'] }),
+      };
+    if (url === '/api/auth/two-factor/verify-backup-code')
+      return { ok: true, json: async () => ({}) };
+    if (url === '/api/go/plex') return { ok: false, status: 404 };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  fireEvent.change(await screen.findByLabelText('E-mail'), {
+    target: { value: 'ana@homora.test' },
+  });
+  expect(new URLSearchParams(window.location.search).get('returnTo')).toBe('/go/plex');
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-teste' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+  await screen.findByRole('heading', { name: 'Verificação em duas etapas' });
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/go/plex')).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Usar um código de recuperação' }));
+  fireEvent.change(screen.getByLabelText('Código de recuperação'), {
+    target: { value: 'abcde-12345' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Verificar' }));
+  expect(await screen.findByText('Endereço curto não encontrado.')).toBeTruthy();
+  expect(window.location.pathname).toBe('/go/plex');
+});
+
+it.each([
+  '/go/plex?x=1',
+  '/go/plex#fragment',
+  '/go/%70lex',
+  '/go/plex\\evil',
+  '//evil.test',
+  '/go/UPPER',
+])('rejects unsafe return destination %s', async (destination) => {
+  window.history.replaceState(null, '', `/login?returnTo=${encodeURIComponent(destination)}`);
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === '/api/auth/status')
+      return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    return { ok: true, json: async () => [] };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+  await waitFor(() => expect(window.location.pathname).toBe('/'));
+  expect(fetchMock.mock.calls.some(([url]) => url.startsWith('/api/go/'))).toBe(false);
 });

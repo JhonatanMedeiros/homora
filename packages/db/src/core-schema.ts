@@ -43,6 +43,7 @@ export const services = sqliteTable('services', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
   url: text('url').notNull(),
+  alias: text('alias').unique(),
   category: text('category').notNull(),
   description: text('description').notNull(),
   icon: text('icon').notNull().default(''),

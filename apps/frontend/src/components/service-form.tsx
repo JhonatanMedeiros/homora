@@ -1,11 +1,13 @@
+import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
 import type { HostLink, ServiceInput } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { CopyButton } from '@/components/copy-button';
 import { FormError } from '@/components/form-error';
 import type { FormMonitoring } from '@/components/service-form-monitoring';
 import { ServiceFormLinks, type FormLinks } from '@/components/service-form-links';
@@ -70,6 +72,7 @@ export function ServiceForm({
   onSubmit,
   onCancel,
 }: Props) {
+  const [savedAlias] = useState(() => (editing ? value.alias : null));
   const set = (patch: Partial<ServiceInput>) => onChange({ ...value, ...patch });
   const [open, setOpen] = useState<Section | ''>('look');
   const suggestion = value.icon ? null : suggestBrandIcon(value.name);
@@ -146,6 +149,27 @@ export function ServiceForm({
                   <option key={c} value={c} />
                 ))}
               </datalist>
+            </Field>
+            <Field className="sm:col-span-2">
+              <FieldLabel htmlFor="service-alias">{t('form.alias')}</FieldLabel>
+              <Input
+                id="service-alias"
+                value={value.alias ?? ''}
+                maxLength={63}
+                autoComplete="off"
+                onChange={(e) => set({ alias: e.target.value || null })}
+              />
+              <FieldDescription>{t('form.aliasHint')}</FieldDescription>
+              {savedAlias && (
+                <div className="flex items-center gap-2">
+                  <code>{`${window.location.origin}/go/${savedAlias}`}</code>
+                  <CopyButton
+                    text={`${window.location.origin}/go/${savedAlias}`}
+                    label={t('form.aliasCopy')}
+                    onFailed={() => toast.error(t('settings.public.copyFailed'))}
+                  />
+                </div>
+              )}
             </Field>
             {links && <ServiceFormLinks {...links} />}
             {suggestion && (

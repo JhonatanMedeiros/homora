@@ -33,13 +33,13 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
   const selectServices = (order = 'category, position, name') =>
     sqlite
       .prepare(
-        `SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch,open_target as openTarget FROM services ORDER BY ${order}`,
+        `SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch,open_target as openTarget FROM services ORDER BY ${order}`,
       )
       .all() as unknown as ServiceRow[];
   const selectService = (id: number) =>
     sqlite
       .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch,open_target as openTarget FROM services WHERE id=?',
+        'SELECT id,name,url,alias,category,description,icon,position,allow_private as allowPrivate,check_type as checkType,check_interval as checkInterval,expected_status as expectedStatus,check_path as checkPath,check_match as checkMatch,open_target as openTarget FROM services WHERE id=?',
       )
       .get(id) as ServiceRow | undefined;
   type HostRow = {
@@ -180,6 +180,9 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         .all();
     },
     findService: selectService,
+    findAlias: (alias: string) =>
+      sqlite.prepare('SELECT url FROM services WHERE alias=?').get(alias) as
+        { url: string } | undefined,
     nextServicePosition,
     listGroups: selectGroups,
     pageIdByName,

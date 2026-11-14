@@ -136,7 +136,7 @@ describe('extra addresses on a service', () => {
 
   it('keeps addresses when a reviewed proposal edits the card without them', async () => {
     const { database, create, send } = await setup();
-    const service = await create({ links: [{ url: 'http://192.168.1.5' }] });
+    const service = await create({ alias: 'cloud', links: [{ url: 'http://192.168.1.5' }] });
     const configuration = createServiceConfiguration(getSqliteHandle(database.db));
     configuration.applyProposal({
       op: 'update',
@@ -149,7 +149,11 @@ describe('extra addresses on a service', () => {
       },
     });
     const [after] = (await send('GET', '/api/services')).json<Svc[]>();
-    expect(after).toMatchObject({ name: 'By agent', links: [{ url: 'http://192.168.1.5/' }] });
+    expect(after).toMatchObject({
+      name: 'By agent',
+      alias: 'cloud',
+      links: [{ url: 'http://192.168.1.5/' }],
+    });
   });
 });
 
@@ -231,6 +235,7 @@ describe('export and import', () => {
     const lan = await source.makeType('LAN', 'green');
     const docs = await source.makeType('Docs', 'neutral');
     await source.create({
+      alias: 'cloud',
       links: [
         { url: 'http://192.168.1.5:8080', typeId: lan.id, openTarget: 'same-tab' },
         { url: 'https://docs.example.com', name: 'Manual', typeId: docs.id },
@@ -242,8 +247,9 @@ describe('export and import', () => {
       version: number;
       groups: { services: { links: unknown[] }[] }[];
     };
-    expect(document.version).toBe(4);
+    expect(document.version).toBe(5);
     expect(document.groups[0].services[0].links).toHaveLength(3);
+    expect(exported).toContain('"alias": "cloud"');
     expect(exported).not.toContain('typeId');
 
     const target = await setup();
@@ -255,6 +261,7 @@ describe('export and import', () => {
       (await target.send('POST', '/api/config/import/apply', { content: exported })).statusCode,
     ).toBe(200);
     const [imported] = await target.list();
+    expect(imported).toMatchObject({ alias: 'cloud' });
     expect(
       imported.links.map((link) => [link.url, link.name, link.openTarget, link.type?.name]),
     ).toEqual([
@@ -327,5 +334,43 @@ describe('export and import', () => {
     });
     expect((await send('POST', '/api/config/import/apply', { content })).statusCode).toBe(200);
     expect((await list())[0].links).toMatchObject([{ url: 'http://10.0.0.1/', type: null }]);
+  });
+});
+
+describe('short aliases', () => {
+  it('protects resolution, preserves edits and releases aliases on removal', async () => {
+    const { app, send, base } = await setup();
+    const created = await send('POST', '/api/services', { ...base, alias: 'cloud' });
+    expect(created.statusCode).toBe(201);
+    const id = created.json<{ id: number }>().id;
+    const anonymous = await app.inject({ method: 'GET', url: '/api/go/cloud' });
+    expect(anonymous.statusCode).toBe(401);
+    expect(anonymous.headers['cache-control']).toBe('no-store');
+    expect((await send('GET', '/api/go/cloud?url=https://evil.test')).json()).toEqual({
+      url: 'https://cloud.example.com/',
+    });
+    expect((await send('POST', '/api/services', { ...base, alias: 'cloud' })).statusCode).toBe(409);
+    for (const alias of ['Upper', '-bad', 'two--hyphens', 'a b', 'x'.repeat(64)]) {
+      const invalid = await send('PUT', `/api/services/${id}`, { ...base, alias });
+      expect(invalid.statusCode).toBe(400);
+      expect(invalid.json()).toMatchObject({ code: 'invalid-alias' });
+    }
+    expect(
+      (
+        await send('PUT', `/api/services/${id}`, {
+          ...base,
+          name: 'Renamed',
+          url: 'https://new.example.test',
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect((await send('GET', '/api/go/cloud')).json()).toEqual({
+      url: 'https://new.example.test/',
+    });
+    expect((await send('PUT', `/api/services/${id}`, { ...base, alias: null })).statusCode).toBe(
+      200,
+    );
+    expect((await send('GET', '/api/go/cloud')).statusCode).toBe(404);
+    expect((await send('POST', '/api/services', { ...base, alias: 'cloud' })).statusCode).toBe(201);
   });
 });

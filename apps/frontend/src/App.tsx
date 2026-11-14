@@ -1,3 +1,4 @@
+import { isServiceAlias } from '@homora/shared';
 import { Fragment, useEffect, useState } from 'react';
 import {
   BrowserRouter,
@@ -39,7 +40,9 @@ function validDestination(path: string) {
     !path.startsWith('//') &&
     !path.includes('?') &&
     !path.includes('#') &&
-    Boolean(matchRoutes(validPaths, path))
+    !/[\\%]/.test(path) &&
+    (Boolean(matchRoutes(validPaths, path)) ||
+      (path.startsWith('/go/') && isServiceAlias(path.slice(4))))
   );
 }
 
@@ -112,6 +115,50 @@ function DashboardForRoute({
   );
 }
 
+function GoAlias() {
+  const { pathname } = useLocation();
+  const alias = pathname.startsWith('/go/') ? pathname.slice(4) : '';
+  const [state, setState] = useState<'loading' | 'missing' | 'error'>('loading');
+  useEffect(() => {
+    if (!isServiceAlias(alias)) return;
+    const controller = new AbortController();
+    void fetch(`/api/go/${alias}`, { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        if (response.status === 401) {
+          window.location.replace(`/login?returnTo=${encodeURIComponent(pathname)}`);
+          return;
+        }
+        if (response.status === 404) {
+          setState('missing');
+          return;
+        }
+        if (!response.ok) throw new Error();
+        const body: unknown = await response.json();
+        if (!body || typeof body !== 'object' || !('url' in body) || typeof body.url !== 'string')
+          throw new Error();
+        const url = new URL(body.url);
+        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+          throw new Error();
+        if (!controller.signal.aborted) window.location.assign(url.href);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setState('error');
+      });
+    return () => controller.abort();
+  }, [alias, pathname]);
+  return (
+    <main role="status">
+      {t(
+        !isServiceAlias(alias) || state === 'missing'
+          ? 'alias.notFound'
+          : state === 'error'
+            ? 'alias.error'
+            : 'alias.loading',
+      )}
+    </main>
+  );
+}
+
 function AppRoutes() {
   const {
     status,
@@ -173,6 +220,7 @@ function AppRoutes() {
   return (
     <Fragment key={locale}>
       <Routes>
+        <Route path="/go/*" element={<GoAlias />} />
         <Route
           path="*"
           element={<DashboardForRoute onLogout={onLogout} token={token} setToken={setToken} />}
