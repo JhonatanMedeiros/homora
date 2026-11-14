@@ -1,9 +1,48 @@
-import { ArrowRight } from 'lucide-react';
 import type { Service } from '@homora/shared';
 import { cn } from '@/lib/utils';
+import { textDiff, type TextDiff } from './proposal-text-diff';
 import type { Diff } from './agent-model';
 import { diffRows } from './proposal-diff';
 import { t } from '@/i18n';
+
+/** One side of a field change: removed values are struck through, added ones are highlighted. */
+function DiffLine({
+  kind,
+  label,
+  value,
+  part,
+}: {
+  kind: 'add' | 'del';
+  label: string;
+  value: string;
+  part?: TextDiff | null;
+}) {
+  const shown = value || t('proposal.empty');
+  return (
+    <span
+      className={cn(
+        'flex min-w-0 items-baseline gap-2 rounded-md px-3 py-1.5 break-words',
+        kind === 'add' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive',
+      )}
+    >
+      <span aria-hidden="true" className="w-3 shrink-0">
+        {kind === 'add' ? '+' : '−'}
+      </span>
+      <span className="sr-only">{label}:</span>
+      <span className={cn('min-w-0 break-all', kind === 'del' && 'line-through')}>
+        {part ? (
+          <>
+            {part.prefix}
+            <strong className="font-semibold">{kind === 'add' ? part.after : part.before}</strong>
+            {part.suffix}
+          </>
+        ) : (
+          shown
+        )}
+      </span>
+    </span>
+  );
+}
 
 /** Proposed change in clear language: operation title and field-by-field before and after. */
 export function ProposalChange({
@@ -36,33 +75,30 @@ export function ProposalChange({
       {changed.length > 0 && (
         <dl className="flex flex-col gap-3">
           {changed.map((row) => (
-            <div key={row.key} className="flex flex-col gap-1">
-              <dt className="font-mono text-xs text-muted-foreground">{row.label}</dt>
-              {diff.op === 'update' ? (
-                <dd className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                  <span className="flex min-w-0 flex-col rounded-md border bg-muted px-3 py-2 break-words">
-                    <small className="text-xs text-muted-foreground">{t('proposal.before')}</small>
-                    {row.before || t('proposal.empty')}
-                  </span>
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="hidden size-4 text-muted-foreground sm:block"
-                  />
-                  <span className="flex min-w-0 flex-col rounded-md border border-primary bg-card px-3 py-2 break-words">
-                    <small className="text-xs text-muted-foreground">{t('proposal.after')}</small>
-                    {row.next || t('proposal.empty')}
-                  </span>
-                </dd>
-              ) : (
-                <dd
-                  className={cn(
-                    'rounded-md border px-3 py-2 break-words',
-                    diff.op === 'delete' ? 'bg-muted line-through' : 'border-primary bg-card',
-                  )}
-                >
-                  {diff.op === 'delete' ? row.before : row.next}
-                </dd>
-              )}
+            <div key={row.key} className="grid gap-1 sm:grid-cols-[9rem_1fr] sm:gap-3">
+              <dt className="font-mono text-xs text-muted-foreground sm:pt-2">{row.label}</dt>
+              <dd className="flex min-w-0 flex-col gap-1 font-mono text-sm">
+                {diff.op === 'create' ? (
+                  <DiffLine kind="add" label={t('proposal.after')} value={row.next} />
+                ) : diff.op === 'delete' ? (
+                  <DiffLine kind="del" label={t('proposal.before')} value={row.before} />
+                ) : (
+                  <>
+                    <DiffLine
+                      kind="del"
+                      label={t('proposal.before')}
+                      value={row.before}
+                      part={textDiff(row.before, row.next)}
+                    />
+                    <DiffLine
+                      kind="add"
+                      label={t('proposal.after')}
+                      value={row.next}
+                      part={textDiff(row.before, row.next)}
+                    />
+                  </>
+                )}
+              </dd>
             </div>
           ))}
         </dl>

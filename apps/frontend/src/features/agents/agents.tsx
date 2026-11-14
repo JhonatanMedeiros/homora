@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Service } from '@homora/shared';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -64,10 +65,22 @@ export function Agents({
     history,
   } = workspace;
   /** The reviewed card leaves the list, so keyboard focus would fall back to the page start. */
-  const review = async (id: string, approve: boolean, batch = false) => {
-    await reviewProposal(id, approve, batch);
+  const review = async (id: string, approve: boolean, batch = false, quiet = false) => {
+    const done = await reviewProposal(id, approve, batch, quiet);
     sectionRef.current?.querySelector<HTMLElement>('[role="tabpanel"]')?.focus();
+    return done;
   };
+  /** Routine proposals, approved in order; the first one that fails leaves the rest waiting. */
+  const approveMany = async (ids: string[]) => {
+    let approved = 0;
+    for (const id of ids) {
+      if (!(await review(id, true, false, true))) break;
+      approved += 1;
+    }
+    if (approved > 0) toast.success(t('proposal.approvedMany', { count: approved }));
+  };
+  const serviceFor = (proposal: Proposal) =>
+    services.find((service) => service.id === parseDiff(proposal.diff)?.id);
   const events = useAgentActivity(proposals);
   const agentName = (id: string) =>
     agents?.find((agent) => agent.id === id)?.name ?? t('agents.fallbackName');
@@ -85,7 +98,7 @@ export function Agents({
     );
   };
 
-  const renderProposal = (proposal: Proposal, open = true) => {
+  const renderProposal = (proposal: Proposal) => {
     const diff = parseDiff(proposal.diff);
     return (
       <ProposalCard
@@ -105,7 +118,6 @@ export function Agents({
             ? () => void recreate(proposal.id)
             : undefined
         }
-        defaultOpen={open}
         agentName={agentName(proposal.author)}
         current={services.find((service) => service.id === diff?.id)}
         busy={reviewing !== null}
@@ -208,7 +220,11 @@ export function Agents({
             expired={expired}
             history={history}
             reviewing={reviewing}
+            now={now}
+            agentName={agentName}
+            serviceFor={serviceFor}
             onReview={(id, approve, batch) => void review(id, approve, batch)}
+            onApproveMany={(ids) => void approveMany(ids)}
             renderProposal={renderProposal}
             renderBatchItem={renderBatchItem}
             renderRow={renderRow}

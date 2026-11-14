@@ -33,8 +33,9 @@ it('shows security-relevant card settings for review', () => {
       onSetupConnection={() => {}}
     />,
   );
-  // The field is named once as a tag and once in the changes, which start open.
-  expect(screen.getAllByText('Permitir monitoramento em rede privada')).toHaveLength(2);
+  // The changes are always shown in full, and the risk is named.
+  expect(screen.getAllByText('Permitir monitoramento em rede privada')).toHaveLength(1);
+  expect(screen.getByText('Atenção')).toBeTruthy();
   expect(screen.getAllByText('true')).toHaveLength(2);
   expect(screen.getAllByText('Ignorar validação TLS para este serviço').length).toBeGreaterThan(0);
   expect(screen.getByText('ping')).toBeTruthy();

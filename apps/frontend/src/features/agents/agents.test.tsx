@@ -187,7 +187,7 @@ it('shows each agent as a card and confirms inside its dialog before rotating or
 it('summarises what waits, who is active and lets the review period change in a dialog', async () => {
   const calls = mockApi([active]);
   render(<Harness />);
-  const waiting = (await screen.findByText('Aguardando você')).closest('[data-slot="card"]');
+  const waiting = (await screen.findByText('Aguardando você')).closest('div');
   await waitFor(() => expect(waiting?.textContent).toContain('1'));
   fireEvent.click(screen.getByRole('button', { name: 'Alterar' }));
   const dialog = await screen.findByRole('dialog', { name: 'Prazo de revisão' });
@@ -249,8 +249,10 @@ it('shows a token returned by an identity proposal review', async () => {
     }),
   );
   render(<Harness />);
-  expect(await screen.findByText(/Alteração de identidade de agente/)).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Aprovar e aplicar' }));
+  expect(
+    await screen.findByRole('heading', { name: /Alteração de identidade de agente/ }),
+  ).toBeTruthy();
+  await confirmHeld();
   const dialog = await screen.findByRole('dialog', { name: /Token de/ });
   expect(within(dialog).getByText('one-time-example')).toBeTruthy();
 });
@@ -272,7 +274,7 @@ it('reviews a batch together and explains conflicting changes', async () => {
   vi.stubGlobal('fetch', fetchMock);
   render(<Harness />);
   fireEvent.click(await screen.findByRole('button', { name: /^Aprovar lote/ }));
-  expect(screen.getByText('Lote de 3 alterações')).toBeTruthy();
+  expect(screen.getAllByText('Lote de 3 alterações').length).toBeGreaterThan(0);
   expect(await screen.findByText(/As alterações do lote entram em conflito/)).toBeTruthy();
   expect(fetchMock).toHaveBeenCalledWith(
     '/api/proposal-batches/batch/review',
@@ -292,14 +294,15 @@ it('moves a pending proposal to expired at its deadline without reloading', asyn
       return {
         ok: true,
         json: async () => [
-          { id: 'p', author: 'a', state: 'pending', expiresAt: now + 120, diff: '{}' },
+          { id: 'p', author: 'a', state: 'pending', expiresAt: now + 1500, diff: '{}' },
         ],
       };
     }),
   );
   render(<Harness />);
-  expect(await screen.findByText(/Expira em 1 s/)).toBeTruthy();
-  const toggle = await screen.findByRole('button', { name: 'Expiradas (1)' }, { timeout: 2000 });
+  // The deadline shows in the queue and in the proposal itself.
+  expect((await screen.findAllByText(/Expira em \d s/)).length).toBeGreaterThan(0);
+  const toggle = await screen.findByRole('button', { name: 'Expiradas (1)' }, { timeout: 3000 });
   // Expired proposals stay collapsed so a long backlog does not push the page down.
   expect(screen.queryByRole('button', { name: 'Recriar' })).toBeNull();
   fireEvent.click(toggle);
@@ -324,6 +327,13 @@ it('shows an empty active list when all agents are revoked', async () => {
   expect(screen.getByText('Nenhum agente ativo.')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Agentes revogados (1)' })).toBeTruthy();
 });
+
+/** A risky approval is held; a plain activation asks in a dialog, which is how a test confirms it. */
+async function confirmHeld() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Segure para aprovar' }));
+  const dialog = await screen.findByRole('alertdialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Sim, aplicar' }));
+}
 
 function reviewApi(review: () => unknown, diff: unknown) {
   vi.stubGlobal(
@@ -355,7 +365,7 @@ it('names the token dialog after the identity the proposal creates', async () =>
     { kind: 'agent', change: { op: 'create', name: 'Child', scopes: ['services:read'] } },
   );
   render(<Harness />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Aprovar e aplicar' }));
+  await confirmHeld();
   expect(await screen.findByRole('dialog', { name: 'Token de "Child"' })).toBeTruthy();
 });
 

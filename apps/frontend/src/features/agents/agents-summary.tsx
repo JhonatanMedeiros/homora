@@ -1,40 +1,33 @@
-import { Bot, CheckCheck, Clock, Inbox } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
-function Tile({
-  icon,
+function Stat({
   label,
   value,
   accent = false,
-  action,
 }: {
-  icon: ReactNode;
   label: string;
   value: ReactNode;
   accent?: boolean;
-  action?: ReactNode;
 }) {
   return (
-    <Card className={cn('py-4', accent && 'border-primary bg-primary/5')}>
-      <CardContent className="flex flex-col gap-1 px-4">
-        <dt className="flex items-center gap-2 text-sm text-muted-foreground [&_svg]:size-4">
-          {icon}
-          {label}
-        </dt>
-        <dd className="flex items-baseline justify-between gap-2">
-          <span className="font-mono text-2xl font-semibold tabular-nums">{value}</span>
-          {action}
-        </dd>
-      </CardContent>
-    </Card>
+    <div className="flex items-baseline gap-2">
+      <dd
+        className={cn(
+          'font-mono text-base font-semibold tabular-nums',
+          accent ? 'text-accent-text' : 'text-foreground',
+        )}
+      >
+        {value}
+      </dd>
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+    </div>
   );
 }
 
-/** What needs attention at a glance: waiting proposals, active agents, approvals and the review period. */
+/** What needs attention at a glance, in one line: waiting proposals, active agents, approvals and the review period. */
 export function AgentsSummary({
   pending,
   active,
@@ -50,31 +43,21 @@ export function AgentsSummary({
 }) {
   const count = (value: number | null) => (value === null ? '–' : value);
   return (
-    <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Tile
-        icon={<Inbox />}
+    <dl className="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-lg border bg-card px-4 py-2.5">
+      <Stat
         label={t('agents.summary.pending')}
         value={count(pending)}
         accent={(pending ?? 0) > 0}
       />
-      <Tile icon={<Bot />} label={t('agents.summary.active')} value={count(active)} />
-      <Tile icon={<CheckCheck />} label={t('agents.summary.approved')} value={count(approved)} />
-      <Tile
-        icon={<Clock />}
-        label={t('agents.summary.period')}
-        value={t('agents.minutes', { count: ttl })}
-        action={
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            className="h-auto p-0"
-            onClick={onChangeTtl}
-          >
-            {t('agents.change')}
-          </Button>
-        }
-      />
+      <Stat label={t('agents.summary.active')} value={count(active)} />
+      <Stat label={t('agents.summary.approved')} value={count(approved)} />
+      <div className="flex items-center gap-2 sm:ml-auto">
+        <dt className="text-sm text-muted-foreground">{t('agents.summary.period')}</dt>
+        <dd className="font-mono text-sm tabular-nums">{t('agents.minutes', { count: ttl })}</dd>
+        <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={onChangeTtl}>
+          {t('agents.change')}
+        </Button>
+      </div>
     </dl>
   );
 }
