@@ -168,7 +168,17 @@ export function AlertsBell({
             {data?.items.map((item) => (
               <li key={item.id} className="flex flex-col gap-1 border-b pb-3 text-sm">
                 <div className="flex justify-between gap-2">
-                  <strong>{t(item.kind === 'down' ? 'bell.down' : 'bell.up')}</strong>
+                  <strong>
+                    {t(
+                      item.probe
+                        ? item.kind === 'down'
+                          ? 'bell.probeDown'
+                          : 'bell.probeUp'
+                        : item.kind === 'down'
+                          ? 'bell.down'
+                          : 'bell.up',
+                    )}
+                  </strong>
                   {item.readAt === null && <span>{t('bell.unread')}</span>}
                 </div>
                 {item.serviceId !== null ? (

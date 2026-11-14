@@ -60,7 +60,8 @@ it('filters the Home as you type in the top bar search', async () => {
     vi.fn(async (url: string) => {
       if (url === '/api/auth/status')
         return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/connections') return { ok: true, json: async () => [] };
+      if (url === '/api/connections' || url === '/api/probes')
+        return { ok: true, json: async () => [] };
       return {
         ok: true,
         json: async () => [

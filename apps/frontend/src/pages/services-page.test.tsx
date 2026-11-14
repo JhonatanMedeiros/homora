@@ -94,3 +94,34 @@ it('shows probes on the Home at any width and lists a probe that is down in Need
   expect(section.textContent).toContain('Offline');
   expect(screen.getByRole('region', { name: 'Needs attention' })).toBeTruthy();
 });
+
+it('counts a probe that is down in the health banner and in the Offline view', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) =>
+      url === '/api/probes'
+        ? new Response(
+            JSON.stringify([
+              { id: 20, name: 'Internet', address: 'https://1.1.1.1', checkType: 'http' },
+            ]),
+          )
+        : new Response('[]'),
+    ),
+  );
+  const down = {
+    ...data,
+    statuses: {
+      7: { status: 'available', reason: 'responding', httpStatus: 200, latencyMs: 20 },
+      20: { status: 'unavailable', reason: 'no-response', httpStatus: null },
+    },
+  } as unknown as Data;
+  render(
+    <MemoryRouter>
+      <ServicesPage data={down} formRoute={null} navigate={() => {}} onAddService={() => {}} />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText('1 service has a problem')).toBeTruthy();
+  expect(screen.getByRole('group', { name: 'Filter by status' }).textContent).toMatch(
+    /Offline\s*1/,
+  );
+});

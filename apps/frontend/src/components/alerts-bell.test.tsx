@@ -160,3 +160,37 @@ it('tells the opener when an event comes from a probe', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Internet' }));
   expect(onService).toHaveBeenCalledWith(9, true);
 });
+
+it('names a probe event as a probe', async () => {
+  setLocale('en');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            unread: 1,
+            nextBefore: null,
+            items: [
+              {
+                id: 1,
+                serviceId: 9,
+                serviceName: 'Internet',
+                kind: 'up',
+                confirmedAt: 1700000000000,
+                startedAt: 1699999000000,
+                endedAt: 1700000000000,
+                reason: null,
+                httpStatus: null,
+                readAt: null,
+                probe: true,
+              },
+            ],
+          }),
+        ),
+    ),
+  );
+  render(<AlertsBell onService={() => {}} />);
+  fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
+  expect(await screen.findByText('Probe recovered')).toBeTruthy();
+});
