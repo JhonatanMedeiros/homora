@@ -19,7 +19,6 @@ const base = {
   statuses,
   monitorSettings: undefined,
   browsing: true,
-  query: '',
   statusFilter: 'all' as const,
   statusCounts: zero,
 };
@@ -35,15 +34,12 @@ it('lists every probe and reports the offline one as down', () => {
   ]);
 });
 
-it('applies search and the status view while browsing, and ignores them otherwise', () => {
-  expect(deriveHomeProbes({ ...base, query: 'rout' }).probeViews.map((item) => item.id)).toEqual([
-    2,
-  ]);
+it('applies the status view while browsing, and ignores it otherwise', () => {
   expect(
     deriveHomeProbes({ ...base, statusFilter: 'down' }).probeViews.map((item) => item.id),
   ).toEqual([2]);
   expect(
-    deriveHomeProbes({ ...base, browsing: false, query: 'rout', statusFilter: 'down' }).probeViews,
+    deriveHomeProbes({ ...base, browsing: false, statusFilter: 'down' }).probeViews,
   ).toHaveLength(2);
 });
 

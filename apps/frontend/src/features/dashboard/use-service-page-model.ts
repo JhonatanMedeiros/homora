@@ -21,7 +21,6 @@ type Options = {
   dependencies: Dependency[];
   hostView: boolean;
   paged: boolean;
-  query: string;
   selected: string | null;
   organizing: boolean;
   /** Home filters: by state and by tag. Ignored while organizing or in a host view. */
@@ -39,7 +38,6 @@ export function useServicePageModel({
   dependencies,
   hostView,
   paged,
-  query,
   selected,
   organizing,
   statusFilter,
@@ -97,13 +95,8 @@ export function useServicePageModel({
       ? pages.find((page) => page.id === pageIdOf(service.category))?.name
       : undefined;
   const onPage = (service: Service) => !paged || hostView || categories.includes(service.category);
-  // The top bar's search and the filters below only apply to the plain Home view.
+  // Status and tag filters apply only while browsing the plain Home view.
   const filtering = !organizing && !hostView;
-  const needle = filtering ? query.trim().toLowerCase() : '';
-  const matches = (service: Service) =>
-    !needle ||
-    service.name.toLowerCase().includes(needle) ||
-    service.url.toLowerCase().includes(needle);
   const bucketOf = (service: Service) =>
     statusBucket(statuses[service.id], monitorSettings?.[service.id], blockedIds.has(service.id));
   const activeStatusFilter = filtering ? statusFilter : 'all';
@@ -113,7 +106,6 @@ export function useServicePageModel({
       .filter(
         (service) =>
           onPage(service) &&
-          matches(service) &&
           (selected === null || service.category === selected) &&
           (activeTag === null || (tags[service.id] ?? []).includes(activeTag)) &&
           matchesStatusFilter(activeStatusFilter, bucketOf(service)),
@@ -145,7 +137,7 @@ export function useServicePageModel({
     .filter(
       (group) =>
         group.items.length ||
-        (selected === null && !needle && activeStatusFilter === 'all' && activeTag === null),
+        (selected === null && activeStatusFilter === 'all' && activeTag === null),
     );
 
   return {

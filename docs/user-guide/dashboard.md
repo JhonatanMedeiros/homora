@@ -116,8 +116,6 @@ Press `Ctrl K` (`⌘ K` on macOS) or `/` from anywhere to open the palette.
 - Sort results by **Relevance**, **Name** or **Status**.
 - Press `Enter` to open the service, or `Shift Enter` to jump to its card on the dashboard.
 - The palette also lists settings pages and actions under **Go to**, such as Import / Export.
-- The **Filter services** field in the top bar narrows the dashboard as you type (Escape clears it); the palette is still
-  the way to jump to a service, a setting or an action.
 - Optional **web search**: turn it on in **Settings → Top bar and shortcuts** to add "Search the web" to the
   palette. It is off by default; nothing is sent until you choose it, and then only the text you typed goes to the search engine.
   With it on, a prefix picks the engine: `!g` Google, `!ddg` DuckDuckGo, `!b` Brave, `!bing` Bing, `!w` Wikipedia, `!gh` GitHub,

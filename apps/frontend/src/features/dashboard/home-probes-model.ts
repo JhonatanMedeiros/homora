@@ -12,27 +12,24 @@ type Input = {
   probes: Probe[] | null | undefined;
   statuses: Record<number, ServiceStatus>;
   monitorSettings: Record<number, Parameters<typeof statusBucket>[1]> | undefined;
-  /** Search and the status view only apply while browsing the plain Home. */
+  /** The status view only applies while browsing the plain Home. */
   browsing: boolean;
-  query: string;
   statusFilter: StatusFilter;
   statusCounts: Record<StatusFilter, number>;
 };
 
 /**
  * Probes are monitors without a card: they get their own Home section and join "Needs attention".
- * Search and the status views apply to them too; groups, tags and pages do not.
+ * The status views apply to them too; groups, tags and pages do not.
  */
 export function deriveHomeProbes({
   probes,
   statuses,
   monitorSettings,
   browsing,
-  query,
   statusFilter,
   statusCounts,
 }: Input) {
-  const needle = browsing ? query.trim().toLowerCase() : '';
   const allProbes = (probes ?? []).map((probe) => {
     const view = describeStatus(statuses[probe.id], false, { checkType: probe.checkType });
     return {
@@ -45,12 +42,8 @@ export function deriveHomeProbes({
       meta: view.meta,
     };
   });
-  const probeViews = allProbes.filter(
-    (probe) =>
-      (!needle ||
-        probe.name.toLowerCase().includes(needle) ||
-        probe.address.toLowerCase().includes(needle)) &&
-      matchesStatusFilter(browsing ? statusFilter : 'all', probe.bucket),
+  const probeViews = allProbes.filter((probe) =>
+    matchesStatusFilter(browsing ? statusFilter : 'all', probe.bucket),
   );
   const countsWithProbes = Object.fromEntries(
     STATUS_FILTERS.map((filter) => [

@@ -15,7 +15,6 @@ import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/features/dashboard/category-filter';
 import { StatusFilter } from '@/features/dashboard/status-filter';
 import { StatusBanner } from '@/components/status-banner';
-import { setHomeSearch, useHomeSearch } from '@/features/dashboard/home-search';
 import { PageTabMenu } from '@/components/page-tab-menu';
 import { PinnedRow } from '@/features/dashboard/pinned-row';
 import { HomeRail } from '@/features/dashboard/home-rail';
@@ -128,8 +127,6 @@ export function ServicesPage({
     return onProblemsRequest(show);
   }, []);
   const list = view === 'list';
-  // The top bar filters the Home.
-  const query = useHomeSearch();
   const [selected, setSelected] = useState<string | null>(null);
   const deps = useDependencies();
   // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
@@ -199,7 +196,6 @@ export function ServicesPage({
     dependencies: deps.dependencies,
     hostView,
     paged,
-    query,
     selected,
     organizing,
     statusFilter,
@@ -249,7 +245,6 @@ export function ServicesPage({
       statuses,
       monitorSettings: overview?.settings,
       browsing: !organizing && !hostView,
-      query,
       statusFilter,
       statusCounts,
     });
@@ -677,12 +672,11 @@ export function ServicesPage({
           <ServicesEmpty
             hasServices={services.length > 0}
             onAdd={onAddService}
-            calm={statusFilter === 'down' && !query && !tagFilter && !selected}
+            calm={statusFilter === 'down' && !tagFilter && !selected}
             onClearFilters={
               statusFilter !== 'all' || tagFilter || selected || favoritesOnly
                 ? () => {
                     setStatusFilter('all');
-                    setHomeSearch('');
                     setTagFilter(null);
                     setSelected(null);
                     setFavoritesOnly(false);

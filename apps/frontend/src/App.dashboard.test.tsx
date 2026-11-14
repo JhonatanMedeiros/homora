@@ -54,7 +54,7 @@ it('displays services, filters, and submits a new entry', async () => {
   expect(await screen.findByLabelText('Opções de Proxmox')).toBeTruthy();
 });
 
-it('filters the Home as you type in the top bar search', async () => {
+it('opens the command palette to search services from Home', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -85,11 +85,9 @@ it('filters the Home as you type in the top bar search', async () => {
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.change(screen.getByLabelText('Filtrar serviços no painel'), {
-    target: { value: 'gateway' },
-  });
-  expect(screen.queryByRole('link', { name: /Jellyfin/ })).toBeNull();
-  expect(screen.getByRole('link', { name: /Router/ })).toBeTruthy();
+  expect(screen.queryByLabelText('Filtrar serviços no painel')).toBeNull();
+  fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+  expect(await screen.findByPlaceholderText('Buscar serviços ou executar um comando')).toBeTruthy();
 });
 
 it('shows unknown status and timestamp of last attempt without depending on status', async () => {

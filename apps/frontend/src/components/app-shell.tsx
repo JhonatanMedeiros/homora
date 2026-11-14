@@ -20,7 +20,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { initials, type Profile } from '@/features/account/account-model';
-import { HomeSearchField } from '@/features/dashboard/home-search-field';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
@@ -68,7 +67,6 @@ export function AppShell({
             className={`text-sidebar-foreground ${managing || standalone ? 'max-md:hidden' : ''}`}
           />
           <span className="mr-auto" />
-          {tab === 'services' && !managing && <HomeSearchField />}
           <Button
             variant="ghost"
             aria-label={t('palette.button')}
