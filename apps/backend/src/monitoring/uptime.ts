@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { type Service, type UptimeRange, type UptimeSummary } from '@homora/shared';
+import { type UptimeRange, type UptimeSummary } from '@homora/shared';
+import type { MonitoringService } from './service-source.js';
 import { serviceSignature } from './signature.js';
 
 /** History is retained for 30 days, shared with observation publishing and history reads. */
@@ -16,7 +17,7 @@ const UPTIME_MIN_CHECKS = 5;
 export const STATUS_SQL = 'status';
 export const LATENCY_SQL = 'latency_ms';
 type SignedService = Pick<
-  Service,
+  MonitoringService,
   | 'url'
   | 'allowPrivate'
   | 'checkInsecure'
@@ -34,7 +35,7 @@ export const signature = serviceSignature;
 export function uptimeServicesOf(db: DatabaseSync, serviceId?: number): UptimeService[] {
   return db
     .prepare(
-      `SELECT id,url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets WHERE (? IS NULL OR id=?) ORDER BY id`,
+      `SELECT id,link_url AS url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets WHERE (? IS NULL OR id=?) ORDER BY id`,
     )
     .all(serviceId ?? null, serviceId ?? null) as unknown as UptimeService[];
 }

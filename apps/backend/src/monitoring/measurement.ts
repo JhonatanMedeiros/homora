@@ -88,7 +88,11 @@ export function createMeasurementGuard(
     },
 
     /** Feeds one publication of the monitor; only a publication with newer checks is a cycle. */
-    observe(services: Service[], states: Record<number, ServiceStatus>, at = Date.now()) {
+    observe(
+      services: Pick<Service, 'id' | 'name'>[],
+      states: Record<number, ServiceStatus>,
+      at = Date.now(),
+    ) {
       if (!services.length) return;
       let newest = '';
       const byReason = new Map<string, { id: number; name: string }[]>();

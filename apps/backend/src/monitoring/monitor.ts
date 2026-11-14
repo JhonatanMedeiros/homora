@@ -1,5 +1,6 @@
-import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
-import { isNonHttp } from './probe.js';
+import type { MonitoringService } from './service-source.js';
+import { CHECK_INTERVAL_DEFAULT, type CheckType } from '@homora/shared';
+import { resolveCheckTarget } from './target.js';
 import { serviceSignature } from './signature.js';
 import { noopLog, type Log } from '../logger.js';
 import {
@@ -43,7 +44,7 @@ const rawFailure = (error: unknown): RawFailure => ({
 });
 
 export function createServiceMonitor(
-  getServices: () => Promise<Service[]>,
+  getServices: () => Promise<MonitoringService[]>,
   check: (
     url: string,
     allowPrivate?: boolean,
@@ -53,7 +54,7 @@ export function createServiceMonitor(
     options?: { insecureTls?: boolean; ca?: string },
   ) => Promise<CheckResult> = checkService,
   now: () => number = Date.now,
-  publish?: (services: Service[], states: Record<number, ServiceStatus>) => void,
+  publish?: (services: MonitoringService[], states: Record<number, ServiceStatus>) => void,
   /** Services in a scheduled maintenance window at the given time; they are not probed. */
   inMaintenance: (at: number) => ReadonlySet<number> = () => new Set(),
   trust: () => { bundle: string; hash: string } | null = () => null,
@@ -77,7 +78,7 @@ export function createServiceMonitor(
    * reason: that points at the monitor's own environment (DNS, network policy, trust store),
    * not at the services.
    */
-  function summarize(current: Service[], checked: number, durationMs: number) {
+  function summarize(current: MonitoringService[], checked: number, durationMs: number) {
     const byReason: Record<string, number> = {};
     let measured = 0;
     for (const service of current) {
@@ -115,7 +116,7 @@ export function createServiceMonitor(
     }
     const runGeneration = generation;
     running = (async () => {
-      let current: Service[];
+      let current: MonitoringService[];
       try {
         current = await getServices();
       } catch (error) {
@@ -154,7 +155,7 @@ export function createServiceMonitor(
       const lastOf = (id: number) => states.get(id)?.lastAttempt ?? '';
       const startedAt = now();
       const paused = inMaintenance(startedAt);
-      const isDue = (service: Service) => {
+      const isDue = (service: MonitoringService) => {
         const last = lastOf(service.id);
         if (!last) return true;
         // Entering or leaving a maintenance window shows at once, not at the next interval.
@@ -169,7 +170,7 @@ export function createServiceMonitor(
       let nextIndex = 0;
       let checked = 0;
       /** Stores a measured result and logs it only when the service changed state. */
-      const settle = (service: Service, next: ServiceStatus, failure?: RawFailure) => {
+      const settle = (service: MonitoringService, next: ServiceStatus, failure?: RawFailure) => {
         const previous = states.get(service.id);
         states.set(service.id, next);
         if (failure) failures.set(service.id, failure);
@@ -218,11 +219,7 @@ export function createServiceMonitor(
               continue;
             }
             try {
-              const target =
-                service.checkUrl ??
-                (!isNonHttp(service.checkType) && service.checkPath
-                  ? new URL(service.checkPath, new URL(service.url).origin).href
-                  : service.url);
+              const target = resolveCheckTarget(service);
               const args = [
                 target,
                 service.allowPrivate === true,

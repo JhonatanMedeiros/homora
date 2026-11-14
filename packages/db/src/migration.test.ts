@@ -1082,9 +1082,9 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
         is_public: 0,
       },
     ]);
-    expect(rows('SELECT id,url FROM monitor_targets ORDER BY id')).toEqual([
-      { id: 7, url: 'https://cloud.test/' },
-      { id: 9, url: 'http://jf.test/' },
+    expect(rows('SELECT id,link_url,check_url FROM monitor_targets ORDER BY id')).toEqual([
+      { id: 7, link_url: 'https://cloud.test/', check_url: 'https://probe.test/up' },
+      { id: 9, link_url: 'http://jf.test/', check_url: null },
     ]);
 
     // Nothing lost in any table that pointed at a service.
@@ -1151,8 +1151,8 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
       INSERT INTO service_uptime_rollup(service_id,hour,up) VALUES(20,1,1);
       INSERT INTO service_maintenance(service_id,starts_at,ends_at) VALUES(20,1,2);
     `);
-    expect(rows('SELECT id,url FROM monitor_targets WHERE id=20')).toEqual([
-      { id: 20, url: 'http://1.1.1.1' },
+    expect(rows('SELECT id,link_url,check_url FROM monitor_targets WHERE id=20')).toEqual([
+      { id: 20, link_url: null, check_url: 'http://1.1.1.1' },
     ]);
     expect(rows('SELECT id FROM service_cards WHERE id=20')).toEqual([]);
     // A card cannot be pinned, tagged or linked to a probe, and cannot exist without a monitor.

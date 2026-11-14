@@ -1,7 +1,7 @@
+import type { MonitoringService } from './service-source.js';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   CHECK_INTERVAL_DEFAULT,
-  type Service,
   type ServiceInsights,
   type UptimeRange,
   type UptimeSummary,
@@ -91,7 +91,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       db.prepare('DELETE FROM service_observations').run();
       published = null;
     },
-    publish(services: Service[], states: Record<number, ServiceStatus>) {
+    publish(services: MonitoringService[], states: Record<number, ServiceStatus>) {
       const caHash = trust()?.hash;
       db.exec('BEGIN IMMEDIATE');
       const next = new Map<number, { state: ServiceStatus; sig: string; key: string }>();
@@ -342,12 +342,12 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       const caHash = trust()?.hash;
       const rows = db
         .prepare(
-          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_insecure AS checkInsecure,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,s.check_url AS checkUrl,s.check_match AS checkMatch,o.signature,o.observation
+          `SELECT s.id,s.link_url AS url,s.allow_private AS allowPrivate,s.check_insecure AS checkInsecure,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,s.check_url AS checkUrl,s.check_match AS checkMatch,o.signature,o.observation
         FROM monitor_targets s LEFT JOIN service_observations o ON o.service_id=s.id ORDER BY s.id`,
         )
         .all() as unknown as Array<
         Pick<
-          Service,
+          MonitoringService,
           | 'id'
           | 'url'
           | 'allowPrivate'

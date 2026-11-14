@@ -1,10 +1,10 @@
+import type { MonitoringService } from './service-source.js';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   DEFAULT_MONITOR_SETTINGS,
   SLA_TARGET_DEFAULT,
   type Incident,
   type MonitorSettings,
-  type Service,
   type StatusOverview,
   type UptimeSummary,
 } from '@homora/shared';
@@ -190,7 +190,7 @@ export function createIncidentStore(
 
   return {
     /** Called with every monitor publication; only checks newer than the last one seen count. */
-    observe(services: Service[], states: Record<number, ServiceStatus>) {
+    observe(services: MonitoringService[], states: Record<number, ServiceStatus>) {
       if (!services.length) return;
       const settings = readSettings();
       const ids = new Set(services.map(({ id }) => id));
@@ -232,7 +232,7 @@ export function createIncidentStore(
      * the failures already in the history show up the first time this feature is used. Only
      * checks made under each service's current configuration count, like the uptime does.
      */
-    rebuildFromHistory(services: Service[]) {
+    rebuildFromHistory(services: MonitoringService[]) {
       const existing = db.prepare('SELECT 1 FROM service_incidents LIMIT 1').get();
       if (existing) return 0;
       const settings = readSettings();

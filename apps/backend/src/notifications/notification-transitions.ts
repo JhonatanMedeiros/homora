@@ -42,7 +42,10 @@ export function createNotificationTransitions(
     snapshot() {
       return [...previous.entries()];
     },
-    observe(services: Service[], states: Record<number, ServiceStatus>): NotificationEvent[] {
+    observe(
+      services: (Omit<Service, 'url'> & { url: string | null })[],
+      states: Record<number, ServiceStatus>,
+    ): NotificationEvent[] {
       // invalidate() publishes an empty snapshot before checking again; it is not a deletion.
       if (!services.length) return [];
       const ids = new Set(services.map(({ id }) => id));

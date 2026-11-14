@@ -20,3 +20,5 @@ export { createMaintenanceStore, MaintenanceError } from './maintenance.js';
 export { serviceSignature } from './signature.js';
 export { createMonitoringTrustStore } from './trust.js';
 export { createMonitoringSource, toMonitoringService } from './service-source.js';
+
+export { resolveCheckTarget } from './target.js';
