@@ -27,7 +27,8 @@ Clicking a window opens that service's details.
 
 When services are offline, **Needs attention** groups them by what they probably share: a stopped guest or an
 offline host (from a linked Proxmox connection), the same error starting within ten minutes, or an address that does
-not answer. The wording always says _likely_: Homora only reads what it already knows and never names a fix.
+not answer. The wording always says _likely_: Homora only reads what it already knows and never names a fix. The panel starts as one line (how many services are offline and how many causes);
+**Show causes** opens the list, and the browser remembers the choice so the services stay on screen.
 
 For each group you can **Acknowledge** it (you saw it; it stays quiet until that incident ends, and a new incident
 speaks up again) or **Mute 1 h**. Both can be undone from the toast or with **Show again**. This only quiets the

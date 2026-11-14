@@ -1,10 +1,22 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { Incident, Service } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import { groupCauses, type Cause } from '@/lib/causes';
 import { reasonText } from '@/lib/uptime-view';
 import type { Impact } from '@/lib/hosts';
 import { formatTime, t } from '@/i18n';
+import { cn } from '@/lib/utils';
+
+const OPEN_KEY = 'homora-causes-open';
+
+function readOpen(): boolean {
+  try {
+    return localStorage.getItem(OPEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 type Props = {
   /** Services that are down right now (not blocked, not in maintenance). */
@@ -46,6 +58,16 @@ export function ProbableCauses({
   onAcknowledge,
   onShowAgain,
 }: Props) {
+  const [open, setOpen] = useState(readOpen);
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    try {
+      localStorage.setItem(OPEN_KEY, next ? '1' : '0');
+    } catch {
+      // The choice just is not remembered.
+    }
+  };
   const causes = useMemo(
     () =>
       groupCauses(
@@ -65,16 +87,24 @@ export function ProbableCauses({
   return (
     <section
       aria-label={t('causes.title')}
-      className="flex flex-col gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-2.5"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold">{t('causes.title')}</h2>
-        <p className="text-xs text-muted-foreground">
-          {causes.length > 0 &&
-            t('causes.summary', { services: down.length, causes: causes.length })}
-        </p>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm font-semibold">
+          {t('causes.title')}
+          <span className="text-xs font-normal text-muted-foreground">
+            {causes.length > 0 &&
+              t('causes.summary', { services: down.length, causes: causes.length })}
+          </span>
+        </h2>
+        {causes.length > 0 && (
+          <Button type="button" size="sm" variant="ghost" aria-expanded={open} onClick={toggle}>
+            {open ? t('causes.hide') : t('causes.show')}
+            <ChevronDown className={cn('transition-transform', open && 'rotate-180')} />
+          </Button>
+        )}
       </div>
-      {causes.length > 0 && (
+      {open && causes.length > 0 && (
         <ul className="flex flex-col gap-3">
           {causes.map((cause) => {
             const members = cause.ids.flatMap((id) => byId.get(id) ?? []);
@@ -139,7 +169,7 @@ export function ProbableCauses({
           )}
         </div>
       )}
-      {onAcknowledge && causes.length > 0 && (
+      {open && onAcknowledge && causes.length > 0 && (
         <p className="text-xs text-muted-foreground">{t('attention.note')}</p>
       )}
     </section>
