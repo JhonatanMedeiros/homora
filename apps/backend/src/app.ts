@@ -44,6 +44,8 @@ import { createCustomCss } from './custom-css.js';
 import { registerCustomCssRoutes } from './routes/custom-css.js';
 import { createPages } from './pages.js';
 import { registerPageRoutes } from './routes/pages.js';
+import { registerProbeRoutes } from './routes/probes.js';
+import { createProbeStore } from './probes.js';
 import { createAppearance } from './appearance.js';
 import { createBackgroundStore } from './background-image.js';
 import { registerAppearanceRoutes } from './routes/appearance.js';
@@ -202,6 +204,7 @@ export function createApp(
     audit,
     createServiceAttention(sqlite),
   );
+  registerProbeRoutes(app, createProbeStore(sqlite), serviceMonitor, auth, audit);
   registerServiceLinkTypeRoutes(app, configuration);
   registerHostSuggestionRoutes(app, sqlite, connections, configuration);
   registerServiceDependencyRoutes(app, sqlite, auth, audit);
