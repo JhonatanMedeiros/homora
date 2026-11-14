@@ -105,3 +105,22 @@ it('shows deleted services without a link and marks all notifications as read', 
   await waitFor(() => expect(screen.getByRole('button', { name: /none unread/ })).toBeTruthy());
   expect(navigate).not.toHaveBeenCalled();
 });
+
+it('counts pending agent proposals in the bell and links to them', async () => {
+  setLocale('en');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) =>
+      url.startsWith('/api/proposals')
+        ? new Response(
+            JSON.stringify([{ id: 'p1', state: 'pending', expiresAt: Date.now() + 60_000 }]),
+          )
+        : new Response(JSON.stringify({ items: [], unread: 0, nextBefore: null })),
+    ),
+  );
+  const onProposals = vi.fn();
+  render(<AlertsBell onService={() => {}} onProposals={onProposals} />);
+  fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
+  fireEvent.click(await screen.findByRole('button', { name: /1 agent proposals/ }));
+  expect(onProposals).toHaveBeenCalled();
+});

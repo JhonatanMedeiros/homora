@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 /** Dispatched on `window` after the proposal list changes, so the badge refreshes at once. */
 export const PROPOSALS_CHANGED = 'homora:proposals-changed';
 
+const POLL_MS = 15_000;
+
 /** How many agent proposals wait for review. Refreshes when `refreshKey` changes (e.g. the section). */
 export function usePendingProposals(refreshKey: string, enabled: boolean) {
   const [count, setCount] = useState(0);
@@ -12,6 +14,18 @@ export function usePendingProposals(refreshKey: string, enabled: boolean) {
     window.addEventListener(PROPOSALS_CHANGED, bump);
     return () => window.removeEventListener(PROPOSALS_CHANGED, bump);
   }, []);
+  useEffect(() => {
+    if (!enabled) return;
+    const bump = () => {
+      if (document.visibilityState === 'visible') setVersion((value) => value + 1);
+    };
+    const timer = window.setInterval(bump, POLL_MS);
+    document.addEventListener('visibilitychange', bump);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', bump);
+    };
+  }, [enabled]);
   useEffect(() => {
     if (!enabled) return;
     const controller = new AbortController();
