@@ -111,6 +111,18 @@ Follow this workflow when adding or changing an integration or its widgets:
    icon catalog and production build. Update the integration reference, permissions and live
    validation status. Mocked fixtures demonstrate contract behavior, not real service compatibility.
 
+When adding a shared SDK operation or widget capability, keep service-specific paths, names,
+state mappings and presentation in the integration definition. Give the capability a bounded,
+service-neutral contract and add a synthetic test for a second domain with different field names
+and data. This demonstrates reuse but does not replace design review; expand transport methods,
+permissions or network capabilities only through the separate review described above.
+
+`pnpm check` runs the integration boundary tests. They inspect runtime source for direct and
+literal dynamic imports, reexports and comparisons or switches over known integration types, and
+for SDK dependencies on application packages. Test files are excluded because the current contract
+harness lives in the backend. The static check cannot prove independence or discover every indirect
+or dynamically constructed dependency, so reviewers must still inspect the design and widget code.
+
 The SDK owns manifest validation, parsing, adapter execution and widget presentation. The host still
 owns configuration, authentication, persistence, route handling, the injected error policy and the
 restricted transport. It provides generic forms and screens for supported contracts; entirely new
