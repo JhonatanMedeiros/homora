@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import { RowListSkeleton } from '@/components/skeletons';
 import { formatDateTime, t } from '@/i18n';
+import { usePendingProposals } from '@/hooks/use-pending-proposals';
 import { formatDuration, reasonText } from '@/lib/uptime-view';
 
 type Item = {
@@ -24,7 +25,14 @@ type Item = {
 };
 type Result = { items: Item[]; unread: number; nextBefore: number | null };
 
-export function AlertsBell({ onService }: { onService: (id: number, probe: boolean) => void }) {
+export function AlertsBell({
+  onService,
+  onProposals,
+}: {
+  onService: (id: number, probe: boolean) => void;
+  onProposals?: () => void;
+}) {
+  const pendingProposals = usePendingProposals('bell', true);
   const [data, setData] = useState<Result>();
   const [error, setError] = useState<'load' | 'action' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,7 +60,7 @@ export function AlertsBell({ onService }: { onService: (id: number, probe: boole
   useEffect(() => {
     const counter = generation;
     void Promise.resolve().then(() => load());
-    const timer = window.setInterval(() => void load(), 60_000);
+    const timer = window.setInterval(() => void load(), 15_000);
     return () => {
       counter.current++;
       window.clearInterval(timer);
@@ -72,12 +80,13 @@ export function AlertsBell({ onService }: { onService: (id: number, probe: boole
       setBusy(false);
     }
   }
+  const total = (data?.unread ?? 0) + pendingProposals;
   const label = error
     ? t(error === 'action' ? 'bell.actionError' : 'bell.error')
     : !data
       ? t('bell.loading')
-      : data.unread
-        ? t('bell.count', { count: data.unread })
+      : total
+        ? t('bell.count', { count: total })
         : t('bell.none');
   return (
     <Popover
@@ -96,12 +105,12 @@ export function AlertsBell({ onService }: { onService: (id: number, probe: boole
           className="relative px-2.5"
         >
           <Bell aria-hidden="true" />
-          {!error && !!data?.unread && (
+          {!error && total > 0 && (
             <span
               aria-hidden="true"
               className="absolute top-1 right-0.5 min-w-4 rounded-full bg-destructive px-1 text-center font-mono text-[0.625rem] leading-4 text-white"
             >
-              {data.unread}
+              {total}
             </span>
           )}
         </Button>
@@ -135,8 +144,20 @@ export function AlertsBell({ onService }: { onService: (id: number, probe: boole
               </Button>
             </Alert>
           )}
+          {pendingProposals > 0 && onProposals && (
+            <Button
+              variant="outline"
+              className="mb-4 h-auto min-h-10 w-full justify-start whitespace-normal text-left"
+              onClick={() => {
+                setOpen(false);
+                onProposals();
+              }}
+            >
+              {t('bell.proposals', { count: pendingProposals })}
+            </Button>
+          )}
           {!data && !error && <RowListSkeleton label={t('bell.loading')} rows={2} />}
-          {data && !data.items.length && !error && (
+          {data && !data.items.length && !pendingProposals && !error && (
             <Empty>
               <EmptyHeader>
                 <EmptyDescription>{t('bell.empty')}</EmptyDescription>
