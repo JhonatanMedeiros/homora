@@ -18,8 +18,8 @@
   cycle; 503 when stalled) used by the Dockerfile `HEALTHCHECK`; [user guide](user-guide/logs.md) and
   [ADR 0022](decisions/0022-structured-runtime-logs.md).
 - Not done: the monitor's raw failure is not persisted across restarts or shown in the interface;
-  validation was local (automated tests and a local server run), not against a Docker or Coolify
-  deployment.
+  validation was local: automated tests, a local server run and a local Docker build of the backend
+  image whose `HEALTHCHECK` (now `/api/health`) reported `healthy`. Not verified on Coolify.
 
 ### Monitoring trust and TLS exceptions (issue #191)
 
