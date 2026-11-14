@@ -43,7 +43,7 @@ docker compose up -d --build
 ```
 
 Open <http://localhost:8080>, create the administrator account (a name, an email used only as your sign-in
-name, and a password of at least 8 characters), then press **Add service**. Your data lives in the
+name, and a password of at least 8 characters), then press **Add your first service**. Your data lives in the
 `homora-data` Docker volume, and the port is bound to `127.0.0.1` by default.
 
 > **Do not expose Homora to a network you do not control.** Until the first account exists, anyone who can

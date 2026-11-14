@@ -34,7 +34,7 @@ signed in for up to 30 days instead of 8 hours.
 
 ## 3. Add your first service
 
-1. Press **Add service** (or press `n` on the dashboard).
+1. Press **Add your first service** (or press `n` on the dashboard).
 2. Fill in the essentials: a **name**, the **URL** you open the service at, and a **category**, which is the
    group the card lives in. Typing a new category creates the group.
 3. Pick an **icon**. Type a service name and Homora suggests the matching brand logo, for example
@@ -66,6 +66,8 @@ and opens a **Details** panel with the recent checks.
 | **Manage → Activity**     | A log of sign-ins, proposals, approvals and settings changes.                          |
 | **Manage → Settings**     | Appearance, pages, top bar, alerts, the public status page, and export or import.      |
 | **Account** (avatar menu) | Password, two-step verification and passkeys.                                          |
+
+The avatar menu also links to the Homora repository on GitHub.
 
 Press `?` anywhere to see every keyboard shortcut.
 

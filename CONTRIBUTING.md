@@ -1,8 +1,7 @@
 # Contributing
 
-Homora is in active development and does not have a finalized license yet. Until
-maintainers choose and publish a license, do not assume permission to redistribute
-the project. See also [security](SECURITY.md) before reporting a vulnerability.
+Homora is in active development and is available under the [MIT license](LICENSE).
+See also [security](SECURITY.md) before reporting a vulnerability.
 
 ## Setup and Validation
 

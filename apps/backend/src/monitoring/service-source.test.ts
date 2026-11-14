@@ -35,7 +35,7 @@ describe('monitoring source', () => {
   it('turns the SQLite 0/1 flag into a real boolean for a card', () => {
     const sqlite = database();
     sqlite.exec(`
-      INSERT INTO services (id, url) VALUES (1, 'https://proxmox.labphobos.com/');
+      INSERT INTO services (id, url) VALUES (1, 'https://proxmox.example.test/');
       INSERT INTO monitors (id, name, url, allow_private, check_type, check_url)
         VALUES (1, 'Proxmox', NULL, 1, 'http', 'https://192.168.1.10:8006/');
     `);
@@ -45,7 +45,7 @@ describe('monitoring source', () => {
     // The engine compares `allowPrivate === true`; a raw 1 makes it refuse every private target.
     expect(service.allowPrivate).toBe(true);
     expect(typeof service.allowPrivate).toBe('boolean');
-    expect(service.url).toBe('https://proxmox.labphobos.com/');
+    expect(service.url).toBe('https://proxmox.example.test/');
     expect(service.checkUrl).toBe('https://192.168.1.10:8006/');
   });
 
@@ -66,7 +66,7 @@ describe('monitoring source', () => {
   it('coerces check_insecure the same way', () => {
     const sqlite = database();
     sqlite.exec(`
-      INSERT INTO services (id, url) VALUES (3, 'https://portainer.labphobos.com/');
+      INSERT INTO services (id, url) VALUES (3, 'https://portainer.example.test/');
       INSERT INTO monitors (id, name, url, allow_private, check_insecure, check_type, check_url)
         VALUES (3, 'Portainer', NULL, 1, 1, 'http', 'https://192.168.1.12:9443/');
     `);
