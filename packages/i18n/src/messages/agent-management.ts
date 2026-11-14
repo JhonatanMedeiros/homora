@@ -49,6 +49,9 @@ export const en = {
   'scope.proposals:create.hint':
     'Suggests changes to cards. Nothing changes without your approval.',
   'scope.groups:propose': 'Propose group changes',
+  'scope.maintenance:propose': 'Propose maintenance',
+  'scope.maintenance:propose.hint':
+    'Lists windows and proposes scheduling or cancelling maintenance for human review.',
   'scope.groups:propose.hint': 'Suggests creating, renaming, ordering or removing groups.',
   'scope.hosts:read': 'Read host suggestions',
   'scope.hosts:read.hint':
@@ -218,6 +221,9 @@ export const ptBR: Record<keyof typeof en, string> = {
   'scope.proposals:create': 'Criar propostas',
   'scope.proposals:create.hint': 'Sugere mudanças nos cards. Nada muda sem a sua aprovação.',
   'scope.groups:propose': 'Propor mudanças em grupos',
+  'scope.maintenance:propose': 'Propor manutenção',
+  'scope.maintenance:propose.hint':
+    'Lista janelas e propõe agendar ou cancelar manutenções para revisão humana.',
   'scope.groups:propose.hint': 'Sugere criar, renomear, ordenar ou remover grupos.',
   'scope.hosts:read': 'Ler hosts sugeridos',
   'scope.hosts:read.hint':

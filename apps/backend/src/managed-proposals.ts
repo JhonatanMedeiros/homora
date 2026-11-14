@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { isNodeName, isVmid } from '@homora/shared';
+import { isNodeName, isVmid, MAINTENANCE_NOTE_MAX } from '@homora/shared';
+import { createMaintenanceStore } from './monitoring/index.js';
 import {
   hasInventoryDomain,
   LEGACY_WIDGET_SOURCES,
@@ -96,12 +97,23 @@ export const hostLinkChangeSchema = z
     evidence: z.array(z.string().max(200)).min(1).max(5),
   })
   .strict();
+const maintenanceWindow = {
+  serviceId: id,
+  startsAt: z.number().int().safe(),
+  endsAt: z.number().int().safe(),
+  note: z.string().max(MAINTENANCE_NOTE_MAX),
+};
+export const maintenanceChangeSchema = z.discriminatedUnion('op', [
+  z.object({ op: z.literal('create'), ...maintenanceWindow }).strict(),
+  z.object({ op: z.literal('cancel'), id, ...maintenanceWindow }).strict(),
+]);
 export const managedChangeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('group'), change: groupChangeSchema }).strict(),
   z.object({ kind: z.literal('card-order'), change: cardOrderSchema }).strict(),
   z.object({ kind: z.literal('widget'), change: widgetChangeSchema }).strict(),
   z.object({ kind: z.literal('connection-setup'), change: connectionSetupSchema }).strict(),
   z.object({ kind: z.literal('host-link'), change: hostLinkChangeSchema }).strict(),
+  z.object({ kind: z.literal('maintenance'), change: maintenanceChangeSchema }).strict(),
 ]);
 export type ManagedChange = z.infer<typeof managedChangeSchema>;
 
@@ -141,7 +153,25 @@ function exactMembers(current: (string | number)[], requested: (string | number)
 /** Called inside an existing write transaction. All validation is repeated at approval. */
 export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
   const { kind, change } = managedChangeSchema.parse(input);
-  if (kind === 'group') {
+  if (kind === 'maintenance') {
+    const store = createMaintenanceStore(db);
+    if (change.op === 'create') {
+      if (!change.note.trim()) throw new Error('invalid-window');
+      store.create(change.serviceId, change);
+    } else {
+      const current = store
+        .upcoming(Date.now(), change.serviceId)
+        .find((row) => row.id === change.id);
+      if (
+        !current ||
+        current.startsAt !== change.startsAt ||
+        current.endsAt !== change.endsAt ||
+        current.note !== change.note
+      )
+        throw new Error('maintenance-not-found');
+      store.remove(change.id);
+    }
+  } else if (kind === 'group') {
     if (change.op === 'create') {
       db.prepare(
         'INSERT INTO service_groups(name,position,page_id) VALUES(?,(SELECT COALESCE(MAX(position),-1)+1 FROM service_groups),(SELECT id FROM pages ORDER BY position,id LIMIT 1))',

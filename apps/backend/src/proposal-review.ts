@@ -4,6 +4,8 @@ import { serviceProposalSchema } from './input-schemas.js';
 import type { agentChangeSchema } from './agent-changes.js';
 import { createServiceConfiguration, type ServiceChange } from './service-configuration.js';
 import { applyManagedChange, managedChangeSchema } from './managed-proposals.js';
+import type { ManagedChange } from './managed-proposals.js';
+import { MaintenanceError } from './monitoring/index.js';
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
@@ -28,6 +30,21 @@ export function createProposalReviewService({
   revoke: (id: string) => void;
   rotate: (id: string) => string;
 }) {
+  function auditMaintenance(change: ManagedChange, human: string, proposalId: string, now: number) {
+    if (change.kind !== 'maintenance') return;
+    sqlite
+      .prepare(
+        'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+      )
+      .run(
+        human,
+        change.change.op === 'create' ? 'service-maintenance-create' : 'service-maintenance-delete',
+        proposalId,
+        'ok',
+        now,
+        `${change.change.serviceId}:${change.change.op === 'cancel' ? change.change.id : `${change.change.startsAt}/${change.change.endsAt}`}`,
+      );
+  }
   function decide(id: string, accept: boolean, human: string) {
     try {
       return configuration.transaction(() => {
@@ -130,6 +147,7 @@ export function createProposalReviewService({
           throw new Error('Configuration has changed');
         if (managedChange) {
           applyManagedChange(sqlite, managedChange);
+          auditMaintenance(managedChange, human, id, now);
         } else {
           const d = serviceProposalSchema.parse(decoded);
           configuration.applyProposal(d as ServiceChange);
@@ -196,7 +214,9 @@ export function createProposalReviewService({
             for (const p of rows) {
               const decoded = JSON.parse(p.diff) as Record<string, unknown>;
               if (decoded.kind === 'managed') {
-                applyManagedChange(sqlite, managedChangeSchema.parse(decoded.change));
+                const change = managedChangeSchema.parse(decoded.change);
+                applyManagedChange(sqlite, change);
+                auditMaintenance(change, human, p.id, now);
               } else {
                 const change = serviceProposalSchema.parse(decoded) as ServiceChange;
                 if (change.op === 'create')
@@ -206,8 +226,13 @@ export function createProposalReviewService({
                 configuration.applyProposal(change);
               }
             }
-          } catch {
-            throw new Error('Batch changes conflict');
+          } catch (error) {
+            if (
+              error instanceof MaintenanceError ||
+              (error instanceof Error && error.message === 'maintenance-not-found')
+            )
+              throw error;
+            throw new Error('Batch changes conflict', { cause: error });
           }
           // One logical decision is one configuration revision, even for mixed changes.
           sqlite.prepare('UPDATE config_version SET version=? WHERE id=1').run(version + 1);

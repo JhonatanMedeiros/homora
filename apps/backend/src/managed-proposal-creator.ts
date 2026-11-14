@@ -64,43 +64,49 @@ export function createManagedProposalCreator({
               ]
           : relevantGroups.map((row) => row.name);
       const before =
-        change.kind === 'host-link'
+        change.kind === 'maintenance'
           ? {
               services: snapshot.services
                 .filter((row) => row.id === change.change.serviceId)
-                .map(({ id, name, host_connection_id, host_node, host_vmid, host_type }) => ({
-                  id,
-                  name,
-                  host_connection_id,
-                  host_node,
-                  host_vmid,
-                  host_type,
-                })),
+                .map(({ id, name }) => ({ id, name })),
             }
-          : change.kind === 'group' || change.kind === 'card-order'
+          : change.kind === 'host-link'
             ? {
-                groups: relevantGroups,
                 services: snapshot.services
-                  .filter((row) => relevantCategories.includes(row.category))
-                  .map(({ id, name, category, position }) => ({ id, name, category, position })),
-              }
-            : change.kind === 'widget'
-              ? {
-                  widgets: widgetRows.map(({ id, integration_id, type, name, service_id }) => ({
+                  .filter((row) => row.id === change.change.serviceId)
+                  .map(({ id, name, host_connection_id, host_node, host_vmid, host_type }) => ({
                     id,
-                    integration_id,
-                    type,
                     name,
-                    service_id,
+                    host_connection_id,
+                    host_node,
+                    host_vmid,
+                    host_type,
                   })),
-                  connections: snapshot.connections
-                    .filter((row) => row.id === widgetConnectionId)
-                    .map(({ id, type, name }) => ({ id, type, name })),
+              }
+            : change.kind === 'group' || change.kind === 'card-order'
+              ? {
+                  groups: relevantGroups,
                   services: snapshot.services
-                    .filter((row) => widgetServiceIds.includes(row.id))
-                    .map(({ id, name }) => ({ id, name })),
+                    .filter((row) => relevantCategories.includes(row.category))
+                    .map(({ id, name, category, position }) => ({ id, name, category, position })),
                 }
-              : null;
+              : change.kind === 'widget'
+                ? {
+                    widgets: widgetRows.map(({ id, integration_id, type, name, service_id }) => ({
+                      id,
+                      integration_id,
+                      type,
+                      name,
+                      service_id,
+                    })),
+                    connections: snapshot.connections
+                      .filter((row) => row.id === widgetConnectionId)
+                      .map(({ id, type, name }) => ({ id, type, name })),
+                    services: snapshot.services
+                      .filter((row) => widgetServiceIds.includes(row.id))
+                      .map(({ id, name }) => ({ id, name })),
+                  }
+                : null;
       const diff = { kind: 'managed', change, before };
       const id = randomBytes(16).toString('hex');
       const now = Date.now();

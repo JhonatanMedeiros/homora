@@ -63,6 +63,7 @@ export function createMcp(database: DatabaseSync, options: McpOptions = {}) {
     groupsWithPage,
   });
   registerMcpProposalTools(server, {
+    database,
     proposalService,
     token,
     authorize,

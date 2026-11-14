@@ -1814,6 +1814,17 @@ Delivered as one change for issue #179 (mockup linked there); items are named by
 
 Optional aliases use authenticated `/go/<alias>` navigation and travel in Homora exports (version 5). Import previews warn and omit invalid or conflicting aliases. Homepage and Dashy aliases are not imported. HTTP routing and authenticated resolution were checked through local Vite and an isolated Compose stack. Interactive browser validation remains pending.
 
+## Proposed maintenance windows (issue #185)
+
+Agents with the dedicated `maintenance:propose` scope can list active and upcoming windows
+per card and propose creation or cancellation individually or in a batch. Approval applies
+the exact period and records the reviewer; overlaps and changed cancellation targets are
+revalidated transactionally. Existing tokens do not acquire the scope automatically.
+
+Validation: focused MCP and proposal tests, `pnpm check` (1,661 application tests and
+25 script tests) and `pnpm build` passed. Browser review and a live MCP client using
+the HTTP and stdio transports were not manually verified.
+
 ### Separate monitoring address (issue #184)
 
 - Added an optional check URL, taking precedence over the card URL and check path for all check types. It uses the existing destination policy and per-service private-network permission. Native exports use version 6; earlier versions remain readable. Existing services retain their monitoring signatures when the field is absent.

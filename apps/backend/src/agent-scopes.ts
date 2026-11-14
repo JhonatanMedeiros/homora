@@ -8,6 +8,7 @@ export const AGENT_SCOPES = [
   'audit:read',
   ...integrationAgentScopeIds,
   'proposals:create',
+  'maintenance:propose',
   'groups:propose',
   'widgets:read',
   'widgets:propose',
