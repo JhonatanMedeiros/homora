@@ -119,7 +119,11 @@ export function DashboardPage({
       onLogout={onLogout}
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
-      alerts={<AlertsBell onService={(id) => routerNavigate(`/services/${id}`)} />}
+      alerts={
+        <AlertsBell
+          onService={(id, probe) => routerNavigate(probe ? '/manage/probes' : `/services/${id}`)}
+        />
+      }
     >
       <SafeModeBanner
         onEdit={() => {
