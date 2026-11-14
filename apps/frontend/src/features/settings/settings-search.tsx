@@ -28,6 +28,7 @@ const entries: { section: SettingsSection; label: MessageKey }[] = [
   { section: 'alerts', label: 'notifications.webhooks' },
   { section: 'alerts', label: 'notifications.telegram' },
   { section: 'alerts', label: 'settings.monitoring.allowPrivate' },
+  { section: 'alerts', label: 'settings.trust.title' },
   { section: 'public', label: 'settings.section.public' },
   { section: 'backup', label: 'settings.section.backup' },
 ];

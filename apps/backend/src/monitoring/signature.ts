@@ -13,6 +13,7 @@ export function serviceSignature(
     Service,
     | 'url'
     | 'allowPrivate'
+    | 'checkInsecure'
     | 'checkType'
     | 'checkInterval'
     | 'expectedStatus'
@@ -20,6 +21,7 @@ export function serviceSignature(
     | 'checkUrl'
     | 'checkMatch'
   >,
+  caHash?: string,
 ) {
   return createHash('sha256')
     .update(
@@ -33,6 +35,13 @@ export function serviceSignature(
         // Appended only when set, so services without it keep the signature (and history) they had.
         ...(service.checkMatch ? [service.checkMatch] : []),
         ...(service.checkUrl ? [{ checkUrl: service.checkUrl }] : []),
+        ...(service.checkInsecure ? [{ checkInsecure: true }] : []),
+        ...(caHash &&
+        service.allowPrivate &&
+        !service.checkInsecure &&
+        ['http', 'tls'].includes(service.checkType ?? 'http')
+          ? [{ caHash }]
+          : []),
       ]),
     )
     .digest('hex')

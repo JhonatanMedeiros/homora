@@ -10,6 +10,7 @@ import {
 } from '@homora/shared';
 import type { ServiceStatus } from './monitor.js';
 import { serviceSignature } from './signature.js';
+import { monitoringTrustReader } from './trust.js';
 
 const DAY = 24 * 3_600_000;
 const SLA_KEY = 'sla_target_pct';
@@ -57,6 +58,7 @@ const fresh = (): Streak => ({
  * change nothing. Everything is derived from the monitor's own observations.
  */
 export function createIncidentStore(db: DatabaseSync) {
+  const trust = monitoringTrustReader(db);
   const streaks = new Map<number, Streak>();
   let overviewCache: { at: number; body: StatusOverview } | null = null;
 
@@ -201,12 +203,13 @@ export function createIncidentStore(db: DatabaseSync) {
          FROM service_observation_history WHERE service_id=? AND signature=? AND status IN ('available','unavailable') ORDER BY observed_at`,
       );
       let opened = 0;
+      const caHash = trust()?.hash;
       db.exec('BEGIN IMMEDIATE');
       try {
         for (const service of services) {
           const streak = fresh();
           const config = settings.get(service.id) ?? DEFAULT_MONITOR_SETTINGS;
-          for (const row of rows.all(service.id, serviceSignature(service)) as {
+          for (const row of rows.all(service.id, serviceSignature(service, caHash)) as {
             at: number;
             status: 'available' | 'unavailable';
             reason: string | null;

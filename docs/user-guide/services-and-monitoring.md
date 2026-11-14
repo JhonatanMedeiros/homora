@@ -42,6 +42,10 @@ Link the card to the **host** it runs on and record the services it **depends on
 
 - **Allow monitoring on a private network** lets Homora probe addresses on your local network, such as
   `192.168.x.x`. It applies to this service only. See [The destination policy](#the-destination-policy).
+- **Skip TLS verification for this service** is an optional exception for HTTP and TLS checks on
+  permitted private addresses. It can let an attacker impersonate the service and may show an
+  expired certificate as healthy. The card displays **TLS not verified** while the exception is on.
+  Prefer installing your private CA in Settings → Alerts when possible.
 - **Show on the public status page** includes the service on the optional public page. See
   [Notifications and the public status page](notifications-and-status-page.md#public-status-page-optional-read-only).
 
@@ -61,6 +65,12 @@ Every type goes through the same destination policy. Pick the one that answers t
 
 Homora never stores response bodies. A keyword or JSON mismatch is recorded only as the reason
 `content-mismatch`.
+
+For private HTTPS origins, Settings → Alerts accepts a PEM or CRT bundle containing up to ten
+currently valid certificates (64 KB total). The additional trust applies only to HTTP and TLS
+checks whose authorized address is private, while certificate and hostname validation remain on.
+Uploading replaces the bundle. Certificate trust and per-service TLS exceptions are local to this
+installation and are not transferred by configuration export.
 
 ### HTTP options
 

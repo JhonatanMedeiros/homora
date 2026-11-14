@@ -1,10 +1,65 @@
 import { EventEmitter } from 'node:events';
 import http from 'node:http';
+import https from 'node:https';
 import { afterEach, expect, it, vi } from 'vitest';
 import * as networkPolicy from './network-policy.js';
 import { getAuthorizedJson, getAuthorizedResponse } from './network-request.js';
 
 afterEach(() => vi.restoreAllMocks());
+it('keeps TLS verification enabled by default even for private addresses', async () => {
+  vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
+    url: new URL('https://service.test/'),
+    address: { address: '10.0.0.4', family: 4 },
+  });
+  const req = Object.assign(new EventEmitter(), { destroy: vi.fn() });
+  const res = Object.assign(new EventEmitter(), { statusCode: 200, destroy: vi.fn() });
+  const spy = vi.spyOn(https, 'get').mockImplementation((...args: unknown[]) => {
+    queueMicrotask(() => {
+      (args[2] as (response: typeof res) => void)(res);
+      res.emit('end');
+      req.emit('close');
+    });
+    return req as unknown as ReturnType<typeof https.get>;
+  });
+  await getAuthorizedResponse('https://service.test/', {
+    origins: ['https://service.test'],
+    allowPrivate: true,
+  });
+  expect(
+    (spy.mock.calls[0][1] as { rejectUnauthorized?: boolean }).rejectUnauthorized,
+  ).toBeUndefined();
+});
+it.each([
+  ['10.0.0.4', true, true],
+  ['8.8.8.8', true, false],
+  ['10.0.0.4', false, false],
+])(
+  'applies private CA only to an authorized private address (%s, %s)',
+  async (address, allowPrivate, expected) => {
+    vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
+      url: new URL('https://service.test/'),
+      address: { address, family: 4 },
+    });
+    const req = Object.assign(new EventEmitter(), { destroy: vi.fn() });
+    const res = Object.assign(new EventEmitter(), { statusCode: 200, destroy: vi.fn() });
+    const spy = vi.spyOn(https, 'get').mockImplementation((...args: unknown[]) => {
+      queueMicrotask(() => {
+        (args[2] as (response: typeof res) => void)(res);
+        res.emit('end');
+        req.emit('close');
+      });
+      return req as unknown as ReturnType<typeof https.get>;
+    });
+    await getAuthorizedResponse(
+      'https://service.test/',
+      { origins: ['https://service.test'], allowPrivate },
+      { privateCa: 'test-ca', privateInsecureTls: true },
+    );
+    const options = spy.mock.calls[0][1] as { ca?: string[]; rejectUnauthorized?: boolean };
+    expect(options.ca?.includes('test-ca') ?? false).toBe(expected);
+    expect(options.rejectUnauthorized === false).toBe(expected);
+  },
+);
 it('pins validated address and preserves original URL for Host and TLS', async () => {
   vi.spyOn(networkPolicy, 'authorizeDestination').mockResolvedValue({
     url: new URL('http://service.test/data'),

@@ -25,6 +25,28 @@ const card = {
   description: 'Media server',
 };
 
+it('shows and audits a TLS exception in an approved proposal', () => {
+  const { db, api } = fixture();
+  try {
+    const agent = api.issue('bot', ['proposals:create']);
+    expect(() =>
+      api.propose(agent.id, { op: 'create', service: { ...card, checkInsecure: true } }),
+    ).toThrow();
+    const proposal = api.propose(agent.id, {
+      op: 'create',
+      service: { ...card, allowPrivate: true, checkInsecure: true },
+    });
+    expect(proposal.diff).toMatchObject({ service: { allowPrivate: true, checkInsecure: true } });
+    expect(api.decide(proposal.id, true, 'human')).toBe('approved');
+    expect(db.prepare('SELECT check_insecure FROM monitors').get()).toEqual({ check_insecure: 1 });
+    expect(
+      db.prepare("SELECT action FROM audit_events WHERE action='monitoring-tls-insecure'").get(),
+    ).toEqual({ action: 'monitoring-tls-insecure' });
+  } finally {
+    db.close();
+  }
+});
+
 it('authorizes explicit scopes, rotates/revokes credentials by invalidating old tokens', () => {
   const { db, api } = fixture();
   const agent = api.issue('bot', ['services:read']);

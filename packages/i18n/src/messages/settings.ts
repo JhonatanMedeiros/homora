@@ -1,5 +1,20 @@
 /** Text for the Interface, Public status and Docker discovery settings. */
 export const en = {
+  'settings.trust.title': 'Private monitoring certificates',
+  'settings.trust.loading': 'Loading monitoring certificates',
+  'settings.trust.hint':
+    'Additional trust applies only to HTTP and TLS checks on private addresses explicitly allowed by each service. Certificates are local to this installation.',
+  'settings.trust.file': 'Certificate bundle',
+  'settings.trust.fileHint':
+    'PEM or CRT; up to 10 certificates and 64 KB. Uploading replaces the existing bundle.',
+  'settings.trust.upload': 'Upload certificates',
+  'settings.trust.remove': 'Remove certificates',
+  'settings.trust.validity': 'Valid from {from} to {to}',
+  'settings.trust.invalid':
+    'The stored certificate bundle is invalid or expired. Replace or remove it.',
+  'settings.trust.loadError': 'Could not load monitoring certificates.',
+  'settings.trust.saveError': 'Could not save certificates. Check the bundle and try again.',
+  'settings.trust.saved': 'Monitoring certificates updated.',
   'settings.monitoring.defaults': 'New services',
   'settings.monitoring.allowPrivate': 'New services allow private network',
   'settings.monitoring.allowPrivateHint':
@@ -146,6 +161,22 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
+  'settings.trust.title': 'Certificados para monitoramento privado',
+  'settings.trust.loading': 'Carregando certificados de monitoramento',
+  'settings.trust.hint':
+    'A confiança adicional vale somente para verificações HTTP e TLS de endereços privados permitidos em cada serviço. Os certificados são locais desta instalação.',
+  'settings.trust.file': 'Conjunto de certificados',
+  'settings.trust.fileHint':
+    'PEM ou CRT; até 10 certificados e 64 KB. O envio substitui o conjunto existente.',
+  'settings.trust.upload': 'Enviar certificados',
+  'settings.trust.remove': 'Remover certificados',
+  'settings.trust.validity': 'Válido de {from} até {to}',
+  'settings.trust.invalid':
+    'O conjunto armazenado é inválido ou expirou. Substitua ou remova os certificados.',
+  'settings.trust.loadError': 'Não foi possível carregar os certificados de monitoramento.',
+  'settings.trust.saveError':
+    'Não foi possível salvar os certificados. Confira o arquivo e tente novamente.',
+  'settings.trust.saved': 'Certificados de monitoramento atualizados.',
   'settings.monitoring.defaults': 'Novos serviços',
   'settings.monitoring.allowPrivate': 'Novos serviços permitem rede privada',
   'settings.monitoring.allowPrivateHint':

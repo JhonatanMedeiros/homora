@@ -19,6 +19,7 @@ it('shows security-relevant card settings for review', () => {
         category: 'Home',
         position: 0,
         allowPrivate: true,
+        checkInsecure: true,
         checkType: 'ping',
         checkInterval: 30,
       },
@@ -34,7 +35,8 @@ it('shows security-relevant card settings for review', () => {
   );
   // The field is named once as a tag and once in the changes, which start open.
   expect(screen.getAllByText('Permitir monitoramento em rede privada')).toHaveLength(2);
-  expect(screen.getByText('true')).toBeTruthy();
+  expect(screen.getAllByText('true')).toHaveLength(2);
+  expect(screen.getAllByText('Ignorar validação TLS para este serviço').length).toBeGreaterThan(0);
   expect(screen.getByText('ping')).toBeTruthy();
   expect(screen.getByText('30')).toBeTruthy();
 });

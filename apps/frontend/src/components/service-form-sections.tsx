@@ -81,11 +81,29 @@ export function ServiceFormSections(props: SectionsProps) {
             <Checkbox
               id="service-private"
               checked={value.allowPrivate === true}
-              onCheckedChange={(checked) => onChange({ ...value, allowPrivate: checked === true })}
+              onCheckedChange={(checked) =>
+                onChange({
+                  ...value,
+                  allowPrivate: checked === true,
+                  ...(checked === true ? {} : { checkInsecure: false }),
+                })
+              }
             />
             <div className="flex flex-col gap-1">
               <FieldLabel htmlFor="service-private">{t('form.allowPrivate')}</FieldLabel>
               <FieldDescription>{t('form.allowPrivateHint')}</FieldDescription>
+            </div>
+          </Field>
+          <Field orientation="horizontal" className="items-start rounded-lg border p-3">
+            <Checkbox
+              id="service-insecure-tls"
+              disabled={!value.allowPrivate}
+              checked={value.checkInsecure === true}
+              onCheckedChange={(checked) => onChange({ ...value, checkInsecure: checked === true })}
+            />
+            <div className="flex flex-col gap-1">
+              <FieldLabel htmlFor="service-insecure-tls">{t('form.insecureTls')}</FieldLabel>
+              <FieldDescription>{t('form.insecureTlsHint')}</FieldDescription>
             </div>
           </Field>
           <Field orientation="horizontal" className="items-start rounded-lg border p-3">

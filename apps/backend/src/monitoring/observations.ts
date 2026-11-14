@@ -9,6 +9,7 @@ import {
 import { z } from 'zod';
 import type { ServiceStatus } from './monitor.js';
 import type { RollupStore } from './rollup.js';
+import { monitoringTrustReader } from './trust.js';
 import {
   HISTORY_RETENTION,
   LATENCY_SQL,
@@ -66,6 +67,7 @@ const percentileOf = (sorted: number[], q: number) =>
   sorted.length ? (sorted[Math.max(0, Math.ceil(sorted.length * q) - 1)] ?? null) : null;
 
 export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
+  const trust = monitoringTrustReader(db);
   /** Availability of the period before `range`, per service, from the hourly rollup. */
   const previousOf = (range: UptimeRange, now: number) => {
     const { span } = UPTIME_WINDOWS[range];
@@ -77,7 +79,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
    */
   let published: Map<number, { state: ServiceStatus; sig: string; key: string }> | null = null;
   /** Uptime is expensive on large inventories and moves slowly, so it is cached briefly. */
-  const uptimeCache = new Map<string, { at: number; version: number; body: Buffer }>();
+  const uptimeCache = new Map<string, { at: number; version: string; body: Buffer }>();
   const uptimeInFlight = new Map<string, Promise<Buffer>>();
   const configVersion = () =>
     (
@@ -90,6 +92,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       published = null;
     },
     publish(services: Service[], states: Record<number, ServiceStatus>) {
+      const caHash = trust()?.hash;
       db.exec('BEGIN IMMEDIATE');
       const next = new Map<number, { state: ServiceStatus; sig: string; key: string }>();
       try {
@@ -108,7 +111,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
         for (const service of services) {
           const state = states[service.id];
           if (!state) continue;
-          const sig = signature(service);
+          const sig = signature(service, caHash);
           const before = published?.get(service.id);
           // The monitor hands over the same state object until a service is probed again.
           if (before && before.state === state && before.sig === sig) {
@@ -204,6 +207,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
         now,
         serviceId !== undefined,
         previousOf(range, now),
+        trust()?.hash,
       );
       for (const row of rows) result[row.id] = summarize(row);
       return result;
@@ -214,7 +218,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
      * computation, and the work is done in slices so the API keeps answering meanwhile.
      */
     uptimeBody(range: UptimeRange, now = Date.now()): Promise<Buffer> {
-      const version = configVersion();
+      const version = `${configVersion()}:${trust()?.hash ?? ''}`;
       const cached = uptimeCache.get(range);
       if (cached && cached.version === version && now - cached.at < UPTIME_CACHE_MS)
         return Promise.resolve(cached.body);
@@ -223,7 +227,14 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       if (pending) return pending;
       const work = (async () => {
         const rows = uptimeServicesOf(db);
-        const summarize = uptimeSummarizerOf(db, range, now, false, previousOf(range, now));
+        const summarize = uptimeSummarizerOf(
+          db,
+          range,
+          now,
+          false,
+          previousOf(range, now),
+          trust()?.hash,
+        );
         const result: Record<number, UptimeSummary> = {};
         for (let i = 0; i < rows.length; i += UPTIME_SLICE) {
           for (const row of rows.slice(i, i + UPTIME_SLICE)) result[row.id] = summarize(row);
@@ -253,7 +264,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
           `SELECT observed_at AS at,${LATENCY_SQL} AS latency FROM service_observation_history
            WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL`,
         )
-        .all(id, signature(row), Math.max(start, now - HISTORY_RETENTION), now) as {
+        .all(id, signature(row, trust()?.hash), Math.max(start, now - HISTORY_RETENTION), now) as {
         at: number;
         latency: number;
       }[];
@@ -298,7 +309,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
            FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND ${STATUS_SQL}='unavailable'
            GROUP BY reason,httpStatus ORDER BY n DESC LIMIT 6`,
         )
-        .all(id, signature(row), now - HISTORY_RETENTION) as {
+        .all(id, signature(row, trust()?.hash), now - HISTORY_RETENTION) as {
         reason: string;
         httpStatus: number | null;
         n: number;
@@ -328,9 +339,10 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       };
     },
     list(now = Date.now()) {
+      const caHash = trust()?.hash;
       const rows = db
         .prepare(
-          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,s.check_url AS checkUrl,s.check_match AS checkMatch,o.signature,o.observation
+          `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_insecure AS checkInsecure,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,s.check_url AS checkUrl,s.check_match AS checkMatch,o.signature,o.observation
         FROM monitor_targets s LEFT JOIN service_observations o ON o.service_id=s.id ORDER BY s.id`,
         )
         .all() as unknown as Array<
@@ -339,6 +351,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
           | 'id'
           | 'url'
           | 'allowPrivate'
+          | 'checkInsecure'
           | 'checkType'
           | 'checkInterval'
           | 'expectedStatus'
@@ -352,7 +365,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       >;
       return rows.map((row) => {
         let state: ServiceStatus = unchecked;
-        if (row.observation && row.signature === signature(row)) {
+        if (row.observation && row.signature === signature(row, caHash)) {
           try {
             const parsed = observationSchema.safeParse(JSON.parse(row.observation) as unknown);
             if (parsed.success) state = parsed.data;

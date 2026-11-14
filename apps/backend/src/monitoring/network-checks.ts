@@ -39,6 +39,7 @@ export function readCertificate(
   hostname: string,
   port: number,
   timeoutMs = TIMEOUT_MS,
+  ca?: string,
 ): Promise<Certificate> {
   return new Promise((resolve, reject) => {
     const startedAt = Date.now();
@@ -48,6 +49,7 @@ export function readCertificate(
       servername: net.isIP(hostname) ? undefined : hostname,
       rejectUnauthorized: false,
       timeout: timeoutMs,
+      ...(ca ? { ca: [...tls.getCACertificates('default'), ca] } : {}),
     });
     const fail = () => {
       socket.destroy();

@@ -34,6 +34,39 @@ const cardsOf = (database: ReturnType<typeof createDatabase>) =>
 const MIGRATIONS = readMigrationFiles({
   migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
 });
+it('defaults insecure monitoring to off when upgrading existing services', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-insecure-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO monitors(id,name,allow_private,check_url) VALUES(5,'Existing',1,NULL),(6,'Probe',1,'https://probe.test'); INSERT INTO services(id,url,category,description) VALUES(5,'https://example.test','Home','')",
+    );
+    old.close();
+    const database = createDatabase(path);
+    const row = getSqliteHandle(database.db)
+      .prepare('SELECT name,allow_private,check_insecure FROM service_cards WHERE id=5')
+      .get();
+    expect(row).toMatchObject({ name: 'Existing', allow_private: 1, check_insecure: 0 });
+    expect(
+      getSqliteHandle(database.db)
+        .prepare('SELECT name,check_insecure FROM monitor_targets WHERE id=6')
+        .get(),
+    ).toEqual({ name: 'Probe', check_insecure: 0 });
+    database.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 it('adopts legacy database and preserves its data across restarts', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-migration-')),
     path = join(dir, 'data.sqlite');
@@ -874,8 +907,8 @@ it('adds favorites and acknowledgements without touching cards; deleting a card 
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
-    // Database created by the previous version: every migration except the last one.
-    for (const migration of MIGRATIONS.slice(0, -1)) {
+    // Start immediately before the attention migration (0038).
+    for (const migration of MIGRATIONS.slice(0, 38)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -924,8 +957,8 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
-    // Database created by the previous version: every migration except the last one.
-    for (const migration of MIGRATIONS.slice(0, -1)) {
+    // Start immediately before the monitors and probes migration (0040).
+    for (const migration of MIGRATIONS.slice(0, 40)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -981,6 +1014,7 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
         check_url: 'https://probe.test/up',
         check_match: 'ok',
         allow_private: 1,
+        check_insecure: 0,
         is_public: 1,
       },
       {
@@ -993,6 +1027,7 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
         check_url: null,
         check_match: null,
         allow_private: 0,
+        check_insecure: 0,
         is_public: 0,
       },
     ]);

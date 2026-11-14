@@ -35,11 +35,14 @@ export function createServiceMonitor(
     allowPrivate?: boolean,
     type?: CheckType,
     match?: string | null,
+    now?: () => number,
+    options?: { insecureTls?: boolean; ca?: string },
   ) => Promise<CheckResult> = checkService,
   now: () => number = Date.now,
   publish?: (services: Service[], states: Record<number, ServiceStatus>) => void,
   /** Services in a scheduled maintenance window at the given time; they are not probed. */
   inMaintenance: (at: number) => ReadonlySet<number> = () => new Set(),
+  trust: () => { bundle: string; hash: string } | null = () => null,
 ) {
   const states = new Map<number, ServiceStatus>();
   /** Configuration each state was measured under, so edited services are probed again and only those. */
@@ -67,6 +70,7 @@ export function createServiceMonitor(
         return;
       }
       if (runGeneration !== generation) return;
+      const ca = trust();
       // Publishing rewrites observation rows, so it only happens when something changed.
       let changed = false;
       const currentIds = new Set(current.map(({ id }) => id));
@@ -77,7 +81,7 @@ export function createServiceMonitor(
           changed = true;
         }
       for (const service of current) {
-        const signature = serviceSignature(service);
+        const signature = serviceSignature(service, ca?.hash);
         if (states.has(service.id) && signatures.get(service.id) !== signature) {
           // Edited since the last probe: the old result no longer describes this service.
           states.set(service.id, unchecked());
@@ -129,15 +133,24 @@ export function createServiceMonitor(
               continue;
             }
             try {
-              const result = await check(
+              const target =
                 service.checkUrl ??
-                  (!isNonHttp(service.checkType) && service.checkPath
-                    ? new URL(service.checkPath, new URL(service.url).origin).href
-                    : service.url),
+                (!isNonHttp(service.checkType) && service.checkPath
+                  ? new URL(service.checkPath, new URL(service.url).origin).href
+                  : service.url);
+              const args = [
+                target,
                 service.allowPrivate === true,
                 service.checkType ?? 'http',
                 service.checkMatch ?? null,
-              );
+              ] as const;
+              const options = {
+                ...(service.checkInsecure ? { insecureTls: true } : {}),
+                ...(ca && !service.checkInsecure ? { ca: ca.bundle } : {}),
+              };
+              const result = Object.keys(options).length
+                ? await check(...args, undefined, options)
+                : await check(...args);
               if (runGeneration === generation)
                 states.set(service.id, {
                   ...(result.outcome ??

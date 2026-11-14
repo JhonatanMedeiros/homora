@@ -26,6 +26,7 @@ export type ServiceFields = {
   icon?: string;
   position?: number;
   allowPrivate?: boolean;
+  checkInsecure?: boolean;
   openTarget?: 'new-tab' | 'same-tab';
   checkType?: CheckType;
   checkInterval?: number | null;
@@ -135,6 +136,7 @@ export const FIELDS: [keyof ServiceFields, MessageKey][] = [
   ['icon', 'field.icon'],
   ['position', 'field.position'],
   ['allowPrivate', 'field.allowPrivate'],
+  ['checkInsecure', 'form.insecureTls'],
   ['openTarget', 'form.openTarget'],
   ['checkType', 'field.checkType'],
   ['checkInterval', 'field.checkInterval'],

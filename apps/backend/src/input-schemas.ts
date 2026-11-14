@@ -40,6 +40,7 @@ export const serviceInputSchema = z
     icon: z.string().trim().max(ICON_MAX_LENGTH).optional(),
     position: z.number().int().safe().min(0).optional(),
     allowPrivate: z.boolean().optional(),
+    checkInsecure: z.boolean().optional(),
     openTarget: z.enum(OPEN_TARGETS).optional(),
     checkType: z.enum(CHECK_TYPES).optional(),
     expectedStatus: z

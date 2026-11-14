@@ -30,9 +30,14 @@ import type { createServiceAttention } from '../service-attention.js';
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 type Monitor = ReturnType<typeof createServiceMonitor>;
 type Observations = ReturnType<typeof createObservationStore>;
-const publicService = <T extends { allowPrivate: number | boolean }>(row: T) => ({
+const publicService = <
+  T extends { allowPrivate: number | boolean; checkInsecure: number | boolean },
+>(
+  row: T,
+) => ({
   ...row,
   allowPrivate: Boolean(row.allowPrivate),
+  checkInsecure: Boolean(row.checkInsecure),
 });
 
 export function registerServiceConfigurationRoutes(
@@ -247,6 +252,16 @@ export function registerServiceConfigurationRoutes(
         host ?? null,
         links,
       );
+      if (created.checkInsecure) {
+        const session = await auth.session(request.headers);
+        audit.record({
+          actor: session ? `user:${session.userId}` : 'user:unknown',
+          action: 'monitoring-tls-insecure',
+          result: 'ok',
+          detail: `service:${created.id}:on`,
+          ipAddress: request.ip,
+        });
+      }
       void monitor.invalidate();
       return reply.code(201).send(publicService(created));
     } catch (error) {
@@ -276,8 +291,19 @@ export function registerServiceConfigurationRoutes(
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
     const { host, links, ...input } = parsed.data;
     try {
+      const before = configuration.findService(id);
       const updated = configuration.updateService(id, input, host, links);
       if (!updated) return reply.code(404).send(errorBody('service-not-found'));
+      if (Boolean(before?.checkInsecure) !== Boolean(updated.checkInsecure)) {
+        const session = await auth.session(request.headers);
+        audit.record({
+          actor: session ? `user:${session.userId}` : 'user:unknown',
+          action: 'monitoring-tls-insecure',
+          result: 'ok',
+          detail: `service:${id}:${updated.checkInsecure ? 'on' : 'off'}`,
+          ipAddress: request.ip,
+        });
+      }
       void monitor.invalidate();
       return publicService(updated);
     } catch (error) {

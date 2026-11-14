@@ -10,10 +10,11 @@ import {
 
 export type ServiceRow = Omit<
   Service,
-  'position' | 'allowPrivate' | 'checkType' | 'checkInterval'
+  'position' | 'allowPrivate' | 'checkInsecure' | 'checkType' | 'checkInterval'
 > & {
   position: number;
   allowPrivate: number | boolean;
+  checkInsecure: number | boolean;
   checkType: CheckType;
   checkInterval: number | null;
 };
@@ -61,13 +62,15 @@ export function createServiceCardConfiguration({
 }) {
   /** A card is two rows with one id: what is monitored, and how it is shown. */
   function insertCard(service: ServiceInput, position: number) {
+    if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
     const monitor = sqlite
       .prepare(
-        'INSERT INTO monitors(name,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match) VALUES(?,?,?,?,?,?,?,?)',
+        'INSERT INTO monitors(name,allow_private,check_insecure,check_type,check_interval,expected_status,check_path,check_url,check_match) VALUES(?,?,?,?,?,?,?,?,?)',
       )
       .run(
         service.name,
         service.allowPrivate ? 1 : 0,
+        service.checkInsecure ? 1 : 0,
         service.checkType ?? 'http',
         service.checkInterval ?? null,
         service.expectedStatus ?? null,
@@ -95,13 +98,16 @@ export function createServiceCardConfiguration({
 
   /** Fields the input leaves out keep the card's current value. */
   function writeCard(id: number, service: ServiceInput, current: ServiceRow, position: number) {
+    const insecure = service.checkInsecure ?? Boolean(current.checkInsecure);
+    if (insecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
     sqlite
       .prepare(
-        'UPDATE monitors SET name=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_url=?,check_match=? WHERE id=?',
+        'UPDATE monitors SET name=?,allow_private=?,check_insecure=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_url=?,check_match=? WHERE id=?',
       )
       .run(
         service.name,
         service.allowPrivate ? 1 : 0,
+        insecure ? 1 : 0,
         service.checkType ?? current.checkType,
         service.checkInterval === undefined ? current.checkInterval : service.checkInterval,
         service.expectedStatus === undefined
@@ -165,6 +171,7 @@ export function createServiceCardConfiguration({
   ) {
     return transaction(() => {
       const service = validateService(input);
+      if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
       ensureGroup(service.category);
       service.position = nextServicePosition(service.category);
       const id = insertCard(service, service.position ?? 0);
@@ -173,7 +180,12 @@ export function createServiceCardConfiguration({
       if (host) writeHost(created.id, host);
       if (links !== undefined) writeLinks(created.id, links);
       bumpVersion();
-      return { ...created, host, links: selectServiceLinks(created.id) };
+      return {
+        ...created,
+        checkInsecure: service.checkInsecure === true,
+        host,
+        links: selectServiceLinks(created.id),
+      };
     });
   }
 

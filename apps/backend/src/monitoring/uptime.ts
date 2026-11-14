@@ -19,6 +19,7 @@ type SignedService = Pick<
   Service,
   | 'url'
   | 'allowPrivate'
+  | 'checkInsecure'
   | 'checkType'
   | 'checkInterval'
   | 'expectedStatus'
@@ -33,7 +34,7 @@ export const signature = serviceSignature;
 export function uptimeServicesOf(db: DatabaseSync, serviceId?: number): UptimeService[] {
   return db
     .prepare(
-      `SELECT id,url,allow_private AS allowPrivate,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets WHERE (? IS NULL OR id=?) ORDER BY id`,
+      `SELECT id,url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets WHERE (? IS NULL OR id=?) ORDER BY id`,
     )
     .all(serviceId ?? null, serviceId ?? null) as unknown as UptimeService[];
 }
@@ -45,6 +46,7 @@ export function uptimeSummarizerOf(
   now: number,
   single: boolean,
   previous: Record<number, number | null> = {},
+  caHash?: string,
 ) {
   const { span, bucket } = UPTIME_WINDOWS[range];
   const count = span / bucket;
@@ -74,7 +76,7 @@ export function uptimeSummarizerOf(
     `SELECT ${LATENCY_SQL} AS latency FROM service_observation_history WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=? AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL ORDER BY latency LIMIT 1 OFFSET ?`,
   );
   return (row: UptimeService): UptimeSummary => {
-    const sig = signature(row);
+    const sig = signature(row, caHash);
     const args = [row.id, sig, since, now] as const;
     const slots = Array.from({ length: count }, () => ({
       up: 0,

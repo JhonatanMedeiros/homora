@@ -56,6 +56,7 @@ export const monitors = sqliteTable('monitors', {
   checkUrl: text('check_url'),
   checkMatch: text('check_match'),
   allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
+  checkInsecure: integer('check_insecure', { mode: 'boolean' }).notNull().default(false),
   // Opt-in to the read-only public status page. Never set by imports or agent proposals.
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
 });

@@ -412,6 +412,41 @@ it('preserves old signatures without a target and distinguishes target changes',
   );
 });
 
+it('rechecks when the TLS exception changes and passes the exception to the probe', async () => {
+  let current = { ...service(1, 'https://nas.test'), allowPrivate: true, checkInsecure: false };
+  const check = vi.fn(async () => ok);
+  const monitor = createServiceMonitor(async () => [current], check);
+  await monitor.run();
+  current = { ...current, checkInsecure: true };
+  await monitor.invalidate();
+  expect(check).toHaveBeenLastCalledWith('https://nas.test', true, 'http', null, undefined, {
+    insecureTls: true,
+  });
+  expect(check).toHaveBeenCalledTimes(2);
+});
+
+it('rechecks eligible services when private trust changes', async () => {
+  let ca: { bundle: string; hash: string } | null = null;
+  const check = vi.fn(async () => ok);
+  const monitor = createServiceMonitor(
+    async () => [{ ...service(1, 'https://nas.test'), allowPrivate: true }],
+    check,
+    Date.now,
+    undefined,
+    undefined,
+    () => ca,
+  );
+  await monitor.run();
+  ca = { bundle: 'certificate', hash: 'one' };
+  await monitor.invalidate();
+  expect(check).toHaveBeenLastCalledWith('https://nas.test', true, 'http', null, undefined, {
+    ca: 'certificate',
+  });
+  ca = null;
+  await monitor.invalidate();
+  expect(check).toHaveBeenCalledTimes(3);
+});
+
 it('reports a blocked separate destination distinctly', async () => {
   const monitor = createServiceMonitor(
     async () => [

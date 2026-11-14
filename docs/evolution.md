@@ -1,5 +1,22 @@
 # Homora Evolution Plan
 
+### Monitoring trust and TLS exceptions (issue #191)
+
+- Added an administrator-managed, local PEM bundle for HTTP and TLS monitoring. Additional trust is
+  used only after destination authorization and private IP pinning. Its hash identifies the checks
+  made under that bundle; changes trigger new probes. Corrupt or expired bundles are reported.
+- Added the optional, audited per-service TLS verification exception, disabled by default and
+  restricted to private destinations, with a visible card marker and proposal diff. Bundles and
+  exceptions are not exported. See [ADR 0021](decisions/0021-monitoring-private-tls-trust.md).
+- The migration was checked with an isolated previous-version database; existing service data
+  survived and the new flag defaulted to off. `pnpm check` and `pnpm build` passed. An isolated
+  local HTTPS server with a temporary self-signed certificate verified rejection without trust,
+  successful HTTP and TLS checks with trust, and the per-service exception. An authenticated local
+  API flow also verified status changes when the CA was added and removed, then enabled the
+  exception and confirmed that the TLS check still reported the expiry.
+- The settings and card flows were covered by automated UI tests; a manual browser walkthrough and
+  checks against real homelab services remain pending.
+
 This plan translates the initial repository evaluation into concrete work phases.
 The core priority is a dependable, useful homelab homepage, configurable entirely via
 the web interface, and operational without Proxmox or AI agents. Infrastructure
@@ -1856,7 +1873,7 @@ the HTTP and stdio transports were not manually verified.
 - Extended import checks to widget runtime, tests and test support, forbidding application and integration dependencies. The runtime workspace graph now starts independently at `@homora/widgets` and tests indirect dependencies. A synthetic minimal host exercises public widget registration, configuration, source compatibility and presentation. Computed imports, aliases, external dependencies and real host or browser behavior remain outside these checks.
 - Validation: focused widget and boundary tests, `pnpm check` (1,661 application tests and 31 script tests), and `pnpm build` passed.
 
-### Monitors separate from cards, and probes (ADR 0020)
+### Monitors separate from cards, and probes (ADR 0021)
 
 - Split the `services` table into `monitors` (what is monitored, with all monitoring history) and `services` (the dashboard card), sharing ids, so a monitor can exist without a card. Migration `0040` keeps every id, row and relation; the migration runner now handles foreign keys outside the transaction and refuses a migration that leaves orphans. `service_cards` and `monitor_targets` views keep API shapes, configuration hashes and monitoring signatures unchanged.
 - Added probes: monitors without a card, managed under Manage > Probes (list, examples, form, delete confirmation) with a Probes block in the Home rail. They are checked, charted, acknowledged and can be shared on the public status page under Connectivity. API: `/api/probes`.
