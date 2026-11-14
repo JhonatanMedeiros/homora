@@ -55,6 +55,7 @@ export function Agents({
     revoke: revokeAgent,
     review: reviewProposal,
     recreate,
+    refresh,
     saveTtl,
     pending,
     activeAgents,
@@ -91,6 +92,11 @@ export function Agents({
         key={proposal.id}
         proposal={proposal}
         now={now}
+        onRefresh={
+          proposal.state === 'stale' && !proposal.batchId
+            ? () => void refresh(proposal.id)
+            : undefined
+        }
         onRecreate={
           proposal.state === 'expired' &&
           !recreating &&

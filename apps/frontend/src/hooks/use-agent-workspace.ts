@@ -71,7 +71,10 @@ export function useAgentWorkspace(
 
   useEffect(() => {
     let active = true;
-    fetchAgentData()
+    // Opening the page renews the stale proposals that destroy nothing before they are listed.
+    fetch('/api/proposals/refresh-stale', { method: 'POST' })
+      .catch(() => null)
+      .then(() => fetchAgentData())
       .then(([agentData, proposalData]) => {
         if (active) {
           setAgents(agentData);
@@ -86,6 +89,22 @@ export function useAgentWorkspace(
       active = false;
     };
   }, []);
+
+  /** Renews the stale proposals that destroy nothing: on demand only, never from the poll. */
+  const refreshStale = useCallback(async () => {
+    const response = await fetch('/api/proposals/refresh-stale', { method: 'POST' }).catch(
+      () => null,
+    );
+    if (response?.ok) await load();
+  }, [load]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshStale();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [refreshStale]);
 
   async function create(name: string, scopes: string[]): Promise<boolean> {
     setMessage('');
@@ -226,6 +245,20 @@ export function useAgentWorkspace(
     setRecreating(false);
   }
 
+  async function refresh(id: string) {
+    const response = await fetch(`/api/proposals/${id}/refresh`, { method: 'POST' }).catch(
+      () => null,
+    );
+    if (response?.ok) toast.success(t('agents.refreshed'));
+    else {
+      const body = (await response?.json().catch(() => null)) as { code?: string } | null;
+      const feedback = apiError(body, t('agents.refreshFailed'));
+      setMessage(feedback);
+      toast.error(feedback);
+    }
+    await load();
+  }
+
   async function saveTtl(event: FormEvent): Promise<boolean> {
     event.preventDefault();
     const response = await fetch('/api/proposal-settings', {
@@ -276,6 +309,7 @@ export function useAgentWorkspace(
     revoke,
     review,
     recreate,
+    refresh,
     saveTtl,
     pending,
     activeAgents,

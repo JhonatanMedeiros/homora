@@ -18,6 +18,10 @@ export type Proposal = {
   author: string;
   batchId?: string | null;
   createdAt?: number;
+  /** Why a stale proposal cannot be approved as it is. */
+  staleReason?: 'config-changed' | 'target-gone' | 'batch' | 'agent';
+  /** When the proposal was last re-based on the current configuration. */
+  refreshedAt?: number | null;
 };
 export type ServiceFields = {
   name?: string;

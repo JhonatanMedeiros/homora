@@ -1,6 +1,6 @@
 import type { Service } from '@homora/shared';
 import { useState } from 'react';
-import { Check, ChevronDown, X } from 'lucide-react';
+import { Check, ChevronDown, RefreshCw, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +40,8 @@ type Props = {
   busy?: boolean;
   now?: number;
   onRecreate?: () => void;
+  /** Re-bases a stale proposal on the current configuration, keeping what was asked. */
+  onRefresh?: () => void;
   /**
    * Whether the changes are shown at first. Open for a short queue and always for identity and
    * connection proposals, so approving never happens without the values in front of you.
@@ -123,6 +125,7 @@ export function ProposalCard({
   busy,
   now,
   onRecreate,
+  onRefresh,
   defaultOpen = true,
 }: Props) {
   const diff = parseDiff(proposal.diff);
@@ -146,6 +149,9 @@ export function ProposalCard({
             </Badge>
             <p className="text-sm text-muted-foreground">
               {agentName} · {validity(proposal, now, pending)}
+              {pending && proposal.refreshedAt
+                ? ` · ${t('proposal.refreshed', { date: formatDate(proposal.refreshedAt) })}`
+                : ''}
             </p>
             {proposal.batchId && (
               <p className="text-sm text-muted-foreground">
@@ -165,7 +171,11 @@ export function ProposalCard({
           {!hideReview && (pending || proposal.state === 'stale') && (
             <CardFooter className="justify-end gap-2">
               {!pending && (
-                <p className="mr-auto text-sm text-muted-foreground">{t('proposal.staleHint')}</p>
+                <p className="mr-auto text-sm text-muted-foreground">
+                  {proposal.staleReason
+                    ? t(`proposal.stale.${proposal.staleReason}`)
+                    : t('proposal.staleHint')}
+                </p>
               )}
               <Button
                 type="button"
@@ -174,8 +184,22 @@ export function ProposalCard({
                 onClick={() => onReview(false)}
               >
                 <X data-icon="inline-start" />
-                {t('proposal.reject')}
+                {t(proposal.staleReason === 'target-gone' ? 'proposal.retire' : 'proposal.reject')}
               </Button>
+              {!pending && onRefresh && proposal.staleReason === 'config-changed' && (
+                <ApproveButton
+                  confirm={isDestructive(diff)}
+                  title={t('proposal.refreshConfirmTitle')}
+                  actionLabel={t('proposal.refresh')}
+                  variant="outline"
+                  description={t('proposal.refreshConfirmBody', { name: summary })}
+                  disabled={busy}
+                  onApprove={onRefresh}
+                >
+                  <RefreshCw data-icon="inline-start" />
+                  {t('proposal.refresh')}
+                </ApproveButton>
+              )}
               {/* Always present: the buttons keep their places when a proposal turns stale. */}
               <ApproveButton
                 confirm={isDestructive(diff)}
