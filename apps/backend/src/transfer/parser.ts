@@ -6,6 +6,7 @@ import {
   OPEN_TARGETS,
   CHECK_INTERVAL_MAX,
   CHECK_INTERVAL_MIN,
+  isServiceAlias,
   isCheckMatch,
   isCheckPath,
   isCheckType,
@@ -133,9 +134,12 @@ export function parseService(
   if (raw.checkMatch !== undefined && !isCheckMatch(raw.checkMatch))
     issues.push({ path: `${path}.checkMatch`, code: 'check-ignored', severity: 'warning' });
   const links = parseLinks(raw.links, path, issues);
+  if (raw.alias !== undefined && !isServiceAlias(raw.alias))
+    issues.push({ path: `${path}.alias`, code: 'alias-ignored', severity: 'warning' });
   return {
     name,
     url: url.href,
+    ...(isServiceAlias(raw.alias) ? { alias: raw.alias } : {}),
     description: typeof raw.description === 'string' ? raw.description.trim().slice(0, 140) : '',
     icon,
     allowPrivate: raw.allowPrivate === true,

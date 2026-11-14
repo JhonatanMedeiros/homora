@@ -58,7 +58,7 @@ describe('parsing', () => {
     ['invalid syntax', 'groups: [unclosed', 'invalid-syntax'],
     ['document without groups', 'version: 1\n', 'invalid-document'],
     ['root that is not an object', '- a\n- b', 'invalid-document'],
-    ['unsupported version', 'version: 5\ngroups: []', 'unsupported-version'],
+    ['unsupported version', 'version: 6\ngroups: []', 'unsupported-version'],
   ])('rejects %s', (_name, content, code) => {
     const parsed = parseTransfer(content);
     expect(parsed.issues).toEqual([{ path: '', code, severity: 'error' }]);
@@ -275,4 +275,53 @@ it('shows clocks beyond the page widget limit as skipped before applying', () =>
     code: 'widget-limit',
     severity: 'warning',
   });
+});
+
+it('preserves valid aliases in exports and reports invalid or conflicting aliases in the preview', () => {
+  const parsed = parseTransfer(
+    JSON.stringify({
+      version: 5,
+      groups: [
+        {
+          name: 'Media',
+          services: [
+            { name: 'One', url: 'https://one.test', alias: 'taken' },
+            { name: 'Two', url: 'https://two.test', alias: 'free' },
+            { name: 'Three', url: 'https://three.test', alias: 'free' },
+            { name: 'Four', url: 'https://four.test', alias: 'Bad Alias' },
+          ],
+        },
+      ],
+    }),
+  );
+  const plan = planImport(parsed, {
+    groups: [],
+    services: [{ category: 'Other', url: 'https://old.test/', alias: 'taken' }],
+  });
+  expect(plan.services.map((service) => service.alias)).toEqual([
+    undefined,
+    'free',
+    undefined,
+    undefined,
+  ]);
+  expect(plan.issues.map((issue) => issue.code)).toEqual([
+    'alias-ignored',
+    'alias-conflict',
+    'alias-conflict',
+  ]);
+  const exported = serializeConfiguration(
+    [{ name: 'Media' }],
+    [
+      {
+        id: 1,
+        name: 'One',
+        url: 'https://one.test/',
+        category: 'Media',
+        description: '',
+        alias: 'free',
+      },
+    ],
+    'json',
+  );
+  expect(parseTransfer(exported).document.groups[0].services[0].alias).toBe('free');
 });

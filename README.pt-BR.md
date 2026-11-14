@@ -20,6 +20,8 @@
 > **Nota sobre o idioma:** a interface do Homora é totalmente bilíngue (inglês e português do Brasil), mas a
 > documentação detalhada em `docs/` é mantida em inglês. Os links abaixo levam a ela.
 
+Aliases curtos opcionais como `/go/plex` exigem login e acompanham a URL atual do serviço. Alterar ou remover o alias invalida favoritos; reutilizá-lo para outro serviço fará antigos favoritos abrirem o novo serviço.
+
 ## Por que o Homora
 
 A maioria dos homelabs acaba com uma dúzia de interfaces web em uma dúzia de portas. O Homora dá a elas uma porta de

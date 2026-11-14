@@ -3,7 +3,7 @@ import type { ImportPlan, ParsedImport } from './types.js';
 
 type Existing = {
   groups: string[];
-  services: { category: string; url: string }[];
+  services: { category: string; url: string; alias?: string | null }[];
   pages?: string[];
   widgetCount?: number;
 };
@@ -15,6 +15,7 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
   const seenGroups = new Set<string>();
   const existingKeys = new Set(existing.services.map((s) => `${s.category}\n${s.url}`));
   const fileKeys = new Set<string>();
+  const aliases = new Set(existing.services.flatMap((s) => (s.alias ? [s.alias] : [])));
   const groups: ImportPlan['groups'] = [];
   const knownPages = existing.pages ?? [];
   const pages: ImportPlan['pages'] = [];
@@ -49,7 +50,18 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
           severity: 'warning',
         });
       fileKeys.add(key);
+      const isNew = !repeated && !existingKeys.has(key);
+      const alias =
+        isNew && service.alias && !aliases.has(service.alias) ? service.alias : undefined;
+      if (isNew && service.alias && !alias)
+        issues.push({
+          path: `groups[${groupIndex}].services[${index}].alias`,
+          code: 'alias-conflict',
+          severity: 'warning',
+        });
+      if (alias) aliases.add(alias);
       services.push({
+        ...(alias ? { alias } : {}),
         group: group.name,
         name: service.name,
         url: service.url,

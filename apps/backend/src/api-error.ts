@@ -39,6 +39,8 @@ export const ERROR_MESSAGES = {
     'Could not read the Docker containers. Check HOMORA_DOCKER_HOST and the proxy.',
   'docker-invalid-response': 'Docker returned an unexpected response.',
   'invalid-widget': 'Provide a valid integration and name.',
+  'invalid-alias': 'Use 1 to 63 lowercase letters, digits and hyphens.',
+  'alias-exists': 'This alias is already in use.',
   'invalid-url': 'Provide a valid URL.',
   'https-url-required': 'Provide a valid HTTPS URL.',
   'invalid-token': 'Provide a valid token.',
