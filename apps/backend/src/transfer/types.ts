@@ -1,12 +1,13 @@
 import type { ClockConfig } from '@homora/widgets/clock';
-import type { Appearance, CheckType, OpenTarget } from '@homora/shared';
+import type { Appearance, CheckType, LinkColor, OpenTarget } from '@homora/shared';
 
 /**
  * Homora export format version. Version 2 added pages (`pages` and a `page` on each group);
- * version 3 adds page widgets. Versions 1 and 2 remain readable; version 1 groups go to the first page.
+ * version 3 adds page widgets; version 4 adds the extra addresses of a service (`links`, each with
+ * its type by name and color). Versions 1 to 3 remain readable; version 1 groups go to the first page.
  */
-export const TRANSFER_VERSION = 3;
-export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3];
+export const TRANSFER_VERSION = 4;
+export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4];
 export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
 export const MAX_SERVICES = 1000;
@@ -15,6 +16,13 @@ export const MAX_SERVICES = 1000;
  * spend hundreds of milliseconds on the only thread; real exports use a small fraction of this.
  */
 export const MAX_FLOW_OPENERS = 20_000;
+/** An extra address in a file. Its type travels by name and color, never by id. */
+export type ImportedLink = {
+  url: string;
+  name: string;
+  openTarget?: OpenTarget;
+  type?: { name: string; color: LinkColor };
+};
 export type ImportedService = {
   name: string;
   url: string;
@@ -27,6 +35,7 @@ export type ImportedService = {
   expectedStatus?: string;
   checkPath?: string;
   checkMatch?: string;
+  links?: ImportedLink[];
 };
 export type ImportedGroup = {
   name: string;
@@ -64,6 +73,8 @@ export type IssueCode =
   | 'icon-unsupported'
   | 'columns-ignored'
   | 'open-target-ignored'
+  | 'link-ignored'
+  | 'link-limit'
   | 'check-ignored'
   | 'widget-ignored'
   | 'widget-source-unavailable'

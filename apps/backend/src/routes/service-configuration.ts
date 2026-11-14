@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { HostLinkError } from '../service-configuration.js';
+import { HostLinkError, ServiceLinkError } from '../service-configuration.js';
 import { ServiceValidationError, UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createObservationStore, createServiceMonitor } from '../monitoring/index.js';
@@ -154,12 +154,13 @@ export function registerServiceConfigurationRoutes(
   app.post('/api/services', async (request, reply) => {
     const parsed = serviceFormSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
-    const { host, ...input } = parsed.data;
+    const { host, links, ...input } = parsed.data;
     try {
       // Only the UI create path applies the instance default, and only when the form sent no value.
       const created = configuration.createService(
         { ...input, allowPrivate: input.allowPrivate ?? configuration.newServicesAllowPrivate() },
         host ?? null,
+        links,
       );
       void monitor.invalidate();
       return reply.code(201).send(publicService(created));
@@ -168,7 +169,9 @@ export function registerServiceConfigurationRoutes(
         .code(400)
         .send(
           errorBody(
-            error instanceof ServiceValidationError || error instanceof HostLinkError
+            error instanceof ServiceValidationError ||
+              error instanceof HostLinkError ||
+              error instanceof ServiceLinkError
               ? error.code
               : 'invalid-data',
           ),
@@ -181,9 +184,9 @@ export function registerServiceConfigurationRoutes(
     if (id === null) return reply.code(404).send(errorBody('service-not-found'));
     const parsed = serviceFormSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
-    const { host, ...input } = parsed.data;
+    const { host, links, ...input } = parsed.data;
     try {
-      const updated = configuration.updateService(id, input, host);
+      const updated = configuration.updateService(id, input, host, links);
       if (!updated) return reply.code(404).send(errorBody('service-not-found'));
       void monitor.invalidate();
       return publicService(updated);
@@ -192,7 +195,9 @@ export function registerServiceConfigurationRoutes(
         .code(400)
         .send(
           errorBody(
-            error instanceof ServiceValidationError || error instanceof HostLinkError
+            error instanceof ServiceValidationError ||
+              error instanceof HostLinkError ||
+              error instanceof ServiceLinkError
               ? error.code
               : 'invalid-data',
           ),

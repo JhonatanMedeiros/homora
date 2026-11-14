@@ -4,6 +4,7 @@ import { en as appShell } from './messages/app-shell.js';
 import { en as serviceCards } from './messages/service-cards.js';
 import { en as serviceGroups } from './messages/service-groups.js';
 import { en as serviceForm } from './messages/service-form.js';
+import { en as serviceLinks } from './messages/service-links.js';
 import { en as agents } from './messages/agents.js';
 import { en as integrations } from './messages/integrations.js';
 import { en as connections } from './messages/connections.js';
@@ -26,6 +27,7 @@ export const en = {
   ...serviceCards,
   ...serviceGroups,
   ...serviceForm,
+  ...serviceLinks,
   ...agents,
   ...integrations,
   ...connections,

@@ -67,6 +67,41 @@ export const services = sqliteTable('services', {
   hostType: text('host_type'),
 });
 
+/**
+ * Types of extra address ("Public", "LAN", ...): a name and a color, shared by every service.
+ * Names are unique ignoring case; at most 20; created and edited from the service form.
+ */
+export const linkTypes = sqliteTable(
+  'link_types',
+  {
+    id: integer('id').primaryKey(),
+    name: text('name').notNull(),
+    color: text('color').notNull(),
+    position: integer('position').notNull().default(0),
+  },
+  (table) => [uniqueIndex('link_types_name_nocase_idx').on(sql`${table.name} COLLATE NOCASE`)],
+);
+
+/**
+ * Extra addresses of a service, in `position` order. They are never monitored. They disappear with
+ * the service; deleting a type only clears `type_id`. `open_target` null follows the service.
+ */
+export const serviceLinks = sqliteTable(
+  'service_links',
+  {
+    id: integer('id').primaryKey(),
+    serviceId: integer('service_id')
+      .notNull()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    typeId: integer('type_id').references(() => linkTypes.id, { onDelete: 'set null' }),
+    name: text('name').notNull().default(''),
+    url: text('url').notNull(),
+    openTarget: text('open_target'),
+    position: integer('position').notNull().default(0),
+  },
+  (table) => [index('service_links_service_idx').on(table.serviceId, table.position)],
+);
+
 /** Small instance-wide settings (key/value). Values are plain text and never hold secrets. */
 export const appSettings = sqliteTable('app_settings', {
   key: text('key').primaryKey(),

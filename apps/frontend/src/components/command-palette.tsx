@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Service } from '@homora/shared';
+import { linkLabel, linkOpenTarget, type Service, type ServiceLink } from '@homora/shared';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +27,8 @@ import {
   type PaletteSort,
 } from '@/lib/palette-search';
 import { hostOf, type ServiceStatus } from '@/lib/services';
+import { LINK_COLOR_CLASS, openAddress } from '@/lib/service-links';
+import { cn } from '@/lib/utils';
 import { CommandPaletteCommands } from './command-palette-commands';
 
 type Props = {
@@ -61,6 +63,10 @@ const SORTS: {
   { id: 'name', label: 'palette.sortName' },
   { id: 'status', label: 'palette.sortStatus' },
 ];
+
+/** At most this many extra addresses of one service show in the palette; the card has them all. */
+const PALETTE_LINKS_MAX = 4;
+const linkText = (link: ServiceLink) => `${linkLabel(link)} ${link.type?.name ?? ''} ${link.url}`;
 
 const itemService = (value: string) => /^(?:service|recent)-(\d+)$/.exec(value)?.[1];
 
@@ -124,14 +130,53 @@ export function CommandPalette({
   const openService = (service: Service) =>
     run(() => {
       remember(service.id);
-      if (service.openTarget === 'same-tab') window.location.assign(service.url);
-      else window.open(service.url, '_blank', 'noopener,noreferrer');
+      openAddress(service.url, service.openTarget === 'same-tab' ? 'same-tab' : 'new-tab');
+    });
+  const openLink = (service: Service, link: ServiceLink) =>
+    run(() => {
+      remember(service.id);
+      openAddress(link.url, linkOpenTarget(service, link));
     });
   const goToCard = (service: Service) =>
     run(() => {
       remember(service.id);
       onGoToCard(service);
     });
+
+  /** Extra addresses sit right under their service while searching; the empty palette stays short. */
+  const renderLinks = (service: Service) =>
+    parsed.text
+      ? (service.links ?? []).slice(0, PALETTE_LINKS_MAX).map((link) => (
+          <CommandItem
+            key={`extra-${service.id}-${link.id}`}
+            value={`extra-${service.id}-${link.id}`}
+            keywords={[searchFields(service), linkText(link)]}
+            onSelect={() => openLink(service, link)}
+            className="pl-7"
+          >
+            {link.type ? (
+              <span
+                className={cn(
+                  'w-14 shrink-0 truncate rounded-sm px-1.5 py-0.5 text-center text-[0.625rem] font-semibold tracking-wider uppercase',
+                  LINK_COLOR_CLASS[link.type.color],
+                )}
+              >
+                {link.type.name}
+              </span>
+            ) : (
+              <span aria-hidden="true" className="w-14 shrink-0" />
+            )}
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">
+                {service.name} · {linkLabel(link)}
+              </span>
+              <span className="block truncate font-mono text-xs text-muted-foreground">
+                {link.url.replace(/^https?:\/\//, '')}
+              </span>
+            </span>
+          </CommandItem>
+        ))
+      : null;
 
   const renderService = (service: Service, prefix: 'service' | 'recent') => {
     const state = statuses[service.id]?.status ?? 'unknown';
@@ -181,7 +226,14 @@ export function CommandPalette({
         // Prefixes are removed before ranking. With a custom sort every match ties, so the DOM order wins.
         filter: (value, query, keywords) => {
           const text = parseQuery(query).text;
-          const found = score(`${value} ${keywords?.join(' ') ?? ''}`, text);
+          // An extra address ranks exactly like its service when the service matches (so it stays
+          // right under it, DOM order breaking the tie), and by its own text otherwise.
+          const found = value.startsWith('extra-')
+            ? score(
+                `service-${/^extra-(\d+)-/.exec(value)?.[1] ?? ''} ${keywords?.[0] ?? ''}`,
+                text,
+              ) || score(keywords?.[1] ?? '', text)
+            : score(`${value} ${keywords?.join(' ') ?? ''}`, text);
           return sort === 'relevance' || !found ? found : 1;
         },
         onKeyDown: (event) => {
@@ -229,7 +281,10 @@ export function CommandPalette({
         )}
         {visible.length > 0 && (
           <CommandGroup heading={t('palette.services')}>
-            {visible.map((service) => renderService(service, 'service'))}
+            {visible.flatMap((service) => [
+              renderService(service, 'service'),
+              renderLinks(service),
+            ])}
           </CommandGroup>
         )}
         <CommandPaletteCommands

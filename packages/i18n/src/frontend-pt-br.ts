@@ -5,6 +5,7 @@ import { ptBR as appShell } from './messages/app-shell.js';
 import { ptBR as serviceCards } from './messages/service-cards.js';
 import { ptBR as serviceGroups } from './messages/service-groups.js';
 import { ptBR as serviceForm } from './messages/service-form.js';
+import { ptBR as serviceLinks } from './messages/service-links.js';
 import { ptBR as agents } from './messages/agents.js';
 import { ptBR as integrations } from './messages/integrations.js';
 import { ptBR as connections } from './messages/connections.js';
@@ -26,6 +27,7 @@ export const ptBR: Record<MessageKey, string> = {
   ...serviceCards,
   ...serviceGroups,
   ...serviceForm,
+  ...serviceLinks,
   ...agents,
   ...integrations,
   ...connections,

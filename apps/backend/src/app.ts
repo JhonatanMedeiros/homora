@@ -27,6 +27,7 @@ import { registerServiceConfigurationRoutes } from './routes/service-configurati
 import { errorBody } from './api-error.js';
 import { createTagStore } from './service-tags.js';
 import { registerServiceTagRoutes } from './routes/service-tags.js';
+import { registerServiceLinkTypeRoutes } from './routes/service-link-types.js';
 import { registerServiceMaintenanceRoutes } from './routes/service-maintenance.js';
 import { createDockerPush } from './discovery/index.js';
 import { registerDockerPushRoutes } from './routes/docker-push.js';
@@ -194,6 +195,7 @@ export function createApp(
     auth,
     audit,
   );
+  registerServiceLinkTypeRoutes(app, configuration);
   registerHostSuggestionRoutes(app, sqlite, connections, configuration);
   registerServiceDependencyRoutes(app, sqlite, auth, audit);
   registerResourceLinkRoutes(app, sqlite, auth, audit);

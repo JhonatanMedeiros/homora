@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { StatusLight } from '@/components/status-light';
 import { describeStatus } from '@/lib/status-text';
 import { hostOf, type ServiceStatus } from '@/lib/services';
+import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { t } from '@/i18n';
 
 export type HostMapServicePanelProps = {
@@ -79,6 +80,9 @@ export function HostMapServicePanel({
             <span className="sr-only">{t('card.opensNewTab')}</span>
           )}
         </a>
+        <div className="-ml-2">
+          <ServiceLinksMenu service={service} align="start" />
+        </div>
       </div>
       {page && (
         <div className="flex flex-col gap-1">

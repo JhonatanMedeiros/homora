@@ -212,3 +212,59 @@ it('shows the g hints on the navigation rows only when shortcuts are on', () => 
   const plain = screen.getByText('Integrações').closest('[cmdk-item]') as HTMLElement;
   expect(within(plain).queryByText('g')).toBeNull();
 });
+
+const withLinks: Service[] = [
+  {
+    ...svc(1, 'Wiki', 'Casa'),
+    links: [
+      {
+        id: 10,
+        url: 'http://192.168.1.5:8080/',
+        name: '',
+        openTarget: null,
+        type: { id: 1, name: 'LAN', color: 'green' },
+      },
+      { id: 11, url: 'https://wiki.lan/admin', name: 'Painel', openTarget: 'same-tab', type: null },
+    ],
+  },
+  svc(2, 'Proxmox', 'Infra'),
+];
+
+it('lists the extra addresses under their service only while searching', () => {
+  setup({ services: withLinks });
+  expect(screen.queryByText('Wiki · LAN')).toBeNull();
+  type('wiki');
+  expect(screen.getByText('Wiki · LAN')).toBeTruthy();
+  expect(screen.getByText('Wiki · Painel')).toBeTruthy();
+  // Row order: the service, then its addresses.
+  const rows = screen.getAllByRole('option').map((row) => row.textContent ?? '');
+  const at = (text: string) => rows.findIndex((row) => row.includes(text));
+  expect(at('Wiki · LAN')).toBe(at('wiki.lan') + 1);
+  expect(screen.queryByText('Proxmox')).toBeNull();
+});
+
+it('finds an extra address by its type or host without the service name', () => {
+  setup({ services: withLinks });
+  type('192.168.1.5');
+  expect(screen.getByText('Wiki · LAN')).toBeTruthy();
+  expect(screen.queryByText('Proxmox')).toBeNull();
+});
+
+it('opens an extra address the way it is set to open and remembers the service', () => {
+  const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  setup({ services: withLinks });
+  type('wiki');
+  fireEvent.click(screen.getByText('Wiki · LAN'));
+  expect(open).toHaveBeenCalledWith('http://192.168.1.5:8080/', '_blank', 'noopener,noreferrer');
+  expect(JSON.parse(localStorage.getItem('homora-recent-services') ?? '[]')).toEqual([1]);
+});
+
+it('navigates the same tab for an extra address that asks for it', () => {
+  const assign = vi.fn();
+  vi.stubGlobal('location', { ...window.location, assign });
+  setup({ services: withLinks });
+  type('wiki');
+  fireEvent.click(screen.getByText('Wiki · Painel'));
+  expect(assign).toHaveBeenCalledWith('https://wiki.lan/admin');
+  vi.unstubAllGlobals();
+});
