@@ -426,3 +426,7 @@ formats without a second consumer. Both are deferred. See [ADR 0005](decisions/0
 ## Internal widget contract
 
 `@homora/widgets` defines configuration, localization, states, and source contracts without depending on integrations. `@homora/integrations` adapts its presentations and manifests to the contract; applications do not implement service-specific rules. Home page instances are stored separately from legacy rows. The host maintains credentials, transport, and caching; the top bar continues to use local browser preferences. See [ADR 0019](decisions/0019-widget-sdk.md) and the [widget inventory](issue-159-widget-inventory.md). Page widgets are not part of MCP.
+
+### Short service aliases
+
+An optional unique alias belongs to a service and resolves through the session-protected `/api/go/:alias` endpoint. The SPA handles `/go/:alias` and navigates to the validated current primary URL after authentication. The endpoint does not request the destination and responses are not cacheable. The public status page does not expose aliases.

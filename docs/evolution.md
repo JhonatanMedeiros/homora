@@ -314,6 +314,13 @@ and verification evidence.
 
 ## R1 — Living Homepage and Honest Status (Tasks)
 
+Widget ideas and their current mapping are tracked in [widget catalog](widget-catalog.md).
+The catalog is a prioritization aid, not authorization to implement its candidates; individual
+issues must establish scope, dependencies and validation. Existing integration live-validation
+gaps remain recorded in [integrations](integrations.md).
+Integration candidates are tracked in the [integration catalog](integration-catalog.md) and
+[epic #178](https://github.com/JhonatanMedeiros/homora/issues/178).
+
 Origin: [strategy.md](strategy.md), phase R1 and real-world Homepage migration benchmark.
 Mark items only with stated implementation and verification evidence.
 
@@ -649,6 +656,16 @@ recorded above. Stage 4 is blocked: it needs a real read-only Proxmox and explic
 authorization, and nothing was marked validated from fixtures. Stage 5 has the written
 walkthrough but not publication. Acceptance criteria still unmet: live-only validation (stage 4)
 and the open items listed under stages 2 and 3.
+
+### MCP coverage follow-up (2026-11-13)
+
+The dashboard's pages were not fully discoverable over MCP: groups include their
+page name, but empty pages were invisible. `list_pages` now returns page IDs and
+names in dashboard order under the existing `services:read` scope, without writes
+or network access. The capability inventory records other UI areas without MCP
+equivalents; exposing them requires a specific use case and explicit data and
+permission boundaries. The existing R4 validation and live-environment limits above
+remain unchanged.
 
 ## Upgrade and Clean Installation Validation (2026-11-10)
 
@@ -1792,3 +1809,7 @@ Delivered as one change for issue #179 (mockup linked there); items are named by
   wording of the Portuguese README beyond a direct translation.
 - Known gap: some interface messages still say "see the README" for Docker discovery; the guide is now
   [docker-discovery.md](user-guide/docker-discovery.md).
+
+## Short service aliases (issue #164)
+
+Optional aliases use authenticated `/go/<alias>` navigation and travel in Homora exports (version 5). Import previews warn and omit invalid or conflicting aliases. Homepage and Dashy aliases are not imported. HTTP routing and authenticated resolution were checked through local Vite and an isolated Compose stack. Interactive browser validation remains pending.

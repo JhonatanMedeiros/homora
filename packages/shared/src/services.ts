@@ -43,7 +43,12 @@ export const CHECK_INTERVAL_DEFAULT = 60;
 export const OPEN_TARGETS = ['new-tab', 'same-tab'] as const;
 export type OpenTarget = (typeof OPEN_TARGETS)[number];
 
+export const isServiceAlias = (value: unknown): value is string =>
+  typeof value === 'string' && value.length <= 63 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+
 export type ServiceInput = {
+  /** Omitted preserves the existing alias; null removes it. */
+  alias?: string | null;
   /** Omitted preserves the current value, or opens a new tab for new services. */
   openTarget?: OpenTarget;
   name: string;
@@ -76,11 +81,13 @@ export type Service = ServiceInput & {
 
 /** Invalid service input; `code` is stable and message is in English. */
 export class ServiceValidationError extends Error {
-  constructor(readonly code: 'invalid-url' | 'invalid-name-or-category') {
+  constructor(readonly code: 'invalid-url' | 'invalid-name-or-category' | 'invalid-alias') {
     super(
-      code === 'invalid-url'
-        ? 'Provide a valid HTTP or HTTPS URL without credentials.'
-        : 'Provide a valid name and category.',
+      code === 'invalid-alias'
+        ? 'Provide a valid alias.'
+        : code === 'invalid-url'
+          ? 'Provide a valid HTTP or HTTPS URL without credentials.'
+          : 'Provide a valid name and category.',
     );
     this.name = 'ServiceValidationError';
   }
@@ -218,6 +225,8 @@ export function normalizeIcon(value: unknown): string {
 }
 
 export function validateService(input: Partial<ServiceInput>): ServiceInput {
+  if (input.alias !== undefined && input.alias !== null && !isServiceAlias(input.alias))
+    throw new ServiceValidationError('invalid-alias');
   const name = String(input.name ?? '').trim();
   const category = String(input.category ?? '').trim();
   let url: URL;
@@ -234,6 +243,7 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
     name,
     category,
     url: url.href,
+    ...(input.alias !== undefined ? { alias: input.alias } : {}),
     description: String(input.description ?? '')
       .trim()
       .slice(0, 140),

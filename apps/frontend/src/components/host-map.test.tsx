@@ -138,6 +138,17 @@ it('selects a service with the keyboard-operable button and shows its details', 
   expect(handlers.onChangeHost).toHaveBeenCalledWith(expect.objectContaining({ id: 3 }));
 });
 
+it('shows the configured icon on the map and service details in the panel', () => {
+  const detailed = { ...services[0]!, icon: 'brand:proxmox', description: 'DNS for the lab' };
+  setup({ services: [detailed], cardDetails: () => ({ tags: ['network'] }) });
+  const tile = screen.getByRole('button', { name: /^pihole, / });
+  expect(tile.querySelector('img')?.getAttribute('src')).toContain('proxmox.svg');
+  fireEvent.click(tile);
+  const panel = screen.getByRole('complementary', { name: 'Details' });
+  expect(within(panel).getByText('DNS for the lab')).toBeTruthy();
+  expect(within(panel).getByText('network')).toBeTruthy();
+});
+
 it('selects a guest and lists its services', () => {
   setup();
   fireEvent.click(screen.getByRole('button', { name: /dns/ }));

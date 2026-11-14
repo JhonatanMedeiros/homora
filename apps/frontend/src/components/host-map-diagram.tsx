@@ -1,5 +1,6 @@
 import type { Service } from '@homora/shared';
 import { Button } from '@/components/ui/button';
+import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
 import {
   MAP,
@@ -134,7 +135,15 @@ export function HostMapDiagram({
           selected && 'border-primary ring-2 ring-primary',
         )}
       >
-        <span className="truncate font-medium">{item.service.name}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="grid size-7 shrink-0 place-items-center rounded-md bg-secondary text-sm font-semibold"
+          >
+            <ServiceIcon icon={item.service.icon} name={item.service.name} />
+          </span>
+          <span className="truncate font-medium">{item.service.name}</span>
+        </span>
         <StatusLight
           state={status.state}
           blocked={status.blocked}
@@ -185,7 +194,7 @@ export function HostMapDiagram({
           );
         }}
         className={cn(
-          'absolute rounded-md border bg-muted/40',
+          'absolute rounded-lg border bg-muted/40 shadow-sm',
           selected && 'ring-2 ring-primary',
           dropOver === guest.group.key && 'border-2 border-dashed border-primary bg-accent',
         )}
@@ -227,7 +236,7 @@ export function HostMapDiagram({
         aria-label={title}
         style={{ left: container.x, top: container.y, width: container.w, height: container.h }}
         className={cn(
-          'absolute rounded-lg border bg-card',
+          'absolute rounded-xl border bg-card shadow-sm',
           offline && 'border-2 border-dashed border-destructive',
           !container.node && 'border-dashed',
         )}

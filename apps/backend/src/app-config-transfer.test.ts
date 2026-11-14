@@ -142,3 +142,63 @@ groups:
     ).toBe(400);
   });
 });
+
+it('previews alias conflicts and requires a fresh preview after a concurrent change', async () => {
+  const headers = { origin: 'http://localhost:5173', cookie };
+  const post = (url: string, payload: object) =>
+    app.inject({ method: 'POST', url, headers, payload });
+  const base = { category: 'Media', description: '' };
+  await post('/api/services', {
+    ...base,
+    name: 'Existing',
+    url: 'https://existing.test',
+    alias: 'taken',
+  });
+  const content = JSON.stringify({
+    version: 5,
+    groups: [
+      {
+        name: 'Media',
+        services: [
+          {
+            name: 'Conflict',
+            url: 'https://conflict.test',
+            alias: 'taken',
+            links: [{ url: 'https://extra.test' }],
+          },
+          { name: 'Free', url: 'https://free.test', alias: 'free' },
+        ],
+      },
+    ],
+  });
+  const preview = (await post('/api/config/import/preview', { content })).json();
+  expect(preview.plan.issues).toContainEqual(expect.objectContaining({ code: 'alias-conflict' }));
+  await post('/api/services', {
+    ...base,
+    name: 'Concurrent',
+    url: 'https://concurrent.test',
+    alias: 'free',
+  });
+  expect(
+    (await post('/api/config/import/apply', { content, expectedVersion: preview.version }))
+      .statusCode,
+  ).toBe(409);
+  const renewed = (await post('/api/config/import/preview', { content })).json();
+  expect(
+    renewed.plan.issues.filter((issue: { code: string }) => issue.code === 'alias-conflict'),
+  ).toHaveLength(2);
+  expect(
+    (await post('/api/config/import/apply', { content, expectedVersion: renewed.version }))
+      .statusCode,
+  ).toBe(200);
+  const list = (
+    await app.inject({ method: 'GET', url: '/api/services', headers: { cookie } })
+  ).json();
+  expect(list.find((item: { name: string }) => item.name === 'Conflict')).toMatchObject({
+    alias: null,
+    links: [{ url: 'https://extra.test/' }],
+  });
+  expect(list.find((item: { name: string }) => item.name === 'Free')).toMatchObject({
+    alias: null,
+  });
+});

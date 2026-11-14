@@ -1,6 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { HostLinkError, ServiceLinkError } from '../service-configuration.js';
-import { ServiceValidationError, UPTIME_RANGES, type UptimeRange } from '@homora/shared';
+import {
+  ServiceValidationError,
+  isServiceAlias,
+  UPTIME_RANGES,
+  type UptimeRange,
+} from '@homora/shared';
 import type { createServiceConfiguration } from '../service-configuration.js';
 import type { createObservationStore, createServiceMonitor } from '../monitoring/index.js';
 import {
@@ -40,6 +45,21 @@ export function registerServiceConfigurationRoutes(
   audit: AuditLog,
   attention: ReturnType<typeof createServiceAttention>,
 ) {
+  app.get<{ Params: { alias: string } }>('/api/go/:alias', async (request, reply) => {
+    reply.header('Cache-Control', 'no-store');
+    const row = isServiceAlias(request.params.alias)
+      ? configuration.findAlias(request.params.alias)
+      : undefined;
+    if (!row) return reply.code(404).send(errorBody('not-found'));
+    try {
+      const url = new URL(row.url);
+      if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+        throw new Error();
+      return { url: url.href };
+    } catch {
+      return reply.code(404).send(errorBody('not-found'));
+    }
+  });
   app.get('/api/services', async () => {
     const shared = publicStatus.publicIds();
     const pinned = attention.pinnedIds();
@@ -230,6 +250,11 @@ export function registerServiceConfigurationRoutes(
       void monitor.invalidate();
       return reply.code(201).send(publicService(created));
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNIQUE constraint failed: services.alias')
+      )
+        return reply.code(409).send(errorBody('alias-exists'));
       return reply
         .code(400)
         .send(
@@ -256,6 +281,11 @@ export function registerServiceConfigurationRoutes(
       void monitor.invalidate();
       return publicService(updated);
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNIQUE constraint failed: services.alias')
+      )
+        return reply.code(409).send(errorBody('alias-exists'));
       return reply
         .code(400)
         .send(

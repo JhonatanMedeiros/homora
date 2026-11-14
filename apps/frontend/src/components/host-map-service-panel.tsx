@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { Service } from '@homora/shared';
 import { Button } from '@/components/ui/button';
+import { ServiceIcon } from '@/components/service-icon';
+import { StatusMeta } from '@/components/service-card-common';
+import { CardWidgets } from '@/components/card-widgets';
+import { ServiceUptime } from '@/components/service-uptime';
+import type { ServiceCardProps } from '@/components/service-card.types';
 import { StatusLight } from '@/components/status-light';
 import { describeStatus } from '@/lib/status-text';
 import { hostOf, type ServiceStatus } from '@/lib/services';
@@ -24,7 +29,10 @@ export type HostMapServicePanelProps = {
   onOpenCard: () => void;
   onChangeHost: () => void;
   hostEditor: React.ReactNode;
-};
+} & Pick<
+  ServiceCardProps,
+  'widgets' | 'uptime' | 'monitor' | 'tags' | 'uptimeRange' | 'onUptimeRangeChange'
+>;
 
 export function HostMapServicePanel({
   service,
@@ -42,6 +50,12 @@ export function HostMapServicePanel({
   onOpenCard,
   onChangeHost,
   hostEditor,
+  widgets,
+  uptime,
+  monitor,
+  tags,
+  uptimeRange,
+  onUptimeRangeChange,
 }: {
   service: Service;
   status?: ServiceStatus;
@@ -58,15 +72,26 @@ export function HostMapServicePanel({
   onOpenCard: () => void;
   onChangeHost: () => void;
   hostEditor: React.ReactNode;
-}) {
-  const view = describeStatus(status, blocked);
+} & Pick<
+  ServiceCardProps,
+  'widgets' | 'uptime' | 'monitor' | 'tags' | 'uptimeRange' | 'onUptimeRangeChange'
+>) {
+  const view = describeStatus(status, blocked, { monitor, checkType: service.checkType });
   const [editingHost, setEditingHost] = useState(false);
   const label = 'text-xs font-medium text-muted-foreground';
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="text-base font-semibold break-words">{service.name}</h4>
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-lg font-semibold"
+            >
+              <ServiceIcon icon={service.icon} name={service.name} />
+            </span>
+            <h4 className="text-base font-semibold break-words">{service.name}</h4>
+          </div>
           <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
         </div>
         <a
@@ -84,6 +109,32 @@ export function HostMapServicePanel({
           <ServiceLinksMenu service={service} align="start" />
         </div>
       </div>
+      {service.description && (
+        <p className="text-sm text-muted-foreground">{service.description}</p>
+      )}
+      {(view.note || view.meta || view.tag) && (
+        <div className="flex flex-col gap-1 text-sm">
+          <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
+          {view.note && <p className="text-muted-foreground">{view.note}</p>}
+        </div>
+      )}
+      <CardWidgets widgets={widgets ?? []} />
+      <ServiceUptime
+        service={service}
+        summary={uptime}
+        monitor={monitor}
+        range={uptimeRange ?? '24h'}
+        onRangeChange={onUptimeRangeChange ?? (() => {})}
+      />
+      {tags && tags.length > 0 && (
+        <ul aria-label={t('form.tags')} className="flex flex-wrap gap-1.5">
+          {tags.map((tag) => (
+            <li key={tag} className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+              {tag}
+            </li>
+          ))}
+        </ul>
+      )}
       {page && (
         <div className="flex flex-col gap-1">
           <span className={label}>{t('pages.title')}</span>
@@ -178,6 +229,9 @@ export function HostMapServicePanel({
           </ul>
         </div>
       )}
+      <Button type="button" variant="outline" size="sm" onClick={onChangeHost}>
+        {t('common.edit')}
+      </Button>
       <Button type="button" variant="outline" size="sm" onClick={onOpenCard}>
         {t('map.panel.openCard')}
       </Button>

@@ -59,6 +59,7 @@ to your first alert.
 
 - **Groups, pages and cards** with drag-and-drop ordering, 1 to 6 columns per group, tabs for pages (keys `1` to `9`)
   and tags to filter.
+- **Short addresses:** optionally assign a unique alias such as `/go/plex` to a service. Sign-in is required; the address follows the current service URL. Changing or removing the alias invalidates bookmarks. Reusing it for another service sends old bookmarks to that service.
 - **Two layouts:** a dense list or detailed cards with descriptions and uptime bars. Group, Host and Map views.
 - **Icons your way:** an emoji, a built-in icon (`lucide:server`), one of **164 bundled homelab brand logos**
   (`brand:plex`, served locally with no external requests) or an image URL. The form suggests the logo that

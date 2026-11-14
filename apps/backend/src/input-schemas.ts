@@ -91,6 +91,7 @@ export const linkTypeUpdateSchema = z
   .strict();
 /** Web UI only. `links` omitted keeps the card's extra addresses; `[]` removes them all. */
 export const serviceFormSchema = serviceInputSchema.extend({
+  alias: z.string().nullable().optional(),
   host: hostLinkSchema.nullable().optional(),
   links: z.array(serviceLinkSchema).max(SERVICE_LINKS_MAX).optional(),
 });

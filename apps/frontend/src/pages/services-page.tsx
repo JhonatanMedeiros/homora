@@ -524,6 +524,14 @@ export function ServicesPage({
         <Suspense fallback={<ServicesSkeleton label={t('common.loading')} list={list} />}>
           <HostMap
             services={services}
+            cardDetails={(service) => ({
+              widgets: cardWidgets[service.id],
+              uptime: uptime[service.id],
+              monitor: overview?.settings?.[service.id],
+              tags: tagMap[service.id],
+              uptimeRange,
+              onUptimeRangeChange: setUptimeRange,
+            })}
             connections={hostData.connections}
             inventories={hostData.inventories}
             statuses={statuses}

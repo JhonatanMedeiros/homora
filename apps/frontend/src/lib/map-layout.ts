@@ -3,8 +3,8 @@ import type { HostGuestGroup, HostNodeGroup, HostViewModel } from '@/lib/hosts';
 
 /** Geometry in map units (CSS px at zoom 1). Everything is computed, nothing is stored. */
 export const MAP = {
-  serviceW: 200,
-  serviceH: 36,
+  serviceW: 240,
+  serviceH: 44,
   serviceGap: 6,
   guestPad: 10,
   guestHeader: 52,

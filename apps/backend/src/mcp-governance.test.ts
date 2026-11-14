@@ -57,6 +57,7 @@ it('refuses every write for a read-only agent and persists nothing', async () =>
     };
     const available = caps.tools.filter((t) => t.available).map((t) => t.name);
     expect(available).toContain('list_services');
+    expect(available).toContain('list_pages');
     expect(available.filter((n) => n.startsWith('propose_') && n !== 'propose_batch')).toEqual([]);
     await client.close();
   } finally {

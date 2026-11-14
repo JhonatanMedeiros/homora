@@ -20,6 +20,9 @@ export const en = {
     'Could not read the Docker containers. Check HOMORA_DOCKER_HOST and the proxy.',
   'apiError.docker-invalid-response': 'Docker returned an unexpected response.',
   'apiError.invalid-widget': 'Provide a valid integration and name.',
+  'apiError.invalid-alias':
+    'Use 1–63 lowercase letters, digits and single hyphens, starting and ending with a letter or digit.',
+  'apiError.alias-exists': 'This alias is already in use.',
   'apiError.widget-limit': 'This page already has the most widgets it can hold.',
   'apiError.invalid-url': 'Provide a valid URL.',
   'apiError.https-url-required': 'Provide a valid HTTPS URL.',
@@ -99,6 +102,9 @@ export const ptBR = {
     'Não foi possível ler os contêineres do Docker. Confira HOMORA_DOCKER_HOST e o proxy.',
   'apiError.docker-invalid-response': 'O Docker devolveu uma resposta inesperada.',
   'apiError.invalid-widget': 'Informe integração e nome válidos.',
+  'apiError.invalid-alias':
+    'Use de 1 a 63 letras minúsculas, números e hífens simples, começando e terminando com letra ou número.',
+  'apiError.alias-exists': 'Este alias já está em uso.',
   'apiError.widget-limit': 'Esta página já tem o máximo de widgets que cabem nela.',
   'apiError.invalid-url': 'Informe uma URL válida.',
   'apiError.https-url-required': 'Informe uma URL HTTPS válida.',

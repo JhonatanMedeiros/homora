@@ -14,13 +14,13 @@ it('validates proposal inputs and lists services without secrets', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'homora-mcp-'));
   const db = new DatabaseSync(':memory:');
   db.exec(
-    "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT, url TEXT, category TEXT, description TEXT, icon TEXT DEFAULT '', position INTEGER DEFAULT 0, allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT); INSERT INTO services(id,name,url,category,description) VALUES (1,'Jellyfin','http://localhost/','Media',''); CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER); CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT); CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);",
+    "CREATE TABLE services (id INTEGER PRIMARY KEY, name TEXT, url TEXT, category TEXT, description TEXT, icon TEXT DEFAULT '', position INTEGER DEFAULT 0, allow_private INTEGER DEFAULT 0,check_type TEXT NOT NULL DEFAULT 'http',check_interval INTEGER,expected_status TEXT,check_path TEXT,check_match TEXT,open_target TEXT NOT NULL DEFAULT 'new-tab',host_connection_id INTEGER,host_node TEXT,host_vmid INTEGER,host_type TEXT,alias TEXT UNIQUE); INSERT INTO services(id,name,url,category,description) VALUES (1,'Jellyfin','http://localhost/','Media',''); CREATE TABLE config_version(id INTEGER PRIMARY KEY,version INTEGER); CREATE TABLE agent_identities(id TEXT PRIMARY KEY,name TEXT,token_hash TEXT UNIQUE,scopes TEXT,revoked_at INTEGER,created_at INTEGER); CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE service_proposals(id TEXT PRIMARY KEY,author_id TEXT,diff TEXT,base_hash TEXT,base_version INTEGER,expires_at INTEGER,state TEXT,created_at INTEGER,reviewed_at INTEGER,reviewer TEXT,batch_id TEXT); CREATE TABLE audit_events(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,proposal_id TEXT,result TEXT,created_at INTEGER,detail TEXT);",
   );
   db.prepare(
     "UPDATE services SET url='http://localhost/?api_key=synthetic-secret' WHERE id=1",
   ).run();
   db.exec(
-    "CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0); CREATE TABLE service_groups (id INTEGER PRIMARY KEY, name TEXT, position INTEGER, columns INTEGER,page_id INTEGER); INSERT INTO service_groups VALUES (1,'Mídia',0,NULL,1)",
+    "CREATE TABLE pages(id INTEGER PRIMARY KEY,name TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 0); INSERT INTO pages VALUES(1,'Home',0),(2,'Empty',1); CREATE TABLE service_groups (id INTEGER PRIMARY KEY, name TEXT, position INTEGER, columns INTEGER,page_id INTEGER); INSERT INTO service_groups VALUES (1,'Mídia',0,NULL,1)",
   );
   db.exec(`CREATE TABLE integration_instances(id INTEGER PRIMARY KEY,type TEXT,name TEXT,public_config TEXT,secret_ref TEXT,certificate_ref TEXT);
     CREATE TABLE integration_widgets(id INTEGER PRIMARY KEY,integration_id INTEGER,type TEXT,name TEXT,public_config TEXT,service_id INTEGER);
@@ -49,6 +49,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'list_services',
       'list_service_status',
       'get_service',
+      'list_pages',
       'list_groups',
       'get_group',
       'list_group_services',
@@ -109,6 +110,9 @@ it('validates proposal inputs and lists services without secrets', async () => {
       expect((published.op as { enum: string[] }).enum, name).toEqual(ops);
     }
     const result = await client.callTool({ name: 'list_services', arguments: {} });
+    expect(JSON.stringify(await client.callTool({ name: 'list_pages', arguments: {} }))).toContain(
+      'Empty',
+    );
     expect(JSON.stringify(result)).toContain('Jellyfin');
     expect(JSON.stringify(result)).not.toContain('synthetic-secret');
     expect(
@@ -144,6 +148,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
     }
     const reader = createProposalService(db).issue('reader', ['agents:read', 'audit:read']);
     process.env.HOMORA_AGENT_TOKEN = reader.token;
+    expect((await client.callTool({ name: 'list_pages', arguments: {} })).isError).toBe(true);
     const agents = JSON.stringify(await client.callTool({ name: 'list_agents', arguments: {} }));
     expect(agents).toContain('reader');
     expect(agents).not.toContain(reader.token);

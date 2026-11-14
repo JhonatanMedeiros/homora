@@ -42,6 +42,7 @@ export function registerMcpCapabilitiesTool(
         ...[
           'list_services',
           'get_service',
+          'list_pages',
           'list_groups',
           'list_service_status',
           'get_group',

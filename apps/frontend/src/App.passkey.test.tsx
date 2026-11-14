@@ -36,6 +36,7 @@ function stub(
       return new Response(
         JSON.stringify({ configured: true, authenticated, passkey: { origins } }),
       );
+    if (url === '/api/go/plex') return new Response('', { status: 404 });
     if (url === '/api/auth/passkey/generate-authenticate-options')
       return new Response(JSON.stringify({ challenge: 'abc' }));
     if (url === '/api/auth/passkey/verify-authentication') {
@@ -100,4 +101,16 @@ it('hides the passkey button and explains when the address or browser cannot use
   render(<App />);
   expect(await screen.findByText('This browser does not support passkeys.')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Sign in with a passkey' })).toBeNull();
+});
+
+it('returns to a short address after passkey authentication', async () => {
+  window.history.replaceState(null, '', '/go/plex');
+  browser.startAuthentication.mockResolvedValue({ id: 'credential' });
+  const fetchMock = stub([window.location.origin]);
+  render(<App />);
+  await screen.findByRole('button', { name: 'Sign in with a passkey' });
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/go/plex')).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Sign in with a passkey' }));
+  expect(await screen.findByText('Short address not found.')).toBeTruthy();
+  expect(window.location.pathname).toBe('/go/plex');
 });

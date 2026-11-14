@@ -135,7 +135,7 @@ export function createConfigurationTransfer({
             sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number }
           ).n,
           groups: selectGroups().map((group) => group.name),
-          services: rows.map((row) => ({ category: row.category, url: row.url })),
+          services: rows.map((row) => ({ category: row.category, url: row.url, alias: row.alias })),
           pages: (
             sqlite.prepare('SELECT id,name FROM pages ORDER BY position,id').all() as {
               id: number;
@@ -188,7 +188,11 @@ export function createConfigurationTransfer({
             sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number }
           ).n,
           groups: selectGroups().map((group) => group.name),
-          services: selectServices().map((row) => ({ category: row.category, url: row.url })),
+          services: selectServices().map((row) => ({
+            category: row.category,
+            url: row.url,
+            alias: row.alias,
+          })),
           pages: existingPages.map((page) => page.name),
         });
         // Pages the file asks for are created while there is room; the rest fall back to the first page.
@@ -218,7 +222,7 @@ export function createConfigurationTransfer({
           }
         }
         const insert = sqlite.prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match,open_target) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         );
         const queue = parsed.document.groups.flatMap((group) =>
           group.services.map((service) => ({ group: group.name, service })),
@@ -256,6 +260,7 @@ export function createConfigurationTransfer({
             valid.checkPath ?? null,
             valid.checkMatch ?? null,
             valid.openTarget ?? 'new-tab',
+            plan.services[index].alias ?? null,
           );
           if (service.pinned)
             sqlite

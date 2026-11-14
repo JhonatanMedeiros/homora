@@ -24,6 +24,7 @@ function serviceDraft(service: Service | undefined, allowPrivateDefault: boolean
     ? {
         name: service.name,
         url: service.url,
+        alias: service.alias ?? null,
         category: service.category,
         description: service.description,
         icon: service.icon ?? '',

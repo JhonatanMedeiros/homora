@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7e1e5734-3346-4dcd-860e-d36584f80f06",
+  "id": "a4e4e664-66cd-491d-b302-2bea2a49daab",
   "prevId": "0859104f-23de-4358-b164-bc74be3af1ba",
   "tables": {
     "app_settings": {
@@ -484,58 +484,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "service_acknowledgements": {
-      "name": "service_acknowledgements",
-      "columns": {
-        "service_id": {
-          "name": "service_id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "incident_id": {
-          "name": "incident_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "acknowledged_at": {
-          "name": "acknowledged_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "muted_until": {
-          "name": "muted_until",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "service_acknowledgements_service_id_services_id_fk": {
-          "name": "service_acknowledgements_service_id_services_id_fk",
-          "tableFrom": "service_acknowledgements",
-          "tableTo": "services",
-          "columnsFrom": [
-            "service_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "service_groups": {
       "name": "service_groups",
       "columns": {
@@ -701,44 +649,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "service_pins": {
-      "name": "service_pins",
-      "columns": {
-        "service_id": {
-          "name": "service_id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "pinned_at": {
-          "name": "pinned_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "service_pins_service_id_services_id_fk": {
-          "name": "service_pins_service_id_services_id_fk",
-          "tableFrom": "service_pins",
-          "tableTo": "services",
-          "columnsFrom": [
-            "service_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "services": {
       "name": "services",
       "columns": {
@@ -761,6 +671,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "alias": {
+          "name": "alias",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "category": {
@@ -882,7 +799,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "services_alias_unique": {
+          "name": "services_alias_unique",
+          "columns": [
+            "alias"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
         "services_host_connection_id_integration_instances_id_fk": {
           "name": "services_host_connection_id_integration_instances_id_fk",

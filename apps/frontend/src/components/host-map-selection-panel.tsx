@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import type { Service } from '@homora/shared';
 import { X } from 'lucide-react';
-import { HostMapServicePanel } from '@/components/host-map-service-panel';
+import {
+  HostMapServicePanel,
+  type HostMapServicePanelProps,
+} from '@/components/host-map-service-panel';
 import { Button } from '@/components/ui/button';
 import type { ServiceStatus } from '@/lib/services';
 import { t } from '@/i18n';
@@ -24,6 +27,7 @@ type SelectedService = {
 /** Side panel for details and actions on a selected map service or guest. */
 export function HostMapSelectionPanel({
   service,
+  cardDetails,
   guest,
   hostEditor,
   onClose,
@@ -34,6 +38,10 @@ export function HostMapSelectionPanel({
   onChangeHost,
 }: {
   service?: SelectedService;
+  cardDetails?: Pick<
+    HostMapServicePanelProps,
+    'widgets' | 'uptime' | 'monitor' | 'tags' | 'uptimeRange' | 'onUptimeRangeChange'
+  >;
   guest?: Guest;
   hostEditor?: ReactNode;
   onClose: () => void;
@@ -46,7 +54,7 @@ export function HostMapSelectionPanel({
   return (
     <aside
       aria-label={t('map.panel.title')}
-      className="absolute inset-x-3 bottom-20 z-10 flex max-h-[45%] flex-col gap-3 overflow-auto rounded-xl border bg-card p-4 text-sm shadow-lg lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-6.5rem)] lg:w-72"
+      className="absolute inset-x-3 bottom-20 z-10 flex max-h-[45%] flex-col gap-3 overflow-auto rounded-xl border bg-card p-4 text-sm shadow-lg lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-6.5rem)] lg:w-96"
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -65,6 +73,7 @@ export function HostMapSelectionPanel({
       </div>
       {service && (
         <HostMapServicePanel
+          {...cardDetails}
           service={service.service}
           status={service.status}
           blocked={service.blocked}

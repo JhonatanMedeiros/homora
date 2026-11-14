@@ -22,11 +22,18 @@ import { HostMapHeader } from '@/components/host-map-header';
 import { useHostMapViewport } from '@/hooks/use-host-map-viewport';
 import { useHostMapEditing, type MapEdit } from '@/hooks/use-host-map-editing';
 import { t } from '@/i18n';
+import type { HostMapServicePanelProps } from '@/components/host-map-service-panel';
 
 export type { MapEdit } from '@/hooks/use-host-map-editing';
 
 type Props = {
   edit?: MapEdit;
+  cardDetails?: (
+    service: Service,
+  ) => Pick<
+    HostMapServicePanelProps,
+    'widgets' | 'uptime' | 'monitor' | 'tags' | 'uptimeRange' | 'onUptimeRangeChange'
+  >;
   /** Manual dependencies, shown as "Depends on" and "Used by". */
   dependencies?: Dependency[];
   /** "May be affected through ..." hints by service id, from manual dependencies. */
@@ -64,6 +71,7 @@ const impactText = (impact: Impact) =>
  */
 export function HostMap({
   edit,
+  cardDetails,
   dependencies = [],
   notes = {},
   services,
@@ -300,6 +308,7 @@ export function HostMap({
                   }
                 : undefined
             }
+            cardDetails={selectedService ? cardDetails?.(selectedService) : undefined}
             guest={selectedGuest}
             onClose={() => setSelection(null)}
             onSelectService={(id) => setSelection({ kind: 'service', id })}
