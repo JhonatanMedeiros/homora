@@ -117,3 +117,26 @@ it('lists one row per line in management and always uses rows in organize mode',
   );
   expect(container.querySelector('ul')?.className).toBe('grid grid-cols-1 gap-1.5');
 });
+
+it('auto-collapses a healthy group without saving it, and lets the person open it', () => {
+  localStorage.clear();
+  const { container } = render(
+    <GroupSection {...base} autoCollapse>
+      <li>a</li>
+    </GroupSection>,
+  );
+  expect(container.querySelector('ul')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /Expandir grupo Infra|Expand group Infra/ }));
+  expect(container.querySelector('ul')).toBeTruthy();
+  // Nothing was written: a reload goes back to the automatic behavior.
+  expect(localStorage.getItem('homora-collapsed-groups')).toBeNull();
+});
+
+it('packs compact tiles tighter than cards', () => {
+  const { container } = render(
+    <GroupSection {...base} compact>
+      <li>a</li>
+    </GroupSection>,
+  );
+  expect(container.querySelector('ul')?.className).toContain('gap-2');
+});

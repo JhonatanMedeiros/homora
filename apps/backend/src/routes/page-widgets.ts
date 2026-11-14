@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { integrationWidgetDefinition } from '@homora/integrations';
 import { supportsSource } from '@homora/widgets';
 import { clockWidget } from '@homora/widgets/clock';
+import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { parseId } from '../input-schemas.js';
 
@@ -84,6 +85,8 @@ export function registerPageWidgetRoutes(app: FastifyInstance, sqlite: DatabaseS
   app.post('/api/page-widgets', async (request, reply) => {
     const value = validate(request.body);
     if (!value || list().length >= 200) return reply.code(400).send(errorBody('invalid-widget'));
+    if (list().filter((row) => row.pageId === value.pageId).length >= MAX_WIDGETS_PER_PAGE)
+      return reply.code(409).send(errorBody('widget-limit'));
     const result = transaction(() =>
       sqlite
         .prepare(
@@ -132,6 +135,11 @@ export function registerPageWidgetRoutes(app: FastifyInstance, sqlite: DatabaseS
     const current = list().find((row) => row.id === widgetId);
     if (!current) return reply.code(404).send(errorBody('widget-not-found'));
     if (current.version !== 1) return reply.code(409).send(errorBody('invalid-widget'));
+    if (
+      current.pageId !== value.pageId &&
+      list().filter((row) => row.pageId === value.pageId).length >= MAX_WIDGETS_PER_PAGE
+    )
+      return reply.code(409).send(errorBody('widget-limit'));
     const position =
       current.pageId === value.pageId
         ? current.position

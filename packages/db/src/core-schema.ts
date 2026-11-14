@@ -103,6 +103,28 @@ export const serviceLinks = sqliteTable(
   (table) => [index('service_links_service_idx').on(table.serviceId, table.position)],
 );
 
+/** Favorite services, shown in the Pinned row of the Home. One row per service; it goes with the service. */
+export const servicePins = sqliteTable('service_pins', {
+  serviceId: integer('service_id')
+    .primaryKey()
+    .references(() => services.id, { onDelete: 'cascade' }),
+  pinnedAt: integer('pinned_at').notNull(),
+});
+
+/**
+ * "I saw this" for an offline service. It holds either an acknowledged incident (it stops counting
+ * once that incident ends or a new one begins) or a mute that lapses at `muted_until`. Neither
+ * changes monitoring or notifications; they only quiet what the Home highlights.
+ */
+export const serviceAcknowledgements = sqliteTable('service_acknowledgements', {
+  serviceId: integer('service_id')
+    .primaryKey()
+    .references(() => services.id, { onDelete: 'cascade' }),
+  incidentId: integer('incident_id'),
+  acknowledgedAt: integer('acknowledged_at').notNull(),
+  mutedUntil: integer('muted_until'),
+});
+
 /** Small instance-wide settings (key/value). Values are plain text and never hold secrets. */
 export const appSettings = sqliteTable('app_settings', {
   key: text('key').primaryKey(),

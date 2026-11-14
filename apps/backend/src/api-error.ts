@@ -78,6 +78,7 @@ export const ERROR_MESSAGES = {
     'Could not query the integration. Check the connection, permissions and certificate.',
   'integration-changed': 'The integration changed while it was being queried. Try again.',
   'widget-not-found': 'Widget not found.',
+  'widget-limit': 'This page already has the most widgets it can hold.',
   'resource-link-not-found': 'This card is not linked to a resource.',
   'account-exists': 'Account already configured.',
   'account-setup-failed':

@@ -38,6 +38,7 @@ export type ImportedService = {
   checkPath?: string;
   checkMatch?: string;
   links?: ImportedLink[];
+  pinned?: true;
 };
 export type ImportedGroup = {
   name: string;

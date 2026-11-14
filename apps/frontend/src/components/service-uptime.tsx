@@ -134,12 +134,39 @@ function Sparkline({ summary }: { summary: UptimeSummary }) {
   );
 }
 
-function UptimeBars({
+/**
+ * A quiet, non-interactive version of the bucket bar for dense tiles: no tooltip and no focus stop,
+ * because the percentage and the status next to it already say the same in words.
+ */
+export function UptimeMiniBar({
   summary,
   monitor,
 }: {
+  summary?: UptimeSummary;
+  monitor?: Pick<MonitorSettings, 'degradedLatencyMs'>;
+}) {
+  if (!summary) return <span className="min-w-0 flex-1" aria-hidden="true" />;
+  return (
+    <span aria-hidden="true" className="flex h-1.5 min-w-0 flex-1 items-stretch gap-px">
+      {summary.buckets.map((bucket) => (
+        <span
+          key={bucket.start}
+          className={cn('min-w-px flex-1 rounded-[1px]', BAR_COLOR[barState(bucket, monitor)])}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function UptimeBars({
+  summary,
+  monitor,
+  axis = true,
+}: {
   summary: UptimeSummary;
   monitor?: Pick<MonitorSettings, 'degradedLatencyMs'>;
+  /** Start and end labels under the bar. The card leaves them out; the drawer shows them. */
+  axis?: boolean;
 }) {
   const range = summary.range;
   const count = summary.buckets.length;
@@ -236,13 +263,15 @@ function UptimeBars({
           </div>
         )}
       </div>
-      <div
-        aria-hidden="true"
-        className="flex justify-between font-mono text-[0.6875rem] text-muted-foreground"
-      >
-        <span>{t('uptime.axis.start', { range: rangeLabel(range) })}</span>
-        <span>{t('uptime.axis.now')}</span>
-      </div>
+      {axis && (
+        <div
+          aria-hidden="true"
+          className="flex justify-between font-mono text-[0.6875rem] text-muted-foreground"
+        >
+          <span>{t('uptime.axis.start', { range: rangeLabel(range) })}</span>
+          <span>{t('uptime.axis.now')}</span>
+        </div>
+      )}
       <div aria-live="polite">
         {picked && selected !== null && (
           <div
@@ -283,9 +312,12 @@ export function ServiceUptime({
   range,
   onRangeChange,
   monitor,
+  onDetails,
 }: {
   service: Service;
   summary?: UptimeSummary;
+  /** Opens the details drawer; without it the link goes to the full page. */
+  onDetails?: () => void;
   range: UptimeRange;
   onRangeChange: (range: UptimeRange) => void;
   /** Alert settings of the service: bars slower than its limit read as degraded. */
@@ -320,26 +352,37 @@ export function ServiceUptime({
           )}
         </span>
         <Sparkline summary={summary} />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="-my-1 -mr-2 shrink-0"
-          aria-expanded={open}
-          aria-controls={panelId}
-          aria-label={t('uptime.toggleFor', { name: service.name })}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {t('uptime.toggle')}
-          <ChevronDown
-            aria-hidden="true"
-            className={cn('transition-transform', open && 'rotate-180')}
-          />
-        </Button>
+        {!onDetails && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="-my-1 -mr-2 shrink-0"
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={t('uptime.toggleFor', { name: service.name })}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {t('uptime.toggle')}
+            <ChevronDown
+              aria-hidden="true"
+              className={cn('transition-transform', open && 'rotate-180')}
+            />
+          </Button>
+        )}
       </div>
-      <UptimeBars summary={summary} monitor={monitor} />
+      <UptimeBars summary={summary} monitor={monitor} axis={!onDetails} />
       <div className="flex justify-end text-xs">
-        {inRouter ? (
+        {onDetails ? (
+          <button
+            type="button"
+            onClick={onDetails}
+            aria-label={t('drawer.openFor', { name: service.name })}
+            className="text-primary hover:underline"
+          >
+            {t('card.details')} →
+          </button>
+        ) : inRouter ? (
           <Link to={detailPath} className="text-primary hover:underline">
             {t('detail.link')} →
           </Link>
@@ -349,7 +392,7 @@ export function ServiceUptime({
           </a>
         )}
       </div>
-      {open && (
+      {!onDetails && open && (
         <UptimeDetails
           id={panelId}
           service={service}
@@ -429,7 +472,7 @@ function RecentIncidents({ serviceId, refreshKey }: { serviceId: number; refresh
   );
 }
 
-function UptimeDetails({
+export function UptimeDetails({
   id,
   service,
   summary,

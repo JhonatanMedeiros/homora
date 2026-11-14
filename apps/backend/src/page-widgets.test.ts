@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { defaultClockConfig } from '@homora/widgets/clock';
+import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { expect, it } from 'vitest';
 import { createApp } from './app.js';
 import { createTestSession } from './test-auth.js';
@@ -127,5 +128,41 @@ it('accepts only a matching integration source and protects it from deletion', a
   const exported = JSON.parse((await req('GET', '/api/config/export?format=json')).body);
   expect(exported.widgets[0].source).toEqual({ type: 'proxmox', name: 'Demo' });
   expect(JSON.stringify(exported)).not.toContain('connectionId');
+  await app.close();
+});
+
+it('holds at most the widget limit per page, for creating and for moving in', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'homora-widget-limit-')), 'data.sqlite');
+  const { db } = createDatabase(path);
+  const { auth, cookie } = await createTestSession();
+  const app = createApp(db, 5173, auth, createVault(path));
+  const headers = { cookie, origin: 'http://localhost:5173' };
+  const req = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: unknown) =>
+    app.inject({ method, url, headers, payload: payload as object | undefined });
+  const home = (await req('GET', '/api/pages')).json()[0].id;
+  const lab = (await req('POST', '/api/pages', { name: 'Lab' }))
+    .json()
+    .find((page: { name: string }) => page.name === 'Lab').id;
+  const data = (pageId: number) => ({
+    pageId,
+    type: 'clock',
+    name: '',
+    config: defaultClockConfig,
+    connectionId: null,
+  });
+  for (let index = 0; index < MAX_WIDGETS_PER_PAGE; index += 1)
+    expect((await req('POST', '/api/page-widgets', data(lab))).statusCode).toBe(201);
+  const refused = await req('POST', '/api/page-widgets', data(lab));
+  expect(refused.statusCode).toBe(409);
+  expect(refused.json().code).toBe('widget-limit');
+  // Another page is not affected, and moving into the full page is refused too.
+  const other = (await req('POST', '/api/page-widgets', data(home))).json();
+  expect(other.id).toBeGreaterThan(0);
+  expect((await req('PUT', `/api/page-widgets/${other.id}`, data(lab))).statusCode).toBe(409);
+  // Editing a widget that already lives on the full page still works.
+  const inLab = (await req('GET', '/api/page-widgets'))
+    .json()
+    .find((row: { pageId: number }) => row.pageId === lab);
+  expect((await req('PUT', `/api/page-widgets/${inLab.id}`, data(lab))).statusCode).toBe(200);
   await app.close();
 });

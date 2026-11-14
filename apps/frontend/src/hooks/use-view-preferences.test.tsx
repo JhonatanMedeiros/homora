@@ -5,9 +5,9 @@ import { useViewPreferences } from './use-view-preferences';
 
 afterEach(() => localStorage.clear());
 
-it('defaults to list and keeps descriptions visible', () => {
+it('defaults to compact tiles and keeps descriptions visible', () => {
   const { result } = renderHook(() => useViewPreferences());
-  expect(result.current.view).toBe('list');
+  expect(result.current.view).toBe('tiles');
   expect(result.current.showDescriptions).toBe(true);
 });
 
@@ -26,4 +26,23 @@ it('saves the chosen view and descriptions preference', () => {
   expect(localStorage.getItem('homora-descriptions')).toBe('hidden');
   expect(result.current.view).toBe('cards');
   expect(result.current.showDescriptions).toBe(false);
+});
+
+it('keeps a saved list choice and reads the new tiles value', () => {
+  localStorage.setItem('homora-density', 'list');
+  expect(renderHook(() => useViewPreferences()).result.current.view).toBe('list');
+  localStorage.setItem('homora-density', 'tiles');
+  expect(renderHook(() => useViewPreferences()).result.current.view).toBe('tiles');
+});
+
+it('saves how healthy groups and problems are handled', () => {
+  const { result } = renderHook(() => useViewPreferences());
+  expect(result.current.collapseHealthy).toBe(false);
+  expect(result.current.problemsFirst).toBe(false);
+  act(() => result.current.setCollapseHealthy(true));
+  act(() => result.current.setProblemsFirst(true));
+  expect(localStorage.getItem('homora-collapse-healthy')).toBe('on');
+  expect(localStorage.getItem('homora-problems-first')).toBe('on');
+  expect(result.current.collapseHealthy).toBe(true);
+  expect(result.current.problemsFirst).toBe(true);
 });

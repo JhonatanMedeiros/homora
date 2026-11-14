@@ -1,6 +1,11 @@
 import { PageWidgets } from '@/components/page-widgets';
+import { toast } from 'sonner';
+import { useAcknowledgements } from '@/hooks/use-acknowledgements';
+import { isQuiet } from '@/lib/acknowledgements';
+import { onProblemsRequest, takeProblemsRequest } from '@/lib/home-intent';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import type { Service } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +18,13 @@ import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/components/category-filter';
 import { StatusFilter } from '@/components/status-filter';
 import { StatusBanner } from '@/components/status-banner';
+import { setHomeSearch, useHomeSearch } from '@/lib/home-search';
+import { PageTabMenu } from '@/components/page-tab-menu';
+import { PinnedRow } from '@/components/pinned-row';
+import { HomeRail } from '@/components/home-rail';
+import { useMinWidth } from '@/hooks/use-min-width';
+import { ServiceDrawer } from '@/components/service-drawer';
+import { ProbableCauses } from '@/components/probable-causes';
 import { ServiceOptionsSheet } from '@/components/service-options-sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTags } from '@/hooks/use-tags';
@@ -87,18 +99,35 @@ export function ServicesPage({
     setShowDescriptions,
     uptimeRange,
     setUptimeRange,
+    collapseHealthy,
+    problemsFirst,
+    widgetRail,
+    setWidgetRail,
   } = useViewPreferences();
+  const wide = useMinWidth(1280);
+  const wider = useMinWidth(1440);
   const uptime = useUptime(uptimeRange);
   const [overviewVersion, setOverviewVersion] = useState(0);
   const overview = useStatusOverview(overviewVersion);
   const maintenance = useMaintenance();
   const clock = useNow();
+  const attention = useAcknowledgements();
   const inMaintenance = activeWindows(maintenance.windows, clock);
   const { tags: tagMap, reload: reloadTags } = useTags();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>('all');
+  useEffect(() => {
+    const show = () => {
+      if (takeProblemsRequest()) setStatusFilter('down');
+    };
+    show();
+    return onProblemsRequest(show);
+  }, []);
   const list = view === 'list' || managing;
-  const [query, setQuery] = useState('');
+  const [manageQuery, setQuery] = useState('');
+  const homeQuery = useHomeSearch();
+  // The top bar filters the Home; the manage list has its own field.
+  const query = managing ? manageQuery : homeQuery;
   const [selected, setSelected] = useState<string | null>(null);
   const deps = useDependencies();
   // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
@@ -158,6 +187,11 @@ export function ServicesPage({
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [nodeFilter, setNodeFilter] = useState<{ connectionId: number; node: string } | null>(null);
   const [organizing, setOrganizing] = useState(false);
+  const [detailsId, setDetailsId] = useState<number | null>(null);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const detailsService = services.find((item) => item.id === detailsId) ?? null;
+  // Dense tiles are the Home default; management and organize mode always show rows.
+  const compact = view === 'tiles' && !managing && !organizing;
   const pageModel = useServicePageModel({
     data,
     hostData,
@@ -186,6 +220,63 @@ export function ServicesPage({
     dependencyNotes,
     offline,
   } = pageModel;
+  // Wide Home: views and groups on the left, page widgets on the right.
+  const railed = wide && !mobile && !managing && !organizing && !hostView && services.length > 0;
+  const widgetsInRail = railed && widgetRail && wider;
+  // 'Problems first' only reorders what is shown; it never changes the saved order of groups.
+  const ordered =
+    problemsFirst && !managing && !organizing
+      ? groups
+          .map((group, index) => ({ group, index, down: group.items.filter(isDown).length }))
+          .sort((a, b) => (b.down > 0 ? 1 : 0) - (a.down > 0 ? 1 : 0) || a.index - b.index)
+          .map(({ group }) => group)
+      : groups;
+  const activePage = pages.find((page) => page.id === activePageId);
+  const pinnedServices = services.filter((service) => service.pinned);
+  // The Favorites view keeps only pinned services, and drops groups left empty by that.
+  const shownGroups =
+    favoritesOnly && !managing && !organizing
+      ? ordered
+          .map((group) => ({ ...group, items: group.items.filter((item) => item.pinned) }))
+          .filter((group) => group.items.length > 0)
+      : ordered;
+  async function togglePinned(service: Service) {
+    const next = !service.pinned;
+    if (!(await data.pin(service.id, next))) {
+      toast.error(t('pinned.failed'));
+      return;
+    }
+    toast(t(next ? 'pinned.added' : 'pinned.removed', { name: service.name }), {
+      duration: 8000,
+      action: {
+        label: t('common.undo'),
+        onClick: () =>
+          void data.pin(service.id, !next).then((ok) => {
+            if (!ok) toast.error(t('pinned.failed'));
+          }),
+      },
+    });
+  }
+  const downNow = services.filter(isDown);
+  const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
+  async function acknowledge(members: Service[], minutes?: number) {
+    const ids = members.map((member) => member.id);
+    const incidents = Object.fromEntries(ids.map((id) => [id, overview?.open[id]?.id]));
+    if (!(await attention.acknowledge(ids, incidents, minutes))) {
+      toast.error(t('attention.failed'));
+      return;
+    }
+    toast(t(minutes ? 'attention.muted' : 'attention.done', { count: ids.length }), {
+      duration: 8000,
+      action: {
+        label: t('common.undo'),
+        onClick: () =>
+          void attention.clear(ids).then((ok) => {
+            if (!ok) toast.error(t('attention.clearFailed'));
+          }),
+      },
+    });
+  }
   const actions = useServicePageActions({
     data,
     sortedIn,
@@ -201,6 +292,13 @@ export function ServicesPage({
     onViewChange: setView,
     showDescriptions,
     onShowDescriptionsChange: setShowDescriptions,
+    uptimeRange,
+    onUptimeRangeChange: setUptimeRange,
+    organizing,
+    onToggleOrganizing: () => {
+      setOrganizing(!organizing);
+      setConfirming(null);
+    },
     showHostSuggestions:
       hostData.connections.length > 0 && services.some((service) => !service.host),
     onHostSuggestions: () => setSuggestOpen(true),
@@ -216,7 +314,7 @@ export function ServicesPage({
   }, [cancelRename, setConfirming]);
 
   const categoryFilter =
-    !organizing && !hostView && services.length > 0 && categories.length > 2 ? (
+    !organizing && !hostView && !railed && services.length > 0 && categories.length > 2 ? (
       <CategoryFilter
         categories={categories}
         selected={selected}
@@ -229,7 +327,7 @@ export function ServicesPage({
       />
     ) : null;
 
-  return (
+  const body = (
     <section
       aria-label={t('nav.services')}
       className={cn('flex flex-col gap-4 md:gap-6', organizing && 'pb-20 md:pb-0')}
@@ -248,10 +346,11 @@ export function ServicesPage({
             maintenance={maintenance.windows}
             uptime={uptime}
             range={uptimeRange}
+            onOpenService={(id) => setDetailsId(id)}
           />
         }
         stateFilter={
-          !organizing && !hostView && services.length > 0 ? (
+          !organizing && !hostView && !railed && services.length > 0 ? (
             <StatusFilter
               selected={statusFilter}
               counts={statusCounts}
@@ -296,6 +395,17 @@ export function ServicesPage({
           {t('status.stale')}
         </p>
       )}
+      {!managing && !organizing && !hostView && (
+        <ProbableCauses
+          down={downNow.filter((service) => !quietNow(service.id))}
+          quiet={downNow.filter((service) => quietNow(service.id))}
+          incidents={overview?.open}
+          impacts={impacts}
+          onOpen={(service) => setDetailsId(service.id)}
+          onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
+          onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
+        />
+      )}
       <FormError>{groupError}</FormError>
       {typeof formRoute === 'number' &&
         data.loaded &&
@@ -339,6 +449,11 @@ export function ServicesPage({
       </p>
       {paged && !hostView && (
         <PageTabs
+          menu={
+            activePage ? (
+              <PageTabMenu page={activePage} onChanged={() => data.refresh()} />
+            ) : undefined
+          }
           pages={pages}
           activeId={activePageId}
           onSelect={(id) => {
@@ -351,13 +466,15 @@ export function ServicesPage({
           }}
         />
       )}
-      {!managing && !hostView && <PageWidgets pageId={activePageId} pages={pages} />}
+      {!managing && !hostView && !widgetsInRail && (
+        <PageWidgets pageId={activePageId} pages={pages} />
+      )}
       {managing && !organizing && services.length > 0 && (
         <Input
           type="search"
           aria-label={t('manage.filter')}
           placeholder={t('manage.filter')}
-          value={query}
+          value={manageQuery}
           onChange={(event) => setQuery(event.target.value)}
           className="max-w-sm"
         />
@@ -463,10 +580,18 @@ export function ServicesPage({
           />
         </Suspense>
       )}
+      {!managing && !organizing && !hostView && !favoritesOnly && (
+        <PinnedRow
+          services={pinnedServices}
+          statuses={statuses}
+          blockedIds={blockedIds}
+          onDetails={(service) => setDetailsId(service.id)}
+        />
+      )}
       {!hostView && (
         <ServiceGroups
           data={{
-            groups,
+            groups: shownGroups,
             services,
             groupRows,
             pages,
@@ -492,6 +617,9 @@ export function ServicesPage({
             managing,
             organizing,
             list,
+            compact,
+            collapseHealthy: collapseHealthy && !managing,
+            isDown,
             showDescriptions,
             revealServiceId: focusService?.id,
             revealNonce: focusNonce,
@@ -502,6 +630,7 @@ export function ServicesPage({
             onTag: setTagFilter,
             hostOf: (service) => hostLabel(service, hostData.connections, hostData.inventories),
             onEditService: openForm,
+            onDetails: managing ? undefined : (service) => setDetailsId(service.id),
             onRemoveService: (service) => void remove(service),
             onCancelRemoval: (id) => setConfirming((current) => (current === id ? null : current)),
             onResource: setResourceReview,
@@ -520,6 +649,19 @@ export function ServicesPage({
           }}
         />
       )}
+      <ServiceDrawer
+        service={detailsService}
+        status={detailsService ? statuses[detailsService.id] : undefined}
+        blocked={detailsService ? blockedIds.has(detailsService.id) : false}
+        uptime={detailsService ? uptime[detailsService.id] : undefined}
+        monitor={detailsService ? overview?.settings[detailsService.id] : undefined}
+        incident={detailsService ? overview?.open[detailsService.id] : undefined}
+        maintenanceUntil={detailsService ? inMaintenance[detailsService.id]?.endsAt : undefined}
+        range={uptimeRange}
+        onRangeChange={setUptimeRange}
+        onTogglePinned={managing ? undefined : (item) => void togglePinned(item)}
+        onClose={() => setDetailsId(null)}
+      />
       <ServicePageOverlays
         services={services}
         suggestionsOpen={suggestOpen}
@@ -566,8 +708,53 @@ export function ServicesPage({
           <ServicesEmpty
             hasServices={services.length > 0}
             onAdd={() => (managing ? openForm() : onAddService())}
+            calm={!managing && statusFilter === 'down' && !query && !tagFilter && !selected}
+            onClearFilters={
+              !managing && (statusFilter !== 'all' || tagFilter || selected || favoritesOnly)
+                ? () => {
+                    setStatusFilter('all');
+                    setHomeSearch('');
+                    setTagFilter(null);
+                    setSelected(null);
+                    setFavoritesOnly(false);
+                  }
+                : undefined
+            }
           />
         )}
     </section>
+  );
+  if (!railed) return body;
+  return (
+    <div className="grid grid-cols-[13rem_minmax(0,1fr)] gap-6 min-[1440px]:grid-cols-[13rem_minmax(0,1fr)_19rem]">
+      <aside className="sticky top-4 self-start">
+        <HomeRail
+          statusFilter={statusFilter}
+          counts={statusCounts}
+          onStatusFilter={setStatusFilter}
+          groups={categories
+            .filter((name): name is string => typeof name === 'string')
+            .map((name) => {
+              const members = services.filter((s) => s.category === name);
+              return { name, total: members.length, down: members.filter(isDown).length };
+            })}
+          selectedGroup={selected}
+          onSelectGroup={setSelected}
+          favorites={{
+            count: pinnedServices.length,
+            active: favoritesOnly,
+            onToggle: () => setFavoritesOnly(!favoritesOnly),
+          }}
+          widgetRail={widgetRail}
+          onToggleWidgetRail={() => setWidgetRail(!widgetRail)}
+        />
+      </aside>
+      {body}
+      {widgetsInRail && (
+        <aside className="min-w-0">
+          <PageWidgets pageId={activePageId} pages={pages} layout="rail" />
+        </aside>
+      )}
+    </div>
   );
 }

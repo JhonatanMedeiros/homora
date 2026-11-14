@@ -40,6 +40,11 @@ type GroupPresentation = {
   managing: boolean;
   organizing: boolean;
   list: boolean;
+  compact?: boolean;
+  /** Groups with nothing wrong start collapsed ('Collapse healthy groups'). */
+  collapseHealthy?: boolean;
+  /** Services of a group that are down; healthy groups have none. */
+  isDown?: (service: Service) => boolean;
   showDescriptions: boolean;
   revealServiceId?: number;
   revealNonce?: number;
@@ -51,6 +56,8 @@ type GroupActions = {
   onTag?: (tag: string) => void;
   hostOf: (service: Service) => HostLabel | null;
   onEditService: (service: Service) => void;
+  /** Opens the details drawer; absent in management. */
+  onDetails?: (service: Service) => void;
   onRemoveService: (service: Service) => void;
   onCancelRemoval: (serviceId: number) => void;
   onResource: (serviceId: number) => void;
@@ -88,13 +95,24 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
     impacts,
     dependencyNotes,
   } = data;
-  const { managing, organizing, list, showDescriptions, revealServiceId, revealNonce, confirming } =
-    presentation;
+  const {
+    managing,
+    organizing,
+    list,
+    compact = false,
+    collapseHealthy = false,
+    isDown,
+    showDescriptions,
+    revealServiceId,
+    revealNonce,
+    confirming,
+  } = presentation;
   const {
     onUptimeRangeChange,
     onTag,
     hostOf,
     onEditService,
+    onDetails,
     onRemoveService,
     onCancelRemoval,
     onResource,
@@ -119,6 +137,8 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
         count={items.length}
         organizing={organizing}
         list={list}
+        compact={compact}
+        autoCollapse={collapseHealthy && !!isDown && !items.some(isDown)}
         managing={managing}
         revealSignal={
           revealServiceId !== undefined && items.some((item) => item.id === revealServiceId)
@@ -227,8 +247,10 @@ export function ServiceGroups({ data, presentation, actions }: Props) {
               blocked={blockedIds.has(service.id)}
               managing={managing}
               list={list}
+              compact={compact}
               showDescription={showDescriptions || managing}
               confirmingRemoval={confirming === service.id}
+              onDetails={onDetails ? () => onDetails(service) : undefined}
               onEdit={() => onEditService(service)}
               onRemove={() => onRemoveService(service)}
               onCancelRemoval={() => onCancelRemoval(service.id)}

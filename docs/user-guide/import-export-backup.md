@@ -12,6 +12,8 @@ Open **Settings**. Download your groups, cards and their order as YAML or JSON (
 
 To import, pick the file format (Homora, Homepage or Dashy) and a file. Homora shows a preview of what will be added, what already exists and what was ignored, and writes nothing until you confirm. Import only adds: nothing is overwritten or removed. Imported cards are not allowed to monitor your private network unless you tick that option for a Homora file you trust.
 
+The native export also records which services are pinned as favorites (`pinned: true`); files from older versions import with none pinned.
+
 Icons from other dashboards are kept only when Homora has an equivalent (an image URL, an emoji, a brand logo or one of the built-in icons); the others are left empty with a warning. Widgets, monitoring settings and Docker links from Homepage and Dashy are not imported. The formats were checked against those projects' documentation; real files may vary.
 
 ## Backup and restore

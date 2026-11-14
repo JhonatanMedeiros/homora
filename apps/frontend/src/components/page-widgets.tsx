@@ -1,6 +1,7 @@
 import { MoreHorizontal, Plus } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
+import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -54,13 +55,20 @@ function newWidgetDraft(pageId: number): WidgetDraft {
   };
 }
 
-type Props = { pageId: number; pages: PageRow[] };
+type Props = {
+  pageId: number;
+  pages: PageRow[];
+  /** `rail` stacks the widgets in a narrow column beside the services; `strip` spreads them above. */
+  layout?: 'strip' | 'rail';
+};
 
 /** Widgets of a page. Plain information by default; the controls appear in the card menu and organize mode. */
-export function PageWidgets({ pageId, pages }: Props) {
+export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
   const [widgets, setWidgets] = useState<PageWidget[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [readings, setReadings] = useState<Record<number, CardWidgetState>>({});
+  /** Last good reading of each widget, so a failing connection shows old data marked as such. */
+  const lastGood = useRef<Record<number, CardWidgetState & { status: 'ready' }>>({});
   const [draft, setDraft] = useState<WidgetDraft | null>(null);
   const [chosen, setChosen] = useState(false);
   const [dragId, setDragId] = useState<number | null>(null);
@@ -137,11 +145,21 @@ export function PageWidgets({ pageId, pages }: Props) {
         } catch {
           /* Isolate a broken presentation. */
         }
-        next[item.id] = !data
-          ? { widget, status: 'error' }
-          : stats
-            ? { widget, status: 'ready', stats }
-            : { widget, status: 'invalid' };
+        const good = lastGood.current[item.id];
+        if (data && stats) {
+          const fresh = {
+            widget,
+            status: 'ready' as const,
+            stats,
+            checkedAt: new Date().toISOString(),
+          };
+          lastGood.current[item.id] = fresh;
+          next[item.id] = fresh;
+        } else if (!data && good) {
+          next[item.id] = { ...good, widget, stale: true };
+        } else {
+          next[item.id] = !data ? { widget, status: 'error' } : { widget, status: 'invalid' };
+        }
       }
       setReadings(next);
       timer = window.setTimeout(() => void cycle(), 60_000);
@@ -153,6 +171,14 @@ export function PageWidgets({ pageId, pages }: Props) {
     };
   }, [widgets, connections]);
   const current = widgets.filter((item) => item.pageId === pageId);
+  const full = current.length >= MAX_WIDGETS_PER_PAGE;
+  const fullPages = new Set(
+    pages
+      .filter(
+        (page) => widgets.filter((item) => item.pageId === page.id).length >= MAX_WIDGETS_PER_PAGE,
+      )
+      .map((page) => page.id),
+  );
   async function change(url: string, method: string, body?: unknown) {
     if (busy) return false;
     setBusy(true);
@@ -226,7 +252,9 @@ export function PageWidgets({ pageId, pages }: Props) {
       {!loading && (
         <div
           role="list"
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className={
+            layout === 'rail' ? 'flex flex-col gap-3' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'
+          }
           onDragLeave={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropAt(null);
           }}
@@ -251,10 +279,16 @@ export function PageWidgets({ pageId, pages }: Props) {
                 serviceId: null,
               },
             };
+            const missingConnection =
+              item.type !== 'clock' &&
+              !loading &&
+              !connections.some((connection) => connection.id === item.connectionId);
             const state: CardWidgetState =
               item.version !== 1
                 ? { ...base, status: 'invalid' }
-                : (readings[item.id] ?? { ...base, status: 'loading' });
+                : missingConnection
+                  ? { ...base, status: 'unconfigured' }
+                  : (readings[item.id] ?? { ...base, status: 'loading' });
             const edit = () => {
               setChosen(true);
               setDraft({
@@ -290,7 +324,8 @@ export function PageWidgets({ pageId, pages }: Props) {
                   event.preventDefault();
                   event.dataTransfer.dropEffect = 'move';
                   const box = event.currentTarget.getBoundingClientRect();
-                  const sideBySide = window.matchMedia('(min-width: 640px)').matches;
+                  const sideBySide =
+                    layout === 'strip' && window.matchMedia('(min-width: 640px)').matches;
                   const after = sideBySide
                     ? event.clientX > box.left + box.width / 2
                     : event.clientY > box.top + box.height / 2;
@@ -307,9 +342,9 @@ export function PageWidgets({ pageId, pages }: Props) {
                   dragId === item.id && 'border-dashed opacity-40',
                 )}
               >
-                {markable(index) && <DropMarker edge="start" />}
+                {markable(index) && <DropMarker edge="start" stacked={layout === 'rail'} />}
                 {index === current.length - 1 && markable(current.length) && (
-                  <DropMarker edge="end" />
+                  <DropMarker edge="end" stacked={layout === 'rail'} />
                 )}
                 <h3 className="truncate pr-24 text-sm font-medium">{displayName}</h3>
                 <WidgetErrorBoundary key={`${item.type}:${item.id}`}>
@@ -348,7 +383,7 @@ export function PageWidgets({ pageId, pages }: Props) {
                             .map((page) => (
                               <DropdownMenuItem
                                 key={page.id}
-                                disabled={item.version !== 1}
+                                disabled={item.version !== 1 || fullPages.has(page.id)}
                                 onSelect={() => movePage(page.id)}
                               >
                                 {page.name}
@@ -382,24 +417,30 @@ export function PageWidgets({ pageId, pages }: Props) {
               </article>
             );
           })}
-          <Button
-            type="button"
-            variant="outline"
-            className="h-auto min-h-24 border-dashed text-muted-foreground"
-            onClick={openAdd}
-            onDragOver={(event) => {
-              if (dragId === null) return;
-              event.preventDefault();
-              setDropAt(current.length);
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              dropHere();
-            }}
-          >
-            <Plus />
-            {t('pageWidgets.addTile')}
-          </Button>
+          {full ? (
+            <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">
+              {t('pageWidgets.limit', { max: MAX_WIDGETS_PER_PAGE })}
+            </p>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto min-h-24 border-dashed text-muted-foreground"
+              onClick={openAdd}
+              onDragOver={(event) => {
+                if (dragId === null) return;
+                event.preventDefault();
+                setDropAt(current.length);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                dropHere();
+              }}
+            >
+              <Plus />
+              {t('pageWidgets.addTile')}
+            </Button>
+          )}
         </div>
       )}
       <AlertDialog
@@ -453,14 +494,20 @@ export function PageWidgets({ pageId, pages }: Props) {
 }
 
 /** Insertion bar in the gap before or after a card: vertical beside it, horizontal when stacked. */
-function DropMarker({ edge }: { edge: 'start' | 'end' }) {
+function DropMarker({ edge, stacked }: { edge: 'start' | 'end'; stacked: boolean }) {
   return (
     <span
       aria-hidden="true"
       className={cn(
         'pointer-events-none absolute z-10 rounded-full bg-primary',
-        'inset-x-0 h-1 sm:inset-x-auto sm:inset-y-0 sm:h-auto sm:w-1',
-        edge === 'start' ? '-top-2 sm:top-0 sm:-left-2' : '-bottom-2 sm:bottom-0 sm:-right-2',
+        stacked ? 'inset-x-0 h-1' : 'inset-x-0 h-1 sm:inset-x-auto sm:inset-y-0 sm:h-auto sm:w-1',
+        edge === 'start'
+          ? stacked
+            ? '-top-2'
+            : '-top-2 sm:top-0 sm:-left-2'
+          : stacked
+            ? '-bottom-2'
+            : '-bottom-2 sm:bottom-0 sm:-right-2',
       )}
     />
   );

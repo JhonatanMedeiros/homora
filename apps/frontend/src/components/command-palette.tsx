@@ -14,7 +14,7 @@ import { Kbd } from '@/components/ui/kbd';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { StatusLight } from '@/components/status-light';
 import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
-import { buildSearchUrl } from '@/lib/web-search';
+import { buildSearchUrl, parseBang } from '@/lib/web-search';
 import { t } from '@/i18n';
 import { useRecentServices } from '@/hooks/use-recent-services';
 import type { View } from '@/hooks/use-view-preferences';
@@ -114,7 +114,12 @@ export function CommandPalette({
   const showCommands = !parsed.filtered;
 
   // Only the free text the person typed: prefixes (status:, group:) never leave the browser.
-  const searchUrl = webSearch.template ? buildSearchUrl(webSearch.template, parsed.text) : null;
+  const bang = webSearch.enabled ? parseBang(parsed.text) : null;
+  const searchUrl = bang
+    ? buildSearchUrl(bang.template, bang.text)
+    : webSearch.template
+      ? buildSearchUrl(webSearch.template, parsed.text)
+      : null;
 
   const changeOpen = (next: boolean) => {
     if (!next) {
@@ -295,7 +300,8 @@ export function CommandPalette({
             view,
             showDescriptions,
             searchUrl,
-            searchText: parsed.text,
+            searchText: bang ? bang.text : parsed.text,
+            searchEngine: bang?.label,
           }}
           actions={{
             run,

@@ -778,7 +778,7 @@ it('adds extra addresses and link types without touching cards; deleting cascade
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
     // Database created before the extra-address migration.
-    for (const migration of MIGRATIONS.slice(0, -2)) {
+    for (const migration of MIGRATIONS.slice(0, -3)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -822,7 +822,7 @@ it('adds unique optional aliases without changing existing services', () => {
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
-    for (const migration of MIGRATIONS.slice(0, -1)) {
+    for (const migration of MIGRATIONS.slice(0, -2)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -840,6 +840,56 @@ it('adds unique optional aliases without changing existing services', () => {
     ]);
     check.exec("UPDATE services SET alias='example' WHERE id=1");
     expect(() => check.exec("UPDATE services SET alias='example' WHERE id=2")).toThrow();
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds favorites and acknowledgements without touching cards; deleting a card removes them', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-attention-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    // Database created by the previous version: every migration except the last one.
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO services(id,name,url,category,description) VALUES(7,'Existing','https://example.test','Home','')",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    check.exec('PRAGMA foreign_keys = ON');
+    expect(check.prepare('SELECT name,url FROM services WHERE id=7').get()).toEqual({
+      name: 'Existing',
+      url: 'https://example.test',
+    });
+    expect(check.prepare('SELECT COUNT(*) AS n FROM service_pins').get()).toEqual({ n: 0 });
+    expect(check.prepare('SELECT COUNT(*) AS n FROM service_acknowledgements').get()).toEqual({
+      n: 0,
+    });
+    check.exec(
+      'INSERT INTO service_pins(service_id,pinned_at) VALUES(7,1); INSERT INTO service_acknowledgements(service_id,acknowledged_at) VALUES(7,1)',
+    );
+    expect(() =>
+      check.exec('INSERT INTO service_pins(service_id,pinned_at) VALUES(7,2)'),
+    ).toThrow();
+    expect(() =>
+      check.exec('INSERT INTO service_pins(service_id,pinned_at) VALUES(99,2)'),
+    ).toThrow();
+    check.exec('DELETE FROM services WHERE id=7');
+    expect(check.prepare('SELECT COUNT(*) AS n FROM service_pins').get()).toEqual({ n: 0 });
+    expect(check.prepare('SELECT COUNT(*) AS n FROM service_acknowledgements').get()).toEqual({
+      n: 0,
+    });
     check.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });

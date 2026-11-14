@@ -5,6 +5,7 @@ import {
   LayoutList,
   Moon,
   Plus,
+  Rows3,
   Search,
   Settings2,
 } from 'lucide-react';
@@ -25,17 +26,19 @@ type Props = {
     showCommands: boolean;
     shortcutsEnabled: boolean;
     managing: boolean;
-    view: 'list' | 'cards';
+    view: 'tiles' | 'list' | 'cards';
     showDescriptions: boolean;
     searchUrl: string | null;
     searchText: string;
+    /** Set when a bang picked the engine (`!g text`). */
+    searchEngine?: string;
   };
   actions: {
     run: (action: () => void) => void;
     onNavigate: (path: string) => void;
     onAddService: () => void;
     onManageChange: (managing: boolean) => void;
-    onViewChange: (view: 'list' | 'cards') => void;
+    onViewChange: (view: 'tiles' | 'list' | 'cards') => void;
     onShowDescriptionsChange: (show: boolean) => void;
     onToggleTheme: () => void;
   };
@@ -62,6 +65,7 @@ export function CommandPaletteCommands({ state, actions }: Props) {
     showDescriptions,
     searchUrl,
     searchText,
+    searchEngine,
   } = state;
   const {
     run,
@@ -116,6 +120,11 @@ export function CommandPaletteCommands({ state, actions }: Props) {
               {managing ? <House /> : <Settings2 />}
               {managing ? t('palette.home') : t('palette.manage')}
             </CommandItem>
+            <CommandItem onSelect={() => run(() => onViewChange('tiles'))}>
+              <Rows3 />
+              {t('palette.viewCompact')}
+              {view === 'tiles' && <CommandShortcut>{t('palette.current')}</CommandShortcut>}
+            </CommandItem>
             <CommandItem onSelect={() => run(() => onViewChange('list'))}>
               <LayoutList />
               {t('palette.viewList')}
@@ -149,7 +158,9 @@ export function CommandPaletteCommands({ state, actions }: Props) {
           >
             <Search />
             <span className="min-w-0 flex-1 truncate">
-              {t('palette.webSearch', { text: searchText })}
+              {searchEngine
+                ? t('palette.webSearchWith', { engine: searchEngine, text: searchText })
+                : t('palette.webSearch', { text: searchText })}
             </span>
           </CommandItem>
         </CommandGroup>

@@ -11,6 +11,7 @@ const handlers = () => ({
   onOpenHelp: vi.fn(),
   onGo: vi.fn(),
   onNewService: vi.fn(),
+  onShowProblems: vi.fn(),
 });
 function Host(props: ReturnType<typeof handlers>) {
   useShortcuts(props);
@@ -167,4 +168,14 @@ it('ignores the digit keys while typing in a field', () => {
   setup({ onGoPage } as never);
   press('1', {}, document.querySelector('input') as Element);
   expect(onGoPage).not.toHaveBeenCalled();
+});
+
+it('shows the problems with g then p, and not with p alone', () => {
+  setup();
+  press('p');
+  expect(h.onShowProblems).not.toHaveBeenCalled();
+  press('g');
+  press('p');
+  expect(h.onShowProblems).toHaveBeenCalledOnce();
+  expect(h.onGo).not.toHaveBeenCalled();
 });

@@ -268,3 +268,29 @@ it('navigates the same tab for an extra address that asks for it', () => {
   expect(assign).toHaveBeenCalledWith('https://wiki.lan/admin');
   vi.unstubAllGlobals();
 });
+
+it('sends a bang to its engine with only the text after it, and only when web search is on', () => {
+  setup();
+  type('!g quantum cats');
+  expect(screen.queryByText(/Buscar no Google/)).toBeNull();
+  cleanup();
+  webSearchOn();
+  const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  setup();
+  type('!g quantum cats');
+  fireEvent.click(screen.getByText('Buscar no Google por “quantum cats”'));
+  expect(open).toHaveBeenCalledExactlyOnceWith(
+    'https://www.google.com/search?q=quantum%20cats',
+    '_blank',
+    'noopener,noreferrer',
+  );
+});
+
+it('keeps the normal web search for an unknown bang or a bang without text', () => {
+  webSearchOn();
+  setup();
+  type('!zz hello');
+  expect(screen.getByText('Buscar na web por “!zz hello”')).toBeTruthy();
+  type('!g');
+  expect(screen.queryByText(/Buscar no Google/)).toBeNull();
+});

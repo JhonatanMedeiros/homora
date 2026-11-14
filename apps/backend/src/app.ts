@@ -25,6 +25,7 @@ import { registerDiscoveryRoutes } from './routes/discovery.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
 import { errorBody } from './api-error.js';
+import { createServiceAttention } from './service-attention.js';
 import { createTagStore } from './service-tags.js';
 import { registerServiceTagRoutes } from './routes/service-tags.js';
 import { registerServiceLinkTypeRoutes } from './routes/service-link-types.js';
@@ -194,6 +195,7 @@ export function createApp(
     publicStatus,
     auth,
     audit,
+    createServiceAttention(sqlite),
   );
   registerServiceLinkTypeRoutes(app, configuration);
   registerHostSuggestionRoutes(app, sqlite, connections, configuration);

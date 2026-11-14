@@ -41,6 +41,7 @@ export function serializeConfiguration(
           ...(service.icon ? { icon: service.icon } : {}),
           ...(service.allowPrivate ? { allowPrivate: true } : {}),
           ...(service.openTarget === 'same-tab' ? { openTarget: 'same-tab' } : {}),
+          ...(service.pinned ? { pinned: true } : {}),
           ...(service.checkType && service.checkType !== 'http'
             ? { check: service.checkType }
             : {}),

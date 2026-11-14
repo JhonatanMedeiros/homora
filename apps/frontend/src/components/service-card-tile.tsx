@@ -41,6 +41,7 @@ export function ServiceCardTile({
   managing,
   showDescription,
   confirmingRemoval,
+  onDetails,
   onEdit,
   onRemove,
   onCancelRemoval,
@@ -155,6 +156,7 @@ export function ServiceCardTile({
           range={uptimeRange}
           onRangeChange={onUptimeRangeChange}
           monitor={monitor}
+          onDetails={onDetails}
         />
         {tags.length > 0 && (
           <ul aria-label={t('form.tags')} className="m-0 flex list-none flex-wrap gap-1.5 p-0">

@@ -1766,6 +1766,32 @@ manual responsive and keyboard verification in a browser remains pending.
   preview; name and page are collapsed. Editing skips the gallery and does not change the type.
 - Validation: component interface tests; browser verification pending.
 
+### Home redesign: compact tiles, rails, causes, drawer and favorites (2026-11-14)
+
+Delivered as one change for issue #179 (mockup linked there); items are named by their issue ids.
+
+- Compact tile is the default layout (N6), with groups that collapse when healthy and a problems-first order (N8). The
+  layout toggle is Compact, List, Cards; the **Display** popover also holds descriptions and the uptime period (C4).
+- Left rail with the four status filters and the groups with their health (N4, C2, C3), right widget panel (N9, C7,
+  C1), widget panel off switch, stale and not-configured widget states (N10).
+- Pulse windows (N1), **Needs attention** with probable causes (N2), acknowledge and mute with Undo and an audit trail
+  (N3), alerts bell (N12), `g` then `p` (C8), top-bar filter field (C9).
+- Details drawer and bottom sheet (N7, C5, C10), favorites with a Pinned row and a Favorites view (N5; migration `0037`,
+  export and import), page tab menu (N13), empty states (N16), Organize on the Home toolbar (C6), phone bottom bar (N14),
+  distinct unknown, not monitored and degraded tiles (N15), undo toasts for pin, acknowledge and moves (N11).
+- Decisions taken with the author: causes are computed in the browser as a tested pure function; acknowledging does not
+  pause notifications; favorites and Pinned share one field and the row is global.
+- C5 completed: with the drawer, the card drops the History toggle, the axis labels and the "Incidents and charts" link;
+  the drawer shows the period selector, latency, incidents and the axis. Cards outside the Home (no drawer) keep the old controls.
+- Bangs (`!g`, `!w`, `!gh`…) work only while the opt-in web search is on and send only the text after the prefix (N/A in
+  the issue list: decision 8). A page holds at most 12 widgets (`MAX_WIDGETS_PER_PAGE`; decision 2): creating or moving
+  into a full page is refused with `widget-limit`, and an import skips the widgets that do not fit.
+- Screenshots retaken for the changed Home: dashboard (dark, light, Cards), details drawer (new), command palette, organize
+  mode, Settings → Home and pages, and the phone view. They use synthetic data; statuses and uptime were fabricated in the
+  browser because the sandbox cannot reach monitored services. Host view, host map, service detail, integrations, agents and
+  activity were not retaken and still show the old top bar.
+- Validation: see the pull request for the commands and results.
+
 ### Documentation: showcase README, user guide and fresh screenshots (2026-11-13)
 
 - The README is now a showcase (value, quick start, features, screenshots, use cases, integrations, security

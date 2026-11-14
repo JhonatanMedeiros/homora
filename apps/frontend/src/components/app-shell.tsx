@@ -20,12 +20,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { initials, type Profile } from '@/features/account/account-model';
+import { HomeSearchField } from '@/components/home-search-field';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { navGroups, navItems, type Tab } from '@/components/app-nav';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DashboardTabs } from '@/components/dashboard-tabs';
 import { MobileTabs } from '@/components/mobile-tabs';
 
 type Props = {
@@ -36,6 +39,8 @@ type Props = {
   onLogout: () => void;
   onOpenPalette: () => void;
   profile: Profile | null;
+  /** The alerts bell, when the dashboard has data to count. */
+  alerts?: ReactNode;
   children: ReactNode;
 };
 
@@ -47,19 +52,22 @@ export function AppShell({
   onLogout,
   onOpenPalette,
   profile,
+  alerts,
   children,
 }: Props) {
   // The account is a page of its own: no sidebar and no search, just a way back.
   const standalone = tab === 'account' && !managing;
   const pendingProposals = usePendingProposals(tab, managing);
+  const mobile = useIsMobile();
   return (
     <div className="min-h-svh">
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
         <div
-          className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8 ${managing ? 'max-w-none md:px-6' : 'max-w-6xl'}`}
+          className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8 ${managing ? 'max-w-none md:px-6' : tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
         >
           <BrandMark compact className="text-sidebar-foreground" />
           <span className="mr-auto" />
+          {tab === 'services' && !managing && <HomeSearchField />}
           <Button
             variant="ghost"
             aria-label={t('palette.button')}
@@ -72,6 +80,7 @@ export function AppShell({
               Ctrl K
             </Kbd>
           </Button>
+          {alerts}
           <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <DropdownMenu>
@@ -127,7 +136,7 @@ export function AppShell({
         className={
           managing
             ? 'flex w-full flex-col pb-24 md:pb-0'
-            : 'mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-8'
+            : `mx-auto flex w-full ${tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'} flex-col gap-8 px-4 py-8 md:px-8 md:py-8 ${tab === 'services' ? 'pb-24 md:pb-8' : ''}`
         }
       >
         {!managing && !standalone && (
@@ -184,6 +193,14 @@ export function AppShell({
         )}
       </main>
       {managing && <MobileTabs tab={tab} onTabChange={onTabChange} />}
+      {tab === 'services' && !managing && mobile && (
+        <DashboardTabs
+          onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          onSearch={onOpenPalette}
+          onAlerts={() => onTabChange('activity')}
+          onManage={() => onManageChange(true)}
+        />
+      )}
     </div>
   );
 }

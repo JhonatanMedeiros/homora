@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { StatusOverview, UptimeSummary } from '@homora/shared';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { StatusBanner } from '@/components/status-banner';
 
 afterEach(cleanup);
@@ -117,4 +117,21 @@ it('copes with missing numbers: no overview, no history and an exhausted budget'
 it('renders nothing without services', () => {
   const { container } = show({ services: [] });
   expect(container.textContent).toBe('');
+});
+
+it('shows one window per service, with the state in words, and opens the chosen one', () => {
+  const onOpen = vi.fn();
+  show({
+    statuses: { 1: ok, 2: down, 3: ok },
+    onOpenService: onOpen,
+  });
+  const windows = screen.getByRole('list', { name: /janela por serviço/i });
+  expect(windows.querySelectorAll('button')).toHaveLength(3);
+  fireEvent.click(screen.getByRole('button', { name: /Jellyfin: Fora do ar/ }));
+  expect(onOpen).toHaveBeenCalledWith(2);
+});
+
+it('hides the windows when nothing can open them', () => {
+  show({ statuses: { 1: ok, 2: ok, 3: ok } });
+  expect(screen.queryByRole('list', { name: /janela por serviço/i })).toBeNull();
 });

@@ -150,6 +150,7 @@ export function parseService(
     ...(checkType ? { checkType } : {}),
     ...(checkInterval ? { checkInterval } : {}),
     ...(links.length ? { links } : {}),
+    ...(raw.pinned === true ? { pinned: true as const } : {}),
   };
 }
 

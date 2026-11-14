@@ -98,6 +98,15 @@ export const serviceFormSchema = serviceInputSchema.extend({
 export const dismissalBodySchema = z
   .object({ host: hostLinkSchema, dismissed: z.boolean() })
   .strict();
+export const pinBodySchema = z.object({ pinned: z.boolean() }).strict();
+/** Acknowledge what the person saw; `muteMinutes` quiets it for a while (at most a week). */
+export const acknowledgeBodySchema = z
+  .object({
+    incidentId: z.number().int().safe().positive().nullable().optional(),
+    muteMinutes: z.number().int().min(1).max(10_080).optional(),
+  })
+  .strict();
+
 export const hostBodySchema = z.object({ host: hostLinkSchema.nullable() }).strict();
 
 const serviceIdSchema = z.number().int().safe().positive();

@@ -229,3 +229,29 @@ it('survives a failing or malformed incident response', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Histórico de disponibilidade de Wiki' }));
   expect(await screen.findByText('Não foi possível carregar os incidentes.')).toBeTruthy();
 });
+
+it('keeps the card slim when the drawer exists: no History toggle, no axis labels, one way to the details', () => {
+  const onDetails = vi.fn();
+  render(
+    <ServiceUptime
+      service={service}
+      summary={summary()}
+      range="24h"
+      onRangeChange={() => {}}
+      onDetails={onDetails}
+    />,
+  );
+  expect(screen.queryByRole('button', { name: 'Histórico de disponibilidade de Wiki' })).toBeNull();
+  expect(screen.queryByText('agora')).toBeNull();
+  expect(screen.queryByText(/Incidentes e gráficos/)).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes de Wiki' }));
+  expect(onDetails).toHaveBeenCalledOnce();
+});
+
+it('still shows the History toggle and the axis where there is no drawer', () => {
+  render(
+    <ServiceUptime service={service} summary={summary()} range="24h" onRangeChange={() => {}} />,
+  );
+  expect(screen.getByRole('button', { name: 'Histórico de disponibilidade de Wiki' })).toBeTruthy();
+  expect(screen.getByText('agora')).toBeTruthy();
+});

@@ -67,6 +67,22 @@ export function useServices() {
     }
   }
 
+  /** Marks or unmarks a favorite; the list reloads so every view agrees. */
+  async function pin(id: number, pinned: boolean): Promise<boolean> {
+    try {
+      const response = await fetch(`/api/services/${id}/pin`, {
+        method: 'PUT',
+        headers: json,
+        body: JSON.stringify({ pinned }),
+      });
+      if (!response.ok) return false;
+      await refresh();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   useEffect(() => {
     let active = true;
     fetch('/api/services')
@@ -201,6 +217,7 @@ export function useServices() {
     refresh,
     deleteService,
     linkHost,
+    pin,
     ...ordering,
   };
 }

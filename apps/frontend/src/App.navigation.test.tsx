@@ -99,7 +99,7 @@ it('displays error for unknown pages and missing service', async () => {
   expect(await screen.findByText('Serviço não encontrado.')).toBeTruthy();
 });
 
-it('shows the list view by default and opens the command palette with Ctrl K', async () => {
+it('shows compact tiles by default and opens the command palette with Ctrl K', async () => {
   localStorage.clear();
   vi.stubGlobal(
     'fetch',
@@ -126,8 +126,8 @@ it('shows the list view by default and opens the command palette with Ctrl K', a
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.click(screen.getByRole('button', { name: 'Visualização' }));
-  expect((await screen.findByRole('radio', { name: 'Lista' })).getAttribute('data-state')).toBe(
+  fireEvent.click(screen.getByRole('button', { name: 'Exibição' }));
+  expect((await screen.findByRole('radio', { name: 'Compacto' })).getAttribute('data-state')).toBe(
     'on',
   );
   fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });

@@ -23,6 +23,7 @@ export const en = {
   'apiError.invalid-alias':
     'Use 1–63 lowercase letters, digits and single hyphens, starting and ending with a letter or digit.',
   'apiError.alias-exists': 'This alias is already in use.',
+  'apiError.widget-limit': 'This page already has the most widgets it can hold.',
   'apiError.invalid-url': 'Provide a valid URL.',
   'apiError.https-url-required': 'Provide a valid HTTPS URL.',
   'apiError.invalid-token': 'Provide a valid token.',
@@ -104,6 +105,7 @@ export const ptBR = {
   'apiError.invalid-alias':
     'Use de 1 a 63 letras minúsculas, números e hífens simples, começando e terminando com letra ou número.',
   'apiError.alias-exists': 'Este alias já está em uso.',
+  'apiError.widget-limit': 'Esta página já tem o máximo de widgets que cabem nela.',
   'apiError.invalid-url': 'Informe uma URL válida.',
   'apiError.https-url-required': 'Informe uma URL HTTPS válida.',
   'apiError.invalid-token': 'Informe um token válido.',
