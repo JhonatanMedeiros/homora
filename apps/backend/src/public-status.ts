@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { PROBES_GROUP } from '@homora/shared';
 import type { createObservationStore } from './monitoring/index.js';
 
 type Observations = ReturnType<typeof createObservationStore>;
@@ -53,15 +54,16 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
   function build(now: number) {
     const rows = sqlite
       .prepare(
-        'SELECT id,name,category FROM services WHERE is_public=1 ORDER BY category,position,name',
+        `SELECT m.id,m.name,COALESCE(s.category,?) AS category FROM monitors m LEFT JOIN services s ON s.id=m.id
+         WHERE m.is_public=1 ORDER BY s.id IS NOT NULL,category,s.position,m.name`,
       )
-      .all() as { id: number; name: string; category: string }[];
+      .all(PROBES_GROUP) as { id: number; name: string; category: string }[];
     const current = new Map(observations.list(now).map((row) => [row.id, row]));
     const start = now - BAR_COUNT * BAR_MS;
     const checks = sqlite
       .prepare(
         `SELECT h.service_id AS id,h.observed_at AS at,json_extract(h.observation,'$.status') AS status
-         FROM service_observation_history h JOIN services s ON s.id=h.service_id
+         FROM service_observation_history h JOIN monitors s ON s.id=h.service_id
          WHERE s.is_public=1 AND h.observed_at>=? AND h.observed_at<=?`,
       )
       .all(start, now) as { id: number; at: number; status: string }[];
@@ -78,7 +80,7 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
     const rollup = sqlite
       .prepare(
         `SELECT r.service_id AS id,(r.hour/${DAY_MS})*${DAY_MS} AS day,SUM(r.up) AS up,SUM(r.down) AS down
-         FROM service_uptime_rollup r JOIN services s ON s.id=r.service_id
+         FROM service_uptime_rollup r JOIN monitors s ON s.id=r.service_id
          WHERE s.is_public=1 AND r.hour>=? GROUP BY r.service_id,day`,
       )
       .all(dayStart) as { id: number; day: number; up: number; down: number }[];
@@ -93,7 +95,7 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
       sqlite
         .prepare(
           `SELECT s.name AS name,i.started_at AS startedAt,i.ended_at AS endedAt
-           FROM service_incidents i JOIN services s ON s.id=i.service_id
+           FROM service_incidents i JOIN monitors s ON s.id=i.service_id
            WHERE s.is_public=1 AND COALESCE(i.ended_at,?)>=? ORDER BY i.started_at DESC LIMIT ?`,
         )
         .all(now, now - INCIDENT_WINDOW_MS, INCIDENT_LIMIT) as {
@@ -110,7 +112,7 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
       sqlite
         .prepare(
           `SELECT s.name AS name,m.starts_at AS startsAt,m.ends_at AS endsAt
-           FROM service_maintenance m JOIN services s ON s.id=m.service_id
+           FROM service_maintenance m JOIN monitors s ON s.id=m.service_id
            WHERE s.is_public=1 AND m.ends_at>? ORDER BY m.starts_at LIMIT 10`,
         )
         .all(now) as { name: string; startsAt: number; endsAt: number }[]
@@ -171,14 +173,14 @@ export function createPublicStatus(sqlite: DatabaseSync, observations: Observati
     },
     publicIds() {
       return new Set(
-        (sqlite.prepare('SELECT id FROM services WHERE is_public=1').all() as { id: number }[]).map(
+        (sqlite.prepare('SELECT id FROM monitors WHERE is_public=1').all() as { id: number }[]).map(
           (row) => row.id,
         ),
       );
     },
     setServicePublic(id: number, isPublic: boolean) {
       const result = sqlite
-        .prepare('UPDATE services SET is_public=? WHERE id=?')
+        .prepare('UPDATE monitors SET is_public=? WHERE id=?')
         .run(isPublic ? 1 : 0, id);
       cache = null;
       return result.changes > 0;

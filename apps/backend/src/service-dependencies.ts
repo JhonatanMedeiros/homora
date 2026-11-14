@@ -21,7 +21,7 @@ export type Dependency = { serviceId: number; dependsOnId: number };
  */
 export function createServiceDependencies(sqlite: DatabaseSync) {
   const exists = (id: number) =>
-    Boolean(sqlite.prepare('SELECT id FROM services WHERE id=?').get(id));
+    Boolean(sqlite.prepare('SELECT id FROM monitors WHERE id=?').get(id));
   const dependsOn = sqlite.prepare(
     'SELECT depends_on_id AS id FROM service_dependencies WHERE service_id=?',
   );

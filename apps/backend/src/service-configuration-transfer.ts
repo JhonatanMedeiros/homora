@@ -228,8 +228,11 @@ export function createConfigurationTransfer({
             count += 1;
           }
         }
-        const insert = sqlite.prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        const insertMonitor = sqlite.prepare(
+          'INSERT INTO monitors(name,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match) VALUES(?,?,?,?,?,?,?,?)',
+        );
+        const insertCard = sqlite.prepare(
+          'INSERT INTO services(id,url,category,description,icon,position,open_target,alias) VALUES(?,?,?,?,?,?,?,?)',
         );
         const queue = parsed.document.groups.flatMap((group) =>
           group.services.map((service) => ({ group: group.name, service })),
@@ -253,13 +256,8 @@ export function createConfigurationTransfer({
             allowPrivate:
               options.grantPrivate === true || (options.keepPrivate && service.allowPrivate),
           });
-          const inserted = insert.run(
+          const monitor = insertMonitor.run(
             valid.name,
-            valid.url,
-            valid.category,
-            valid.description,
-            valid.icon ?? '',
-            nextServicePosition(valid.category),
             valid.allowPrivate ? 1 : 0,
             valid.checkType ?? 'http',
             valid.checkInterval ?? null,
@@ -267,16 +265,24 @@ export function createConfigurationTransfer({
             valid.checkPath ?? null,
             valid.checkUrl ?? null,
             valid.checkMatch ?? null,
+          );
+          insertCard.run(
+            Number(monitor.lastInsertRowid),
+            valid.url,
+            valid.category,
+            valid.description,
+            valid.icon ?? '',
+            nextServicePosition(valid.category),
             valid.openTarget ?? 'new-tab',
             plan.services[index].alias ?? null,
           );
           if (service.pinned)
             sqlite
               .prepare('INSERT OR IGNORE INTO service_pins(service_id,pinned_at) VALUES(?,?)')
-              .run(Number(inserted.lastInsertRowid), Date.now());
+              .run(Number(monitor.lastInsertRowid), Date.now());
           if (service.links?.length)
             writeLinks(
-              Number(inserted.lastInsertRowid),
+              Number(monitor.lastInsertRowid),
               service.links.map((link) => ({
                 url: link.url,
                 name: link.name,

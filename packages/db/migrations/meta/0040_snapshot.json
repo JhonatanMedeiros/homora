@@ -1,8 +1,8 @@
 {
+  "id": "78f2f464-e1bc-4320-85c2-39c71a1e3b31",
+  "prevId": "733efdd8-bec7-4521-ad55-a277f9f81904",
   "version": "6",
   "dialect": "sqlite",
-  "id": "565a66d0-7818-43a8-adc1-3bb81e99ec15",
-  "prevId": "733efdd8-bec7-4521-ad55-a277f9f81904",
   "tables": {
     "app_settings": {
       "name": "app_settings",
@@ -193,28 +193,28 @@
         "integration_resource_links_service_id_services_id_fk": {
           "name": "integration_resource_links_service_id_services_id_fk",
           "tableFrom": "integration_resource_links",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "integration_resource_links_integration_id_integration_instances_id_fk": {
           "name": "integration_resource_links_integration_id_integration_instances_id_fk",
           "tableFrom": "integration_resource_links",
-          "tableTo": "integration_instances",
           "columnsFrom": [
             "integration_id"
           ],
+          "tableTo": "integration_instances",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -273,28 +273,28 @@
         "integration_widgets_integration_id_integration_instances_id_fk": {
           "name": "integration_widgets_integration_id_integration_instances_id_fk",
           "tableFrom": "integration_widgets",
-          "tableTo": "integration_instances",
           "columnsFrom": [
             "integration_id"
           ],
+          "tableTo": "integration_instances",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "integration_widgets_service_id_services_id_fk": {
           "name": "integration_widgets_service_id_services_id_fk",
           "tableFrom": "integration_widgets",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -416,28 +416,28 @@
         "page_widgets_page_id_pages_id_fk": {
           "name": "page_widgets_page_id_pages_id_fk",
           "tableFrom": "page_widgets",
-          "tableTo": "pages",
           "columnsFrom": [
             "page_id"
           ],
+          "tableTo": "pages",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "page_widgets_connection_id_integration_instances_id_fk": {
           "name": "page_widgets_connection_id_integration_instances_id_fk",
           "tableFrom": "page_widgets",
-          "tableTo": "integration_instances",
           "columnsFrom": [
             "connection_id"
           ],
+          "tableTo": "integration_instances",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -521,15 +521,15 @@
         "service_acknowledgements_service_id_services_id_fk": {
           "name": "service_acknowledgements_service_id_services_id_fk",
           "tableFrom": "service_acknowledgements",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -589,15 +589,15 @@
         "service_groups_page_id_pages_id_fk": {
           "name": "service_groups_page_id_pages_id_fk",
           "tableFrom": "service_groups",
-          "tableTo": "pages",
           "columnsFrom": [
             "page_id"
           ],
+          "tableTo": "pages",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -673,28 +673,28 @@
         "service_links_service_id_services_id_fk": {
           "name": "service_links_service_id_services_id_fk",
           "tableFrom": "service_links",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "service_links_type_id_link_types_id_fk": {
           "name": "service_links_type_id_link_types_id_fk",
           "tableFrom": "service_links",
-          "tableTo": "link_types",
           "columnsFrom": [
             "type_id"
           ],
+          "tableTo": "link_types",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -724,15 +724,15 @@
         "service_pins_service_id_services_id_fk": {
           "name": "service_pins_service_id_services_id_fk",
           "tableFrom": "service_pins",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -802,14 +802,6 @@
         },
         "allow_private": {
           "name": "allow_private",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "check_insecure": {
-          "name": "check_insecure",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -917,15 +909,15 @@
         "services_host_connection_id_integration_instances_id_fk": {
           "name": "services_host_connection_id_integration_instances_id_fk",
           "tableFrom": "services",
-          "tableTo": "integration_instances",
           "columnsFrom": [
             "host_connection_id"
           ],
+          "tableTo": "integration_instances",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -1054,15 +1046,15 @@
         "notification_states_service_id_services_id_fk": {
           "name": "notification_states_service_id_services_id_fk",
           "tableFrom": "notification_states",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1144,15 +1136,15 @@
         "service_incidents_service_id_services_id_fk": {
           "name": "service_incidents_service_id_services_id_fk",
           "tableFrom": "service_incidents",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1213,15 +1205,15 @@
         "service_maintenance_service_id_services_id_fk": {
           "name": "service_maintenance_service_id_services_id_fk",
           "tableFrom": "service_maintenance",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1267,15 +1259,15 @@
         "service_monitor_settings_service_id_services_id_fk": {
           "name": "service_monitor_settings_service_id_services_id_fk",
           "tableFrom": "service_monitor_settings",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1327,8 +1319,8 @@
           "notNull": false,
           "autoincrement": false,
           "generated": {
-            "as": "(json_extract(observation, '$.status'))",
-            "type": "virtual"
+            "type": "virtual",
+            "as": "(json_extract(observation, '$.status'))"
           }
         },
         "latency_ms": {
@@ -1338,8 +1330,8 @@
           "notNull": false,
           "autoincrement": false,
           "generated": {
-            "as": "(json_extract(observation, '$.latencyMs'))",
-            "type": "virtual"
+            "type": "virtual",
+            "as": "(json_extract(observation, '$.latencyMs'))"
           }
         }
       },
@@ -1376,15 +1368,15 @@
         "service_observation_history_service_id_services_id_fk": {
           "name": "service_observation_history_service_id_services_id_fk",
           "tableFrom": "service_observation_history",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1421,15 +1413,15 @@
         "service_observations_service_id_services_id_fk": {
           "name": "service_observations_service_id_services_id_fk",
           "tableFrom": "service_observations",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1459,15 +1451,15 @@
         "service_tags_service_id_services_id_fk": {
           "name": "service_tags_service_id_services_id_fk",
           "tableFrom": "service_tags",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -1529,15 +1521,15 @@
         "service_uptime_rollup_service_id_services_id_fk": {
           "name": "service_uptime_rollup_service_id_services_id_fk",
           "tableFrom": "service_uptime_rollup",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -1844,28 +1836,28 @@
         "host_suggestion_dismissals_service_id_services_id_fk": {
           "name": "host_suggestion_dismissals_service_id_services_id_fk",
           "tableFrom": "host_suggestion_dismissals",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "host_suggestion_dismissals_connection_id_integration_instances_id_fk": {
           "name": "host_suggestion_dismissals_connection_id_integration_instances_id_fk",
           "tableFrom": "host_suggestion_dismissals",
-          "tableTo": "integration_instances",
           "columnsFrom": [
             "connection_id"
           ],
+          "tableTo": "integration_instances",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -1920,28 +1912,28 @@
         "service_dependencies_service_id_services_id_fk": {
           "name": "service_dependencies_service_id_services_id_fk",
           "tableFrom": "service_dependencies",
-          "tableTo": "services",
           "columnsFrom": [
             "service_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "service_dependencies_depends_on_id_services_id_fk": {
           "name": "service_dependencies_depends_on_id_services_id_fk",
           "tableFrom": "service_dependencies",
-          "tableTo": "services",
           "columnsFrom": [
             "depends_on_id"
           ],
+          "tableTo": "services",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -2156,15 +2148,15 @@
         "account_userId_user_id_fk": {
           "name": "account_userId_user_id_fk",
           "tableFrom": "account",
-          "tableTo": "user",
           "columnsFrom": [
             "userId"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2272,15 +2264,15 @@
         "passkey_userId_user_id_fk": {
           "name": "passkey_userId_user_id_fk",
           "tableFrom": "passkey",
-          "tableTo": "user",
           "columnsFrom": [
             "userId"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2367,15 +2359,15 @@
         "session_userId_user_id_fk": {
           "name": "session_userId_user_id_fk",
           "tableFrom": "session",
-          "tableTo": "user",
           "columnsFrom": [
             "userId"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2457,15 +2449,15 @@
         "twoFactor_userId_user_id_fk": {
           "name": "twoFactor_userId_user_id_fk",
           "tableFrom": "twoFactor",
-          "tableTo": "user",
           "columnsFrom": [
             "userId"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2611,9 +2603,9 @@
   "views": {},
   "enums": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
+    "tables": {}
   },
   "internal": {
     "indexes": {

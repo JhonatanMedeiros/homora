@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { createObservationStore } from './observations.js';
+import { CARD_SCHEMA } from '../test-card-schema.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -8,14 +9,14 @@ const now = Date.parse('2026-11-12T12:00:00.000Z');
 
 function setup() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY,url TEXT,check_insecure INTEGER DEFAULT 0,allow_private INTEGER,check_type TEXT,check_interval INTEGER,expected_status TEXT,check_path TEXT,check_url TEXT,check_match TEXT);
+  db.exec(`${CARD_SCHEMA}
     CREATE TABLE service_observations(service_id INTEGER PRIMARY KEY,signature TEXT,observation TEXT);
     CREATE TABLE service_observation_history(id INTEGER PRIMARY KEY,service_id INTEGER,signature TEXT,observed_at INTEGER,observation TEXT,
       status TEXT GENERATED ALWAYS AS (json_extract(observation,'$.status')) VIRTUAL,
       latency_ms REAL GENERATED ALWAYS AS (json_extract(observation,'$.latencyMs')) VIRTUAL,
       UNIQUE(service_id,observed_at,signature));
     CREATE INDEX history_uptime_idx ON service_observation_history(service_id,signature,observed_at,status,latency_ms);
-    INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(1,'https://one.test',0,'http',30),(2,'https://two.test',0,'http',30);`);
+    INSERT INTO service_cards(id,url,allow_private,check_type,check_interval) VALUES(1,'https://one.test',0,'http',30),(2,'https://two.test',0,'http',30);`);
   const store = createObservationStore(db);
   // Publishing once records the configuration signature the service has right now.
   const service = (id: number) => ({
@@ -212,7 +213,7 @@ it('answers 25 services with 30 days of history at the default 60 s interval wit
     ).signature;
     expect(sig).toHaveLength(16);
     const insertService = db.prepare(
-      "INSERT INTO services(id,url,allow_private,check_type,check_interval) VALUES(?,'https://one.test',0,'http',30)",
+      "INSERT INTO service_cards(id,url,allow_private,check_type,check_interval) VALUES(?,'https://one.test',0,'http',30)",
     );
     for (let id = 3; id <= SERVICES; id++) insertService.run(id);
     // Generate the representative history inside SQLite instead of crossing the JS/SQLite

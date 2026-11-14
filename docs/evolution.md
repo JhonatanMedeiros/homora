@@ -7,7 +7,7 @@
   made under that bundle; changes trigger new probes. Corrupt or expired bundles are reported.
 - Added the optional, audited per-service TLS verification exception, disabled by default and
   restricted to private destinations, with a visible card marker and proposal diff. Bundles and
-  exceptions are not exported. See [ADR 0020](decisions/0020-monitoring-private-tls-trust.md).
+  exceptions are not exported. See [ADR 0021](decisions/0021-monitoring-private-tls-trust.md).
 - The migration was checked with an isolated previous-version database; existing service data
   survived and the new flag defaulted to off. `pnpm check` and `pnpm build` passed. An isolated
   local HTTPS server with a temporary self-signed certificate verified rejection without trust,
@@ -1872,3 +1872,10 @@ the HTTP and stdio transports were not manually verified.
 
 - Extended import checks to widget runtime, tests and test support, forbidding application and integration dependencies. The runtime workspace graph now starts independently at `@homora/widgets` and tests indirect dependencies. A synthetic minimal host exercises public widget registration, configuration, source compatibility and presentation. Computed imports, aliases, external dependencies and real host or browser behavior remain outside these checks.
 - Validation: focused widget and boundary tests, `pnpm check` (1,661 application tests and 31 script tests), and `pnpm build` passed.
+
+### Monitors separate from cards, and probes (ADR 0021)
+
+- Split the `services` table into `monitors` (what is monitored, with all monitoring history) and `services` (the dashboard card), sharing ids, so a monitor can exist without a card. Migration `0040` keeps every id, row and relation; the migration runner now handles foreign keys outside the transaction and refuses a migration that leaves orphans. `service_cards` and `monitor_targets` views keep API shapes, configuration hashes and monitoring signatures unchanged.
+- Added probes: monitors without a card, managed under Manage > Probes (list, examples, form, delete confirmation) with a Probes block in the Home rail. They are checked, charted, acknowledged and can be shared on the public status page under Connectivity. API: `/api/probes`.
+- Not done: probes in configuration export/import, agent proposals and MCP tools; a mobile chip row and an alerts-bell entry for probes; per-probe alert settings screen; the Uptime Kuma cutover itself.
+- Validation: `pnpm check` (1,674 application tests and 31 script tests) and `pnpm build` passed. The migration was tested on a database with history, links and dependencies, not on a copy of a real installation. The new screens were not exercised in a browser.

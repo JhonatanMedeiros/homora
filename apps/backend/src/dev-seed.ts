@@ -32,13 +32,30 @@ export function seedDevelopmentDatabase(sqlite: DatabaseSync) {
     const insertGroup = sqlite.prepare(
       'INSERT INTO service_groups(name, position, page_id) VALUES (?, ?, (SELECT id FROM pages ORDER BY position,id LIMIT 1))',
     );
-    const insertService = sqlite.prepare(
-      'INSERT INTO services(name, url, category, description, icon, position, allow_private) VALUES (?, ?, ?, ?, ?, ?, 0)',
+    const insertMonitor = sqlite.prepare('INSERT INTO monitors(name, allow_private) VALUES (?, 0)');
+    const insertCard = sqlite.prepare(
+      'INSERT INTO services(id, url, category, description, icon, position) VALUES (?, ?, ?, ?, ?, ?)',
     );
+    const insertService = (
+      name: string,
+      url: string,
+      category: string,
+      description: string,
+      icon: string,
+      position: number,
+    ) =>
+      insertCard.run(
+        Number(insertMonitor.run(name).lastInsertRowid),
+        url,
+        category,
+        description,
+        icon,
+        position,
+      );
     groups.forEach((group, groupPosition) => {
       insertGroup.run(group.name, groupPosition);
       group.services.forEach(([name, description], position) => {
-        insertService.run(
+        insertService(
           name,
           `http://127.0.0.1:${18000 + groupPosition * 100 + position}/`,
           group.name,

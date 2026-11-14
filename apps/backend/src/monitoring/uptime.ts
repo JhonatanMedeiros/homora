@@ -34,7 +34,7 @@ export const signature = serviceSignature;
 export function uptimeServicesOf(db: DatabaseSync, serviceId?: number): UptimeService[] {
   return db
     .prepare(
-      `SELECT id,url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM services WHERE (? IS NULL OR id=?) ORDER BY id`,
+      `SELECT id,url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets WHERE (? IS NULL OR id=?) ORDER BY id`,
     )
     .all(serviceId ?? null, serviceId ?? null) as unknown as UptimeService[];
 }

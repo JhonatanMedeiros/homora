@@ -63,6 +63,11 @@ export const ERROR_MESSAGES = {
   'invalid-ca': 'Invalid CA certificate.',
   'secret-required': 'Enter the secret again when changing the address or its identity.',
   'service-not-found': 'Service not found.',
+  'probe-not-found': 'Probe not found.',
+  'invalid-probe-name': 'Provide a name for the probe.',
+  'invalid-probe-address':
+    'Provide an HTTP or HTTPS address without credentials, query or fragment.',
+  'invalid-probe-option': 'One of the probe options is not valid.',
   'maintenance-overlap': 'This service already has maintenance scheduled in that period.',
   'maintenance-not-found': 'Maintenance window not found.',
   'group-not-found': 'Group not found.',

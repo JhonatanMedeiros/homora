@@ -38,8 +38,9 @@ it('persists transitions and encrypts destination without exposing it in payload
   const path = join(dir, 'db.sqlite');
   const database = createDatabase(path);
   const db = getSqliteHandle(database.db);
+  db.prepare("INSERT INTO monitors(id,name) VALUES(1,'Example')").run();
   db.prepare(
-    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Example','https://service.example','Home','')",
+    "INSERT INTO services(id,url,category,description) VALUES(1,'https://service.example','Home','')",
   ).run();
   const send = vi
     .spyOn(network, 'getAuthorizedResponse')
@@ -73,8 +74,9 @@ it('retries failures independently and exposes only a sanitized HTTP error', asy
   const path = join(dir, 'db.sqlite');
   const database = createDatabase(path);
   const db = getSqliteHandle(database.db);
+  db.prepare("INSERT INTO monitors(id,name) VALUES(1,'Example')").run();
   db.prepare(
-    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Example','https://service.example','Home','')",
+    "INSERT INTO services(id,url,category,description) VALUES(1,'https://service.example','Home','')",
   ).run();
   const send = vi
     .spyOn(network, 'getAuthorizedResponse')

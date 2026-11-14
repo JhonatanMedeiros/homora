@@ -58,7 +58,7 @@ data or real credentials. There is no established response SLA or bug bounty pol
   administrator may instead opt an individual service into unverified TLS for private targets;
   this is audited and visibly marked, but permits impersonation and expired certificates to appear
   healthy. Neither the bundle nor this exception is included in configuration exports. See
-  [ADR 0020](docs/decisions/0020-monitoring-private-tls-trust.md).
+  [ADR 0021](docs/decisions/0021-monitoring-private-tls-trust.md).
 - The Proxmox guest inventory (names, ids, state) is more sensitive than the aggregate widget.
   It is returned only to authenticated web sessions, never by the public status page or
   MCP, and cards store only ids. Homora never writes to Proxmox.

@@ -39,27 +39,43 @@ export const serviceGroups = sqliteTable('service_groups', {
   pageId: integer('page_id').references(() => pages.id, { onDelete: 'restrict' }),
 });
 
-export const services = sqliteTable('services', {
+/**
+ * What Homora monitors: the unit that owns checks, observations, incidents, uptime, maintenance,
+ * notifications and public status. A monitor is either the check of a service card (it then shares
+ * the card's id) or a probe, which has no card: `check_url` is its address and is required in the
+ * application. A card's check address is its own `check_url`, else the card URL.
+ */
+export const monitors = sqliteTable('monitors', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
-  url: text('url').notNull(),
-  alias: text('alias').unique(),
-  category: text('category').notNull(),
-  description: text('description').notNull(),
-  icon: text('icon').notNull().default(''),
-  position: integer('position').notNull().default(0),
-  allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
-  checkInsecure: integer('check_insecure', { mode: 'boolean' }).notNull().default(false),
   // 'http' (GET) or 'ping' (ICMP); interval in seconds is null for monitor default.
-  openTarget: text('open_target').notNull().default('new-tab'),
   checkType: text('check_type').notNull().default('http'),
   checkInterval: integer('check_interval'),
   expectedStatus: text('expected_status'),
   checkPath: text('check_path'),
   checkUrl: text('check_url'),
   checkMatch: text('check_match'),
+  allowPrivate: integer('allow_private', { mode: 'boolean' }).notNull().default(false),
+  checkInsecure: integer('check_insecure', { mode: 'boolean' }).notNull().default(false),
   // Opt-in to the read-only public status page. Never set by imports or agent proposals.
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+});
+
+/**
+ * The dashboard card of a monitor: how it is shown and opened. It shares its monitor's id and goes
+ * with it. Monitors without a row here are probes and never appear on the Home.
+ */
+export const services = sqliteTable('services', {
+  id: integer('id')
+    .primaryKey()
+    .references(() => monitors.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  alias: text('alias').unique(),
+  category: text('category').notNull(),
+  description: text('description').notNull(),
+  icon: text('icon').notNull().default(''),
+  position: integer('position').notNull().default(0),
+  openTarget: text('open_target').notNull().default('new-tab'),
   // Optional "runs on" link to a Proxmox guest. Ids only: names are resolved from the live
   // inventory so renames follow. All four columns are set together or all are null.
   hostConnectionId: integer('host_connection_id').references(() => integrationInstances.id, {
@@ -121,7 +137,7 @@ export const servicePins = sqliteTable('service_pins', {
 export const serviceAcknowledgements = sqliteTable('service_acknowledgements', {
   serviceId: integer('service_id')
     .primaryKey()
-    .references(() => services.id, { onDelete: 'cascade' }),
+    .references(() => monitors.id, { onDelete: 'cascade' }),
   incidentId: integer('incident_id'),
   acknowledgedAt: integer('acknowledged_at').notNull(),
   mutedUntil: integer('muted_until'),

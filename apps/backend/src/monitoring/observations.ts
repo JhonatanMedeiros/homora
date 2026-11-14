@@ -141,7 +141,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       }
     },
     history(id: number, from: number, to: number, before?: number, limit = 100) {
-      const service = db.prepare('SELECT id FROM services WHERE id=?').get(id);
+      const service = db.prepare('SELECT id FROM monitors WHERE id=?').get(id);
       if (!service) throw new Error('Service not found');
       const rows = db
         .prepare(
@@ -343,7 +343,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
       const rows = db
         .prepare(
           `SELECT s.id,s.url,s.allow_private AS allowPrivate,s.check_insecure AS checkInsecure,s.check_type AS checkType,s.check_interval AS checkInterval,s.expected_status AS expectedStatus,s.check_path AS checkPath,s.check_url AS checkUrl,s.check_match AS checkMatch,o.signature,o.observation
-        FROM services s LEFT JOIN service_observations o ON o.service_id=s.id ORDER BY s.id`,
+        FROM monitor_targets s LEFT JOIN service_observations o ON o.service_id=s.id ORDER BY s.id`,
         )
         .all() as unknown as Array<
         Pick<

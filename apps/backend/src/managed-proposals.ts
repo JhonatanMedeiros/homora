@@ -123,7 +123,7 @@ export function managedSnapshot(db: DatabaseSync) {
     groups: db.prepare('SELECT id,name,position,columns FROM service_groups ORDER BY id').all(),
     services: db
       .prepare(
-        'SELECT id,name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,host_connection_id,host_node,host_vmid,host_type FROM services ORDER BY id',
+        'SELECT id,name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,host_connection_id,host_node,host_vmid,host_type FROM service_cards ORDER BY id',
       )
       .all(),
     widgets: db
@@ -207,7 +207,7 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
     const update = db.prepare('UPDATE services SET position=? WHERE id=?');
     if (change.op === 'reorder') {
       const rows = db
-        .prepare('SELECT id FROM services WHERE category=? ORDER BY position,name')
+        .prepare('SELECT id FROM service_cards WHERE category=? ORDER BY position,name')
         .all(change.category) as { id: number }[];
       if (
         !exactMembers(

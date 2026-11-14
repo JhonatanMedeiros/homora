@@ -53,7 +53,7 @@ export function createMaintenanceStore(db: DatabaseSync) {
         window.endsAt <= now
       )
         throw new MaintenanceError('invalid-window');
-      if (!db.prepare('SELECT 1 FROM services WHERE id=?').get(serviceId))
+      if (!db.prepare('SELECT 1 FROM monitors WHERE id=?').get(serviceId))
         throw new MaintenanceError('service-not-found');
       if (
         db

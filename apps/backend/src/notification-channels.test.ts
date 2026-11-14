@@ -31,8 +31,9 @@ function setup() {
   const path = join(dir, 'db.sqlite');
   const database = createDatabase(path);
   const db = getSqliteHandle(database.db);
+  db.prepare("INSERT INTO monitors(id,name) VALUES(1,'Example')").run();
   db.prepare(
-    "INSERT INTO services(id,name,url,category,description) VALUES(1,'Example','https://service.example','Home','')",
+    "INSERT INTO services(id,url,category,description) VALUES(1,'https://service.example','Home','')",
   ).run();
   return { notifier: createNotifications(db, createVault(path)), dir };
 }

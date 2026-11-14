@@ -60,64 +60,54 @@ export function createServiceCardConfiguration({
   writeLinks: (id: number, links: unknown) => void;
   selectServiceLinks: (id: number) => ServiceLink[];
 }) {
-  function applyProposal(change: ServiceChange) {
-    if (change.op === 'create') {
-      const service = validateService(change.service);
-      if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
-      ensureGroup(service.category, null, pageForNewService(service.category, change.page));
-      const created = sqlite
-        .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        )
-        .run(
-          service.name,
-          service.url,
-          service.category,
-          service.description,
-          service.icon ?? '',
-          service.position ?? 0,
-          service.allowPrivate ? 1 : 0,
-          service.checkType ?? 'http',
-          service.checkInterval ?? null,
-          service.expectedStatus ?? null,
-          service.checkPath ?? null,
-          service.checkUrl ?? null,
-          service.checkMatch ?? null,
-          service.openTarget ?? 'new-tab',
-          service.alias ?? null,
-        );
-      bumpVersion();
-      const row = selectService(Number(created.lastInsertRowid));
-      if (!row) throw new Error('Created service could not be loaded');
-      if (service.checkInsecure)
-        sqlite.prepare('UPDATE services SET check_insecure=1 WHERE id=?').run(row.id);
-      return selectService(row.id);
-    }
-    if (change.op === 'delete') {
-      const result = sqlite.prepare('DELETE FROM services WHERE id=?').run(change.id);
-      if (!result.changes) throw new Error('Service not found');
-      bumpVersion();
-      return true;
-    }
-    const current = selectService(change.id);
-    if (!current) throw new Error('Service not found');
-    const service = validateService(change.service);
-    const insecure = service.checkInsecure ?? Boolean(current.checkInsecure);
-    if (insecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
-    ensureGroup(service.category);
-    const position = change.service.position ?? current.position;
-    sqlite
+  /** A card is two rows with one id: what is monitored, and how it is shown. */
+  function insertCard(service: ServiceInput, position: number) {
+    if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
+    const monitor = sqlite
       .prepare(
-        'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_url=?,check_match=?,open_target=?,alias=? WHERE id=?',
+        'INSERT INTO monitors(name,allow_private,check_insecure,check_type,check_interval,expected_status,check_path,check_url,check_match) VALUES(?,?,?,?,?,?,?,?,?)',
       )
       .run(
         service.name,
+        service.allowPrivate ? 1 : 0,
+        service.checkInsecure ? 1 : 0,
+        service.checkType ?? 'http',
+        service.checkInterval ?? null,
+        service.expectedStatus ?? null,
+        service.checkPath ?? null,
+        service.checkUrl ?? null,
+        service.checkMatch ?? null,
+      );
+    const id = Number(monitor.lastInsertRowid);
+    sqlite
+      .prepare(
+        'INSERT INTO services(id,url,category,description,icon,position,open_target,alias) VALUES(?,?,?,?,?,?,?,?)',
+      )
+      .run(
+        id,
         service.url,
         service.category,
         service.description,
         service.icon ?? '',
         position,
+        service.openTarget ?? 'new-tab',
+        service.alias ?? null,
+      );
+    return id;
+  }
+
+  /** Fields the input leaves out keep the card's current value. */
+  function writeCard(id: number, service: ServiceInput, current: ServiceRow, position: number) {
+    const insecure = service.checkInsecure ?? Boolean(current.checkInsecure);
+    if (insecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
+    sqlite
+      .prepare(
+        'UPDATE monitors SET name=?,allow_private=?,check_insecure=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_url=?,check_match=? WHERE id=?',
+      )
+      .run(
+        service.name,
         service.allowPrivate ? 1 : 0,
+        insecure ? 1 : 0,
         service.checkType ?? current.checkType,
         service.checkInterval === undefined ? current.checkInterval : service.checkInterval,
         service.expectedStatus === undefined
@@ -126,13 +116,49 @@ export function createServiceCardConfiguration({
         service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
         service.checkUrl === undefined ? (current.checkUrl ?? null) : service.checkUrl,
         service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
-        service.openTarget ?? current.openTarget ?? 'new-tab',
-        service.alias === undefined ? (current.alias ?? null) : service.alias,
-        change.id,
+        id,
       );
     sqlite
-      .prepare('UPDATE services SET check_insecure=? WHERE id=?')
-      .run(insecure ? 1 : 0, change.id);
+      .prepare(
+        'UPDATE services SET url=?,category=?,description=?,icon=?,position=?,open_target=?,alias=? WHERE id=?',
+      )
+      .run(
+        service.url,
+        service.category,
+        service.description,
+        service.icon ?? '',
+        position,
+        service.openTarget ?? current.openTarget ?? 'new-tab',
+        service.alias === undefined ? (current.alias ?? null) : service.alias,
+        id,
+      );
+  }
+
+  /** Deleting the monitor removes the card, its links and its whole history; probes are not cards. */
+  const deleteCard = (id: number) =>
+    sqlite.prepare('DELETE FROM monitors WHERE id=? AND id IN (SELECT id FROM services)').run(id);
+
+  function applyProposal(change: ServiceChange) {
+    if (change.op === 'create') {
+      const service = validateService(change.service);
+      ensureGroup(service.category, null, pageForNewService(service.category, change.page));
+      const id = insertCard(service, service.position ?? 0);
+      bumpVersion();
+      const row = selectService(id);
+      if (!row) throw new Error('Created service could not be loaded');
+      return row;
+    }
+    if (change.op === 'delete') {
+      const result = deleteCard(change.id);
+      if (!result.changes) throw new Error('Service not found');
+      bumpVersion();
+      return true;
+    }
+    const current = selectService(change.id);
+    if (!current) throw new Error('Service not found');
+    const service = validateService(change.service);
+    ensureGroup(service.category);
+    writeCard(change.id, service, current, change.service.position ?? current.position);
     bumpVersion();
     return selectService(change.id);
   }
@@ -148,31 +174,9 @@ export function createServiceCardConfiguration({
       if (service.checkInsecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
       ensureGroup(service.category);
       service.position = nextServicePosition(service.category);
-      const result = sqlite
-        .prepare(
-          'INSERT INTO services(name,url,category,description,icon,position,allow_private,check_type,check_interval,expected_status,check_path,check_url,check_match,open_target,alias) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        )
-        .run(
-          service.name,
-          service.url,
-          service.category,
-          service.description,
-          service.icon ?? '',
-          service.position ?? 0,
-          service.allowPrivate ? 1 : 0,
-          service.checkType ?? 'http',
-          service.checkInterval ?? null,
-          service.expectedStatus ?? null,
-          service.checkPath ?? null,
-          service.checkUrl ?? null,
-          service.checkMatch ?? null,
-          service.openTarget ?? 'new-tab',
-          service.alias ?? null,
-        );
-      const created = selectService(Number(result.lastInsertRowid));
+      const id = insertCard(service, service.position ?? 0);
+      const created = selectService(id);
       if (!created) throw new Error('Created service could not be loaded');
-      if (service.checkInsecure)
-        sqlite.prepare('UPDATE services SET check_insecure=1 WHERE id=?').run(created.id);
       if (host) writeHost(created.id, host);
       if (links !== undefined) writeLinks(created.id, links);
       bumpVersion();
@@ -196,39 +200,13 @@ export function createServiceCardConfiguration({
       const current = selectService(id);
       if (!current) return null;
       const service = validateService(input);
-      const insecure = service.checkInsecure ?? Boolean(current.checkInsecure);
-      if (insecure && !service.allowPrivate) throw new Error('Invalid TLS grant');
       ensureGroup(service.category);
       service.position =
         service.category === current.category
           ? current.position
           : nextServicePosition(service.category);
-      sqlite
-        .prepare(
-          'UPDATE services SET name=?,url=?,category=?,description=?,icon=?,position=?,allow_private=?,check_type=?,check_interval=?,expected_status=?,check_path=?,check_url=?,check_match=?,open_target=?,alias=? WHERE id=?',
-        )
-        .run(
-          service.name,
-          service.url,
-          service.category,
-          service.description,
-          service.icon ?? '',
-          service.position ?? 0,
-          service.allowPrivate ? 1 : 0,
-          service.checkType ?? current.checkType,
-          service.checkInterval === undefined ? current.checkInterval : service.checkInterval,
-          service.expectedStatus === undefined
-            ? (current.expectedStatus ?? null)
-            : service.expectedStatus,
-          service.checkPath === undefined ? (current.checkPath ?? null) : service.checkPath,
-          service.checkUrl === undefined ? (current.checkUrl ?? null) : service.checkUrl,
-          service.checkMatch === undefined ? (current.checkMatch ?? null) : service.checkMatch,
-          service.openTarget ?? current.openTarget ?? 'new-tab',
-          service.alias === undefined ? (current.alias ?? null) : service.alias,
-          id,
-        );
+      writeCard(id, service, current, service.position ?? 0);
       if (host !== undefined) writeHost(id, host);
-      sqlite.prepare('UPDATE services SET check_insecure=? WHERE id=?').run(insecure ? 1 : 0, id);
       if (links !== undefined) writeLinks(id, links);
       bumpVersion();
       const updated = selectService(id);
@@ -249,7 +227,7 @@ export function createServiceCardConfiguration({
 
   function deleteService(id: number) {
     return transaction(() => {
-      const result = sqlite.prepare('DELETE FROM services WHERE id=?').run(id);
+      const result = deleteCard(id);
       if (result.changes) bumpVersion();
       return Boolean(result.changes);
     });
@@ -258,7 +236,7 @@ export function createServiceCardConfiguration({
   function reorderServices(category: string, ids: number[]) {
     return transaction(() => {
       const current = sqlite
-        .prepare('SELECT id FROM services WHERE category=? ORDER BY position,name')
+        .prepare('SELECT id FROM service_cards WHERE category=? ORDER BY position,name')
         .all(category) as { id: number }[];
       if (
         ids.length !== current.length ||

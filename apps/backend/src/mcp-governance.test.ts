@@ -81,8 +81,9 @@ it('allows a dedicated maintenance scope to propose and list windows without app
   const storage = createDatabase(join(dir, 'db.sqlite'));
   const db = getSqliteHandle(storage.db);
   try {
+    db.prepare("INSERT INTO monitors(id,name) VALUES(1,'Example')").run();
     db.prepare(
-      "INSERT INTO services(name,url,category,description) VALUES('Example','https://example.com','Apps','')",
+      "INSERT INTO services(id,url,category,description) VALUES(1,'https://example.com','Apps','')",
     ).run();
     const service = createProposalService(db);
     const agent = service.issue('maintenance', ['maintenance:propose']);

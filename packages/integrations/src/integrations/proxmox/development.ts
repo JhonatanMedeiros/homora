@@ -10,7 +10,7 @@ export function seedDevelopmentMock(sqlite: DatabaseSync) {
   if (demo) return;
 
   const service = sqlite
-    .prepare("SELECT id FROM services WHERE name = 'Proxmox' ORDER BY id LIMIT 1")
+    .prepare("SELECT id FROM service_cards WHERE name = 'Proxmox' ORDER BY id LIMIT 1")
     .get() as { id: number } | undefined;
   if (!service) return;
 
