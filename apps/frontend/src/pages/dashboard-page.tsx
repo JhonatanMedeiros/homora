@@ -1,6 +1,5 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { AlertsBell } from '@/components/alerts-bell';
-import { useAlertCount } from '@/hooks/use-alert-count';
 import { requestProblemsView } from '@/lib/home-intent';
 import { useNavigate } from 'react-router';
 import { AppShell } from '@/components/app-shell';
@@ -73,7 +72,9 @@ export function DashboardPage({
   const navigate = (path: string, replace = false) => routerNavigate(path, { replace });
   const route: DashboardRoute = { tab, managing, form, valid, detail };
   const data = useServices();
-  const alertCount = useAlertCount(data.services, data.statuses, data.blockedIds);
+  const [alertCount, setAlertCount] = useState<number | undefined>();
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const alertsReturnFocus = useRef<HTMLElement | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const { toggleTheme } = useTheme();
@@ -122,12 +123,21 @@ export function DashboardPage({
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
       alertCount={alertCount}
+      onAlerts={() => {
+        alertsReturnFocus.current =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        setAlertsOpen(true);
+      }}
       alerts={
         <AlertsBell
-          services={data.services}
-          statuses={data.statuses}
-          blockedIds={data.blockedIds}
-          onOpen={() => navigate(tabPath('activity'))}
+          onService={(id) => routerNavigate(`/services/${id}`)}
+          open={alertsOpen}
+          onOpenChange={(open) => {
+            if (open) alertsReturnFocus.current = null;
+            setAlertsOpen(open);
+          }}
+          onUnreadChange={setAlertCount}
+          returnFocusRef={alertsReturnFocus}
         />
       }
     >

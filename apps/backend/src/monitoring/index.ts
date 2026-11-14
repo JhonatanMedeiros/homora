@@ -13,6 +13,7 @@ export type { CheckResult, ServiceStatus, StatusReason } from './monitor.js';
 export { createObservationStore } from './observations.js';
 export { createRollupStore } from './rollup.js';
 export { createIncidentStore } from './incidents.js';
+export type { IncidentTransition } from './incidents.js';
 export { createMaintenanceStore, MaintenanceError } from './maintenance.js';
 export { serviceSignature } from './signature.js';
 export { createMonitoringTrustStore } from './trust.js';

@@ -42,7 +42,7 @@ it('defaults insecure monitoring to off when upgrading existing services', () =>
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
-    for (const migration of MIGRATIONS.slice(0, -1)) {
+    for (const migration of MIGRATIONS.slice(0, 41)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -831,7 +831,7 @@ it('adds extra addresses and link types without touching cards; deleting cascade
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
     // Database created before the extra-address migration.
-    for (const migration of MIGRATIONS.slice(0, -3)) {
+    for (const migration of MIGRATIONS.slice(0, 36)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -875,7 +875,7 @@ it('adds unique optional aliases without changing existing services', () => {
     old.exec(
       'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
     );
-    for (const migration of MIGRATIONS.slice(0, -2)) {
+    for (const migration of MIGRATIONS.slice(0, 37)) {
       for (const statement of migration.sql) old.exec(statement);
       old
         .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
@@ -1181,6 +1181,37 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
     expect(count('service_acknowledgements')).toBe(0);
     expect(count('service_dependencies')).toBe(0);
     check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds an empty inbox without changing existing cards and incidents', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-inbox-migration-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO monitors(id,name) VALUES(5,'Existing'); INSERT INTO services(id,url,category,description) VALUES(5,'https://example.test','Home',''); INSERT INTO service_incidents(service_id,started_at,reason) VALUES(5,1,'no-response')",
+    );
+    old.close();
+    const database = createDatabase(path);
+    const db = getSqliteHandle(database.db);
+    expect(db.prepare('SELECT name FROM service_cards WHERE id=5').get()).toEqual({
+      name: 'Existing',
+    });
+    expect(db.prepare('SELECT count(*) AS n FROM service_incidents').get()).toEqual({ n: 1 });
+    expect(db.prepare('SELECT count(*) AS n FROM inbox_notifications').get()).toEqual({ n: 0 });
+    database.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
