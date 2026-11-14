@@ -101,6 +101,19 @@ export function createLogger(options: LoggerOptions = {}): FastifyBaseLogger {
   return Fastify({ logger: loggerConfig(options) }).log;
 }
 
+/**
+ * Commit of the running build. `HOMORA_BUILD_COMMIT` (a `--build-arg`) describes the compiled tree
+ * and wins; `SOURCE_COMMIT` is injected by Coolify on every deploy. The Dockerfile defaults the
+ * build-arg to the literal "unknown", so that value counts as unset.
+ */
+function buildCommit(env: NodeJS.ProcessEnv): string {
+  for (const raw of [env.HOMORA_BUILD_COMMIT, env.SOURCE_COMMIT]) {
+    const value = raw?.trim();
+    if (value && value !== 'unknown') return value;
+  }
+  return 'unknown';
+}
+
 /** Build identity reported at startup and by `/api/health`. */
 export function buildInfo(env: NodeJS.ProcessEnv = process.env) {
   let version = 'unknown';
@@ -112,5 +125,5 @@ export function buildInfo(env: NodeJS.ProcessEnv = process.env) {
   } catch {
     // Not fatal: a build without the manifest still runs; the version just reads "unknown".
   }
-  return { version, commit: env.HOMORA_BUILD_COMMIT || 'unknown' };
+  return { version, commit: buildCommit(env) };
 }
