@@ -105,3 +105,39 @@ it('shows deleted services without a link and marks all notifications as read', 
   await waitFor(() => expect(screen.getByRole('button', { name: /none unread/ })).toBeTruthy());
   expect(navigate).not.toHaveBeenCalled();
 });
+
+it('tells the opener when an event comes from a probe', async () => {
+  setLocale('en');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            unread: 1,
+            nextBefore: null,
+            items: [
+              {
+                id: 1,
+                serviceId: 9,
+                serviceName: 'Internet',
+                kind: 'down',
+                confirmedAt: 1700000000000,
+                startedAt: 1700000000000,
+                endedAt: null,
+                reason: 'no-response',
+                httpStatus: null,
+                readAt: null,
+                probe: true,
+              },
+            ],
+          }),
+        ),
+    ),
+  );
+  const onService = vi.fn();
+  render(<AlertsBell onService={onService} />);
+  fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Internet' }));
+  expect(onService).toHaveBeenCalledWith(9, true);
+});

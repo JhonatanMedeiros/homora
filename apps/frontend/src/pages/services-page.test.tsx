@@ -66,3 +66,31 @@ it('keeps the stored value when editing a service', async () => {
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(checkbox().getAttribute('aria-checked')).toBe('false');
 });
+
+it('shows probes on the Home at any width and lists a probe that is down in Needs attention', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/probes')
+        return new Response(
+          JSON.stringify([
+            { id: 20, name: 'Internet', checkUrl: 'https://1.1.1.1/', checkType: 'http' },
+          ]),
+        );
+      return new Response('[]');
+    }),
+  );
+  const down = {
+    ...data,
+    statuses: { 20: { status: 'unavailable', reason: 'no-response', httpStatus: null } },
+  } as unknown as Data;
+  render(
+    <MemoryRouter>
+      <ServicesPage data={down} formRoute={null} navigate={() => {}} onAddService={() => {}} />
+    </MemoryRouter>,
+  );
+  const section = await screen.findByRole('region', { name: 'Probes' });
+  expect(section.textContent).toContain('Internet');
+  expect(section.textContent).toContain('Offline');
+  expect(screen.getByRole('region', { name: 'Needs attention' })).toBeTruthy();
+});

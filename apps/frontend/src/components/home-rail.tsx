@@ -1,3 +1,4 @@
+import { PROBE_DOT } from '@/lib/probe-dot';
 import { PanelRight, Star } from 'lucide-react';
 import type { LightState } from '@/lib/services';
 import { Button } from '@/components/ui/button';
@@ -22,14 +23,6 @@ type Props = {
   probes?: { items: RailProbe[]; onOpen: () => void };
   widgetRail: boolean;
   onToggleWidgetRail: () => void;
-};
-
-const PROBE_DOT: Record<LightState, string> = {
-  available: 'bg-success',
-  degraded: 'bg-warning',
-  maintenance: 'bg-info',
-  unavailable: 'bg-destructive',
-  unknown: 'ring-[1.5px] ring-inset ring-muted-foreground',
 };
 
 const DOT: Record<StatusFilter, string | null> = {

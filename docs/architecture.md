@@ -434,9 +434,10 @@ An optional unique alias belongs to a service and resolves through the session-p
 
 ### In-app notification inbox
 
-Confirmed incident openings and recoveries for service cards are recorded in `inbox_notifications`
-within the incident transaction. Historical incident reconstruction does not create inbox entries;
-probes are excluded. The inbox is independent of outbound delivery and its cooldown, and reading an
+Confirmed incident openings and recoveries for service cards and probes are recorded in `inbox_notifications`
+within the incident transaction. Historical incident reconstruction does not create inbox entries.
+`inbox_notifications.service_id` references `monitors`, so a probe's events are kept too and the list
+flags them (`probe`). The inbox is independent of outbound delivery and its cooldown, and reading an
 entry does not acknowledge or mute an incident. Names and incident details survive deletion while
 references are cleared. The current administrator shares a single read state. Entries are pruned
 at startup, insertion and listing after 90 days or beyond 10,000 entries, including unread entries. The

@@ -19,10 +19,12 @@ type Item = {
   reason: string | null;
   httpStatus: number | null;
   readAt: number | null;
+  /** Monitored without a dashboard card. */
+  probe?: boolean;
 };
 type Result = { items: Item[]; unread: number; nextBefore: number | null };
 
-export function AlertsBell({ onService }: { onService: (id: number) => void }) {
+export function AlertsBell({ onService }: { onService: (id: number, probe: boolean) => void }) {
   const [data, setData] = useState<Result>();
   const [error, setError] = useState<'load' | 'action' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -154,7 +156,7 @@ export function AlertsBell({ onService }: { onService: (id: number) => void }) {
                     className="h-auto min-h-10 justify-start whitespace-normal break-all p-0 text-left"
                     onClick={() => {
                       setOpen(false);
-                      onService(item.serviceId!);
+                      onService(item.serviceId!, item.probe === true);
                     }}
                   >
                     {item.serviceName}

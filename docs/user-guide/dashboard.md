@@ -44,9 +44,9 @@ the limit you set for it (see [Services and monitoring](services-and-monitoring.
 
 ## Alerts bell
 
-The bell counts unread notifications about confirmed service outages and recoveries. Open it to review the
+The bell counts unread notifications about confirmed outages and recoveries of services and probes (a probe event opens **Manage → Probes**). Open it to review the
 history and mark one or all as read. Reading is independent of acknowledging or muting an incident; **Activity**
-remains available for auditing. The inbox retains up to 90 days and 10,000 entries, and does not include probes.
+remains available for auditing. The inbox retains up to 90 days and 10,000 entries.
 See [Notifications and status page](notifications-and-status-page.md#in-app-notifications).
 
 ## Pages, groups and cards
