@@ -15,12 +15,21 @@ import {
 
 /** The cards of a migrated database, in the shape the `services` table had before cards and monitors split. */
 const cardsOf = (database: ReturnType<typeof createDatabase>) =>
-  getSqliteHandle(database.db)
-    .prepare(
-      'SELECT id,name,alias,check_url AS checkUrl,position,allow_private AS allowPrivate,open_target AS openTarget FROM service_cards ORDER BY id',
-    )
-    .all()
-    .map((row) => ({ ...row, allowPrivate: Boolean(row.allowPrivate) }));
+  (
+    getSqliteHandle(database.db)
+      .prepare(
+        'SELECT id,name,alias,check_url AS checkUrl,position,allow_private AS allowPrivate,open_target AS openTarget FROM service_cards ORDER BY id',
+      )
+      .all() as {
+      id: number;
+      name: string;
+      alias: string | null;
+      checkUrl: string | null;
+      position: number;
+      allowPrivate: number;
+      openTarget: string;
+    }[]
+  ).map((row) => ({ ...row, allowPrivate: Boolean(row.allowPrivate) }));
 
 const MIGRATIONS = readMigrationFiles({
   migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
