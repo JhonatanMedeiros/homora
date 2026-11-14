@@ -22,56 +22,31 @@ type Item = {
 };
 type Result = { items: Item[]; unread: number; nextBefore: number | null };
 
-export function AlertsBell({
-  onService,
-  open: controlledOpen,
-  onOpenChange,
-  onUnreadChange,
-  returnFocusRef,
-}: {
-  onService: (id: number) => void;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onUnreadChange?: (count: number | undefined) => void;
-  returnFocusRef?: React.RefObject<HTMLElement | null>;
-}) {
+export function AlertsBell({ onService }: { onService: (id: number) => void }) {
   const [data, setData] = useState<Result>();
   const [error, setError] = useState<'load' | 'action' | null>(null);
   const [busy, setBusy] = useState(false);
-  const [localOpen, setLocalOpen] = useState(false);
-  const open = controlledOpen ?? localOpen;
-  const setOpen = (value: boolean) => {
-    setLocalOpen(value);
-    onOpenChange?.(value);
-  };
+  const [open, setOpen] = useState(false);
   const generation = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null);
-  const load = useCallback(
-    async (before?: number) => {
-      const current = ++generation.current;
-      try {
-        const response = await fetch(`/api/inbox?limit=20${before ? `&before=${before}` : ''}`);
-        if (!response.ok) throw new Error();
-        const next = (await response.json()) as Result;
-        if (!Array.isArray(next.items) || typeof next.unread !== 'number') throw new Error();
-        if (current !== generation.current) return;
-        setData((previous) =>
-          before && previous ? { ...next, items: [...previous.items, ...next.items] } : next,
-        );
-        setError(null);
-        onUnreadChange?.(next.unread);
-      } catch {
-        if (current === generation.current) {
-          setError('load');
-          onUnreadChange?.(undefined);
-        }
+  const load = useCallback(async (before?: number) => {
+    const current = ++generation.current;
+    try {
+      const response = await fetch(`/api/inbox?limit=20${before ? `&before=${before}` : ''}`);
+      if (!response.ok) throw new Error();
+      const next = (await response.json()) as Result;
+      if (!Array.isArray(next.items) || typeof next.unread !== 'number') throw new Error();
+      if (current !== generation.current) return;
+      setData((previous) =>
+        before && previous ? { ...next, items: [...previous.items, ...next.items] } : next,
+      );
+      setError(null);
+    } catch {
+      if (current === generation.current) {
+        setError('load');
       }
-    },
-    [onUnreadChange],
-  );
-  useEffect(() => {
-    if (controlledOpen) void Promise.resolve().then(() => load());
-  }, [controlledOpen, load]);
+    }
+  }, []);
   useEffect(() => {
     const counter = generation;
     void Promise.resolve().then(() => load());
@@ -91,7 +66,6 @@ export function AlertsBell({
       await load();
     } catch {
       setError('action');
-      onUnreadChange?.(undefined);
     } finally {
       setBusy(false);
     }
@@ -108,7 +82,7 @@ export function AlertsBell({
       open={open}
       onOpenChange={(value) => {
         setOpen(value);
-        if (value && controlledOpen === undefined) void load();
+        if (value) void load();
       }}
     >
       <PopoverTrigger asChild>
@@ -133,14 +107,6 @@ export function AlertsBell({
       <PopoverContent
         aria-label={t('bell.title')}
         align="end"
-        onCloseAutoFocus={(event) => {
-          const target = returnFocusRef?.current;
-          if (returnFocusRef && target?.isConnected) {
-            event.preventDefault();
-            target.focus();
-            returnFocusRef.current = null;
-          }
-        }}
         className="w-[min(24rem,calc(100vw-2rem))] p-0"
       >
         <div className="flex items-center justify-between gap-2 border-b p-4">

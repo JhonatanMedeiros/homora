@@ -1910,3 +1910,8 @@ the HTTP and stdio transports were not manually verified.
 - Added reviewable page changes with the `organization:propose` scope, batch support, version checks and audit events.
 - Added scoped, audited and human-reviewed probes, acknowledgements, tags, favorite cards, resource links and page-widget moves; batch proposals cover the new kinds. MCP responses omit maintenance notes, connection URLs and PEM. Connection tests use restricted transport without persisting results or changing shared backoff.
 - Validation: focused MCP, authorization and proposal tests; `pnpm check` passed (1,722 application tests and 31 script tests) and `pnpm build` passed. No live service was contacted. Browser review remains pending.
+
+### Phone: no bottom bar on the Home
+
+- The Home's phone bar is gone. With notifications (header bell) and search (header) already in the header, the bar was down to Home and Manage and added nothing. Manage moved to the user menu (shown on phones only; the header button stays on larger screens). The Home keeps the full height; the Organize "Done" bar now sits at the bottom edge. `DashboardTabs`, its test and its texts were removed. The management area keeps the floating bar (Probes, Integrations, Agents, More).
+- Validation: `pnpm check` (1,727 application tests) and `pnpm build` passed. Not checked in a browser or on a phone.

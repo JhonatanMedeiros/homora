@@ -180,6 +180,18 @@ it('opens the palette from the header button and goes to a card inside a collaps
   localStorage.clear();
 });
 
+it('reaches Manage from the user menu, which is how phones open it', async () => {
+  stubSignedIn();
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.keyDown(await screen.findByRole('button', { name: /Menu da conta de/ }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/integrations'));
+});
+
 it('opens the account from the user menu as its own page, outside the management area', async () => {
   stubSignedIn();
   render(<App />);
