@@ -5,6 +5,7 @@ Last reviewed: 2026-11-13. Priorities express product judgment, not measured use
 them with maintainer feedback. A candidate may be split, combined, deferred, or rejected. Do not
 implement this catalog wholesale: create and scope a separate issue before starting each item.
 Tracking epic: [issue #177](https://github.com/JhonatanMedeiros/homora/issues/177).
+Source and connection candidates are tracked separately in [integration catalog](integration-catalog.md).
 
 ## Existing capabilities
 

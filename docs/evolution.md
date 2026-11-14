@@ -318,6 +318,8 @@ Widget ideas and their current mapping are tracked in [widget catalog](widget-ca
 The catalog is a prioritization aid, not authorization to implement its candidates; individual
 issues must establish scope, dependencies and validation. Existing integration live-validation
 gaps remain recorded in [integrations](integrations.md).
+Integration candidates are tracked in the [integration catalog](integration-catalog.md) and
+[epic #178](https://github.com/JhonatanMedeiros/homora/issues/178).
 
 Origin: [strategy.md](strategy.md), phase R1 and real-world Homepage migration benchmark.
 Mark items only with stated implementation and verification evidence.
