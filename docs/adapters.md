@@ -117,12 +117,12 @@ service-neutral contract and add a synthetic test for a second domain with diffe
 and data. This demonstrates reuse but does not replace design review; expand transport methods,
 permissions or network capabilities only through the separate review described above.
 
-ESLint reports forbidden static imports in integration runtime, integration tests and application
+ESLint reports forbidden static imports in integration and widget runtime and test code and in application
 runtime code; application test files retain an exception for test helpers. `pnpm check` also
-inspects integration source and test support for forbidden direct imports, and application runtime
+inspects integration and widget source and test support for forbidden direct imports, and application runtime
 for direct and literal dynamic imports, reexports and common type dispatch. A workspace graph checks
 runtime dependencies, optional and peer dependencies and literal source imports for transitive paths
-from the SDK to application, database or shared packages. The graph excludes test and development
+from either SDK to application, database or shared packages, and from the widget SDK to integrations. The graph excludes test and development
 dependencies and only follows declared workspaces, not external packages, computed imports or
 TypeScript aliases. These checks cannot establish semantic genericity; review the design and widget
 code, and validate actual network policy separately.
@@ -231,3 +231,11 @@ SDK backend API, checks a widget source contract and renders the declared presen
 SDK frontend API. It covers generic valid and invalid observations without importing Homora apps or
 real service implementations. It exercises the low-level contracts, not the built-in catalog, a
 browser, live transport or a full host implementation; those remain covered by their own tests.
+
+### Independent widget host verification
+
+`packages/widgets/src/minimal-host.test.ts` uses the public widget SDK to register a synthetic
+widget in a minimal host, validate configuration, check source contract and version compatibility,
+and present data. Widget runtime, tests and test support cannot import application or integration
+code; the workspace graph independently starts at `@homora/widgets`. This does not exercise the
+production host, browser rendering, storage, or computed imports.

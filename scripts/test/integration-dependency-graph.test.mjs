@@ -12,6 +12,15 @@ test('integration SDK has no direct or transitive runtime dependency on host pac
   assert.equal(findForbiddenPath(graph, '@homora/integrations', forbidden), null);
 });
 
+test('widget SDK has no direct or transitive dependency on applications or integrations', async () => {
+  const graph = await workspaceGraph(resolve(import.meta.dirname, '../..'));
+  assert.equal(graph.has('@homora/widgets'), true);
+  assert.equal(
+    findForbiddenPath(graph, '@homora/widgets', new Set([...forbidden, '@homora/integrations'])),
+    null,
+  );
+});
+
 test('detects indirect workspace dependencies and source imports, and handles cycles', async () => {
   const root = await mkdtemp(join(tmpdir(), 'homora-graph-'));
   try {
@@ -28,6 +37,7 @@ test('detects indirect workspace dependencies and source imports, and handles cy
     const middle = await workspace('packages', 'middle', '@homora/middle', {
       '@homora/integrations': 'workspace:*',
     });
+    const widgets = await workspace('packages', 'widgets', '@homora/widgets');
     await workspace('apps', 'backend', '@homora/backend');
     assert.equal(
       findForbiddenPath(await workspaceGraph(root), '@homora/integrations', forbidden),
@@ -59,6 +69,22 @@ test('detects indirect workspace dependencies and source imports, and handles cy
       ['@homora/integrations', '@homora/middle', '@homora/backend'],
     );
     await writeFile(join(middle, 'package.json'), JSON.stringify({ name: '@homora/middle' }));
+    await writeFile(join(widgets, 'src', 'index.ts'), "import '@homora/middle';");
+    await writeFile(
+      join(middle, 'package.json'),
+      JSON.stringify({
+        name: '@homora/middle',
+        dependencies: { '@homora/integrations': 'workspace:*' },
+      }),
+    );
+    assert.deepEqual(
+      findForbiddenPath(
+        await workspaceGraph(root),
+        '@homora/widgets',
+        new Set([...forbidden, '@homora/integrations']),
+      ),
+      ['@homora/widgets', '@homora/middle', '@homora/integrations'],
+    );
     await writeFile(join(sdk, 'src', 'index.ts'), "import('@homora/backend');");
     assert.deepEqual(
       findForbiddenPath(await workspaceGraph(root), '@homora/integrations', forbidden),

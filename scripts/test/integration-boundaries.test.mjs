@@ -5,7 +5,13 @@ import { dirname, join, resolve, sep } from 'node:path';
 import ts from 'typescript';
 
 async function sourceFiles(folder, includeTests = false) {
-  const entries = await readdir(folder, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await readdir(folder, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
   const files = await Promise.all(
     entries.map(async (entry) => {
       const path = join(folder, entry.name);
@@ -40,6 +46,9 @@ function violations(source, file, root, types, side, symbols = new Set()) {
       if (within(resolved, integrationDir) || subpath.some((segment) => types.has(segment)))
         problems.push(`individual integration import: ${specifier}`);
     } else if (
+      (side === 'widget' &&
+        (within(resolved, join(root, 'packages/integrations')) ||
+          /^@homora\/integrations(?:\/|$)/.test(specifier))) ||
       within(resolved, appsDir) ||
       /^@homora\/(backend|frontend|db|shared)(?:\/|$)/.test(specifier)
     ) {
@@ -145,6 +154,20 @@ test('boundary checker catches imports and dispatch while ignoring comments and 
   ])
     assert.notDeepEqual(violations(source, sdkFile, root, types, 'sdk'), [], source);
   assert.deepEqual(violations("import { z } from 'zod';", sdkFile, root, types, 'sdk'), []);
+  const widgetFile = '/repo/packages/widgets/src/test.ts';
+  for (const specifier of [
+    '@homora/integrations',
+    '../../integrations/src/index.js',
+    '../../../apps/frontend/src/index.js',
+  ])
+    assert.notDeepEqual(
+      violations(`import x from '${specifier}';`, widgetFile, root, types, 'widget'),
+      [],
+    );
+  assert.deepEqual(
+    violations("import x from './clock.js';", widgetFile, root, types, 'widget'),
+    [],
+  );
 });
 
 test('application and integration runtime respect integration boundaries', async () => {
@@ -175,8 +198,10 @@ test('application and integration runtime respect integration boundaries', async
     ['apps/frontend/src', 'app'],
     ['packages/integrations/src', 'sdk'],
     ['packages/integrations/test-support', 'sdk'],
+    ['packages/widgets/src', 'widget'],
+    ['packages/widgets/test-support', 'widget'],
   ]) {
-    for (const file of await sourceFiles(join(root, folder), side === 'sdk')) {
+    for (const file of await sourceFiles(join(root, folder), side !== 'app')) {
       const problems = violations(await readFile(file, 'utf8'), file, root, types, side, symbols);
       assert.deepEqual(problems, [], `${file}: ${problems.join(', ')}`);
     }

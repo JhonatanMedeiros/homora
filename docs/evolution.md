@@ -1850,3 +1850,8 @@ the HTTP and stdio transports were not manually verified.
 - Moved the reusable adapter contract and fixture helpers to integration-owned test support. The backend continues to test registry, observation cache and restricted transport independently. Integration source, tests and test support now share the same no-application-import boundary; application tests retain their existing exceptions.
 - Added a workspace runtime dependency graph check that follows declared dependencies and literal imports, with tests for direct and transitive paths and cycles. It does not follow external packages, computed imports, aliases or development dependencies. A synthetic minimal host exercises SDK registration, widget source compatibility and presentation, without a real service or application.
 - Validation: focused adapter, minimal-host and graph tests, `pnpm check` (1,660 application tests and 30 script tests), and `pnpm build` passed. Cache behavior remains covered at the backend boundary; real services and browsers were not exercised.
+
+### Independent widget SDK isolation
+
+- Extended import checks to widget runtime, tests and test support, forbidding application and integration dependencies. The runtime workspace graph now starts independently at `@homora/widgets` and tests indirect dependencies. A synthetic minimal host exercises public widget registration, configuration, source compatibility and presentation. Computed imports, aliases, external dependencies and real host or browser behavior remain outside these checks.
+- Validation: focused widget and boundary tests, `pnpm check` (1,661 application tests and 31 script tests), and `pnpm build` passed.

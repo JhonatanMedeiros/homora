@@ -115,6 +115,31 @@ export default tseslint.config(
     },
   },
   {
+    // Widget contracts, presentations and their tests are independent of host and integrations.
+    files: ['packages/widgets/{src,test-support}/**/*.{ts,tsx,js,jsx,mjs,cjs}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^@homora/(backend|frontend|db|shared|integrations)(/|$)',
+              message: 'Widgets must not depend on applications or integrations.',
+            },
+            {
+              regex: '(^|/)apps/(backend|frontend)(/|$)',
+              message: 'Widgets must not depend on application source.',
+            },
+            {
+              regex: '^\\.{1,2}/(?:.*/)?integrations(/|$)',
+              message: 'Widgets must not depend on integration source.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['apps/frontend/src/**/*.{ts,tsx}'],
     ignores: ['**/*.test.*', '**/*.spec.*'],
     rules: { 'no-restricted-imports': ['error', { patterns: integrationImports }] },
