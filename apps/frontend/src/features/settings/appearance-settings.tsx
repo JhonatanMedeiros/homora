@@ -188,7 +188,7 @@ export function AppearanceSettings() {
           <FormError className="px-4 pt-4 empty:hidden">{error}</FormError>
         </SettingsGroup>
         {(dirty || busy !== null) && (
-          <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between md:bottom-4">
+          <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-10 flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between md:bottom-4">
             <p role="status" className="flex items-center gap-2 text-sm">
               {dirty && !busy && !blocked && (
                 <Badge variant="secondary">{t('appearance.status.unsaved')}</Badge>
