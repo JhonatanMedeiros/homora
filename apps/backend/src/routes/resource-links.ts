@@ -16,6 +16,7 @@ const httpUrl = z
       const url = new URL(value);
       return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;
     } catch {
+      // Schema refinement: an unparseable URL is simply invalid input.
       return false;
     }
   });

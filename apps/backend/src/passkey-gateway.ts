@@ -110,7 +110,7 @@ export function passkeyErrorBody(pathname: string, status: number, text: string 
     const parsed = (JSON.parse(text ?? '{}') as { code?: unknown }).code;
     code = typeof parsed === 'string' ? parsed : undefined;
   } catch {
-    /* Not JSON: handled below. */
+    // Not JSON: the original response is handled below.
   }
   const mapped = code ? ERRORS[code] : undefined;
   if (mapped) return errorBody(mapped);

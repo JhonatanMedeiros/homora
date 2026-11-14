@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { createVault } from './vault.js';
 import type { Service } from '@homora/shared';
 import type { ServiceStatus } from './monitoring/index.js';
+import { noopLog, type Log } from './logger.js';
 import { createNotificationTransitions } from './notification-transitions.js';
 import { createNotificationDelivery } from './notification-delivery.js';
 import { createNotificationChannels } from './notification-channels.js';
@@ -20,9 +21,9 @@ const stateSchema = z
   .strict();
 type Vault = ReturnType<typeof createVault>;
 
-export function createNotifications(db: DatabaseSync, vault?: Vault) {
+export function createNotifications(db: DatabaseSync, vault?: Vault, log: Log = noopLog) {
   const channels = createNotificationChannels(db, vault);
-  const delivery = createNotificationDelivery(db, channels);
+  const delivery = createNotificationDelivery(db, channels, log);
   return {
     list: channels.list,
     save: channels.save,
@@ -40,6 +41,7 @@ export function createNotifications(db: DatabaseSync, vault?: Vault) {
           const parsed = stateSchema.safeParse(JSON.parse(r.state) as unknown);
           return parsed.success ? [[r.service_id, parsed.data] as const] : [];
         } catch {
+          // Unreadable saved state counts as "never notified"; the next transition rewrites it.
           return [];
         }
       });

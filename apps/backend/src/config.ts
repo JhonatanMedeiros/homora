@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { parseDockerHost } from './discovery/index.js';
+import { parseLogLevel } from './logger.js';
 import { parsePasskeyRpId, resolvePasskeyConfig } from './passkey-config.js';
 export const root = fileURLToPath(new URL('../../../', import.meta.url));
 export function parseAllowedOrigins(value: string | undefined): string[] {
@@ -54,6 +55,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   if (sessionSecret !== undefined && sessionSecret.length < 32)
     throw new Error('HOMORA_SESSION_SECRET must have at least 32 characters.');
   return {
+    logLevel: parseLogLevel(env.HOMORA_LOG_LEVEL),
     bindHost,
     apiPort,
     webPort,

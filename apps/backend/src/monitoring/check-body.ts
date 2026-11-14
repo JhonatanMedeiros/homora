@@ -26,6 +26,7 @@ export function matchesJson(body: string, expression: string): boolean {
   try {
     parsed = JSON.parse(body);
   } catch {
+    // A body that is not JSON cannot match the expected value.
     return false;
   }
   const split = expression.indexOf('=');

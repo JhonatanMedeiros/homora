@@ -46,7 +46,8 @@ export function registerNotificationRoutes(
           : reply
               .code(502)
               .send({ ...errorBody('notification-delivery-failed'), ok: false, error: result });
-      } catch {
+      } catch (error) {
+        request.log.warn({ err: error, channel: id }, 'notification test could not be delivered');
         return reply.code(502).send({ ...errorBody('notification-delivery-failed'), ok: false });
       }
     },

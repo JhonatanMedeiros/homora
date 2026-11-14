@@ -24,7 +24,7 @@ export function createShutdownHandler({
   log = console.log,
 }: ShutdownOptions) {
   let closing = false;
-  return async function shutdown(signal: string): Promise<void> {
+  return async function shutdown(signal: string, exitCode = 0): Promise<void> {
     if (closing) return;
     closing = true;
     log(`Received ${signal}. Shutting down.`);
@@ -36,11 +36,35 @@ export function createShutdownHandler({
     try {
       await close();
       clearTimeout(forceExit);
-      exit(0);
+      exit(exitCode);
     } catch (error) {
       clearTimeout(forceExit);
       log(`Shutdown failed: ${error instanceof Error ? error.message : String(error)}`);
       exit(1);
     }
   };
+}
+
+/**
+ * Last-resort handlers: an uncaught exception or unhandled rejection leaves the process in an
+ * unknown state, so it is logged with its stack and the process closes in a controlled way and
+ * exits non-zero, letting the container restart policy bring it back.
+ */
+export function installFatalErrorHandlers({
+  on = (event, listener) => void process.on(event, listener),
+  logFatal,
+  shutdown,
+}: {
+  on?: (
+    event: 'uncaughtException' | 'unhandledRejection',
+    listener: (error: unknown) => void,
+  ) => void;
+  logFatal: (error: unknown, event: string) => void;
+  shutdown: (signal: string, exitCode: number) => Promise<void>;
+}) {
+  for (const event of ['uncaughtException', 'unhandledRejection'] as const)
+    on(event, (error) => {
+      logFatal(error, event);
+      void shutdown(event, 1);
+    });
 }

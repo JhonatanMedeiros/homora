@@ -44,6 +44,8 @@ With a reverse proxy that terminates HTTPS in front of Homora:
 4. Set `HOMORA_TRUSTED_PROXY` to the proxy's address or network, for example `172.18.0.0/16` for a proxy container on the Compose network. This lets the per-client login limit (10 sign-in attempts per client in 15 minutes) tell clients apart. Without it, every client behind your proxy shares one counter, so someone else's failed attempts can lock you out.
 5. Do not disable origin validation. The session cookie is `HttpOnly`, `SameSite=Strict` and gets `Secure` when you sign in from an HTTPS origin.
 
+Runtime logs are JSON lines on the container's output; set `HOMORA_LOG_LEVEL` to change their detail. See [Logs and health checks](logs.md), which also describes `/api/health`, the endpoint the backend container's healthcheck uses.
+
 `HOMORA_TRUST_PROXY=true` (already set in the Compose files) makes the backend read the client address from `X-Forwarded-For`; set it only if every request reaches the backend through a proxy that overwrites that header, as the bundled nginx does.
 
 ## Upgrade

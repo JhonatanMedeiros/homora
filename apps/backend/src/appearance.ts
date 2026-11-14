@@ -21,6 +21,7 @@ export function createAppearance(sqlite: DatabaseSync) {
       try {
         return parseAppearance(JSON.parse(row.value)) ?? DEFAULT_APPEARANCE;
       } catch {
+        // Corrupt saved JSON falls back to the defaults; the next save rewrites it.
         return DEFAULT_APPEARANCE;
       }
     },

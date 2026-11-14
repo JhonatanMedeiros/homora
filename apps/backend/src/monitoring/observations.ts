@@ -370,7 +370,7 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
             const parsed = observationSchema.safeParse(JSON.parse(row.observation) as unknown);
             if (parsed.success) state = parsed.data;
           } catch {
-            /* corrupt data is unknown */
+            // Corrupt saved data is reported as unknown.
           }
         }
         const age = state.lastAttempt ? now - Date.parse(state.lastAttempt) : null;

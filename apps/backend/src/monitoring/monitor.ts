@@ -1,6 +1,7 @@
 import { CHECK_INTERVAL_DEFAULT, type CheckType, type Service } from '@homora/shared';
 import { isNonHttp } from './probe.js';
 import { serviceSignature } from './signature.js';
+import { noopLog, type Log } from '../logger.js';
 import {
   classify,
   checkService,
@@ -27,6 +28,19 @@ const dueSlackMs = 2_000;
 /** Maximum duration to initiate checks within a cycle; remaining services carry over to next cycle. */
 const cycleBudgetMs = 45_000;
 const maxConcurrentChecks = 5;
+/** Fewer measured services than this cannot tell a systemic failure from one broken service. */
+const systemicMinServices = 3;
+
+/** The raw reason a check threw, kept out of the public `reason` and out of the API. */
+type RawFailure = { code: string | null; message: string };
+
+const rawFailure = (error: unknown): RawFailure => ({
+  code:
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : null,
+  message: error instanceof Error ? error.message : String(error),
+});
 
 export function createServiceMonitor(
   getServices: () => Promise<Service[]>,
@@ -43,14 +57,53 @@ export function createServiceMonitor(
   /** Services in a scheduled maintenance window at the given time; they are not probed. */
   inMaintenance: (at: number) => ReadonlySet<number> = () => new Set(),
   trust: () => { bundle: string; hash: string } | null = () => null,
+  log: Log = noopLog,
 ) {
   const states = new Map<number, ServiceStatus>();
+  /** Raw failure behind each unavailable state that came from a thrown check. */
+  const failures = new Map<number, RawFailure>();
+  /** Failure shared by most monitors right now, so the warning is logged once, not every cycle. */
+  let systemic: string | null = null;
+  let lastCycleAt: number | null = null;
   /** Configuration each state was measured under, so edited services are probed again and only those. */
   const signatures = new Map<number, string>();
   let running: Promise<void> | undefined;
   let generation = 0;
   let rerunRequested = false;
   let rerunForce = false;
+
+  /**
+   * One debug line per cycle, and a warning when most measured services fail for the same
+   * reason: that points at the monitor's own environment (DNS, network policy, trust store),
+   * not at the services.
+   */
+  function summarize(current: Service[], checked: number, durationMs: number) {
+    const byReason: Record<string, number> = {};
+    let measured = 0;
+    for (const service of current) {
+      const state = states.get(service.id);
+      if (!state || state.status === 'unknown') continue;
+      measured++;
+      if (state.status !== 'unavailable') continue;
+      const key = failures.get(service.id)?.code ?? state.reason;
+      byReason[key] = (byReason[key] ?? 0) + 1;
+    }
+    log.debug({ checked, measured, failuresByReason: byReason, durationMs }, 'monitor cycle');
+    const [topReason, topCount] = Object.entries(byReason).sort((a, b) => b[1] - a[1])[0] ?? [];
+    const widespread =
+      topReason !== undefined && measured >= systemicMinServices && topCount * 2 > measured;
+    if (widespread) {
+      if (systemic !== topReason)
+        log.warn(
+          { reason: topReason, failing: topCount, measured, failuresByReason: byReason },
+          `systemic monitoring failure: ${topCount} of ${measured} services fail with ${topReason}`,
+        );
+      systemic = topReason;
+    } else if (systemic !== null) {
+      log.info({ previous: systemic, measured }, 'systemic monitoring failure cleared');
+      systemic = null;
+    }
+  }
 
   async function run(force = false) {
     if (running) {
@@ -65,8 +118,9 @@ export function createServiceMonitor(
       let current: Service[];
       try {
         current = await getServices();
-      } catch {
-        // A dashboard read remains usable when monitoring cannot read the DB.
+      } catch (error) {
+        // A dashboard read remains usable when monitoring cannot read the DB, but the cycle is lost.
+        log.error({ err: error }, 'monitor cycle skipped: could not read the services to check');
         return;
       }
       if (runGeneration !== generation) return;
@@ -77,6 +131,7 @@ export function createServiceMonitor(
       for (const id of states.keys())
         if (!currentIds.has(id)) {
           states.delete(id);
+          failures.delete(id);
           signatures.delete(id);
           changed = true;
         }
@@ -112,6 +167,35 @@ export function createServiceMonitor(
         .filter((service) => force || isDue(service))
         .sort((a, b) => lastOf(a.id).localeCompare(lastOf(b.id)));
       let nextIndex = 0;
+      let checked = 0;
+      /** Stores a measured result and logs it only when the service changed state. */
+      const settle = (service: Service, next: ServiceStatus, failure?: RawFailure) => {
+        const previous = states.get(service.id);
+        states.set(service.id, next);
+        if (failure) failures.set(service.id, failure);
+        else failures.delete(service.id);
+        if (
+          previous &&
+          previous.status === next.status &&
+          (next.status !== 'unavailable' || previous.reason === next.reason)
+        )
+          return;
+        const first = !previous || previous.status === 'unknown';
+        const fields = {
+          service: service.id,
+          name: service.name,
+          checkType: service.checkType ?? 'http',
+          from: previous?.status ?? 'unknown',
+          to: next.status,
+          reason: next.reason,
+          ...(next.httpStatus !== null ? { httpStatus: next.httpStatus } : {}),
+          ...(failure ? { errorCode: failure.code, errorMessage: failure.message } : {}),
+        };
+        const message = `service ${fields.from} -> ${fields.to}: ${next.reason}`;
+        if (next.status === 'unavailable') log.warn(fields, message);
+        else if (first) log.debug(fields, message);
+        else log.info(fields, message);
+      };
       await Promise.all(
         Array.from({ length: Math.min(maxConcurrentChecks, monitored.length) }, async () => {
           while (
@@ -121,6 +205,7 @@ export function createServiceMonitor(
           ) {
             const service = monitored[nextIndex++];
             changed = true;
+            checked++;
             const attemptedAt = new Date(now()).toISOString();
             if (paused.has(service.id)) {
               states.set(service.id, {
@@ -152,7 +237,7 @@ export function createServiceMonitor(
                 ? await check(...args, undefined, options)
                 : await check(...args);
               if (runGeneration === generation)
-                states.set(service.id, {
+                settle(service, {
                   ...(result.outcome ??
                     (result.httpStatus === null
                       ? { status: 'available' as const, reason: 'reachable' as const }
@@ -166,27 +251,36 @@ export function createServiceMonitor(
                   latencyMs: result.latencyMs,
                 });
             } catch (error) {
-              if (runGeneration === generation && error instanceof PingUnavailableError)
+              if (runGeneration === generation && error instanceof PingUnavailableError) {
                 states.set(service.id, { ...unchecked(), lastAttempt: attemptedAt });
-              else if (runGeneration === generation)
-                states.set(service.id, {
-                  status: 'unavailable',
-                  lastAttempt: attemptedAt,
-                  reason:
-                    service.checkUrl &&
-                    error instanceof Error &&
-                    'code' in error &&
-                    error.code === 'destination-disallowed'
-                      ? 'destination-blocked'
-                      : 'no-response',
-                  httpStatus: null,
-                  latencyMs: null,
-                });
+                log.warn(
+                  { service: service.id, name: service.name },
+                  'ping check unavailable: the ping binary cannot be used',
+                );
+              } else if (runGeneration === generation) {
+                const failure = rawFailure(error);
+                settle(
+                  service,
+                  {
+                    status: 'unavailable',
+                    lastAttempt: attemptedAt,
+                    reason:
+                      service.checkUrl && failure.code === 'destination-disallowed'
+                        ? 'destination-blocked'
+                        : 'no-response',
+                    httpStatus: null,
+                    latencyMs: null,
+                  },
+                  failure,
+                );
+              }
             }
           }
         }),
       );
       if (runGeneration === generation && changed) publish?.(current, Object.fromEntries(states));
+      lastCycleAt = now();
+      if (checked > 0) summarize(current, checked, now() - startedAt);
     })();
     try {
       await running;
@@ -217,6 +311,14 @@ export function createServiceMonitor(
     },
     snapshot() {
       return Object.fromEntries(states);
+    },
+    /** When the last cycle completed; null before the first one. `/api/health` reports its age. */
+    health() {
+      return { lastCycleAt };
+    },
+    /** Raw reason of the last thrown check per service, for diagnostics; never sent to clients. */
+    lastFailure(id: number) {
+      return failures.get(id);
     },
   };
 }

@@ -249,6 +249,7 @@ pending. The roadmap lives in [docs/strategy.md](docs/strategy.md) and [docs/evo
 | [Import, export and backup](docs/user-guide/import-export-backup.md)              | Moving from Homepage or Dashy, exporting, backing up and restoring.             |
 | [Accounts and security](docs/user-guide/accounts-and-security.md)                 | Sessions, two-step verification, passkeys and account recovery.                 |
 | [Deployment and upgrades](docs/user-guide/deployment.md)                          | Docker, HTTPS reverse proxy, environment variables and upgrades.                |
+| [Logs and health checks](docs/user-guide/logs.md)                                 | JSON logs, `HOMORA_LOG_LEVEL`, what is never logged and `/api/health`.          |
 | [Use cases](docs/user-guide/use-cases.md)                                         | Step-by-step recipes for common homelab goals.                                  |
 
 **Reference and project**

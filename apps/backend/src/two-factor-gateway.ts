@@ -51,6 +51,7 @@ export function twoFactorErrorBody(text: string | null) {
     const mapped = typeof code === 'string' ? ERRORS[code] : undefined;
     return mapped ? errorBody(mapped) : null;
   } catch {
+    // Not JSON: keep the original response, as documented above.
     return null;
   }
 }

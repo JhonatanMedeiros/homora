@@ -1,5 +1,26 @@
 # Homora Evolution Plan
 
+### Structured runtime logs (issue #203)
+
+- Phase 1: JSON logger on stdout (`HOMORA_LOG_LEVEL`, default `info`, `silent` supported) shared by
+  the whole process; startup line with version/commit, migration report, bind and flags; the
+  migrator reports applied migrations and a `schema-ahead` history raises a typed error that is
+  logged as `fatal` (this is the logging half of #201 phase 1; the refusal itself already existed).
+  Redaction and a test that cookies, `Authorization`, tokens, passwords and secrets never appear.
+- Phase 2: the 5xx handler logs the original error, route, method and request id and still answers
+  `internal-error`; the silent `catch` blocks were audited (logged, or given a reason in a comment);
+  notification delivery and integration query failures are logged without credentials; fatal handlers
+  for `uncaughtException` and `unhandledRejection`.
+- Phase 3: the monitor keeps and logs the raw failure code and message, logs state changes only, a
+  `debug` cycle summary and a `warn` when most services fail the same way; incidents opening and
+  closing are logged.
+- Phase 4: public `GET /api/health` (version, `schemaVersion`, database, age of the last monitor
+  cycle; 503 when stalled) used by the Dockerfile `HEALTHCHECK`; [user guide](user-guide/logs.md) and
+  [ADR 0022](decisions/0022-structured-runtime-logs.md).
+- Not done: the monitor's raw failure is not persisted across restarts or shown in the interface;
+  validation was local: automated tests, a local server run and a local Docker build of the backend
+  image whose `HEALTHCHECK` (now `/api/health`) reported `healthy`. Not verified on Coolify.
+
 ### Monitoring trust and TLS exceptions (issue #191)
 
 - Added an administrator-managed, local PEM bundle for HTTP and TLS monitoring. Additional trust is

@@ -116,6 +116,7 @@ export function createBackgroundStore(path: string) {
       try {
         return await readFile(path);
       } catch {
+        // No file (never uploaded, or removed) simply means no background.
         return null;
       }
     },

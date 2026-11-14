@@ -147,6 +147,7 @@ export function createDockerPush(sqlite: DatabaseSync) {
         const parsed = pushInventorySchema.safeParse(JSON.parse(row.inventory));
         return parsed.success ? { ...row, containers: parsed.data.containers } : null;
       } catch {
+        // A stored inventory that is not valid JSON counts as no inventory.
         return null;
       }
     },

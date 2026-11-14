@@ -6,6 +6,7 @@ import { getAuthorizedResponse } from './network-request.js';
 import type { NotificationEvent } from './notification-transitions.js';
 
 import type { NotificationChannel } from './notification-channels.js';
+import { noopLog, type Log } from './logger.js';
 
 type NotificationCredentials = {
   destination?: string;
@@ -26,6 +27,7 @@ export function createNotificationDelivery(
     row: (id: number) => NotificationChannel | undefined;
     credentials: (channel: NotificationChannel) => NotificationCredentials;
   },
+  log: Log = noopLog,
 ) {
   let stopped = false;
   let working = false;
@@ -104,6 +106,18 @@ export function createNotificationDelivery(
       return null;
     } catch (error) {
       const message = safeError(error);
+      // Channel id and type only: the destination and token live in the vault and the URL.
+      log.warn(
+        {
+          channel: channel.id,
+          channelType: channel.type,
+          event: event.event,
+          service: event.service.id,
+          errorCode: (error as { code?: unknown } | null)?.code,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        },
+        'notification delivery failed',
+      );
       db.prepare(
         'UPDATE notification_channels SET last_error=?,failures=failures+1 WHERE id=?',
       ).run(message, channel.id);
@@ -123,8 +137,9 @@ export function createNotificationDelivery(
           if (!(await attempt(channel, job.event, job.url))) break;
         }
       }
-    } catch {
+    } catch (error) {
       // A storage or delivery failure never propagates to the monitor.
+      log.error({ err: error }, 'notification queue stopped on an unexpected error');
     } finally {
       working = false;
     }
@@ -137,6 +152,7 @@ export function createNotificationDelivery(
     for (const event of events)
       for (const channel of channels) {
         if (queue.length >= maxQueue) {
+          log.warn({ channel: channel.id }, 'notification queue full; event dropped');
           db.prepare(
             "UPDATE notification_channels SET last_error='Queue full',failures=failures+1 WHERE id=?",
           ).run(channel.id);

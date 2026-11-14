@@ -58,7 +58,7 @@ export function registerPageWidgetRoutes(app: FastifyInstance, sqlite: DatabaseS
       try {
         config = JSON.parse(row.config);
       } catch {
-        /* Invalid saved data stays isolated. */
+        // Invalid saved data stays isolated: the widget is returned with `config: null`.
       }
       return { ...row, config };
     });

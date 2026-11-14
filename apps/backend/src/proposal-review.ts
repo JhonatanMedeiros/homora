@@ -292,7 +292,7 @@ export function createProposalReviewService({
           )
           .run(human, 'review', id, 'failed', Date.now());
       } catch {
-        /* database failure */
+        // The original error is rethrown below; a second failure while recording it adds nothing.
       }
       throw error;
     }
@@ -380,7 +380,7 @@ export function createProposalReviewService({
           )
           .run(human, 'review', batchId, 'failed', Date.now());
       } catch {
-        /* database failure */
+        // The original error is rethrown below; a second failure while recording it adds nothing.
       }
       throw error;
     }

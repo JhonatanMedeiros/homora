@@ -71,6 +71,7 @@ const safeResourceUrl = z
         !url.hash
       );
     } catch {
+      // Schema refinement: an unparseable URL is simply invalid input.
       return false;
     }
   });
@@ -160,6 +161,7 @@ export const connectionSetupSchema = z
             !url.hash
           );
         } catch {
+          // Schema refinement: an unparseable URL is simply invalid input.
           return false;
         }
       }),

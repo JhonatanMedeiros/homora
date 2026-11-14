@@ -22,11 +22,13 @@ export function registerHostSuggestionRoutes(
     connections,
     listServices: () => configuration.listServices(),
     listHosts: configuration.listHosts,
+    log: app.log,
   });
-  app.get('/api/host-suggestions', async (_request, reply) => {
+  app.get('/api/host-suggestions', async (request, reply) => {
     try {
       return await suggestions.list();
-    } catch {
+    } catch (error) {
+      request.log.warn({ err: error }, 'could not list host suggestions');
       return reply.code(502).send(errorBody('integration-query-failed'));
     }
   });

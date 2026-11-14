@@ -41,6 +41,7 @@ export function redactMcpValue(value: unknown): unknown {
       try {
         output[key] = JSON.stringify(redactMcpValue(JSON.parse(item) as unknown));
       } catch {
+        // An unparseable diff is withheld (null) rather than sent unredacted.
         output[key] = null;
       }
     } else if (input.kind === 'managed' && key === 'change' && item && typeof item === 'object') {
@@ -108,6 +109,7 @@ export const publicUrl = (value: string) => {
     url.hash = '';
     return url.href;
   } catch {
+    // An unparseable URL is withheld (empty) rather than sent as-is.
     return '';
   }
 };

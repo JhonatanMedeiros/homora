@@ -1,5 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 
+import { noopLog, type Log } from './logger.js';
+
 export type AuditKind = 'access' | 'account' | 'proposal' | 'agent';
 export type AuditOutcome = 'success' | 'failure' | 'refused';
 
@@ -118,11 +120,16 @@ type Row = {
  * Activity feed over `audit_events`. Never store passwords or typed e-mail addresses here: a
  * failed sign-in keeps only the client address and the attempt count.
  */
-export function createAuditLog(sqlite: DatabaseSync, now: () => number = Date.now) {
+export function createAuditLog(
+  sqlite: DatabaseSync,
+  now: () => number = Date.now,
+  log: Log = noopLog,
+) {
   try {
     sqlite.prepare('DELETE FROM audit_events WHERE created_at < ?').run(now() - RETENTION_MS);
-  } catch {
-    /* Retention is best effort. */
+  } catch (error) {
+    // Retention is best effort: old events stay a little longer.
+    log.warn({ err: error }, 'could not prune old audit events');
   }
   return {
     /** Records an event. A storage failure must never break the action being audited. */
@@ -141,8 +148,9 @@ export function createAuditLog(sqlite: DatabaseSync, now: () => number = Date.no
             input.detail?.slice(0, 200) ?? null,
             input.ipAddress?.slice(0, 64) ?? null,
           );
-      } catch {
-        /* Intentionally ignored. */
+      } catch (error) {
+        // Never throws into the audited action, but a lost security event is worth a line.
+        log.error({ err: error, action: input.action }, 'could not record audit event');
       }
     },
     /** Failed sign-ins from one address inside the throttle window. */
