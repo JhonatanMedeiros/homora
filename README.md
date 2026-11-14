@@ -63,7 +63,7 @@ to your first alert.
 - **Two layouts:** a dense list or detailed cards with descriptions and uptime bars. Group, Host and Map views.
 - **Icons your way:** an emoji, a built-in icon (`lucide:server`), one of **164 bundled homelab brand logos**
   (`brand:plex`, served locally with no external requests) or an image URL. The form suggests the logo that
-  matches the service name.
+  matches the service name and can use the service's `/favicon.ico` directly in the browser.
 - **Command palette** (`Ctrl K` or `/`) to jump to any card, filter with `status:down` or `group:Media`, and
   reach every settings page. Single-key shortcuts (`?` lists them) can be turned off.
 - **Personal look:** accent color, gradients, card translucency, a background image and custom CSS (with a

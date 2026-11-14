@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { BRAND_ICON_NAMES } from '@homora/icons';
-import { iconKind, suggestBrandIcon } from './icons';
+import { faviconUrl, iconKind, suggestBrandIcon } from './icons';
 
 const dir = resolve(__dirname, '../../../../packages/icons/assets');
 
@@ -35,4 +35,14 @@ it('suggests logo based on service name and identifies icon type', () => {
   expect(suggestBrandIcon('')).toBeNull();
   expect(iconKind('brand:plex')).toBe('brand');
   expect(iconKind('brand:inexistente')).toBe('empty');
+});
+
+it('derives a favicon from the service origin without credentials or private paths', () => {
+  expect(faviconUrl('https://example.test:8443/path?token=secret')).toBe(
+    'https://example.test:8443/favicon.ico',
+  );
+  expect(faviconUrl('http://localhost:3000/')).toBe('http://localhost:3000/favicon.ico');
+  expect(faviconUrl('https://user:pass@example.test/')).toBeNull();
+  expect(faviconUrl('javascript:alert(1)')).toBeNull();
+  expect(faviconUrl('invalid')).toBeNull();
 });

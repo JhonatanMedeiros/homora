@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ServiceIcon } from '@/components/service-icon';
 import { TagInput } from '@/components/tag-input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { suggestBrandIcon } from '@/lib/icons';
+import { faviconUrl, suggestBrandIcon } from '@/lib/icons';
 import { t } from '@/i18n';
 
 type Props = {
@@ -19,6 +19,7 @@ type Props = {
 export function LookPanel({ value, onChange, tags }: Props) {
   const set = (patch: Partial<ServiceInput>) => onChange({ ...value, ...patch });
   const suggestion = suggestBrandIcon(value.name);
+  const favicon = faviconUrl(value.url);
   return (
     <FieldGroup className="grid gap-4 sm:grid-cols-2">
       <Field className="sm:col-span-2">
@@ -76,6 +77,18 @@ export function LookPanel({ value, onChange, tags }: Props) {
             >
               <ServiceIcon icon={`brand:${suggestion}`} name={value.name} />
               {t('icon.suggested', { icon: suggestion })}
+            </Button>
+          </div>
+        )}
+        {favicon && (
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => set({ icon: favicon })}
+            >
+              {t('icon.favicon')}
             </Button>
           </div>
         )}

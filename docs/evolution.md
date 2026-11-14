@@ -1,5 +1,11 @@
 # Homora Evolution Plan
 
+### Service favicons
+
+- The appearance form can use the service origin's `/favicon.ico`; the browser loads it directly.
+  The image may be unavailable if the service uses a different path or cannot be reached.
+- A larger local catalog, custom local icons and optional remote catalogs remain pending.
+
 ### Structured runtime logs (issue #203)
 
 - Phase 1: JSON logger on stdout (`HOMORA_LOG_LEVEL`, default `info`, `silent` supported) shared by
