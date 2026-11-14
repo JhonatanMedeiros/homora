@@ -9,10 +9,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { ArrangeToggle } from '@/components/service-view-toolbar';
-import { StatusFilter } from '@/components/status-filter';
-import { ViewLayoutFields } from '@/components/view-options';
-import type { StatusFilter as StatusFilterValue } from '@/lib/status-filter';
+import { ArrangeToggle } from '@/features/dashboard/service-view-toolbar';
+import { StatusFilter } from '@/features/dashboard/status-filter';
+import { ViewLayoutFields } from '@/features/dashboard/view-options';
+import type { StatusFilter as StatusFilterValue } from '@/features/dashboard/status-filter-model';
 import { t } from '@/i18n';
 
 type Props = {

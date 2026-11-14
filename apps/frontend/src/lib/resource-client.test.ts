@@ -1,5 +1,4 @@
 import { expect, it } from 'vitest';
-import type { IntegrationResource, ResourceLink } from '@homora/shared';
 import { widgetStats } from '@/features/connections/connection-model';
 import {
   parseInventory,
@@ -7,6 +6,7 @@ import {
   sameUrl,
   viewLink,
 } from '@homora/integrations/resources/client';
+import type { IntegrationResource, ResourceLink } from '@homora/integrations';
 
 const resource = (over: Partial<IntegrationResource> = {}): IntegrationResource => ({
   uuid: 'abc123',

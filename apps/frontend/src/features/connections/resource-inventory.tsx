@@ -1,7 +1,6 @@
 import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
 import { RotateCw } from 'lucide-react';
-import type { IntegrationResource, ResourceState, ResourceType } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
@@ -24,6 +23,7 @@ import { ResourceDiscovery } from './resource-discovery';
 import { ResourceLinkDialog } from './resource-link-dialog';
 import { ResourceTable } from './resource-table';
 import type { Connection } from './connection-model';
+import type { IntegrationResource, ResourceState, ResourceType } from '@homora/integrations';
 
 const STATES: ResourceState[] = ['running', 'degraded', 'stopped', 'unknown'];
 const TYPES: ResourceType[] = ['application', 'service'];

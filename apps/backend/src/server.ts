@@ -6,7 +6,7 @@ import { loadConfig } from './config.js';
 import { createDockerSource } from './discovery/index.js';
 import { createAuth, loadSessionSecret } from './auth.js';
 import { createVault } from './vault.js';
-import { migrateLegacyConnectionsAtStartup } from './legacy-integrations.js';
+import { migrateLegacyConnectionsAtStartup } from './integrations/legacy-integrations.js';
 import { createShutdownHandler, installFatalErrorHandlers } from './shutdown.js';
 import { buildInfo, createLogger } from './logger.js';
 const config = loadConfig();

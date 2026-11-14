@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { ResourceType, ResourceLink } from '@homora/shared';
 import { hasInventoryDomain } from '@homora/integrations';
+import type { ResourceType, ResourceLink } from '@homora/integrations';
 
 export class ResourceLinkError extends Error {
   constructor(readonly code: 'service-not-found' | 'integration-not-found' | 'invalid-data') {

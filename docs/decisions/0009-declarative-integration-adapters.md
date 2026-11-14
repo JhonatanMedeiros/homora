@@ -5,8 +5,8 @@
 ## Context
 
 Adding an integration meant editing many places by hand: the adapter, the registry,
-two hard-coded type enums (`input-schemas.ts`, `managed-proposals.ts`), the stored
-configuration schema and per-type quirks in `integration-connections.ts`, the frontend
+two hard-coded type enums (`input-schemas.ts`, `proposals/managed-proposals.ts`), the stored
+configuration schema and per-type quirks in `integrations/integration-connections.ts`, the frontend
 kind union, labels, form and data-to-text switch, and the brand icon list. Four of the five
 adapters (Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home) are the same shape: validate
 a URL and a few fields, make one authenticated GET, check and bound the JSON, return a few
@@ -41,7 +41,7 @@ run by **one reviewed interpreter** (`packages/integrations/src/backend-manifest
   `x-api-key` through a new optional `apiKey` request member. `x-api-key` was already on the
   transport's whitelist; no header name was added. The connection transport sends it only when set.
 - **Single source of truth.** The registry builds from `integrationDefinitions`. The type enums,
-  stored public-config keys, connection input and proposal schemas (`integration-fields.ts`), the
+  stored public-config keys, connection input and proposal schemas (`integrations/integration-fields.ts`), the
   connection form, the data-to-text rendering, the picker and the brand icon come from the same
   definitions. `GET /api/integrations/catalog` returns `registry.describe()`: fields and display,
   never requests, extraction rules or stored values. MCP discovery keeps `registry.list()`

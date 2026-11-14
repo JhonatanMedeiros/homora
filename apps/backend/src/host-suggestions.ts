@@ -1,10 +1,11 @@
 import { isIP } from 'node:net';
 import { noopLog, type Log } from './logger.js';
 import type { DatabaseSync } from 'node:sqlite';
-import type { GuestType, HostLink, Service } from '@homora/shared';
+import type { HostLink, Service } from '@homora/shared';
 import { hasInventoryDomain } from '@homora/integrations';
 import { authorizeDestination } from './network-policy.js';
 import type { HostGuestAddresses, HostInventoryData } from '@homora/integrations';
+import type { GuestType } from '@homora/integrations';
 
 /** Independent kinds of evidence. A name match is deliberately not one of them. */
 export type EvidenceKind = 'config-address' | 'guest-agent' | 'docker-source';

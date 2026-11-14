@@ -3,7 +3,7 @@ import type { HostLink, Service } from '@homora/shared';
 import { byPosition, isPrivateHost, type ServiceGroup, type ServiceStatus } from '@/lib/services';
 import { compareText, t } from '@/i18n';
 import type { PageRow } from '@/hooks/use-pages';
-import { useServiceOrdering } from '@/hooks/use-service-ordering';
+import { useServiceOrdering } from '@/features/dashboard/use-service-ordering';
 
 const collator = compareText;
 const json = { 'Content-Type': 'application/json' };

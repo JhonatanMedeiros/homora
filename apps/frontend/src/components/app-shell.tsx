@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { initials, type Profile } from '@/features/account/account-model';
-import { HomeSearchField } from '@/components/home-search-field';
+import { HomeSearchField } from '@/features/dashboard/home-search-field';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';

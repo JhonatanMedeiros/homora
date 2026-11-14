@@ -1,4 +1,3 @@
-import type { ResourceLink } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -11,6 +10,7 @@ import type { CardRef } from '@/hooks/use-resource-inventory';
 import { sameUrl } from '@homora/integrations/resources/client';
 import { t } from '@/i18n';
 import { MANUAL, NEW_GROUP, problem, type Row } from './resource-discovery-model';
+import type { ResourceLink } from '@homora/integrations';
 
 export function ResourceDiscoveryRow({
   row,

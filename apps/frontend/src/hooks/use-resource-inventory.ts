@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { IntegrationResource, ResourceLink } from '@homora/shared';
 import { apiError, t } from '@/i18n';
 import { parseInventory, parseLinks } from '@homora/integrations/resources/client';
 import type { CardRef, GroupRef } from '@/features/connections/connection-model';
+import type { IntegrationResource, ResourceLink } from '@homora/integrations';
 
 export type { CardRef, GroupRef } from '@/features/connections/connection-model';
 export type InventoryState =

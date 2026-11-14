@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { AlertsBell } from '@/components/alerts-bell';
-import { requestProblemsView } from '@/lib/home-intent';
+import { requestProblemsView } from '@/features/dashboard/home-intent';
 import { useNavigate } from 'react-router';
 import { AppShell } from '@/components/app-shell';
 import { CommandPalette } from '@/components/command-palette';
@@ -12,7 +12,7 @@ import { useAppearance } from '@/hooks/use-appearance';
 import { useCustomCss } from '@/hooks/use-custom-css';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
-import { useViewPreferences } from '@/hooks/use-view-preferences';
+import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
 import { tabPath, type Tab } from '@/components/app-nav';
 import { t } from '@/i18n';
 import { Button } from '@/components/ui/button';

@@ -1,6 +1,6 @@
 import { UPTIME_RANGES } from '@homora/shared';
 import { Switch } from '@/components/ui/switch';
-import { useViewPreferences } from '@/hooks/use-view-preferences';
+import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
 import { t } from '@/i18n';
 import { PagesSettings } from './pages-settings';
 import { Segmented } from './segmented';

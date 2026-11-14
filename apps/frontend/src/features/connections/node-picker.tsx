@@ -1,7 +1,7 @@
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { Input } from '@/components/ui/input';
 import { t } from '@/i18n';
-import { useHostNodeOptions } from '@/hooks/use-host-node-options';
+import { useHostNodeOptions } from '@/features/hosts/use-host-node-options';
 
 type Props = { id: string; connectionId: number; value: string; onChange: (value: string) => void };
 

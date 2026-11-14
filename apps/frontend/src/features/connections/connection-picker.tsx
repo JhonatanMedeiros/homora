@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { integrationDefinitions } from '@homora/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConnectionMark } from './connection-mark';
 import { labels, type Kind } from './connection-model';
 import { t, tOr } from '@/i18n';
+import { integrationDefinitions } from '@homora/integrations';
 
 type Props = {
   /** Connections already registered, by type. */

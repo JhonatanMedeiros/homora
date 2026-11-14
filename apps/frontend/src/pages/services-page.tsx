@@ -1,68 +1,65 @@
 import { PageWidgets } from '@/components/page-widgets';
-import { toast } from 'sonner';
 import { useAcknowledgements } from '@/hooks/use-acknowledgements';
 import { isQuiet } from '@/lib/acknowledgements';
-import { onProblemsRequest, takeProblemsRequest } from '@/lib/home-intent';
+import { onProblemsRequest, takeProblemsRequest } from '@/features/dashboard/home-intent';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import type { Service } from '@homora/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useDependencies } from '@/hooks/use-dependencies';
-import { dependentsOf } from '@/lib/dependencies';
-import { hostLabel } from '@/lib/hosts';
-import { useViewPreferences } from '@/hooks/use-view-preferences';
-import { useUptime } from '@/hooks/use-uptime';
+import { useDependencies } from '@/features/hosts/use-dependencies';
+import { dependentsOf } from '@/features/hosts/dependencies';
+import { hostLabel } from '@/features/hosts/hosts';
+import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
+import { useUptime } from '@/features/uptime/use-uptime';
 import { PageTabs } from '@/components/page-tabs';
-import { CategoryFilter } from '@/components/category-filter';
-import { StatusFilter } from '@/components/status-filter';
+import { CategoryFilter } from '@/features/dashboard/category-filter';
+import { StatusFilter } from '@/features/dashboard/status-filter';
 import { StatusBanner } from '@/components/status-banner';
-import { setHomeSearch, useHomeSearch } from '@/lib/home-search';
+import { setHomeSearch, useHomeSearch } from '@/features/dashboard/home-search';
 import { PageTabMenu } from '@/components/page-tab-menu';
-import { PinnedRow } from '@/components/pinned-row';
-import { HomeRail } from '@/components/home-rail';
+import { PinnedRow } from '@/features/dashboard/pinned-row';
+import { HomeRail } from '@/features/dashboard/home-rail';
 import { useProbeList } from '@/hooks/use-probes';
-import { describeStatus } from '@/lib/status-text';
+import { deriveHomeProbes } from '@/features/dashboard/home-probes-model';
 import { useMinWidth } from '@/hooks/use-min-width';
 import { ServiceDrawer } from '@/components/service-drawer';
-import { ProbableCauses } from '@/components/probable-causes';
-import { HomeProbes } from '@/components/home-probes';
+import { ProbableCauses } from '@/features/uptime/probable-causes';
+import { HomeProbes } from '@/features/dashboard/home-probes';
 import { ServiceOptionsSheet } from '@/components/service-options-sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTags } from '@/hooks/use-tags';
 import { useStatusOverview } from '@/hooks/use-status-overview';
-import { activeWindows, useMaintenance } from '@/hooks/use-maintenance';
+import { activeWindows, useMaintenance } from '@/features/uptime/use-maintenance';
 import { useNow } from '@/hooks/use-now';
-import {
-  matchesStatusFilter,
-  statusBucket,
-  STATUS_FILTERS,
-  type StatusFilter as StatusFilterValue,
-} from '@/lib/status-filter';
+import { type StatusFilter as StatusFilterValue } from '@/features/dashboard/status-filter-model';
 import { FormError } from '@/components/form-error';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { ServicesSkeleton } from '@/components/skeletons';
-import { ServiceGroups } from '@/components/service-groups';
-import { ServiceDashboardHeader } from '@/components/service-dashboard-header';
+import { ServiceGroups } from '@/features/dashboard/service-groups';
+import { ServiceDashboardHeader } from '@/features/dashboard/service-dashboard-header';
 import { useCardWidgets } from '@/hooks/use-card-widgets';
 import { useResourceLinks } from '@/hooks/use-resource-links';
 import { ServicePageOverlays } from '@/components/service-page-overlays';
 import { ServicePageEditor } from '@/components/service-page-editor';
 import { useServiceEditor } from '@/hooks/use-service-editor';
-import { useServiceGroups } from '@/hooks/use-service-groups';
-import { useServicePageModel } from '@/hooks/use-service-page-model';
-import { useServicePageFocus, type FocusRequest } from '@/hooks/use-service-page-focus';
+import { useServiceGroups } from '@/features/dashboard/use-service-groups';
+import { useServicePageModel } from '@/features/dashboard/use-service-page-model';
+import {
+  useServicePageFocus,
+  type FocusRequest,
+} from '@/features/dashboard/use-service-page-focus';
 import { ServicesEmpty } from '@/components/services-empty';
-import { OrganizeToggle } from '@/components/service-view-toolbar';
+import { OrganizeToggle } from '@/features/dashboard/service-view-toolbar';
 import type { useServices } from '@/hooks/use-services';
-import { useServicePageActions } from '@/hooks/use-service-page-actions';
+import { useServicePageActions } from '@/features/dashboard/use-service-page-actions';
 import { t } from '@/i18n';
+import { useHomeAttentionActions } from '@/features/dashboard/use-home-attention-actions';
 
 const HostView = lazy(() =>
-  import('@/components/host-view').then((module) => ({ default: module.HostView })),
+  import('@/features/hosts/host-view').then((module) => ({ default: module.HostView })),
 );
 const HostMap = lazy(() =>
-  import('@/components/host-map').then((module) => ({ default: module.HostMap })),
+  import('@/features/hosts/host-map').then((module) => ({ default: module.HostMap })),
 );
 
 /** Main screen: service groups with status, search, edit, and Organize mode. */
@@ -77,7 +74,7 @@ type Props = {
   onFocusHandled?: () => void;
 };
 
-export type { FocusRequest } from '@/hooks/use-service-page-focus';
+export type { FocusRequest } from '@/features/dashboard/use-service-page-focus';
 
 export function ServicesPage({
   data,
@@ -245,77 +242,19 @@ export function ServicesPage({
           .map((group) => ({ ...group, items: group.items.filter((item) => item.pinned) }))
           .filter((group) => group.items.length > 0)
       : ordered;
-  async function togglePinned(service: Service) {
-    const next = !service.pinned;
-    if (!(await data.pin(service.id, next))) {
-      toast.error(t('pinned.failed'));
-      return;
-    }
-    toast(t(next ? 'pinned.added' : 'pinned.removed', { name: service.name }), {
-      duration: 8000,
-      action: {
-        label: t('common.undo'),
-        onClick: () =>
-          void data.pin(service.id, !next).then((ok) => {
-            if (!ok) toast.error(t('pinned.failed'));
-          }),
-      },
+  const { togglePinned, acknowledge } = useHomeAttentionActions({ data, attention, overview });
+  const { allProbes, probeViews, countsWithProbes, downProbes, probeIds, probeStatusItems } =
+    deriveHomeProbes({
+      probes: probeList.probes,
+      statuses,
+      monitorSettings: overview?.settings,
+      browsing: !organizing && !hostView,
+      query,
+      statusFilter,
+      statusCounts,
     });
-  }
-  // Probes are monitors without a card: they get their own Home section and join "Needs attention".
-  const probeNeedle = !organizing && !hostView ? query.trim().toLowerCase() : '';
-  const allProbes = (probeList.probes ?? []).map((probe) => {
-    const view = describeStatus(statuses[probe.id], false, { checkType: probe.checkType });
-    return {
-      id: probe.id,
-      name: probe.name,
-      address: probe.address,
-      bucket: statusBucket(statuses[probe.id], overview?.settings[probe.id], false),
-      state: view.state,
-      label: view.label,
-      meta: view.meta,
-    };
-  });
-  // Search and the status views apply to probes too; groups, tags and pages do not.
-  const probeViews = allProbes.filter(
-    (probe) =>
-      (!probeNeedle ||
-        probe.name.toLowerCase().includes(probeNeedle) ||
-        probe.address.toLowerCase().includes(probeNeedle)) &&
-      matchesStatusFilter(!organizing && !hostView ? statusFilter : 'all', probe.bucket),
-  );
-  const countsWithProbes = Object.fromEntries(
-    STATUS_FILTERS.map((filter) => [
-      filter,
-      statusCounts[filter] +
-        allProbes.filter((probe) => matchesStatusFilter(filter, probe.bucket)).length,
-    ]),
-  ) as typeof statusCounts;
-  const downProbes = allProbes
-    .filter((probe) => probe.state === 'unavailable')
-    .map((probe) => ({ id: probe.id, name: probe.name }) as Service);
-  const probeIds = new Set(downProbes.map((probe) => probe.id));
-  const probeStatusItems = allProbes.map((probe) => ({ id: probe.id, name: probe.name }));
   const downNow = [...services.filter(isDown), ...downProbes];
   const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
-  async function acknowledge(members: Service[], minutes?: number) {
-    const ids = members.map((member) => member.id);
-    const incidents = Object.fromEntries(ids.map((id) => [id, overview?.open[id]?.id]));
-    if (!(await attention.acknowledge(ids, incidents, minutes))) {
-      toast.error(t('attention.failed'));
-      return;
-    }
-    toast(t(minutes ? 'attention.muted' : 'attention.done', { count: ids.length }), {
-      duration: 8000,
-      action: {
-        label: t('common.undo'),
-        onClick: () =>
-          void attention.clear(ids).then((ok) => {
-            if (!ok) toast.error(t('attention.clearFailed'));
-          }),
-      },
-    });
-  }
   const actions = useServicePageActions({
     data,
     sortedIn,

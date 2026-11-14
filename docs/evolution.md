@@ -1405,7 +1405,7 @@ See [ADR 0005](decisions/0005-status-transition-notifications.md).
 
 ## Appearance, custom CSS and pages (2026-11-12)
 
-- Issue #97 in four phases ([ADR 0009](decisions/0009-appearance-and-pages.md)): accent color, gradients and card translucency with a contrast check in both themes; an optional background image processed with `sharp`; custom CSS served same-origin with a safe mode (`?safe=1`, `pnpm css:reset`); and pages as tabs on the Home (migration `0023`).
+- Issue #97 in four phases ([ADR 0023](decisions/0023-appearance-and-pages.md)): accent color, gradients and card translucency with a contrast check in both themes; an optional background image processed with `sharp`; custom CSS served same-origin with a safe mode (`?safe=1`, `pnpm css:reset`); and pages as tabs on the Home (migration `0023`).
 - Export now writes version 2 (pages and a page per group) and still reads version 1. It also includes appearance and custom CSS, which import deliberately does not read.
 - Validation: `pnpm check` and `pnpm build` on every phase. Tests cover the contrast function, image processing, CSS validation, the routes (auth, audit, limits), the migration, import and export with pages, the settings screens, the tab strip and the digit shortcuts.
 - Not verified: any behaviour in a real browser (rendering of gradients, blur and the background image, the look of the tab strip on phones, drag and drop, keyboard focus order), screen readers, real HTTP proxies in front of the 2 MB upload, and a CSP (none is shipped).
@@ -1639,7 +1639,7 @@ See [ADR 0005](decisions/0005-status-transition-notifications.md).
 
 ## Uptime status: incidents, banner and degraded state (2026-11-12)
 
-Phase 1 of the uptime redesign (see [ADR 0011](decisions/0011-incidents-and-alert-thresholds.md)).
+Phase 1 of the uptime redesign (see [ADR 0024](decisions/0024-incidents-and-alert-thresholds.md)).
 
 - [x] Incident log derived from checks, rebuilt from history on first start; `GET /api/services/:id/incidents`.
 - [x] Per-service failure/recovery thresholds and degraded latency, applied to incidents and alerts (anti-flapping).
@@ -1951,3 +1951,12 @@ the HTTP and stdio transports were not manually verified.
 - Where there is no side rail (below 1,280 px and on phones) the Probes section sits right under "Needs attention" instead of at the bottom; with the rail the list stays in the rail and the duplicate section is gone.
 - The bell says "Probe unavailable" / "Probe recovered" for probe events.
 - Validation: `pnpm check` (1,751 tests) and `pnpm build` passed; checked in Chromium at 1,500, 1,024 and 390 px with synthetic data (see the follow-up message in the PR).
+
+### Architecture review follow-ups
+
+- Backend: grouped the flat `apps/backend/src` files into `mcp/`, `proposals/`, `agents/`, `notifications/` and `integrations/` (file moves and import rewrites only; no behaviour, API, MCP tool or migration changed). `mcp-server.ts` stays at the root because `dist/mcp-server.js` is the stdio path users configure. The new folders have no ESLint-enforced entry point yet; only `monitoring/`, `transfer/` and `discovery/` do.
+- `@homora/shared` no longer re-exports `@homora/integrations` or `@homora/icons`; consumers import them directly. `shared` still imports the guest-name helpers of the integration SDK in `hosts.ts` and `BRAND_ICON_NAMES` from icons in `services.ts`, so the dependency is narrower but not gone.
+- Frontend: moved the host map and dependencies (`features/hosts`), uptime, maintenance and failure causes (`features/uptime`) and the Home's cards, groups, filters and organize mode (`features/dashboard`) out of `components/`, `hooks/` and `lib/`. `lib/status-filter.ts` became `status-filter-model.ts` to avoid a name clash with the component. Split `service-detail-page.tsx` (806 to about 550 lines) and `services-page.tsx` (790 to about 730 lines): the detail panels moved to `features/uptime/detail-parts.tsx`, the probe derivation to `features/dashboard/home-probes-model.ts` (4 new tests) and the pin/acknowledge actions to `use-home-attention-actions.ts`. `services-page.tsx` still composes most Home state and remains the next candidate.
+- Docs: renumbered the duplicated ADRs (`0009-appearance-and-pages` is now 0023, `0011-incidents-and-alert-thresholds` is now 0024; the integration ADRs 0009 and 0011 keep their numbers because `AGENTS.md` and many documents cite them). `docs/architecture.md` dropped the per-component frontend inventory in favour of a module map and now shows monitoring and notifications in the diagram.
+- Not done: moving the monitor scheduler out of the API process. It was conditional on monitoring volume growing, and `monitoring/index.ts` already isolates it.
+- Validation: `pnpm check` (1,765 application tests, 31 script tests; 1,761 before) and `pnpm build` passed. No browser or live-service check.

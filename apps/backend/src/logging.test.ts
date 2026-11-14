@@ -6,7 +6,7 @@ import { createDatabase, getSqliteHandle, MigrationHistoryError } from '@homora/
 import { createApp, HEALTH_PATH } from './app.js';
 import { loadConfig } from './config.js';
 import { createLogger, parseLogLevel, type LogLevel } from './logger.js';
-import { createNotifications } from './notifications.js';
+import { createNotifications } from './notifications/index.js';
 import * as network from './network-request.js';
 import { createVault } from './vault.js';
 import { createTestSession } from './test-auth.js';

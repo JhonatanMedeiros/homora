@@ -16,18 +16,17 @@ import {
   isCheckUrl,
   isExpectedStatus,
   MAINTENANCE_NOTE_MAX,
-  isNodeName,
-  isVmid,
   THRESHOLD_MAX,
 } from '@homora/shared';
 import { z } from 'zod';
 import { MAX_GROUP_COLUMNS } from './group-limits.js';
 import { LEGACY_WIDGET_SOURCES } from '@homora/integrations';
-import { AGENT_SCOPES } from './agent-scopes.js';
+import { AGENT_SCOPES } from './agents/agent-scopes.js';
 import {
   integrationTypeSchema as integrationType,
   publicFieldShape,
-} from './integration-fields.js';
+} from './integrations/integration-fields.js';
+import { isNodeName, isVmid } from '@homora/integrations';
 
 const boundedText = (max: number) => z.string().max(max);
 

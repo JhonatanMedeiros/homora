@@ -1,12 +1,12 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { RESOURCE_ID_PATTERN } from '@homora/shared';
 import { createResourceLinks, ResourceLinkError } from '../resource-links.js';
 import { parseId } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
 import type { createAuth } from '../auth.js';
 import type { AuditLog } from '../audit.js';
+import { RESOURCE_ID_PATTERN } from '@homora/integrations';
 
 const httpUrl = z
   .string()

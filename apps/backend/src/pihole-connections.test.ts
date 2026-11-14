@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createDatabase } from '@homora/db';
 import { createVault } from './vault.js';
-import { createIntegrationConnections } from './integration-connections.js';
+import { createIntegrationConnections } from './integrations/integration-connections.js';
 import * as network from './network-request.js';
 
 afterEach(() => vi.restoreAllMocks());

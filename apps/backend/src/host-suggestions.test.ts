@@ -8,9 +8,9 @@ import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createTestSession } from './test-auth.js';
 import { createVault } from './vault.js';
 import { createApp } from './app.js';
-import { createMcp } from './mcp.js';
-import { createIntegrationConnections } from './integration-connections.js';
-import { createProposalService } from './proposals.js';
+import { createMcp } from './mcp/index.js';
+import { createIntegrationConnections } from './integrations/integration-connections.js';
+import { createProposalService } from './proposals/index.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import {
   agentAddresses,
