@@ -553,6 +553,24 @@ appears monitored without being checked, and reference migration benchmark can b
 - Not validated: Docker Swarm, Podman, rootless Docker, remote daemon hosts, arm64 proxy image,
   automatic card updates on label changes (discovery is strictly on-demand), Traefik/Dashy labels.
 
+### Docker discovery batch review (2026-11-14)
+
+- Scope (issue #222, single PR): a review dialog replaces direct import for local and remote
+  sources. It lets the user edit name, group and address of selected suggestions, shows per-row
+  status (will be created, already exists, not valid), keeps private monitoring as a separate
+  explicit choice, and reports a result for every selected container after confirmation.
+- API (additive): `POST .../import` accepts `overrides` (name, group, url by container ID),
+  `preview` (evaluates without persisting) and `fingerprint` (rejects with `discovery-stale` if the
+  current evaluation differs from the reviewed one); responses include `results`. Listings add
+  `skipped`, `skippedTotal`, `rejected` and an address `note` (`loopback`, `internal-name`).
+  ADR 0003 has an amendment. Containers without an address label are informational only; no
+  address or port is inferred and the agent's collected data is unchanged.
+- Also fixed: a container rejected by validation no longer leaves an empty group in the import.
+- Validation: unit tests for parsing, overrides, notes and rejections, local and push HTTP tests for
+  preview, stale fingerprint, version and per-item results, and frontend tests for the dialog.
+  Not validated: a live Docker daemon, keyboard and screen reader use in real browsers, and
+  narrow-screen rendering beyond layout classes (to be checked manually).
+
 ### R1 Log — Top Bar (2026-11-10)
 
 - Scope: optional banner on the homepage displaying local date, time, and Proxmox cluster CPU,

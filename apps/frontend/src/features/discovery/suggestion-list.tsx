@@ -77,6 +77,11 @@ export function SuggestionList({
                     {t('discovery.container', { name: item.container })}
                   </small>
                 )}
+                {item.note && (
+                  <small className="text-muted-foreground">
+                    {t(`discovery.note.${item.note}`)}
+                  </small>
+                )}
               </Label>
               <Badge variant={item.isNew ? 'success' : 'secondary'}>
                 {item.isNew ? t('transfer.statusNew') : t('transfer.statusDuplicate')}

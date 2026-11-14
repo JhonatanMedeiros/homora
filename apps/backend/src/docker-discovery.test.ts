@@ -258,3 +258,93 @@ it('returns stable error when Docker daemon fails to respond', async () => {
     await done();
   }
 });
+
+it('lists skipped and rejected containers and flags addresses that a browser may not open', () => {
+  const all: DockerContainer[] = [
+    ...containers,
+    { Id: id(6), Names: ['/local'], Labels: { 'homora.url': 'http://localhost:8080' } },
+    { Id: id(7), Names: ['/web'], Labels: { 'homora.url': 'http://web:8080' } },
+  ];
+  const { entries, skipped, skippedTotal, rejected } = parseDocker(all);
+  expect(skipped).toEqual([{ id: id(3), container: 'db' }]);
+  expect(skippedTotal).toBe(1);
+  expect(rejected).toEqual([{ id: id(4), container: 'ruim', code: expect.any(String) }]);
+  expect(entries.find((e) => e.id === id(6))?.note).toBe('loopback');
+  expect(entries.find((e) => e.id === id(7))?.note).toBe('internal-name');
+  expect(entries.find((e) => e.id === id(1))?.note).toBeUndefined();
+  // A selected review does not list informational containers
+  expect(parseDocker(all, new Set([id(1)])).skipped).toEqual([]);
+});
+
+it('applies review edits through the same validation as labels', () => {
+  const edits = new Map([
+    [id(1), { name: 'Cinema', group: 'Home', url: 'http://192.168.1.10:9000' }],
+    [id(2), { url: 'javascript:alert(1)' }],
+  ]);
+  const { parsed, entries, rejected } = parseDocker(containers, new Set([id(1), id(2)]), edits);
+  expect(parsed.document.groups).toEqual([
+    expect.objectContaining({
+      name: 'Home',
+      services: [expect.objectContaining({ name: 'Cinema', url: 'http://192.168.1.10:9000/' })],
+    }),
+  ]);
+  expect(entries.map((e) => e.id)).toEqual([id(1)]);
+  expect(rejected.map((r) => r.id)).toEqual([id(2)]);
+  // An edit can supply an address for a container that has no label
+  expect(
+    parseDocker(containers, new Set([id(3)]), new Map([[id(3), { url: 'http://db.lan' }]])).entries,
+  ).toHaveLength(1);
+});
+
+it('previews with edits without creating, reports each result, and rejects stale confirmations', async () => {
+  const live = [...containers];
+  const { send, done } = await setup({ list: async () => live });
+  try {
+    const found = (await send('GET', '/api/discovery')).json();
+    expect(found.skipped).toEqual([{ id: id(3), container: 'db' }]);
+    expect(found.rejected).toHaveLength(1);
+    const body = {
+      ids: [id(1), id(2), id(4), id(9)],
+      overrides: { [id(1)]: { name: 'Cinema' }, [id(2)]: { url: 'ftp://nope' } },
+      expectedVersion: found.version,
+    };
+    const preview = (
+      await send('POST', '/api/discovery/import', { ...body, preview: true })
+    ).json();
+    expect(preview.results.map((r: { id: string; status: string }) => [r.id, r.status])).toEqual([
+      [id(1), 'created'],
+      [id(2), 'rejected'],
+      [id(4), 'rejected'],
+      [id(9), 'missing'],
+    ]);
+    expect(preview.plan.services[0].name).toBe('Cinema');
+    expect((await send('GET', '/api/services')).json()).toEqual([]);
+
+    // Labels changed after review: the reviewed data is not applied
+    live[0] = {
+      ...live[0],
+      Labels: { ...(live[0].Labels ?? {}), 'homora.url': 'http://changed.lan' },
+    };
+    const stale = await send('POST', '/api/discovery/import', {
+      ...body,
+      fingerprint: preview.fingerprint,
+    });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json().code).toBe('discovery-stale');
+    expect((await send('GET', '/api/services')).json()).toEqual([]);
+
+    live[0] = containers[0];
+    const applied = await send('POST', '/api/discovery/import', {
+      ...body,
+      fingerprint: preview.fingerprint,
+    });
+    expect(applied.json().created).toBe(1);
+    expect(applied.json().results[0]).toMatchObject({ id: id(1), status: 'created' });
+    expect((await send('GET', '/api/services')).json()[0].name).toBe('Cinema');
+    // Importing again reports the duplicate instead of silently ignoring it
+    const again = await send('POST', '/api/discovery/import', { ids: [id(1)] });
+    expect(again.json().results[0].status).toBe('duplicate');
+  } finally {
+    await done();
+  }
+});

@@ -1,5 +1,5 @@
-import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
+import { useDiscoveryReview } from '@/hooks/use-discovery-review';
 import { apiError, t } from '@/i18n';
 import {
   localDiscoverySuggestions,
@@ -11,8 +11,6 @@ import {
 export function useLocalDiscovery(onImported: () => void | Promise<void>) {
   const [state, setState] = useState<LocalDiscoveryState>({ status: 'loading' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [allowPrivate, setAllowPrivate] = useState(false);
-  const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(true);
   const [reload, setReload] = useState(0);
 
@@ -48,56 +46,38 @@ export function useLocalDiscovery(onImported: () => void | Promise<void>) {
 
   function rescan() {
     setBusy(true);
-    setMessage('');
     setReload((value) => value + 1);
   }
 
-  async function add() {
-    if (state.status !== 'ready' || selected.size === 0) return;
-    setBusy(true);
-    setMessage('');
-    try {
-      const response = await fetch('/api/discovery/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ids: [...selected],
-          keepPrivate: allowPrivate,
-          expectedVersion: state.found.version,
-        }),
-      });
-      const body: unknown = await response.json().catch(() => null);
-      if (!response.ok) {
-        const failure = apiError(body, t('discovery.failed'));
-        setMessage(failure);
-        toast.error(failure);
-        return;
-      }
-      const created = (body as { created?: number }).created ?? 0;
+  const review = useDiscoveryReview({
+    endpoint: '/api/discovery/import',
+    extra: {},
+    onDone: async () => {
       await onImported();
-      toast.success(t('discovery.added', { count: created }));
       setReload((value) => value + 1);
-    } catch {
-      setMessage(t('discovery.failed'));
-      toast.error(t('discovery.failed'));
-    } finally {
-      setBusy(false);
-    }
-  }
+    },
+  });
 
   const items = localDiscoverySuggestions(state);
+  function startReview() {
+    review.open(
+      items.flatMap((item) =>
+        item.id && selected.has(item.id)
+          ? [{ ...item, id: item.id, container: item.container }]
+          : [],
+      ),
+    );
+  }
   const newCount = items.filter((item) => item.isNew).length;
 
   return {
     state,
     selected,
     setSelected,
-    allowPrivate,
-    setAllowPrivate,
-    message,
     busy,
     rescan,
-    add,
+    review,
+    startReview,
     items,
     newCount,
   };
