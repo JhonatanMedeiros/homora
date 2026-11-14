@@ -1,6 +1,5 @@
 import { registerPageWidgetRoutes } from './routes/page-widgets.js';
 import Fastify, { LogController, type FastifyBaseLogger, type FastifyServerOptions } from 'fastify';
-import type { Service } from '@homora/shared';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
@@ -11,6 +10,7 @@ import {
   createIncidentStore,
   createRollupStore,
   createMaintenanceStore,
+  createMonitoringSource,
 } from './monitoring/index.js';
 import { registerConnectionRoutes } from './routes/connections.js';
 import { createProposalService } from './proposals/index.js';
@@ -124,19 +124,9 @@ export function createApp(
   const tagStore = createTagStore(sqlite);
   // An old backend process may have stopped without clearing its last observation.
   observations.clear();
+  const monitoringSource = createMonitoringSource(sqlite);
   const serviceMonitor = createServiceMonitor(
-    async () =>
-      (
-        sqlite
-          .prepare(
-            'SELECT id,name,url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets ORDER BY id',
-          )
-          .all() as unknown as Service[]
-      ).map((service) => ({
-        ...service,
-        allowPrivate: Boolean(service.allowPrivate),
-        checkInsecure: Boolean(service.checkInsecure),
-      })),
+    async () => monitoringSource.list(),
     undefined,
     undefined,
     (rows, states) => {
@@ -184,13 +174,7 @@ export function createApp(
   }
   const publicStatus = createPublicStatus(sqlite, observations);
   try {
-    incidents.rebuildFromHistory(
-      sqlite
-        .prepare(
-          'SELECT id,url,allow_private AS allowPrivate,check_insecure AS checkInsecure,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_path AS checkPath,check_url AS checkUrl,check_match AS checkMatch FROM monitor_targets',
-        )
-        .all() as unknown as Service[],
-    );
+    incidents.rebuildFromHistory(monitoringSource.list());
   } catch (error) {
     // Incidents are auxiliary: the dashboard stays usable without them.
     log.error({ err: error }, 'could not rebuild incidents from history');
