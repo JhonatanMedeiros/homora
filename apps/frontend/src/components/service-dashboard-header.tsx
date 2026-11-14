@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { HostImpactBanner } from '@/components/host-impact-banner';
 import { OrganizePanel } from '@/components/organize-panel';
 import { TopBar } from '@/components/top-bar';
-import { ServiceViewToolbar } from '@/components/service-view-toolbar';
+import { OrganizeToggle, ServiceViewToolbar } from '@/components/service-view-toolbar';
 import type { ComponentProps } from 'react';
 
 type ToolbarProps = ComponentProps<typeof ServiceViewToolbar> & {
@@ -51,7 +51,17 @@ export function ServiceDashboardHeader({
       {!compact && (
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           {stateFilter ?? <span />}
-          {serviceCount > 0 && <ServiceViewToolbar {...toolbar} />}
+          {serviceCount > 0 ? (
+            <ServiceViewToolbar {...toolbar} />
+          ) : (
+            // Nothing to arrange yet, but groups and the first services are made in Organize.
+            toolbar.onToggleOrganizing && (
+              <OrganizeToggle
+                organizing={toolbar.organizing}
+                onToggle={toolbar.onToggleOrganizing}
+              />
+            )
+          )}
         </div>
       )}
       {showImpact && <HostImpactBanner {...impact} />}

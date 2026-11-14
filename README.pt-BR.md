@@ -169,8 +169,8 @@ card ao primeiro alerta.
   </tr>
   <tr>
     <td width="50%">
-      <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Modo organizar com alças de arrastar e controles de mover"></a>
-      <br><b>Modo organizar.</b> Arraste linhas, use as setas ou mova um serviço para outro grupo.
+      <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Modo organizar com Adicionar serviço, menu da linha para editar, remover ou mover, e alças de arrastar"></a>
+      <br><b>Modo organizar.</b> Adicione, edite, remova, reordene ou mova serviços, tudo na Home.
     </td>
     <td width="50%">
       <a href="docs/screenshots/settings-appearance.png"><img src="docs/screenshots/settings-appearance.png" alt="Configurações de aparência com cores de destaque e fundos de página"></a>

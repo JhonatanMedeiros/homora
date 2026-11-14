@@ -84,7 +84,7 @@ export const en = {
   'group.columnsCount': '{count} columns',
   'group.columnsCount_one': '{count} column',
   'organize.region': 'Organize mode',
-  'organize.help': 'Drag the rows, use the arrows, or open ⋯ to move a service to another group.',
+  'organize.help': 'Drag the rows, use the arrows, or open ⋯ to edit, remove or move a service.',
   'organize.bar': 'Organizing',
   'organize.finish': 'Done organizing',
   'organize.cancelNew': 'Cancel',
@@ -199,7 +199,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'group.columnsCount_one': '{count} coluna',
   'organize.region': 'Modo organizar',
   'organize.help':
-    'Arraste as linhas, use as setas ou abra ⋯ para mover um serviço para outro grupo.',
+    'Arraste as linhas, use as setas ou abra ⋯ para editar, remover ou mover um serviço.',
   'organize.bar': 'Organizando',
   'organize.finish': 'Concluir organização',
   'organize.cancelNew': 'Cancelar',

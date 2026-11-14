@@ -395,3 +395,22 @@ it('undoes a move to another group, restoring group and order', async () => {
   expect(puts.map((call) => JSON.parse(call.body ?? '{}').category)).toEqual(['Infra', 'Casa']);
   window.history.replaceState(null, '', '/');
 });
+
+it('offers Organize on a Home with no services, to add the first service or group', async () => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url === '/api/auth/status')
+        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+      return { ok: true, json: async () => [] };
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  expect(screen.getByRole('button', { name: 'Novo grupo' })).toBeTruthy();
+  expect(screen.getAllByRole('button', { name: /Adicionar serviço/ }).length).toBeGreaterThan(0);
+  expect(screen.getByRole('button', { name: 'Concluir' })).toBeTruthy();
+});

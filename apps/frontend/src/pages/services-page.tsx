@@ -47,6 +47,7 @@ import { useServiceGroups } from '@/hooks/use-service-groups';
 import { useServicePageModel } from '@/hooks/use-service-page-model';
 import { useServicePageFocus, type FocusRequest } from '@/hooks/use-service-page-focus';
 import { ServicesEmpty } from '@/components/services-empty';
+import { OrganizeToggle } from '@/components/service-view-toolbar';
 import type { useServices } from '@/hooks/use-services';
 import { useServicePageActions } from '@/hooks/use-service-page-actions';
 import { t } from '@/i18n';
@@ -492,6 +493,9 @@ export function ServicesPage({
             }
           />
         </div>
+      )}
+      {!organizing && mobile && services.length === 0 && (
+        <OrganizeToggle organizing={organizing} onToggle={toolbar.onToggleOrganizing} />
       )}
       {!(mobile && !organizing) && categoryFilter}
       {mapView && services.length > 0 && (
