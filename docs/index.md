@@ -28,6 +28,25 @@ features:
     linkText: Explore integrations
 ---
 
+## See Homora in action
+
+The examples below use synthetic data from a demo installation.
+
+<div class="home-gallery">
+<figure>
+
+![Service details showing uptime, latency and incidents](screenshots/service-detail.png)
+
+<figcaption>Investigate service health and incidents. <a href="/user-guide/services-and-monitoring.html">Explore monitoring</a></figcaption>
+</figure>
+<figure>
+
+![The integrations page showing connected services](screenshots/integrations.png)
+
+<figcaption>Bring information from your tools into Homora. <a href="/user-guide/integrations-and-widgets.html">Explore integrations</a></figcaption>
+</figure>
+</div>
+
 ## Start with what you need
 
 - **New to Homora?** Follow [your first steps](user-guide/getting-started.md) to install it and add a service.
