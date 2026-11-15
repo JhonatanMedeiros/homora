@@ -1,4 +1,6 @@
 node_modules
+# Release Please generates this file with its own Markdown formatting.
+CHANGELOG.md
 **/dist
 .turbo
 .idea
