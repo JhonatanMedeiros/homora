@@ -1,8 +1,7 @@
 # Integrations and widgets
 
-Integrations let Homora show live information from the tools you already run: how many VMs are up in Proxmox, what
-Jellyfin is streaming, how your DNS blocker is doing. They are **optional** and **read-only**: Homora queries them
-but never changes anything in them.
+Integrations show live information from the tools you already run, such as how many VMs are up in Proxmox or how your
+DNS blocker is doing. They are **optional** and **read-only**: Homora queries them and never changes anything in them.
 
 ![The Integrations page](../screenshots/integrations.png)
 
@@ -33,10 +32,11 @@ but never changes anything in them.
 | **Cloudflare**        | The number of zones and of active zones                                                 | Token with _Zone Read_, HTTPS                |
 | **Coolify**           | Applications and services; links them to cards and proposes cards for review            | Token with `read` only, HTTPS                |
 
-> **Experimental.** The integrations were validated with mocks and documented sample responses. Coolify (v4.7.5)
-> and Pi-hole have been partly checked against real installations. Expect rough edges and verify each connection in
-> your own environment. The authoritative table, with exact limits and requirements per integration, is the
-> [integration reference](../integrations.md#integration-status).
+::: warning Experimental
+The integrations were validated with mocks and documented sample responses. Coolify (v4.7.5) and Pi-hole were partly
+checked against real installations. Verify each connection in your own environment. The authoritative table, with
+exact limits and requirements, is the [integration reference](../integrations.md#integration-status).
+:::
 
 ## Add a connection
 
@@ -47,11 +47,11 @@ but never changes anything in them.
 4. If it uses a private certificate authority, paste the CA's **public** certificate (PEM). Never paste a private key.
 5. Choose **Save and test**, or open the connection's card later and choose **Test connection**.
 
-Each connection card shows whether the last test worked and, when it did not, a short reason (credentials rejected,
-service error, timeout). The page summary counts the connections that need attention. Homora tests only when you
-ask, and keeps the last result until you edit the connection.
+Each connection card shows whether the last test worked and, if not, a short reason (credentials rejected, service
+error, timeout). The page summary counts connections that need attention. Homora tests only when you ask and keeps
+the last result until you edit the connection.
 
-Good to know:
+### Good to know
 
 - Connections run from the **backend**, so the address must be reachable from where Homora runs. Inside a container,
   `localhost` is the container itself.
@@ -80,14 +80,12 @@ Page widgets live on a dashboard page, between the health banner and your groups
 
 1. On the dashboard, press the dashed **Add widget** tile.
 2. Pick a widget from the searchable gallery (Homora's own, and those offered by your connections).
-3. Set its options. A **clock** offers 12 or 24-hour format, seconds, the date, and any time zone, with a live preview.
-   Name and page are collapsed under the options.
+3. Set its options. A **clock** offers 12 or 24-hour format, seconds, the date and any time zone, with a live preview.
 4. Save.
 
-Each widget has a **⋯** menu to edit it (the type cannot change), move it earlier or later, move it to another page or
-remove it with a confirmation. On a touch screen the menu is always visible, and widgets can also be dragged to reorder.
-Exports include **clocks**; connected widgets appear as skipped in the import preview and must be recreated with a
-connection you choose.
+Each widget has a **⋯** menu to edit it (the type cannot change), move it, or remove it after confirmation. On a touch
+screen the menu is always visible, and you can drag widgets to reorder them. Exports include **clocks**; connected
+widgets appear as skipped in the import preview and must be recreated with a connection you choose.
 
 ## The top bar
 
@@ -97,10 +95,10 @@ time zone. The choice is saved in the browser only.
 
 ## Docker discovery
 
-Docker discovery lives on the Integrations page too. It suggests cards from container labels, on this host or from
-remote hosts through a small agent. See [Docker discovery](docker-discovery.md).
+Docker discovery also lives on the Integrations page. It suggests cards from container labels, on this host or on
+remote hosts. See [Docker discovery](docker-discovery.md).
 
 ## Writing your own
 
-Integrations are declarative where possible and fully tested with fixtures. If your favorite tool is missing, read
-[Writing an integration adapter](../adapters.md); the guide applies equally to people and AI agents.
+If your tool is missing, read [Writing an integration adapter](../adapters.md). The guide applies equally to people and
+AI agents.

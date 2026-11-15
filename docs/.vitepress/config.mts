@@ -1,4 +1,19 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitepress';
+
+// Decision records are listed from the files themselves, so a new ADR needs no navigation edit.
+const decisionsDir = fileURLToPath(new URL('../decisions/', import.meta.url));
+const decisionRecords = readdirSync(decisionsDir)
+  .filter((file) => /^\d{4}-.+\.md$/.test(file))
+  .sort()
+  .map((file) => {
+    const heading = readFileSync(`${decisionsDir}${file}`, 'utf8').match(/^# ADR (\d{4}): (.+)$/m);
+    return {
+      text: heading ? `${heading[1]} · ${heading[2]}` : file.replace(/\.md$/, ''),
+      link: `/decisions/${file.replace(/\.md$/, '')}`,
+    };
+  });
 
 export default defineConfig({
   title: 'Homora',
@@ -66,8 +81,15 @@ export default defineConfig({
               { text: 'Criar uma integração', link: '/adapters' },
             ],
           },
+          {
+            text: 'Registros de decisão (inglês)',
+            collapsed: true,
+            items: decisionRecords,
+          },
         ],
-        outline: { label: 'Nesta página' },
+        outline: { level: [2, 3], label: 'Nesta página' },
+        lastUpdated: { text: 'Atualizado em', formatOptions: { dateStyle: 'medium' } },
+        externalLinkIcon: true,
         docFooter: { prev: 'Página anterior', next: 'Próxima página' },
         sidebarMenuLabel: 'Menu',
         langMenuLabel: 'Alterar idioma',
@@ -85,6 +107,7 @@ export default defineConfig({
   description: 'Documentation for the self-hosted homelab dashboard.',
   head: [['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }]],
   appearance: 'dark',
+  lastUpdated: true,
   // These are instructions for the reader's own machine, not pages in this site.
   ignoreDeadLinks: [/^https?:\/\/localhost(?::\d+)?\/?$/],
   markdown: {
@@ -116,12 +139,16 @@ export default defineConfig({
   themeConfig: {
     i18nRouting: false,
     logo: '/logo.svg',
-    siteTitle: 'Homora Docs',
+    siteTitle: 'Homora',
     nav: [
       { text: 'Guide', link: '/user-guide/getting-started' },
       { text: 'Integrations', link: '/integrations' },
       { text: 'Contribute', link: '/contributing' },
     ],
+    outline: { level: [2, 3], label: 'On this page' },
+    lastUpdated: { text: 'Last updated', formatOptions: { dateStyle: 'medium' } },
+    docFooter: { prev: 'Previous', next: 'Next' },
+    externalLinkIcon: true,
     socialLinks: [{ icon: 'github', link: 'https://github.com/JhonatanMedeiros/homora' }],
     search: {
       provider: 'local',
@@ -183,6 +210,20 @@ export default defineConfig({
           { text: 'Architecture and security', link: '/architecture' },
           { text: 'Product vision', link: '/product' },
           { text: 'Evolution plan', link: '/evolution' },
+        ],
+      },
+      {
+        text: 'Decision records',
+        collapsed: true,
+        items: decisionRecords,
+      },
+      {
+        text: 'Project planning',
+        collapsed: true,
+        items: [
+          { text: 'Strategy', link: '/strategy' },
+          { text: 'Delivery plan', link: '/plan' },
+          { text: 'Product evaluation', link: '/product-evaluation' },
         ],
       },
       {
