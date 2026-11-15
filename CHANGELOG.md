@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/JhonatanMedeiros/homora/compare/v0.1.0...v0.1.1) (2026-11-15)
+
+
+### 📝 Documentation
+
+* improve documentation site design and guides ([#232](https://github.com/JhonatanMedeiros/homora/issues/232)) ([c688f5e](https://github.com/JhonatanMedeiros/homora/commit/c688f5ecdedc13ee7fe9c89b1dd6f97ea81404d9))
+
 ## 0.1.0 (2026-11-15)
 
 The first public Homora release brings your services, their health and your homelab tools together in a self-hosted dashboard. Proxmox and AI agents are optional: you can start with a simple collection of service links and add capabilities when you need them.
