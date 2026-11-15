@@ -2026,3 +2026,8 @@ the HTTP and stdio transports were not manually verified.
 
 - Prepare or refresh the Release Please PR manually on `main`; merging the same-repository release PR automatically runs Release Please and publishes its images. Ordinary PR merges no longer update the release PR. A maintainer must refresh an open release PR before final review so it includes recent changes.
 - Local validation: actionlint (allowing the already-used Ubuntu runner label), event-condition scenarios for manual runs and merged, closed or foreign PRs, and an in-memory Release Please PR-to-release simulation. GitHub execution of the new manual and merged-PR triggers is pending.
+
+### GitHub Actions Node.js 24
+
+- Updated the pinned checkout, Node setup, pnpm setup and Release Please actions to versions that declare Node.js 24, keeping the manual release preparation and image publishing flow.
+- Local validation used actionlint and a simulated Release Please 17.6.0 flow (the version bundled in action v5.0.0). GitHub execution of the upgraded Release Please action and publication workflow remains pending until a maintainer prepares and publishes a release.
