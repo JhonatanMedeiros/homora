@@ -49,7 +49,7 @@ Within a minute the card shows **Online**, **Offline** or **Waiting**, with the 
 redirect or a login prompt counts as Online; a failing card explains why (not found, server error, no response)
 and opens a **Details** panel with the recent checks.
 
-> **Tip:** if you already use Homepage or Dashy, skip the typing. Import your existing file from
+> **Tip:** if you have a supported configuration file, skip the typing. Import it from
 > **Settings → Export and import**. See [Import, export and backup](import-export-backup.md).
 
 ## 4. Know your way around
@@ -68,6 +68,13 @@ and opens a **Details** panel with the recent checks.
 | **Account** (avatar menu) | Password, two-step verification and passkeys.                                          |
 
 The avatar menu also links to the Homora repository on GitHub.
+It includes **What's new**, where you can search recent release notes and see whether a newer stable
+version is available. The indicator requires an identified release image; source builds without a
+release tag do not claim to be up to date. The server requests public release information from GitHub when you sign in and every six hours while the page remains open. GitHub receives the server's public IP address; the request includes no Homora credentials, hostname, services or inventory. If GitHub is unavailable,
+the rest of Homora keeps working.
+
+When running the local development environment with `pnpm dev`, this window uses clearly marked
+example notes instead of contacting GitHub. They are not real releases and never trigger an update indicator.
 
 Press `?` anywhere to see every keyboard shortcut.
 

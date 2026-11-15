@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   Activity,
   ArrowLeft,
@@ -7,6 +7,7 @@ import {
   LogOut,
   Search,
   Settings,
+  Sparkles,
   UserRound,
 } from 'lucide-react';
 import { Kbd } from '@/components/ui/kbd';
@@ -28,6 +29,12 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { navGroups, navItems, type Tab } from '@/components/app-nav';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
 import { MobileTabs } from '@/components/mobile-tabs';
+import { VersionMenuItem } from '@/components/version-menu-item';
+import { Badge } from '@/components/ui/badge';
+import { releaseUrl, useBuildVersion } from '@/hooks/use-build-version';
+import { hasUpdate } from '@/features/releases/release-feed';
+import { useReleaseFeed } from '@/features/releases/use-release-feed';
+import { ReleasesDialog } from '@/features/releases/releases-dialog';
 
 type Props = {
   tab: Tab;
@@ -57,6 +64,11 @@ export function AppShell({
   // The account is a page of its own: no sidebar and no search, just a way back.
   const standalone = tab === 'account' && !managing;
   const pendingProposals = usePendingProposals(tab, managing);
+  const [releasesOpen, setReleasesOpen] = useState(false);
+  const build = useBuildVersion();
+  const feed = useReleaseFeed();
+  const installedTag = build?.releaseTag ?? null;
+  const updateAvailable = !feed.demo && hasUpdate(installedTag, feed.releases);
   return (
     <div className="min-h-svh">
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
@@ -67,6 +79,23 @@ export function AppShell({
             compact
             className={`text-sidebar-foreground ${managing || standalone ? 'max-md:hidden' : ''}`}
           />
+          {build &&
+            !managing &&
+            !standalone &&
+            (build.releaseTag ? (
+              <a
+                href={releaseUrl(build.releaseTag)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden text-xs text-sidebar-foreground/70 underline-offset-4 hover:underline sm:inline"
+              >
+                v{build.version}
+              </a>
+            ) : (
+              <span className="hidden text-xs text-sidebar-foreground/70 sm:inline">
+                v{build.version}
+              </span>
+            ))}
           <span className="mr-auto" />
           <Button
             variant="ghost"
@@ -87,7 +116,7 @@ export function AppShell({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                aria-label={t('userMenu.label', { name: profile?.name ?? '' })}
+                aria-label={`${t('userMenu.label', { name: profile?.name ?? '' })}${updateAvailable ? ` · ${t('releases.update')}` : ''}`}
                 className="h-11 gap-1.5 rounded-full px-1.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-expanded:bg-sidebar-accent"
               >
                 <Avatar className="size-8">
@@ -96,6 +125,9 @@ export function AppShell({
                   </AvatarFallback>
                 </Avatar>
                 <ChevronDown aria-hidden="true" className="size-3.5" />
+                {updateAvailable && (
+                  <span aria-hidden="true" className="size-2 rounded-full bg-primary" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-56">
@@ -119,6 +151,10 @@ export function AppShell({
               <DropdownMenuItem onSelect={() => onTabChange('activity')}>
                 <Activity /> {t('nav.activity')}
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setReleasesOpen(true)}>
+                <Sparkles /> {t('releases.title')}
+                {updateAvailable && <Badge className="ml-auto">{t('releases.update')}</Badge>}
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <a
                   href="https://github.com/JhonatanMedeiros/homora"
@@ -128,6 +164,7 @@ export function AppShell({
                   <ExternalLink /> GitHub
                 </a>
               </DropdownMenuItem>
+              <VersionMenuItem />
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={onLogout}>
                 <LogOut /> {t('app.logout')}
@@ -150,6 +187,15 @@ export function AppShell({
           </Button>
         </div>
       </header>
+      <ReleasesDialog
+        open={releasesOpen}
+        onOpenChange={setReleasesOpen}
+        status={feed.status}
+        releases={feed.releases}
+        currentTag={installedTag}
+        demo={feed.demo}
+        retry={feed.retry}
+      />
       <main
         className={
           managing

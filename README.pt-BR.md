@@ -17,8 +17,8 @@
 > As capturas de tela deste repositório vêm de uma instalação de demonstração com dados sintéticos
 > ([como são feitas](docs/screenshots/README.md)).
 >
-> **Nota sobre o idioma:** a interface do Homora é totalmente bilíngue (inglês e português do Brasil), mas a
-> documentação detalhada em `docs/` é mantida em inglês. Os links abaixo levam a ela.
+> **Nota sobre o idioma:** a interface oferece inglês e português do Brasil. O site de documentação inclui
+> guias em português; as referências técnicas detalhadas permanecem em inglês.
 
 Aliases curtos opcionais como `/go/plex` exigem login e acompanham a URL atual do serviço. Alterar ou remover o alias invalida favoritos; reutilizá-lo para outro serviço fará antigos favoritos abrirem o novo serviço.
 
@@ -33,8 +33,9 @@ entrada única e responde à pergunta que você realmente tem quando algo parece
 - **Agentes propõem, você decide.** Conecte um agente de IA por MCP com tokens restritos e revogáveis. Ele pode sugerir
   cards, grupos e widgets, mas nada muda até você aprovar a proposta exata, e cada passo fica registrado.
 - **Local e privado.** SQLite no seu disco, logos servidos localmente, sem telemetria e credenciais criptografadas em repouso.
-- **Traga sua configuração.** Importe do [Homepage](https://github.com/gethomepage/homepage) ou do
-  [Dashy](https://github.com/Lissy93/dashy), sempre com pré-visualização, e exporte para YAML ou JSON quando quiser.
+- **Novidades no sistema.** O menu do perfil mostra as notas e destaca versões estáveis mais recentes.
+  Enquanto você estiver conectado, o Homora consulta o GitHub, que recebe o IP público do servidor.
+- **Traga sua configuração.** Importe configurações compatíveis com pré-visualização e exporte para YAML ou JSON quando quiser.
 
 ## Início rápido
 
@@ -208,7 +209,7 @@ O Homora é responsivo e também funciona no celular:
 
 | Você quer...                                  | O Homora oferece...                                                                                                |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Parar de lembrar portas e favoritos           | Uma página com grupos, páginas, busca e atalhos, além de importação do Homepage ou do Dashy.                       |
+| Parar de lembrar portas e favoritos           | Uma página com grupos, páginas, busca e atalhos, além de importação de configurações.                              |
 | Saber quando algo quebra antes da sua família | Verificações em cada card, alertas no celular e uma página pública de status opcional.                             |
 | Entender uma queda                            | Registro de incidentes, motivos de falha, histórico de latência e um mapa do que depende de cada host.             |
 | Adicionar serviços que você já roda no Docker | Descoberta por labels com etapa de revisão, localmente ou a partir de hosts remotos.                               |
@@ -247,7 +248,9 @@ está em [docs/strategy.md](docs/strategy.md) e [docs/evolution.md](docs/evoluti
 
 ## Documentação
 
-A documentação detalhada está em inglês.
+O site de documentação pode ser executado localmente com `pnpm docs:dev`; consulte a [configuração e hospedagem](docs/maintainers/documentation.md). O site ainda não foi publicado.
+
+O site inclui guias em português e referências detalhadas em inglês.
 
 **Guia do usuário**
 
@@ -261,7 +264,7 @@ A documentação detalhada está em inglês.
 | [Docker discovery](docs/user-guide/docker-discovery.md)                           | Labels, agentes remotos e o proxy Docker restrito.                                              |
 | [AI agents and MCP](docs/user-guide/agents-and-mcp.md)                            | Tokens, escopos, propostas, revisão e configuração dos clientes.                                |
 | [Appearance and personalization](docs/user-guide/appearance.md)                   | Temas, cores de destaque, fundos, CSS personalizado e modo seguro.                              |
-| [Import, export and backup](docs/user-guide/import-export-backup.md)              | Migrar do Homepage ou do Dashy, exportar, fazer backup e restaurar.                             |
+| [Import, export and backup](docs/user-guide/import-export-backup.md)              | Importar, exportar, fazer backup e restaurar.                                                   |
 | [Accounts and security](docs/user-guide/accounts-and-security.md)                 | Sessões, verificação em duas etapas, passkeys e recuperação de conta.                           |
 | [Deployment and upgrades](docs/user-guide/deployment.md)                          | Docker, proxy reverso HTTPS, variáveis de ambiente e atualizações.                              |
 | [Use cases](docs/user-guide/use-cases.md)                                         | Receitas passo a passo para objetivos comuns de homelab.                                        |
@@ -270,7 +273,7 @@ A documentação detalhada está em inglês.
 
 - [Glossário](GLOSSARY.md) · [Produto](docs/product.md) · [Arquitetura e segurança](docs/architecture.md) · [Padrões de engenharia](docs/standards.md)
 - [Referência de integrações](docs/integrations.md) · [Como escrever uma integração](docs/adapters.md) · [Inventário de capacidades dos agentes](docs/agent-capabilities.md) · [Demonstração de agentes em dez minutos](docs/agent-demo.md)
-- [Estratégia frente ao Homepage e ao Dashy](docs/strategy.md) · [Plano de entrega](docs/plan.md) · [Plano de evolução](docs/evolution.md) · [Registros de decisão](docs/decisions)
+- [Estratégia do produto](docs/strategy.md) · [Plano de entrega](docs/plan.md) · [Plano de evolução](docs/evolution.md) · [Registros de decisão](docs/decisions)
 - [Orientações para agentes de IA](AGENTS.md) · [Como contribuir](CONTRIBUTING.md) · [Política de segurança](SECURITY.md)
 
 ## Desenvolvimento

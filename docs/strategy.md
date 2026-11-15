@@ -1,47 +1,22 @@
-# Strategy: Homora as an Open Source Alternative
+# Homora Product Strategy
 
 **Date:** 2026-11-10  
 **Status:** direction decision confirmed by maintainer. Checked items are implemented;
 unchecked items are planned or still need real-world validation. The actual progress of each item is tracked in
 [evolution.md](evolution.md).
 
-This document positions Homora relative to [Homepage](https://github.com/gethomepage/homepage)
-and [Dashy](https://github.com/Lissy93/dashy), the maintainer's primary reference projects.
-It complements the [product evaluation](product-evaluation.md), which contains a detailed
-comparison against other dashboards, and does not replace the
-[evolution plan](evolution.md), which remains the system of record for implementation progress.
+This document describes Homora's product direction and complements the historical
+[product evaluation](product-evaluation.md). The [evolution plan](evolution.md) remains
+the system of record for implementation progress and validation.
 
 ## Decisions
 
-| Topic          | Decision                                                                                                                                                                          |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Positioning    | **Parity on adoption blockers, plus a clear differentiator:** human-reviewed agent proposals with explicit permissions and audit logs. Do not compete on sheer integration count. |
-| Configuration  | SQLite remains the source of truth. YAML/JSON files serve for **importing, exporting, versioning, and migrating** from Homepage and Dashy.                                        |
-| Language       | English as default language for README, documentation, and web UI, with full runtime i18n and complete pt-BR support. Engineering documentation is maintained in English.         |
-| Core Principle | Unchanged: useful without Proxmox and without AI agents; network destination policies and secret protections are never relaxed to gain convenience.                               |
-
-## Factual Comparison
-
-Sources: READMEs of both projects, surveyed on 2026-11-10. Capabilities evolve across
-versions; verify before publicly claiming feature parity.
-
-| Area          | Homepage / Dashy (Documented)                                                                   | Homora (Current Codebase)                                                                         |
-| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Integrations  | Homepage documents integrations for 100+ services.                                              | Four read adapters and Proxmox; none validated against live multi-version hosts.                  |
-| Widgets       | Service data directly on shortcut tiles, plus informational widgets (weather, clock, search).   | Widgets render inside service cards on the homepage with aggregated telemetry.                    |
-| Discovery     | Homepage discovers services via Docker container labels.                                        | Suggestions via Docker labels (optional, via read-only proxy) with human review.                  |
-| Configuration | Homepage: YAML files or Docker labels. Dashy: single `conf.yml`, editable via web UI.           | SQLite database, web UI, plus YAML/JSON import/export with preview.                               |
-| Status        | Dashy: HTTP status and ICMP ping with custom intervals. Homepage: container health.             | HTTP with status code and latency, optional ICMP ping, and per-service check intervals.           |
-| Access        | OIDC in both; Dashy also provides multi-user roles, granular types, and read-only guest access. | Single local administrator account with password authentication.                                  |
-| Languages     | Homepage supports 40+ languages; Dashy supports 30+.                                            | English and Brazilian Portuguese via runtime i18n.                                                |
-| Customization | Themes, custom CSS (both); Dashy has visual color customizer and multi-page layouts.            | Light and dark themes; no custom CSS injections or multi-page routing.                            |
-| Search        | Dashy: numeric hotkeys and web bang searches; Homepage: instant filter.                         | Instant client filter with `Ctrl K` and `/`.                                                      |
-| Icons         | Icon library references by name (e.g., SimpleIcons, Dashboard Icons).                           | Bundled brand icons (`brand:name`), built-in Lucide names, custom image URLs, emoji, or initials. |
-
-What Homora already possesses that reference projects do not describe: human approval
-tied to the exact diff, agent identities with scoped permissions and revocation,
-immutable audit logging, per-destination SSRF policies, and encrypted secrets outside
-the browser.
+| Topic          | Decision                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Positioning    | **Dependable everyday use:** organize and monitor services, with optional human-reviewed agent proposals, explicit permissions and audit logs.                            |
+| Configuration  | SQLite remains the source of truth. YAML/JSON files serve for **importing, exporting, versioning, and migration**.                                                        |
+| Language       | English as default language for README, documentation, and web UI, with full runtime i18n and complete pt-BR support. Engineering documentation is maintained in English. |
+| Core Principle | Unchanged: useful without Proxmox and without AI agents; network destination policies and secret protections are never relaxed to gain convenience.                       |
 
 ## Roadmap Phases
 
@@ -139,7 +114,7 @@ without sharing administrator credentials.
 
 **Done Definition:** the governing agent differentiator is demonstrable to people who have not read the source code.
 
-## Reference Case: Migrating a Homepage Dashboard
+## Reference Case: Migrating a Dashboard
 
 This benchmark considers a representative dashboard and asks: "can I migrate to Homora?".
 The scope below describes possible features, not a validated import from a particular installation;
@@ -180,11 +155,11 @@ or network destination policies.
 ## Risks
 
 - Scope: multi-phase roadmap exceeds solo maintainer bandwidth; treat R0 and R1 as the minimum
-  bar to compete and defer R3 and R4 as necessary.
-- Perceived parity: large unvalidated catalogs become tech debt. Prioritize a small set of rock-solid adapters.
+  foundation and defer R3 and R4 as necessary.
+- Large unvalidated catalogs become tech debt. Prioritize a small set of rock-solid adapters.
 - Importers rely on moving third-party specs; target tested schemas and fail with clear diagnostics.
 - Docker discovery grants privileged socket access; keep read-only, human-approved, and clearly document risks.
-- Do not claim superiority over Homepage or Dashy before validating above features with real homelab users.
+- Validate product claims and the above features with real homelab users.
 
 ## Progress Tracking
 

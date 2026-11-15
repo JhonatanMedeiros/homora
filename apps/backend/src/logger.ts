@@ -125,5 +125,8 @@ export function buildInfo(env: NodeJS.ProcessEnv = process.env) {
   } catch {
     // Not fatal: a build without the manifest still runs; the version just reads "unknown".
   }
-  return { version, commit: buildCommit(env) };
+  const tag = env.HOMORA_RELEASE_TAG;
+  const releaseTag =
+    tag === `v${version}` && /^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(tag) ? tag : null;
+  return { version, commit: buildCommit(env), releaseTag };
 }

@@ -1,7 +1,7 @@
 # Contributing
 
 Homora is in active development and is available under the [MIT license](LICENSE).
-See also [security](SECURITY.md) before reporting a vulnerability.
+Please follow the [code of conduct](CODE_OF_CONDUCT.md) and see [security](SECURITY.md) before reporting a vulnerability.
 
 ## Setup and Validation
 
@@ -34,7 +34,11 @@ do not use personal data or production databases in tests.
   before submitting.
 - Use commit messages following Conventional Commits, for example
   `fix: preserve data on migration`.
+- Use `deps:` for dependency updates and `security:` for security changes so
+  they appear in the corresponding release notes.
 
 Pull requests should explain the problem, summarize the solution, and list
 the checks executed along with known limitations. There is no guaranteed review
 turnaround while the project is in early development.
+
+Maintainers can find the versioning and publication workflow in [the release guide](docs/maintainers/releases.md).

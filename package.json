@@ -25,12 +25,17 @@
     "auth:reset": "node scripts/auth-reset.mjs",
     "css:reset": "node scripts/css-reset.mjs",
     "integration:create": "node scripts/create-integration.mjs",
-    "integration:catalog": "node packages/integrations/scripts/integration-catalog.mjs --write"
+    "integration:catalog": "node packages/integrations/scripts/integration-catalog.mjs --write",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
     "@eslint/js": "10.0.1",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "26.6.6",
@@ -47,6 +52,7 @@
     "turbo": "2.11.10",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",
+    "vitepress": "1.6.4",
     "vitest": "5.1.0"
   },
   "lint-staged": {

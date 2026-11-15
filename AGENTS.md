@@ -30,6 +30,23 @@ not necessarily the existing implementation.
 - When delivering, explain what changed, how it was validated, and what could not
   be verified. Do not claim tests passed without running them.
 
+## Documentation site
+
+- For documentation site changes, read [the maintenance guide](docs/maintainers/documentation.md).
+  The VitePress site uses the Markdown in `docs/`; English is the default and
+  `docs/pt-BR/` contains Portuguese guides. When behavior or instructions change,
+  update the relevant content in both languages, or clearly record what remains untranslated.
+  Label links to English-only references.
+- Keep documentation focused on Homora. Name other dashboard projects when needed to
+  explain compatibility, such as supported import formats or Docker labels, rather than
+  adding product comparisons or unnecessary references.
+- The home page checks GitHub for the latest public stable release; do not substitute a
+  hard-coded version, a source checkout version, or a Docker tag. Preserve the link to
+  releases when a version cannot be determined.
+- Run `pnpm docs:build` after changing site content, navigation, theme, or configuration;
+  use `pnpm docs:dev` or `pnpm docs:preview` for local review. Validate links and both
+  languages where affected, and describe any unverified hosting or release behavior.
+
 ## Integration work for contributors and agents
 
 - Before creating, changing, or reviewing an integration or widget, read

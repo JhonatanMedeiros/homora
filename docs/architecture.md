@@ -5,7 +5,7 @@ SQLite database, distributed as a cohesive set of packages and processes. This
 structure keeps single-user installation simple without precluding module extraction
 if concrete requirements emerge.
 
-Project comparisons and integrations roadmap are documented in
+Integration design and the roadmap are documented in
 [integrations](integrations.md). The diagram below represents currently implemented paths;
 differences between HTTP and MCP execution models are detailed further down.
 

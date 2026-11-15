@@ -212,6 +212,7 @@ describe('/api/health', () => {
           'commit',
           'database',
           'monitor',
+          'releaseTag',
           'schemaVersion',
           'status',
           'version',

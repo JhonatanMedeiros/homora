@@ -55,8 +55,8 @@ both implementation and stated verification criteria are met; existing code alon
 does not imply the end-to-end workflow has been validated. Work phases may be decomposed
 into smaller subtasks.
 
-> **Direction (2026-11-10):** strategic positioning relative to Homepage and Dashy
-> alongside phases R0 through R4 are detailed in [strategy.md](strategy.md).
+> **Direction (2026-11-10):** the product direction
+> and phases R0 through R4 are detailed in [strategy.md](strategy.md).
 > Phases P0 through P5 below continue tracking baseline progress; when beginning an
 > R phase, break down its goals into tracking items here.
 
@@ -365,7 +365,7 @@ gaps remain recorded in [integrations](integrations.md).
 Integration candidates are tracked in the [integration catalog](integration-catalog.md) and
 [epic #178](https://github.com/JhonatanMedeiros/homora/issues/178).
 
-Origin: [strategy.md](strategy.md), phase R1 and real-world Homepage migration benchmark.
+Origin: [strategy.md](strategy.md), phase R1 and real-world migration validation.
 Mark items only with stated implementation and verification evidence.
 
 - [ ] **In-card widgets:** each card can display metrics from an attached connection, showing
@@ -415,8 +415,7 @@ appears monitored without being checked, and reference migration benchmark can b
   in `apps/frontend/public/brand-icons` and served directly by Homora. No third-party CDN requests;
   opening the dashboard never leaks client IPs. Curated for homelab and self-hosting services;
   strictly clean vector SVGs (5 icons discarded due to embedded bitmaps or `foreignObject`).
-  Icons existing solely as PNG in upstream project (e.g. Homepage, Dashy, Linkwarden, Speedtest
-  Tracker) were excluded.
+  Icons available only as PNG in the upstream project were excluded.
 - Format: `brand:name` (names listed in `packages/shared/src/brand-icons.ts`; unlisted values
   discarded by `normalizeIcon`). UI renders the logo and falls back to initials if loading fails.
 - UI: icon picker displays brand logos alongside built-in Lucide icons; service form offers
@@ -557,7 +556,7 @@ appears monitored without being checked, and reference migration benchmark can b
 - Full Compose stack: `docker compose -f compose.yml -f compose.docker-discovery.yml up` brought up
   backend, frontend, and proxy with zero direct socket mounts on the backend.
 - Not validated: Docker Swarm, Podman, rootless Docker, remote daemon hosts, arm64 proxy image,
-  automatic card updates on label changes (discovery is strictly on-demand), Traefik/Dashy labels.
+  automatic card updates on label changes (discovery is strictly on-demand), other label formats.
 
 ### Docker discovery batch review (2026-11-14)
 
@@ -1994,3 +1993,31 @@ the HTTP and stdio transports were not manually verified.
 
 - The default Docker image now runs the web interface and backend together; nginx listens on port 8080 and the backend listens only on container loopback. The optional Docker discovery agent remains a separate image. Compose retains the existing data volume and `backend` service name.
 - Validated locally with a single-image build, first account and service in a browser, container recreation with the same temporary volume, an in-container backup, and refusal of direct API connections on the container network interface. Multi-architecture publication, registry pulls and migration from an existing two-container installation remain pending.
+
+### Release automation (in preparation)
+
+- Release Please is configured to propose versions and changelogs, update the backend version and trigger the reusable image workflow. Stable and pre-release image tags are separated; the image workflow checks version consistency before publishing.
+- Local validation: the Release Please strategy created a simulated release PR, changelog and `v0.1.0` release against an in-memory GitHub substitute; stable and pre-release tags were checked using the pinned metadata action. Both images were built for amd64 and arm64 with SBOM and provenance, pushed to an isolated local registry and the application was pulled and started on both architectures (arm64 emulated). `pnpm check` and `pnpm build` passed. A repository credential and live GitHub Actions, pull request, release and GHCR publication have not been validated. The first release remains pending.
+- The account menu and authentication screen show the backend version. Release image builds embed a matching release tag and link to that version's GitHub release; builds without such a tag display the version without a release link.
+- Release notes group Conventional Commit entries into features, fixes, security, performance, dependencies, documentation and improvements, with breaking changes highlighted. Dependabot uses the dedicated `deps:` type for configured ecosystems. Maintainers review the generated text and add release highlights, migration notes and acknowledgements where appropriate.
+
+### Release notes and update indicator
+
+- The profile menu opens release notes with search and pagination; an indicator appears only when an identified installed release is older than a published stable release. The backend retrieves a fixed GitHub feed using the restricted transport; network and privacy boundaries are recorded in ADR 0025.
+- Validation: `pnpm build`, `pnpm check`, focused authorization, network, parsing and UI tests, and browser checks with a synthetic release feed at desktop and mobile widths. The existing transport retrieved a public GitHub Atom feed. The real Homora feed remains unvalidated because the repository has not published a public release.
+- The local development mock mode supplies clearly labeled example notes without an update indicator or external links; normal installations still use GitHub. Focused tests and an isolated development-mode container verified the example dialog and search on desktop and mobile; no public Homora release was queried.
+
+### Open-source contribution entry points
+
+- Added issue and pull request templates, a code of conduct and support guidance, plus grouped Dependabot version updates for the pnpm workspace. The templates request synthetic data and direct vulnerability reports to the private security channel.
+- Validated YAML parsing, required form fields, Dependabot configuration, formatting and the `deps:` commit convention locally. GitHub's form rendering and Dependabot's first update run remain unverified.
+
+### Documentation site
+
+- Added a VitePress site using the existing English user guide and reference documentation, with local search, responsive navigation, dark and light themes, and contributor entry points. The documentation remains available as Markdown in the repository.
+- The site builds to static files and includes setup instructions for Vercel and Netlify. `pnpm docs:build`, `pnpm build`, and `pnpm check` passed locally; browser checks covered search, navigation and mobile layout. Publication and the first provider-hosted build remain pending.
+
+### Documentation languages and release link
+
+- Added a Portuguese site and user guides covering the main workflows, with English as the default and links to detailed English references. The home page checks GitHub for the latest public stable release and falls back to the releases page when it cannot identify one.
+- Local validation covers the static build, language selection and search, a simulated release, a failed request and a mobile viewport. Public release lookup remains unverified until a release is accessible.

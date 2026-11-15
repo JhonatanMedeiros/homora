@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import type { AuthStatus, Credentials } from '@/hooks/use-auth';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { VersionFooter } from '@/components/version-footer';
 import { BrandMark } from '@/components/brand-mark';
 import { FormError } from '@/components/form-error';
 import { Button } from '@/components/ui/button';
@@ -249,6 +250,7 @@ export function AuthPage({
               </CardContent>
             )}
           </Card>
+          <VersionFooter />
         </div>
       </div>
     </main>

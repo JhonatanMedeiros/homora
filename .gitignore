@@ -13,3 +13,5 @@ data/*.auth
 data/*.key
 data/*.proxmox
 data/*.tmp
+
+docs/.vitepress/cache/

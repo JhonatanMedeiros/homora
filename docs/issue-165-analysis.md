@@ -35,8 +35,7 @@ navigating to the card, as it has its own dedicated function.
    reads and writes, including proposals and import.
 2. Export the choice in native YAML/JSON format and accept legacy files without
    the field as new tab. For invalid values, show a preview warning instead
-   of silently altering intent. Do not assume equivalence with Homepage or
-   Dashy options without verifying their formats.
+   of silently altering intent. Do not assume equivalence with other import formats without verifying them.
 3. Add the control to the form and preserve the choice in the edit draft.
    Centralize the target decision across all four link presentations and the
    palette, preserving native link behavior and new-tab protection.

@@ -1,22 +1,20 @@
-# Product and Competitive Evaluation
+# Product Evaluation
 
 **Date:** 2026-11-10  
 **Scope:** features present in branch `feat/roadmap-completion` at commit
-`d98e52c`, Homora documentation, and official documentation of comparable products.
+`d98e52c` and Homora documentation.
 
 > **Historical snapshot (2026-11-10).** Several gaps described here, such as the 25-service
 > check limit and non-semantic status, were addressed in phase R1; see
 > [evolution.md](evolution.md) for current state.
 
-This is a comparison of published capabilities, not a benchmark of performance,
-security, market adoption, or user satisfaction. Visual review was conducted via
-inspection of JSX and CSS files, without browser rendering. The positioning
-recommendation below is a hypothesis to be validated, not a binding product decision.
+This is a historical evaluation of Homora, not a benchmark of performance, security,
+or user satisfaction. Visual review was conducted via inspection of JSX and CSS files,
+without browser rendering. The recommendation below is a hypothesis, not a binding decision.
 
 ## Conclusion
 
-As a generic dashboard, Homora does not yet offer a clear competitive edge over
-mature alternatives. It organizes links, groups, and basic health checks, but
+At the time of this evaluation, Homora organized links, groups, and basic health checks, but
 its unique homelab value—integration metrics, infrastructure status, and linking
 applications to host machines—remains either unexposed or unimplemented on the
 primary dashboard. The UI also prominently highlights "Agents" despite the agent
@@ -30,25 +28,6 @@ experience. The recommendation is to position Homora as an **operational map of 
 homelab**: a single place to launch services, check responsiveness, and identify where
 they are hosted. Proxmox and AI agents remain optional; the links dashboard must
 remain useful without either.
-
-## Observed Comparison
-
-| Product        | Officially Documented Experience                                                                                                                               | Implication for Homora                                                                                                                                              |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Homepage       | Service widgets attached directly to shortcuts, informational widgets, Docker integration, and a Proxmox widget for VM/container counts and CPU/memory stats.  | A connections catalog separated from the homepage and a service list with no attached data appear shallow by comparison.                                            |
-| Homarr         | Separates apps, integrations, widgets, and boards; supports drag-and-drop sizing, linking apps to integrations, and aggregating stats.                         | Clear and configurable mental model between service, connection, widget, and board. Homora models these entities, but has not yet surfaced widget stats onto cards. |
-| Dashy          | Highly configurable themes and layouts, icons, status badges, widgets, and multiple navigation modes.                                                          | Competing on themes and visual options alone is not a sustainable differentiator for Homora.                                                                        |
-| Glance         | Configurable multi-page dashboard featuring RSS feeds, container health, and server stats widgets.                                                             | Users expect glanceable information at a glance; a homepage of only static links and status dots is insufficient differentiation.                                   |
-| Current Homora | Editable groups and shortcuts, basic HTTP health checks, Proxmox in a separate tab, four experimental adapters, and local MCP for querying and card proposals. | Does not yet display on the homepage the data that would justify a dedicated homelab-first proposition.                                                             |
-
-Competitor sources: [Homepage service widgets](https://gethomepage.dev/widgets/),
-[Homepage Docker integration](https://gethomepage.dev/configs/docker/),
-[Homepage Proxmox widget](https://gethomepage.dev/widgets/services/proxmox/),
-[Homarr apps, integrations, and widgets](https://homarr.dev/docs/getting-started/),
-[Homarr integrations](https://homarr.dev/docs/management/integrations/),
-[Homarr widgets](https://homarr.dev/docs/widgets/),
-[Dashy documented features](https://docs.dashy.to/), and
-[Glance on GitHub](https://github.com/glanceapp/glance).
 
 ## Confirmed Gaps in Code
 
@@ -120,10 +99,10 @@ artificially increase visual density.
 
 ## Decisions Requiring Validation
 
-- This operational hypothesis must be validated with homelab practitioners; competitor
+- This operational hypothesis must be validated with homelab practitioners; external
   surveys cannot replace user interviews and real-world usage.
 - Card↔guest associations require a live Proxmox environment, least-privilege service
   accounts, multi-container applications, and inventory privacy controls.
 - The MVP must remain useful without Proxmox and without AI agents, per product vision.
-- Do not claim Homora surpasses competitors before validating the operational homepage,
+- Do not make unsupported product claims before validating the operational homepage,
   multi-device LAN behavior, and real integrations.

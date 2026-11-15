@@ -24,4 +24,11 @@ describe('buildInfo', () => {
     expect(withCommit.version).toBe(buildInfo({}).version);
     expect(withCommit.version).toMatch(/^\d+\.\d+\.\d+/);
   });
+
+  it('only identifies a release when the tag matches the package version', () => {
+    const version = buildInfo({}).version;
+    expect(buildInfo({ HOMORA_RELEASE_TAG: `v${version}` }).releaseTag).toBe(`v${version}`);
+    expect(buildInfo({ HOMORA_RELEASE_TAG: 'v999.999.999' }).releaseTag).toBeNull();
+    expect(buildInfo({}).releaseTag).toBeNull();
+  });
 });
