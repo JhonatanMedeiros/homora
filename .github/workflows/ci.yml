@@ -3,36 +3,76 @@ on:
   pull_request:
     branches:
       - main
+  # Pushes to main run only the Docker job, which refreshes the image layer cache that pull
+  # requests can read (a cache is visible to its own branch and to the default branch).
+  push:
+    branches:
+      - main
 permissions:
   contents: read
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+env:
+  # Optional Turborepo Remote Cache. Without them Turborepo uses only the local cache.
+  # The token is not available to pull requests from forks.
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 jobs:
-  validate:
+  lint:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
+
+  format:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: ./.github/actions/setup
+      - run: pnpm format:check
+
+  type-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: ./.github/actions/setup
+      - run: pnpm type-check
+
+  test:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: ./.github/actions/setup
+      # The tests import the compiled workspace packages.
+      - run: pnpm build
+      - run: pnpm test
+
+  # Aggregates the checks above under the name "validate", so a branch protection rule that
+  # requires it keeps working.
+  validate:
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [lint, format, type-check, test]
+    runs-on: ubuntu-26.04
+    steps:
+      - run: |
+          echo "lint=${{ needs.lint.result }} format=${{ needs.format.result }} type-check=${{ needs.type-check.result }} test=${{ needs.test.result }}"
+          test "${{ needs.lint.result }}${{ needs.format.result }}${{ needs.type-check.result }}${{ needs.test.result }}" = "successsuccesssuccesssuccess"
 
   build:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm build
       - run: pnpm docs:build
+
   docker:
     runs-on: ubuntu-26.04
     steps:
@@ -44,9 +84,11 @@ jobs:
           target: homora
           push: false
           cache-from: type=gha,scope=homora
+          cache-to: type=gha,scope=homora,mode=max
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: discovery-agent
           push: false
           cache-from: type=gha,scope=discovery-agent
+          cache-to: type=gha,scope=discovery-agent,mode=max

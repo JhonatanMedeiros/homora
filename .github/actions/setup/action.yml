@@ -1,0 +1,22 @@
+name: Set up Homora
+description: Install Node, pnpm and the dependencies, and restore the Turborepo cache.
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+    # Without a Remote Cache token (forks, or before it is configured), keep the local cache
+    # between runs of the same branch. With a token, Turborepo shares results across branches.
+    - if: ${{ env.TURBO_TOKEN == '' }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-${{ github.job }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-${{ github.job }}-
+          turbo-${{ runner.os }}-

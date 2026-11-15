@@ -11,3 +11,16 @@ backups
 .env.*
 !.env.example
 propostas
+
+# Not needed to build the images. Excluding them keeps documentation, workflow and agent
+# edits from invalidating the build layers and shrinks the context sent to the builder.
+docs
+.github
+.husky
+.agent
+.agents
+.claude
+.codex
+.hermes
+.impeccable
+vercel.json
