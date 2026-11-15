@@ -2012,3 +2012,8 @@ the HTTP and stdio transports were not manually verified.
 
 - Added issue and pull request templates, a code of conduct and support guidance, plus grouped Dependabot version updates for the pnpm workspace. The templates request synthetic data and direct vulnerability reports to the private security channel.
 - Validated YAML parsing, required form fields, Dependabot configuration, formatting and the `deps:` commit convention locally. GitHub's form rendering and Dependabot's first update run remain unverified.
+
+### Documentation site
+
+- Added a VitePress site using the existing English user guide and reference documentation, with local search, responsive navigation, dark and light themes, and contributor entry points. The documentation remains available as Markdown in the repository.
+- The site builds to static files and includes setup instructions for Vercel and Netlify. `pnpm docs:build`, `pnpm build`, and `pnpm check` passed locally; browser checks covered search, navigation and mobile layout. Publication and the first provider-hosted build remain pending.

@@ -244,6 +244,8 @@ pending. The roadmap lives in [docs/strategy.md](docs/strategy.md) and [docs/evo
 
 ## Documentation
 
+The documentation site can be built locally with `pnpm docs:dev`; see [site setup and hosting](docs/maintainers/documentation.md). The site is not published yet.
+
 **User guide**
 
 | Guide                                                                             | What it covers                                                                  |

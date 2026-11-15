@@ -249,6 +249,8 @@ está em [docs/strategy.md](docs/strategy.md) e [docs/evolution.md](docs/evoluti
 
 ## Documentação
 
+O site de documentação pode ser executado localmente com `pnpm docs:dev`; consulte a [configuração e hospedagem](docs/maintainers/documentation.md). O site ainda não foi publicado.
+
 A documentação detalhada está em inglês.
 
 **Guia do usuário**
