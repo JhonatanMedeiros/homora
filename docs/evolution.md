@@ -2021,3 +2021,8 @@ the HTTP and stdio transports were not manually verified.
 
 - Added a Portuguese site and user guides covering the main workflows, with English as the default and links to detailed English references. The home page checks GitHub for the latest public stable release and falls back to the releases page when it cannot identify one.
 - Local validation covers the static build, language selection and search, a simulated release, a failed request and a mobile viewport. Public release lookup remains unverified until a release is accessible.
+
+### On-demand release preparation
+
+- Prepare or refresh the Release Please PR manually on `main`; merging the same-repository release PR automatically runs Release Please and publishes its images. Ordinary PR merges no longer update the release PR. A maintainer must refresh an open release PR before final review so it includes recent changes.
+- Local validation: actionlint (allowing the already-used Ubuntu runner label), event-condition scenarios for manual runs and merged, closed or foreign PRs, and an in-memory Release Please PR-to-release simulation. GitHub execution of the new manual and merged-PR triggers is pending.
