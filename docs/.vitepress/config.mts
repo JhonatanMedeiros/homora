@@ -15,6 +15,8 @@ const decisionRecords = readdirSync(decisionsDir)
     };
   });
 
+const siteUrl = 'https://homora-dash.vercel.app';
+
 export default defineConfig({
   title: 'Homora',
   locales: {
@@ -105,7 +107,26 @@ export default defineConfig({
     },
   },
   description: 'Documentation for the self-hosted homelab dashboard.',
-  head: [['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }]],
+  head: [
+    ['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }],
+    ['meta', { name: 'theme-color', content: '#171615' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:site_name', content: 'Homora' }],
+    ['meta', { property: 'og:image', content: `${siteUrl}/og.png` }],
+    ['meta', { property: 'og:image:width', content: '1200' }],
+    ['meta', { property: 'og:image:height', content: '630' }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+  ],
+  sitemap: { hostname: siteUrl },
+  transformHead({ pageData, title, description }) {
+    const path = pageData.relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '.html');
+    return [
+      ['link', { rel: 'canonical', href: `${siteUrl}/${path}` }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: pageData.description || description }],
+      ['meta', { property: 'og:url', content: `${siteUrl}/${path}` }],
+    ];
+  },
   appearance: 'dark',
   lastUpdated: true,
   // These are instructions for the reader's own machine, not pages in this site.

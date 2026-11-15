@@ -1,3 +1,7 @@
+---
+description: 'Structured JSON runtime logs, log levels and the health check endpoint.'
+---
+
 # Logs and health checks
 
 Homora's backend writes **one JSON object per line to standard output**. There are no log files to

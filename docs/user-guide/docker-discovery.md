@@ -1,3 +1,7 @@
+---
+description: 'Suggest cards from running Docker containers using labels, a restricted socket proxy or remote agents.'
+---
+
 # Docker discovery
 
 Docker discovery suggests cards from running containers, so you do not have to type every service by hand. It is off by

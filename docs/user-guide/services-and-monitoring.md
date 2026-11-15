@@ -1,3 +1,7 @@
+---
+description: 'Service form, seven check types, thresholds, incidents, uptime, maintenance windows and host dependencies.'
+---
+
 # Services and monitoring
 
 A **service** is a card on your dashboard. It has an address to open and, optionally, a scheduled check that tells you

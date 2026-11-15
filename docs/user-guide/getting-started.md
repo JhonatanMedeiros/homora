@@ -1,3 +1,7 @@
+---
+description: 'Install Homora with Docker, create your account, add a first service and get your first alert in about ten minutes.'
+---
+
 # Getting started
 
 A ten-minute tour: install Homora, create your account, add a first card, see it monitored, and get your first

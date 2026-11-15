@@ -1,3 +1,7 @@
+---
+description: 'Send alerts to Telegram, ntfy, Discord or webhooks, and publish an optional read-only status page.'
+---
+
 # Notifications and the public status page
 
 Two ways to tell people (including yourself) that something is down: push alerts to the channels you already use, and

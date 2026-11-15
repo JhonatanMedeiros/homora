@@ -1,3 +1,7 @@
+---
+description: 'Theme, language, accent color, backgrounds, custom CSS and safe mode.'
+---
+
 # Appearance and personalization
 
 Homora is meant to look like _your_ dashboard. This guide covers the theme and language, the look shared by all your

@@ -1,3 +1,7 @@
+---
+description: 'Connect Proxmox, Jellyfin, Pi-hole and other tools, and show live data with card and page widgets.'
+---
+
 # Integrations and widgets
 
 Integrations show live information from the tools you already run, such as how many VMs are up in Proxmox or how your

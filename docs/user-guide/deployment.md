@@ -1,3 +1,7 @@
+---
+description: 'Run Homora with Docker, put it behind an HTTPS reverse proxy and upgrade safely.'
+---
+
 # Deployment and upgrades
 
 How to run Homora with Docker, which network setups were tested, and how to upgrade safely.

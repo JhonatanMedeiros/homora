@@ -243,7 +243,7 @@ pending. The roadmap lives in [docs/strategy.md](docs/strategy.md) and [docs/evo
 
 ## Documentation
 
-The documentation site can be built locally with `pnpm docs:dev`; see [site setup and hosting](docs/maintainers/documentation.md). English is the default, with Portuguese guides available in the language menu. The site is not published yet.
+Read it online at **[homora-dash.vercel.app](https://homora-dash.vercel.app)**, or build the site locally with `pnpm docs:dev`; see [site setup and hosting](docs/maintainers/documentation.md). English is the default, with Portuguese guides available in the language menu.
 
 **User guide**
 

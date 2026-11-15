@@ -1,3 +1,7 @@
+---
+description: 'The Homora dashboard: health banner, pages, groups, layouts, command palette, shortcuts and organize mode.'
+---
+
 # The dashboard
 
 The dashboard (`/`) is the page you will use most. It shows your cards grouped into pages, a health summary and any
