@@ -43,7 +43,7 @@ jobs:
       contents: read
       packages: write
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - target: homora
@@ -86,4 +86,4 @@ jobs:
           provenance: mode=max
           sbom: true
           cache-from: type=gha,scope=${{ matrix.target }}
-          cache-to: type=gha,scope=${{ matrix.target }},mode=max
+          cache-to: type=gha,scope=${{ matrix.target }},mode=max,ignore-error=true
