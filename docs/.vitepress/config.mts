@@ -255,6 +255,7 @@ export default defineConfig({
           { text: 'Engineering standards', link: '/standards' },
           { text: 'Building an integration', link: '/adapters' },
           { text: 'Maintaining releases', link: '/maintainers/releases' },
+          { text: 'Maintaining CI', link: '/maintainers/ci' },
           { text: 'Maintaining this site', link: '/maintainers/documentation' },
         ],
       },
