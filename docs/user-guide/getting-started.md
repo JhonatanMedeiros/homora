@@ -67,14 +67,7 @@ and opens a **Details** panel with the recent checks.
 | **Manage → Settings**     | Appearance, pages, top bar, alerts, the public status page, and export or import.      |
 | **Account** (avatar menu) | Password, two-step verification and passkeys.                                          |
 
-The avatar menu also links to the Homora repository on GitHub.
-It includes **What's new**, where you can search recent release notes and see whether a newer stable
-version is available. The indicator requires an identified release image; source builds without a
-release tag do not claim to be up to date. The server requests public release information from GitHub when you sign in and every six hours while the page remains open. GitHub receives the server's public IP address; the request includes no Homora credentials, hostname, services or inventory. If GitHub is unavailable,
-the rest of Homora keeps working.
-
-When running the local development environment with `pnpm dev`, this window uses clearly marked
-example notes instead of contacting GitHub. They are not real releases and never trigger an update indicator.
+The avatar menu links to the repository and to **What's new**, where you can read release notes and see whether a newer stable version is available. Source builds without a release tag do not claim to be up to date. The server checks GitHub when you sign in and every six hours; GitHub sees only the server's public IP address, and Homora keeps working if the check fails.
 
 Press `?` anywhere to see every keyboard shortcut.
 

@@ -44,10 +44,8 @@ who wants the details.
 - [Agent capability inventory](../agent-capabilities.md) · [Agent walkthrough](../agent-demo.md)
 - [Decision records](../decisions) · [Strategy](../strategy.md) · [Evolution plan](../evolution.md)
 
-## Conventions used in this guide
+## Conventions
 
-- **Bold** names such as **Settings → Alerts** are labels you can click in the interface; `code` is something you type or a file name.
-- `Ctrl` shortcuts use `⌘` on macOS.
-- Paths such as `/manage/settings/alerts` are routes of the web interface, which you can bookmark.
-- Commands that start with `pnpm` run in a checkout of the repository. With Docker Compose, the guide gives the
-  `docker compose exec backend …` equivalent.
+- **Bold** is a label you can click, such as **Settings → Alerts**. `Code` is something you type or a file name.
+- Shortcuts use `Ctrl`; on macOS use `⌘`.
+- Commands starting with `pnpm` run in a repository checkout. With Docker Compose, use `docker compose exec backend …`.
