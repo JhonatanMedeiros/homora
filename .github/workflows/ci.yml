@@ -17,7 +17,8 @@ env:
   # Optional Turborepo Remote Cache. Without them Turborepo uses only the local cache.
   # The token is not available to pull requests from forks.
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  # The team slug is not sensitive, so a variable is preferred, but a secret works too.
+  TURBO_TEAM: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 jobs:
   lint:
     if: github.event_name == 'pull_request'
