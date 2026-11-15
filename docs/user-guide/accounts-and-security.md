@@ -1,3 +1,7 @@
+---
+description: 'Sessions, password reset, two-step verification, passkeys and secret rotation.'
+---
+
 # Accounts, sessions and security
 
 Homora has one local administrator account protected by a password, with optional two-step verification and passkeys.

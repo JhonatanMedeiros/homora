@@ -1,3 +1,7 @@
+---
+description: 'Step-by-step recipes for common homelab goals: bookmarks, alerts, status pages, Proxmox, Docker, AI agents and more.'
+---
+
 # Use cases
 
 Practical recipes for common homelab goals. Each one lists the steps and links to the guide with the details.

@@ -1,3 +1,7 @@
+---
+description: 'Let AI agents propose changes through MCP with scoped tokens, while you review and approve every proposal.'
+---
+
 # AI agents and MCP
 
 Homora can be driven by AI agents through the Model Context Protocol (MCP), with one hard rule: **agents only

@@ -1,3 +1,7 @@
+---
+description: 'Task-by-task guides for using, running and securing Homora.'
+---
+
 # Homora user guide
 
 Everything you can do with Homora, explained task by task. The project [README](../../README.md) is the

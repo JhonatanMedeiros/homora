@@ -248,7 +248,7 @@ está em [docs/strategy.md](docs/strategy.md) e [docs/evolution.md](docs/evoluti
 
 ## Documentação
 
-O site de documentação pode ser executado localmente com `pnpm docs:dev`; consulte a [configuração e hospedagem](docs/maintainers/documentation.md). O site ainda não foi publicado.
+Leia online em **[homora-dash.vercel.app](https://homora-dash.vercel.app)** ou execute o site localmente com `pnpm docs:dev`; consulte a [configuração e hospedagem](docs/maintainers/documentation.md).
 
 O site inclui guias em português e referências detalhadas em inglês.
 
