@@ -12,6 +12,7 @@ import { cloudflareManifest } from '../integrations/cloudflare/definition.js';
 import { coolifyDefinition } from '../integrations/coolify/definition.js';
 import { proxmoxDefinition } from '../integrations/proxmox/definition.js';
 import { piHoleDefinition } from '../integrations/pi-hole/definition.js';
+import { healthchecksManifest } from '../integrations/healthchecks/definition.js';
 export { jellyfinManifest };
 export { homeAssistantManifest };
 export { uptimeKumaManifest };
@@ -24,6 +25,7 @@ export { cloudflareManifest };
 export { coolifyDefinition };
 export { proxmoxDefinition };
 export { piHoleDefinition };
+export { healthchecksManifest };
 const entries: readonly { type: string; definition: IntegrationDefinition }[] = [
   { type: 'jellyfin', definition: jellyfinManifest },
   { type: 'home-assistant', definition: homeAssistantManifest },
@@ -37,6 +39,7 @@ const entries: readonly { type: string; definition: IntegrationDefinition }[] = 
   { type: 'coolify', definition: coolifyDefinition },
   { type: 'proxmox', definition: proxmoxDefinition },
   { type: 'pi-hole', definition: piHoleDefinition },
+  { type: 'healthchecks', definition: healthchecksManifest },
 ];
 for (const entry of entries) {
   if (entry.type !== entry.definition.type)
