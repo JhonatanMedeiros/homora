@@ -1,7 +1,7 @@
 # Contributing
 
 Homora is in active development and is available under the [MIT license](LICENSE).
-See also [security](SECURITY.md) before reporting a vulnerability.
+Please follow the [code of conduct](CODE_OF_CONDUCT.md) and see [security](SECURITY.md) before reporting a vulnerability.
 
 ## Setup and Validation
 

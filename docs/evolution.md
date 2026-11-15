@@ -2007,3 +2007,8 @@ the HTTP and stdio transports were not manually verified.
 - The profile menu opens release notes with search and pagination; an indicator appears only when an identified installed release is older than a published stable release. The backend retrieves a fixed GitHub feed using the restricted transport; network and privacy boundaries are recorded in ADR 0025.
 - Validation: `pnpm build`, `pnpm check`, focused authorization, network, parsing and UI tests, and browser checks with a synthetic release feed at desktop and mobile widths. The existing transport retrieved a public GitHub Atom feed. The real Homora feed remains unvalidated because the repository has not published a public release.
 - The local development mock mode supplies clearly labeled example notes without an update indicator or external links; normal installations still use GitHub. Focused tests and an isolated development-mode container verified the example dialog and search on desktop and mobile; no public Homora release was queried.
+
+### Open-source contribution entry points
+
+- Added issue and pull request templates, a code of conduct and support guidance, plus grouped Dependabot version updates for the pnpm workspace. The templates request synthetic data and direct vulnerability reports to the private security channel.
+- Validated YAML parsing, required form fields, Dependabot configuration, formatting and the `deps:` commit convention locally. GitHub's form rendering and Dependabot's first update run remain unverified.
