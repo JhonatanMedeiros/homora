@@ -4,15 +4,15 @@ Pull requests to `main` run the workflow in `.github/workflows/ci.yml`. This pag
 
 ## Jobs
 
-| Job          | Runs                                                            |
-| ------------ | --------------------------------------------------------------- |
-| `lint`       | `pnpm lint`                                                     |
-| `format`     | `pnpm format:check`                                             |
-| `type-check` | `pnpm type-check` (builds the workspace packages first)         |
-| `test`       | `pnpm build`, then `pnpm test` (the tests import `dist`)        |
-| `build`      | `pnpm build` and `pnpm docs:build`                              |
-| `docker`     | Builds the `homora` and `discovery-agent` image targets         |
-| `validate`   | Passes only when `lint`, `format`, `type-check` and `test` pass |
+| Job          | Runs                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lint`       | `pnpm lint`                                                                                                                                             |
+| `format`     | `pnpm format:check`                                                                                                                                     |
+| `type-check` | `pnpm type-check` (builds the workspace packages first)                                                                                                 |
+| `test`       | Three parallel shards: `pnpm build`, then `vitest run --shard=N/3` (the tests import `dist`); the first also runs `node --test scripts/test/*.test.mjs` |
+| `build`      | `pnpm build` and `pnpm docs:build`                                                                                                                      |
+| `docker`     | Builds the `homora` and `discovery-agent` image targets                                                                                                 |
+| `validate`   | Passes only when `lint`, `format`, `type-check` and every `test` shard pass                                                                             |
 
 The first four run in parallel instead of one long `pnpm check`. `validate` only aggregates them, so a branch protection rule that requires `validate` keeps working; if you require checks by name, require `validate`, `build` and `docker`. `pnpm check` still runs everything locally and in the release workflow.
 

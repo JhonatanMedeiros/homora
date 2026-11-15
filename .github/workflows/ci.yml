@@ -47,12 +47,20 @@ jobs:
   test:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: test (${{ matrix.shard }}/3)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       # The tests import the compiled workspace packages.
       - run: pnpm build
-      - run: pnpm test
+      - run: pnpm exec vitest run --shard=${{ matrix.shard }}/3
+      # The script tests are small, so they run once, with the first shard.
+      - if: matrix.shard == 1
+        run: node --test scripts/test/*.test.mjs
 
   # Aggregates the checks above under the name "validate", so a branch protection rule that
   # requires it keeps working.
