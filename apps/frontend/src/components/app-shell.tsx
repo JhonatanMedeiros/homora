@@ -68,7 +68,7 @@ export function AppShell({
   const build = useBuildVersion();
   const feed = useReleaseFeed();
   const installedTag = build?.releaseTag ?? null;
-  const updateAvailable = hasUpdate(installedTag, feed.releases);
+  const updateAvailable = !feed.demo && hasUpdate(installedTag, feed.releases);
   return (
     <div className="min-h-svh">
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
@@ -193,6 +193,7 @@ export function AppShell({
         status={feed.status}
         releases={feed.releases}
         currentTag={installedTag}
+        demo={feed.demo}
         retry={feed.retry}
       />
       <main

@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { createReleaseNotes } from './release-notes.js';
 import { createAppTestContext } from './app-test-context.js';
 import * as network from './network-request.js';
+import { createDatabase } from '@homora/db';
+import { createApp } from './app.js';
+import { createTestSession } from './test-auth.js';
 
 describe('release notes retrieval', () => {
   it('only requests the fixed public origin with restricted transport and caches the result', async () => {
@@ -60,10 +63,36 @@ it('returns release feed as JSON only to signed-in users', async () => {
     });
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-type']).toContain('application/json');
-    expect(response.json()).toEqual({ feed: '<feed><entry>example</entry></feed>' });
+    expect(response.json()).toEqual({ feed: '<feed><entry>example</entry></feed>', demo: false });
     expect(request).toHaveBeenCalledTimes(1);
   } finally {
     await close();
+    vi.restoreAllMocks();
+  }
+});
+
+it('provides clearly marked sample notes without making a network request in development mode', async () => {
+  const request = vi.spyOn(network, 'getAuthorizedResponse');
+  const database = createDatabase(':memory:');
+  const { auth, cookie } = createTestSession();
+  const app = createApp(database.db, 5173, auth, undefined, [], undefined, {
+    developmentMocks: true,
+  });
+  try {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/release-notes',
+      headers: { cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      demo: true,
+      feed: expect.stringContaining('Example release notes'),
+    });
+    expect(request).not.toHaveBeenCalled();
+  } finally {
+    await app.close();
+    database.close();
     vi.restoreAllMocks();
   }
 });

@@ -41,6 +41,7 @@ export const en = {
   'app.logout': 'Sign out',
   'app.version': 'Version {version}',
   'releases.title': "What's new",
+  'releases.demo': 'Example data for development; these are not published releases.',
   'releases.description': 'Release notes and updates for Homora.',
   'releases.search': 'Search release notes',
   'releases.loading': 'Loading release notes',
@@ -57,8 +58,6 @@ export const en = {
   'releases.next': 'Next release',
   'releases.page': 'Release {current} of {total}',
   'releases.github': 'View release on GitHub',
-  'releases.privacy':
-    'Homora checks GitHub every six hours while signed in. GitHub receives your server’s IP address.',
   'releases.retry': 'Try again',
   'app.localNote': 'Local environment, reachable only from this machine.',
   'brand.home': 'Homora, home',
@@ -108,6 +107,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'app.logout': 'Sair',
   'app.version': 'Versão {version}',
   'releases.title': 'Novidades',
+  'releases.demo': 'Dados de exemplo para desenvolvimento; estas versões não foram publicadas.',
   'releases.description': 'Notas de versão e atualizações do Homora.',
   'releases.search': 'Buscar nas notas de versão',
   'releases.loading': 'Carregando notas de versão',
@@ -124,8 +124,6 @@ export const ptBR: Record<keyof typeof en, string> = {
   'releases.next': 'Próxima versão',
   'releases.page': 'Versão {current} de {total}',
   'releases.github': 'Ver release no GitHub',
-  'releases.privacy':
-    'O Homora consulta o GitHub a cada seis horas enquanto você está conectado. O GitHub recebe o IP do servidor.',
   'releases.retry': 'Tentar novamente',
   'app.localNote': 'Ambiente local, acessível somente nesta máquina.',
   'brand.home': 'Homora, início',

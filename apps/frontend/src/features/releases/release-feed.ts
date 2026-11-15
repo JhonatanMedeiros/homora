@@ -134,7 +134,9 @@ export function parseReleases(xml: string): Release[] {
 }
 
 /** Read the same-origin feed; the backend owns the fixed outbound destination. */
-export async function fetchReleases(signal: AbortSignal): Promise<Release[]> {
+export async function fetchReleases(
+  signal: AbortSignal,
+): Promise<{ releases: Release[]; demo: boolean }> {
   const response = await fetch(RELEASES_URL, {
     signal,
     redirect: 'error',
@@ -167,5 +169,8 @@ export async function fetchReleases(signal: AbortSignal): Promise<Release[]> {
     payload.feed.length > 512_000
   )
     throw new Error('Invalid release feed');
-  return parseReleases(payload.feed);
+  return {
+    releases: parseReleases(payload.feed),
+    demo: 'demo' in payload && payload.demo === true,
+  };
 }

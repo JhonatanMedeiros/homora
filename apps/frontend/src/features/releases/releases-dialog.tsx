@@ -23,6 +23,7 @@ type Props = {
   status: 'loading' | 'ready' | 'error';
   releases: Release[];
   currentTag: string | null;
+  demo?: boolean;
   retry: () => void;
 };
 
@@ -95,7 +96,15 @@ function Notes({ text }: { text: string }) {
   );
 }
 
-export function ReleasesDialog({ open, onOpenChange, status, releases, currentTag, retry }: Props) {
+export function ReleasesDialog({
+  open,
+  onOpenChange,
+  status,
+  releases,
+  currentTag,
+  demo = false,
+  retry,
+}: Props) {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const normalized = query.trim().toLocaleLowerCase();
@@ -111,6 +120,11 @@ export function ReleasesDialog({ open, onOpenChange, status, releases, currentTa
           <DialogTitle>{t('releases.title')}</DialogTitle>
           <DialogDescription>{t('releases.description')}</DialogDescription>
         </DialogHeader>
+        {demo && (
+          <Alert>
+            <AlertDescription>{t('releases.demo')}</AlertDescription>
+          </Alert>
+        )}
         {status === 'loading' && (
           <LoadingRegion label={t('releases.loading')} className="flex flex-col gap-3">
             <Skeleton className="h-10 w-full" />
@@ -147,17 +161,21 @@ export function ReleasesDialog({ open, onOpenChange, status, releases, currentTa
         {current && (
           <div className="min-h-0 overflow-y-auto rounded-md border p-4">
             <div className="mb-4 flex flex-wrap items-center gap-2">
-              <a
-                className="inline-flex items-center gap-1 font-semibold underline-offset-4 hover:underline"
-                href={releaseUrl(current.tag)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {current.tag}
-                <ExternalLink className="size-3" />
-                <span className="sr-only"> {t('releases.github')}</span>
-              </a>
-              {currentTag && compareVersions(current.tag, currentTag) === 0 && (
+              {demo ? (
+                <span className="font-semibold">{current.tag}</span>
+              ) : (
+                <a
+                  className="inline-flex items-center gap-1 font-semibold underline-offset-4 hover:underline"
+                  href={releaseUrl(current.tag)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {current.tag}
+                  <ExternalLink className="size-3" />
+                  <span className="sr-only"> {t('releases.github')}</span>
+                </a>
+              )}
+              {!demo && currentTag && compareVersions(current.tag, currentTag) === 0 && (
                 <Badge variant="secondary">{t('releases.current')}</Badge>
               )}
               <time className="text-xs text-muted-foreground" dateTime={current.date}>
@@ -201,7 +219,6 @@ export function ReleasesDialog({ open, onOpenChange, status, releases, currentTa
             </div>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">{t('releases.privacy')}</p>
       </DialogContent>
     </Dialog>
   );

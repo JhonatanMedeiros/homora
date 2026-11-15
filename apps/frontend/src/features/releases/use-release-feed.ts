@@ -6,7 +6,8 @@ export function useReleaseFeed() {
   const [state, setState] = useState<{
     status: 'loading' | 'ready' | 'error';
     releases: Release[];
-  }>({ status: 'loading', releases: [] });
+    demo: boolean;
+  }>({ status: 'loading', releases: [], demo: false });
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => {
     setState((previous) => ({ ...previous, status: 'loading' }));
@@ -21,8 +22,8 @@ export function useReleaseFeed() {
       const current = request;
       const timer = setTimeout(() => current.abort(), 8000);
       try {
-        const releases = await fetchReleases(current.signal);
-        if (!controller.signal.aborted) setState({ status: 'ready', releases });
+        const result = await fetchReleases(current.signal);
+        if (!controller.signal.aborted) setState({ status: 'ready', ...result });
       } catch {
         if (!controller.signal.aborted) setState((previous) => ({ ...previous, status: 'error' }));
       } finally {

@@ -50,3 +50,19 @@ it('filters release notes and provides a retry on error', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
   expect(retry).toHaveBeenCalledOnce();
 });
+
+it('labels development examples and does not link to invented releases', () => {
+  render(
+    <ReleasesDialog
+      open
+      onOpenChange={() => {}}
+      status="ready"
+      releases={releases}
+      currentTag="v0.1.0"
+      demo
+      retry={() => {}}
+    />,
+  );
+  expect(screen.getByText(/Dados de exemplo para desenvolvimento/)).toBeTruthy();
+  expect(screen.queryByRole('link', { name: /v0.2.0/ })).toBeNull();
+});

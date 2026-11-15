@@ -67,7 +67,10 @@ it('reads only the authenticated same-origin endpoint and does not follow redire
     .fn()
     .mockResolvedValue(new Response(JSON.stringify({ feed: feed('') }), { status: 200 }));
   vi.stubGlobal('fetch', fetchMock);
-  await expect(fetchReleases(new AbortController().signal)).resolves.toEqual([]);
+  await expect(fetchReleases(new AbortController().signal)).resolves.toEqual({
+    releases: [],
+    demo: false,
+  });
   expect(fetchMock).toHaveBeenCalledWith(
     '/api/release-notes',
     expect.objectContaining({ redirect: 'error' }),

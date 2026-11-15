@@ -73,6 +73,9 @@ version is available. The indicator requires an identified release image; source
 release tag do not claim to be up to date. The server requests public release information from GitHub when you sign in and every six hours while the page remains open. GitHub receives the server's public IP address; the request includes no Homora credentials, hostname, services or inventory. If GitHub is unavailable,
 the rest of Homora keeps working.
 
+When running the local development environment with `pnpm dev`, this window uses clearly marked
+example notes instead of contacting GitHub. They are not real releases and never trigger an update indicator.
+
 Press `?` anywhere to see every keyboard shortcut.
 
 ## 5. Get alerted when something breaks
