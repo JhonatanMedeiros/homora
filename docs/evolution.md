@@ -2016,3 +2016,8 @@ the HTTP and stdio transports were not manually verified.
 
 - Added a VitePress site using the existing English user guide and reference documentation, with local search, responsive navigation, dark and light themes, and contributor entry points. The documentation remains available as Markdown in the repository.
 - The site builds to static files and includes setup instructions for Vercel and Netlify. `pnpm docs:build`, `pnpm build`, and `pnpm check` passed locally; browser checks covered search, navigation and mobile layout. Publication and the first provider-hosted build remain pending.
+
+### Documentation languages and release link
+
+- Added a Portuguese site and user guides covering the main workflows, with English as the default and links to detailed English references. The home page checks GitHub for the latest public stable release and falls back to the releases page when it cannot identify one.
+- Local validation covers the static build, language selection and search, a simulated release, a failed request and a mobile viewport. Public release lookup remains unverified until a release is accessible.

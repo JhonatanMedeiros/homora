@@ -20,6 +20,12 @@ pnpm docs:preview
 
 The static output is written to `docs/.vitepress/dist`. The configuration and navigation are in `docs/.vitepress/config.mts`; the theme is in `docs/.vitepress/theme/`. Add new pages to the appropriate sidebar section and use relative Markdown links where practical, so documents also work on GitHub. Check links, screenshots, and any claims about product behavior against the implementation.
 
+## Languages and releases
+
+English is the default. The language menu also opens the Portuguese site at `docs/pt-BR/`; its user guides cover the main workflows and link to the detailed English references. When changing product behavior, update both language versions or explicitly record any remaining translation work. Links to English-only technical references are labeled. The language menu returns to the selected language's home page so that untranslated pages do not lead to missing routes.
+
+On the home page, the browser requests the latest public stable release from the fixed GitHub API endpoint. GitHub receives the visitor's IP address. If the repository has no accessible release, the request fails, or its tag is not a valid stable version, the site displays a link to the releases page instead of guessing a version. The release number is not taken from the source checkout or Docker `latest` tag.
+
 ## Deploy to Vercel or Netlify
 
 Create a project connected to this repository only when ready to publish. Use the repository root as the project root, Node 24 and pnpm 12.4.2 (the version pinned in `package.json`). The settings are the same for both services:

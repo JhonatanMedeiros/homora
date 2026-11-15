@@ -17,8 +17,8 @@
 > As capturas de tela deste repositório vêm de uma instalação de demonstração com dados sintéticos
 > ([como são feitas](docs/screenshots/README.md)).
 >
-> **Nota sobre o idioma:** a interface do Homora é totalmente bilíngue (inglês e português do Brasil), mas a
-> documentação detalhada em `docs/` é mantida em inglês. Os links abaixo levam a ela.
+> **Nota sobre o idioma:** a interface oferece inglês e português do Brasil. O site de documentação inclui
+> guias em português; as referências técnicas detalhadas permanecem em inglês.
 
 Aliases curtos opcionais como `/go/plex` exigem login e acompanham a URL atual do serviço. Alterar ou remover o alias invalida favoritos; reutilizá-lo para outro serviço fará antigos favoritos abrirem o novo serviço.
 
@@ -250,7 +250,7 @@ está em [docs/strategy.md](docs/strategy.md) e [docs/evolution.md](docs/evoluti
 
 O site de documentação pode ser executado localmente com `pnpm docs:dev`; consulte a [configuração e hospedagem](docs/maintainers/documentation.md). O site ainda não foi publicado.
 
-A documentação detalhada está em inglês.
+O site inclui guias em português e referências detalhadas em inglês.
 
 **Guia do usuário**
 

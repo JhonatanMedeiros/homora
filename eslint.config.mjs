@@ -60,6 +60,7 @@ export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
+      'docs/.vitepress/cache/**',
       '**/node_modules/**',
       '.agent/**',
       '.agents/**',
