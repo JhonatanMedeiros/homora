@@ -31,8 +31,7 @@ answers the question you actually have when something feels off: **what is down,
   credentials encrypted at rest.
 - **Release notes in the app.** The profile menu shows what's new and highlights newer stable releases.
   While signed in, Homora checks GitHub for release notes; GitHub sees the server's public IP address.
-- **Bring your setup with you.** Import from [Homepage](https://github.com/gethomepage/homepage) or
-  [Dashy](https://github.com/Lissy93/dashy), always with a preview, and export to YAML or JSON whenever you like.
+- **Bring your setup with you.** Import supported configurations with a preview, and export to YAML or JSON whenever you like.
 
 ## Quick start
 
@@ -205,7 +204,7 @@ Homora is responsive and works on a phone too:
 
 | You want to...                                      | Homora gives you...                                                                                      |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Stop remembering ports and bookmarks                | One page with groups, pages, search and shortcuts, plus an import from Homepage or Dashy.                |
+| Stop remembering ports and bookmarks                | One page with groups, pages, search and shortcuts, plus configuration import.                            |
 | Know when something breaks, before your family does | Checks on every card, alerts to your phone and an optional public status page.                           |
 | Understand an outage                                | Incident log, failure reasons, latency history and a map of what depends on which host.                  |
 | Add services you already run in Docker              | Label-based discovery with a review step, locally or from remote hosts.                                  |
@@ -258,7 +257,7 @@ The documentation site can be built locally with `pnpm docs:dev`; see [site setu
 | [Docker discovery](docs/user-guide/docker-discovery.md)                           | Labels, remote agents and the restricted Docker proxy.                          |
 | [AI agents and MCP](docs/user-guide/agents-and-mcp.md)                            | Tokens, scopes, proposals, review and client setup.                             |
 | [Appearance and personalization](docs/user-guide/appearance.md)                   | Themes, accent colors, backgrounds, custom CSS and safe mode.                   |
-| [Import, export and backup](docs/user-guide/import-export-backup.md)              | Moving from Homepage or Dashy, exporting, backing up and restoring.             |
+| [Import, export and backup](docs/user-guide/import-export-backup.md)              | Importing, exporting, backing up and restoring.                                 |
 | [Accounts and security](docs/user-guide/accounts-and-security.md)                 | Sessions, two-step verification, passkeys and account recovery.                 |
 | [Deployment and upgrades](docs/user-guide/deployment.md)                          | Docker, HTTPS reverse proxy, environment variables and upgrades.                |
 | [Logs and health checks](docs/user-guide/logs.md)                                 | JSON logs, `HOMORA_LOG_LEVEL`, what is never logged and `/api/health`.          |
@@ -268,7 +267,7 @@ The documentation site can be built locally with `pnpm docs:dev`; see [site setu
 
 - [Glossary](GLOSSARY.md) · [Product](docs/product.md) · [Architecture and security](docs/architecture.md) · [Engineering standards](docs/standards.md)
 - [Integration reference](docs/integrations.md) · [Writing an integration](docs/adapters.md) · [Agent capability inventory](docs/agent-capabilities.md) · [Ten-minute agent demo](docs/agent-demo.md)
-- [Strategy versus Homepage and Dashy](docs/strategy.md) · [Delivery plan](docs/plan.md) · [Evolution plan and progress](docs/evolution.md) · [Decision records](docs/decisions)
+- [Product strategy](docs/strategy.md) · [Delivery plan](docs/plan.md) · [Evolution plan and progress](docs/evolution.md) · [Decision records](docs/decisions)
 - [Guidance for AI agents](AGENTS.md) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 
 ## Development

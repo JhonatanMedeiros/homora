@@ -49,7 +49,7 @@ Within a minute the card shows **Online**, **Offline** or **Waiting**, with the 
 redirect or a login prompt counts as Online; a failing card explains why (not found, server error, no response)
 and opens a **Details** panel with the recent checks.
 
-> **Tip:** if you already use Homepage or Dashy, skip the typing. Import your existing file from
+> **Tip:** if you have a supported configuration file, skip the typing. Import it from
 > **Settings → Export and import**. See [Import, export and backup](import-export-backup.md).
 
 ## 4. Know your way around

@@ -55,8 +55,8 @@ both implementation and stated verification criteria are met; existing code alon
 does not imply the end-to-end workflow has been validated. Work phases may be decomposed
 into smaller subtasks.
 
-> **Direction (2026-11-10):** strategic positioning relative to Homepage and Dashy
-> alongside phases R0 through R4 are detailed in [strategy.md](strategy.md).
+> **Direction (2026-11-10):** the product direction
+> and phases R0 through R4 are detailed in [strategy.md](strategy.md).
 > Phases P0 through P5 below continue tracking baseline progress; when beginning an
 > R phase, break down its goals into tracking items here.
 
@@ -365,7 +365,7 @@ gaps remain recorded in [integrations](integrations.md).
 Integration candidates are tracked in the [integration catalog](integration-catalog.md) and
 [epic #178](https://github.com/JhonatanMedeiros/homora/issues/178).
 
-Origin: [strategy.md](strategy.md), phase R1 and real-world Homepage migration benchmark.
+Origin: [strategy.md](strategy.md), phase R1 and real-world migration validation.
 Mark items only with stated implementation and verification evidence.
 
 - [ ] **In-card widgets:** each card can display metrics from an attached connection, showing
@@ -415,8 +415,7 @@ appears monitored without being checked, and reference migration benchmark can b
   in `apps/frontend/public/brand-icons` and served directly by Homora. No third-party CDN requests;
   opening the dashboard never leaks client IPs. Curated for homelab and self-hosting services;
   strictly clean vector SVGs (5 icons discarded due to embedded bitmaps or `foreignObject`).
-  Icons existing solely as PNG in upstream project (e.g. Homepage, Dashy, Linkwarden, Speedtest
-  Tracker) were excluded.
+  Icons available only as PNG in the upstream project were excluded.
 - Format: `brand:name` (names listed in `packages/shared/src/brand-icons.ts`; unlisted values
   discarded by `normalizeIcon`). UI renders the logo and falls back to initials if loading fails.
 - UI: icon picker displays brand logos alongside built-in Lucide icons; service form offers
@@ -557,7 +556,7 @@ appears monitored without being checked, and reference migration benchmark can b
 - Full Compose stack: `docker compose -f compose.yml -f compose.docker-discovery.yml up` brought up
   backend, frontend, and proxy with zero direct socket mounts on the backend.
 - Not validated: Docker Swarm, Podman, rootless Docker, remote daemon hosts, arm64 proxy image,
-  automatic card updates on label changes (discovery is strictly on-demand), Traefik/Dashy labels.
+  automatic card updates on label changes (discovery is strictly on-demand), other label formats.
 
 ### Docker discovery batch review (2026-11-14)
 

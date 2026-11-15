@@ -31,7 +31,7 @@ showcase; this guide is the manual.
 | Guide                                                | Topics                                                                     |
 | ---------------------------------------------------- | -------------------------------------------------------------------------- |
 | [Deployment and upgrades](deployment.md)             | Docker Compose, HTTPS reverse proxy, tested scenarios, upgrading           |
-| [Import, export and backup](import-export-backup.md) | Homepage and Dashy import, YAML and JSON export, backup and restore        |
+| [Import, export and backup](import-export-backup.md) | Configuration import, YAML and JSON export, backup and restore             |
 | [Accounts and security](accounts-and-security.md)    | Sessions, two-step verification, passkeys, password reset, secret rotation |
 
 ## Reference

@@ -7,8 +7,8 @@ are tracked in [strategy](strategy.md) and [evolution plan](evolution.md), not r
 
 ## Phase 0 — Validation
 
-- [x] Evaluate existing dashboards and document real gaps in
-      [product and competitor evaluation](product-evaluation.md); positioning hypothesis
+- [x] Evaluate Homora and document gaps in
+      [product evaluation](product-evaluation.md); positioning hypothesis
       still needs validation with users.
 - [ ] Finalize name, target audience, and usage examples; verify name and trademark availability.
 - [x] Choose tech stack (Fastify, React, SQLite), distribution format (Docker

@@ -35,8 +35,7 @@ entrada única e responde à pergunta que você realmente tem quando algo parece
 - **Local e privado.** SQLite no seu disco, logos servidos localmente, sem telemetria e credenciais criptografadas em repouso.
 - **Novidades no sistema.** O menu do perfil mostra as notas e destaca versões estáveis mais recentes.
   Enquanto você estiver conectado, o Homora consulta o GitHub, que recebe o IP público do servidor.
-- **Traga sua configuração.** Importe do [Homepage](https://github.com/gethomepage/homepage) ou do
-  [Dashy](https://github.com/Lissy93/dashy), sempre com pré-visualização, e exporte para YAML ou JSON quando quiser.
+- **Traga sua configuração.** Importe configurações compatíveis com pré-visualização e exporte para YAML ou JSON quando quiser.
 
 ## Início rápido
 
@@ -210,7 +209,7 @@ O Homora é responsivo e também funciona no celular:
 
 | Você quer...                                  | O Homora oferece...                                                                                                |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Parar de lembrar portas e favoritos           | Uma página com grupos, páginas, busca e atalhos, além de importação do Homepage ou do Dashy.                       |
+| Parar de lembrar portas e favoritos           | Uma página com grupos, páginas, busca e atalhos, além de importação de configurações.                              |
 | Saber quando algo quebra antes da sua família | Verificações em cada card, alertas no celular e uma página pública de status opcional.                             |
 | Entender uma queda                            | Registro de incidentes, motivos de falha, histórico de latência e um mapa do que depende de cada host.             |
 | Adicionar serviços que você já roda no Docker | Descoberta por labels com etapa de revisão, localmente ou a partir de hosts remotos.                               |
@@ -265,7 +264,7 @@ A documentação detalhada está em inglês.
 | [Docker discovery](docs/user-guide/docker-discovery.md)                           | Labels, agentes remotos e o proxy Docker restrito.                                              |
 | [AI agents and MCP](docs/user-guide/agents-and-mcp.md)                            | Tokens, escopos, propostas, revisão e configuração dos clientes.                                |
 | [Appearance and personalization](docs/user-guide/appearance.md)                   | Temas, cores de destaque, fundos, CSS personalizado e modo seguro.                              |
-| [Import, export and backup](docs/user-guide/import-export-backup.md)              | Migrar do Homepage ou do Dashy, exportar, fazer backup e restaurar.                             |
+| [Import, export and backup](docs/user-guide/import-export-backup.md)              | Importar, exportar, fazer backup e restaurar.                                                   |
 | [Accounts and security](docs/user-guide/accounts-and-security.md)                 | Sessões, verificação em duas etapas, passkeys e recuperação de conta.                           |
 | [Deployment and upgrades](docs/user-guide/deployment.md)                          | Docker, proxy reverso HTTPS, variáveis de ambiente e atualizações.                              |
 | [Use cases](docs/user-guide/use-cases.md)                                         | Receitas passo a passo para objetivos comuns de homelab.                                        |
@@ -274,7 +273,7 @@ A documentação detalhada está em inglês.
 
 - [Glossário](GLOSSARY.md) · [Produto](docs/product.md) · [Arquitetura e segurança](docs/architecture.md) · [Padrões de engenharia](docs/standards.md)
 - [Referência de integrações](docs/integrations.md) · [Como escrever uma integração](docs/adapters.md) · [Inventário de capacidades dos agentes](docs/agent-capabilities.md) · [Demonstração de agentes em dez minutos](docs/agent-demo.md)
-- [Estratégia frente ao Homepage e ao Dashy](docs/strategy.md) · [Plano de entrega](docs/plan.md) · [Plano de evolução](docs/evolution.md) · [Registros de decisão](docs/decisions)
+- [Estratégia do produto](docs/strategy.md) · [Plano de entrega](docs/plan.md) · [Plano de evolução](docs/evolution.md) · [Registros de decisão](docs/decisions)
 - [Orientações para agentes de IA](AGENTS.md) · [Como contribuir](CONTRIBUTING.md) · [Política de segurança](SECURITY.md)
 
 ## Desenvolvimento
