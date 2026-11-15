@@ -23,14 +23,14 @@ The shared setup (Node, pnpm, dependencies and the Turborepo cache) lives in `.g
 Turborepo skips tasks whose inputs did not change. A GitHub runner is discarded after each run, so the cache has to be stored somewhere:
 
 - **Remote Cache (recommended).** When `TURBO_TOKEN` and `TURBO_TEAM` are set, Turborepo shares results across branches, CI runs and your machine.
-- **GitHub cache (fallback).** Without a token (for example in pull requests from forks, which cannot read secrets), the setup action keeps `.turbo/cache` between runs of the same branch.
+- **GitHub cache (fallback).** Without a token or team (for example in pull requests from forks, which cannot read secrets), the setup action keeps `.turbo/cache` between runs of the same branch.
 
 ### Configure the Remote Cache
 
 1. Create a token in the Vercel dashboard under **Account Settings → Tokens**. Give it the shortest expiry you are comfortable renewing. A token created on a personal account can access everything in that account, not only the cache, so treat it as a sensitive secret.
 2. In the GitHub repository, open **Settings → Secrets and variables → Actions** and add:
    - the **secret** `TURBO_TOKEN` with the token;
-   - the **variable** `TURBO_TEAM` with the team slug (for a personal account, the account slug).
+   - the **variable** `TURBO_TEAM` with the team slug (for a personal account, the account slug). The workflow also accepts it as a secret.
 3. Open a pull request and check that the Turborepo output says `Remote caching enabled` and that a second run shows `cache hit` lines.
 
 To authenticate artifacts, you can also set a `TURBO_REMOTE_CACHE_SIGNATURE_KEY` secret and `remoteCache.signature: true` in `turbo.json`; Turborepo then rejects cache entries that were not signed with the key.
