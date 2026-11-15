@@ -29,6 +29,8 @@ answers the question you actually have when something feels off: **what is down,
   cards, groups and widgets, but nothing changes until you approve the exact proposal, and every step is audited.
 - **Local-first and private.** SQLite on your disk, brand icons served locally, no telemetry, and
   credentials encrypted at rest.
+- **Release notes in the app.** The profile menu shows what's new and highlights newer stable releases.
+  While signed in, Homora checks GitHub for release notes; GitHub sees the server's public IP address.
 - **Bring your setup with you.** Import from [Homepage](https://github.com/gethomepage/homepage) or
   [Dashy](https://github.com/Lissy93/dashy), always with a preview, and export to YAML or JSON whenever you like.
 

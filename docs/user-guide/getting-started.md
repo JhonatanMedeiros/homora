@@ -68,6 +68,10 @@ and opens a **Details** panel with the recent checks.
 | **Account** (avatar menu) | Password, two-step verification and passkeys.                                          |
 
 The avatar menu also links to the Homora repository on GitHub.
+It includes **What's new**, where you can search recent release notes and see whether a newer stable
+version is available. The indicator requires an identified release image; source builds without a
+release tag do not claim to be up to date. The server requests public release information from GitHub when you sign in and every six hours while the page remains open. GitHub receives the server's public IP address; the request includes no Homora credentials, hostname, services or inventory. If GitHub is unavailable,
+the rest of Homora keeps working.
 
 Press `?` anywhere to see every keyboard shortcut.
 

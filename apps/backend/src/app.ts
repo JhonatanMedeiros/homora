@@ -52,6 +52,7 @@ import { registerProbeRoutes } from './routes/probes.js';
 import { createProbeStore } from './probes.js';
 import { createAppearance } from './appearance.js';
 import { createBackgroundStore } from './background-image.js';
+import { createReleaseNotes } from './release-notes.js';
 import { registerAppearanceRoutes } from './routes/appearance.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
 import { createMonitoringTrustStore } from './monitoring/index.js';
@@ -257,6 +258,12 @@ export function createApp(
     allowedOrigins,
     options.apiPort ?? 3000,
   );
+
+  const releaseNotes = createReleaseNotes();
+  app.get('/api/release-notes', async (_request, reply) => {
+    const feed = await releaseNotes();
+    return feed === null ? reply.code(503).send(errorBody('internal-error')) : { feed };
+  });
 
   const build = buildInfo();
   app.get(HEALTH_PATH, async (_request, reply) => {

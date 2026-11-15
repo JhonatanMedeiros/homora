@@ -17,6 +17,9 @@ data or real credentials. There is no established response SLA or bug bounty pol
 
 ## Known Precautions
 
+- While signed in, Homora checks the fixed public GitHub releases feed for release notes and
+  newer stable versions every six hours. The request sends no Homora credentials, hostnames, service details or inventory, but GitHub receives
+  the server's public IP address. No automatic software update is performed.
 - Keep `.env`, `data/`, `.session-secret`, `.key`, and `.proxmox` files out of version control
   and with restricted permissions. Custom paths also need protection.
 - The database may contain encrypted credentials; the `.key` file is required to

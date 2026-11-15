@@ -33,6 +33,8 @@ entrada única e responde à pergunta que você realmente tem quando algo parece
 - **Agentes propõem, você decide.** Conecte um agente de IA por MCP com tokens restritos e revogáveis. Ele pode sugerir
   cards, grupos e widgets, mas nada muda até você aprovar a proposta exata, e cada passo fica registrado.
 - **Local e privado.** SQLite no seu disco, logos servidos localmente, sem telemetria e credenciais criptografadas em repouso.
+- **Novidades no sistema.** O menu do perfil mostra as notas e destaca versões estáveis mais recentes.
+  Enquanto você estiver conectado, o Homora consulta o GitHub, que recebe o IP público do servidor.
 - **Traga sua configuração.** Importe do [Homepage](https://github.com/gethomepage/homepage) ou do
   [Dashy](https://github.com/Lissy93/dashy), sempre com pré-visualização, e exporte para YAML ou JSON quando quiser.
 
