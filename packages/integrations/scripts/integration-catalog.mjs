@@ -1,6 +1,5 @@
 import { access, readFile, readdir, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
 import { format } from 'oxfmt';
 
 // The repository formatting rules, so generated files match `pnpm format:check`.
