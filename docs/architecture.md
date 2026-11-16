@@ -46,7 +46,7 @@ flowchart LR
 
 ## Module map
 
-Backend (`apps/backend/src`). Folders are capabilities; the first group has an ESLint-enforced entry point
+Backend (`apps/backend/src`). Folders are capabilities; the first group has an oxlint-enforced entry point
 (`index.ts`), the others are organised by convention.
 
 | Folder                                   | Responsibility                                                                                                        |
@@ -280,7 +280,7 @@ releases exist.
 interface is `monitoring/index.ts` (`createServiceMonitor`, `startServiceMonitor`,
 `createObservationStore`, `createRollupStore`, `createIncidentStore`, `createMaintenanceStore`,
 `MaintenanceError`, `serviceSignature` and the `ServiceStatus`/`CheckResult`/`StatusReason` types).
-An ESLint rule rejects imports of the folder's other files from outside it.
+An oxlint rule rejects imports of the folder's other files from outside it.
 
 Execution flow: `monitor.ts` (scheduler, concurrency, invalidation) -> `probe.ts` (HTTP/ICMP/TCP/DNS/TLS/
 keyword/JSON classification; uses `network-checks.ts` for raw sockets and `check-body.ts` for body
@@ -317,7 +317,7 @@ created; see [ADR 0013](decisions/0013-monitoring-capability-boundary.md).
 The architectural baseline is appropriate for an early-stage product: modular boundaries
 between frontend, backend, and shared packages are well-established, external integrations
 remain in the backend, the database is backed by migrations, and automated unit/integration
-tests cover critical paths. Strict TypeScript, pnpm workspaces, Turborepo, ESLint, Prettier,
+tests cover critical paths. Strict TypeScript, pnpm workspaces, Turborepo, oxlint, oxfmt,
 Vitest, and CI provide solid engineering hygiene. Microservices or additional generic
 frameworks are unnecessary.
 

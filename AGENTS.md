@@ -71,9 +71,19 @@ not necessarily the existing implementation.
   validation, persistence, tests, and recording architectural decisions.
 - Use the Node version specified in `.nvmrc` and the pnpm version in `package.json`.
   See the README for local installation and execution.
-- Available checks: `pnpm check` (lint, formatting, types, and tests) and
-  `pnpm build`. For smaller changes, run the relevant specific tests as well.
-  If dependencies or environment prevent execution, report it.
+- Available checks: `pnpm check` (lint with oxlint, formatting with oxfmt and types with
+  TypeScript 7 in parallel, then the tests) and `pnpm build`. For smaller changes, run the
+  relevant specific tests as well. If dependencies or environment prevent execution, report it.
+  `pnpm test` needs the workspace packages compiled; `pnpm type-check` does that.
+- A pre-push hook (`.husky/pre-push`) checks what you are about to push in a few seconds. Do not
+  skip it with `--no-verify`; fix what it reports. The CI workflow, its time budgets and how pull
+  requests select tests are in [maintaining CI](docs/maintainers/ci.md): read it before changing
+  `.github/workflows/ci.yml` or `scripts/ci/`, and do not raise a budget to hide a slowdown.
+- Test files share one worker and run in random order, so a test must leave nothing behind: use
+  `vi.stubGlobal`/`vi.stubEnv` instead of assigning to globals, give `Object.defineProperty` on
+  `window` `configurable: true` and `writable: true`, and stop intervals, listeners and servers in
+  `afterEach`. Never retry a test, widen a timeout or skip one to make CI green: a check that
+  needs a retry has a bug, so find it. The full rules are in [engineering standards](docs/standards.md).
 - Schema changes require a compatible migration and validation of data
   preservation. Do not delete existing databases or backups for testing; use
   isolated temporary files.

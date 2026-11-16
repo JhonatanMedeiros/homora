@@ -81,7 +81,8 @@ export function createProposalRefresh({
   function refresh(id: string, human: string) {
     return configuration.transaction(() => {
       const row = sqlite.prepare('SELECT * FROM service_proposals WHERE id=?').get(id) as
-        Row | undefined;
+        | Row
+        | undefined;
       const now = Date.now();
       if (!row || row.state !== 'pending' || row.expires_at <= now || row.batch_id)
         throw new Error('Proposal is unavailable');

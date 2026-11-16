@@ -191,7 +191,7 @@ export function createIncidentStore(
   return {
     /** Called with every monitor publication; only checks newer than the last one seen count. */
     observe(services: MonitoringService[], states: Record<number, ServiceStatus>) {
-      if (!services.length) return;
+      if (services.length === 0) return;
       const settings = readSettings();
       const ids = new Set(services.map(({ id }) => id));
       for (const id of streaks.keys()) if (!ids.has(id)) streaks.delete(id);
@@ -299,7 +299,8 @@ export function createIncidentStore(
 
     slaTarget(): number {
       const row = db.prepare('SELECT value FROM app_settings WHERE key=?').get(SLA_KEY) as
-        { value: string } | undefined;
+        | { value: string }
+        | undefined;
       const value = Number(row?.value);
       return Number.isFinite(value) && value >= 90 && value < 100 ? value : SLA_TARGET_DEFAULT;
     },

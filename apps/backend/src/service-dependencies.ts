@@ -5,7 +5,10 @@ export const MAX_DEPENDENCIES_PER_SERVICE = 50;
 export class DependencyError extends Error {
   constructor(
     readonly code:
-      'service-not-found' | 'dependency-self' | 'dependency-cycle' | 'dependency-limit',
+      | 'service-not-found'
+      | 'dependency-self'
+      | 'dependency-cycle'
+      | 'dependency-limit',
   ) {
     super(code);
     this.name = 'DependencyError';
@@ -29,7 +32,7 @@ export function createServiceDependencies(sqlite: DatabaseSync) {
   function reaches(from: number, target: number) {
     const seen = new Set<number>();
     const stack = [from];
-    while (stack.length) {
+    while (stack.length > 0) {
       const current = stack.pop()!;
       if (current === target) return true;
       if (seen.has(current)) continue;

@@ -10,7 +10,8 @@ export function createCustomCss(sqlite: DatabaseSync) {
   const read = (key: string) =>
     (
       sqlite.prepare('SELECT value FROM app_settings WHERE key=?').get(key) as
-        { value: string } | undefined
+        | { value: string }
+        | undefined
     )?.value;
   const write = (key: string, value: string) =>
     sqlite

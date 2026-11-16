@@ -1,8 +1,13 @@
 import { access, readFile, readdir, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import prettier from 'prettier';
+import { join, resolve } from 'node:path';
+import { format } from 'oxfmt';
 
+// The repository formatting rules, so generated files match `pnpm format:check`.
+const {
+  $schema: _schema,
+  ignorePatterns: _ignore,
+  ...formatOptions
+} = JSON.parse(await readFile(new URL('../../../.oxfmtrc.json', import.meta.url), 'utf8'));
 const identifier = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const typeName = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
@@ -127,22 +132,19 @@ export async function generateCatalog(root, write = false) {
   };
   for (const [name, text] of Object.entries(outputs)) {
     const path = join(source, 'generated', name);
-    const config = (await prettier.resolveConfig(path)) ?? {};
-    const formatted = await prettier.format(text, { ...config, filepath: path });
+    const { code: formatted, errors } = await format(path, text, formatOptions);
+    if (errors.length > 0) throw new Error(`Could not format ${name}: ${errors[0].message}`);
     if (write) await writeFile(path, formatted);
     else if ((await readFile(path, 'utf8')) !== formatted)
       throw new Error(`Integration catalog is stale: ${name}. Run pnpm integration:catalog.`);
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
   try {
     if (!['--check', '--write'].includes(process.argv[2]) || process.argv.length !== 3)
       throw new Error('Usage: pnpm integration:catalog');
-    await generateCatalog(
-      resolve(dirname(fileURLToPath(import.meta.url)), '../../..'),
-      process.argv[2] === '--write',
-    );
+    await generateCatalog(resolve(import.meta.dirname, '../../..'), process.argv[2] === '--write');
   } catch (error) {
     console.error(
       error instanceof Error ? error.message : 'Could not generate integration catalog.',

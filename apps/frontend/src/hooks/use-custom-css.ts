@@ -51,7 +51,7 @@ const getSnapshot = () => cached;
 
 /** Adds or removes the same-origin stylesheet link; it is the only way the CSS reaches the page. */
 function syncLink() {
-  const existing = document.getElementById(LINK_ID);
+  const existing = document.querySelector(`#${LINK_ID}`);
   if (!state.enabled || safe) {
     existing?.remove();
     return;
@@ -66,7 +66,7 @@ function syncLink() {
   link.rel = 'stylesheet';
   link.setAttribute('href', href);
   // Last in <head>, so it wins over the application's own rules of equal weight.
-  document.head.appendChild(link);
+  document.head.append(link);
 }
 
 function publish(next: Partial<CustomCssState>) {
@@ -105,7 +105,8 @@ async function load() {
 }
 
 export type CustomCssResult =
-  { ok: true } | { ok: false; message: string; problem?: CustomCssProblem };
+  | { ok: true }
+  | { ok: false; message: string; problem?: CustomCssProblem };
 
 async function send(payload: { css?: string; enabled?: boolean }): Promise<CustomCssResult> {
   try {

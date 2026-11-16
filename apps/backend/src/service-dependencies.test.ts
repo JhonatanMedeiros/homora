@@ -84,7 +84,8 @@ it('records, validates and removes manual dependencies, with authorization and a
     expect((await send('GET', '/api/service-dependencies')).json()).toEqual([]);
 
     const events = (await send('GET', '/api/activity')).json() as
-      { action?: string }[] | { events?: { action: string }[] };
+      | { action?: string }[]
+      | { events?: { action: string }[] };
     const text = JSON.stringify(events);
     expect(text).toContain('service-dependency-add');
     expect(text).toContain('service-dependency-remove');

@@ -42,7 +42,8 @@ export function createPublicStatus(
   const getSetting = (key: string) =>
     (
       sqlite.prepare('SELECT value FROM app_settings WHERE key=?').get(key) as
-        { value: string } | undefined
+        | { value: string }
+        | undefined
     )?.value;
   const setSetting = (key: string, value: string) =>
     sqlite
@@ -55,7 +56,8 @@ export function createPublicStatus(
   const configVersion = () =>
     (
       sqlite.prepare('SELECT version FROM config_version WHERE id=1').get() as
-        { version: number } | undefined
+        | { version: number }
+        | undefined
     )?.version ?? 0;
 
   const settings = () => ({
@@ -222,7 +224,7 @@ export function createPublicStatus(
       if (!cache || cache.version !== version || now - cache.at > CACHE_MS || now < cache.at)
         cache = { at: now, version, body: build(now) };
       const { body } = cache;
-      return body.services.length ? body : null;
+      return body.services.length > 0 ? body : null;
     },
     /** Admin preview: same shape, even when the page is switched off or has no services. */
     preview(now = Date.now()) {

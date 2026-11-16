@@ -19,6 +19,10 @@ pnpm check
 pnpm build
 ```
 
+`pnpm check` runs lint (oxlint), formatting (oxfmt) and types (TypeScript 7) in parallel, then the tests. Git
+hooks (installed by `pnpm install`) format and lint staged files on commit and check what you push in a few seconds
+before `git push`; see [maintaining CI](docs/maintainers/ci.md) for the checks the pull request runs.
+
 For local development, copy `.env.example` to `.env` if you need to customize
 ports or database path, then run `pnpm dev`. Backup tests use temporary files;
 do not use personal data or production databases in tests.

@@ -64,7 +64,7 @@ const FAILURE_DETAIL_LOOKBACK = 500;
 /** Latency series ranges: the bucket sizes of the history bars, so both charts line up. */
 export const LATENCY_RANGES = ['24h', '7d', '30d'] as const;
 const percentileOf = (sorted: number[], q: number) =>
-  sorted.length ? (sorted[Math.max(0, Math.ceil(sorted.length * q) - 1)] ?? null) : null;
+  sorted.length > 0 ? (sorted[Math.max(0, Math.ceil(sorted.length * q) - 1)] ?? null) : null;
 
 export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
   const trust = monitoringTrustReader(db);
@@ -84,7 +84,8 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
   const configVersion = () =>
     (
       db.prepare('SELECT version FROM config_version WHERE id=1').get() as
-        { version: number } | undefined
+        | { version: number }
+        | undefined
     )?.version ?? 0;
   return {
     clear() {

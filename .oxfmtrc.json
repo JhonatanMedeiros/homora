@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "endOfLine": "lf",
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "node_modules",
+    "CHANGELOG.md",
+    "**/dist",
+    ".turbo",
+    ".idea",
+    ".agent",
+    ".agents",
+    ".claude",
+    ".github/agents",
+    ".github/skills",
+    ".impeccable",
+    "data",
+    "pnpm-lock.yaml",
+    "packages/db/migrations",
+    "coverage",
+    ".codex",
+    ".hermes",
+    "skills-lock.json"
+  ]
+}

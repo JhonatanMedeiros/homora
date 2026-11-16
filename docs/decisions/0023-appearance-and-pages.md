@@ -63,8 +63,8 @@ or run script.
   flag off while keeping the text and records an audit event (`custom-css-reset`,
   actor `anonymous`, detail `cli: disabled`). It works when the interface is unusable.
 - Stable hooks for authors: `data-homora="service-card | group-title | top-bar |
-app-header | host-view | host-map | host-suggestions | impact-banner |
-safe-mode-banner | page-tabs"`.
+  app-header | host-view | host-map | host-suggestions | impact-banner |
+  safe-mode-banner | page-tabs"`.
 - **No CSP is shipped today.** The code is written so one can be added (no inline style
   attributes from settings, no external assets), but a header is not set by Homora or the
   bundled nginx. This is a known gap, listed in SECURITY.md.

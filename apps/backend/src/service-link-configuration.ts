@@ -20,7 +20,10 @@ export class ServiceLinkError extends Error {
 }
 
 export type LinkTypeFailure =
-  'invalid-link-type' | 'link-type-exists' | 'link-type-limit' | 'link-type-not-found';
+  | 'invalid-link-type'
+  | 'link-type-exists'
+  | 'link-type-limit'
+  | 'link-type-not-found';
 type Result<T> = { ok: true; value: T } | { ok: false; code: LinkTypeFailure };
 const ok = <T>(value: T): Result<T> => ({ ok: true, value });
 const fail = (code: LinkTypeFailure): Result<never> => ({ ok: false, code });
@@ -62,7 +65,8 @@ export function createServiceLinkConfiguration(
 
   const findType = (id: number) =>
     sqlite.prepare('SELECT id,name,color FROM link_types WHERE id=?').get(id) as
-      LinkType | undefined;
+      | LinkType
+      | undefined;
   const typeCount = () =>
     (sqlite.prepare('SELECT COUNT(*) AS n FROM link_types').get() as { n: number }).n;
   const nameTaken = (name: string, exceptId?: number) =>

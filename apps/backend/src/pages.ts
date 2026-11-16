@@ -53,7 +53,8 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
     /** The first page: where new groups go unless told otherwise. */
     firstId(): number {
       const row = sqlite.prepare('SELECT id FROM pages ORDER BY position,id LIMIT 1').get() as
-        { id: number } | undefined;
+        | { id: number }
+        | undefined;
       if (!row) throw new Error('There is always at least one page');
       return row.id;
     },
@@ -155,7 +156,8 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
         const page = find(pageId);
         if (!page) return fail('page-not-found');
         const group = sqlite.prepare('SELECT name FROM service_groups WHERE id=?').get(groupId) as
-          { name: string } | undefined;
+          | { name: string }
+          | undefined;
         if (!group) return fail('page-not-found');
         sqlite.prepare('UPDATE service_groups SET page_id=? WHERE id=?').run(pageId, groupId);
         bumpVersion();

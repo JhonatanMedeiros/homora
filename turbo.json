@@ -5,14 +5,6 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "type-check": {
-      "dependsOn": ["^build"],
-      "outputs": []
-    },
-    "test": {
-      "dependsOn": ["build"],
-      "outputs": []
-    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

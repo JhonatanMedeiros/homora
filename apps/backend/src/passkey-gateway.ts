@@ -57,7 +57,8 @@ const schemas = {
 } as const;
 
 export type PasskeyBodyResult =
-  { ok: true; body: Record<string, unknown> | undefined } | { ok: false; code: ErrorCode };
+  | { ok: true; body: Record<string, unknown> | undefined }
+  | { ok: false; code: ErrorCode };
 
 /** Validates a body and keeps only the fields the interface may send. */
 export function parsePasskeyBody(pathname: string, body: unknown): PasskeyBodyResult {

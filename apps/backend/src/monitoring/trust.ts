@@ -19,7 +19,7 @@ export function parseMonitoringTrust(bundle: string, now = Date.now()): Monitori
   if (
     blocks.length === 0 ||
     blocks.length > MAX_CERTIFICATES ||
-    bundle.replace(CERTIFICATE, '').trim() !== ''
+    bundle.replaceAll(CERTIFICATE, '').trim() !== ''
   )
     throw new Error('Invalid certificate bundle.');
 
@@ -49,7 +49,8 @@ export function createMonitoringTrustStore(db: DatabaseSync) {
   return {
     read(): { trust: MonitoringTrust | null; invalid: boolean } {
       const row = db.prepare('SELECT value FROM app_settings WHERE key=?').get(KEY) as
-        { value: string } | undefined;
+        | { value: string }
+        | undefined;
       if (!row) {
         cachedValue = undefined;
         cached = null;

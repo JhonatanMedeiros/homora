@@ -116,7 +116,8 @@ export function uptimeSummarizerOf(
     for (const slot of slots) {
       if (!slot.lastFailureAt) continue;
       const detail = failureAt.get(row.id, sig, slot.lastFailureAt) as
-        { reason: string | null; httpStatus: number | null } | undefined;
+        | { reason: string | null; httpStatus: number | null }
+        | undefined;
       if (!detail) continue;
       slot.reason = detail.reason ?? undefined;
       slot.httpStatus = detail.httpStatus;
