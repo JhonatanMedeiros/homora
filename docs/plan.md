@@ -55,7 +55,8 @@ are tracked in [strategy](strategy.md) and [evolution plan](evolution.md), not r
       architecture docs exist; review for completeness before release).
 - [x] Create a reproducible Docker image and verify clean install and upgrade data preservation
       (validated locally on 2026-11-10).
-- [ ] Publish the first release: the multi-arch workflow (`release.yml`) has not run and no tag exists.
+- [x] Publish the first release: `v0.1.0` and `v0.1.1` are tagged and the multi-arch image is published to GHCR
+      (pulled, started and answered HTTP 200 on 2026-11-16, see the evolution log).
 - [ ] Validate MVP acceptance criteria in a real environment and log improvements.
 - [ ] Evaluate Proxmox helper install script and additional integrations based on user demand.
       (Declarative adapters, the contract harness, five reference integrations and Proxmox node

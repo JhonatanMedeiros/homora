@@ -289,10 +289,9 @@ image builds, and English documentation ready for external community contributio
 Origin: [strategy.md](strategy.md), phase R0. Mark items only with stated implementation
 and verification evidence.
 
-- [ ] **Reproducible Docker image:** pin Node and nginx base images by version and SHA256 digest,
-      build amd64 and arm64 in CI, and document upgrade steps. Implemented and validated locally
-      (see log below); **pending** publishing an official release: CI workflow has not run
-      against remote registries and `compose.release.yml` remains unverified against published images.
+- [x] **Reproducible Docker image:** pin Node and nginx base images by version and SHA256 digest,
+      build amd64 and arm64 in CI, and document upgrade steps. Validated locally and against the
+      published release (see log below).
 - [x] **License and attributions** (also tracked in P5): MIT license in `LICENSE` and third-party
       dependencies in `THIRD_PARTY_NOTICES.md`. Docker container includes these files.
 - [x] **YAML/JSON export and import** of services, groups, and ordering, with validation and
@@ -2031,6 +2030,11 @@ the HTTP and stdio transports were not manually verified.
 
 - Updated the pinned checkout, Node setup, pnpm setup and Release Please actions to versions that declare Node.js 24, keeping the manual release preparation and image publishing flow.
 - Local validation used actionlint and a simulated Release Please 17.6.0 flow (the version bundled in action v5.0.0). GitHub execution of the upgraded Release Please action and publication workflow remains pending until a maintainer prepares and publishes a release.
+
+### Published image verified (2026-11-16)
+
+- Releases `v0.1.0` and `v0.1.1` exist and `ghcr.io/jhonatanmedeiros/homora` is public with `amd64` and `arm64` manifests. Pulling `latest` without credentials, starting it with `docker run` and requesting `/` returned HTTP 200 with version 0.1.1 and 47 migrations applied. `compose.release.yml` with `HOMORA_VERSION=0.1.1` also started and answered HTTP 200.
+- Updated the README, the Portuguese README and both deployment guides, which still described the image as not yet published. Not verified: starting the `arm64` image on arm64 hardware, and upgrading an existing volume between published versions.
 
 ### Faster CI
 
