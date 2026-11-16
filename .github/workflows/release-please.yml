@@ -46,3 +46,22 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       tag: ${{ needs.prepare.outputs.tag_name }}
+  # The release is created as a draft so that nobody sees it before its images exist; it is
+  # published only after both images were pushed and verified. If an image job fails, the draft
+  # stays: rerun the Release workflow for the tag, then publish the draft by hand.
+  publish-release:
+    needs: [prepare, images]
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.tag_name }}
+        run: |
+          # A draft is not returned by the "release by tag" endpoint, so look it up in the list.
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq ".[] | select(.tag_name == \"$TAG\") | .id" | head -n 1)
+          test -n "$id"
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" -F draft=false
