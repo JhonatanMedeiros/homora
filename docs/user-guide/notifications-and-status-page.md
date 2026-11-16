@@ -16,7 +16,7 @@ delivery. A test sends a real message. Each channel shows its last successful se
 attempts.
 
 - Messages use the language selected for each channel. New channels start with the interface language; channels that
-  existed before this setting stay in English. Webhook JSON fields and values do not change.
+  existed before this setting stay in English. Webhook JSON uses language-independent fields and values.
 - The webhook URL, bot token and chat ID are encrypted with the integration vault key, and saved values cannot be
   viewed again. Keep the database and its `.key` backup together.
 - Webhook destinations on private networks need explicit opt-in. Loopback, link-local and other forbidden ranges stay
@@ -35,15 +35,18 @@ Protect the token, and avoid saving that URL in shell history or logs.
 
 A webhook receives a JSON `POST` with:
 
-| Field        | Value                                                               |
-| ------------ | ------------------------------------------------------------------- |
-| `event`      | `down` or `up`                                                      |
-| `service`    | `id`, `name`, `category` (the URL only if you explicitly enable it) |
-| `status`     | The service status                                                  |
-| `reason`     | Why the check failed, if it did                                     |
-| `httpStatus` | The HTTP status code, if any                                        |
-| `latencyMs`  | The check latency                                                   |
-| `at`         | When it happened                                                    |
+| Field              | Value                                                                      |
+| ------------------ | -------------------------------------------------------------------------- |
+| `event`            | `down` or `up`                                                             |
+| `service`          | `id`, `name`, `category` (the URL only if you explicitly enable it)        |
+| `status`           | The service status                                                         |
+| `reason`           | Why the check failed, if it did                                            |
+| `httpStatus`       | The HTTP status code, if any                                               |
+| `latencyMs`        | The check latency                                                          |
+| `at`               | When it happened                                                           |
+| `outageDurationMs` | Time from the first observed failure to confirmed recovery, when available |
+
+Human-readable alerts include the reason, HTTP status and response time when available. Recovery messages include the time from the first observed failure to confirmed recovery when known; outages already in progress before this feature may not have a duration. The optional URL is the service link.
 
 ### When messages are sent
 

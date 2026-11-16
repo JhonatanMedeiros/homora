@@ -41,7 +41,7 @@ export function createNotificationDelivery(
   ) {
     const secret = credentials(channel);
     const message = notificationText(channel.locale, event);
-    const text = `Homora: ${event.service.name} — ${message}${channel.include_url && serviceUrl ? `\n${serviceUrl}` : ''}`;
+    const text = `${message}${channel.include_url && serviceUrl ? `\n${serviceUrl}` : ''}`;
     let destination = secret.destination!;
     let headers: Record<string, string> | undefined;
     let payload: unknown;
@@ -53,7 +53,7 @@ export function createNotificationDelivery(
     } else if (channel.type === 'ntfy') {
       // ntfy's JSON publishing: the topic is the path of the address, the request goes to the server root.
       const url = new URL(secret.destination!);
-      const topic = decodeURIComponent(url.pathname.replace(/^\/+|\/+$/g, ''));
+      const topic = decodeURIComponent(url.pathname.replaceAll(/^\/+|\/+$/g, ''));
       destination = `${url.origin}/`;
       payload = {
         topic,
@@ -129,7 +129,7 @@ export function createNotificationDelivery(
     if (working || stopped) return;
     working = true;
     try {
-      while (!stopped && queue.length) {
+      while (!stopped && queue.length > 0) {
         const job = queue.shift()!;
         for (let tries = 0; tries < 3 && !stopped; tries++) {
           const channel = row(job.channelId);
@@ -172,7 +172,7 @@ export function createNotificationDelivery(
 
   function test(id: number) {
     const channel = row(id);
-    if (!channel) return undefined;
+    if (!channel) return;
     const event: NotificationEvent = {
       event: 'down',
       service: { id: 0, name: 'Homora test', category: '' },

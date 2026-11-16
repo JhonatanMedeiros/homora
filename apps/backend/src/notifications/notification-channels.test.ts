@@ -96,7 +96,7 @@ describe('ntfy and Discord channels', () => {
       notifier.publish([service], { 1: down });
       await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
       expect(JSON.parse(send.mock.calls[0]?.[2]?.jsonBody ?? '{}').content).toBe(
-        'Homora: Example — OFFLINE (erro do servidor)',
+        '🔴 Homora · Serviço indisponível\nExample\nDetalhes: erro do servidor · HTTP 502',
       );
       expect(() =>
         notifier.save({
@@ -107,6 +107,33 @@ describe('ntfy and Discord channels', () => {
           locale: 'invalid',
         }),
       ).toThrow();
+    } finally {
+      await notifier.stop();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('sends localized Telegram messages with the optional URL', async () => {
+    const { notifier, dir } = setup();
+    const send = vi
+      .spyOn(network, 'getAuthorizedResponse')
+      .mockResolvedValue({ status: 200, body: '{"ok":true}' });
+    try {
+      notifier.save({
+        name: 't',
+        ...base,
+        type: 'telegram',
+        token: '123456:abc',
+        chatId: '123',
+        locale: 'pt-BR',
+        includeUrl: true,
+      });
+      notifier.publish([service], { 1: down });
+      await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+      expect(JSON.parse(send.mock.calls[0]![2]!.jsonBody!)).toMatchObject({
+        chat_id: '123',
+        text: '🔴 Homora · Serviço indisponível\nExample\nDetalhes: erro do servidor · HTTP 502\nhttps://service.example',
+      });
     } finally {
       await notifier.stop();
       rmSync(dir, { recursive: true, force: true });
@@ -133,7 +160,7 @@ describe('ntfy and Discord channels', () => {
       const [discord, ntfy] = send.mock.calls;
       expect(discord?.[0]).toBe(DISCORD);
       expect(JSON.parse(discord?.[2]?.jsonBody ?? '{}')).toEqual({
-        content: 'Homora: Example — DOWN (error-status)',
+        content: '🔴 Homora · Service unavailable\nExample\nDetails: server error · HTTP 502',
         allowed_mentions: { parse: [] },
       });
       expect(ntfy?.[0]).toBe('https://ntfy.example/');

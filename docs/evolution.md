@@ -2054,3 +2054,7 @@ the HTTP and stdio transports were not manually verified.
 - The development server (`pnpm dev`) now seeds a busy sample homelab on first start: 19 cards with a mix of healthy, slow, failing and stopped services served by local listeners on the machine's private address (loopback is never a monitorable destination), a demo Proxmox inventory (one node offline, one guest stopped), page widgets, favorites, tags, dependencies, maintenance, probes, an expiring certificate and past alerts. The inventory mock lives with the Proxmox integration, like the existing widget mock.
 - Validated with the unit and component tests (summary, pill, rail items, Home page) and `pnpm check`, and by hand in the development server on desktop. Not verified: a phone-width pass on a real device, a connection to a real Proxmox, and the pill in the light theme.
 - Pending: the screenshots in `docs/screenshots` still show the previous Home (banner in the page body) because they come from the demo installation, which is not in the repository; the topology latency idea has no data source; agent proposals are not part of the development scenario.
+
+### Clearer outbound monitoring alerts
+
+- Localized human-readable alerts show the check reason, HTTP status and latency when available. Recoveries include the time from the first observed failure to confirmed recovery when known; older in-progress outages may lack a start time. Webhooks receive an optional `outageDurationMs`. Live channel delivery has not been validated.
