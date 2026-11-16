@@ -1,3 +1,4 @@
+import { countdownWidget } from '@homora/widgets/countdown';
 import { clockWidget } from '@homora/widgets/clock';
 import { integrationDefinition } from '@homora/integrations';
 import { parse } from 'yaml';
@@ -153,7 +154,7 @@ export function parseService(
     ...(isCheckMatch(raw.checkMatch) ? { checkMatch: raw.checkMatch } : {}),
     ...(checkType ? { checkType } : {}),
     ...(checkInterval ? { checkInterval } : {}),
-    ...(links.length ? { links } : {}),
+    ...(links.length > 0 ? { links } : {}),
     ...(raw.pinned === true ? { pinned: true as const } : {}),
   };
 }
@@ -191,7 +192,7 @@ export function parseTransfer(content: string): ParsedImport {
     });
     if (!Array.isArray(raw.pages))
       issues.push({ path: 'pages', code: 'page-invalid', severity: 'warning' });
-    if (listed.length) document.pages = listed;
+    if (listed.length > 0) document.pages = listed;
   }
   if (raw.widgets !== undefined) {
     if (!Array.isArray(raw.widgets) || raw.widgets.length > 200)
@@ -211,10 +212,12 @@ export function parseTransfer(content: string): ParsedImport {
           return;
         }
         const page = normalizePageName(item.page)!;
-        if (item.type === 'clock') {
-          const config = clockWidget.parseConfig(item.config);
+        if (item.type === 'clock' || item.type === 'countdown') {
+          const config = (item.type === 'clock' ? clockWidget : countdownWidget).parseConfig(
+            item.config,
+          );
           if (config && item.source === undefined)
-            document.widgets!.push({ page, type: 'clock', name: item.name, config });
+            document.widgets!.push({ page, type: item.type, name: item.name, config });
           else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
         } else if (
           integrationDefinition(item.type) &&

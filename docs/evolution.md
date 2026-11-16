@@ -2062,3 +2062,7 @@ the HTTP and stdio transports were not manually verified.
 ### Pull request title guidance
 
 - Documented Conventional Commit titles for contributors and agents, including the Release Please exception and the need to verify the merged commit message. No automated title check was added.
+
+### Countdown page widget (issue #258)
+
+- Added a local countdown for one event, with an explicit or browser time zone and configurable past-event visibility. DST overlaps use the first occurrence; gaps advance by the transition. Validated with focused widget, route, transfer and interface tests, `pnpm check`, `pnpm build` and `pnpm docs:build`. Browser and screen-reader checks remain pending.

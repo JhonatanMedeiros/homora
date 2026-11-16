@@ -22,3 +22,9 @@ As integrações incluem Proxmox, Jellyfin, Home Assistant e outras. A cobertura
 Para criar uma integração, siga o [guia do SDK em inglês](/adapters). Para contêineres, veja [descoberta Docker](docker-discovery.md).
 
 [Leia o guia completo de integrações e widgets em inglês](/user-guide/integrations-and-widgets).
+
+## Contagem regressiva
+
+Adicione o widget de página **Contagem regressiva** para um evento. Informe nome, data e hora locais e escolha um fuso IANA ou o fuso do navegador. O contador atualiza a cada minuto enquanto a aba está visível. Após o evento, ele permanece visível em texto atenuado por padrão; selecione **Ocultar automaticamente** para escondê-lo. Widgets ocultos permanecem salvos; use **Gerenciar contagens ocultas** para editá-los ou removê-los. Cada evento usa um widget.
+
+Se uma mudança de horário tornar a hora ambígua, vale a primeira ocorrência. Se a hora não existir, ela avança pelo intervalo da mudança. A data e hora resolvidas ficam visíveis; o contador não anuncia cada minuto. Contagens são incluídas na exportação e importação sem conexão.

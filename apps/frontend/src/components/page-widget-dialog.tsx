@@ -1,5 +1,9 @@
+import { enUS, ptBR } from 'date-fns/locale';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { defaultCountdownConfig, type CountdownConfig } from '@homora/widgets/countdown';
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { defaultClockConfig, type ClockConfig } from '@homora/widgets/clock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,14 +16,14 @@ import { Clock } from '@/components/top-bar';
 import type { Connection } from '@/features/connections/connection-model';
 import type { PageRow } from '@/hooks/use-pages';
 import { listTimeZones } from '@/lib/clock';
-import { t } from '@/i18n';
+import { t, useI18n } from '@/i18n';
 
 export type WidgetDraft = {
   id: number | null;
   pageId: number;
   type: string;
   name: string;
-  config: ClockConfig;
+  config: ClockConfig | CountdownConfig;
   connectionId: number | null;
 };
 
@@ -51,10 +55,13 @@ export function PageWidgetDialog({
   onClose,
 }: Props) {
   const [query, setQuery] = useState('');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const { locale } = useI18n();
   const gallery = draft !== null && draft.id === null && !chosen;
   const pageName = pages.find((page) => page.id === draft?.pageId)?.name ?? '';
   const clockName = t('pageWidgets.clock');
   const needle = query.trim().toLowerCase();
+  const showCountdown = !needle || t('pageWidgets.countdown').toLowerCase().includes(needle);
   const showClock = !needle || clockName.toLowerCase().includes(needle);
   const shown = connections.filter(
     (connection) =>
@@ -62,18 +69,22 @@ export function PageWidgetDialog({
       connection.name.toLowerCase().includes(needle) ||
       connection.type.toLowerCase().includes(needle),
   );
-  const setConfig = (patch: Partial<ClockConfig>) =>
+  const setConfig = (patch: Partial<ClockConfig & CountdownConfig>) =>
     draft && onChange({ ...draft, config: { ...draft.config, ...patch } });
   const kindName =
     draft?.connectionId == null
-      ? clockName
+      ? draft?.type === 'countdown'
+        ? t('pageWidgets.countdown')
+        : clockName
       : (connections.find((connection) => connection.id === draft.connectionId)?.name ??
         draft.type);
-  const pick = (connection: Connection | null) => {
+  const pick = (connection: Connection | null, localType = 'clock') => {
     if (!draft) return;
     onChange({
       ...draft,
-      type: connection?.type ?? 'clock',
+      type: connection?.type ?? localType,
+      config:
+        localType === 'countdown' && !connection ? defaultCountdownConfig : defaultClockConfig,
       connectionId: connection?.id ?? null,
     });
     onChoose(true);
@@ -106,7 +117,7 @@ export function PageWidgetDialog({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          {showClock && (
+          {(showClock || showCountdown) && (
             <section aria-labelledby="pw-group-homora" className="flex flex-col gap-2">
               <h3
                 id="pw-group-homora"
@@ -115,13 +126,24 @@ export function PageWidgetDialog({
                 {t('pageWidgets.groupHomora')}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">
-                <GalleryOption
-                  title={clockName}
-                  description={t('pageWidgets.clockDesc')}
-                  onPick={() => pick(null)}
-                >
-                  <Clock preferences={defaultClockConfig} />
-                </GalleryOption>
+                {showClock && (
+                  <GalleryOption
+                    title={clockName}
+                    description={t('pageWidgets.clockDesc')}
+                    onPick={() => pick(null)}
+                  >
+                    <Clock preferences={defaultClockConfig} />
+                  </GalleryOption>
+                )}
+                {showCountdown && (
+                  <GalleryOption
+                    title={t('pageWidgets.countdown')}
+                    description={t('pageWidgets.countdownDesc')}
+                    onPick={() => pick(null, 'countdown')}
+                  >
+                    ⌛
+                  </GalleryOption>
+                )}
               </div>
             </section>
           )}
@@ -149,7 +171,7 @@ export function PageWidgetDialog({
               </div>
             </section>
           )}
-          {!showClock && shown.length === 0 && (
+          {!showClock && !showCountdown && shown.length === 0 && (
             <p className="text-sm text-muted-foreground">{t('pageWidgets.noMatch')}</p>
           )}
         </div>
@@ -179,7 +201,7 @@ export function PageWidgetDialog({
                     <FieldLabel htmlFor="pw-zone">{t('settings.ui.timeZone')}</FieldLabel>
                     <FormSelect
                       id="pw-zone"
-                      value={draft.config.timeZone}
+                      value={(draft.config as ClockConfig).timeZone}
                       onChange={(event) => setConfig({ timeZone: event.target.value })}
                     >
                       <FormSelectOption value="">
@@ -198,7 +220,7 @@ export function PageWidgetDialog({
                     <FieldLabel htmlFor="pw-hours">{t('settings.ui.hours')}</FieldLabel>
                     <FormSelect
                       id="pw-hours"
-                      value={draft.config.hourFormat}
+                      value={(draft.config as ClockConfig).hourFormat}
                       onChange={(event) =>
                         setConfig({ hourFormat: event.target.value as ClockConfig['hourFormat'] })
                       }
@@ -211,7 +233,7 @@ export function PageWidgetDialog({
                   <Field orientation="horizontal">
                     <Switch
                       id="pw-date"
-                      checked={draft.config.date}
+                      checked={(draft.config as ClockConfig).date}
                       onCheckedChange={(date) => setConfig({ date })}
                     />
                     <FieldLabel htmlFor="pw-date">{t('settings.ui.date')}</FieldLabel>
@@ -219,13 +241,169 @@ export function PageWidgetDialog({
                   <Field orientation="horizontal">
                     <Switch
                       id="pw-seconds"
-                      checked={draft.config.seconds}
+                      checked={(draft.config as ClockConfig).seconds}
                       onCheckedChange={(seconds) => setConfig({ seconds })}
                     />
                     <FieldLabel htmlFor="pw-seconds">{t('settings.ui.seconds')}</FieldLabel>
                   </Field>
                 </>
               )}
+              {draft.type === 'countdown' &&
+                (() => {
+                  const config = draft.config as CountdownConfig;
+                  return (
+                    <>
+                      <Field>
+                        <FieldLabel htmlFor="pw-event">{t('pageWidgets.eventName')}</FieldLabel>
+                        <Input
+                          id="pw-event"
+                          required
+                          maxLength={60}
+                          value={config.eventName}
+                          onChange={(event) => setConfig({ eventName: event.target.value })}
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="pw-target">{t('pageWidgets.eventDate')}</FieldLabel>
+                        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="pw-target"
+                              type="button"
+                              variant="outline"
+                              className="justify-start"
+                            >
+                              <CalendarDays data-icon="inline-start" />
+                              {config.localDateTime
+                                ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+                                    new Date(`${config.localDateTime.slice(0, 10)}T12:00:00`),
+                                  ) + `, ${config.localDateTime.slice(11)}`
+                                : t('pageWidgets.chooseDate')}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent align="start" className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              locale={locale === 'pt-BR' ? ptBR : enUS}
+                              selected={
+                                config.localDateTime
+                                  ? new Date(`${config.localDateTime.slice(0, 10)}T12:00:00`)
+                                  : undefined
+                              }
+                              defaultMonth={
+                                config.localDateTime
+                                  ? new Date(`${config.localDateTime.slice(0, 10)}T12:00:00`)
+                                  : undefined
+                              }
+                              onSelect={(date) => {
+                                if (!date) return;
+                                const day = `${date.getFullYear().toString().padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                                setConfig({
+                                  localDateTime: `${day}T${config.localDateTime.slice(11) || '00:00'}`,
+                                });
+                              }}
+                            />
+                            <FieldGroup className="gap-3 border-t p-3">
+                              <Field>
+                                <FieldLabel htmlFor="pw-hour">
+                                  {t('pageWidgets.eventHour')}
+                                </FieldLabel>
+                                <FormSelect
+                                  id="pw-hour"
+                                  disabled={!config.localDateTime}
+                                  value={config.localDateTime.slice(11, 13) || '00'}
+                                  onChange={(event) =>
+                                    setConfig({
+                                      localDateTime: `${config.localDateTime.slice(0, 11)}${event.target.value}:${config.localDateTime.slice(14, 16)}`,
+                                    })
+                                  }
+                                >
+                                  {Array.from({ length: 24 }, (_, hour) =>
+                                    String(hour).padStart(2, '0'),
+                                  ).map((hour) => (
+                                    <FormSelectOption key={hour} value={hour}>
+                                      {hour}
+                                    </FormSelectOption>
+                                  ))}
+                                </FormSelect>
+                              </Field>
+                              <Field>
+                                <FieldLabel htmlFor="pw-minute">
+                                  {t('pageWidgets.eventMinute')}
+                                </FieldLabel>
+                                <FormSelect
+                                  id="pw-minute"
+                                  disabled={!config.localDateTime}
+                                  value={config.localDateTime.slice(14, 16) || '00'}
+                                  onChange={(event) =>
+                                    setConfig({
+                                      localDateTime: `${config.localDateTime.slice(0, 14)}${event.target.value}`,
+                                    })
+                                  }
+                                >
+                                  {Array.from({ length: 60 }, (_, minute) =>
+                                    String(minute).padStart(2, '0'),
+                                  ).map((minute) => (
+                                    <FormSelectOption key={minute} value={minute}>
+                                      {minute}
+                                    </FormSelectOption>
+                                  ))}
+                                </FormSelect>
+                              </Field>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setCalendarOpen(false)}
+                              >
+                                {t('pageWidgets.dateTimeDone')}
+                              </Button>
+                            </FieldGroup>
+                          </PopoverContent>
+                        </Popover>
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="pw-countdown-zone">
+                          {t('settings.ui.timeZone')}
+                        </FieldLabel>
+                        <FormSelect
+                          id="pw-countdown-zone"
+                          value={config.timeZone}
+                          onChange={(event) => setConfig({ timeZone: event.target.value })}
+                        >
+                          <FormSelectOption value="">
+                            {t('settings.ui.timeZoneBrowser', {
+                              zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                            })}
+                          </FormSelectOption>
+                          {listTimeZones().map((zone) => (
+                            <FormSelectOption key={zone} value={zone}>
+                              {zone}
+                            </FormSelectOption>
+                          ))}
+                        </FormSelect>
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="pw-past">{t('pageWidgets.pastBehavior')}</FieldLabel>
+                        <FormSelect
+                          id="pw-past"
+                          value={config.pastBehavior}
+                          onChange={(event) =>
+                            setConfig({
+                              pastBehavior: event.target.value as CountdownConfig['pastBehavior'],
+                            })
+                          }
+                        >
+                          <FormSelectOption value="keep">
+                            {t('pageWidgets.keepPast')}
+                          </FormSelectOption>
+                          <FormSelectOption value="hide">
+                            {t('pageWidgets.hidePast')}
+                          </FormSelectOption>
+                        </FormSelect>
+                      </Field>
+                    </>
+                  );
+                })()}
               <Collapsible defaultOpen={draft.id !== null && draft.name !== ''}>
                 <CollapsibleTrigger asChild>
                   <Button type="button" variant="ghost" size="sm" className="-ml-2">
@@ -273,7 +451,7 @@ export function PageWidgetDialog({
                 </span>
                 <div className="flex flex-col gap-3 rounded-md border bg-card p-3">
                   <span className="truncate text-sm font-medium">{draft.name || clockName}</span>
-                  <Clock preferences={draft.config} />
+                  <Clock preferences={draft.config as ClockConfig} />
                 </div>
                 <span className="text-xs text-muted-foreground">
                   {t('pageWidgets.previewHint')}
@@ -294,7 +472,13 @@ export function PageWidgetDialog({
               <Button type="button" variant="outline" onClick={onClose}>
                 {t('pages.cancel')}
               </Button>
-              <Button type="submit" disabled={busy}>
+              <Button
+                type="submit"
+                disabled={
+                  busy ||
+                  (draft.type === 'countdown' && !(draft.config as CountdownConfig).localDateTime)
+                }
+              >
                 {draft.id === null ? t('pageWidgets.add') : t('widgets.save')}
               </Button>
             </div>
