@@ -220,3 +220,19 @@ it('reorders by dragging a card past another one', async () => {
     ),
   );
 });
+
+it('adds a local note with Markdown text', async () => {
+  const fetcher = vi.fn(async () => new Response('[]'));
+  vi.stubGlobal('fetch', fetcher);
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar widget' }));
+  fireEvent.click(await screen.findByRole('button', { name: /Uma nota curta/ }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nota' }), { target: { value: '**Olá**' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar widget' }));
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/page-widgets',
+      expect.objectContaining({ method: 'POST', body: expect.stringContaining('**Olá**') }),
+    ),
+  );
+});

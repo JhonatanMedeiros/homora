@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { integrationWidgetDefinition } from '@homora/integrations';
 import { supportsSource } from '@homora/widgets';
 import { clockWidget } from '@homora/widgets/clock';
+import { noteWidget } from '@homora/widgets/note';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { parseId } from '../input-schemas.js';
@@ -67,8 +68,11 @@ export function registerPageWidgetRoutes(app: FastifyInstance, sqlite: DatabaseS
     if (!parsed.success) return null;
     const value = parsed.data;
     if (!sqlite.prepare('SELECT id FROM pages WHERE id=?').get(value.pageId)) return null;
-    if (value.type === 'clock') {
-      const config = clockWidget.parseConfig(value.config);
+    if (value.type === 'clock' || value.type === 'note') {
+      const config =
+        value.type === 'clock'
+          ? clockWidget.parseConfig(value.config)
+          : noteWidget.parseConfig(value.config);
       return config && value.connectionId === null ? { ...value, config } : null;
     }
     const definition = integrationWidgetDefinition(value.type);

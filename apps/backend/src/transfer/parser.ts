@@ -1,3 +1,4 @@
+import { noteWidget } from '@homora/widgets/note';
 import { clockWidget } from '@homora/widgets/clock';
 import { integrationDefinition } from '@homora/integrations';
 import { parse } from 'yaml';
@@ -153,7 +154,7 @@ export function parseService(
     ...(isCheckMatch(raw.checkMatch) ? { checkMatch: raw.checkMatch } : {}),
     ...(checkType ? { checkType } : {}),
     ...(checkInterval ? { checkInterval } : {}),
-    ...(links.length ? { links } : {}),
+    ...(links.length > 0 ? { links } : {}),
     ...(raw.pinned === true ? { pinned: true as const } : {}),
   };
 }
@@ -191,7 +192,7 @@ export function parseTransfer(content: string): ParsedImport {
     });
     if (!Array.isArray(raw.pages))
       issues.push({ path: 'pages', code: 'page-invalid', severity: 'warning' });
-    if (listed.length) document.pages = listed;
+    if (listed.length > 0) document.pages = listed;
   }
   if (raw.widgets !== undefined) {
     if (!Array.isArray(raw.widgets) || raw.widgets.length > 200)
@@ -215,6 +216,11 @@ export function parseTransfer(content: string): ParsedImport {
           const config = clockWidget.parseConfig(item.config);
           if (config && item.source === undefined)
             document.widgets!.push({ page, type: 'clock', name: item.name, config });
+          else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
+        } else if (item.type === 'note') {
+          const config = noteWidget.parseConfig(item.config);
+          if (config && item.source === undefined)
+            document.widgets!.push({ page, type: 'note', name: item.name, config });
           else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
         } else if (
           integrationDefinition(item.type) &&

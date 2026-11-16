@@ -166,3 +166,54 @@ it('holds at most the widget limit per page, for creating and for moving in', as
   expect((await req('PUT', `/api/page-widgets/${inLab.id}`, data(lab))).statusCode).toBe(200);
   await app.close();
 });
+
+it('persists, edits and transfers local notes, rejecting invalid configuration', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'homora-notes-')), 'data.sqlite');
+  const { db } = createDatabase(path);
+  const { auth, cookie } = await createTestSession();
+  const app = createApp(db, 5173, auth, createVault(path));
+  const headers = { cookie, origin: 'http://localhost:5173' };
+  const req = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: unknown) =>
+    app.inject({ method, url, headers, payload: payload as object | undefined });
+  const pageId = (await req('GET', '/api/pages')).json()[0].id;
+  const note = {
+    pageId,
+    type: 'note',
+    name: 'Lab',
+    config: { text: '**Hello**' },
+    connectionId: null,
+  };
+  expect(
+    (await req('POST', '/api/page-widgets', { ...note, config: { text: 'a'.repeat(4001) } }))
+      .statusCode,
+  ).toBe(400);
+  expect((await req('POST', '/api/page-widgets', { ...note, connectionId: 1 })).statusCode).toBe(
+    400,
+  );
+  const created = (await req('POST', '/api/page-widgets', note)).json();
+  expect(created.config).toEqual(note.config);
+  expect(
+    (await req('PUT', `/api/page-widgets/${created.id}`, { ...note, config: { text: 'Edited' } }))
+      .statusCode,
+  ).toBe(200);
+  const content = (await req('GET', '/api/config/export?format=json')).body;
+  expect(JSON.parse(content).widgets).toContainEqual({
+    page: 'Home',
+    type: 'note',
+    name: 'Lab',
+    config: { text: 'Edited' },
+  });
+  const preview = (await req('POST', '/api/config/import/preview', { content })).json();
+  expect(preview.plan.summary.newWidgets).toBe(1);
+  expect(
+    (await req('POST', '/api/config/import/apply', { content, expectedVersion: preview.version }))
+      .statusCode,
+  ).toBe(200);
+  expect(
+    (await req('GET', '/api/page-widgets'))
+      .json()
+      .filter((row: { config: { text: string } }) => row.config.text === 'Edited'),
+  ).toHaveLength(2);
+  expect((await req('DELETE', `/api/page-widgets/${created.id}`)).statusCode).toBe(204);
+  await app.close();
+});
