@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, NotebookPen } from 'lucide-react';
 import { defaultClockConfig, type ClockConfig } from '@homora/widgets/clock';
 import { MAX_NOTE_LENGTH } from '@homora/widgets/note';
 import { Textarea } from '@/components/ui/textarea';
@@ -135,7 +135,7 @@ export function PageWidgetDialog({
                     description={t('pageWidgets.noteDesc')}
                     onPick={() => pick(null, 'note')}
                   >
-                    <span aria-hidden="true">✎</span>
+                    <NotebookPen aria-hidden="true" />
                   </GalleryOption>
                 )}
               </div>
