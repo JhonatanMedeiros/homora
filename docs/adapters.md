@@ -117,7 +117,7 @@ service-neutral contract and add a synthetic test for a second domain with diffe
 and data. This demonstrates reuse but does not replace design review; expand transport methods,
 permissions or network capabilities only through the separate review described above.
 
-ESLint reports forbidden static imports in integration and widget runtime and test code and in application
+oxlint reports forbidden static imports in integration and widget runtime and test code and in application
 runtime code; application test files retain an exception for test helpers. `pnpm check` also
 inspects integration and widget source and test support for forbidden direct imports, and application runtime
 for direct and literal dynamic imports, reexports and common type dispatch. A workspace graph checks

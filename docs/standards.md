@@ -82,7 +82,7 @@ are documented in [architecture](architecture.md).
     without Proxmox or integrations (for example the top bar telemetry), to avoid flicker.
   - Keep the skeleton shape close to the real component so the page does not shift when
     data arrives, and cover new compositions with a small test (see `skeletons.test.tsx`).
-- Files in `src/components/ui` mirror upstream shadcn; ESLint exempts them
+- Files in `src/components/ui` mirror upstream shadcn; oxlint exempts them
   from Fast Refresh and pure-render checks.
 
 ## Contracts and Validation
@@ -143,6 +143,25 @@ are documented in [architecture](architecture.md).
   include negative and failure test cases alongside happy paths.
 - Execute checks commensurate with the scope of changes (`pnpm check` and `pnpm build`
   for broad changes; targeted unit tests for isolated edits) and report exact test results.
+  `pnpm test` imports the compiled workspace packages, so run `pnpm type-check` (which compiles
+  them) or `pnpm build` first in a fresh checkout.
+- Test files share one worker, module graph and DOM (`isolate: false` in `vitest.config.ts`) and run
+  in random order in CI, so a test must leave nothing behind. `vitest.setup.ts` resets, after every
+  file, mocks, stubs, fake timers, environment variables, module state, the DOM, storage, the
+  locale and the viewport. What it cannot see is yours to clean up:
+  - Change globals with `vi.stubGlobal` and `vi.stubEnv`, not by assignment. When a test must use
+    `Object.defineProperty` on `window`, `navigator` or `document`, pass `configurable: true` and
+    `writable: true`: the default makes the property read-only for every later file.
+  - Stop what a test starts outside React: intervals, event listeners on `window` or `document`,
+    servers and open database handles, in `afterEach`.
+  - Do not read a value another test file computed; each file builds its own data and temporary
+    databases.
+  - A file that uses `vi.mock` runs in an isolated project automatically, so it needs no list entry.
+  - To reproduce an order-dependent failure, use the seed printed by CI:
+    `pnpm exec vitest run --sequence.shuffle.files --sequence.seed=<seed>`.
+- Never make a test pass by retrying it, widening a timeout or skipping it. A check that needs a
+  retry has a bug (a race, state that leaks, a hidden dependency); find it. When a wait is
+  genuinely slow, make the cause faster or the wait explicit, and say what you measured.
 - Keep documentation up to date: README for setup/usage; architecture for boundaries
   and designs; evolution plan for validated progress; this document when conventions evolve.
 - For architectural decisions with lasting impact, create `docs/decisions/NNNN-title.md`
