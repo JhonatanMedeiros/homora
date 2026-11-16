@@ -70,6 +70,12 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - id: pair
         run: echo "name=${{ matrix.target }}-${{ matrix.platform }}" | tr '/' '-' >> "$GITHUB_OUTPUT"
+      # Registry names must be lowercase, and the owner keeps its capitals (metadata-action
+      # lowercases for us, but the raw `outputs:` below does not).
+      - id: image
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "name=ghcr.io/${OWNER,,}/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
@@ -90,7 +96,7 @@ jobs:
           build-args: |
             HOMORA_BUILD_COMMIT=${{ steps.commit.outputs.sha }}
             HOMORA_RELEASE_TAG=${{ inputs.tag }}
-          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
           provenance: mode=max
           sbom: true
           cache-from: type=gha,scope=${{ steps.pair.outputs.name }}
@@ -142,9 +148,10 @@ jobs:
             type=raw,value=latest,enable=${{ !contains(inputs.tag || github.ref_name, '-') }}
       - name: Create multi-arch tags
         env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          OWNER: ${{ github.repository_owner }}
         working-directory: ${{ runner.temp }}/digests
         run: |
+          IMAGE="ghcr.io/${OWNER,,}/${{ matrix.image }}"
           tag_args=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
           # shellcheck disable=SC2046,SC2086
           docker buildx imagetools create $tag_args $(printf "$IMAGE@sha256:%s " *)
