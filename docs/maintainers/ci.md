@@ -1,6 +1,6 @@
 # Maintaining continuous integration
 
-Pull requests to `main` and the merge queue run the workflow in `.github/workflows/ci.yml`. This page explains how it is organized, what each time budget means and how its caches work.
+Pull requests to `main` (and the merge queue, if one is enabled) run the workflow in `.github/workflows/ci.yml`. This page explains how it is organized, what each time budget means and how its caches work.
 
 ## Jobs
 
@@ -12,7 +12,7 @@ Pull requests to `main` and the merge queue run the workflow in `.github/workflo
 | `docker`   | Builds the `homora` and `discovery-agent` image targets, in parallel                                                                                                     | job limit: 8 min  |
 | `validate` | Passes only when `static`, every `test` shard, `build` and every `docker` job pass                                                                                       | -                 |
 
-Require **only `validate`** in branch protection and in the merge queue. It aggregates everything else, so adding, splitting or renaming a job does not change the rule. `pnpm check` still runs lint, formatting and types in parallel, then the tests, locally and in the release workflow.
+The `main` ruleset requires a pull request and **only `validate`**. It aggregates everything else, so adding, splitting or renaming a job does not change the rule. `pnpm check` still runs lint, formatting and types in parallel, then the tests, locally and in the release workflow.
 
 The shared setup (Node, pnpm, dependencies and the Turborepo cache) lives in `.github/actions/setup`. The release workflow checks out a tag and does not use it, so that re-running the release of an older tag keeps working.
 
@@ -24,7 +24,7 @@ Locally, the pre-push hook (`.husky/pre-push`, `scripts/pre-push.mjs`) runs form
 
 ## Which tests run
 
-- **Merge queue and pushes to `main`: the whole suite.** The merge queue tests the exact commit that will land, so nothing reaches `main` untested. The workflow has a `merge_group` trigger for this; enabling the merge queue itself is a repository setting (branch protection or a ruleset, "Require merge queue").
+- **Pushes to `main` (and the merge queue, if enabled): the whole suite.** The workflow has a `merge_group` trigger so a merge queue would test the exact commit that will land. GitHub does not offer the merge queue for repositories owned by a personal account, so today the ruleset only requires `validate` on the pull request, and a pull request is tested against the `main` it was last updated with. Move the repository to an organization and add the queue rule to use it.
 - **Pull requests: only what the diff can reach**, to narrow feedback. `scripts/ci/select-tests.mjs` combines three layers: files that tests do not import but that can change any result (lockfile, manifests, tsconfig, Vitest config and setup, migrations, CI files) run everything; Vitest's own import graph (`--changed`); and the workspace graph, because the tests import the compiled `dist` of sibling packages, so a change in `packages/widgets` also selects the tests of every package and app that depends on it. A documentation-only change selects no test.
 - Selection was checked by hiding real changes on purpose: breaking `packages/shared` or `packages/widgets` is invisible to the import graph alone (3 and 1 files selected) and turns the selected run red with the workspace layer (190 and 212 files). `scripts/test/select-tests.test.mjs` keeps these rules from regressing. A change that no test covers still passes in both modes; that is a coverage gap, not a selection one.
 
