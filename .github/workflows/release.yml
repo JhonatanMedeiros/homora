@@ -67,7 +67,27 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
       - id: commit
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          # The tag is vX.Y.Z; the image version label has no leading "v".
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+      - id: about
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          case "$TARGET" in
+            homora)
+              title='Homora'
+              description='Self-hosted home page for your homelab: organize services, monitor their health, connect Proxmox and Docker, and let AI agents propose changes that only you can approve.' ;;
+            discovery-agent)
+              title='Homora discovery agent'
+              description='Sends the labels of the Docker containers on a host to Homora, so they can be suggested as cards.' ;;
+            *) echo "Unknown target: $TARGET" >&2; exit 1 ;;
+          esac
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+          echo "description=$description" >> "$GITHUB_OUTPUT"
       - id: pair
         run: echo "name=${{ matrix.target }}-${{ matrix.platform }}" | tr '/' '-' >> "$GITHUB_OUTPUT"
       # Registry names must be lowercase, and the owner keeps its capitals (metadata-action
@@ -86,6 +106,14 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          # The defaults come from the workflow ref and the repository, so a run started from
+          # `main` for an older tag would label the image with the wrong version and commit, and
+          # both images would share one title and description.
+          labels: |
+            org.opencontainers.image.title=${{ steps.about.outputs.title }}
+            org.opencontainers.image.description=${{ steps.about.outputs.description }}
+            org.opencontainers.image.version=${{ steps.commit.outputs.version }}
+            org.opencontainers.image.revision=${{ steps.commit.outputs.sha }}
       - id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
