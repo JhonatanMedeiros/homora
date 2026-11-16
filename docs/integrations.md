@@ -21,6 +21,7 @@ transport and sanitized fixtures. This describes the implementation, not live-se
 | NetBird           | Manifest     |
 | Tailscale         | Manifest     |
 | Cloudflare        | Manifest     |
+| Healthchecks      | Manifest     |
 | Coolify           | Code adapter |
 | Proxmox           | Code adapter |
 
@@ -259,6 +260,19 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
   environment; behaviour with a very large number of environments (the count stops at 10,000 and is
   then reported as an invalid response).
 
+### Healthchecks
+
+- **Reads:** `GET /api/v3/checks/` with the `X-Api-Key` header; shows how many checks exist and how many
+  are `up`, `grace` (late), `down`, `paused` or `new`. Source: [Healthchecks API](https://healthchecks.io/docs/api/),
+  read 2026-11-15. Only the status of each check is read; names, tags and ping URLs are not shown.
+- **Least privilege:** use the project's read-only API key (Project Settings, API Access). The
+  documentation says it works with this endpoint and omits ping and management URLs from the response.
+- **Network:** the hosted service (`https://healthchecks.io`) or your own instance; HTTPS is required for
+  the key. The API asks clients to stay under 100 requests per minute; results are cached. The
+  response is limited to 1 MB and the count stops at 10,000 checks (reported as an invalid response).
+- **Live validation checklist:** the read-only key is accepted; `status` values for a check that has
+  never pinged and for a paused one; a project with many checks stays under 1 MB.
+
 ### NetBird
 
 - **Reads:** `GET /api/peers` with `Authorization: Token <token>`; shows how many peers exist and how
@@ -413,6 +427,7 @@ widening the transport, so they were not implemented (decision recorded in
 | NetBird           | manifest | Implemented, unvalidated                                 | Personal access token, HTTPS         |
 | Tailscale         | manifest | Implemented, unvalidated                                 | API access token, HTTPS              |
 | Cloudflare        | manifest | Implemented, unvalidated                                 | Token with Zone Read, HTTPS          |
+| Healthchecks      | manifest | Implemented, unvalidated                                 | Read-only project API key, HTTPS     |
 | Coolify           | code     | Partly validated on v4.7.5 (inventory, links, discovery) | Token with `read` only, HTTPS        |
 | Pi-hole v6        | code     | Partially validated (user reports it works)              | Application password, HTTPS          |
 | Beszel, TrueNAS   | —        | Skipped (see above)                                      | —                                    |

@@ -34,6 +34,7 @@ DNS blocker is doing. They are **optional** and **read-only**: Homora queries th
 | **NetBird**           | How many peers exist and how many are connected                                         | Personal access token, HTTPS                 |
 | **Tailscale**         | Devices, how many are connected and how many have an update available                   | API access token, HTTPS                      |
 | **Cloudflare**        | The number of zones and of active zones                                                 | Token with _Zone Read_, HTTPS                |
+| **Healthchecks**      | How many scheduled-job checks exist and how many are up, late, down, paused or new      | Read-only project API key, HTTPS             |
 | **Coolify**           | Applications and services; links them to cards and proposes cards for review            | Token with `read` only, HTTPS                |
 
 ::: warning Experimental
