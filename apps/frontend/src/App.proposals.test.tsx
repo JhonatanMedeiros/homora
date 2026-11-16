@@ -93,7 +93,8 @@ it('does not treat unauthorized private network as service down', async () => {
   render(<App />);
   expect(await screen.findByText('Sem monitoramento')).toBeTruthy();
   expect(screen.queryByText('Fora do ar')).toBeNull();
-  expect(screen.getByText('Todos os serviços monitorados no ar')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /Saúde: Monitoramento parcial/ }));
+  expect(await screen.findByText('Todos os serviços monitorados no ar')).toBeTruthy();
   expect(screen.getByText(/1 serviço sem monitoramento/)).toBeTruthy();
 });
 

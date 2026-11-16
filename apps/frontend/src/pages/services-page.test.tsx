@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { HeaderStatusSlot } from '@/components/header-status-slot';
 import { MemoryRouter } from 'react-router';
 import { ServicesPage } from './services-page';
 import { setLocale } from '@/i18n';
@@ -86,13 +87,16 @@ it('shows probes on the Home at any width and lists a probe that is down in Need
   } as unknown as Data;
   render(
     <MemoryRouter>
+      <HeaderStatusSlot />
       <ServicesPage data={down} formRoute={null} navigate={() => {}} onAddService={() => {}} />
     </MemoryRouter>,
   );
   const section = await screen.findByRole('region', { name: 'Probes' });
   expect(section.textContent).toContain('Internet');
   expect(section.textContent).toContain('Offline');
-  expect(screen.getByRole('region', { name: 'Needs attention' })).toBeTruthy();
+  // The causes live in the header pill's popover, not on the page.
+  fireEvent.click(await screen.findByRole('button', { name: /Health: 1 problem/ }));
+  expect(await screen.findByRole('region', { name: 'Needs attention' })).toBeTruthy();
 });
 
 it('counts a probe that is down in the health banner and in the Offline view', async () => {
@@ -117,9 +121,11 @@ it('counts a probe that is down in the health banner and in the Offline view', a
   } as unknown as Data;
   render(
     <MemoryRouter>
+      <HeaderStatusSlot />
       <ServicesPage data={down} formRoute={null} navigate={() => {}} onAddService={() => {}} />
     </MemoryRouter>,
   );
+  fireEvent.click(await screen.findByRole('button', { name: /Health: 1 problem/ }));
   expect(await screen.findByText('1 service has a problem')).toBeTruthy();
   expect(screen.getByRole('group', { name: 'Filter by status' }).textContent).toMatch(
     /Offline\s*1/,

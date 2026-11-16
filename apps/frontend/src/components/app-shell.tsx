@@ -1,3 +1,4 @@
+import { HeaderStatusSlot } from '@/components/header-status-slot';
 import { useState, type ReactNode } from 'react';
 import {
   Activity,
@@ -109,6 +110,7 @@ export function AppShell({
               Ctrl K
             </Kbd>
           </Button>
+          <HeaderStatusSlot />
           {alerts}
           <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
           <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />

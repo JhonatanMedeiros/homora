@@ -185,3 +185,46 @@ export function offlineNodes(
   }
   return result.sort((a, b) => a.node.localeCompare(b.node));
 }
+
+/** One node in the Home rail: how many cards run on it and how many of those are down. */
+export type HostRailItem = {
+  key: string;
+  connectionId: number;
+  node: string;
+  state: HostNode['status'];
+  total: number;
+  down: number;
+};
+
+/**
+ * Nodes of every readable inventory that have linked cards, for the Home rail. An inventory that
+ * is loading or unreadable adds nothing: the rail never guesses a node is fine or offline.
+ */
+export function hostRailItems(
+  services: Service[],
+  connections: HostConnection[],
+  inventories: HostInventories,
+  isDown: (service: Service) => boolean,
+): HostRailItem[] {
+  const items: HostRailItem[] = [];
+  for (const connection of connections) {
+    const inventory = inventories[connection.id];
+    if (inventory?.status !== 'ready') continue;
+    for (const node of inventory.nodes) {
+      const linked = services.filter(
+        (service) =>
+          service.host?.connectionId === connection.id && service.host.node === node.name,
+      );
+      if (linked.length === 0) continue;
+      items.push({
+        key: `${connection.id}:${node.name}`,
+        connectionId: connection.id,
+        node: node.name,
+        state: node.status,
+        total: linked.length,
+        down: linked.filter(isDown).length,
+      });
+    }
+  }
+  return items.sort((a, b) => a.node.localeCompare(b.node));
+}

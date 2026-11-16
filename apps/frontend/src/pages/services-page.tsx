@@ -8,13 +8,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useDependencies } from '@/features/hosts/use-dependencies';
 import { dependentsOf } from '@/features/hosts/dependencies';
-import { hostLabel } from '@/features/hosts/hosts';
+import { hostLabel, hostRailItems } from '@/features/hosts/hosts';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
 import { useUptime } from '@/features/uptime/use-uptime';
 import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/features/dashboard/category-filter';
 import { StatusFilter } from '@/features/dashboard/status-filter';
 import { StatusBanner } from '@/components/status-banner';
+import { HomeStatusPill } from '@/components/home-status-pill';
+import { HeaderStatusPortal } from '@/components/header-status-slot';
+import { summarizeStatus } from '@/features/uptime/status-summary';
 import { PageTabMenu } from '@/components/page-tab-menu';
 import { PinnedRow } from '@/features/dashboard/pinned-row';
 import { HomeRail } from '@/features/dashboard/home-rail';
@@ -225,7 +228,11 @@ export function ServicesPage({
       ? groups
           .map((group, index) => ({ group, index, down: group.items.filter(isDown).length }))
           .sort((a, b) => (b.down > 0 ? 1 : 0) - (a.down > 0 ? 1 : 0) || a.index - b.index)
-          .map(({ group }) => group)
+          .map(({ group }) => ({
+            ...group,
+            // Inside a group the offline cards come first too; the saved order is untouched.
+            items: [...group.items].sort((a, b) => Number(isDown(b)) - Number(isDown(a))),
+          }))
       : groups;
   const activePage = pages.find((page) => page.id === activePageId);
   const pinnedServices = services
@@ -249,6 +256,13 @@ export function ServicesPage({
       statusCounts,
     });
   const downNow = [...services.filter(isDown), ...downProbes];
+  const statusSummary = summarizeStatus({
+    services: [...services, ...probeStatusItems],
+    statuses,
+    blockedIds,
+    overview,
+    now: clock,
+  });
   const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
   const actions = useServicePageActions({
     data,
@@ -309,23 +323,6 @@ export function ServicesPage({
         organizing={organizing}
         topBar={topBar}
         compact={mobile}
-        banner={
-          <StatusBanner
-            services={[...services, ...probeStatusItems]}
-            statuses={statuses}
-            blockedIds={blockedIds}
-            overview={overview}
-            maintenance={maintenance.windows}
-            uptime={uptime}
-            range={uptimeRange}
-            onOpenConnections={() => navigate('/manage/integrations')}
-            onOpenService={(id) =>
-              allProbes.some((probe) => probe.id === id)
-                ? navigate('/manage/probes')
-                : setDetailsId(id)
-            }
-          />
-        }
         stateFilter={
           !organizing && !hostView && !railed && services.length > 0 ? (
             <StatusFilter
@@ -362,23 +359,53 @@ export function ServicesPage({
           addButton,
         }}
       />
+      {!organizing && services.length + probeStatusItems.length > 0 && (
+        <HeaderStatusPortal>
+          <HomeStatusPill summary={statusSummary}>
+            {(close) => (
+              <>
+                <StatusBanner
+                  variant="popover"
+                  services={[...services, ...probeStatusItems]}
+                  statuses={statuses}
+                  blockedIds={blockedIds}
+                  overview={overview}
+                  maintenance={maintenance.windows}
+                  uptime={uptime}
+                  range={uptimeRange}
+                  onOpenConnections={() => {
+                    close();
+                    navigate('/manage/integrations');
+                  }}
+                  onOpenService={(id) => {
+                    close();
+                    if (allProbes.some((probe) => probe.id === id)) navigate('/manage/probes');
+                    else setDetailsId(id);
+                  }}
+                />
+                <ProbableCauses
+                  alwaysOpen
+                  down={downNow.filter((service) => !quietNow(service.id))}
+                  quiet={downNow.filter((service) => quietNow(service.id))}
+                  incidents={overview?.open}
+                  impacts={impacts}
+                  onOpen={(service) => {
+                    close();
+                    if (probeIds.has(service.id)) navigate('/manage/probes');
+                    else setDetailsId(service.id);
+                  }}
+                  onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
+                  onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
+                />
+              </>
+            )}
+          </HomeStatusPill>
+        </HeaderStatusPortal>
+      )}
       {data.statusError && (
         <p role="status" className="text-xs text-muted-foreground">
           {t('status.stale')}
         </p>
-      )}
-      {!organizing && !hostView && (
-        <ProbableCauses
-          down={downNow.filter((service) => !quietNow(service.id))}
-          quiet={downNow.filter((service) => quietNow(service.id))}
-          incidents={overview?.open}
-          impacts={impacts}
-          onOpen={(service) =>
-            probeIds.has(service.id) ? navigate('/manage/probes') : setDetailsId(service.id)
-          }
-          onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
-          onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
-        />
       )}
       {!railed && !organizing && !hostView && (
         <HomeProbes probes={probeViews} onOpen={() => navigate('/manage/probes')} />
@@ -707,6 +734,13 @@ export function ServicesPage({
             count: pinnedServices.length,
             active: favoritesOnly,
             onToggle: () => setFavoritesOnly(!favoritesOnly),
+          }}
+          hosts={{
+            items: hostRailItems(services, hostData.connections, hostData.inventories, isDown),
+            onSelect: (item) => {
+              setNodeFilter({ connectionId: item.connectionId, node: item.node });
+              setArrange('host');
+            },
           }}
           probes={{ items: allProbes, onOpen: () => navigate('/manage/probes') }}
           widgetRail={widgetRail}

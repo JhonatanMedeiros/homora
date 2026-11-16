@@ -1,6 +1,5 @@
 import {
   CERT_WARNING_DAYS,
-  isDegraded,
   type Maintenance,
   type StatusOverview,
   type UptimeRange,
@@ -16,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
 import type { ServiceStatus } from '@/lib/services';
 import { formatDuration } from '@/features/uptime/uptime-view';
+import { summarizeStatus, type WindowState } from '@/features/uptime/status-summary';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -34,11 +34,13 @@ type Props = {
   onOpenService?: (id: number) => void;
   /** Where to look when the monitor itself cannot measure. */
   onOpenConnections?: () => void;
+  /**
+   * `card` is the block on the Home; `popover` is the same content without the card, always
+   * showing its numbers, for the status popover in the header.
+   */
+  variant?: 'card' | 'popover';
 };
 
-const MAX_NAMED = 2;
-
-type WindowState = 'down' | 'degraded' | 'ok' | 'maintenance' | 'unknown';
 const WINDOW_COLOR: Record<WindowState, string> = {
   down: 'bg-destructive',
   degraded: 'bg-warning',
@@ -116,110 +118,24 @@ export function StatusBanner({
   now: fixedNow,
   onOpenService,
   onOpenConnections,
+  variant = 'card',
 }: Props) {
   const clock = useNow();
   const now = fixedNow ?? clock;
   // On a phone the numbers wait behind "Details": the cards below are what people came for.
   const [open, setOpen] = useState(false);
   const detailsId = useId();
+  const embedded = variant === 'popover';
+  // Embedded in the popover the numbers are always visible; the card hides them on phones.
+  const shown = embedded || open;
   if (services.length === 0) return null;
-  const down: string[] = [];
-  const slow: string[] = [];
-  let unknown = 0;
-  let blocked = 0;
-  const certs: { name: string; days: number }[] = [];
-  const windows: { id: number; name: string; state: WindowState }[] = [];
-  for (const service of services) {
-    const status = statuses[service.id];
-    if (typeof status?.certExpiresAt === 'number')
-      certs.push({
-        name: service.name,
-        days: Math.floor((status.certExpiresAt - now) / 86_400_000),
-      });
-    // Maintenance is planned: neither a problem nor missing information.
-    if (status?.reason === 'maintenance') {
-      windows.push({ id: service.id, name: service.name, state: 'maintenance' });
-      continue;
-    }
-    // Failures that belong to the monitor's own failure say nothing about the service.
-    const isBlocked =
-      (blockedIds.has(service.id) && status?.status !== 'available') ||
-      (overview?.measurement !== undefined &&
-        overview.measurement !== null &&
-        status?.status === 'unavailable' &&
-        status.reason === overview.measurement.reason);
-    const slowNow =
-      status?.status === 'available' &&
-      isDegraded(overview?.settings[service.id], status.status, status.latencyMs);
-    windows.push({
-      id: service.id,
-      name: service.name,
-      state: isBlocked
-        ? 'unknown'
-        : status?.status === 'unavailable'
-          ? 'down'
-          : slowNow
-            ? 'degraded'
-            : status?.status === 'available'
-              ? 'ok'
-              : 'unknown',
-    });
-    if (isBlocked) blocked++;
-    else if (status?.status === 'unavailable') {
-      const since = overview?.open[service.id]?.startedAt;
-      down.push(
-        typeof since === 'number'
-          ? t('banner.down', { name: service.name, duration: formatDuration(now - since) })
-          : t('banner.downNow', { name: service.name }),
-      );
-    } else if (status?.status === 'available') {
-      if (isDegraded(overview?.settings[service.id], status.status, status.latencyMs))
-        slow.push(
-          t('banner.degraded', {
-            name: service.name,
-            latency: Math.round(status.latencyMs ?? 0),
-          }),
-        );
-    } else unknown++;
-  }
-  const problems = down.length + slow.length;
-  const measurement = overview?.measurement ?? null;
-  const title = measurement
-    ? t('banner.measurement.title')
-    : problems > 0
-      ? problems === 1
-        ? t('banner.problem.one')
-        : t('banner.problem.other', { count: problems })
-      : unknown > 0
-        ? unknown === 1
-          ? t('banner.unknown.one')
-          : t('banner.unknown.other', { count: unknown })
-        : blocked > 0
-          ? t('banner.allMonitoredUp')
-          : t('banner.allUp');
-  const named = [...down, ...slow];
-  const subtitle = measurement
-    ? t('banner.measurement.detail')
-    : [
-        ...named.slice(0, MAX_NAMED),
-        ...(named.length > MAX_NAMED
-          ? [t('banner.more', { count: named.length - MAX_NAMED })]
-          : []),
-        ...(blocked > 0
-          ? [
-              blocked === 1
-                ? t('banner.blocked.one')
-                : t('banner.blocked.other', { count: blocked }),
-            ]
-          : []),
-      ].join(' · ');
-  const tone = measurement
-    ? 'warn'
-    : down.length > 0
-      ? 'down'
-      : problems > 0 || unknown > 0 || blocked > 0
-        ? 'warn'
-        : 'ok';
+  const { certs, windows, measurement, title, subtitle, tone } = summarizeStatus({
+    services,
+    statuses,
+    blockedIds,
+    overview,
+    now,
+  });
 
   const values = services
     .map((service) => uptime[service.id]?.uptimePct)
@@ -247,174 +163,179 @@ export function StatusBanner({
       ? Math.max(0, Math.min(100, Math.round((1 - (100 - sla.actualPct) / budget) * 100)))
       : null;
 
-  return (
-    <Card aria-label={t('banner.label')} role="region" className="gap-3 py-3 sm:py-4">
-      <CardContent className="flex flex-col gap-3 px-4 sm:px-5">
-        <div className="flex flex-wrap items-start gap-x-8 gap-y-3">
-          <div className="flex min-w-0 flex-[1_1_18rem] items-start gap-3 sm:min-w-64">
-            <span
-              aria-hidden="true"
-              className={cn(
-                'grid size-9 shrink-0 place-items-center rounded-lg',
-                tone === 'down' && 'bg-destructive/15 text-destructive',
-                tone === 'warn' && 'bg-warning/15 text-warning',
-                tone === 'ok' && 'bg-success/15 text-success',
-              )}
+  const inner = (
+    <>
+      <div className="flex flex-wrap items-start gap-x-8 gap-y-3">
+        <div className="flex min-w-0 flex-[1_1_18rem] items-start gap-3 sm:min-w-64">
+          <span
+            aria-hidden="true"
+            className={cn(
+              'grid size-9 shrink-0 place-items-center rounded-lg',
+              tone === 'down' && 'bg-destructive/15 text-destructive',
+              tone === 'warn' && 'bg-warning/15 text-warning',
+              tone === 'ok' && 'bg-success/15 text-success',
+            )}
+          >
+            {tone === 'ok' ? (
+              <CircleCheck className="size-5" />
+            ) : (
+              <TriangleAlert className="size-5" />
+            )}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p
+              role="status"
+              className="text-base leading-tight font-semibold tracking-tight sm:text-lg"
             >
-              {tone === 'ok' ? (
-                <CircleCheck className="size-5" />
-              ) : (
-                <TriangleAlert className="size-5" />
-              )}
-            </span>
-            <div className="min-w-0 flex-1">
+              {title}
+            </p>
+            {subtitle && (
               <p
-                role="status"
-                className="text-base leading-tight font-semibold tracking-tight sm:text-lg"
+                className={cn('mt-0.5 text-sm text-muted-foreground', !shown && 'hidden sm:block')}
               >
-                {title}
+                {subtitle}
               </p>
-              {subtitle && (
-                <p
-                  className={cn('mt-0.5 text-sm text-muted-foreground', !open && 'hidden sm:block')}
-                >
-                  {subtitle}
-                </p>
-              )}
-              {measurement && onOpenConnections && (
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  className="mt-1 h-auto p-0"
-                  onClick={onOpenConnections}
-                >
-                  {t('banner.measurement.action')}
-                </Button>
+            )}
+            {measurement && onOpenConnections && (
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="mt-1 h-auto p-0"
+                onClick={onOpenConnections}
+              >
+                {t('banner.measurement.action')}
+              </Button>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn('-my-1 -mr-2 shrink-0 sm:hidden', embedded && 'hidden')}
+            aria-expanded={open}
+            aria-controls={detailsId}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {t(open ? 'banner.hideDetails' : 'banner.details')}
+            <ChevronDown
+              aria-hidden="true"
+              className={cn('transition-transform', open && 'rotate-180')}
+            />
+          </Button>
+        </div>
+        <dl
+          id={detailsId}
+          className={cn(
+            'm-0 min-w-0 flex-[3_1_32rem] grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2',
+            shown ? 'grid' : 'hidden sm:grid',
+          )}
+        >
+          <Stat
+            label={t('banner.stat.uptime', { range: t(`uptime.range.${range}`) })}
+            value={average === null ? t('uptime.none') : `${pct(average)}%`}
+            note={
+              services.length === 1
+                ? t('banner.stat.uptimeSub.one')
+                : t('banner.stat.uptimeSub.other', { count: services.length })
+            }
+          />
+          {overview && (
+            <>
+              <Stat
+                label={t('banner.stat.incidents')}
+                value={overview.incidents7d}
+                note={incidentNote}
+              />
+              <Stat
+                label={t('banner.stat.mttr')}
+                value={
+                  overview.mttrMs === null ? t('uptime.none') : formatDuration(overview.mttrMs)
+                }
+                note={
+                  overview.mttrMs === null
+                    ? t('banner.mttr.none')
+                    : t('banner.mttr.longest', {
+                        duration: formatDuration(overview.longestCleanMs),
+                      })
+                }
+              />
+            </>
+          )}
+          {certs.length > 0 && <CertStat certs={certs} />}
+        </dl>
+      </div>
+      {onOpenService && windows.length > 1 && (
+        <ul aria-label={t('banner.windows')} className="m-0 flex list-none flex-wrap gap-1 p-0">
+          {windows.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => onOpenService(item.id)}
+                aria-label={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
+                title={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
+                className="grid size-4 place-items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-6"
+              >
+                <span className={cn('block size-3 rounded-sm', WINDOW_COLOR[item.state])} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {(upcoming || sla) && (
+        <div
+          className={cn(
+            'flex-col gap-3 border-t pt-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-8',
+            shown ? 'flex' : 'hidden sm:flex',
+          )}
+        >
+          {upcoming && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+              <span className="text-muted-foreground">
+                {t(upcoming.startsAt <= now ? 'banner.maintenance.now' : 'banner.maintenance.next')}
+              </span>
+              <Badge variant="outline" className="border-info/50 bg-info/10 text-info">
+                {whenText(upcoming)}
+              </Badge>
+              <span>{services.find((item) => item.id === upcoming.serviceId)?.name}</span>
+              {upcoming.note && <span className="text-muted-foreground">{upcoming.note}</span>}
+            </div>
+          )}
+          {sla && (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm lg:min-w-[26rem] lg:flex-1">
+              <span className="text-muted-foreground">
+                {t('banner.sla.title', { target: pct(sla.targetPct) })}
+              </span>
+              {sla.actualPct === null || left === null ? (
+                <span className="text-muted-foreground">{t('banner.sla.none')}</span>
+              ) : (
+                <>
+                  <Progress
+                    value={left}
+                    aria-label={t('banner.sla.budget', { pct: left })}
+                    className="h-2 min-w-40 flex-1"
+                  />
+                  <span className="font-mono tabular-nums">
+                    {t('banner.sla.reached', { pct: pct(sla.actualPct) })}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {left > 0 ? t('banner.sla.budget', { pct: left }) : t('banner.sla.exhausted')}
+                  </span>
+                </>
               )}
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="-my-1 -mr-2 shrink-0 sm:hidden"
-              aria-expanded={open}
-              aria-controls={detailsId}
-              onClick={() => setOpen((value) => !value)}
-            >
-              {t(open ? 'banner.hideDetails' : 'banner.details')}
-              <ChevronDown
-                aria-hidden="true"
-                className={cn('transition-transform', open && 'rotate-180')}
-              />
-            </Button>
-          </div>
-          <dl
-            id={detailsId}
-            className={cn(
-              'm-0 min-w-0 flex-[3_1_32rem] grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2',
-              open ? 'grid' : 'hidden sm:grid',
-            )}
-          >
-            <Stat
-              label={t('banner.stat.uptime', { range: t(`uptime.range.${range}`) })}
-              value={average === null ? t('uptime.none') : `${pct(average)}%`}
-              note={
-                services.length === 1
-                  ? t('banner.stat.uptimeSub.one')
-                  : t('banner.stat.uptimeSub.other', { count: services.length })
-              }
-            />
-            {overview && (
-              <>
-                <Stat
-                  label={t('banner.stat.incidents')}
-                  value={overview.incidents7d}
-                  note={incidentNote}
-                />
-                <Stat
-                  label={t('banner.stat.mttr')}
-                  value={
-                    overview.mttrMs === null ? t('uptime.none') : formatDuration(overview.mttrMs)
-                  }
-                  note={
-                    overview.mttrMs === null
-                      ? t('banner.mttr.none')
-                      : t('banner.mttr.longest', {
-                          duration: formatDuration(overview.longestCleanMs),
-                        })
-                  }
-                />
-              </>
-            )}
-            {certs.length > 0 && <CertStat certs={certs} />}
-          </dl>
+          )}
         </div>
-        {onOpenService && windows.length > 1 && (
-          <ul aria-label={t('banner.windows')} className="m-0 flex list-none flex-wrap gap-1 p-0">
-            {windows.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpenService(item.id)}
-                  aria-label={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
-                  title={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
-                  className="grid size-4 place-items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-6"
-                >
-                  <span className={cn('block size-3 rounded-sm', WINDOW_COLOR[item.state])} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {(upcoming || sla) && (
-          <div
-            className={cn(
-              'flex-col gap-3 border-t pt-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-8',
-              open ? 'flex' : 'hidden sm:flex',
-            )}
-          >
-            {upcoming && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                <span className="text-muted-foreground">
-                  {t(
-                    upcoming.startsAt <= now ? 'banner.maintenance.now' : 'banner.maintenance.next',
-                  )}
-                </span>
-                <Badge variant="outline" className="border-info/50 bg-info/10 text-info">
-                  {whenText(upcoming)}
-                </Badge>
-                <span>{services.find((item) => item.id === upcoming.serviceId)?.name}</span>
-                {upcoming.note && <span className="text-muted-foreground">{upcoming.note}</span>}
-              </div>
-            )}
-            {sla && (
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm lg:min-w-[26rem] lg:flex-1">
-                <span className="text-muted-foreground">
-                  {t('banner.sla.title', { target: pct(sla.targetPct) })}
-                </span>
-                {sla.actualPct === null || left === null ? (
-                  <span className="text-muted-foreground">{t('banner.sla.none')}</span>
-                ) : (
-                  <>
-                    <Progress
-                      value={left}
-                      aria-label={t('banner.sla.budget', { pct: left })}
-                      className="h-2 min-w-40 flex-1"
-                    />
-                    <span className="font-mono tabular-nums">
-                      {t('banner.sla.reached', { pct: pct(sla.actualPct) })}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {left > 0 ? t('banner.sla.budget', { pct: left }) : t('banner.sla.exhausted')}
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
+      )}
+    </>
+  );
+  return embedded ? (
+    <section aria-label={t('banner.label')} className="flex flex-col gap-3">
+      {inner}
+    </section>
+  ) : (
+    <Card aria-label={t('banner.label')} role="region" className="gap-3 py-3 sm:py-4">
+      <CardContent className="flex flex-col gap-3 px-4 sm:px-5">{inner}</CardContent>
     </Card>
   );
 }

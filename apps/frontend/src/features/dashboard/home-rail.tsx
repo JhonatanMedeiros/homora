@@ -1,5 +1,6 @@
 import { PROBE_DOT } from '@/lib/probe-dot';
 import { PanelRight, Star } from 'lucide-react';
+import type { HostRailItem } from '@/features/hosts/hosts';
 import type { LightState } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 import { STATUS_FILTERS, type StatusFilter } from '@/features/dashboard/status-filter-model';
@@ -19,6 +20,8 @@ type Props = {
   onSelectGroup: (name: string | null) => void;
   /** Favorites: shown only when something is pinned, or while the view is on. */
   favorites: { count: number; active: boolean; onToggle: () => void };
+  /** Proxmox nodes that run cards, under the groups; hidden when there are none. */
+  hosts?: { items: HostRailItem[]; onSelect: (item: HostRailItem) => void };
   /** Probes to list under the groups; hidden when there are none. */
   probes?: { items: RailProbe[]; onOpen: () => void };
   widgetRail: boolean;
@@ -47,6 +50,7 @@ export function HomeRail({
   selectedGroup,
   onSelectGroup,
   favorites,
+  hosts,
   probes,
   widgetRail,
   onToggleWidgetRail,
@@ -130,6 +134,43 @@ export function HomeRail({
               </button>
             );
           })}
+        </section>
+      )}
+      {hosts && hosts.items.length > 0 && (
+        <section aria-label={t('rail.hosts')} className="flex flex-col gap-0.5">
+          <h2 className="px-2.5 pb-1 text-xs font-medium text-muted-foreground">
+            {t('rail.hosts')}
+          </h2>
+          {hosts.items.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => hosts.onSelect(item)}
+              className={cn(ITEM, 'text-muted-foreground')}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'size-2 shrink-0 rounded-full',
+                    item.state === 'online' && 'bg-success',
+                    item.state === 'offline' && 'bg-destructive',
+                    item.state === 'unknown' && 'border border-muted-foreground',
+                  )}
+                />
+                <span className="truncate">{item.node}</span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs tabular-nums">
+                {item.state === 'offline' && (
+                  <span className="text-destructive">{t('filter.status.down')}</span>
+                )}
+                {item.down > 0 && item.state !== 'offline' && (
+                  <span className="text-destructive">{item.down}</span>
+                )}
+                {item.total}
+              </span>
+            </button>
+          ))}
         </section>
       )}
       {probes && probes.items.length > 0 && (
