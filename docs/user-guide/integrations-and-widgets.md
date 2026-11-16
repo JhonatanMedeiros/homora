@@ -86,10 +86,11 @@ Page widgets live on a dashboard page, above your groups.
 1. On the dashboard, press the dashed **Add widget** tile.
 2. Pick a widget from the searchable gallery (Homora's own, and those offered by your connections).
 3. Set its options. A **clock** offers 12 or 24-hour format, seconds, the date and any time zone, with a live preview.
-4. Save.
+4. For a **note**, enter up to 4,000 characters of basic Markdown. An optional name appears above it. Paragraphs, line breaks, emphasis, lists and HTTP(S) links are supported; HTML, images, tables and code blocks are not rendered as such.
+5. Save.
 
 Each widget has a **⋯** menu to edit it (the type cannot change), move it, or remove it after confirmation. On a touch
-screen the menu is always visible, and you can drag widgets to reorder them. Exports include **clocks**; connected
+screen the menu is always visible, and you can drag widgets to reorder them. Exports include **clocks and notes**; connected
 widgets appear as skipped in the import preview and must be recreated with a connection you choose.
 
 ## The top bar

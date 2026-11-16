@@ -71,6 +71,11 @@ test('restores database (with its administrator account), key and integration to
         encrypted,
         'both',
       );
+    sourceDb
+      .prepare(
+        "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position) VALUES((SELECT id FROM pages ORDER BY id LIMIT 1),'note','Runbook',?,1,NULL,0)",
+      )
+      .run(JSON.stringify({ text: '**Restart** safely' }));
     sourceDb.close();
     const runBackup = (from, to) => {
       const result = spawnSync(process.execPath, ['scripts/backup.mjs', from, to], {
@@ -85,6 +90,10 @@ test('restores database (with its administrator account), key and integration to
     const restoredDb = new DatabaseSync(restored, { readOnly: true });
     try {
       assert.equal(restoredDb.prepare('SELECT name FROM service_cards').get().name, 'test');
+      assert.deepEqual(
+        { ...restoredDb.prepare("SELECT name, config FROM page_widgets WHERE type='note'").get() },
+        { name: 'Runbook', config: JSON.stringify({ text: '**Restart** safely' }) },
+      );
     } finally {
       restoredDb.close();
     }

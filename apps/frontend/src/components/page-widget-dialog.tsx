@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, NotebookPen } from 'lucide-react';
 import { defaultClockConfig, type ClockConfig } from '@homora/widgets/clock';
+import { MAX_NOTE_LENGTH } from '@homora/widgets/note';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -19,7 +21,7 @@ export type WidgetDraft = {
   pageId: number;
   type: string;
   name: string;
-  config: ClockConfig;
+  config: ClockConfig & { text: string };
   connectionId: number | null;
 };
 
@@ -56,6 +58,7 @@ export function PageWidgetDialog({
   const clockName = t('pageWidgets.clock');
   const needle = query.trim().toLowerCase();
   const showClock = !needle || clockName.toLowerCase().includes(needle);
+  const showNote = !needle || t('pageWidgets.note').toLowerCase().includes(needle);
   const shown = connections.filter(
     (connection) =>
       !needle ||
@@ -66,14 +69,16 @@ export function PageWidgetDialog({
     draft && onChange({ ...draft, config: { ...draft.config, ...patch } });
   const kindName =
     draft?.connectionId == null
-      ? clockName
+      ? draft?.type === 'note'
+        ? t('pageWidgets.note')
+        : clockName
       : (connections.find((connection) => connection.id === draft.connectionId)?.name ??
         draft.type);
-  const pick = (connection: Connection | null) => {
+  const pick = (connection: Connection | null, localType = 'clock') => {
     if (!draft) return;
     onChange({
       ...draft,
-      type: connection?.type ?? 'clock',
+      type: connection?.type ?? localType,
       connectionId: connection?.id ?? null,
     });
     onChoose(true);
@@ -106,7 +111,7 @@ export function PageWidgetDialog({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          {showClock && (
+          {(showClock || showNote) && (
             <section aria-labelledby="pw-group-homora" className="flex flex-col gap-2">
               <h3
                 id="pw-group-homora"
@@ -115,13 +120,24 @@ export function PageWidgetDialog({
                 {t('pageWidgets.groupHomora')}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">
-                <GalleryOption
-                  title={clockName}
-                  description={t('pageWidgets.clockDesc')}
-                  onPick={() => pick(null)}
-                >
-                  <Clock preferences={defaultClockConfig} />
-                </GalleryOption>
+                {showClock && (
+                  <GalleryOption
+                    title={clockName}
+                    description={t('pageWidgets.clockDesc')}
+                    onPick={() => pick(null)}
+                  >
+                    <Clock preferences={defaultClockConfig} />
+                  </GalleryOption>
+                )}
+                {showNote && (
+                  <GalleryOption
+                    title={t('pageWidgets.note')}
+                    description={t('pageWidgets.noteDesc')}
+                    onPick={() => pick(null, 'note')}
+                  >
+                    <NotebookPen aria-hidden="true" />
+                  </GalleryOption>
+                )}
               </div>
             </section>
           )}
@@ -149,7 +165,7 @@ export function PageWidgetDialog({
               </div>
             </section>
           )}
-          {!showClock && shown.length === 0 && (
+          {!showClock && !showNote && shown.length === 0 && (
             <p className="text-sm text-muted-foreground">{t('pageWidgets.noMatch')}</p>
           )}
         </div>
@@ -225,6 +241,23 @@ export function PageWidgetDialog({
                     <FieldLabel htmlFor="pw-seconds">{t('settings.ui.seconds')}</FieldLabel>
                   </Field>
                 </>
+              )}
+              {draft.type === 'note' && (
+                <Field>
+                  <FieldLabel htmlFor="pw-note">{t('pageWidgets.noteText')}</FieldLabel>
+                  <Textarea
+                    id="pw-note"
+                    rows={6}
+                    maxLength={MAX_NOTE_LENGTH}
+                    value={draft.config.text}
+                    onChange={(event) =>
+                      onChange({ ...draft, config: { ...draft.config, text: event.target.value } })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('pageWidgets.noteHint', { max: MAX_NOTE_LENGTH })}
+                  </p>
+                </Field>
               )}
               <Collapsible defaultOpen={draft.id !== null && draft.name !== ''}>
                 <CollapsibleTrigger asChild>

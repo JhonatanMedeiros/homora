@@ -220,3 +220,115 @@ it('reorders by dragging a card past another one', async () => {
     ),
   );
 });
+
+it('adds a local note with Markdown text', async () => {
+  const fetcher = vi.fn(async () => new Response('[]'));
+  vi.stubGlobal('fetch', fetcher);
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar widget' }));
+  fireEvent.click(await screen.findByRole('button', { name: /Uma nota curta/ }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nota' }), { target: { value: '**Olá**' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar widget' }));
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/page-widgets',
+      expect.objectContaining({ method: 'POST', body: expect.stringContaining('**Olá**') }),
+    ),
+  );
+});
+
+it('edits an existing note and preserves its text in the request', async () => {
+  const note = {
+    id: 7,
+    pageId: 1,
+    type: 'note',
+    name: 'Lab',
+    config: { text: 'Original' },
+    connectionId: null,
+    position: 0,
+    version: 1,
+  };
+  const fetcher = vi.fn(
+    async (url: string) => new Response(JSON.stringify(url === '/api/page-widgets' ? [note] : [])),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  fireEvent.pointerDown(await screen.findByRole('button', { name: 'Ações: Lab' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Editar' }));
+  const input = screen.getByRole('textbox', { name: 'Nota' }) as HTMLTextAreaElement;
+  expect(input.value).toBe('Original');
+  fireEvent.change(input, { target: { value: 'Atualizada' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/page-widgets/7',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          pageId: 1,
+          type: 'note',
+          name: 'Lab',
+          connectionId: null,
+          config: { text: 'Atualizada' },
+        }),
+      }),
+    ),
+  );
+});
+
+it('isolates invalid note configuration', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async (url: string) =>
+        new Response(
+          JSON.stringify(
+            url === '/api/page-widgets'
+              ? [
+                  {
+                    id: 1,
+                    pageId: 1,
+                    type: 'note',
+                    name: 'Invalid note',
+                    config: { text: 123 },
+                    connectionId: null,
+                    position: 0,
+                    version: 1,
+                  },
+                ]
+              : [],
+          ),
+        ),
+    ),
+  );
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  expect(await screen.findByText('Invalid note')).toBeTruthy();
+  expect(await screen.findByText(/dados inválidos/i)).toBeTruthy();
+});
+
+it('saves a clock without leaking note text into its configuration', async () => {
+  const fetcher = vi.fn(async () => new Response('[]'));
+  vi.stubGlobal('fetch', fetcher);
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar widget' }));
+  fireEvent.click(await screen.findByRole('button', { name: /Relógio/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar widget' }));
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/page-widgets',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          pageId: 1,
+          type: 'clock',
+          name: '',
+          config: { hourFormat: 'auto', timeZone: '', seconds: false, date: true },
+          connectionId: null,
+        }),
+      }),
+    ),
+  );
+});

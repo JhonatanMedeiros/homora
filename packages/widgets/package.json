@@ -12,6 +12,10 @@
       "types": "./dist/clock.d.ts",
       "default": "./dist/clock.js"
     },
+    "./note": {
+      "types": "./dist/note.d.ts",
+      "default": "./dist/note.js"
+    },
     "./system-telemetry": {
       "types": "./dist/system-telemetry.d.ts",
       "default": "./dist/system-telemetry.js"

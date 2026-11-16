@@ -1,6 +1,7 @@
 import { MoreHorizontal, Plus } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
+import { noteWidget } from '@homora/widgets/note';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +34,10 @@ import { PageWidgetDialog, type WidgetDraft } from '@/components/page-widget-dia
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
+const NoteContent = lazy(() =>
+  import('@/components/note-content').then((module) => ({ default: module.NoteContent })),
+);
+
 type PageWidget = {
   id: number;
   pageId: number;
@@ -50,7 +55,7 @@ function newWidgetDraft(pageId: number): WidgetDraft {
     pageId,
     type: 'clock',
     name: '',
-    config: defaultClockConfig,
+    config: { ...defaultClockConfig, text: '' },
     connectionId: null,
   };
 }
@@ -158,7 +163,7 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
         } else if (!data && good) {
           next[item.id] = { ...good, widget, stale: true };
         } else {
-          next[item.id] = !data ? { widget, status: 'error' } : { widget, status: 'invalid' };
+          next[item.id] = data ? { widget, status: 'invalid' } : { widget, status: 'error' };
         }
       }
       setReadings(next);
@@ -264,11 +269,17 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
               item.name ||
               (item.type === 'clock'
                 ? t('pageWidgets.clock')
-                : (connections.find((connection) => connection.id === item.connectionId)?.name ??
-                  item.type));
+                : item.type === 'note'
+                  ? t('pageWidgets.note')
+                  : (connections.find((connection) => connection.id === item.connectionId)?.name ??
+                    item.type));
             const config =
               item.type === 'clock' && item.version === 1
                 ? clockWidget.parseConfig(item.config)
+                : null;
+            const noteConfig =
+              item.type === 'note' && item.version === 1
+                ? noteWidget.parseConfig(item.config)
                 : null;
             const base = {
               widget: {
@@ -281,14 +292,15 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
             };
             const missingConnection =
               item.type !== 'clock' &&
+              item.type !== 'note' &&
               !loading &&
               !connections.some((connection) => connection.id === item.connectionId);
             const state: CardWidgetState =
-              item.version !== 1
-                ? { ...base, status: 'invalid' }
-                : missingConnection
+              item.version === 1
+                ? missingConnection
                   ? { ...base, status: 'unconfigured' }
-                  : (readings[item.id] ?? { ...base, status: 'loading' });
+                  : (readings[item.id] ?? { ...base, status: 'loading' })
+                : { ...base, status: 'invalid' };
             const edit = () => {
               setChosen(true);
               setDraft({
@@ -297,7 +309,7 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 type: item.type,
                 name: item.name,
                 connectionId: item.connectionId,
-                config: config ?? defaultClockConfig,
+                config: { ...(config ?? defaultClockConfig), text: noteConfig?.text ?? '' },
               });
             };
             const movePage = (target: number) =>
@@ -306,7 +318,12 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 type: item.type,
                 name: item.name,
                 connectionId: item.connectionId,
-                config: item.type === 'clock' ? (config ?? defaultClockConfig) : {},
+                config:
+                  item.type === 'clock'
+                    ? (config ?? defaultClockConfig)
+                    : item.type === 'note'
+                      ? (noteConfig ?? { text: '' })
+                      : {},
               });
             return (
               <article
@@ -351,6 +368,20 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                   {item.type === 'clock' ? (
                     config ? (
                       <Clock preferences={config} />
+                    ) : (
+                      <p>{t('cardWidget.invalid')}</p>
+                    )
+                  ) : item.type === 'note' ? (
+                    noteConfig ? (
+                      <Suspense
+                        fallback={
+                          <p role="status" className="text-sm text-muted-foreground">
+                            {t('common.loading')}
+                          </p>
+                        }
+                      >
+                        <NoteContent text={noteConfig.text} />
+                      </Suspense>
                     ) : (
                       <p>{t('cardWidget.invalid')}</p>
                     )
@@ -483,7 +514,17 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
           const { id, ...body } = draft;
           void change(id ? `/api/page-widgets/${id}` : '/api/page-widgets', id ? 'PUT' : 'POST', {
             ...body,
-            config: body.type === 'clock' ? body.config : {},
+            config:
+              body.type === 'clock'
+                ? {
+                    hourFormat: body.config.hourFormat,
+                    timeZone: body.config.timeZone,
+                    seconds: body.config.seconds,
+                    date: body.config.date,
+                  }
+                : body.type === 'note'
+                  ? { text: body.config.text }
+                  : {},
           }).then((ok) => {
             if (ok) setDraft(null);
           });
