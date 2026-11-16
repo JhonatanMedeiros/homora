@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/JhonatanMedeiros/homora/compare/v0.2.0...v0.3.0) (2026-11-16)
+
+
+### 🚀 New features
+
+* move Home health into a header pill and list hosts in the rail ([#251](https://github.com/JhonatanMedeiros/homora/issues/251)) ([dbd194a](https://github.com/JhonatanMedeiros/homora/commit/dbd194a7152cfa5fc7b76dc15bffd4615f5bacbb))
+
+
+### 🩹 Bug fixes
+
+* override vulnerable build dependencies ([#248](https://github.com/JhonatanMedeiros/homora/issues/248)) ([b4f8399](https://github.com/JhonatanMedeiros/homora/commit/b4f8399f30add388382d94ea40051797e968dbee))
+
 ## [0.2.0](https://github.com/JhonatanMedeiros/homora/compare/v0.1.1...v0.2.0) (2026-11-16)
 
 
