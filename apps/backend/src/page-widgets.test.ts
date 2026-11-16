@@ -81,12 +81,26 @@ it('exports portable clock configuration and rejects a stale import preview', as
     connectionId: null,
   };
   expect((await req('POST', '/api/page-widgets', widget)).statusCode).toBe(201);
+  const countdown = {
+    pageId,
+    type: 'countdown',
+    name: '',
+    connectionId: null,
+    config: {
+      eventName: 'Renewal',
+      localDateTime: '2030-04-05T10:30',
+      timeZone: 'UTC',
+      pastBehavior: 'keep',
+    },
+  };
+  expect((await req('POST', '/api/page-widgets', countdown)).statusCode).toBe(201);
   const content = (await req('GET', '/api/config/export?format=json')).body;
   expect(JSON.parse(content).widgets).toEqual([
     { page: 'Home', type: 'clock', name: 'UTC', config: widget.config },
+    { page: 'Home', type: 'countdown', name: '', config: countdown.config },
   ]);
   const preview = (await req('POST', '/api/config/import/preview', { content })).json();
-  expect(preview.plan.summary.newWidgets).toBe(1);
+  expect(preview.plan.summary.newWidgets).toBe(2);
   await req('POST', '/api/page-widgets', { ...widget, name: 'Changed' });
   expect(
     (await req('POST', '/api/config/import/apply', { content, expectedVersion: preview.version }))
@@ -97,7 +111,12 @@ it('exports portable clock configuration and rejects a stale import preview', as
     (await req('POST', '/api/config/import/apply', { content, expectedVersion: next.version }))
       .statusCode,
   ).toBe(200);
-  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(3);
+  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(5);
+  expect(
+    (await req('GET', '/api/page-widgets'))
+      .json()
+      .filter((item: { type: string }) => item.type === 'countdown'),
+  ).toHaveLength(2);
   await app.close();
 });
 

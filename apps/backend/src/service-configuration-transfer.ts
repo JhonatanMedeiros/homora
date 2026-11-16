@@ -1,3 +1,4 @@
+import { countdownWidget } from '@homora/widgets/countdown';
 import { noteWidget } from '@homora/widgets/note';
 import { clockWidget } from '@homora/widgets/clock';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
@@ -93,9 +94,14 @@ export function createConfigurationTransfer({
             // A widget whose saved config is not JSON cannot be exported; it is left out.
             return [];
           }
-          if (row.type === 'clock' || row.type === 'note') {
-            const config =
-              row.type === 'clock' ? clockWidget.parseConfig(raw) : noteWidget.parseConfig(raw);
+          if (row.type === 'clock' || row.type === 'countdown' || row.type === 'note') {
+            const config = (
+              row.type === 'clock'
+                ? clockWidget
+                : row.type === 'countdown'
+                  ? countdownWidget
+                  : noteWidget
+            ).parseConfig(raw);
             return config ? [{ page: row.page, type: row.type, name: row.name, config }] : [];
           }
           if (!integrationDefinition(row.type) || row.sourceName === null) return [];

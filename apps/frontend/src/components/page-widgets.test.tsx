@@ -221,6 +221,88 @@ it('reorders by dragging a card past another one', async () => {
   );
 });
 
+it('creates and edits a countdown with localized fields', async () => {
+  const config = {
+    eventName: '<Event>',
+    localDateTime: '2099-01-01T12:00',
+    timeZone: 'UTC',
+    pastBehavior: 'keep',
+  };
+  const widget = {
+    id: 10,
+    pageId: 1,
+    type: 'countdown',
+    name: '',
+    config,
+    connectionId: null,
+    position: 0,
+    version: 1,
+  };
+  const fetcher = vi.fn(
+    async (url: string) =>
+      new Response(JSON.stringify(url === '/api/page-widgets' ? [widget] : [])),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  expect(await screen.findByText('<Event>')).toBeTruthy();
+  expect(screen.getByRole('timer').getAttribute('aria-live')).toBe('off');
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Ações: Contagem regressiva' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Editar' }));
+  expect(((await screen.findByLabelText('Nome do evento')) as HTMLInputElement).value).toBe(
+    '<Event>',
+  );
+  expect(screen.getByLabelText('Após o evento').textContent).toContain('Manter visível');
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar widget' }));
+  fireEvent.click(await screen.findByRole('button', { name: /Contagem regressiva/ }));
+  const date = await screen.findByLabelText('Data e hora do evento');
+  fireEvent.click(date);
+  expect(screen.getByLabelText('Hora').hasAttribute('disabled')).toBe(true);
+  const day = document.querySelector<HTMLButtonElement>('button[data-day]:not([disabled])');
+  expect(day).toBeTruthy();
+  fireEvent.click(day!);
+  expect(screen.getByLabelText('Hora').hasAttribute('disabled')).toBe(false);
+  expect(screen.getByLabelText('Minuto').hasAttribute('disabled')).toBe(false);
+  expect(date.textContent).toContain('00:00');
+  fireEvent.click(screen.getByRole('button', { name: 'Concluído' }));
+  expect(screen.queryByLabelText('Hora')).toBeNull();
+});
+
+it('shows or hides past countdowns in English', async () => {
+  setLocale('en');
+  const item = (id: number, pastBehavior: string) => ({
+    id,
+    pageId: 1,
+    type: 'countdown',
+    name: '',
+    config: {
+      eventName: `Event ${id}`,
+      localDateTime: '2000-01-01T12:00',
+      timeZone: 'UTC',
+      pastBehavior,
+    },
+    connectionId: null,
+    position: id,
+    version: 1,
+  });
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async (url: string) =>
+        new Response(
+          JSON.stringify(url === '/api/page-widgets' ? [item(1, 'keep'), item(2, 'hide')] : []),
+        ),
+    ),
+  );
+  render(<PageWidgets pageId={1} pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]} />);
+  expect(await screen.findByText('Event 1')).toBeTruthy();
+  expect(screen.getByRole('timer').textContent).toContain('ago');
+  expect(screen.queryByText('Event 2')).toBeNull();
+});
+
 it('adds a local note with Markdown text', async () => {
   const fetcher = vi.fn(async () => new Response('[]'));
   vi.stubGlobal('fetch', fetcher);

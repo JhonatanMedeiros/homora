@@ -1,3 +1,9 @@
+import {
+  countdownWidget,
+  defaultCountdownConfig,
+  countdownRemaining,
+} from '@homora/widgets/countdown';
+import { Countdown } from '@/components/countdown';
 import { MoreHorizontal, Plus } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
@@ -55,7 +61,7 @@ function newWidgetDraft(pageId: number): WidgetDraft {
     pageId,
     type: 'clock',
     name: '',
-    config: { ...defaultClockConfig, text: '' },
+    config: defaultClockConfig,
     connectionId: null,
   };
 }
@@ -69,6 +75,8 @@ type Props = {
 
 /** Widgets of a page. Plain information by default; the controls appear in the card menu and organize mode. */
 export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
+  const [showHidden, setShowHidden] = useState(false);
+  const [countdownNow, setCountdownNow] = useState(() => new Date());
   const [widgets, setWidgets] = useState<PageWidget[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [readings, setReadings] = useState<Record<number, CardWidgetState>>({});
@@ -175,7 +183,33 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
       window.clearTimeout(timer);
     };
   }, [widgets, connections]);
+  useEffect(() => {
+    if (!widgets.some((widget) => widget.type === 'countdown')) return;
+    let timer: number;
+    const update = () => {
+      window.clearTimeout(timer);
+      if (!document.hidden) {
+        setCountdownNow(new Date());
+        timer = window.setTimeout(update, 60_000);
+      }
+    };
+    timer = window.setTimeout(update, 60_000);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, [widgets]);
   const current = widgets.filter((item) => item.pageId === pageId);
+  const hiddenCount = current.filter((item) => {
+    const config =
+      item.type === 'countdown' && item.version === 1
+        ? countdownWidget.parseConfig(item.config)
+        : null;
+    return (
+      config && config.pastBehavior === 'hide' && countdownRemaining(config, countdownNow).past
+    );
+  }).length;
   const full = current.length >= MAX_WIDGETS_PER_PAGE;
   const fullPages = new Set(
     pages
@@ -269,13 +303,19 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
               item.name ||
               (item.type === 'clock'
                 ? t('pageWidgets.clock')
-                : item.type === 'note'
-                  ? t('pageWidgets.note')
-                  : (connections.find((connection) => connection.id === item.connectionId)?.name ??
-                    item.type));
-            const config =
+                : item.type === 'countdown'
+                  ? t('pageWidgets.countdown')
+                  : item.type === 'note'
+                    ? t('pageWidgets.note')
+                    : (connections.find((connection) => connection.id === item.connectionId)
+                        ?.name ?? item.type));
+            const clockConfig =
               item.type === 'clock' && item.version === 1
                 ? clockWidget.parseConfig(item.config)
+                : null;
+            const countdownConfig =
+              item.type === 'countdown' && item.version === 1
+                ? countdownWidget.parseConfig(item.config)
                 : null;
             const noteConfig =
               item.type === 'note' && item.version === 1
@@ -292,6 +332,7 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
             };
             const missingConnection =
               item.type !== 'clock' &&
+              item.type !== 'countdown' &&
               item.type !== 'note' &&
               !loading &&
               !connections.some((connection) => connection.id === item.connectionId);
@@ -309,7 +350,12 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 type: item.type,
                 name: item.name,
                 connectionId: item.connectionId,
-                config: { ...(config ?? defaultClockConfig), text: noteConfig?.text ?? '' },
+                config:
+                  item.type === 'countdown'
+                    ? (countdownConfig ?? defaultCountdownConfig)
+                    : item.type === 'note'
+                      ? (noteConfig ?? { text: '' })
+                      : (clockConfig ?? defaultClockConfig),
               });
             };
             const movePage = (target: number) =>
@@ -319,12 +365,17 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 name: item.name,
                 connectionId: item.connectionId,
                 config:
-                  item.type === 'clock'
-                    ? (config ?? defaultClockConfig)
-                    : item.type === 'note'
-                      ? (noteConfig ?? { text: '' })
-                      : {},
+                  item.type === 'clock' || item.type === 'countdown' || item.type === 'note'
+                    ? item.config
+                    : {},
               });
+            if (
+              !showHidden &&
+              countdownConfig &&
+              countdownConfig.pastBehavior === 'hide' &&
+              countdownRemaining(countdownConfig, countdownNow).past
+            )
+              return null;
             return (
               <article
                 key={item.id}
@@ -366,8 +417,14 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 <h3 className="truncate pr-24 text-sm font-medium">{displayName}</h3>
                 <WidgetErrorBoundary key={`${item.type}:${item.id}`}>
                   {item.type === 'clock' ? (
-                    config ? (
-                      <Clock preferences={config} />
+                    clockConfig ? (
+                      <Clock preferences={clockConfig} />
+                    ) : (
+                      <p>{t('cardWidget.invalid')}</p>
+                    )
+                  ) : item.type === 'countdown' ? (
+                    countdownConfig ? (
+                      <Countdown config={countdownConfig} />
                     ) : (
                       <p>{t('cardWidget.invalid')}</p>
                     )
@@ -474,6 +531,18 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
           )}
         </div>
       )}
+      {hiddenCount > 0 && (
+        <Button
+          type="button"
+          variant="ghost"
+          className="self-start"
+          onClick={() => setShowHidden(!showHidden)}
+        >
+          {showHidden
+            ? t('pageWidgets.hideExpired')
+            : t('pageWidgets.showExpired', { count: hiddenCount })}
+        </Button>
+      )}
       <AlertDialog
         open={removing !== null}
         onOpenChange={(open) => {
@@ -515,16 +584,9 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
           void change(id ? `/api/page-widgets/${id}` : '/api/page-widgets', id ? 'PUT' : 'POST', {
             ...body,
             config:
-              body.type === 'clock'
-                ? {
-                    hourFormat: body.config.hourFormat,
-                    timeZone: body.config.timeZone,
-                    seconds: body.config.seconds,
-                    date: body.config.date,
-                  }
-                : body.type === 'note'
-                  ? { text: body.config.text }
-                  : {},
+              body.type === 'clock' || body.type === 'countdown' || body.type === 'note'
+                ? body.config
+                : {},
           }).then((ok) => {
             if (ok) setDraft(null);
           });

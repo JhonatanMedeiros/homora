@@ -108,3 +108,9 @@ remote hosts. See [Docker discovery](docker-discovery.md).
 
 If your tool is missing, read [Writing an integration adapter](../adapters.md). The guide applies equally to people and
 AI agents.
+
+### Countdown
+
+Add a **Countdown** page widget for one named event. Enter its local date and time and choose an IANA time zone, or leave the browser zone selected. The countdown updates each minute while the tab is visible. After the event, it stays visible in muted text by default; choose **Hide automatically** to hide it. Hidden widgets remain saved; use **Manage hidden countdowns** to edit or remove them. Each event needs its own widget.
+
+When a clock change makes the entered time ambiguous, the first occurrence is used. If the time does not exist, it moves forward by the size of the clock change. The full resolved date and time remains visible; the timer does not announce every minute. Countdowns are included in exports and imports without a connection.

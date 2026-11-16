@@ -19,6 +19,10 @@
     "./system-telemetry": {
       "types": "./dist/system-telemetry.d.ts",
       "default": "./dist/system-telemetry.js"
+    },
+    "./countdown": {
+      "types": "./dist/countdown.d.ts",
+      "default": "./dist/countdown.js"
     }
   },
   "scripts": {

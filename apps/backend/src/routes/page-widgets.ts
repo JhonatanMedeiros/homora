@@ -1,3 +1,4 @@
+import { countdownWidget } from '@homora/widgets/countdown';
 import type { FastifyInstance } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
@@ -68,11 +69,14 @@ export function registerPageWidgetRoutes(app: FastifyInstance, sqlite: DatabaseS
     if (!parsed.success) return null;
     const value = parsed.data;
     if (!sqlite.prepare('SELECT id FROM pages WHERE id=?').get(value.pageId)) return null;
-    if (value.type === 'clock' || value.type === 'note') {
-      const config =
+    if (value.type === 'clock' || value.type === 'countdown' || value.type === 'note') {
+      const config = (
         value.type === 'clock'
-          ? clockWidget.parseConfig(value.config)
-          : noteWidget.parseConfig(value.config);
+          ? clockWidget
+          : value.type === 'countdown'
+            ? countdownWidget
+            : noteWidget
+      ).parseConfig(value.config);
       return config && value.connectionId === null ? { ...value, config } : null;
     }
     const definition = integrationWidgetDefinition(value.type);
