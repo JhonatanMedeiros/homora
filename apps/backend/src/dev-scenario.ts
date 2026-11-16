@@ -7,7 +7,8 @@ import { networkInterfaces } from 'node:os';
 import { join } from 'node:path';
 import { root } from './config.js';
 import type { DatabaseSync } from 'node:sqlite';
-import { DEMO_PROXMOX } from './dev-inventory.js';
+/** Name of the demo Proxmox connection the development database ships with. */
+const DEMO_PROXMOX = 'Demo Proxmox (mock)';
 
 /**
  * Loopback is never a monitorable destination, so the sample services live on this machine's
@@ -70,12 +71,21 @@ const EXTRA: Card[] = [
  */
 export function seedDevelopmentScenario(sqlite: DatabaseSync) {
   const host = developmentHost();
-  // The address can change between runs (another network); keep the cards pointing at this one.
-  sqlite
-    .prepare(
-      "UPDATE services SET url = 'http://' || ? || substr(url, instr(substr(url, 8), ':') + 7) WHERE url LIKE 'http://%:18%'",
-    )
-    .run(host);
+  // The address can change between runs (another network); keep everything pointing at this one.
+  const rewrite = (table: 'services' | 'monitors', column: 'url' | 'check_url') => {
+    const rows = sqlite
+      .prepare(
+        `SELECT id, ${column} AS value FROM ${table} WHERE ${column} GLOB '*://*:18[0-9][0-9][0-9]/'`,
+      )
+      .all() as { id: number; value: string }[];
+    const update = sqlite.prepare(`UPDATE ${table} SET ${column} = ? WHERE id = ?`);
+    for (const row of rows) {
+      const next = row.value.replace(/^(\w+:\/\/)[^:/]+(:\d+\/)$/, `$1${host}$2`);
+      if (next !== row.value) update.run(next, row.id);
+    }
+  };
+  rewrite('services', 'url');
+  rewrite('monitors', 'check_url');
   if (sqlite.prepare("SELECT 1 FROM service_cards WHERE name = 'Radarr'").get()) return;
   const connection = sqlite
     .prepare("SELECT id FROM integration_instances WHERE type = 'proxmox' AND name = ?")
@@ -83,7 +93,9 @@ export function seedDevelopmentScenario(sqlite: DatabaseSync) {
   sqlite.exec('BEGIN');
   try {
     // Loopback services only get measured when private destinations are allowed.
-    sqlite.exec('UPDATE monitors SET allow_private = 1');
+    sqlite.exec(
+      "UPDATE monitors SET allow_private = 1 WHERE id IN (SELECT id FROM services WHERE url LIKE 'http://%:180%' OR url LIKE 'http://%:181%' OR url LIKE 'http://%:182%')",
+    );
     const link = sqlite.prepare(
       'UPDATE services SET host_connection_id=?, host_node=?, host_vmid=?, host_type=? WHERE url = ?',
     );
@@ -117,7 +129,7 @@ export function seedDevelopmentScenario(sqlite: DatabaseSync) {
         insertGroup.run(card.group, position);
       }
       const id = Number(insertMonitor.run(card.name).lastInsertRowid);
-      const host = connection && card.host ? card.host : undefined;
+      const linked = connection && card.host ? card.host : undefined;
       insertCard.run(
         id,
         `http://${host}:${card.port}/`,
@@ -125,10 +137,10 @@ export function seedDevelopmentScenario(sqlite: DatabaseSync) {
         card.description,
         `brand:${card.name.toLowerCase().replaceAll(' ', '-')}`,
         100 + index,
-        host ? connection!.id : null,
-        host?.[0] ?? null,
-        host?.[1] ?? null,
-        host?.[2] ?? null,
+        linked ? connection!.id : null,
+        linked?.[0] ?? null,
+        linked?.[1] ?? null,
+        linked?.[2] ?? null,
       );
       threshold.run(`http://${host}:${card.port}/`);
     });
@@ -155,7 +167,7 @@ export function startDevelopmentServices() {
       if (behavior === 'slow') setTimeout(answer, 1900);
       else answer();
     })
-      .on('error', () => undefined)
+      .on('error', () => {})
       .listen(port, '0.0.0.0');
   }
 }
@@ -166,7 +178,8 @@ const PROBE_UP_PORTS = [18600, 18601];
 
 /** Looks a card up by name, since the ids depend on the order the sample data was made in. */
 const idOf = (sqlite: DatabaseSync, name: string) =>
-  (sqlite.prepare('SELECT id FROM monitors WHERE name = ?').get(name) as { id: number }).id;
+  (sqlite.prepare('SELECT id FROM monitors WHERE name = ?').get(name) as { id: number } | undefined)
+    ?.id;
 
 /**
  * Everything on the Home that is not a plain card: widgets, favorites, tags, dependencies,
@@ -186,7 +199,22 @@ export function seedDevelopmentFeatures(sqlite: DatabaseSync) {
   const connection = sqlite
     .prepare("SELECT id FROM integration_instances WHERE type = 'proxmox' AND name = ?")
     .get(DEMO_PROXMOX) as { id: number } | undefined;
-  const id = (name: string) => idOf(sqlite, name);
+  // A database where one of the sample cards was deleted or renamed gets no extras, not a crash.
+  const needed = [
+    'Nextcloud',
+    'Jellyfin',
+    'AdGuard Home',
+    'Grafana',
+    'Plex',
+    'Paperless',
+    'Radarr',
+    'Sonarr',
+    'Prowlarr',
+    'Gitea',
+    'Portainer',
+  ];
+  if (needed.some((name) => idOf(sqlite, name) === undefined)) return;
+  const id = (name: string) => idOf(sqlite, name)!;
   sqlite.exec('BEGIN');
   try {
     // A card that watches a certificate (the sample one expires in 9 days: inside the warning).
@@ -352,7 +380,18 @@ export function startDevelopmentTlsService() {
   const key = join(directory, 'key.pem');
   const cert = join(directory, 'cert.pem');
   try {
-    if (!existsSync(cert)) {
+    // Renew when it is missing or about to leave the 14-day warning window we want to show.
+    const renew = () => {
+      try {
+        execFileSync('openssl', ['x509', '-checkend', String(7 * 86400), '-noout', '-in', cert], {
+          stdio: 'ignore',
+        });
+        return false;
+      } catch {
+        return true;
+      }
+    };
+    if (!existsSync(cert) || renew()) {
       mkdirSync(directory, { recursive: true });
       execFileSync(
         'openssl',
@@ -377,7 +416,7 @@ export function startDevelopmentTlsService() {
     createSecureServer({ key: readFileSync(key), cert: readFileSync(cert) }, (_request, response) =>
       response.end('ok'),
     )
-      .on('error', () => undefined)
+      .on('error', () => {})
       .listen(TLS_PORT, '0.0.0.0');
   } catch {
     // Without openssl the card simply shows as unreachable.
@@ -395,6 +434,6 @@ export function startDevelopmentProbes() {
       response.statusCode = status;
       response.end('probe');
     })
-      .on('error', () => undefined)
+      .on('error', () => {})
       .listen(port, '0.0.0.0');
 }

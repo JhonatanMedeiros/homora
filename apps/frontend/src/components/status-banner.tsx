@@ -5,11 +5,10 @@ import {
   type UptimeRange,
   type UptimeSummary,
 } from '@homora/shared';
-import { ChevronDown, CircleCheck, TriangleAlert } from 'lucide-react';
-import { useId, useState, type ReactNode } from 'react';
+import { CircleCheck, TriangleAlert } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { useNow } from '@/hooks/use-now';
 import { Progress } from '@/components/ui/progress';
 import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
@@ -34,11 +33,6 @@ type Props = {
   onOpenService?: (id: number) => void;
   /** Where to look when the monitor itself cannot measure. */
   onOpenConnections?: () => void;
-  /**
-   * `card` is the block on the Home; `popover` is the same content without the card, always
-   * showing its numbers, for the status popover in the header.
-   */
-  variant?: 'card' | 'popover';
 };
 
 const WINDOW_COLOR: Record<WindowState, string> = {
@@ -104,7 +98,7 @@ function whenText(item: Maintenance) {
 }
 
 /**
- * The first thing the Home says: is everything fine, and if not, what and for how long. Below it,
+ * What the header pill opens: is everything fine, and if not, what and for how long. Below it,
  * the week in numbers (incidents, recovery time) and the availability target for the month.
  */
 export function StatusBanner({
@@ -118,16 +112,9 @@ export function StatusBanner({
   now: fixedNow,
   onOpenService,
   onOpenConnections,
-  variant = 'card',
 }: Props) {
   const clock = useNow();
   const now = fixedNow ?? clock;
-  // On a phone the numbers wait behind "Details": the cards below are what people came for.
-  const [open, setOpen] = useState(false);
-  const detailsId = useId();
-  const embedded = variant === 'popover';
-  // Embedded in the popover the numbers are always visible; the card hides them on phones.
-  const shown = embedded || open;
   if (services.length === 0) return null;
   const { certs, windows, measurement, title, subtitle, tone } = summarizeStatus({
     services,
@@ -140,20 +127,21 @@ export function StatusBanner({
   const values = services
     .map((service) => uptime[service.id]?.uptimePct)
     .filter((value): value is number => typeof value === 'number');
-  const average = values.length
-    ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100
-    : null;
+  const average =
+    values.length > 0
+      ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100
+      : null;
 
   const delta = overview ? overview.incidents7d - overview.incidentsPrevious7d : 0;
-  const incidentNote = !overview
-    ? ''
-    : overview.incidents7d === 0 && overview.incidentsPrevious7d === 0
+  const incidentNote = overview
+    ? overview.incidents7d === 0 && overview.incidentsPrevious7d === 0
       ? t('banner.incidents.none')
       : delta === 0
         ? t('banner.incidents.same')
         : delta < 0
           ? t('banner.incidents.fewer', { count: -delta })
-          : t('banner.incidents.more', { count: delta });
+          : t('banner.incidents.more', { count: delta })
+    : '';
 
   const upcoming = maintenance.find((item) => item.endsAt > now);
   const sla = overview?.sla;
@@ -189,13 +177,7 @@ export function StatusBanner({
             >
               {title}
             </p>
-            {subtitle && (
-              <p
-                className={cn('mt-0.5 text-sm text-muted-foreground', !shown && 'hidden sm:block')}
-              >
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
             {measurement && onOpenConnections && (
               <Button
                 type="button"
@@ -208,27 +190,11 @@ export function StatusBanner({
               </Button>
             )}
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={cn('-my-1 -mr-2 shrink-0 sm:hidden', embedded && 'hidden')}
-            aria-expanded={open}
-            aria-controls={detailsId}
-            onClick={() => setOpen((value) => !value)}
-          >
-            {t(open ? 'banner.hideDetails' : 'banner.details')}
-            <ChevronDown
-              aria-hidden="true"
-              className={cn('transition-transform', open && 'rotate-180')}
-            />
-          </Button>
         </div>
         <dl
-          id={detailsId}
           className={cn(
             'm-0 min-w-0 flex-[3_1_32rem] grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2',
-            shown ? 'grid' : 'hidden sm:grid',
+            'grid',
           )}
         >
           <Stat
@@ -286,7 +252,7 @@ export function StatusBanner({
         <div
           className={cn(
             'flex-col gap-3 border-t pt-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-8',
-            shown ? 'flex' : 'hidden sm:flex',
+            'flex',
           )}
         >
           {upcoming && (
@@ -329,13 +295,9 @@ export function StatusBanner({
       )}
     </>
   );
-  return embedded ? (
+  return (
     <section aria-label={t('banner.label')} className="flex flex-col gap-3">
       {inner}
     </section>
-  ) : (
-    <Card aria-label={t('banner.label')} role="region" className="gap-3 py-3 sm:py-4">
-      <CardContent className="flex flex-col gap-3 px-4 sm:px-5">{inner}</CardContent>
-    </Card>
   );
 }

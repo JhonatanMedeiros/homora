@@ -365,7 +365,6 @@ export function ServicesPage({
             {(close) => (
               <>
                 <StatusBanner
-                  variant="popover"
                   services={[...services, ...probeStatusItems]}
                   statuses={statuses}
                   blockedIds={blockedIds}
@@ -692,7 +691,7 @@ export function ServicesPage({
       )}
       {data.loaded &&
         !data.loadError &&
-        !groups.length &&
+        groups.length === 0 &&
         !hostView &&
         !(paged && categories.length === 0) &&
         !(services.length > 0 && probeViews.length > 0) && (

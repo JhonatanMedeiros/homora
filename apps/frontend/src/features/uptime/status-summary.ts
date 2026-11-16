@@ -95,7 +95,7 @@ export function summarizeStatus({
           : t('banner.downNow', { name: service.name }),
       );
     } else if (status?.status === 'available') {
-      if (isDegraded(overview?.settings[service.id], status.status, status.latencyMs))
+      if (slowNow)
         slow.push(
           t('banner.degraded', {
             name: service.name,

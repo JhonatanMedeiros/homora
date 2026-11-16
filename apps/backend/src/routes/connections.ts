@@ -1,6 +1,8 @@
 import { IntegrationRowsLimitError } from '@homora/integrations/backend/manifest';
-import { developmentMockData } from '@homora/integrations/backend/development';
-import { developmentMockInventory } from '../dev-inventory.js';
+import {
+  developmentMockData,
+  developmentMockInventory,
+} from '@homora/integrations/backend/development';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '@homora/db';
 import { createVault } from '../vault.js';

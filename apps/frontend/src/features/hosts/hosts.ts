@@ -206,23 +206,28 @@ export function hostRailItems(
   inventories: HostInventories,
   isDown: (service: Service) => boolean,
 ): HostRailItem[] {
+  // One pass over the cards, instead of filtering all of them once per node.
+  const linked = new Map<string, Service[]>();
+  for (const service of services) {
+    if (!service.host) continue;
+    const key = `${service.host.connectionId}:${service.host.node}`;
+    linked.set(key, [...(linked.get(key) ?? []), service]);
+  }
   const items: HostRailItem[] = [];
   for (const connection of connections) {
     const inventory = inventories[connection.id];
     if (inventory?.status !== 'ready') continue;
     for (const node of inventory.nodes) {
-      const linked = services.filter(
-        (service) =>
-          service.host?.connectionId === connection.id && service.host.node === node.name,
-      );
-      if (linked.length === 0) continue;
+      const key = `${connection.id}:${node.name}`;
+      const cards = linked.get(key) ?? [];
+      if (cards.length === 0) continue;
       items.push({
-        key: `${connection.id}:${node.name}`,
+        key,
         connectionId: connection.id,
         node: node.name,
         state: node.status,
-        total: linked.length,
-        down: linked.filter(isDown).length,
+        total: cards.length,
+        down: cards.filter(isDown).length,
       });
     }
   }

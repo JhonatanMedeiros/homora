@@ -81,7 +81,7 @@ Each widget has its own loading and error state, so a failing connection never a
 
 ## Page widgets
 
-Page widgets live on a dashboard page, between the health banner and your groups.
+Page widgets live on a dashboard page, above your groups.
 
 1. On the dashboard, press the dashed **Add widget** tile.
 2. Pick a widget from the searchable gallery (Homora's own, and those offered by your connections).
