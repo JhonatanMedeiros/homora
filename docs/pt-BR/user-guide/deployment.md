@@ -12,7 +12,7 @@ docker compose up -d --build
 
 Acesse <http://localhost:8080> e crie a conta administradora. Por padrão, a porta é vinculada a `127.0.0.1` e os dados ficam no volume `homora-data`. Faça a primeira configuração na própria máquina: antes de criar a conta, qualquer pessoa com acesso à porta pode criá-la.
 
-Quando as imagens de release estiverem disponíveis, também será possível usar a imagem única da aplicação:
+As imagens de release são publicadas no GHCR para amd64 e arm64, então também é possível usar a imagem única da aplicação, sem clonar nem compilar o projeto:
 
 ```bash
 docker run -d --name homora --restart unless-stopped \

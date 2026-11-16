@@ -31,7 +31,7 @@ The bind address comes from `HOMORA_BIND_IP` (default `127.0.0.1`). Override it,
 
 ### Run the release image
 
-Release images are published to GHCR, so you can run Homora without cloning or building it:
+Release images are published to GHCR for amd64 and arm64, so you can run Homora without cloning or building it:
 
 ```bash
 docker run -d \

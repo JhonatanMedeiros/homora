@@ -47,7 +47,7 @@ Open <http://localhost:8080>, create the administrator account (a name, an email
 name, and a password of at least 8 characters), then press **Add your first service**. Your data lives in the
 `homora-data` Docker volume, and the port is bound to `127.0.0.1` by default.
 
-After the first image release, Homora can also be started with a single image:
+Homora is also published as a single multi-architecture image (amd64 and arm64):
 
 ```bash
 docker run -d --name homora --restart unless-stopped \
