@@ -16,11 +16,11 @@ function run(script) {
   });
 }
 
-const staticChecks = ['lint', 'format:check'];
+// Fast enough to run side by side. `type-check` also compiles the workspace packages, which the
+// tests import, so it must finish before them.
+const staticChecks = ['lint', 'format:check', 'type-check'];
 const staticResults = await Promise.all(staticChecks.map(run));
 
 if (staticResults.some((code) => code !== 0)) process.exit(1);
 
-for (const script of ['type-check', 'test']) {
-  if ((await run(script)) !== 0) process.exit(1);
-}
+if ((await run('test')) !== 0) process.exit(1);

@@ -3,7 +3,10 @@ on:
   pull_request:
     branches:
       - main
-  # Pushes to main run only the Docker job, which refreshes the image layer cache that pull
+  # The merge queue runs the whole suite on the exact commit that will land on main. Pull requests
+  # may run only the tests their diff can reach, because this run is what guards main.
+  merge_group:
+  # Pushes to main run only the Docker jobs, which refresh the image layer cache that pull
   # requests can read (a cache is visible to its own branch and to the default branch).
   push:
     branches:
@@ -19,34 +22,28 @@ env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   # The team slug is not sensitive, so a variable is preferred, but a secret works too.
   TURBO_TEAM: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+# Each step that runs a project command goes through scripts/ci/budget.mjs, which fails the step when
+# it exceeds its budget. The budgets are in docs/maintainers/ci.md; do not raise one to hide a slowdown.
 jobs:
-  lint:
-    if: github.event_name == 'pull_request'
+  # Formatting, lint and types take a few seconds each now, so one job pays the setup once.
+  static:
+    if: github.event_name != 'push'
     runs-on: ubuntu-26.04
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      - run: pnpm lint
-
-  format:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-      - run: pnpm format:check
-
-  type-check:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-      - run: pnpm type-check
+      - run: node scripts/ci/budget.mjs 10 lint -- pnpm lint
+      - run: node scripts/ci/budget.mjs 10 format -- pnpm format:check
+      - run: node scripts/ci/budget.mjs 20 type-check -- pnpm type-check
+      # The script tests compile generated code against the workspace packages, which the type
+      # check has just built.
+      - run: node scripts/ci/budget.mjs 30 script-tests -- node --test scripts/test/*.test.mjs
 
   test:
-    if: github.event_name == 'pull_request'
+    if: github.event_name != 'push'
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -54,50 +51,52 @@ jobs:
     name: test (${{ matrix.shard }}/3)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Pull requests need the history to find where the branch left main; blobs are not needed
+          # to list the changed files, so the clone skips them.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          filter: blob:none
       - uses: ./.github/actions/setup
-      # The tests import the compiled workspace packages.
-      - run: pnpm build
-      - run: pnpm exec vitest run --shard=${{ matrix.shard }}/3
-      # The script tests are small, so they run once, with the first shard.
-      - if: matrix.shard == 1
-        run: node --test scripts/test/*.test.mjs
-
-  # Aggregates the checks above under the name "validate", so a branch protection rule that
-  # requires it keeps working.
-  validate:
-    if: ${{ always() && github.event_name == 'pull_request' }}
-    needs: [lint, format, type-check, test]
-    runs-on: ubuntu-26.04
-    steps:
-      - run: |
-          echo "lint=${{ needs.lint.result }} format=${{ needs.format.result }} type-check=${{ needs.type-check.result }} test=${{ needs.test.result }}"
-          test "${{ needs.lint.result }}${{ needs.format.result }}${{ needs.type-check.result }}${{ needs.test.result }}" = "successsuccesssuccesssuccess"
+      # The tests import the compiled workspace packages, and only those.
+      - run: node scripts/ci/budget.mjs 20 build-packages -- node scripts/ci/build-packages.mjs
+      - run: node scripts/ci/budget.mjs 120 tests -- node scripts/ci/run-tests.mjs ${{ matrix.shard }}/3
 
   build:
-    if: github.event_name == 'pull_request'
+    if: github.event_name != 'push'
     runs-on: ubuntu-26.04
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      - run: pnpm build
-      - run: pnpm docs:build
+      - run: node scripts/ci/budget.mjs 60 build -- pnpm build
+      - run: node scripts/ci/budget.mjs 40 docs-build -- pnpm docs:build
 
+  # The two image targets build in parallel; each has its own layer cache.
   docker:
     runs-on: ubuntu-26.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [homora, discovery-agent]
+    name: docker (${{ matrix.target }})
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          target: homora
+          target: ${{ matrix.target }}
           push: false
-          cache-from: type=gha,scope=homora
-          cache-to: type=gha,scope=homora,mode=max
-      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          target: discovery-agent
-          push: false
-          cache-from: type=gha,scope=discovery-agent
-          cache-to: type=gha,scope=discovery-agent,mode=max
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,scope=${{ matrix.target }},mode=max
+
+  # The one check to require in branch protection: it passes only when everything above passed.
+  validate:
+    if: ${{ always() && github.event_name != 'push' }}
+    needs: [static, test, build, docker]
+    runs-on: ubuntu-26.04
+    steps:
+      - run: |
+          echo "static=${{ needs.static.result }} test=${{ needs.test.result }} build=${{ needs.build.result }} docker=${{ needs.docker.result }}"
+          test "${{ needs.static.result }}${{ needs.test.result }}${{ needs.build.result }}${{ needs.docker.result }}" = "successsuccesssuccesssuccess"
