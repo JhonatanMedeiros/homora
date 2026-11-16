@@ -26,6 +26,8 @@ To retry a failed image publication, run the **Release** workflow manually with 
 
 Before 1.0, fixes normally advance the patch (`0.1.0` to `0.1.1`) and features or breaking changes advance the minor (`0.1.0` to `0.2.0`). Breaking changes still need explicit release notes and migration guidance. After 1.0 the normal SemVer major/minor/patch rules apply.
 
-The manual-preparation and merged-PR triggers must be validated on GitHub after this change. Local tests do not establish that these external steps work. If the automatic run does not start after merging the release PR, manually run **Prepare release** on `main`; confirm the release and image workflow before announcing it.
+The manual-preparation and merged-PR triggers were validated on GitHub with the 0.2.0 release: the **Prepare release** run started on its own when the release PR was merged. If it ever does not start, run **Prepare release** manually on `main`; confirm the release and image workflow before announcing it.
+
+Each image carries the standard `org.opencontainers.image.*` labels. `version` (without the leading `v`) and `revision` (the commit of the tag) are set from the released tag, not from the branch that started the workflow, and `title` and `description` differ per image. After a release, `docker image inspect ghcr.io/<owner>/homora:<version>` should show the released version and the tag's commit, the same ones `/api/health` reports.
 
 The release is created as a draft (`draft` and `force-tag-creation` in `release-please-config.json`): the tag must exist immediately because the image workflow checks it out, and GitHub only creates a draft's tag when it is published. The publication of the draft by `publish-release` has not run on GitHub yet; the first release after this change validates it. If it does not publish, use the manual command above.
