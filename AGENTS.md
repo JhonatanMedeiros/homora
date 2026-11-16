@@ -24,6 +24,7 @@ not necessarily the existing implementation.
 - Update documentation and the evolution plan when changes affect instructions,
   decisions, or progress. Mark an item as complete only with evidence of
   corresponding criteria; record blockers and partial validations clearly.
+- When creating or renaming a pull request, use a clear Conventional Commit title for the changelog (for example, `feat: add ...`, `fix: correct ...`, or `docs: clarify ...`). Preserve the generated Release Please PR title. Check that the chosen merge method leaves a suitable Conventional Commit message on `main`; see [the release guide](docs/maintainers/releases.md).
 - Do not commit, publish code, deploy services, or perform destructive
   operations without user authorization. Do not include secrets or personal data
   in code, tests, logs, documentation, or commits.
