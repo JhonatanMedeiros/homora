@@ -70,6 +70,18 @@ describe('notification transitions', () => {
     expect(check('available', 7)).toEqual(['up']);
   });
 
+  it('keeps the first failure across restart and measures through confirmed recovery', () => {
+    const thresholds = () => ({ failureThreshold: 2, recoveryThreshold: 2 });
+    const tracker = createNotificationTransitions(0, [], thresholds);
+    tracker.observe([service], { 1: observation('unavailable', 0) });
+    tracker.observe([service], { 1: observation('unavailable', 1) });
+    const restarted = createNotificationTransitions(0, tracker.snapshot(), thresholds);
+    restarted.observe([service], { 1: observation('available', 2) });
+    expect(restarted.observe([service], { 1: observation('available', 3) })).toMatchObject([
+      { event: 'up', outageDurationMs: 180_000 },
+    ]);
+  });
+
   it('never alerts for failures that stop before the threshold', () => {
     const tracker = createNotificationTransitions(300_000, [], () => ({
       failureThreshold: 3,

@@ -8,6 +8,8 @@ Em **Configurações → Alertas**, adicione um canal compatível, como Telegram
 
 Endereços privados em webhooks exigem autorização explícita; destinos proibidos continuam bloqueados e certificados TLS são validados. Os segredos dos canais são criptografados. Guarde a chave junto ao backup do banco.
 
+As mensagens mostram o motivo, o código HTTP e o tempo de resposta quando disponíveis. Na recuperação, mostram o tempo entre a primeira falha observada e a recuperação confirmada quando conhecido; quedas iniciadas antes deste recurso podem não ter duração. A URL opcional é a do serviço. Webhooks recebem esses dados em JSON, incluindo `outageDurationMs` quando disponível.
+
 Alertas são associados a transições de falha e recuperação; resultados desconhecidos não equivalem a recuperação. Entregas podem ser repetidas em caso de falha e mensagens na fila em memória podem ser perdidas durante o encerramento. O sino também mostra eventos no próprio aplicativo, sem exigir canal externo.
 
 ## Página de status
