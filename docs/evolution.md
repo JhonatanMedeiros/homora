@@ -2058,3 +2058,7 @@ the HTTP and stdio transports were not manually verified.
 ### Clearer outbound monitoring alerts
 
 - Localized human-readable alerts show the check reason, HTTP status and latency when available. Recoveries include the time from the first observed failure to confirmed recovery when known; older in-progress outages may lack a start time. Webhooks receive an optional `outageDurationMs`. Live channel delivery has not been validated.
+
+### Pull request title guidance
+
+- Documented Conventional Commit titles for contributors and agents, including the Release Please exception and the need to verify the merged commit message. No automated title check was added.

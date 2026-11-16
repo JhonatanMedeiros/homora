@@ -38,6 +38,9 @@ do not use personal data or production databases in tests.
   before submitting.
 - Use commit messages following Conventional Commits, for example
   `fix: preserve data on migration`.
+- Give pull requests a clear Conventional Commit title, such as `feat: add service alerts`,
+  `fix: preserve data on migration`, or `docs: clarify setup`. The merged commit message
+  determines the changelog; make sure it remains suitable for the chosen merge method.
 - Use `deps:` for dependency updates and `security:` for security changes so
   they appear in the corresponding release notes.
 
