@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/JhonatanMedeiros/homora/compare/v0.1.1...v0.2.0) (2026-11-16)
+
+
+### 🚀 New features
+
+* add the Healthchecks integration ([#243](https://github.com/JhonatanMedeiros/homora/issues/243)) ([25615a5](https://github.com/JhonatanMedeiros/homora/commit/25615a5b247f267c2454f2500de827e382b8807d))
+
+
+### 📝 Documentation
+
+* describe the published release image as available ([#244](https://github.com/JhonatanMedeiros/homora/issues/244)) ([495734d](https://github.com/JhonatanMedeiros/homora/commit/495734de13c37bf6cbaa15db16c2e1d957b7cf07))
+
 ## [0.1.1](https://github.com/JhonatanMedeiros/homora/compare/v0.1.0...v0.1.1) (2026-11-15)
 
 
