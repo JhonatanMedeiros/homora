@@ -18,6 +18,11 @@ export const en = {
   'pageWidgets.showExpired': 'Manage hidden countdowns ({count})',
   'pageWidgets.hideExpired': 'Hide expired countdowns',
 
+  'pageWidgets.note': 'Note',
+  'pageWidgets.noteDesc': 'A short note with basic Markdown',
+  'pageWidgets.noteText': 'Note',
+  'pageWidgets.noteHint': 'Basic Markdown · up to {max} characters',
+  'pageWidgets.noteEmpty': 'Edit this widget to add a note.',
   'pageWidgets.connection': 'Connection',
   'pageWidgets.name': 'Name (optional)',
   'pageWidgets.page': 'Page',
@@ -70,6 +75,11 @@ export const ptBR: Record<keyof typeof en, string> = {
   'pageWidgets.showExpired': 'Gerenciar contagens ocultas ({count})',
   'pageWidgets.hideExpired': 'Ocultar contagens encerradas',
 
+  'pageWidgets.note': 'Nota',
+  'pageWidgets.noteDesc': 'Uma nota curta com Markdown básico',
+  'pageWidgets.noteText': 'Nota',
+  'pageWidgets.noteHint': 'Markdown básico · até {max} caracteres',
+  'pageWidgets.noteEmpty': 'Edite este widget para adicionar uma nota.',
   'pageWidgets.connection': 'Conexão',
   'pageWidgets.name': 'Nome (opcional)',
   'pageWidgets.page': 'Página',

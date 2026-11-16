@@ -1,4 +1,5 @@
 import { countdownWidget } from '@homora/widgets/countdown';
+import { noteWidget } from '@homora/widgets/note';
 import { clockWidget } from '@homora/widgets/clock';
 import { integrationDefinition } from '@homora/integrations';
 import { parse } from 'yaml';
@@ -218,6 +219,11 @@ export function parseTransfer(content: string): ParsedImport {
           );
           if (config && item.source === undefined)
             document.widgets!.push({ page, type: item.type, name: item.name, config });
+          else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
+        } else if (item.type === 'note') {
+          const config = noteWidget.parseConfig(item.config);
+          if (config && item.source === undefined)
+            document.widgets!.push({ page, type: 'note', name: item.name, config });
           else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
         } else if (
           integrationDefinition(item.type) &&

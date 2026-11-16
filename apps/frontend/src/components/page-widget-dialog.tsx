@@ -3,8 +3,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { defaultCountdownConfig, type CountdownConfig } from '@homora/widgets/countdown';
 import { useState } from 'react';
-import { ArrowLeft, CalendarDays } from 'lucide-react';
+import { ArrowLeft, CalendarDays, NotebookPen } from 'lucide-react';
 import { defaultClockConfig, type ClockConfig } from '@homora/widgets/clock';
+import { MAX_NOTE_LENGTH, type NoteConfig } from '@homora/widgets/note';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -23,7 +25,7 @@ export type WidgetDraft = {
   pageId: number;
   type: string;
   name: string;
-  config: ClockConfig | CountdownConfig;
+  config: ClockConfig | CountdownConfig | NoteConfig;
   connectionId: number | null;
 };
 
@@ -63,6 +65,7 @@ export function PageWidgetDialog({
   const needle = query.trim().toLowerCase();
   const showCountdown = !needle || t('pageWidgets.countdown').toLowerCase().includes(needle);
   const showClock = !needle || clockName.toLowerCase().includes(needle);
+  const showNote = !needle || t('pageWidgets.note').toLowerCase().includes(needle);
   const shown = connections.filter(
     (connection) =>
       !needle ||
@@ -75,7 +78,9 @@ export function PageWidgetDialog({
     draft?.connectionId == null
       ? draft?.type === 'countdown'
         ? t('pageWidgets.countdown')
-        : clockName
+        : draft?.type === 'note'
+          ? t('pageWidgets.note')
+          : clockName
       : (connections.find((connection) => connection.id === draft.connectionId)?.name ??
         draft.type);
   const pick = (connection: Connection | null, localType = 'clock') => {
@@ -84,7 +89,11 @@ export function PageWidgetDialog({
       ...draft,
       type: connection?.type ?? localType,
       config:
-        localType === 'countdown' && !connection ? defaultCountdownConfig : defaultClockConfig,
+        !connection && localType === 'countdown'
+          ? defaultCountdownConfig
+          : !connection && localType === 'note'
+            ? { text: '' }
+            : defaultClockConfig,
       connectionId: connection?.id ?? null,
     });
     onChoose(true);
@@ -117,7 +126,7 @@ export function PageWidgetDialog({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          {(showClock || showCountdown) && (
+          {(showClock || showCountdown || showNote) && (
             <section aria-labelledby="pw-group-homora" className="flex flex-col gap-2">
               <h3
                 id="pw-group-homora"
@@ -142,6 +151,15 @@ export function PageWidgetDialog({
                     onPick={() => pick(null, 'countdown')}
                   >
                     ⌛
+                  </GalleryOption>
+                )}
+                {showNote && (
+                  <GalleryOption
+                    title={t('pageWidgets.note')}
+                    description={t('pageWidgets.noteDesc')}
+                    onPick={() => pick(null, 'note')}
+                  >
+                    <NotebookPen aria-hidden="true" />
                   </GalleryOption>
                 )}
               </div>
@@ -171,7 +189,7 @@ export function PageWidgetDialog({
               </div>
             </section>
           )}
-          {!showClock && !showCountdown && shown.length === 0 && (
+          {!showClock && !showCountdown && !showNote && shown.length === 0 && (
             <p className="text-sm text-muted-foreground">{t('pageWidgets.noMatch')}</p>
           )}
         </div>
@@ -404,6 +422,23 @@ export function PageWidgetDialog({
                     </>
                   );
                 })()}
+              {draft.type === 'note' && (
+                <Field>
+                  <FieldLabel htmlFor="pw-note">{t('pageWidgets.noteText')}</FieldLabel>
+                  <Textarea
+                    id="pw-note"
+                    rows={6}
+                    maxLength={MAX_NOTE_LENGTH}
+                    value={(draft.config as NoteConfig).text}
+                    onChange={(event) =>
+                      onChange({ ...draft, config: { ...draft.config, text: event.target.value } })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('pageWidgets.noteHint', { max: MAX_NOTE_LENGTH })}
+                  </p>
+                </Field>
+              )}
               <Collapsible defaultOpen={draft.id !== null && draft.name !== ''}>
                 <CollapsibleTrigger asChild>
                   <Button type="button" variant="ghost" size="sm" className="-ml-2">

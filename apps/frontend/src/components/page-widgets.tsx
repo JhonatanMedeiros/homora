@@ -5,8 +5,9 @@ import {
 } from '@homora/widgets/countdown';
 import { Countdown } from '@/components/countdown';
 import { MoreHorizontal, Plus } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
+import { noteWidget } from '@homora/widgets/note';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +39,10 @@ import type { PageRow } from '@/hooks/use-pages';
 import { PageWidgetDialog, type WidgetDraft } from '@/components/page-widget-dialog';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
+
+const NoteContent = lazy(() =>
+  import('@/components/note-content').then((module) => ({ default: module.NoteContent })),
+);
 
 type PageWidget = {
   id: number;
@@ -296,10 +301,14 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
           {current.map((item, index) => {
             const displayName =
               item.name ||
-              (item.type === 'clock' || item.type === 'countdown'
-                ? t(item.type === 'clock' ? 'pageWidgets.clock' : 'pageWidgets.countdown')
-                : (connections.find((connection) => connection.id === item.connectionId)?.name ??
-                  item.type));
+              (item.type === 'clock'
+                ? t('pageWidgets.clock')
+                : item.type === 'countdown'
+                  ? t('pageWidgets.countdown')
+                  : item.type === 'note'
+                    ? t('pageWidgets.note')
+                    : (connections.find((connection) => connection.id === item.connectionId)
+                        ?.name ?? item.type));
             const clockConfig =
               item.type === 'clock' && item.version === 1
                 ? clockWidget.parseConfig(item.config)
@@ -308,7 +317,10 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
               item.type === 'countdown' && item.version === 1
                 ? countdownWidget.parseConfig(item.config)
                 : null;
-            const config = clockConfig ?? countdownConfig;
+            const noteConfig =
+              item.type === 'note' && item.version === 1
+                ? noteWidget.parseConfig(item.config)
+                : null;
             const base = {
               widget: {
                 id: item.id,
@@ -321,6 +333,7 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
             const missingConnection =
               item.type !== 'clock' &&
               item.type !== 'countdown' &&
+              item.type !== 'note' &&
               !loading &&
               !connections.some((connection) => connection.id === item.connectionId);
             const state: CardWidgetState =
@@ -338,8 +351,11 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 name: item.name,
                 connectionId: item.connectionId,
                 config:
-                  config ??
-                  (item.type === 'countdown' ? defaultCountdownConfig : defaultClockConfig),
+                  item.type === 'countdown'
+                    ? (countdownConfig ?? defaultCountdownConfig)
+                    : item.type === 'note'
+                      ? (noteConfig ?? { text: '' })
+                      : (clockConfig ?? defaultClockConfig),
               });
             };
             const movePage = (target: number) =>
@@ -348,7 +364,10 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 type: item.type,
                 name: item.name,
                 connectionId: item.connectionId,
-                config: item.type === 'clock' || item.type === 'countdown' ? item.config : {},
+                config:
+                  item.type === 'clock' || item.type === 'countdown' || item.type === 'note'
+                    ? item.config
+                    : {},
               });
             if (
               !showHidden &&
@@ -406,6 +425,20 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                   ) : item.type === 'countdown' ? (
                     countdownConfig ? (
                       <Countdown config={countdownConfig} />
+                    ) : (
+                      <p>{t('cardWidget.invalid')}</p>
+                    )
+                  ) : item.type === 'note' ? (
+                    noteConfig ? (
+                      <Suspense
+                        fallback={
+                          <p role="status" className="text-sm text-muted-foreground">
+                            {t('common.loading')}
+                          </p>
+                        }
+                      >
+                        <NoteContent text={noteConfig.text} />
+                      </Suspense>
                     ) : (
                       <p>{t('cardWidget.invalid')}</p>
                     )
@@ -550,7 +583,10 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
           const { id, ...body } = draft;
           void change(id ? `/api/page-widgets/${id}` : '/api/page-widgets', id ? 'PUT' : 'POST', {
             ...body,
-            config: body.type === 'clock' || body.type === 'countdown' ? body.config : {},
+            config:
+              body.type === 'clock' || body.type === 'countdown' || body.type === 'note'
+                ? body.config
+                : {},
           }).then((ok) => {
             if (ok) setDraft(null);
           });

@@ -336,3 +336,20 @@ it('round trips a separate check URL and ignores invalid imported targets', () =
   expect(parsed.document.groups[0].services[0].checkUrl).toBeUndefined();
   expect(parsed.issues).toContainEqual(expect.objectContaining({ code: 'check-ignored' }));
 });
+
+it('rejects invalid or oversized notes during import', () => {
+  const content = JSON.stringify({
+    version: 6,
+    groups: [],
+    widgets: [
+      { page: 'Home', type: 'note', name: '', config: { text: 'x'.repeat(4001) } },
+      { page: 'Home', type: 'note', name: '', config: { text: 10 } },
+      { page: 'Home', type: 'note', name: '', config: { text: 'ok', extra: true } },
+    ],
+  });
+  const parsed = parseTransfer(content);
+  expect(parsed.document.widgets).toEqual([]);
+  expect(
+    parsed.issues.filter((issue) => issue.code === 'widget-invalid').map((issue) => issue.path),
+  ).toEqual(['widgets[0]', 'widgets[1]', 'widgets[2]']);
+});

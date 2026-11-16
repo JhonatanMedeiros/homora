@@ -72,9 +72,10 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
   let remainingWidgets = Math.max(0, 200 - (existing.widgetCount ?? 0));
   const widgets = (parsed.document.widgets ?? []).map((widget, index) => {
     const canCreate =
-      (widget.type === 'clock' || widget.type === 'countdown') && remainingWidgets > 0;
+      (widget.type === 'clock' || widget.type === 'countdown' || widget.type === 'note') &&
+      remainingWidgets > 0;
     if (canCreate) remainingWidgets -= 1;
-    else if (widget.type === 'clock' || widget.type === 'countdown')
+    else if (widget.type === 'clock' || widget.type === 'countdown' || widget.type === 'note')
       issues.push({ path: `widgets[${index}]`, code: 'widget-limit', severity: 'warning' });
     return {
       page: widget.page,
