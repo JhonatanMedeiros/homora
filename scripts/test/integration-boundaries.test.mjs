@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
-import ts from 'typescript';
+import ts from 'typescript6';
 
 async function sourceFiles(folder, includeTests = false) {
   let entries;

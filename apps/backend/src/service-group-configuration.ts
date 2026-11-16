@@ -40,7 +40,8 @@ export function createServiceGroupConfiguration(
   const pageIdByName = (name: string) =>
     (
       sqlite.prepare('SELECT id FROM pages WHERE name=? COLLATE NOCASE').get(name) as
-        { id: number } | undefined
+        | { id: number }
+        | undefined
     )?.id;
   /** Page a group is on, by group name; `undefined` when there is no such group. */
   const pageOfGroup = (name: string) =>
@@ -126,7 +127,8 @@ export function createServiceGroupConfiguration(
     deleteGroup(id: number) {
       return transaction(() => {
         const current = sqlite.prepare('SELECT id,name FROM service_groups WHERE id=?').get(id) as
-          { id: number; name: string } | undefined;
+          | { id: number; name: string }
+          | undefined;
         if (!current) return 'missing' as const;
         if (sqlite.prepare('SELECT id FROM services WHERE category=? LIMIT 1').get(current.name))
           return 'not-empty' as const;

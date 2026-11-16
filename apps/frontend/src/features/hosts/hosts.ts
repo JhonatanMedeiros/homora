@@ -107,7 +107,9 @@ export function buildHostView(
 
 /** Short label of where a card runs, or null when it is not linked. */
 export type HostLabel =
-  { kind: 'found'; guest: HostGuest } | { kind: 'missing' } | { kind: 'unavailable' };
+  | { kind: 'found'; guest: HostGuest }
+  | { kind: 'missing' }
+  | { kind: 'unavailable' };
 export function hostLabel(
   service: Service,
   connections: HostConnection[],
@@ -172,7 +174,7 @@ export function offlineNodes(
         (service) =>
           service.host?.connectionId === connection.id && service.host.node === node.name,
       );
-      if (affected.length)
+      if (affected.length > 0)
         result.push({
           connectionId: connection.id,
           connectionName: connection.name,

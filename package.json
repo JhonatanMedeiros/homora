@@ -10,15 +10,15 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "type-check": "turbo type-check && tsc -p packages/integrations/tsconfig.tests.json",
+    "type-check": "node scripts/ci/typecheck.mjs",
     "test": "vitest run && node --test scripts/test/*.test.mjs",
     "db:generate": "pnpm --filter @homora/db db:generate",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "lint": "oxlint --quiet --report-unused-disable-directives-severity error .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
     "check": "node scripts/check.mjs",
     "prepare": "husky",
     "backup": "node scripts/backup.mjs",
@@ -33,34 +33,29 @@
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
-    "@eslint/js": "10.0.1",
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "26.6.6",
     "@vitest/coverage-v8": "5.1.0",
-    "eslint": "10.14.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.7",
-    "globals": "^17.14.0",
     "happy-dom": "21.0.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
-    "prettier": "3.10.0",
+    "oxfmt": "0.78.0",
+    "oxlint": "1.93.0",
     "turbo": "2.11.10",
-    "typescript": "6.0.3",
-    "typescript-eslint": "8.72.2",
+    "typescript": "7.0.2",
+    "typescript6": "npm:typescript@6.0.3",
     "vitepress": "1.6.4",
     "vitest": "5.1.0"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "oxlint --fix",
+      "oxfmt --no-error-on-unmatched-pattern"
     ],
-    "*.{json,md,html,css,yml,yaml}": "prettier --write"
+    "*.{json,md,html,css,yml,yaml}": "oxfmt --no-error-on-unmatched-pattern"
   },
   "type": "module"
 }

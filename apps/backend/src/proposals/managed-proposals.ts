@@ -375,7 +375,8 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
       change.names.forEach((item, index) => update.run(index, item));
     } else {
       const row = db.prepare('SELECT name FROM service_groups WHERE id=?').get(change.id) as
-        { name: string } | undefined;
+        | { name: string }
+        | undefined;
       if (!row) throw new Error('Group not found');
       if (change.op === 'delete') {
         if (db.prepare('SELECT id FROM services WHERE category=? LIMIT 1').get(row.name))
@@ -403,7 +404,8 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
       change.ids.forEach((item, index) => update.run(index, item));
     } else {
       const service = db.prepare('SELECT category FROM services WHERE id=?').get(change.id) as
-        { category: string } | undefined;
+        | { category: string }
+        | undefined;
       if (
         !service ||
         service.category === change.targetCategory ||

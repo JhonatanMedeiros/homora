@@ -183,7 +183,8 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     findService: selectService,
     findAlias: (alias: string) =>
       sqlite.prepare('SELECT url FROM services WHERE alias=?').get(alias) as
-        { url: string } | undefined,
+        | { url: string }
+        | undefined,
     nextServicePosition,
     listGroups: selectGroups,
     pageIdByName,

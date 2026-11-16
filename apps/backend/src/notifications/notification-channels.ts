@@ -47,7 +47,8 @@ type Vault = ReturnType<typeof createVault>;
 export function createNotificationChannels(db: DatabaseSync, vault?: Vault) {
   const row = (id: number) =>
     db.prepare('SELECT * FROM notification_channels WHERE id=?').get(id) as
-      NotificationChannel | undefined;
+      | NotificationChannel
+      | undefined;
   const publicRow = (c: NotificationChannel) => ({
     id: c.id,
     name: c.name,

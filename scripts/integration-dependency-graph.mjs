@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
-import ts from 'typescript';
+import ts from 'typescript6';
 
 const within = (file, folder) => file === folder || file.startsWith(`${folder}${sep}`);
 const literal = (node) =>
@@ -97,7 +97,7 @@ export async function workspaceGraph(root) {
 export function findForbiddenPath(graph, start, forbidden) {
   const queue = [[start]];
   const visited = new Set([start]);
-  while (queue.length) {
+  while (queue.length > 0) {
     const path = queue.shift();
     for (const next of graph.get(path.at(-1)) ?? []) {
       const candidate = [...path, next];

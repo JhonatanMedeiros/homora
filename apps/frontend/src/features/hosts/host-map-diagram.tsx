@@ -16,7 +16,9 @@ import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
 export type HostMapSelection =
-  { kind: 'service'; id: number } | { kind: 'guest'; key: string } | null;
+  | { kind: 'service'; id: number }
+  | { kind: 'guest'; key: string }
+  | null;
 
 type Props = {
   layout: MapLayout;

@@ -98,8 +98,7 @@
     }
   },
   "scripts": {
-    "build": "node scripts/integration-catalog.mjs --check && tsc -p tsconfig.json",
-    "type-check": "node scripts/integration-catalog.mjs --check && tsc -p tsconfig.json --noEmit"
+    "build": "node scripts/integration-catalog.mjs --check && tsc -p tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "26.6.6",

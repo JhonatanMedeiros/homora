@@ -16,7 +16,8 @@ export function createServiceAttention(sqlite: DatabaseSync, now: () => number =
   const orderKey = 'service_pin_order';
   const order = (): number[] => {
     const row = sqlite.prepare('SELECT value FROM app_settings WHERE key=?').get(orderKey) as
-      { value: string } | undefined;
+      | { value: string }
+      | undefined;
     try {
       const value: unknown = JSON.parse(row?.value ?? '[]');
       if (

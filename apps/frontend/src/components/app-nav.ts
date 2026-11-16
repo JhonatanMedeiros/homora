@@ -2,7 +2,13 @@ import type { MessageKey } from '@/i18n';
 import { Activity, Bot, Radar, Server, Settings, type LucideIcon } from 'lucide-react';
 
 export type Tab =
-  'services' | 'probes' | 'integrations' | 'agents' | 'activity' | 'settings' | 'account';
+  | 'services'
+  | 'probes'
+  | 'integrations'
+  | 'agents'
+  | 'activity'
+  | 'settings'
+  | 'account';
 
 /** Sections of the management area. The account lives outside it, under the user menu. */
 export const navItems: { id: Exclude<Tab, 'account'>; label: MessageKey; icon: LucideIcon }[] = [

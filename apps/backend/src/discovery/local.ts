@@ -8,7 +8,8 @@ import { InputError } from '../api-error.js';
  * in the UI. Container labels and names are untrusted input.
  */
 export type DockerHost =
-  { kind: 'unix'; path: string } | { kind: 'tcp'; host: string; port: number };
+  | { kind: 'unix'; path: string }
+  | { kind: 'tcp'; host: string; port: number };
 export type DockerContainer = {
   Id?: unknown;
   Names?: unknown;
@@ -50,7 +51,11 @@ export function parseDockerHost(value: string | undefined): DockerHost | null {
     !url.hostname
   )
     throw new Error('Invalid HOMORA_DOCKER_HOST. Use unix:///path or http://host:port.');
-  return { kind: 'tcp', host: url.hostname.replace(/^\[|\]$/g, ''), port: Number(url.port || 80) };
+  return {
+    kind: 'tcp',
+    host: url.hostname.replaceAll(/^\[|\]$/g, ''),
+    port: Number(url.port || 80),
+  };
 }
 
 /** Minimal Docker API client: lists running containers and nothing more. */
@@ -91,7 +96,7 @@ export function createDockerSource(host: DockerHost): DockerSource {
             res.on('end', () => {
               try {
                 const body: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-                if (!Array.isArray(body)) throw new Error();
+                if (!Array.isArray(body)) throw new TypeError();
                 resolve(body.slice(0, MAX_CONTAINERS) as DockerContainer[]);
               } catch {
                 reject(new InputError('docker-invalid-response'));

@@ -43,7 +43,8 @@ async function load() {
 }
 
 export type SaveResult =
-  { ok: true } | { ok: false; message: string; problems?: ContrastProblem[] };
+  | { ok: true }
+  | { ok: false; message: string; problems?: ContrastProblem[] };
 
 async function send(init: RequestInit, url = '/api/appearance'): Promise<SaveResult> {
   try {
