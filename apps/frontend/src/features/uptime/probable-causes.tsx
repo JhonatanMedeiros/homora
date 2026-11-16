@@ -28,6 +28,8 @@ type Props = {
   quiet?: Service[];
   onAcknowledge?: (services: Service[], muteMinutes?: number) => void;
   onShowAgain?: (services: Service[]) => void;
+  /** Inside the status popover the causes are the point, so they stay open and cannot be hidden. */
+  alwaysOpen?: boolean;
 };
 
 function detail(cause: Cause): string {
@@ -57,10 +59,12 @@ export function ProbableCauses({
   quiet = [],
   onAcknowledge,
   onShowAgain,
+  alwaysOpen = false,
 }: Props) {
-  const [open, setOpen] = useState(readOpen);
+  const [remembered, setOpen] = useState(readOpen);
+  const open = alwaysOpen || remembered;
   const toggle = () => {
-    const next = !open;
+    const next = !remembered;
     setOpen(next);
     try {
       localStorage.setItem(OPEN_KEY, next ? '1' : '0');
@@ -97,7 +101,7 @@ export function ProbableCauses({
               t('causes.summary', { services: down.length, causes: causes.length })}
           </span>
         </h2>
-        {causes.length > 0 && (
+        {causes.length > 0 && !alwaysOpen && (
           <Button type="button" size="sm" variant="ghost" aria-expanded={open} onClick={toggle}>
             {open ? t('causes.hide') : t('causes.show')}
             <ChevronDown className={cn('transition-transform', open && 'rotate-180')} />

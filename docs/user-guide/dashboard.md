@@ -1,18 +1,19 @@
 ---
-description: 'The Homora dashboard: health banner, pages, groups, layouts, command palette, shortcuts and organize mode.'
+description: 'The Homora dashboard: health pill, pages, groups, layouts, command palette, shortcuts and organize mode.'
 ---
 
 # The dashboard
 
-The dashboard (`/`) is the page you will use most. It shows your cards grouped into pages, a health summary and any
-widgets you added.
+The dashboard (`/`) is the page you will use most. It shows your cards grouped into pages and any widgets you added. Health lives in the header, so the page itself stays
+about your services.
 
 ![The dashboard in the dark theme](../screenshots/dashboard-dark.png)
 
-## The health banner
+## The health pill
 
-The banner answers "is everything fine?" at a glance. When something is wrong it names the services and how long they
-have been down. It also summarizes:
+The pill in the header answers "is everything fine?" at a glance: a colored dot and a few words (**All up**, **2 problems**,
+**Partly monitored**, **No data** or **Cannot measure**). On a phone only the dot shows. Select it to open the details.
+The popover names the services that are down and how long they have been down, and summarizes:
 
 | Figure                    | Meaning                                                                          |
 | ------------------------- | -------------------------------------------------------------------------------- |
@@ -23,8 +24,11 @@ have been down. It also summarizes:
 
 Services not authorized for private-network monitoring appear as _not monitored_, not as failures.
 
-Under the headline, each service has a small window colored by state and named for screen readers. Click one to open
+Under the headline, each service has a small window colored by state and named for screen readers. Select one to open
 the service's details.
+
+When every check fails for the same reason, the pill says **Cannot measure** and the popover explains that Homora
+cannot measure right now, instead of listing every service as down.
 
 ## Needs attention
 
@@ -32,8 +36,7 @@ When services are offline, **Needs attention** groups them by what they probably
 (from a linked Proxmox connection), the same error starting within ten minutes, or an address that does not answer.
 The wording always says _likely_: Homora only reads what it already knows and never names a fix.
 
-The panel starts as one line (how many services are offline, and how many causes). **Show causes** opens the list; the
-browser remembers your choice.
+The causes are in the health pill's popover, under the numbers.
 
 For each group you can **Acknowledge** it (it stays quiet until that incident ends, and a new incident speaks up
 again) or **Mute 1 h**. Both can be undone from the toast or with **Show again**. This only quiets the dashboard:
@@ -42,8 +45,9 @@ checks, incidents and notifications do not change. Each action is recorded in th
 ## Status filters
 
 On wide screens, the left rail has a **Views** list (**All**, **Offline**, **Degraded**, **Maintenance**) and a
-**Groups** list showing each group's health. On smaller screens they become chips under the banner (or **Options** on
-a phone). The numbers are live counts. **Degraded** means online but slower than the limit you set (see
+**Groups** list showing each group's health. When a connected Proxmox runs some of your cards, a **Hosts** list shows each
+node with its state and how many cards run on it; selecting one shows that node's cards. On smaller screens the views
+become chips under the header (or **Options** on a phone). The numbers are live counts. **Degraded** means online but slower than the limit you set (see
 [Services and monitoring](services-and-monitoring.md#alerts-and-states)).
 
 ## Alerts bell
@@ -68,14 +72,14 @@ acknowledging or muting an incident, and **Activity** stays available for auditi
 
 Open **Display** to choose how cards look. The choice is saved in your browser; **Compact** is the default.
 
-| Choice      | What you get                                                                                                                                                                                                                                    |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Compact** | A small tile per service: icon, name, host, state in words and a thin bar for the period. Healthy groups can collapse and groups with problems can come first (both in **Settings → Home and pages**). The `i` button opens the details drawer. |
-| **List**    | A dense row per service. Best for many services.                                                                                                                                                                                                |
-| **Cards**   | Larger cards with the description, the uptime bar and a **Details** link that opens the drawer.                                                                                                                                                 |
-| **Group**   | Cards organized by your groups (the default).                                                                                                                                                                                                   |
-| **Host**    | Cards organized by the machine or guest they run on, for services linked to a host.                                                                                                                                                             |
-| **Map**     | Hosts and the services running on them. See [linking a card to a host](services-and-monitoring.md#where-a-service-runs-and-what-it-needs).                                                                                                      |
+| Choice      | What you get                                                                                                                                                                                                                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Compact** | A small tile per service: icon, name, host, state in words and a thin bar for the period. Healthy groups can collapse and groups with problems can come first, and offline cards come first inside each group (both in **Settings → Home and pages**). The `i` button opens the details drawer. |
+| **List**    | A dense row per service. Best for many services.                                                                                                                                                                                                                                                |
+| **Cards**   | Larger cards with the description, the uptime bar and a **Details** link that opens the drawer.                                                                                                                                                                                                 |
+| **Group**   | Cards organized by your groups (the default).                                                                                                                                                                                                                                                   |
+| **Host**    | Cards organized by the machine or guest they run on, for services linked to a host.                                                                                                                                                                                                             |
+| **Map**     | Hosts and the services running on them. See [linking a card to a host](services-and-monitoring.md#where-a-service-runs-and-what-it-needs).                                                                                                                                                      |
 
 ![Cards layout with descriptions and uptime bars](../screenshots/dashboard-cards.png)
 
@@ -91,7 +95,7 @@ Open **Display** to choose how cards look. The choice is saved in your browser; 
 
 ### Details drawer
 
-The `i` button on a tile, **Details** on a card, a window in the banner or a name in **Needs attention** opens a side
+The `i` button on a tile, **Details** on a card, a window in the health pill or a name in **Needs attention** opens a side
 panel (a bottom sheet on a phone). It shows the state, **Open** and **Copy address**, the availability bar, latency,
 recent incidents and a link to the full page. `Esc` closes it.
 
@@ -105,7 +109,7 @@ the left rail shows only pinned services. Pins are included in export and import
 ### Widget panel
 
 On screens wider than 1440 px, a page's widgets sit in a panel on the right. **Hide widget panel** (left rail) moves
-them to a row under the banner. A widget that cannot refresh keeps its last reading and says how old it is; a widget
+them to a row above your groups. A widget that cannot refresh keeps its last reading and says how old it is; a widget
 whose connection is missing says so.
 
 ## Search: the command palette
@@ -173,7 +177,7 @@ Everything you can do by dragging also works with buttons and menus.
 
 ## Widgets on the dashboard
 
-Between the banner and your groups, the dashboard can show **page widgets**: a clock, or live readings from an
+Above your groups, the dashboard can show **page widgets**: a clock, or live readings from an
 integration such as Proxmox. A page holds up to 12; at the limit, the **Add widget** tile says so and full pages are
 disabled in **Move to page**.
 

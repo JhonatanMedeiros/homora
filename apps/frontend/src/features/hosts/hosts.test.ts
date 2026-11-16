@@ -89,7 +89,7 @@ it('resolves the label from the live inventory so renames follow', () => {
   expect(hostLabel(card(3, 'free'), connections, ready)).toBeNull();
 });
 
-import { offlineNodes, serviceImpact } from './hosts';
+import { hostRailItems, offlineNodes, serviceImpact } from './hosts';
 
 it('computes impact: online, offline node, stopped guest, down service, connection error, unlinked', () => {
   const impact = (service: Service, availability: 'available' | 'unavailable', inv = ready) =>
@@ -121,4 +121,20 @@ it('lists offline nodes with their affected cards and ignores unreadable invento
   expect(found[0].node).toBe('pve2');
   expect(found[0].affected.map((s) => s.name)).toEqual(['a', 'b']);
   expect(offlineNodes(cards, connections, { 1: { status: 'error' } })).toEqual([]);
+});
+
+it('lists nodes with linked cards for the rail, with how many are down', () => {
+  const cards = [
+    card(1, 'a', link(200, 'pve2', 'qemu')),
+    card(2, 'b', link(201, 'pve2', 'qemu')),
+    card(3, 'c', link(101)),
+  ];
+  const items = hostRailItems(cards, connections, ready, (service) => service.id === 2);
+  expect(items.map((item) => [item.node, item.state, item.total, item.down])).toEqual([
+    ['pve1', 'online', 1, 0],
+    ['pve2', 'offline', 2, 1],
+  ]);
+  // Nodes with no linked card, and unreadable inventories, add nothing.
+  expect(hostRailItems([card(9, 'z')], connections, ready, () => false)).toEqual([]);
+  expect(hostRailItems(cards, connections, { 1: { status: 'error' } }, () => false)).toEqual([]);
 });

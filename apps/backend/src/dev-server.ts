@@ -3,6 +3,13 @@ import { join } from 'node:path';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { root } from './config.js';
 import { seedDevelopmentDatabase, seedDevelopmentIntegrationMocks } from './dev-seed.js';
+import {
+  seedDevelopmentFeatures,
+  seedDevelopmentScenario,
+  startDevelopmentProbes,
+  startDevelopmentServices,
+  startDevelopmentTlsService,
+} from './dev-scenario.js';
 
 const dataDir = join(root, 'data');
 const databasePath = join(dataDir, 'homora-dev.sqlite');
@@ -27,10 +34,15 @@ if (created) {
   const database = createDatabase(databasePath);
   try {
     seedDevelopmentIntegrationMocks(getSqliteHandle(database.db));
+    seedDevelopmentScenario(getSqliteHandle(database.db));
+    seedDevelopmentFeatures(getSqliteHandle(database.db));
   } finally {
     database.close();
   }
 }
+startDevelopmentServices();
+startDevelopmentProbes();
+startDevelopmentTlsService();
 process.env.HOMORA_DATABASE_PATH = databasePath;
 process.env.HOMORA_DEV_MOCKS = 'true';
 await import('./server.js');
