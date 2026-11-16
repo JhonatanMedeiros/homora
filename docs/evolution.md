@@ -2059,3 +2059,11 @@ the HTTP and stdio transports were not manually verified.
 
 - Added a local page widget for a short Markdown note, with an optional name, safe rendering and a 4,000-character limit. Notes are portable through configuration export and import; database backups retain them as page widgets.
 - Validation: `pnpm check` passed (1,900 application and 36 script tests), including backup and restore of a note. A local browser confirmed adding a note, Markdown bold and persistence after reload; at 390 px, the note and its edit form were available without horizontal overflow. Screen-reader testing remains pending. An earlier check run had four navigation/proposal failures while other processes ran; their cause was not established.
+
+### Clearer outbound monitoring alerts
+
+- Localized human-readable alerts show the check reason, HTTP status and latency when available. Recoveries include the time from the first observed failure to confirmed recovery when known; older in-progress outages may lack a start time. Webhooks receive an optional `outageDurationMs`. Live channel delivery has not been validated.
+
+### Pull request title guidance
+
+- Documented Conventional Commit titles for contributors and agents, including the Release Please exception and the need to verify the merged commit message. No automated title check was added.

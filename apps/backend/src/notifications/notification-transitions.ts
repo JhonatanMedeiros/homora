@@ -10,6 +10,7 @@ export type NotificationEvent = {
   httpStatus: number | null;
   latencyMs: number | null;
   at: string;
+  outageDurationMs?: number;
 };
 
 export type Previous = {
@@ -22,6 +23,7 @@ export type Previous = {
   failures?: number;
   /** Consecutive successful checks since the last failure while an outage is open. */
   oks?: number;
+  outageStartedAt?: number;
 };
 
 /** How many consecutive checks must agree before an alert is sent; 1 alerts on the first change. */
@@ -47,7 +49,7 @@ export function createNotificationTransitions(
       states: Record<number, ServiceStatus>,
     ): NotificationEvent[] {
       // invalidate() publishes an empty snapshot before checking again; it is not a deletion.
-      if (!services.length) return [];
+      if (services.length === 0) return [];
       const ids = new Set(services.map(({ id }) => id));
       for (const id of previous.keys()) if (!ids.has(id)) previous.delete(id);
       const events: NotificationEvent[] = [];
@@ -72,6 +74,7 @@ export function createNotificationTransitions(
           const at = Date.parse(current.lastAttempt);
           const { failureThreshold, recoveryThreshold } = thresholds(service.id);
           if (current.status === 'unavailable') {
+            if (state.status !== 'unavailable') state.outageStartedAt = at;
             // State saved before thresholds existed counts an open outage as already past its threshold.
             const failures =
               (state.failures ?? (state.status === 'unavailable' ? failureThreshold : 0)) + 1;
@@ -111,8 +114,14 @@ export function createNotificationTransitions(
               httpStatus: current.httpStatus,
               latencyMs: current.latencyMs,
               at: current.lastAttempt,
+              ...(event === 'up' &&
+              state.outageStartedAt !== undefined &&
+              at >= state.outageStartedAt
+                ? { outageDurationMs: at - state.outageStartedAt }
+                : {}),
             });
         }
+        if (state.status === 'available') delete state.outageStartedAt;
         previous.set(service.id, state);
       }
       return events;

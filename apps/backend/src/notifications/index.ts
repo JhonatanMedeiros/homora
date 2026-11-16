@@ -17,6 +17,7 @@ const stateSchema = z
     notifiedDown: z.boolean(),
     failures: z.number().int().nonnegative().optional(),
     oks: z.number().int().nonnegative().optional(),
+    outageStartedAt: z.number().optional(),
   })
   .strict();
 type Vault = ReturnType<typeof createVault>;
@@ -33,7 +34,7 @@ export function createNotifications(db: DatabaseSync, vault?: Vault, log: Log = 
       services: (Omit<Service, 'url'> & { url: string | null })[],
       states: Record<number, ServiceStatus>,
     ) {
-      if (!services.length) return;
+      if (services.length === 0) return;
       const saved = (
         db.prepare('SELECT service_id,state FROM notification_states').all() as {
           service_id: number;

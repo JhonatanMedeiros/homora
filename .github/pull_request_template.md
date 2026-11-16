@@ -1,3 +1,5 @@
+<!-- Use a clear Conventional Commit title, e.g. feat: add service alerts or fix: preserve data on migration. Preserve generated Release Please titles. -->
+
 ## Problem and solution
 
 <!-- Describe the problem and the resulting behavior. Link relevant issues. -->

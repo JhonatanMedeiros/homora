@@ -61,7 +61,10 @@ it('persists transitions and encrypts destination without exposing it in payload
     expect(send).toHaveBeenCalledTimes(1);
     notifier.publish([service], { 1: status('available', 2) });
     await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
-    expect(JSON.parse(send.mock.calls[1][2]!.jsonBody!).event).toBe('up');
+    expect(JSON.parse(send.mock.calls[1][2]!.jsonBody!)).toMatchObject({
+      event: 'up',
+      outageDurationMs: 120_000,
+    });
     notifier.stop();
   } finally {
     database.close();
