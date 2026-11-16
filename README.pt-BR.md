@@ -98,7 +98,7 @@ card ao primeiro alerta.
 ### Conectar
 
 - **Integrações somente leitura** com Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Pi-hole, Speedtest
-  Tracker, Portainer, NetBird, Tailscale, Cloudflare e Coolify, exibidas como **widgets dentro dos cards e nas páginas**.
+  Tracker, Portainer, NetBird, Tailscale, Cloudflare, Healthchecks e Coolify, exibidas como **widgets dentro dos cards e nas páginas**.
   Uma conexão com falha nunca afeta os outros cards.
 - **Mapa serviço-host:** vincule um card à VM ou ao contêiner em que ele roda, registre dependências e veja o que pode ser
   afetado quando um host cai. O Homora sugere vínculos a partir de evidências e nunca escreve no Proxmox.
@@ -221,7 +221,7 @@ Mais cenários, com o passo a passo de cada um, em [Use cases](docs/user-guide/u
 ## Integrações compatíveis
 
 Proxmox VE · Jellyfin · Home Assistant · Uptime Kuma · AdGuard Home · Pi-hole · Speedtest Tracker · Portainer ·
-NetBird · Tailscale · Cloudflare · Coolify
+NetBird · Tailscale · Cloudflare · Healthchecks · Coolify
 
 As doze são **somente leitura e experimentais**: foram validadas com mocks e respostas de exemplo documentadas, não com
 instalações reais de várias versões. O estado de cada uma está na
