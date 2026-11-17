@@ -345,6 +345,7 @@ export function createApp(
     incidents,
     measurement,
     degradedSince,
+    () => monitoringTrust.read().trust?.hash,
   );
   registerWidgetSourceRoutes(app);
   registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);

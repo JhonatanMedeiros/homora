@@ -1,4 +1,5 @@
 import { widgetQuickLinksWidget } from './widgets/quick-links/definition.js';
+import { widgetAvailabilityWidget } from './widgets/availability/definition.js';
 import { widgetDomainExpiryWidget } from './widgets/domain-expiry/definition.js';
 import { widgetPublicIpWidget } from './widgets/public-ip/definition.js';
 import { widgetWeatherWidget } from './widgets/weather/definition.js';
@@ -27,6 +28,7 @@ const widgets = {
   'public-ip': widgetPublicIpWidget,
   'domain-expiry': widgetDomainExpiryWidget,
   'quick-links': widgetQuickLinksWidget,
+  availability: widgetAvailabilityWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];

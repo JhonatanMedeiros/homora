@@ -329,3 +329,164 @@ it('orders degraded monitors by first observed degradation before applying the l
   await app.close();
   db.close();
 });
+
+it('returns availability for services and probes, enforcing min 5 checks and excluding maintenance/unknown', async () => {
+  const { serviceSignature: signature } = await import('../monitoring/index.js');
+  const now = Date.now();
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY, category TEXT);
+    CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER);
+    CREATE TABLE service_observation_history(
+      id INTEGER PRIMARY KEY,
+      service_id INTEGER,
+      signature TEXT,
+      observed_at INTEGER,
+      observation TEXT,
+      status TEXT GENERATED ALWAYS AS (json_extract(observation,'$.status')) VIRTUAL,
+      latency_ms REAL GENERATED ALWAYS AS (json_extract(observation,'$.latencyMs')) VIRTUAL
+    );
+    INSERT INTO services VALUES (1,'Media');`);
+  const targets = [
+    {
+      id: 1,
+      name: 'Jellyfin',
+      url: 'https://jellyfin.example.test',
+      allowPrivate: false,
+      checkInsecure: false,
+      checkType: 'http' as const,
+      checkInterval: 60,
+      expectedStatus: null,
+      checkPath: null,
+      checkUrl: null,
+      checkMatch: null,
+    },
+    {
+      id: 2,
+      name: 'DNS Probe',
+      url: 'https://dns.example.test',
+      allowPrivate: false,
+      checkInsecure: false,
+      checkType: 'http' as const,
+      checkInterval: 60,
+      expectedStatus: null,
+      checkPath: null,
+      checkUrl: null,
+      checkMatch: null,
+    },
+  ];
+  const insert = db.prepare(
+    'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
+  );
+  const jellyfinSig = signature(targets[0]);
+  for (let i = 0; i < 4; i++) {
+    insert.run(
+      1,
+      jellyfinSig,
+      now - (i + 1) * 60_000,
+      JSON.stringify({ status: 'available', latencyMs: 40 }),
+    );
+  }
+  insert.run(
+    1,
+    jellyfinSig,
+    now - 300_000,
+    JSON.stringify({ status: 'unavailable', reason: 'no-response' }),
+  );
+  insert.run(1, jellyfinSig, now - 360_000, JSON.stringify({ status: 'maintenance' }));
+  insert.run(1, jellyfinSig, now - 420_000, JSON.stringify({ status: 'unknown' }));
+
+  const probeSig = signature(targets[1]);
+  for (let i = 0; i < 3; i++) {
+    insert.run(
+      2,
+      probeSig,
+      now - (i + 1) * 60_000,
+      JSON.stringify({ status: 'available', latencyMs: 12 }),
+    );
+  }
+  insert.run(2, probeSig, now - 240_000, JSON.stringify({ status: 'maintenance' }));
+
+  const app = Fastify();
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => targets } as never,
+    {
+      snapshot: () => ({
+        1: {
+          status: 'available',
+          reason: 'responding',
+          latencyMs: 40,
+          lastAttempt: new Date(now - 30_000).toISOString(),
+        },
+        2: {
+          status: 'maintenance',
+          reason: 'maintenance',
+          latencyMs: null,
+          lastAttempt: new Date(now - 300_000).toISOString(),
+        },
+      }),
+    } as never,
+    { open: () => ({}) } as never,
+    { current: () => null },
+  );
+
+  expect((await app.inject('/api/widget-sources/monitoring/availability')).statusCode).toBe(400);
+  expect(
+    (await app.inject('/api/widget-sources/monitoring/availability?target=Jellyfin&range=90d'))
+      .statusCode,
+  ).toBe(400);
+
+  const serviceRes = await app.inject(
+    '/api/widget-sources/monitoring/availability?target=Jellyfin&range=24h',
+  );
+  expect(serviceRes.statusCode).toBe(200);
+  expect(serviceRes.json()).toMatchObject({
+    range: '24h',
+    target: {
+      id: 1,
+      name: 'Jellyfin',
+      isService: true,
+      state: 'ok',
+      stale: false,
+      uptimePct: 80,
+      checks: 7,
+      upChecks: 4,
+      downChecks: 1,
+      unknownChecks: 2,
+      minChecks: 5,
+    },
+  });
+  expect(serviceRes.json().target.buckets).toHaveLength(48);
+
+  const probeRes = await app.inject(
+    '/api/widget-sources/monitoring/availability?target=DNS%20Probe&range=7d',
+  );
+  expect(probeRes.statusCode).toBe(200);
+  expect(probeRes.json()).toMatchObject({
+    range: '7d',
+    target: {
+      id: 2,
+      name: 'DNS Probe',
+      isService: false,
+      state: 'maintenance',
+      stale: true,
+      uptimePct: null,
+      checks: 4,
+      upChecks: 3,
+      downChecks: 0,
+      unknownChecks: 1,
+      minChecks: 5,
+    },
+  });
+  expect(probeRes.json().target.buckets).toHaveLength(84);
+
+  const missingRes = await app.inject(
+    '/api/widget-sources/monitoring/availability?target=Renamed&range=30d',
+  );
+  expect(missingRes.statusCode).toBe(200);
+  expect(missingRes.json()).toMatchObject({ range: '30d', target: null });
+
+  await app.close();
+  db.close();
+});

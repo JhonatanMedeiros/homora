@@ -3,6 +3,10 @@ import {
   ptBR as widgetQuickLinksPt,
 } from './widgets/quick-links/messages.js';
 import {
+  en as widgetAvailability,
+  ptBR as widgetAvailabilityPt,
+} from './widgets/availability/messages.js';
+import {
   en as widgetDomainExpiry,
   ptBR as widgetDomainExpiryPt,
 } from './widgets/domain-expiry/messages.js';
@@ -34,6 +38,7 @@ export const widgetEnglish = {
   ...widgetPublicIp,
   ...widgetDomainExpiry,
   ...widgetQuickLinks,
+  ...widgetAvailability,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -49,4 +54,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetPublicIpPt,
   ...widgetDomainExpiryPt,
   ...widgetQuickLinksPt,
+  ...widgetAvailabilityPt,
 };
