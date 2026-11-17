@@ -1,13 +1,20 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import {
+  WeatherSourceError,
   WidgetHostProvider,
   WidgetSourceError,
+  type WeatherHost,
   type WidgetHost as Host,
   type MonitoringQuery,
   type WidgetSourceParams,
 } from '@homora/widgets/ui';
 import { tOr, useI18n } from '@/i18n';
-import type { MonitoringIncidents } from '@homora/widgets';
+import type {
+  MonitoringIncidents,
+  WeatherGeocodeResponse,
+  WeatherObservation,
+  WeatherProviderSummary,
+} from '@homora/widgets';
 import { parseWidgetMonitoringSource } from '@/hooks/use-widget-monitoring-source';
 import type { MonitoringProblemsQuery } from '@homora/widgets/ui';
 
@@ -93,6 +100,72 @@ export async function readWidgetSource<T = unknown>(
 type FilterStatus = NonNullable<NonNullable<Host['monitoring']>['filterStatus']>;
 export const WidgetStatusFilterContext = createContext<FilterStatus | undefined>(undefined);
 
+async function readWeatherError(response: Response): Promise<WeatherSourceError> {
+  let code = '';
+  try {
+    const body = (await response.json()) as { error?: unknown };
+    if (typeof body.error === 'string') code = body.error;
+  } catch {
+    // Ignore non-JSON error payloads.
+  }
+  if (code === 'weather-provider-not-configured') {
+    return new WeatherSourceError('provider-not-configured', 'Weather provider not configured');
+  }
+  if (code === 'weather-provider-auth-failed') {
+    return new WeatherSourceError('provider-auth-failed', 'Weather provider authentication failed');
+  }
+  if (code === 'weather-rate-limited' || response.status === 429) {
+    return new WeatherSourceError('rate-limited', 'Weather provider rate limited');
+  }
+  return new WeatherSourceError('provider-unavailable', 'Weather provider unavailable');
+}
+
+const weatherHost: WeatherHost = {
+  async read(query, signal) {
+    const params = new URLSearchParams({
+      provider: query.provider,
+      lat: String(query.latitude),
+      lon: String(query.longitude),
+      unit: query.unit,
+    });
+    const name = query.name?.trim();
+    if (name) params.set('name', name);
+    const response = await fetch(`/api/weather?${params}`, { signal });
+    if (!response.ok) throw await readWeatherError(response);
+    return response.json() as Promise<WeatherObservation>;
+  },
+  async listProviders(signal) {
+    const response = await fetch('/api/weather/providers', { signal });
+    if (!response.ok) throw await readWeatherError(response);
+    return response.json() as Promise<WeatherProviderSummary[]>;
+  },
+  async geocode(query, signal) {
+    const params = new URLSearchParams({
+      provider: query.provider,
+      q: query.query,
+    });
+    if (query.limit !== undefined) params.set('limit', String(query.limit));
+    const response = await fetch(`/api/weather/geocode?${params}`, { signal });
+    if (!response.ok) throw await readWeatherError(response);
+    return response.json() as Promise<WeatherGeocodeResponse>;
+  },
+  async saveApiKey(provider, apiKey) {
+    const response = await fetch(`/api/weather/providers/${encodeURIComponent(provider)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey }),
+    });
+    if (!response.ok) throw await readWeatherError(response);
+    return response.json() as Promise<WeatherProviderSummary>;
+  },
+  async clearApiKey(provider) {
+    const response = await fetch(`/api/weather/providers/${encodeURIComponent(provider)}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw await readWeatherError(response);
+  },
+};
+
 export function WidgetHost({
   children,
   ...options
@@ -113,6 +186,7 @@ export function WidgetHost({
           readProblems,
           filterStatus,
         },
+        weather: weatherHost,
         readSource: readWidgetSource,
       }}
     >
