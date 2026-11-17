@@ -29,3 +29,9 @@ In the strip, wide spans two columns from `sm`; small screens and the rail use o
 Portable exports retain the current format and include optional `size: wide` only when needed. Older files default to normal. Older readers ignore this optional field, so they can import new files while displaying the widget as normal; they cannot preserve wide through a re-export. Storing size in config was rejected because it mixes host layout with widget data; a new transfer version would cause older readers to reject files. Unknown size values in imports are rejected as invalid widgets.
 
 Internal monitoring sources are portable without a connection; see [ADR 0027](0027-widget-internal-monitoring.md). A module declares the contract and the host supplies its reader.
+
+## Generic widget source host (#282)
+
+To keep the backend and frontend hosts agnostic as external-source widgets are added, `@homora/widgets` defines a `WidgetSourceReader` contract (`packages/widgets/src/source.ts`) registered in `packages/widgets/src/source-registry.ts`. A module with an external or computed source implements `parseQuery`, `read(params, context)`, and optional `project` inside its own directory (e.g. `source.ts`), receiving only host-injected capabilities (`context.fetch` backed by `network-policy.ts`, clamped to at most 8 s and 512 KB, with DNS pinning and no redirects).
+
+The backend mounts one generic route (`GET /api/widget-sources/:contract` in `apps/backend/src/routes/widget-sources.ts`) that owns authentication, TTL caching, concurrent request deduplication, stale-cache fallback, and policy error mapping. The frontend `WidgetHost` exposes a single generic `readSource(contract, params, signal)` helper so new widget modules do not require new host routes or `WidgetHost` methods. Internal monitoring contracts (`ADR 0027`) remain on `widget-monitoring.ts` for their direct SQLite/monitor snapshot readers.

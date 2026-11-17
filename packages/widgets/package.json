@@ -28,6 +28,10 @@
       "types": "./dist/registry.d.ts",
       "default": "./dist/registry.js"
     },
+    "./source-registry": {
+      "types": "./dist/source-registry.d.ts",
+      "default": "./dist/source-registry.js"
+    },
     "./clock/ui": "./src/widgets/clock/ui/index.tsx",
     "./countdown/ui": "./src/widgets/countdown/ui/index.tsx",
     "./note/ui": "./src/widgets/note/ui/index.tsx",
@@ -40,7 +44,8 @@
     "./calendar/ui": "./src/widgets/calendar/ui/index.tsx",
     "./homelab-summary/ui": "./src/widgets/homelab-summary/ui/index.tsx",
     "./recent-incidents/ui": "./src/widgets/recent-incidents/ui/index.tsx",
-    "./current-problems/ui": "./src/widgets/current-problems/ui/index.tsx"
+    "./current-problems/ui": "./src/widgets/current-problems/ui/index.tsx",
+    "./rss-feed/ui": "./src/widgets/rss-feed/ui/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

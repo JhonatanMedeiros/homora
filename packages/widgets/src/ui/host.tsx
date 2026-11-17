@@ -29,6 +29,41 @@ export type WidgetScopeOptions = {
   loading: boolean;
 };
 
+export type FeedQuery = {
+  feedUrl: string;
+  limit: number;
+  allowPrivateNetwork: boolean;
+};
+
+export type FeedEntry = {
+  id: string;
+  title: string;
+  link: string | null;
+  publishedAt: number | null;
+};
+
+export type FeedData = {
+  feedTitle: string | null;
+  entries: FeedEntry[];
+  fetchedAt: number;
+  stale: boolean;
+};
+
+export type WidgetSourceErrorCode = 'policy-blocked' | 'fetch-failed';
+
+export class WidgetSourceError extends Error {
+  code: WidgetSourceErrorCode;
+  constructor(code: WidgetSourceErrorCode, message: string) {
+    super(message);
+    this.name = 'WidgetSourceError';
+    this.code = code;
+  }
+}
+
+export const FeedSourceError = WidgetSourceError;
+
+export type WidgetSourceParams = Record<string, string | number | boolean | undefined>;
+
 export type WidgetHost = {
   monitoring?: {
     readProblems?: (
@@ -45,6 +80,12 @@ export type WidgetHost = {
     ) => Promise<{ groups: { id: number; name: string }[]; pages: { id: number; name: string }[] }>;
     filterStatus?: (state: 'ok' | 'down' | 'degraded' | 'maintenance' | 'unmeasured') => void;
   };
+  readSource?: <T = unknown>(
+    contract: string,
+    params: WidgetSourceParams,
+    signal: AbortSignal,
+  ) => Promise<T>;
+  readFeed?: (query: FeedQuery, signal: AbortSignal) => Promise<FeedData>;
 
   locale: string;
   incidentReading?: MonitoringReading;

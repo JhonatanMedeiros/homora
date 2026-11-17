@@ -294,3 +294,74 @@ it('reads existing version-one rows without rewriting their configurations', asy
   );
   await app.close();
 });
+
+it('persists, resizes, transfers, and validates rss-feed widgets', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'homora-rss-feed-')), 'data.sqlite');
+  const { db } = createDatabase(path);
+  const { auth, cookie } = await createTestSession();
+  const app = createApp(db, 5173, auth, createVault(path));
+  const headers = { cookie, origin: 'http://localhost:5173' };
+  const req = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: unknown) =>
+    app.inject({ method, url, headers, payload: payload as object | undefined });
+  const pageId = (await req('GET', '/api/pages')).json()[0].id;
+
+  const invalidFeed = {
+    pageId,
+    type: 'rss-feed',
+    name: 'Feed',
+    connectionId: null,
+    config: {
+      feedUrl: 'https://user:pass@example.com/feed.xml',
+      title: '',
+      limit: 5,
+      allowPrivateNetwork: false,
+    },
+  };
+  expect((await req('POST', '/api/page-widgets', invalidFeed)).statusCode).toBe(400);
+
+  const validFeed = {
+    pageId,
+    type: 'rss-feed',
+    name: 'Homelab News',
+    connectionId: null,
+    size: 'normal',
+    config: {
+      feedUrl: 'https://example.com/feed.xml',
+      title: 'Releases',
+      limit: 5,
+      allowPrivateNetwork: false,
+    },
+  };
+  const created = (await req('POST', '/api/page-widgets', validFeed)).json();
+  expect(created.size).toBe('normal');
+
+  const updated = (
+    await req('PUT', `/api/page-widgets/${created.id}`, {
+      ...validFeed,
+      size: 'wide',
+      config: { ...validFeed.config, limit: 8, allowPrivateNetwork: true },
+    })
+  ).json();
+  expect(updated.size).toBe('wide');
+  expect(updated.config.limit).toBe(8);
+  expect(updated.config.allowPrivateNetwork).toBe(true);
+
+  const content = (await req('GET', '/api/config/export?format=json')).body;
+  expect(JSON.parse(content).widgets).toContainEqual({
+    page: 'Home',
+    type: 'rss-feed',
+    name: 'Homelab News',
+    size: 'wide',
+    config: updated.config,
+  });
+
+  const preview = (await req('POST', '/api/config/import/preview', { content })).json();
+  expect(preview.plan.summary.newWidgets).toBe(1);
+  expect(
+    (await req('POST', '/api/config/import/apply', { content, expectedVersion: preview.version }))
+      .statusCode,
+  ).toBe(200);
+  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(2);
+  expect((await req('DELETE', `/api/page-widgets/${created.id}`)).statusCode).toBe(204);
+  await app.close();
+});

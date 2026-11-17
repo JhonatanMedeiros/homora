@@ -1,3 +1,4 @@
+import { en as widgetRssFeed, ptBR as widgetRssFeedPt } from './widgets/rss-feed/messages.js';
 import { en as summary, ptBR as summaryPt } from './widgets/homelab-summary/messages.js';
 import { en as incidents, ptBR as incidentsPt } from './widgets/recent-incidents/messages.js';
 
@@ -18,6 +19,7 @@ export const widgetEnglish = {
   ...incidents,
 
   ...widgetProblems,
+  ...widgetRssFeed,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -28,4 +30,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...incidentsPt,
 
   ...widgetProblemsPt,
+  ...widgetRssFeedPt,
 };
