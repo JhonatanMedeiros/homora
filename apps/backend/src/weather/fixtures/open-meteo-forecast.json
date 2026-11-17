@@ -1,0 +1,27 @@
+{
+  "_source": {
+    "kind": "hand-written-from-official-docs",
+    "docs": "https://open-meteo.com/en/docs",
+    "note": "Constructed from Open-Meteo Forecast API v1 documentation (checked 2026-11-17), not recorded from a live request."
+  },
+  "body": {
+    "latitude": 52.52,
+    "longitude": 13.419998,
+    "current": {
+      "time": "2026-11-17T14:00",
+      "temperature_2m": 8.4,
+      "relative_humidity_2m": 72,
+      "apparent_temperature": 5.9,
+      "is_day": 1,
+      "weather_code": 2,
+      "wind_speed_10m": 14.2
+    },
+    "daily": {
+      "time": ["2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"],
+      "weather_code": [2, 61, 3, 0, 71],
+      "temperature_2m_max": [9.5, 10.1, 7.8, 6.4, 2.3],
+      "temperature_2m_min": [3.2, 4.5, 2.1, -0.5, -3.0],
+      "precipitation_probability_max": [15, 80, 25, 0, 60]
+    }
+  }
+}

@@ -209,3 +209,13 @@ export const integrationResourceLinks = sqliteTable(
     index('integration_resource_links_resource_idx').on(table.integrationId, table.resourceUuid),
   ],
 );
+
+/**
+ * Encrypted credentials for optional API-key weather providers (e.g. OpenWeatherMap).
+ * Keyless providers (Open-Meteo) work without a row here. Secrets are sealed with the vault.
+ */
+export const weatherProviders = sqliteTable('weather_providers', {
+  provider: text('provider').primaryKey(),
+  secretRef: text('secret_ref').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});

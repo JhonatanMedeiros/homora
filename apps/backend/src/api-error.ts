@@ -121,6 +121,14 @@ export const ERROR_MESSAGES = {
   'proposal-not-stale': 'The proposal is already up to date.',
   'batch-conflict': 'The changes in this batch conflict. No changes were applied.',
   'config-changed': 'The configuration changed. Review it again.',
+  'invalid-weather-provider': 'Unsupported weather provider.',
+  'weather-provider-keyless': 'This weather provider does not use an API key.',
+  'invalid-weather-api-key': 'Provide a valid weather API key.',
+  'weather-provider-not-configured': 'Weather provider credentials are not configured.',
+  'weather-provider-auth-failed': 'Weather provider rejected credentials.',
+  'weather-rate-limited': 'Weather provider rate limit exceeded.',
+  'weather-provider-unavailable': 'Weather provider is unavailable.',
+  'vault-unavailable': 'Credential vault is unavailable.',
   ...legacyApiErrorMessages,
 } as const;
 

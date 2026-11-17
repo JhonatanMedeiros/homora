@@ -479,3 +479,16 @@ checks were performed; a detailed validation record is still pending.
 ## Home page widgets
 
 Integration presentations can also be placed on pages, using an existing connection chosen by the administrator. The source is verified against the type contract and continues using host transport and caching. Exports include neither connections nor credentials: the preview indicates that these widgets will be ignored and need to be recreated. Legacy rows without a card remain on the Integrations screen. See [ADR 0019](decisions/0019-widget-sdk.md).
+
+## Weather source providers (SRC-15)
+
+The `homora:weather` (version 1) source contract in `@homora/widgets` provides a normalized read-only weather payload (`current` conditions, up to 5 `daily` forecast days, `location`, `unit`, `provider` attribution, and `cache` metadata) and a bounded backend geocoding endpoint (`GET /api/weather/geocode`) for widget configuration. Search queries are never stored in the database or sent with host/user metadata.
+
+All weather requests run on the backend through `network-request.ts` with `allowPrivate: false`, HTTPS only, DNS pinning, no redirects, a 6-second timeout, and a 128 KB response limit. Weather observations are cached in memory for 10 minutes keyed by provider, rounded coordinates, and unit (`metric` or `imperial`), with concurrent request deduplication. Failed requests are never cached, and provider credentials are never exposed to the browser, audit logs, or MCP.
+
+| Provider       | Auth                   | Endpoints                                                                                                        | Quotas and rate limits (checked 2026-11-17)                       | Terms and attribution                                           | Status                   |
+| -------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------ |
+| Open-Meteo     | Keyless (default)      | `GET https://api.open-meteo.com/v1/forecast`, `GET https://geocoding-api.open-meteo.com/v1/search`               | Free tier: 600/min, 5,000/hr, 10,000/day (weighted by query size) | Non-commercial use on free tier; CC BY 4.0 attribution required | Implemented, unvalidated |
+| OpenWeatherMap | API key (vault-sealed) | `GET https://api.openweathermap.org/data/2.5/weather`, `/data/2.5/forecast`, `GET /geo/1.0/direct` (v2.5 / v1.0) | Free tier (no card): 60 calls/min, 1,000,000 calls/month          | Standard API v2.5 terms; API key stored encrypted in vault      | Implemented, unvalidated |
+
+Live-provider validation against real Open-Meteo and OpenWeatherMap endpoints remains pending; current tests use hand-written fixtures constructed from official API documentation.

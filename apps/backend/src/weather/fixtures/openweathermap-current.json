@@ -1,0 +1,30 @@
+{
+  "_source": {
+    "kind": "hand-written-from-official-docs",
+    "docs": "https://openweathermap.org/current",
+    "note": "Constructed from OpenWeatherMap Current Weather API v2.5 documentation (checked 2026-11-17), not recorded from a live request."
+  },
+  "body": {
+    "weather": [
+      {
+        "id": 801,
+        "main": "Clouds",
+        "description": "few clouds",
+        "icon": "02d"
+      }
+    ],
+    "main": {
+      "temp": 8.4,
+      "feels_like": 5.9,
+      "humidity": 72
+    },
+    "wind": {
+      "speed": 4.0
+    },
+    "dt": 1794924000,
+    "sys": {
+      "sunrise": 1794900000,
+      "sunset": 1794932000
+    }
+  }
+}
