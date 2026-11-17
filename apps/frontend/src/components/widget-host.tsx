@@ -11,6 +11,7 @@ import {
 import { tOr, useI18n } from '@/i18n';
 import type {
   MonitoringAvailability,
+  MonitoringCertificates,
   MonitoringIncidents,
   MonitoringMaintenance,
   WeatherGeocodeResponse,
@@ -100,6 +101,18 @@ export async function readAvailability(
     range: query.range,
   });
   return getJson(`/api/widget-sources/monitoring/availability?${params}`, signal);
+}
+
+async function readCertificates(
+  query: { pages: string[]; groups: string[] },
+  signal: AbortSignal,
+): Promise<MonitoringCertificates> {
+  const params = new URLSearchParams({
+    limit: '5',
+    pages: JSON.stringify(query.pages),
+    groups: JSON.stringify(query.groups),
+  });
+  return getJson(`/api/widget-sources/monitoring/certificates?${params}`, signal);
 }
 
 async function readTargets(signal: AbortSignal): Promise<MonitoringTargetOption[]> {
@@ -245,6 +258,8 @@ export function WidgetHost({
           readAvailability,
           readLatency,
           readServiceTargets,
+
+          readCertificates,
           readTargets,
           filterStatus,
         },

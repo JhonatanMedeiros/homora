@@ -1,4 +1,8 @@
 import {
+  en as widgetCertificateExpiry,
+  ptBR as widgetCertificateExpiryPt,
+} from './widgets/certificate-expiry/messages.js';
+import {
   en as widgetMaintenanceSchedule,
   ptBR as widgetMaintenanceSchedulePt,
 } from './widgets/maintenance-schedule/messages.js';
@@ -46,6 +50,7 @@ export const widgetEnglish = {
   ...widgetAvailability,
   ...latency,
 
+  ...widgetCertificateExpiry,
   ...widgetMaintenanceSchedule,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
@@ -65,5 +70,6 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetAvailabilityPt,
   ...latencyPt,
 
+  ...widgetCertificateExpiryPt,
   ...widgetMaintenanceSchedulePt,
 };

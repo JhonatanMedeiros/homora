@@ -93,6 +93,8 @@ export type {
   MonitoringLatency,
   MonitoringCounts,
   MonitoringSummary,
+  MonitoringCertificate,
+  MonitoringCertificates,
   MonitoringProblem,
   MonitoringProblems,
   MonitoringIncident,

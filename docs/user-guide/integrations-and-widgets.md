@@ -150,3 +150,9 @@ Select between the keyless **Open-Meteo** provider (default) or **OpenWeatherMap
 Add **Latency history** and select a service card. Choose 24 hours, 7 days or 30 days and a normal or wide size. The chart shows the median of successful checks in each interval; gaps mean no valid reading was recorded. A short outage can be hidden inside an interval that also contains successful checks. Only raw checks retained for up to 30 days and matching the current monitor configuration are shown.
 
 When a reading is stale or the service cannot be measured, the widget labels the last valid reading and its time rather than calling it current. A check is stale after more than twice its configured interval. If the card is deleted, select another card explicitly. Configuration export preserves the period and size but clears the local service selection; select it again after import. Database backups preserve the selection.
+
+### Certificate expiry
+
+The **Certificate expiry** page widget lists service cards configured with a TLS check, earliest expiry first. It shows up to five and reports additional matches. The 7, 14, 30 or 60 day warning is a display setting; it does not change monitoring or alerts. An unexpired certificate can still be invalid. A failed check may show an earlier observation, labeled with its time; unknown expiry is never treated as expired. Observations are retained for up to 30 days and only matched to the current check configuration. The widget does not perform additional checks.
+
+Page and group filters are optional and use names for portability. If a selected name is removed or renamed, edit the widget: it will not expand the selection automatically. A failed refresh keeps the last result marked as outdated. Select a row to open service details.

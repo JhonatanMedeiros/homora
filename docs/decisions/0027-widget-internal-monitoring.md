@@ -43,6 +43,10 @@ The latency and service-target contracts expose only local monitoring data to th
 
 A generic optional `portableConfig` function removes local references on both export and import, including manually edited files; the latency module clears its target while preserving the range. Imported widgets can be saved unconfigured. The source reads successful raw checks under the current monitor signature for at most 30 days and finds the latest valid reading without a 500-event limit. Bucket medians use the existing nearest-rank aggregation. Empty buckets remain gaps; partial buckets can conceal short outages. A reading is stale after more than twice the configured interval, without availability's 120-second floor. The monitor polls every 10 seconds and schedules based on the configured interval; this stricter threshold intentionally reveals delayed checks sooner. No additional network permission is granted.
 
+## Certificate expiry source (#302)
+
+The version 1 certificate source reads retained TLS observations for service cards, scoped by portable page and group names. A missing selected name prevents matches. It exposes only names, IDs, derived state and expiry/observation times. It uses the current monitor signature, including trust, and never initiates a check. The presentation threshold is independent of monitor policy. A prior or aged observation is marked stale; retention limits historical lookup to 30 days. The existing per-query bounded cache and session authentication apply.
+
 ## MON-06: maintenance schedule (#301)
 
 `homora:monitoring-maintenance` version 1 reads existing maintenance without notes, URLs or network access. A window matches when `ends_at > now` and `starts_at < now + horizon`; the upper horizon is exclusive. It is ongoing when `starts_at <= now < ends_at`, matching the store's active rule. The source counts after filtering, sorts active first and then by start and ID, and returns at most the configured 1–10 rows (default 5). The horizons are exactly 24 hours, 7 days and 30 days. The source does not cache responses, so transitions and deletions are reflected on the next request.

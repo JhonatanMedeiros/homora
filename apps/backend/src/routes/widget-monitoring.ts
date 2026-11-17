@@ -17,6 +17,8 @@ import {
   type MonitoringMaintenance,
 } from '@homora/widgets';
 import {
+  certificateReading,
+  serviceSignature,
   UPTIME_MIN_CHECKS,
   uptimeSummarizerOf,
   type createDegradedSince,
@@ -194,6 +196,28 @@ const availabilitySchema: z.ZodType<MonitoringAvailability> = z
   })
   .strict();
 
+const certificatesSchema = z
+  .object({
+    generatedAt: timestamp,
+    items: z
+      .array(
+        z
+          .object({
+            id: z.number().int().positive(),
+            name: z.string().max(200),
+            expiresAt: timestamp.nullable(),
+            observedAt: timestamp.nullable(),
+            stale: z.boolean(),
+            state: z.enum(['down', 'degraded', 'ok', 'maintenance', 'blocked', 'unknown']),
+          })
+          .strict(),
+      )
+      .max(50),
+    total: z.number().int().nonnegative(),
+    missingFilter: z.boolean(),
+  })
+  .strict();
+
 const safeReasons = new Set([
   'no-response',
   'not-found',
@@ -251,8 +275,9 @@ export function registerWidgetMonitoringRoutes(
           return null;
         }
       };
-      const groupNames = kind === 'incidents' || kind === 'maintenance' ? parseNames(groups) : [];
-      const pageNames = kind === 'incidents' || kind === 'maintenance' ? parseNames(pages) : [];
+      const namedScope = kind === 'incidents' || kind === 'maintenance' || kind === 'certificates';
+      const groupNames = namedScope ? parseNames(groups) : [];
+      const pageNames = namedScope ? parseNames(pages) : [];
       if (!groupNames || !pageNames) return reply.code(400).send(errorBody('invalid-query'));
       if (
         (kind === 'summary' || kind === 'problems') &&
@@ -282,6 +307,16 @@ export function registerWidgetMonitoringRoutes(
         includeDegraded,
         target,
         range,
+        ...(kind === 'certificates'
+          ? [
+              (
+                db.prepare('SELECT version FROM config_version WHERE id=1').get() as
+                  | { version: number }
+                  | undefined
+              )?.version ?? 0,
+              caHash?.() ?? null,
+            ]
+          : []),
       ]);
       const cached = cache.get(key);
       if (
@@ -347,6 +382,70 @@ export function registerWidgetMonitoringRoutes(
               lastValid: observations.lastValidLatency(match.id, now),
               points: series.points.map(({ start, p50 }) => ({ start, p50 })),
             },
+          });
+          break;
+        }
+        case 'certificates': {
+          const allGroups = db.prepare('SELECT name FROM service_groups').all() as {
+            name: string;
+          }[];
+          const allPages = db.prepare('SELECT name FROM pages').all() as { name: string }[];
+          const missingFilter =
+            groupNames.some((name) => !allGroups.some((row) => row.name === name)) ||
+            pageNames.some((name) => !allPages.some((row) => row.name === name));
+          const cards = db
+            .prepare(`SELECT s.id, g.name AS groupName, p.name AS pageName
+            FROM services s LEFT JOIN service_groups g ON g.name=s.category
+            LEFT JOIN pages p ON p.id=COALESCE(g.page_id, (SELECT id FROM pages ORDER BY position, id LIMIT 1))`)
+            .all() as { id: number; groupName: string | null; pageName: string | null }[];
+          const selected = new Set(
+            cards
+              .filter(
+                (card) =>
+                  (groupNames.length === 0 ||
+                    (card.groupName !== null && groupNames.includes(card.groupName))) &&
+                  (pageNames.length === 0 ||
+                    (card.pageName !== null && pageNames.includes(card.pageName))),
+              )
+              .map((card) => card.id),
+          );
+          const states = monitor.snapshot();
+          const savedSignature = db.prepare(
+            'SELECT signature FROM service_observations WHERE service_id=?',
+          );
+          const items = missingFilter
+            ? []
+            : source
+                .list()
+                .filter((item) => item.checkType === 'tls' && selected.has(item.id))
+                .map((item) => {
+                  const saved = savedSignature.get(item.id) as { signature: string } | undefined;
+                  const status =
+                    saved?.signature === serviceSignature(item, caHash?.())
+                      ? states[item.id]
+                      : undefined;
+                  return {
+                    id: item.id,
+                    name: item.name,
+                    ...certificateReading(db, item, now, caHash?.()),
+                    state: monitoringState({
+                      status: status?.status,
+                      reason: status?.reason,
+                      latencyMs: status?.latencyMs,
+                      blocked:
+                        item.url !== null && !item.allowPrivate && isHomePrivateHost(item.url),
+                      measurementReason: measurement.current()?.reason,
+                    }),
+                  };
+                })
+                .sort(
+                  (a, b) => (a.expiresAt ?? Infinity) - (b.expiresAt ?? Infinity) || a.id - b.id,
+                );
+          value = certificatesSchema.parse({
+            generatedAt: now,
+            items: items.slice(0, limit),
+            total: items.length,
+            missingFilter,
           });
           break;
         }

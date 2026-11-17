@@ -1,6 +1,7 @@
 import type {
   AvailabilityRange,
   MonitoringAvailability,
+  MonitoringCertificates,
   MonitoringIncidents,
   MonitoringMaintenance,
   MonitoringSummary,
@@ -136,6 +137,10 @@ export type WidgetHost = {
     ) => Promise<MonitoringLatency>;
     readServiceTargets?: (signal: AbortSignal) => Promise<{ target: string; name: string }[]>;
 
+    readCertificates?: (
+      query: { pages: string[]; groups: string[] },
+      signal: AbortSignal,
+    ) => Promise<MonitoringCertificates>;
     readMaintenance?: (
       query: MonitoringMaintenanceQuery,
       signal: AbortSignal,
