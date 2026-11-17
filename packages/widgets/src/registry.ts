@@ -1,5 +1,7 @@
 import { widgetHomelabSummaryWidget } from './widgets/homelab-summary/definition.js';
 import { widgetRecentIncidentsWidget } from './widgets/recent-incidents/definition.js';
+
+import { widgetProblemsWidget } from './widgets/current-problems/definition.js';
 import { widgetCalendarWidget } from './widgets/calendar/definition.js';
 import { clockWidget } from './clock.js';
 import { countdownWidget } from './countdown.js';
@@ -13,6 +15,8 @@ const widgets = {
   calendar: widgetCalendarWidget,
   'homelab-summary': widgetHomelabSummaryWidget,
   'recent-incidents': widgetRecentIncidentsWidget,
+
+  'current-problems': widgetProblemsWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];

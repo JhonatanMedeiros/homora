@@ -1,3 +1,4 @@
+export { createDegradedSince } from './degraded-since.js';
 /**
  * Public interface of the monitoring capability: check scheduling and probing, observation
  * history, hourly rollups, uptime, incidents and maintenance windows.

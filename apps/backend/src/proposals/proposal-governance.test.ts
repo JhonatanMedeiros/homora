@@ -17,10 +17,13 @@ const schema = `${CARD_SCHEMA}
   CREATE TRIGGER service_proposal_immutable BEFORE UPDATE OF author_id,diff,base_hash,base_version,created_at ON service_proposals BEGIN SELECT RAISE(ABORT,'proposal contents are immutable'); END;`;
 const card = { name: 'Media', url: 'https://media.example', category: 'Apps', description: 'x' };
 
-function twoConnections() {
+function twoConnections(wal = false) {
   const dir = mkdtempSync(join(tmpdir(), 'homora-governance-'));
   const path = join(dir, 'test.sqlite');
   const first = new DatabaseSync(path);
+  // The load run measures proposal throughput with two durable connections, without a
+  // rollback-journal file creation and deletion for every transaction.
+  if (wal) first.exec('PRAGMA journal_mode=WAL');
   first.exec(schema);
   const second = new DatabaseSync(path);
   return {
@@ -172,7 +175,7 @@ it('rejects oversized and hostile fields and never stores credentials in proposa
 });
 
 it('records a bounded load run: 100 pending proposals are created and reviewed quickly', () => {
-  const t = twoConnections();
+  const t = twoConnections(true);
   try {
     const agent = t.one.issue('bot', ['proposals:create']);
     const start = performance.now();
