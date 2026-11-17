@@ -1,5 +1,5 @@
 import Markdown from 'react-markdown';
-import { t } from '@/i18n';
+import { useWidgetHost } from '../../../ui/host.js';
 import type { ComponentProps } from 'react';
 
 function SafeLink({ href, children }: ComponentProps<'a'>) {
@@ -14,6 +14,7 @@ function SafeLink({ href, children }: ComponentProps<'a'>) {
 
 /** React renders text safely; only this subset and absolute HTTP(S) links are allowed. */
 export function NoteContent({ text }: { text: string }) {
+  const { t } = useWidgetHost();
   if (!text.trim())
     return <p className="text-sm text-muted-foreground">{t('pageWidgets.noteEmpty')}</p>;
   return (

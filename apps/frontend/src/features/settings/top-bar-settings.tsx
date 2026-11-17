@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Clock } from '@/components/top-bar';
+import { Clock } from '@homora/widgets/clock/ui';
+import { WidgetHost } from '@/components/widget-host';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { Input } from '@homora/ui/input';
 import { Switch } from '@homora/ui/switch';
@@ -9,7 +10,7 @@ import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { useTelemetryConnections } from '@/hooks/use-telemetry-connections';
 import { t, type MessageKey } from '@/i18n';
-import { browserTimeZone, listTimeZones } from '@/lib/clock';
+import { browserTimeZone, listTimeZones } from '@homora/widgets/clock';
 import {
   CUSTOM_ENGINE,
   SEARCH_ENGINES,
@@ -237,7 +238,9 @@ export function TopBarSettings() {
           </span>
           {topBar ? (
             <div className="rounded-md border bg-background px-4 py-2">
-              <Clock preferences={clock} />
+              <WidgetHost>
+                <Clock preferences={clock} />
+              </WidgetHost>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">{t('settings.ui.previewOff')}</p>

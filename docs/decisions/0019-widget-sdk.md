@@ -11,8 +11,10 @@ The [widget inventory](../issue-159-widget-inventory.md) describes the previous 
 
 ## Decision
 
+The module and source-only UI boundaries in [ADR 0026](0026-widget-modules.md) extend this decision.
+
 `@homora/widgets` is an internal workspace package without dependencies on integrations, the
-backend server, or React. It declares localizations, schema versioning, validated configurations,
+backend server, or React in its compiled entries. It declares localizations, schema versioning, validated configurations,
 optional sources, states, and presentations for statistics and the clock. The clock is a local
 definition without a source or network access. Top-bar telemetry requires the `system-telemetry`
 version 1 contract. A source satisfies a requirement only when contract name and version match

@@ -94,13 +94,22 @@ it('exports portable clock configuration and rejects a stale import preview', as
     },
   };
   expect((await req('POST', '/api/page-widgets', countdown)).statusCode).toBe(201);
+  const note = {
+    pageId,
+    type: 'note',
+    name: 'Reminder',
+    connectionId: null,
+    config: { text: '**Hello**' },
+  };
+  expect((await req('POST', '/api/page-widgets', note)).statusCode).toBe(201);
   const content = (await req('GET', '/api/config/export?format=json')).body;
   expect(JSON.parse(content).widgets).toEqual([
     { page: 'Home', type: 'clock', name: 'UTC', config: widget.config },
     { page: 'Home', type: 'countdown', name: '', config: countdown.config },
+    { page: 'Home', type: 'note', name: 'Reminder', config: note.config },
   ]);
   const preview = (await req('POST', '/api/config/import/preview', { content })).json();
-  expect(preview.plan.summary.newWidgets).toBe(2);
+  expect(preview.plan.summary.newWidgets).toBe(3);
   await req('POST', '/api/page-widgets', { ...widget, name: 'Changed' });
   expect(
     (await req('POST', '/api/config/import/apply', { content, expectedVersion: preview.version }))
@@ -111,7 +120,7 @@ it('exports portable clock configuration and rejects a stale import preview', as
     (await req('POST', '/api/config/import/apply', { content, expectedVersion: next.version }))
       .statusCode,
   ).toBe(200);
-  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(5);
+  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(7);
   expect(
     (await req('GET', '/api/page-widgets'))
       .json()
@@ -234,5 +243,39 @@ it('persists, edits and transfers local notes, rejecting invalid configuration',
       .filter((row: { config: { text: string } }) => row.config.text === 'Edited'),
   ).toHaveLength(2);
   expect((await req('DELETE', `/api/page-widgets/${created.id}`)).statusCode).toBe(204);
+  await app.close();
+});
+
+it('reads existing version-one rows without rewriting their configurations', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'homora-widget-legacy-')), 'data.sqlite');
+  const { db } = createDatabase(path);
+  const sqlite = getSqliteHandle(db);
+  const { auth, cookie } = await createTestSession();
+  const app = createApp(db, 5173, auth, createVault(path));
+  const headers = { cookie, origin: 'http://localhost:5173' };
+  const page = (await app.inject({ method: 'GET', url: '/api/pages', headers })).json()[0].id;
+  const configs = [
+    ['clock', defaultClockConfig],
+    ['note', { text: 'old note' }],
+    [
+      'countdown',
+      {
+        eventName: 'Old event',
+        localDateTime: '2030-01-01T12:00',
+        timeZone: '',
+        pastBehavior: 'keep',
+      },
+    ],
+  ] as const;
+  const insert = sqlite.prepare(
+    'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position) VALUES(?,?,?, ?,1,NULL,?)',
+  );
+  configs.forEach(([type, config], index) =>
+    insert.run(page, type, '', JSON.stringify(config), index),
+  );
+  const result = (await app.inject({ method: 'GET', url: '/api/page-widgets', headers })).json();
+  expect(result.map((row: { type: string; config: unknown }) => [row.type, row.config])).toEqual(
+    configs,
+  );
   await app.close();
 });

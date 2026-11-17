@@ -9,6 +9,9 @@ export type WidgetDefinition<Config> = {
   version: number;
   locations: readonly WidgetLocation[];
   source: WidgetSource | null;
+  portable?: boolean;
+  defaultConfig?: Config;
+  sizes?: readonly string[];
   parseConfig(value: unknown): Config | null;
 };
 export type WidgetState<Data> =

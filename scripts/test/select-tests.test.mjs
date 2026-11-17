@@ -58,3 +58,10 @@ test('source-only UI changes select frontend tests', () => {
     selected.some((file) => file.startsWith('apps/frontend/') && /\.test\.tsx?$/.test(file)),
   );
 });
+
+test('widget source-only UI changes select frontend tests', () => {
+  const selected = select('packages/widgets/src/widgets/note/ui/view.tsx');
+  assert.ok(
+    selected.some((file) => file.startsWith('apps/frontend/') && /\.test\.tsx?$/.test(file)),
+  );
+});

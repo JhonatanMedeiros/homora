@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countdownRemaining, countdownTarget, countdownWidget } from './countdown.js';
+import { countdownRemaining, countdownTarget, countdownWidget } from './definition.js';
 
 const config = {
   eventName: 'Renewal',

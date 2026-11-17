@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { countdownRemaining, type CountdownConfig } from '@homora/widgets/countdown';
-import { useI18n } from '@/i18n';
+import { countdownRemaining, type CountdownConfig } from '../../../countdown.js';
+import { useWidgetHost } from '../../../ui/host.js';
 
 export function Countdown({ config }: { config: CountdownConfig }) {
-  const { locale } = useI18n();
+  const { locale } = useWidgetHost();
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     let timer: number;
@@ -52,3 +52,25 @@ export function Countdown({ config }: { config: CountdownConfig }) {
     </div>
   );
 }
+
+export { Editor } from './editor.js';
+
+import { countdownWidget, defaultCountdownConfig } from '../../../countdown.js';
+import { Editor } from './editor.js';
+import type { WidgetUI } from '../../../ui/types.js';
+export const widgetUI: WidgetUI = {
+  name: 'pageWidgets.countdown',
+  description: 'pageWidgets.countdownDesc',
+  defaultConfig: defaultCountdownConfig,
+  parse: countdownWidget.parseConfig,
+  View: ({ config }) => <Countdown config={config as CountdownConfig} />,
+  Editor: ({ config, onChange }) => (
+    <Editor config={config as CountdownConfig} onChange={onChange} />
+  ),
+  Gallery: () => '⌛',
+  canSubmit: (config) => Boolean((config as CountdownConfig).localDateTime),
+  isHidden: (config, now) => {
+    const parsed = countdownWidget.parseConfig(config);
+    return !!parsed && parsed.pastBehavior === 'hide' && countdownRemaining(parsed, now).past;
+  },
+};

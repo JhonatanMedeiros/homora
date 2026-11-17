@@ -1,5 +1,9 @@
 import { expect, it } from 'vitest';
-import { defaultClockPreferences, formatClock, isTimeZone } from './clock';
+import {
+  defaultClockConfig as defaultClockPreferences,
+  formatClock,
+  isTimeZone,
+} from '@homora/widgets/clock';
 
 const at = new Date('2026-03-04T15:07:09Z');
 

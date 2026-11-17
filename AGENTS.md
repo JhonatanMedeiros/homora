@@ -62,6 +62,11 @@ not necessarily the existing implementation.
 - Preserve data compatibility, least privilege and the restricted transport. Verify contract tests,
   `pnpm check` and `pnpm build`; describe live-service validation as pending unless actually performed.
 
+## Local widget modules
+
+- Keep local widget definitions, logic, messages and UI under `packages/widgets/src/widgets/<type>`. Use the registry and host context; do not add widget-specific branches to host routes, transfer, page layout, gallery or dialog. Follow [ADR 0026](docs/decisions/0026-widget-modules.md).
+- Compiled entries must not import React or `@homora/ui`; UI entries are source-only and use shared primitives. Preserve stored configurations, portable exports and translations. New sources, permissions and sizes require their own approved scope.
+
 ## Structure and Commands
 
 - `apps/frontend`: React, Vite, Tailwind v4, and shadcn/ui (use the `shadcn` skill and UI conventions in `docs/standards.md`); `apps/backend`: Fastify API, Proxmox, and MCP.

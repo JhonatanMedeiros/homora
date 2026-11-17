@@ -1,7 +1,4 @@
-import { countdownWidget } from '@homora/widgets/countdown';
-import { noteWidget } from '@homora/widgets/note';
-import { clockWidget } from '@homora/widgets/clock';
-import { integrationDefinition } from '@homora/integrations';
+import { resolveWidget } from '@homora/integrations';
 import { parse } from 'yaml';
 import { MAX_GROUP_COLUMNS } from '../group-limits.js';
 import {
@@ -213,20 +210,14 @@ export function parseTransfer(content: string): ParsedImport {
           return;
         }
         const page = normalizePageName(item.page)!;
-        if (item.type === 'clock' || item.type === 'countdown') {
-          const config = (item.type === 'clock' ? clockWidget : countdownWidget).parseConfig(
-            item.config,
-          );
-          if (config && item.source === undefined)
+        const definition = resolveWidget(item.type);
+        if (definition?.portable) {
+          const config = definition.parseConfig(item.config);
+          if (config !== null && item.source === undefined)
             document.widgets!.push({ page, type: item.type, name: item.name, config });
           else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
-        } else if (item.type === 'note') {
-          const config = noteWidget.parseConfig(item.config);
-          if (config && item.source === undefined)
-            document.widgets!.push({ page, type: 'note', name: item.name, config });
-          else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
         } else if (
-          integrationDefinition(item.type) &&
+          definition?.source &&
           isRecord(item.source) &&
           item.source.type === item.type &&
           typeof item.source.name === 'string' &&

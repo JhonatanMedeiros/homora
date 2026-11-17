@@ -1,3 +1,4 @@
+import { defaultWidget } from '@homora/widgets/registry';
 import { createServer } from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -242,9 +243,10 @@ export function seedDevelopmentFeatures(sqlite: DatabaseSync) {
     );
     widget.run(
       page,
-      'clock',
+      defaultWidget.type,
       'Clock',
       JSON.stringify({
+        ...defaultWidget.defaultConfig,
         hourFormat: '24h',
         timeZone: 'America/Sao_Paulo',
         seconds: false,

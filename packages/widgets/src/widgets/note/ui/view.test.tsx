@@ -1,16 +1,19 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { NoteContent } from './note-content';
+import { NoteContent } from './view.js';
+import { WidgetHostProvider } from '../../../ui/host.js';
 
 afterEach(cleanup);
 it('renders basic Markdown but never executes HTML or unsafe links', () => {
   const { container } = render(
-    <NoteContent
-      text={
-        '**Bold** and *italic*\n\n- one\n- two\n\n[good](https://example.com) [bad](javascript:alert(1))\n\n<img src=x onerror=alert(1)>'
-      }
-    />,
+    <WidgetHostProvider value={{ locale: 'en', t: (key) => key }}>
+      <NoteContent
+        text={
+          '**Bold** and *italic*\n\n- one\n- two\n\n[good](https://example.com) [bad](javascript:alert(1))\n\n<img src=x onerror=alert(1)>'
+        }
+      />
+    </WidgetHostProvider>,
   );
   expect(container.querySelector('strong')?.textContent).toBe('Bold');
   expect(container.querySelector('em')?.textContent).toBe('italic');
