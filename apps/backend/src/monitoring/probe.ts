@@ -134,7 +134,7 @@ export async function checkService(
       options.ca && allowPrivate && isPrivateDestination(address.address) ? options.ca : undefined;
     const insecureTls =
       options.insecureTls === true && allowPrivate && isPrivateDestination(address.address);
-    const hostname = target.hostname.replace(/^\[|\]$/g, '');
+    const hostname = target.hostname.replaceAll(/^\[|\]$/g, '');
     const certificate = privateCa
       ? await readCertificate(address.address, hostname, port, undefined, privateCa)
       : await readCertificate(address.address, hostname, port);
@@ -156,11 +156,12 @@ export async function checkService(
   }
   const startedAt = Date.now();
   const body = BODY_CHECK_TYPES.includes(type) && Boolean(match);
+  const httpLike = type === 'http' || BODY_CHECK_TYPES.includes(type);
   const response = await getAuthorizedResponse(url, policy, {
     timeoutMs: 8000,
     reportRedirect: true,
-    ...(type === 'http' && options.ca ? { privateCa: options.ca } : {}),
-    ...(type === 'http' && options.insecureTls ? { privateInsecureTls: true } : {}),
+    ...(httpLike && options.ca ? { privateCa: options.ca } : {}),
+    ...(httpLike && options.insecureTls ? { privateInsecureTls: true } : {}),
     ...(body ? { maxBodyBytes: CONTENT_CHECK_MAX_BYTES } : {}),
   });
   const result: CheckResult = { httpStatus: response.status, latencyMs: Date.now() - startedAt };

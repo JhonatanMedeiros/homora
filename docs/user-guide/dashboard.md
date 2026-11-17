@@ -59,9 +59,9 @@ acknowledging or muting an incident, and **Activity** stays available for auditi
 
 ## Pages, groups and cards
 
-- **Pages** are the tabs along the top, for example _Home_, _Media_ and _Lab_. Each shows how many of its services are
-  down. The `⋯` button on the selected tab renames, moves or deletes it (a page with groups or widgets asks where they
-  go first). Press `1` to `9` to switch pages. Manage pages in **Settings → Home and pages**: up to 12, with unique
+- **Pages** sit in the header along the top, for example _Home_, _Media_ and _Lab_. Each shows how many of its services are
+  down. The `⋯` button on the selected page renames, moves or deletes it (a page with groups or widgets asks where they
+  go first), and `+` creates a new page. When many pages overflow, arrows and a page menu appear beside them. Press `1` to `9` to switch pages. Manage pages in **Settings → Home and pages**: up to 12, with unique
   names.
 - **Groups** organize cards inside a page. Choose one in the **Groups** list to filter to it. Each group has 1 to 6
   columns, so a short group can use two wide columns while a long one uses six.
@@ -212,8 +212,7 @@ the numbers are calculated.
 
 ## On a phone
 
-The layout collapses to one column and the header keeps a single row. The Home has no bottom bar: search,
-notifications and the theme are in the header, and **Manage** is in the avatar menu. In the management area, a
+The layout collapses to one column, with the search bar and scrollable page pills stacked cleanly under the top header row. The Home has no bottom bar: notifications are in the header, **Manage** is in the avatar menu, and theme and language live in **Manage → Settings**. In the management area, a
 floating bottom bar shows icons (only the current item shows its name) and **More**, which opens a sheet with the rest
 and a way back to the dashboard.
 

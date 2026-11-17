@@ -11,19 +11,28 @@ export const agentIdentities = sqliteTable('agent_identities', {
   createdAt: integer('created_at').notNull(),
 });
 
-export const serviceProposals = sqliteTable('service_proposals', {
-  id: text('id').primaryKey(),
-  authorId: text('author_id').notNull(),
-  diff: text('diff').notNull(),
-  baseHash: text('base_hash').notNull(),
-  baseVersion: integer('base_version').notNull(),
-  expiresAt: integer('expires_at').notNull(),
-  state: text('state').notNull(),
-  createdAt: integer('created_at').notNull(),
-  reviewedAt: integer('reviewed_at'),
-  reviewer: text('reviewer'),
-  batchId: text('batch_id'),
-});
+export const serviceProposals = sqliteTable(
+  'service_proposals',
+  {
+    id: text('id').primaryKey(),
+    authorId: text('author_id').notNull(),
+    diff: text('diff').notNull(),
+    baseHash: text('base_hash').notNull(),
+    baseVersion: integer('base_version').notNull(),
+    expiresAt: integer('expires_at').notNull(),
+    state: text('state').notNull(),
+    createdAt: integer('created_at').notNull(),
+    reviewedAt: integer('reviewed_at'),
+    reviewer: text('reviewer'),
+    batchId: text('batch_id'),
+  },
+  (table) => [
+    index('service_proposals_state_expires_idx').on(table.state, table.expiresAt),
+    index('service_proposals_batch_idx').on(table.batchId),
+    index('service_proposals_author_idx').on(table.authorId),
+    index('service_proposals_created_idx').on(table.createdAt),
+  ],
+);
 
 export const configVersion = sqliteTable('config_version', {
   id: integer('id').primaryKey(),
@@ -43,7 +52,10 @@ export const auditEvents = sqliteTable(
     detail: text('detail'),
     ipAddress: text('ip_address'),
   },
-  (table) => [index('audit_events_created_idx').on(table.createdAt)],
+  (table) => [
+    index('audit_events_created_idx').on(table.createdAt),
+    index('audit_events_proposal_action_idx').on(table.proposalId, table.action, table.createdAt),
+  ],
 );
 
 // Remote Docker discovery identities and their last accepted inventory. Tokens are

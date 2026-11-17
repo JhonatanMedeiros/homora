@@ -55,14 +55,16 @@ export function createProposalQueries({
       baseVersion: number;
       batchId: string | null;
     }[];
+    const nonPendingBatches = new Set<string>();
+    for (const row of rows) {
+      if (row.batchId && row.state !== 'pending') nonPendingBatches.add(row.batchId);
+    }
     return rows.map((proposal) => {
       if (proposal.state !== 'pending') return proposal;
       const decoded = JSON.parse(proposal.diff) as Record<string, unknown>;
       if (decoded.kind === 'agent') return proposal;
       const managed = decoded.kind === 'managed' ? managedChangeSchema.parse(decoded.change) : null;
-      const incomplete =
-        proposal.batchId &&
-        rows.some((other) => other.batchId === proposal.batchId && other.state !== 'pending');
+      const incomplete = Boolean(proposal.batchId && nonPendingBatches.has(proposal.batchId));
       const stale =
         incomplete ||
         (proposal.baseVersion !== configuration.version() &&

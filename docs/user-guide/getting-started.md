@@ -60,16 +60,16 @@ and opens a **Details** panel with the recent checks.
 
 ![The Homora dashboard](../screenshots/dashboard-dark.png)
 
-| Where                     | What it is                                                                             |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| **Dashboard** (`/`)       | Your cards, grouped and organized in pages. The banner at the top summarizes health.   |
-| **Search** (`Ctrl K`)     | Jump to any card, filter by status or group, and reach any settings page.              |
-| **Organize** (Dashboard)  | Add, edit, organize and delete cards and groups, right on the Home.                    |
-| **Manage → Integrations** | Connect Proxmox and other tools, attach widgets to cards, and set up Docker discovery. |
-| **Manage → Agents**       | Create AI agent identities and review their proposals.                                 |
-| **Manage → Activity**     | A log of sign-ins, proposals, approvals and settings changes.                          |
-| **Manage → Settings**     | Appearance, pages, top bar, alerts, the public status page, and export or import.      |
-| **Account** (avatar menu) | Password, two-step verification and passkeys.                                          |
+| Where                     | What it is                                                                                   |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| **Dashboard** (`/`)       | Your cards, grouped and organized in pages. The status pill in the header summarizes health. |
+| **Search** (`Ctrl K`)     | Jump to any card, filter by status or group, and reach any settings page.                    |
+| **Organize** (Dashboard)  | Add, edit, organize and delete cards and groups, right on the Home.                          |
+| **Manage → Integrations** | Connect Proxmox and other tools, attach widgets to cards, and set up Docker discovery.       |
+| **Manage → Agents**       | Create AI agent identities and review their proposals.                                       |
+| **Manage → Activity**     | A log of sign-ins, proposals, approvals and settings changes.                                |
+| **Manage → Settings**     | Appearance, pages, top bar, alerts, the public status page, and export or import.            |
+| **Account** (avatar menu) | Password, two-step verification and passkeys.                                                |
 
 The avatar menu links to the repository and to **What's new**, where you can read release notes and see whether a newer stable version is available. Source builds without a release tag do not claim to be up to date. The server checks GitHub when you sign in and every six hours; GitHub sees only the server's public IP address, and Homora keeps working if the check fails.
 

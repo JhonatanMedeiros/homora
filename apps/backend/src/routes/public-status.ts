@@ -3,7 +3,7 @@ import rateLimit from '@fastify/rate-limit';
 import type { createAuth } from '../auth.js';
 import type { AuditLog } from '../audit.js';
 import type { createPublicStatus } from '../public-status.js';
-import { errorBody } from '../api-error.js';
+import { errorBody, sendSanitizedError } from '../api-error.js';
 import { parseId, publicStatusSettingsSchema, servicePublicSchema } from '../input-schemas.js';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -27,10 +27,10 @@ export function registerPublicStatusRoutes(
       errorResponseBuilder: () =>
         Object.assign(new Error('Too many requests.'), { statusCode: 429 }),
     });
-    scope.setErrorHandler((error, _request, reply) => {
+    scope.setErrorHandler((error, request, reply) => {
       if ((error as { statusCode?: number }).statusCode === 429)
         return reply.code(429).header('Retry-After', '60').send(errorBody('too-many-requests'));
-      return reply.send(error);
+      return sendSanitizedError(error, request, reply);
     });
     scope.get(PUBLIC_STATUS_PATH, async (_request, reply) => {
       const body = publicStatus.snapshot();

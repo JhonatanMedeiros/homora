@@ -1,3 +1,4 @@
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { legacyApiErrorMessages } from '@homora/integrations';
 
 /**
@@ -136,4 +137,32 @@ export class InputError extends Error {
     this.code = code;
     this.name = 'InputError';
   }
+}
+
+/**
+ * Shared Fastify error handler: logs and sanitizes 500+ errors to `internal-error`
+ * so route-level or encapsulated error handlers never leak internal details.
+ */
+export function sendSanitizedError(error: unknown, request: FastifyRequest, reply: FastifyReply) {
+  const status =
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    typeof error.statusCode === 'number'
+      ? error.statusCode
+      : 500;
+  if (status >= 500) {
+    // The client only learns `internal-error`; the original error stays in the log.
+    request.log.error(
+      {
+        err: error,
+        method: request.method,
+        url: request.url.split('?')[0],
+        route: request.routeOptions.url ?? null,
+      },
+      'request failed',
+    );
+    return reply.code(status).send(errorBody('internal-error'));
+  }
+  return reply.send(error);
 }
