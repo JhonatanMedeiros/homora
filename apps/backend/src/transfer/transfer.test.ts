@@ -353,3 +353,22 @@ it('rejects invalid or oversized notes during import', () => {
     parsed.issues.filter((issue) => issue.code === 'widget-invalid').map((issue) => issue.path),
   ).toEqual(['widgets[0]', 'widgets[1]', 'widgets[2]']);
 });
+
+it('preserves portable quick links and rejects unsafe imported links', () => {
+  const config = { title: 'Useful', links: [{ label: 'Example', url: 'https://example.test' }] };
+  const text = serializeConfiguration([], [], 'json', {
+    pages: ['Home'],
+    widgets: [{ page: 'Home', type: 'quick-links', name: 'Links', config, size: 'wide' }],
+  });
+  const parsed = parseTransfer(text);
+  expect(parsed.issues).toEqual([]);
+  expect(parsed.document.widgets?.[0]).toMatchObject({ type: 'quick-links', config, size: 'wide' });
+  expect(planImport(parsed, { groups: [], services: [], pages: ['Home'] }).widgets[0]?.status).toBe(
+    'new',
+  );
+  const invalid = parseTransfer(text.replace('https://example.test', 'javascript:alert(1)'));
+  expect(invalid.document.widgets).toEqual([]);
+  expect(invalid.issues).toEqual(
+    expect.arrayContaining([expect.objectContaining({ code: 'widget-invalid' })]),
+  );
+});

@@ -76,6 +76,15 @@ test('restores database (with its administrator account), key and integration to
         "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position) VALUES((SELECT id FROM pages ORDER BY id LIMIT 1),'note','Runbook',?,1,NULL,0)",
       )
       .run(JSON.stringify({ text: '**Restart** safely' }));
+    const quickLinks = {
+      title: 'Useful',
+      links: [{ label: 'Example', url: 'https://example.test' }],
+    };
+    sourceDb
+      .prepare(
+        "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position,size) VALUES((SELECT id FROM pages ORDER BY id LIMIT 1),'quick-links','Links',?,1,NULL,1,'wide')",
+      )
+      .run(JSON.stringify(quickLinks));
     sourceDb.close();
     const runBackup = (from, to) => {
       const result = spawnSync(process.execPath, ['scripts/backup.mjs', from, to], {
@@ -90,6 +99,14 @@ test('restores database (with its administrator account), key and integration to
     const restoredDb = new DatabaseSync(restored, { readOnly: true });
     try {
       assert.equal(restoredDb.prepare('SELECT name FROM service_cards').get().name, 'test');
+      assert.deepEqual(
+        {
+          ...restoredDb
+            .prepare("SELECT config, version, size FROM page_widgets WHERE type='quick-links'")
+            .get(),
+        },
+        { config: JSON.stringify(quickLinks), version: 1, size: 'wide' },
+      );
       assert.deepEqual(
         { ...restoredDb.prepare("SELECT name, config FROM page_widgets WHERE type='note'").get() },
         { name: 'Runbook', config: JSON.stringify({ text: '**Restart** safely' }) },
