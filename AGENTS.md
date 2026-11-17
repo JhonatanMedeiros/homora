@@ -67,6 +67,7 @@ not necessarily the existing implementation.
 Before creating or changing a widget, read [the widget creation guide](docs/create-widget.md), [the catalog](docs/widget-catalog.md), [ADR 0019](docs/decisions/0019-widget-sdk.md) and [ADR 0026](docs/decisions/0026-widget-modules.md). Use `pnpm widget:create <type>` for new modules and validate the generated registration and boundaries.
 
 - Keep local widget definitions, logic, messages and UI under `packages/widgets/src/widgets/<type>`. Use the registry and host context; do not add widget-specific branches to host routes, transfer, page layout, gallery or dialog. Follow [ADR 0026](docs/decisions/0026-widget-modules.md).
+- For external-source widgets, implement `WidgetSourceReader` in `source.ts` (registered in `packages/widgets/src/source-registry.ts`) and read it from `ui/` via `useWidgetHost().readSource(contract, params, signal)` instead of adding widget-specific routes or `WidgetHost` methods. Keep widget-specific unit/UI/source tests inside `packages/widgets/src/widgets/<type>/`; keep backend tests focused on generic host behavior, `network-policy.ts` enforcement, and persistence/transfer.
 - Compiled entries must not import React or `@homora/ui`; UI entries are source-only and use shared primitives. Preserve stored configurations, portable exports and translations. New sources, permissions and sizes require their own approved scope.
 
 ## Structure and Commands

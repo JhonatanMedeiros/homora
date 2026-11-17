@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import {
-  getWidgetSource,
   SourceInvalidQueryError,
   SourceParseError,
   SourcePolicyBlockedError,
@@ -8,6 +7,7 @@ import {
   type WidgetSourceContext,
   type WidgetSourceReader,
 } from '@homora/widgets';
+import { getWidgetSource } from '@homora/widgets/source-registry';
 import { errorBody } from '../api-error.js';
 import { getAuthorizedResponse, type RequestOptions } from '../network-request.js';
 import type { DestinationPolicy } from '../network-policy.js';

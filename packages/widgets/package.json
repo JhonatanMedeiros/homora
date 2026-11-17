@@ -28,6 +28,10 @@
       "types": "./dist/registry.d.ts",
       "default": "./dist/registry.js"
     },
+    "./source-registry": {
+      "types": "./dist/source-registry.d.ts",
+      "default": "./dist/source-registry.js"
+    },
     "./clock/ui": "./src/widgets/clock/ui/index.tsx",
     "./countdown/ui": "./src/widgets/countdown/ui/index.tsx",
     "./note/ui": "./src/widgets/note/ui/index.tsx",

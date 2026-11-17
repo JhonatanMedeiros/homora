@@ -118,4 +118,3 @@ export {
   type WidgetSourceContext,
   type WidgetSourceReader,
 } from './source.js';
-export { getWidgetSource, listWidgetSources } from './source-registry.js';
