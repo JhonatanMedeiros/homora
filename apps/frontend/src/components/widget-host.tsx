@@ -1,6 +1,11 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { WidgetHostProvider, type WidgetHost as Host } from '@homora/widgets/ui';
+import {
+  WidgetHostProvider,
+  type WidgetHost as Host,
+  type MonitoringQuery,
+} from '@homora/widgets/ui';
 import { tOr, useI18n } from '@/i18n';
+import type { MonitoringIncidents } from '@homora/widgets';
 
 async function getJson(path: string, signal: AbortSignal) {
   const response = await fetch(path, { signal });
@@ -21,10 +26,29 @@ async function readScopes(signal: AbortSignal) {
   return { groups, pages };
 }
 
+export async function readIncidents(
+  options: MonitoringQuery,
+  signal: AbortSignal,
+): Promise<MonitoringIncidents> {
+  const query = new URLSearchParams({
+    days: String(options.days),
+    limit: String(options.limit),
+    minimumMinutes: String(options.minimumMinutes),
+  });
+  if (options.groups.length > 0) query.set('groups', JSON.stringify(options.groups));
+  if (options.pages.length > 0) query.set('pages', JSON.stringify(options.pages));
+  return getJson(`/api/widget-sources/monitoring/incidents?${query}`, signal);
+}
+
 type FilterStatus = NonNullable<NonNullable<Host['monitoring']>['filterStatus']>;
 export const WidgetStatusFilterContext = createContext<FilterStatus | undefined>(undefined);
 
-export function WidgetHost({ children }: { children: ReactNode }) {
+export function WidgetHost({
+  children,
+  ...options
+}: { children: ReactNode } & Partial<
+  Pick<Host, 'openMonitor' | 'groups' | 'pages' | 'wide' | 'incidentReading'>
+>) {
   const { locale } = useI18n();
   const filterStatus = useContext(WidgetStatusFilterContext);
   return (
@@ -32,6 +56,7 @@ export function WidgetHost({ children }: { children: ReactNode }) {
       value={{
         locale,
         t: (key, params) => tOr(key, key, params),
+        ...options,
         monitoring: {
           readSummary,
           readScopes,

@@ -90,7 +90,7 @@ Page widgets live on a dashboard page, above your groups.
 5. Save.
 
 Each widget has a **⋯** menu to edit it (the type cannot change), move it, or remove it after confirmation. On a touch
-screen the menu is always visible, and you can drag widgets to reorder them. Exports include **clocks and notes**; connected
+screen the menu is always visible, and you can drag widgets to reorder them. Exports include local and internal monitoring widgets; connected
 widgets appear as skipped in the import preview and must be recreated with a connection you choose.
 
 ## The top bar
@@ -120,3 +120,9 @@ When a clock change makes the entered time ambiguous, the first occurrence is us
 Add a **Calendar** page widget to see the current month without a connection. Choose the first day of the week or **Automatic**, which follows the interface locale, and choose an IANA time zone or the browser time zone. Navigate between months and use **Today** to return. The displayed month is temporary; reloading returns to the current month. The date updates at midnight while visible and when returning to a hidden tab. Week numbers and events are not shown. The calendar supports normal and wide sizes; its configuration is included in exports and imports.
 
 Add **Homelab summary** to see current counts for online, degraded, offline, maintenance and not measured monitors. It uses Homora's internal monitoring and does not need a connection. Choose groups and pages to restrict the summary; leaving a selection empty includes all. Standalone probes are included when no groups or pages are selected. You can hide the not measured row; its count still contributes to the total and the bar. Select a state to filter Home. Outside Home the counts are informational. A stale or failed reading is identified in the widget. Group and page selections use names, so a name absent after import matches nothing.
+
+### Recent incidents
+
+Add **Recent incidents** to see monitoring outages, newest first, with ongoing incidents first. Choose 24 hours, 7 days or 30 days, up to 10 entries (5 by default), an optional minimum duration and optional page and group filters. Selecting both filters requires a match in both; select none to include all, including standalone probes. Clicking a service opens its drawer; a standalone probe opens the probes page. The wide size includes the monitor's short failure reason; the rail and small screens use the normal presentation. Each incident is a separate row, even when several belong to one service. Dates use the browser's time zone.
+
+The period includes incidents that overlap it, including an older ongoing incident. Incident rows currently have no automatic age pruning, but monitoring may not have existed for the entire selected period. Data refreshes every minute; a failed refresh retains the last result marked as outdated. Filters use names so they survive export and import; after renaming or removing a page or group, edit the widget's filters. This widget and its configuration are portable and do not need a connection.

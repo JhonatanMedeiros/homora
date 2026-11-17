@@ -85,3 +85,40 @@ it('round trips the homelab summary without a connection', () => {
   a.close();
   b.close();
 });
+
+it('round trips a recent incidents widget with portable filters and no connection', () => {
+  const first = createDatabase(':memory:');
+  const second = createDatabase(':memory:');
+  const a = getSqliteHandle(first.db);
+  const b = getSqliteHandle(second.db);
+  const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
+  const config = {
+    periodDays: 30,
+    limit: 10,
+    groups: ['Infra'],
+    pages: ['Home'],
+    minimumMinutes: 5,
+  };
+  a.prepare(
+    'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,NULL,?,0)',
+  ).run(page, 'recent-incidents', 'Outages', JSON.stringify(config), 'wide');
+  const data = createServiceConfiguration(a).exportData();
+  const text = serializeConfiguration(data.groups, data.services, 'json', {
+    pages: data.pages,
+    widgets: data.widgets,
+  });
+  const target = createServiceConfiguration(b);
+  const parsed = parseTransfer(text);
+  expect(target.previewImport(parsed).plan.widgets[0].status).toBe('new');
+  expect(target.applyImport(parsed, { keepPrivate: false })).toMatchObject({
+    status: 'applied',
+    widgetsCreated: 1,
+  });
+  const row = b
+    .prepare('SELECT type, config, connection_id AS connectionId, size FROM page_widgets')
+    .get() as { type: string; config: string; connectionId: null; size: string };
+  expect(row).toMatchObject({ type: 'recent-incidents', connectionId: null, size: 'wide' });
+  expect(JSON.parse(row.config)).toEqual(config);
+  a.close();
+  b.close();
+});

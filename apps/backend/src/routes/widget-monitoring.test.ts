@@ -26,10 +26,11 @@ it('returns bounded, validated data and isolates failures between readers', asyn
   const db = new DatabaseSync(':memory:');
   db.exec(`CREATE TABLE monitors(id INTEGER PRIMARY KEY, name TEXT);
     CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER);
-    CREATE TABLE service_incidents(id INTEGER PRIMARY KEY, service_id INTEGER, started_at INTEGER, ended_at INTEGER);
+    CREATE TABLE service_incidents(id INTEGER PRIMARY KEY, service_id INTEGER, started_at INTEGER, ended_at INTEGER, reason TEXT, http_status INTEGER);
+    CREATE TABLE services(id INTEGER, category TEXT); CREATE TABLE service_groups(id INTEGER, name TEXT, page_id INTEGER); CREATE TABLE pages(id INTEGER, name TEXT);
     INSERT INTO monitors VALUES (1,'A'),(2,'B');
     INSERT INTO service_monitor_settings VALUES (2,100);`);
-  db.prepare('INSERT INTO service_incidents VALUES(1,1,?,NULL)').run(now - 5000);
+  db.prepare("INSERT INTO service_incidents VALUES(1,1,?,NULL,'no-response',NULL)").run(now - 5000);
   const rows = [
     { id: 1, name: 'A', url: 'https://example.test', allowPrivate: false, checkInterval: 60 },
     { id: 2, name: 'B', url: 'https://example.test', allowPrivate: false, checkInterval: 60 },
@@ -89,7 +90,7 @@ it('returns bounded, validated data and isolates failures between readers', asyn
 it('returns explicit empty responses', async () => {
   const db = new DatabaseSync(':memory:');
   db.exec(
-    'CREATE TABLE monitors(id INTEGER PRIMARY KEY, name TEXT); CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER); CREATE TABLE service_incidents(id INTEGER, service_id INTEGER, started_at INTEGER, ended_at INTEGER);',
+    'CREATE TABLE monitors(id INTEGER PRIMARY KEY, name TEXT); CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER); CREATE TABLE service_incidents(id INTEGER, service_id INTEGER, started_at INTEGER, ended_at INTEGER, reason TEXT, http_status INTEGER); CREATE TABLE services(id INTEGER, category TEXT); CREATE TABLE service_groups(id INTEGER, name TEXT, page_id INTEGER); CREATE TABLE pages(id INTEGER, name TEXT);',
   );
   const app = Fastify();
   registerWidgetMonitoringRoutes(
@@ -151,6 +152,64 @@ it('scopes summary to selected groups and pages without changing the default', a
   expect((await app.inject('/api/widget-sources/monitoring/problems?groups=10')).statusCode).toBe(
     400,
   );
+  await app.close();
+  db.close();
+});
+
+it('filters before limiting, keeps long open incidents, and exposes only safe reason vocabulary', async () => {
+  const now = Date.now();
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE monitors(id INTEGER PRIMARY KEY, name TEXT);
+    CREATE TABLE services(id INTEGER, category TEXT);
+    CREATE TABLE service_groups(id INTEGER, name TEXT, page_id INTEGER);
+    CREATE TABLE pages(id INTEGER, name TEXT);
+    CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER);
+    CREATE TABLE service_incidents(id INTEGER, service_id INTEGER, started_at INTEGER, ended_at INTEGER, reason TEXT, http_status INTEGER);
+    INSERT INTO monitors VALUES (1,'A'),(2,'B'),(3,'Probe');
+    INSERT INTO services VALUES (1,'Infra'),(2,'Other');
+    INSERT INTO service_groups VALUES (1,'Infra',1),(2,'Other',2);
+    INSERT INTO pages VALUES (1,'Home'),(2,'Lab');`);
+  const insert = db.prepare('INSERT INTO service_incidents VALUES(?,?,?,?,?,?)');
+  insert.run(1, 1, now - 40 * 86_400_000, null, 'no-response', null);
+  insert.run(2, 1, now - 300_000, now - 60_000, 'error-status', 503);
+  insert.run(3, 2, now - 100_000, now - 60_000, 'secret response body', 999);
+  insert.run(4, 3, now - 200_000, null, 'secret response body', null);
+  const app = Fastify();
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => [] } as never,
+    { snapshot: () => ({}) } as never,
+    { open: () => ({}) } as never,
+    { current: () => null },
+  );
+  const all = (await app.inject('/api/widget-sources/monitoring/incidents?days=1&limit=2')).json();
+  expect(all.items.map((item: { id: number }) => item.id)).toEqual([4, 1]);
+  expect(all.items[0]).toMatchObject({ reason: 'other', hasService: false, httpStatus: null });
+  expect(all.truncated).toBe(true);
+  expect(JSON.stringify(all)).not.toContain('secret response body');
+  const filtered = (
+    await app.inject(
+      `/api/widget-sources/monitoring/incidents?days=1&limit=2&minimumMinutes=2&groups=${encodeURIComponent(JSON.stringify(['Infra']))}&pages=${encodeURIComponent(JSON.stringify(['Home']))}`,
+    )
+  ).json();
+  expect(filtered.items.map((item: { id: number }) => item.id)).toEqual([1, 2]);
+  expect(filtered.items[1]).toMatchObject({
+    reason: 'error-status',
+    httpStatus: 503,
+    hasService: true,
+  });
+  expect(filtered.truncated).toBe(false);
+  for (const query of [
+    'days=31',
+    'limit=51',
+    'minimumMinutes=43201',
+    'groups=garbage',
+    'pages=%5B%221%22%2C%221%22%5D',
+  ])
+    expect((await app.inject(`/api/widget-sources/monitoring/incidents?${query}`)).statusCode).toBe(
+      400,
+    );
   await app.close();
   db.close();
 });

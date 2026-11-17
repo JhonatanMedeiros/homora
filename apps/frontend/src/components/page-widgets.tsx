@@ -36,10 +36,12 @@ type Props = {
   pages: PageRow[];
   /** `rail` stacks the widgets in a narrow column beside the services; `strip` spreads them above. */
   layout?: 'strip' | 'rail';
+  groups?: { name: string; pageId: number | null }[];
+  openMonitor?: (id: number, hasService: boolean) => void;
 };
 
 /** Widgets of a page. Plain information by default; the controls appear in the card menu and organize mode. */
-export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
+export function PageWidgets({ pageId, pages, layout = 'strip', groups = [], openMonitor }: Props) {
   const [showHidden, setShowHidden] = useState(false);
   const [visibilityNow, setVisibilityNow] = useState(() => new Date());
   const { widgets, connections, readings, error, busy, loading, change, reorder } =
@@ -136,6 +138,8 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
                 pages,
                 fullPages,
                 layout,
+                groups,
+                openMonitor,
                 showHidden,
                 visibilityNow,
                 dragId,
@@ -216,6 +220,7 @@ export function PageWidgets({ pageId, pages, layout = 'strip' }: Props) {
         </AlertDialogContent>
       </AlertDialog>
       <PageWidgetDialog
+        groups={groups}
         draft={draft}
         chosen={chosen}
         connections={connections}

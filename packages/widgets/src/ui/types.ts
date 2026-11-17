@@ -1,9 +1,11 @@
 import type { ComponentType } from 'react';
+import type { MonitoringQuery } from './host.js';
 export type WidgetUI = {
   name: string;
   description: string;
   defaultConfig: unknown;
   parse: (config: unknown) => unknown | null;
+  monitoringQuery?: (config: unknown) => MonitoringQuery;
   View: ComponentType<{ config: unknown }>;
   Editor: ComponentType<{ config: unknown; onChange: (config: unknown) => void }>;
   Gallery: ComponentType;

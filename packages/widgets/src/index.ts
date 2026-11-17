@@ -67,7 +67,7 @@ export function definePresenter<Input, Output>(
 }
 
 import { isInternalSource } from './monitoring.js';
-export { isInternalSource, monitoringSources } from './monitoring.js';
+export { isInternalSource, monitoringSources, monitoringIncidentReasons } from './monitoring.js';
 
 /** Internal sources are supplied by every host and need no connection binding. */
 export function isPortableWidget(definition: WidgetDefinition<unknown> | undefined): boolean {
@@ -82,5 +82,6 @@ export type {
   MonitoringProblem,
   MonitoringProblems,
   MonitoringIncident,
+  MonitoringIncidentReason,
   MonitoringIncidents,
 } from './monitoring.js';
