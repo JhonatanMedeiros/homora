@@ -85,6 +85,12 @@ test('restores database (with its administrator account), key and integration to
         "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position,size) VALUES((SELECT id FROM pages ORDER BY id LIMIT 1),'quick-links','Links',?,1,NULL,1,'wide')",
       )
       .run(JSON.stringify(quickLinks));
+    const maintenance = { days: 7, limit: 5, groups: ['Infra'], pages: ['Home'] };
+    sourceDb
+      .prepare(
+        "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position,size) VALUES((SELECT id FROM pages ORDER BY id LIMIT 1),'maintenance-schedule','Maintenance',?,1,NULL,2,'wide')",
+      )
+      .run(JSON.stringify(maintenance));
     sourceDb.close();
     const runBackup = (from, to) => {
       const result = spawnSync(process.execPath, ['scripts/backup.mjs', from, to], {
@@ -99,6 +105,16 @@ test('restores database (with its administrator account), key and integration to
     const restoredDb = new DatabaseSync(restored, { readOnly: true });
     try {
       assert.equal(restoredDb.prepare('SELECT name FROM service_cards').get().name, 'test');
+      assert.deepEqual(
+        {
+          ...restoredDb
+            .prepare(
+              "SELECT config,version,size FROM page_widgets WHERE type='maintenance-schedule'",
+            )
+            .get(),
+        },
+        { config: JSON.stringify(maintenance), version: 1, size: 'wide' },
+      );
       assert.deepEqual(
         {
           ...restoredDb

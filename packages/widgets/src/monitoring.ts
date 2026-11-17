@@ -8,6 +8,7 @@ export const monitoringSources = {
   incidents: { contract: 'homora:monitoring-incidents', version: 1 },
   availability: { contract: 'homora:monitoring-availability', version: 1 },
   certificates: { contract: 'homora:monitoring-certificates', version: 1 },
+  maintenance: { contract: 'homora:monitoring-maintenance', version: 1 },
 } as const satisfies Record<string, WidgetSource>;
 
 export function isInternalSource(source: WidgetSource | null): boolean {
@@ -128,4 +129,18 @@ export type MonitoringCertificates = {
   items: MonitoringCertificate[];
   total: number;
   missingFilter: boolean;
+};
+
+/** A maintenance window projected without notes or addresses. */
+export type MonitoringMaintenance = {
+  generatedAt: number;
+  items: {
+    id: number;
+    monitorId: number;
+    name: string;
+    startsAt: number;
+    endsAt: number;
+    hasService: boolean;
+  }[];
+  total: number;
 };

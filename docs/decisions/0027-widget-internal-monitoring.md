@@ -40,3 +40,11 @@ A typed host callback opens a card's existing ServiceDrawer or the probe managem
 ## Certificate expiry source (#302)
 
 The version 1 certificate source reads retained TLS observations for service cards, scoped by portable page and group names. A missing selected name prevents matches. It exposes only names, IDs, derived state and expiry/observation times. It uses the current monitor signature, including trust, and never initiates a check. The presentation threshold is independent of monitor policy. A prior or aged observation is marked stale; retention limits historical lookup to 30 days. The existing per-query bounded cache and session authentication apply.
+
+## MON-06: maintenance schedule (#301)
+
+`homora:monitoring-maintenance` version 1 reads existing maintenance without notes, URLs or network access. A window matches when `ends_at > now` and `starts_at < now + horizon`; the upper horizon is exclusive. It is ongoing when `starts_at <= now < ends_at`, matching the store's active rule. The source counts after filtering, sorts active first and then by start and ID, and returns at most the configured 1–10 rows (default 5). The horizons are exactly 24 hours, 7 days and 30 days. The source does not cache responses, so transitions and deletions are reflected on the next request.
+
+The maintenance store accepts monitor IDs, so standalone probes can have windows, including through the maintenance API. Unfiltered results include them and the generic host action opens probe management, not a fabricated service. Page and group filters intersect and exclude probes with no card. Page association follows the existing first-page fallback for unassigned groups. Names make configuration portable: missing or renamed selections match nothing until edited; a later scope with the same name matches again. Deleted monitors are excluded by the join.
+
+Each instance refreshes at the next displayed boundary or within 60 seconds, and retains the last successful reading with an outdated warning on failure. The browser formats dates in its identified time zone. A stale reading describes the state at its generation time; it is not presented as a current measurement. No transfer format or database migration was needed.

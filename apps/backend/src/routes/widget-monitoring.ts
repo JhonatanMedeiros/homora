@@ -14,6 +14,7 @@ import {
   type MonitoringSummary,
   type MonitoringProblems,
   type MonitoringIncidents,
+  type MonitoringMaintenance,
 } from '@homora/widgets';
 import {
   certificateReading,
@@ -108,6 +109,26 @@ const incidentsSchema: z.ZodType<MonitoringIncidents> = z
     truncated: z.boolean(),
   })
   .strict();
+const maintenanceSchema: z.ZodType<MonitoringMaintenance> = z
+  .object({
+    generatedAt: timestamp,
+    total: z.number().int().nonnegative(),
+    items: z
+      .array(
+        z
+          .object({
+            id: z.number().int().positive(),
+            monitorId: z.number().int().positive(),
+            name: z.string().max(200),
+            startsAt: timestamp,
+            endsAt: timestamp,
+            hasService: z.boolean(),
+          })
+          .strict(),
+      )
+      .max(50),
+  })
+  .strict();
 const availabilitySchema: z.ZodType<MonitoringAvailability> = z
   .object({
     generatedAt: timestamp,
@@ -197,8 +218,9 @@ export function registerWidgetMonitoringRoutes(
         return reply.code(404).send(errorBody('not-found'));
       const query = querySchema.safeParse(request.query);
       if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
-      const { limit, days, groups, pages, minimumMinutes, includeDegraded, target, range } =
-        query.data;
+      const { days, groups, pages, minimumMinutes, includeDegraded, target, range } = query.data;
+      const limit =
+        kind === 'maintenance' && request.query.limit === undefined ? 5 : query.data.limit;
       const parseNames = (value: string | undefined): string[] | null => {
         if (!value) return [];
         try {
@@ -221,8 +243,9 @@ export function registerWidgetMonitoringRoutes(
           return null;
         }
       };
-      const groupNames = kind === 'incidents' || kind === 'certificates' ? parseNames(groups) : [];
-      const pageNames = kind === 'incidents' || kind === 'certificates' ? parseNames(pages) : [];
+      const namedScope = kind === 'incidents' || kind === 'maintenance' || kind === 'certificates';
+      const groupNames = namedScope ? parseNames(groups) : [];
+      const pageNames = namedScope ? parseNames(pages) : [];
       if (!groupNames || !pageNames) return reply.code(400).send(errorBody('invalid-query'));
       if (
         (kind === 'summary' || kind === 'problems') &&
@@ -263,7 +286,7 @@ export function registerWidgetMonitoringRoutes(
           : []),
       ]);
       const cached = cache.get(key);
-      if (cached && now - cached.at < 10_000) return cached.value;
+      if (kind !== 'maintenance' && cached && now - cached.at < 10_000) return cached.value;
       let value: unknown;
       switch (kind) {
         case 'certificates': {
@@ -388,6 +411,39 @@ export function registerWidgetMonitoringRoutes(
           } else {
             value = availabilitySchema.parse({ generatedAt: now, range, target: null });
           }
+          break;
+        }
+        case 'maintenance': {
+          if (![1, 7, 30].includes(days) || limit > 10 || minimumMinutes)
+            return reply.code(400).send(errorBody('invalid-query'));
+          const groupFilter =
+            groupNames.length > 0 ? `AND g.name IN (${groupNames.map(() => '?').join(',')})` : '';
+          const pageFilter =
+            pageNames.length > 0 ? `AND p.name IN (${pageNames.map(() => '?').join(',')})` : '';
+          const where = `FROM service_maintenance w JOIN monitors m ON m.id=w.service_id
+            LEFT JOIN services s ON s.id=m.id LEFT JOIN service_groups g ON g.name=s.category
+            LEFT JOIN pages p ON s.id IS NOT NULL AND p.id=COALESCE(g.page_id, (SELECT id FROM pages ORDER BY position,id LIMIT 1))
+            WHERE w.ends_at>? AND w.starts_at<? ${groupFilter} ${pageFilter}`;
+          const args = [now, now + days * 86_400_000, ...groupNames, ...pageNames];
+          const total = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number })
+            .n;
+          const rows = db
+            .prepare(`SELECT w.id,w.service_id AS monitorId,m.name,w.starts_at AS startsAt,
+            w.ends_at AS endsAt,s.id IS NOT NULL AS hasService ${where}
+            ORDER BY (w.starts_at>?), w.starts_at, w.id LIMIT ?`)
+            .all(...args, now, limit) as unknown as Array<{
+            id: number;
+            monitorId: number;
+            name: string;
+            startsAt: number;
+            endsAt: number;
+            hasService: number;
+          }>;
+          value = maintenanceSchema.parse({
+            generatedAt: now,
+            total,
+            items: rows.map((row) => ({ ...row, hasService: Boolean(row.hasService) })),
+          });
           break;
         }
         case 'incidents': {
@@ -546,8 +602,10 @@ export function registerWidgetMonitoringRoutes(
         }
       }
       // Bound cache cardinality even when clients use many parameter combinations.
-      if (cache.size >= 32) cache.clear();
-      cache.set(key, { at: now, value });
+      if (kind !== 'maintenance') {
+        if (cache.size >= 32) cache.clear();
+        cache.set(key, { at: now, value });
+      }
       return value;
     },
   );

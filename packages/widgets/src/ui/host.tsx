@@ -3,6 +3,7 @@ import type {
   MonitoringAvailability,
   MonitoringCertificates,
   MonitoringIncidents,
+  MonitoringMaintenance,
   MonitoringSummary,
   MonitoringProblems,
 } from '../monitoring.js';
@@ -36,6 +37,12 @@ export type MonitoringProblemsReading =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'ready'; data: MonitoringProblems; stale: boolean; now: number };
+export type MonitoringMaintenanceQuery = {
+  days: 1 | 7 | 30;
+  limit: number;
+  pages: string[];
+  groups: string[];
+};
 export type MonitoringAvailabilityQuery = {
   target: string;
   range: AvailabilityRange;
@@ -127,6 +134,10 @@ export type WidgetHost = {
       query: { pages: string[]; groups: string[] },
       signal: AbortSignal,
     ) => Promise<MonitoringCertificates>;
+    readMaintenance?: (
+      query: MonitoringMaintenanceQuery,
+      signal: AbortSignal,
+    ) => Promise<MonitoringMaintenance>;
     readProblems?: (
       query: MonitoringProblemsQuery,
       signal: AbortSignal,

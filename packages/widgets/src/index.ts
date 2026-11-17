@@ -97,6 +97,7 @@ export type {
   MonitoringIncident,
   MonitoringIncidentReason,
   MonitoringIncidents,
+  MonitoringMaintenance,
 } from './monitoring.js';
 export {
   MAX_FEED_BYTES,
