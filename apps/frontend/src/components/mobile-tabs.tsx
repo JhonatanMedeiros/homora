@@ -1,16 +1,10 @@
 import { useState } from 'react';
 import { Ellipsis, House } from 'lucide-react';
 import { FloatingNav, FloatingNavItem } from '@/components/floating-nav';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { navItems, primaryNavIds, type Tab } from '@/components/app-nav';
-import { Separator } from '@/components/ui/separator';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Separator } from '@homora/ui/separator';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
 import { t } from '@/i18n';
 
 type Props = { tab: Tab; onTabChange: (tab: Tab) => void; onHome: () => void };

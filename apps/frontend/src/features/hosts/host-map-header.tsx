@@ -1,6 +1,6 @@
 import { ArrowLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { BrandMark } from '@/components/brand-mark';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import type { HostConnection } from '@/features/hosts/hosts';
 import { t } from '@/i18n';
 

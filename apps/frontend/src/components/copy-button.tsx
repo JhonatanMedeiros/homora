@@ -1,6 +1,6 @@
 import { useEffect, useState, type ComponentProps } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { t } from '@/i18n';
 
 /** Copies `text` to the clipboard and confirms with a check for two seconds. */

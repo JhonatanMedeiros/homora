@@ -1,9 +1,9 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Checkbox } from '@homora/ui/checkbox';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { IconPicker } from '@/components/icon-picker';
-import { Input } from '@/components/ui/input';
+import { Input } from '@homora/ui/input';
 import { ServiceIcon } from '@/components/service-icon';
 import { ResourceStateBadge } from '@/components/resource-state';
 import type { CardRef } from '@/hooks/use-resource-inventory';

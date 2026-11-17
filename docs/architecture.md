@@ -71,7 +71,7 @@ moving them is future work.
 Frontend (`apps/frontend/src`): `pages/` compose routes, `features/<name>/` own presentation, hooks and models of one
 capability (account, activity, agents, auth, connections, dashboard, discovery, hosts, probes, public-status,
 settings, transfer, uptime), and `components/`, `hooks/`, `lib/` keep only what several capabilities share
-(UI primitives in `components/ui`, shell and navigation, preferences, formatting). `dashboard` holds the Home (cards,
+(shell and navigation, preferences, formatting). `dashboard` holds the Home (cards,
 groups, filters, organize mode); `hosts` the service-to-host map, suggestions and dependencies; `uptime` the detail
 view, maintenance and failure causes. A move out of the shared folders needs a single consuming capability; a new
 workspace package needs an independent consumer. Route composers stay in `pages/`; `services-page.tsx` still
@@ -396,3 +396,7 @@ entry does not acknowledge or mute an incident. Names and incident details survi
 references are cleared. The current administrator shares a single read state. Entries are pruned
 at startup, insertion and listing after 90 days or beyond 10,000 entries, including unread entries. The
 inbox is not an audit log. The frontend polls the authenticated API every minute.
+
+## Shared UI primitives
+
+`@homora/ui` owns shadcn primitives as source-only TSX exports, one subpath per component, with no barrel or build output. Vite and Vitest transpile the source and the frontend type-check includes it. The shell-specific sidebar and `use-mobile` remain in the frontend; revisit this if another consumer needs them. The shared Toaster receives its theme from the app. `cn` lives at `@homora/ui/lib/utils`, with no app re-export. Tokens remain in the frontend `style.css` and Tailwind scans package sources via `@source`. The app and package each have a shadcn `components.json`; see [Interface standards](standards.md#interface-frontend) for the CLI workflow. React and React DOM are peers; other primitive dependencies belong to the package. UI must not depend on apps or domain packages.

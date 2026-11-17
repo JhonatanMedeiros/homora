@@ -5,7 +5,7 @@ import { StatusLight } from '@/components/status-light';
 import { formatAgo, formatDateTime, formatShortDateTime, t, useI18n } from '@/i18n';
 import { formatDuration } from '@/features/uptime/uptime-view';
 import type { Availability } from '@/lib/services';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { PublicStatusSkeleton } from '@/components/skeletons';
 
 export type {

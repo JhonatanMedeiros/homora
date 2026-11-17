@@ -24,12 +24,14 @@ are documented in [architecture](architecture.md).
 
 ## Interface (Frontend)
 
+Import shared primitives by subpath, e.g. `@homora/ui/button`, and `cn` from `@homora/ui/lib/utils`. The frontend and UI package have separate `components.json` files; run the CLI from the frontend and review its destinations and dependencies. Tokens remain in the frontend stylesheet.
+
 - The UI is built with React, Tailwind CSS v4, and shadcn/ui (Radix primitives,
   `new-york` style, lucide icons). `apps/frontend/components.json` configures the CLI;
   the `shadcn` skill in `.agents/skills/shadcn` guides agents. Add primitives with
   `npx shadcn@latest add <component>` (inside `apps/frontend`) and review generated files:
-  this project's CLI may generate `cn` imports as `"cn"`; correct them to `@/lib/utils`.
-- Primitives live in `src/components/ui` (shadcn, aligned with tokens), shared
+  this project's CLI may generate `cn` imports as `"cn"`; correct them to `@homora/ui/lib/utils`.
+- Primitives live in `packages/ui/src/components` (shadcn, aligned with tokens); the shell-specific sidebar remains in the frontend. Shared
   product components in `src/components`, route composers in `src/pages`, and
   capability modules in `src/features`. Colocate a hook, model, component and
   its tests in a feature when their consumers belong to that feature; keep hooks
@@ -49,7 +51,7 @@ are documented in [architecture](architecture.md).
   fits. Exceptions include semantic links, structural HTML, file inputs that cannot be
   represented by the current primitive API, and cases where native behavior is a
   documented accessibility or platform requirement. Keep raw elements inside
-  `src/components/ui` implementations; do not edit those files as product call sites.
+  `packages/ui/src/components` implementations; do not edit those files as product call sites.
 - For sets of a few mutually exclusive choices, compose shadcn `ToggleGroup` or
   `RadioGroup`; do not build option cards from custom labels and hidden native inputs.
   Form labels and descriptions use `Field`/`FieldLabel`/`FieldDescription` and controls
@@ -82,7 +84,7 @@ are documented in [architecture](architecture.md).
     without Proxmox or integrations (for example the top bar telemetry), to avoid flicker.
   - Keep the skeleton shape close to the real component so the page does not shift when
     data arrives, and cover new compositions with a small test (see `skeletons.test.tsx`).
-- Files in `src/components/ui` mirror upstream shadcn; oxlint exempts them
+- Files in `packages/ui/src/components` mirror upstream shadcn; oxlint exempts them
   from Fast Refresh and pure-render checks.
 
 ## Contracts and Validation

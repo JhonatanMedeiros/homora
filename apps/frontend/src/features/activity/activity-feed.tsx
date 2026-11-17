@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@homora/ui/badge';
 import { StatusLight } from '@/components/status-light';
 import { SectionTitle } from '@/components/section-title';
 import { getLocale, t } from '@/i18n';

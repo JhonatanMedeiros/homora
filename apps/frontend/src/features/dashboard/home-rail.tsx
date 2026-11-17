@@ -2,9 +2,9 @@ import { PROBE_DOT } from '@/lib/probe-dot';
 import { PanelRight, Star } from 'lucide-react';
 import type { HostRailItem } from '@/features/hosts/hosts';
 import type { LightState } from '@/lib/services';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { STATUS_FILTERS, type StatusFilter } from '@/features/dashboard/status-filter-model';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 
 type Group = { name: string; total: number; down: number };

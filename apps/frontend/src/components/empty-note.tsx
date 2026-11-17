@@ -1,4 +1,4 @@
-import { Empty, EmptyDescription } from '@/components/ui/empty';
+import { Empty, EmptyDescription } from '@homora/ui/empty';
 
 /** Compact empty state for lists inside a section. */
 export function EmptyNote({ children }: { children: string }) {

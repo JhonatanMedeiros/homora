@@ -4,9 +4,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@homora/ui/dialog';
 import { ConnectGuide } from './connect-guide';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { SHEET_CLASS } from './sheet-class';
 import { t } from '@/i18n';
 

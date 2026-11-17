@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Badge } from '@homora/ui/badge';
+import { Avatar, AvatarFallback } from '@homora/ui/avatar';
+import { Button } from '@homora/ui/button';
+import { Card, CardContent } from '@homora/ui/card';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 import { initials, type Profile } from './account-model';
 

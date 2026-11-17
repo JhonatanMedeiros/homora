@@ -1,9 +1,9 @@
 import { useState, type FormEvent, type RefObject } from 'react';
 import { Plus, SlidersHorizontal } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
+import { Field, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { t } from '@/i18n';
 
 type Props = {

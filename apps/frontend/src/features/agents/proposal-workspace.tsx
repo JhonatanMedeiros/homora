@@ -1,14 +1,8 @@
 import type { ReactNode } from 'react';
 import { CheckCircle2, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { Button } from '@homora/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@homora/ui/empty';
 import { RowListSkeleton } from '@/components/skeletons';
 import { t } from '@/i18n';
 import type { Proposal, Service } from './agent-model';

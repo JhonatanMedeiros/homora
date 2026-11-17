@@ -1,8 +1,8 @@
 import type { Service } from '@homora/shared';
 import { ChevronDown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { t } from '@/i18n';
 import { formatDate, parseDiff, proposalSummary, STATES, type Proposal } from './agent-model';
 import { ManagedProposalChange } from './managed-proposal-change';

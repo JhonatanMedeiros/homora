@@ -30,6 +30,15 @@ const build = (name) => {
   const { dir, deps, hasCatalog } = meta.get(name);
   const job = Promise.all(deps.filter((d) => meta.has(d)).map(build)).then(async () => {
     if (hasCatalog) await run('node', ['scripts/integration-catalog.mjs', '--check'], dir);
+    if (name === '@homora/ui') {
+      await run(
+        new URL('../../node_modules/.bin/tsc', import.meta.url).pathname,
+        ['-p', 'tsconfig.json'],
+        dir,
+      );
+      done.add(name);
+      return;
+    }
     await run(
       new URL('../../node_modules/.bin/tsc', import.meta.url).pathname,
       ['-p', 'tsconfig.json'],

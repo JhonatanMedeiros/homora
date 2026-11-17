@@ -2071,3 +2071,9 @@ the HTTP and stdio transports were not manually verified.
 ### Countdown page widget (issue #258)
 
 - Added a local countdown for one event, with an explicit or browser time zone and configurable past-event visibility. DST overlaps use the first occurrence; gaps advance by the transition. Validated with focused widget, route, transfer and interface tests, `pnpm check`, `pnpm build` and `pnpm docs:build`. Browser and screen-reader checks remain pending.
+
+### Shared UI package (#265)
+
+The shadcn primitives have been moved to `@homora/ui`; the widget module work in #266 and #267 remains separate. See [architecture](architecture.md#shared-ui-primitives) for the package decisions.
+
+Visual comparison against the previous revision used an isolated local database with synthetic services and the same backend for both frontends. Home, the service drawer and detail page, integrations management, appearance settings, the add-widget dialog, and login were compared in light and dark themes at 1440 × 900 and 390 × 844. No visual regression was observed in the captured viewport states. Small pixel differences reflected the animated login glow and changing clock/monitoring values; real integrations, other states and content outside the captured viewports were not visually checked.

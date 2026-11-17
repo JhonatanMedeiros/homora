@@ -1,6 +1,6 @@
-import { Card } from '@/components/ui/card';
+import { Card } from '@homora/ui/card';
 import { t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { healthOf, type Connection, type IntegrationWidget } from './connection-model';
 
 /** How many connections work and how many need a look, at a glance. */

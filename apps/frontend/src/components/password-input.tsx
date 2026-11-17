@@ -5,7 +5,7 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from '@/components/ui/input-group';
+} from '@homora/ui/input-group';
 import { useI18n } from '@/i18n';
 
 /** Credential input that starts obscured and allows toggling visibility. */

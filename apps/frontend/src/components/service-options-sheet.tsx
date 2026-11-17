@@ -1,6 +1,6 @@
 import { SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useState, type ComponentProps } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   Sheet,
   SheetContent,
@@ -8,7 +8,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@homora/ui/sheet';
 import { ArrangeToggle } from '@/features/dashboard/service-view-toolbar';
 import { StatusFilter } from '@/features/dashboard/status-filter';
 import { ViewLayoutFields } from '@/features/dashboard/view-options';

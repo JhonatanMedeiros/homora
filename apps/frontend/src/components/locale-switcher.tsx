@@ -1,5 +1,5 @@
 import { Languages } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,7 +7,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@homora/ui/dropdown-menu';
 import { locales, useI18n } from '@/i18n';
 
 /** Explicit selector among available languages. */

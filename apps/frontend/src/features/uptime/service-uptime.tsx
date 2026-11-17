@@ -12,10 +12,10 @@ import {
 import { ChevronDown, X } from 'lucide-react';
 import { Link, useInRouterContext } from 'react-router';
 import { deltaPoints } from '@/lib/detail-view';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@homora/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import {
   barState,
   deltaText,

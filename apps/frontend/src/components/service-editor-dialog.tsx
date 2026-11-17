@@ -5,7 +5,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@homora/ui/dialog';
 import { ServiceForm } from '@/components/service-form';
 import { t } from '@/i18n';
 

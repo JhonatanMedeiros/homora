@@ -1,9 +1,9 @@
 import { LayoutGrid, LayoutList, Rows3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@homora/ui/button';
+import { Label } from '@homora/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@homora/ui/popover';
+import { Switch } from '@homora/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { UPTIME_RANGES, type UptimeRange } from '@homora/shared';
 import { t } from '@/i18n';
 import type { View } from '@/features/dashboard/use-view-preferences';

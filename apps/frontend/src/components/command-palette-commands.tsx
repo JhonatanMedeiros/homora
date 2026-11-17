@@ -9,13 +9,8 @@ import {
   Search,
   Settings2,
 } from 'lucide-react';
-import {
-  CommandGroup,
-  CommandItem,
-  CommandSeparator,
-  CommandShortcut,
-} from '@/components/ui/command';
-import { Kbd } from '@/components/ui/kbd';
+import { CommandGroup, CommandItem, CommandSeparator, CommandShortcut } from '@homora/ui/command';
+import { Kbd } from '@homora/ui/kbd';
 import { navItems, tabPath } from '@/components/app-nav';
 import { chordFor } from '@/lib/shortcuts';
 import { settingsPath } from '@/features/settings/sections';

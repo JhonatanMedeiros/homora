@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Laptop, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
 import {
   Item,
   ItemActions,
@@ -11,7 +11,7 @@ import {
   ItemGroup,
   ItemMedia,
   ItemTitle,
-} from '@/components/ui/item';
+} from '@homora/ui/item';
 import { FormError } from '@/components/form-error';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, formatAgo, formatDateTime, formatIn, t } from '@/i18n';

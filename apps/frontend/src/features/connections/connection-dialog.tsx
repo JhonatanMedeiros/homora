@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
 import { hasInventoryDomain } from '@homora/integrations';
 import { t } from '@/i18n';

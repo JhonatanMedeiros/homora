@@ -1,11 +1,11 @@
 import { ICON_MAX_LENGTH, type ServiceInput } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Button } from '@homora/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@homora/ui/field';
 import { IconPicker } from '@/components/icon-picker';
-import { Input } from '@/components/ui/input';
+import { Input } from '@homora/ui/input';
 import { ServiceIcon } from '@/components/service-icon';
 import { TagInput } from '@/components/tag-input';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { faviconUrl, suggestBrandIcon } from '@/lib/icons';
 import { t } from '@/i18n';
 

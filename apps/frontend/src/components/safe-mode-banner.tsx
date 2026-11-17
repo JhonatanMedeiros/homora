@@ -1,7 +1,7 @@
 import { ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
 import { useCustomCss } from '@/hooks/use-custom-css';
 import { t } from '@/i18n';
 

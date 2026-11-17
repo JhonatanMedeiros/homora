@@ -1,18 +1,12 @@
 import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
 import { RotateCw } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { Input } from '@/components/ui/input';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@homora/ui/empty';
+import { Input } from '@homora/ui/input';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
+import { Spinner } from '@homora/ui/spinner';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { RowListSkeleton } from '@/components/skeletons';
 import { useResourceInventory } from '@/hooks/use-resource-inventory';

@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Spinner } from '@/components/ui/spinner';
+} from '@homora/ui/dialog';
+import { Field, FieldLabel } from '@homora/ui/field';
+import { Spinner } from '@homora/ui/spinner';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { putLink } from '@/lib/resource-api';
 import type { CardRef } from '@/hooks/use-resource-inventory';

@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import { DropdownMenuItem, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuLabel } from '@homora/ui/dropdown-menu';
 import { releaseUrl, useBuildVersion } from '@/hooks/use-build-version';
 import { t } from '@/i18n';
 

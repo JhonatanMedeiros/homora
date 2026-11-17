@@ -1,8 +1,8 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
 import type { Service } from '@homora/shared';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Spinner } from '@/components/ui/spinner';
+} from '@homora/ui/dialog';
+import { Spinner } from '@homora/ui/spinner';
 import { ResourceStateBadge } from '@/components/resource-state';
 import { deleteLink, putLink, updateCard } from '@/lib/resource-api';
 import { needsReview } from '@homora/integrations/resources/client';

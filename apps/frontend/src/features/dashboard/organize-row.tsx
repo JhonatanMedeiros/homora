@@ -1,7 +1,7 @@
 import type { DragEvent } from 'react';
 import type { Service } from '@homora/shared';
 import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +12,11 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
+} from '@homora/ui/dropdown-menu';
+import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from '@homora/ui/item';
 import { ServiceIcon } from '@/components/service-icon';
 import { t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { hostOf } from '@/lib/services';
 
 type Props = {

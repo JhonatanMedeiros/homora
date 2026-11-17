@@ -1,12 +1,7 @@
 import type { Service } from '@homora/shared';
 import { Server } from 'lucide-react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@homora/ui/accordion';
+import { Button } from '@homora/ui/button';
 import { EmptyNote } from '@/components/empty-note';
 import { StatusLight } from '@/components/status-light';
 import { ServiceIcon } from '@/components/service-icon';

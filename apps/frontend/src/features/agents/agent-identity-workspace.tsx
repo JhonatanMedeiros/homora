@@ -8,17 +8,11 @@ import type { ActivityEvent } from '@/features/activity/activity-model';
 import { ConnectDialog } from './connect-dialog';
 import { NewAgentDialog } from './new-agent-dialog';
 import { TokenDialog } from './token-dialog';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { Button } from '@homora/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@homora/ui/empty';
 import { CardGridSkeleton } from '@/components/skeletons';
-import { TabsContent } from '@/components/ui/tabs';
+import { TabsContent } from '@homora/ui/tabs';
 import { t } from '@/i18n';
 
 type Props = {

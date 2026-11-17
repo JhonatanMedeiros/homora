@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
 import { integrationDefinition } from '@homora/integrations';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Spinner } from '@/components/ui/spinner';
+} from '@homora/ui/dialog';
+import { Spinner } from '@homora/ui/spinner';
 import { createCard, putLink } from '@/lib/resource-api';
 import { sameUrl } from '@homora/integrations/resources/client';
 import type { CardRef, GroupRef } from '@/hooks/use-resource-inventory';

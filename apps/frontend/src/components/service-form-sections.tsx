@@ -1,14 +1,9 @@
 import type { ReactNode } from 'react';
 import type { ServiceInput } from '@homora/shared';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@homora/ui/accordion';
+import { Checkbox } from '@homora/ui/checkbox';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@homora/ui/tabs';
 import { DependencyPicker } from '@/features/hosts/dependency-picker';
 import { HostPicker } from '@/features/hosts/host-picker';
 import { LookPanel } from '@/components/service-form-look';

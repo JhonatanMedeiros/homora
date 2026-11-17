@@ -1,6 +1,6 @@
-import { Spinner } from '@/components/ui/spinner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Spinner } from '@homora/ui/spinner';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
 import { formatAgo, formatDateTime, t } from '@/i18n';
 import { hasInventoryDomain } from '@homora/integrations';
 import { HealthLight } from './health-light';

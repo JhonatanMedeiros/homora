@@ -9,8 +9,8 @@ import {
   type ThemeName,
 } from '@homora/shared';
 import { FormError } from '@/components/form-error';
-import { Input } from '@/components/ui/input';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Input } from '@homora/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { t, type MessageKey } from '@/i18n';
 import { SettingRow } from './setting-row';
 

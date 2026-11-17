@@ -7,14 +7,8 @@ import type {
   UptimeRange,
   UptimeSummary,
 } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Button } from '@homora/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
 import { StatusLight } from '@/components/status-light';
 import { UptimeBars, UptimeDetails, UptimePercent } from '@/features/uptime/service-uptime';
 import { copyAddress } from '@/lib/copy-address';

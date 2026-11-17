@@ -15,7 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
 import { tabPath, type Tab } from '@/components/app-nav';
 import { t } from '@/i18n';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { settingsPath } from '@/features/settings/sections';
 import { useServices } from '@/hooks/use-services';
 import { ServicesPage, type FocusRequest } from '@/pages/services-page';

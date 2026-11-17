@@ -1,5 +1,5 @@
 import { SectionTitle } from '@/components/section-title';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@homora/ui/tabs';
 import { t } from '@/i18n';
 import { LocalDiscovery } from './local-discovery';
 import { PushSources } from './push-sources';

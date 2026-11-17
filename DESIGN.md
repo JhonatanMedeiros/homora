@@ -149,7 +149,7 @@ Bordered card, 16px padding; whole card is the link. Icon tile turns ember-tinte
 
 ### shadcn base
 
-shadcn/ui new-york, Radix, Lucide, Tailwind v4, tokens in `@theme inline`. Primitives in `src/components/ui`, product components in `src/components`, pages in `src/pages`, domain modules in `src/features`. Every UI element is a component.
+shadcn/ui new-york, Radix, Lucide, Tailwind v4, tokens in `@theme inline`. Primitives in `packages/ui/src/components` (except the shell sidebar in the frontend), product components in `src/components`, pages in `src/pages`, domain modules in `src/features`. Every UI element is a component.
 
 ## Do's and Don'ts
 

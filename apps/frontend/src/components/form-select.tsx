@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import {
   Select,
   SelectContent,
@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@homora/ui/select';
 
 const OPTION_PREFIX = 'homora-option:';
 

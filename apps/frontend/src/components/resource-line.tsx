@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Badge } from '@homora/ui/badge';
 import { t } from '@/i18n';
 import { needsReview } from '@homora/integrations/resources/client';
 import type { CardResource } from '@/hooks/use-resource-links';

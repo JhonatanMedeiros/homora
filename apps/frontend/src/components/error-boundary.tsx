@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { useI18n } from '@/i18n';

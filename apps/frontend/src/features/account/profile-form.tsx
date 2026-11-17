@@ -1,9 +1,9 @@
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@homora/ui/spinner';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { PasswordInput } from '@/components/password-input';
 import { FormError } from '@/components/form-error';
 import { SectionTitle } from '@/components/section-title';

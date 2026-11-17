@@ -7,15 +7,15 @@ import {
 } from '@homora/shared';
 import { CircleCheck, TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Badge } from '@homora/ui/badge';
 import { useNow } from '@/hooks/use-now';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '@homora/ui/progress';
 import { formatDateTime, formatNumber, formatShortDateTime, formatTime, t } from '@/i18n';
 import type { ServiceStatus } from '@/lib/services';
 import { formatDuration } from '@/features/uptime/uptime-view';
 import { summarizeStatus, type WindowState } from '@/features/uptime/status-summary';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 type Props = {
   services: { id: number; name: string }[];

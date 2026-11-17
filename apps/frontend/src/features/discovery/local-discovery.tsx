@@ -1,13 +1,7 @@
 import { Container, RefreshCw } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@homora/ui/empty';
 import { SectionSkeleton } from '@/components/skeletons';
 import { t } from '@/i18n';
 import { ImportPreview } from '@/features/transfer/import-preview';

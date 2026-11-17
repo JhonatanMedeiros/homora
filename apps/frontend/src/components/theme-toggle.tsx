@@ -1,5 +1,5 @@
 import { Contrast } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 

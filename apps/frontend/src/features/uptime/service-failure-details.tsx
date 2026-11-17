@@ -1,8 +1,8 @@
 import { CHECK_INTERVAL_DEFAULT, type Service } from '@homora/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { DetailsSkeleton } from '@/components/skeletons';
 import { formatAgo, formatTime, t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import type { ServiceStatus } from '@/lib/services';
 import {
   useServiceFailureDetails,

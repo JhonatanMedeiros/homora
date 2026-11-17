@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@homora/ui/spinner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@homora/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -17,10 +17,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+} from '@homora/ui/dialog';
+import { Field, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Button } from '@homora/ui/button';
 import { CopyButton } from '@/components/copy-button';
 import { t } from '@/i18n';
 import { ImportPreview } from '@/features/transfer/import-preview';

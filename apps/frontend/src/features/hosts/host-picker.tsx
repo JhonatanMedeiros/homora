@@ -1,24 +1,18 @@
 import { useMemo, useState } from 'react';
 import type { HostLink } from '@homora/shared';
 import { Server } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { EmptyNote } from '@/components/empty-note';
 import { FormError } from '@/components/form-error';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@homora/ui/spinner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { findGuest, type HostConnection, type HostInventories } from '@/features/hosts/hosts';
 import { t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 type Props = {
   value: HostLink | null;

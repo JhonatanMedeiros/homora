@@ -1,9 +1,9 @@
 import { toast } from 'sonner';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@homora/ui/spinner';
 import { useState, type FormEvent } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Checkbox } from '@homora/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@homora/ui/dialog';
 import {
   Field,
   FieldDescription,
@@ -19,9 +19,9 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
-} from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+} from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { isWriteScope, PROFILES, scopeHint, scopeLabel, SCOPES, type Profile } from './agent-model';
 import { SHEET_CLASS } from './sheet-class';
 import { t, type MessageKey } from '@/i18n';

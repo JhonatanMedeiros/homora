@@ -1,7 +1,7 @@
 import { Plus, RotateCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Button } from '@homora/ui/button';
+import { Card } from '@homora/ui/card';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@homora/ui/empty';
 import { CardGridSkeleton } from '@/components/skeletons';
 import {
   AlertDialog,
@@ -12,8 +12,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from '@homora/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@homora/ui/tabs';
 import { ConnectionCard } from './connection-card';
 import { ConnectionDialog } from './connection-dialog';
 import { ConnectionsSummary } from './connections-summary';

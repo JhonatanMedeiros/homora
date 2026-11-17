@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 /**
  * The phone's bottom navigation: a capsule that floats above the content, never touching the

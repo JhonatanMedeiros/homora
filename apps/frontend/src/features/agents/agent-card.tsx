@@ -1,10 +1,10 @@
 import { ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Card } from '@homora/ui/card';
 import { StatusLight } from '@/components/status-light';
 import { formatAgo, t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { permissionCounts, type Agent } from './agent-model';
 
 /** One agent. The whole card opens its details; the name is the control that carries it. */

@@ -1,8 +1,8 @@
 import type { Service } from '@homora/shared';
 import { CircleCheck, CircleHelp } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Checkbox } from '@homora/ui/checkbox';
 import type {
   CardSuggestion,
   SuggestionCandidate,

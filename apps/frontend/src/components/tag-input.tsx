@@ -1,8 +1,8 @@
 import { normalizeTag, TAG_MAX_LENGTH, TAGS_MAX_PER_SERVICE } from '@homora/shared';
 import { X } from 'lucide-react';
 import { useState, type KeyboardEvent } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@homora/ui/badge';
+import { Input } from '@homora/ui/input';
 import { t } from '@/i18n';
 
 type Props = { id: string; value: string[]; onChange: (tags: string[]) => void };

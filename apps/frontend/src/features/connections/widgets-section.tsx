@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Button } from '@homora/ui/button';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@homora/ui/dropdown-menu';
 import {
   Item,
   ItemActions,
@@ -8,7 +8,7 @@ import {
   ItemDescription,
   ItemMedia,
   ItemTitle,
-} from '@/components/ui/item';
+} from '@homora/ui/item';
 import { ConnectionMark } from './connection-mark';
 import { RowMenu } from './row-menu';
 import {

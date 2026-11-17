@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { linkLabel, linkOpenTarget, type Service, type ServiceLink } from '@homora/shared';
 import { ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   CommandDialog,
   CommandEmpty,
@@ -9,9 +9,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Kbd } from '@/components/ui/kbd';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+} from '@homora/ui/command';
+import { Kbd } from '@homora/ui/kbd';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { StatusLight } from '@/components/status-light';
 import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
 import { buildSearchUrl, parseBang } from '@/lib/web-search';
@@ -28,7 +28,7 @@ import {
 } from '@/lib/palette-search';
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { LINK_COLOR_CLASS, openAddress } from '@/lib/service-links';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { CommandPaletteCommands } from './command-palette-commands';
 
 type Props = {

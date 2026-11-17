@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Clock } from '@/components/top-bar';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@homora/ui/input';
+import { Switch } from '@homora/ui/switch';
 import { useClockPreferences } from '@/hooks/use-clock-preferences';
 import { useShortcutsPreference } from '@/hooks/use-shortcuts-preference';
 import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';

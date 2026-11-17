@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@homora/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@homora/ui/popover';
 import { t } from '@/i18n';
 import { pillText, type StatusSummary } from '@/features/uptime/status-summary';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 type Props = {
   summary: StatusSummary;

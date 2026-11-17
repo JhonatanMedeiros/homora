@@ -1,17 +1,17 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '@homora/ui/dialog';
+import { Input } from '@homora/ui/input';
+import { Skeleton } from '@homora/ui/skeleton';
 import { LoadingRegion } from '@/components/skeletons';
 import { releaseUrl } from '@/hooks/use-build-version';
 import { getLocale, t } from '@/i18n';

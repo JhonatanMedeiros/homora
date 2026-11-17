@@ -4,8 +4,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Kbd } from '@/components/ui/kbd';
+} from '@homora/ui/dialog';
+import { Kbd } from '@homora/ui/kbd';
 import { t } from '@/i18n';
 import { SHORTCUTS } from '@/lib/shortcuts';
 

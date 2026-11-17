@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 import { RISK_LABELS, type Risk } from './proposal-risk';
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Field, FieldLabel } from '@/components/ui/field';
+import { Button } from '@homora/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
+import { Field, FieldLabel } from '@homora/ui/field';
 import { ActivitySkeleton } from '@/components/skeletons';
 import { EmptyNote } from '@/components/empty-note';
 import { FormError } from '@/components/form-error';

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@homora/ui/separator';
 
 /** Section title with a count and a hairline divider. */
 export function SectionTitle({

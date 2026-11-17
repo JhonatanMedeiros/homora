@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { LINK_NAME_MAX, LINK_URL_MAX, SERVICE_LINKS_MAX, type OpenTarget } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FieldDescription } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Button } from '@homora/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
+import { FieldDescription } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { LinkTypePicker } from '@/components/link-type-picker';
 import type { LinkTypesApi } from '@/hooks/use-link-types';
 import { emptyLinkDraft, type LinkDraft } from '@/lib/service-links';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 
 /** Extra addresses of the service being edited, as the form holds them. */

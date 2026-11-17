@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import type { Service } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { t } from '@/i18n';
 
