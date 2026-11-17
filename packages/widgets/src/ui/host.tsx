@@ -1,4 +1,4 @@
-import type { MonitoringIncidents, MonitoringSummary } from '../monitoring.js';
+import type { MonitoringIncidents, MonitoringSummary, MonitoringProblems } from '../monitoring.js';
 import { createContext, useContext, type ReactNode } from 'react';
 
 export type MonitoringQuery = {
@@ -12,8 +12,29 @@ export type MonitoringReading =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'ready'; data: MonitoringIncidents; stale: boolean };
+export type MonitoringProblemsQuery = {
+  limit: number;
+  pages: string[];
+  groups: string[];
+  includeDegraded: boolean;
+};
+export type MonitoringProblemsReading =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; data: MonitoringProblems; stale: boolean; now: number };
+export type WidgetScopeOptions = {
+  pages: string[];
+  groups: string[];
+  error: boolean;
+  loading: boolean;
+};
+
 export type WidgetHost = {
   monitoring?: {
+    readProblems?: (
+      query: MonitoringProblemsQuery,
+      signal: AbortSignal,
+    ) => Promise<MonitoringProblems>;
     readSummary: (
       groups: number[],
       pages: number[],

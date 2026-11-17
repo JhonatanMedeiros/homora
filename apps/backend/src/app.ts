@@ -5,6 +5,7 @@ import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createAuth } from './auth.js';
 import { createVault } from './vault.js';
 import {
+  createDegradedSince,
   createServiceMonitor,
   startServiceMonitor,
   createObservationStore,
@@ -154,6 +155,7 @@ export function createApp(
   // An old backend process may have stopped without clearing its last observation.
   observations.clear();
   const monitoringSource = createMonitoringSource(sqlite);
+  const degradedSince = createDegradedSince(sqlite);
   const serviceMonitor = createServiceMonitor(
     async () => monitoringSource.list(),
     undefined,
@@ -173,6 +175,11 @@ export function createApp(
         judged = measurement.mask(states);
       } catch (error) {
         log.error({ err: error }, 'could not evaluate whether monitoring can measure');
+      }
+      try {
+        degradedSince.observe(rows, judged);
+      } catch (error) {
+        log.error({ err: error }, 'could not track observed latency degradation');
       }
       try {
         notifications.publish(rows, judged);
@@ -334,6 +341,7 @@ export function createApp(
     serviceMonitor,
     incidents,
     measurement,
+    degradedSince,
   );
   registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
   registerServiceTagRoutes(app, tagStore);

@@ -1,5 +1,7 @@
 import { widgetUI as summary } from '@homora/widgets/homelab-summary/ui';
 import { widgetUI as incidents } from '@homora/widgets/recent-incidents/ui';
+
+import { widgetUI as widgetProblems } from '@homora/widgets/current-problems/ui';
 import { widgetUI as widgetCalendar } from '@homora/widgets/calendar/ui';
 import { widgetUI as clock } from '@homora/widgets/clock/ui';
 import { widgetUI as countdown } from '@homora/widgets/countdown/ui';
@@ -16,6 +18,8 @@ const widgets = {
   calendar: widgetCalendar,
   'homelab-summary': summary,
   'recent-incidents': incidents,
+
+  'current-problems': widgetProblems,
 } satisfies Record<LocalWidgetType, WidgetUI>;
 export function getWidgetUI(type: string): WidgetUI | undefined {
   return Object.hasOwn(widgets, type) ? widgets[type as LocalWidgetType] : undefined;

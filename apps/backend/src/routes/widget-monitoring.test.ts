@@ -149,9 +149,9 @@ it('scopes summary to selected groups and pages without changing the default', a
     (await app.inject('/api/widget-sources/monitoring/summary?groups=10&pages=2')).json().counts
       .unknown,
   ).toBe(0);
-  expect((await app.inject('/api/widget-sources/monitoring/problems?groups=10')).statusCode).toBe(
-    400,
-  );
+  expect(
+    (await app.inject('/api/widget-sources/monitoring/problems?groups=invalid')).statusCode,
+  ).toBe(400);
   await app.close();
   db.close();
 });
@@ -210,6 +210,122 @@ it('filters before limiting, keeps long open incidents, and exposes only safe re
     expect((await app.inject(`/api/widget-sources/monitoring/incidents?${query}`)).statusCode).toBe(
       400,
     );
+  await app.close();
+  db.close();
+});
+
+it('filters before counting and limiting, orders by age, and excludes maintenance and unmeasured monitors', async () => {
+  const now = Date.now();
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY, category TEXT);
+    CREATE TABLE service_groups(id INTEGER PRIMARY KEY, name TEXT, page_id INTEGER);
+    CREATE TABLE pages(id INTEGER PRIMARY KEY, name TEXT, position INTEGER);
+    CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER);
+    INSERT INTO pages VALUES(1,'Home',0),(2,'Other',1);
+    INSERT INTO service_groups VALUES(1,'Media',1),(2,'Work',2);
+    INSERT INTO services VALUES(1,'Media'),(2,'Media'),(3,'Media'),(4,'Media'),(5,'Media'),(6,'Work'),(7,'Media');
+    INSERT INTO service_monitor_settings VALUES(3,100);`);
+  const targets = Array.from({ length: 8 }, (_, index) => ({
+    id: index + 1,
+    name: `Monitor ${index + 1}`,
+    url: 'https://example.test',
+    allowPrivate: false,
+    checkInterval: 60,
+  }));
+  const statuses = {
+    1: { status: 'unavailable', reason: 'error-status', httpStatus: 503 },
+    2: { status: 'unavailable', reason: 'no-response' },
+    3: { status: 'available', latencyMs: 150 },
+    4: { status: 'unavailable', reason: 'maintenance' },
+    5: { status: 'unknown', reason: 'unchecked' },
+    6: { status: 'unavailable', reason: 'private response body secret' },
+    7: { status: 'unavailable', reason: 'destination-blocked' },
+    8: { status: 'unavailable', reason: 'no-response' },
+  };
+  const app = Fastify();
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => targets } as never,
+    { snapshot: () => statuses } as never,
+    {
+      open: () => ({
+        1: { startedAt: now - 1000, reason: 'error-status', httpStatus: 503 },
+        2: { startedAt: now - 5000, reason: 'no-response' },
+        8: { startedAt: now - 10000, reason: 'no-response' },
+      }),
+    } as never,
+    { current: () => null },
+  );
+  const params = new URLSearchParams({
+    pages: '1',
+    groups: '1',
+    limit: '1',
+  });
+  const reading = (await app.inject(`/api/widget-sources/monitoring/problems?${params}`)).json();
+  expect(reading).toMatchObject({
+    total: 3,
+    unmeasured: 2,
+    truncated: true,
+    items: [{ id: 2, isService: true, reason: 'no-response' }],
+  });
+  params.set('includeDegraded', 'false');
+  params.set('limit', '10');
+  const offline = (await app.inject(`/api/widget-sources/monitoring/problems?${params}`)).json();
+  expect(offline.total).toBe(2);
+  expect(offline.items.map((item: { id: number }) => item.id)).toEqual([2, 1]);
+  expect(offline.items[1]).toMatchObject({ reason: 'error-status', httpStatus: 503 });
+  const all = (await app.inject('/api/widget-sources/monitoring/problems?limit=10')).json();
+  expect(all.items[0]).toMatchObject({ id: 8, isService: false });
+  expect(JSON.stringify(all)).not.toContain('private response body secret');
+  expect(all.items.find((item: { id: number }) => item.id === 6).reason).toBeNull();
+  expect((await app.inject('/api/widget-sources/monitoring/problems?pages=bad')).statusCode).toBe(
+    400,
+  );
+  await app.close();
+  db.close();
+});
+
+it('orders degraded monitors by first observed degradation before applying the limit', async () => {
+  const { createDegradedSince } = await import('../monitoring/index.js');
+  const now = Date.now();
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY, category TEXT);
+    CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER);
+    INSERT INTO services VALUES (1,'A'),(2,'A');
+    INSERT INTO service_monitor_settings VALUES (1,100),(2,100);`);
+  const targets = [1, 2].map((id) => ({
+    id,
+    name: String(id),
+    url: 'https://example.test',
+    allowPrivate: false,
+    checkInterval: 60,
+  }));
+  const status = (at: number) => ({
+    status: 'available',
+    reason: 'responding',
+    latencyMs: 200,
+    httpStatus: 200,
+    lastAttempt: new Date(at).toISOString(),
+  });
+  const tracker = createDegradedSince(db);
+  tracker.observe(targets as never, { 1: status(now - 1000), 2: status(now - 5000) } as never, now);
+  const app = Fastify();
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => targets } as never,
+    { snapshot: () => ({ 1: status(now - 1000), 2: status(now - 5000) }) } as never,
+    { open: () => ({}) } as never,
+    { current: () => null },
+    tracker,
+  );
+  const response = (await app.inject('/api/widget-sources/monitoring/problems?limit=1')).json();
+  expect(response).toMatchObject({
+    total: 2,
+    truncated: true,
+    items: [{ id: 2, state: 'degraded', since: now - 5000 }],
+  });
   await app.close();
   db.close();
 });

@@ -7,12 +7,14 @@ import {
   monitoringState,
   monitoringSources,
   monitoringIncidentReasons,
+  orderMonitoringProblems,
   type MonitoringCounts,
   type MonitoringSummary,
   type MonitoringProblems,
   type MonitoringIncidents,
 } from '@homora/widgets';
 import type {
+  createDegradedSince,
   createMonitoringSource,
   createServiceMonitor,
   createIncidentStore,
@@ -27,6 +29,7 @@ const querySchema = z
     groups: z.string().max(12000).optional(),
     pages: z.string().max(12000).optional(),
     minimumMinutes: z.coerce.number().int().min(0).max(43200).default(0),
+    includeDegraded: z.enum(['true', 'false']).default('true'),
   })
   .strict();
 const countsSchema = z
@@ -62,11 +65,16 @@ const problemsSchema: z.ZodType<MonitoringProblems> = z
             stale: z.boolean(),
             latencyMs: z.number().nonnegative().finite().nullable(),
             since: timestamp.nullable(),
+            reason: z.string().max(40).nullable(),
+            httpStatus: z.number().int().min(100).max(599).nullable(),
+            isService: z.boolean(),
           })
           .strict(),
       )
       .max(50),
     truncated: z.boolean(),
+    total: z.number().int().nonnegative(),
+    unmeasured: z.number().int().nonnegative(),
   })
   .strict();
 const incidentsSchema: z.ZodType<MonitoringIncidents> = z
@@ -93,6 +101,17 @@ const incidentsSchema: z.ZodType<MonitoringIncidents> = z
   })
   .strict();
 
+const safeReasons = new Set([
+  'no-response',
+  'not-found',
+  'error-status',
+  'unexpected-status',
+  'content-mismatch',
+  'cert-expired',
+  'cert-invalid',
+  'cert-expiring',
+]);
+
 /** Each reader owns its cache and validates its complete response before returning it. */
 export function registerWidgetMonitoringRoutes(
   app: FastifyInstance,
@@ -101,6 +120,7 @@ export function registerWidgetMonitoringRoutes(
   monitor: ReturnType<typeof createServiceMonitor>,
   incidents: ReturnType<typeof createIncidentStore>,
   measurement: Pick<ReturnType<typeof createMeasurementGuard>, 'current'>,
+  degradedSince?: Pick<ReturnType<typeof createDegradedSince>, 'since'>,
 ) {
   const cache = new Map<string, { at: number; value: unknown }>();
   app.get<{ Params: { kind: string }; Querystring: Record<string, string> }>(
@@ -111,7 +131,7 @@ export function registerWidgetMonitoringRoutes(
         return reply.code(404).send(errorBody('not-found'));
       const query = querySchema.safeParse(request.query);
       if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
-      const { limit, days, groups, pages, minimumMinutes } = query.data;
+      const { limit, days, groups, pages, minimumMinutes, includeDegraded } = query.data;
       const parseNames = (value: string | undefined): string[] | null => {
         if (!value) return [];
         try {
@@ -138,17 +158,23 @@ export function registerWidgetMonitoringRoutes(
       const pageNames = kind === 'incidents' ? parseNames(pages) : [];
       if (!groupNames || !pageNames) return reply.code(400).send(errorBody('invalid-query'));
       if (
-        kind === 'summary' &&
+        (kind === 'summary' || kind === 'problems') &&
         ([groups, pages].some(
           (value) => value !== undefined && (!/^\d+(,\d+)*$/.test(value) || value.length > 1000),
         ) ||
           minimumMinutes)
       )
         return reply.code(400).send(errorBody('invalid-query'));
-      if (kind === 'problems' && (groups || pages || minimumMinutes))
-        return reply.code(400).send(errorBody('invalid-query'));
       const now = Date.now();
-      const key = `${kind}:${limit}:${days}:${groups ?? ''}:${pages ?? ''}:${minimumMinutes}`;
+      const key = JSON.stringify([
+        kind,
+        limit,
+        days,
+        groups,
+        pages,
+        minimumMinutes,
+        includeDegraded,
+      ]);
       const cached = cache.get(key);
       if (cached && now - cached.at < 10_000) return cached.value;
       let value: unknown;
@@ -235,6 +261,12 @@ export function registerWidgetMonitoringRoutes(
           unknown: 0,
         };
         let stale = 0;
+        let unmeasured = 0;
+        const cards =
+          kind === 'problems'
+            ? (db.prepare('SELECT id FROM services').all() as { id: number }[])
+            : [];
+        const cardsById = new Set(cards.map((card) => card.id));
         const problems = [];
         for (const target of targets) {
           const status = states[target.id];
@@ -254,7 +286,12 @@ export function registerWidgetMonitoringRoutes(
             now - lastAttempt >
               Math.max(120_000, (target.checkInterval ?? CHECK_INTERVAL_DEFAULT) * 2_000);
           if (isStale) stale++;
-          if (state === 'down' || state === 'degraded')
+          if (kind !== 'problems') continue;
+          if (state === 'unknown' || state === 'blocked') unmeasured++;
+          if (state === 'down' || (state === 'degraded' && includeDegraded === 'true')) {
+            const incident = open[target.id];
+            const reason = incident?.reason ?? status?.reason;
+            const code = incident?.httpStatus ?? status?.httpStatus;
             problems.push({
               id: target.id,
               name: target.name,
@@ -262,10 +299,21 @@ export function registerWidgetMonitoringRoutes(
               lastAttempt,
               stale: isStale,
               latencyMs: status?.latencyMs ?? null,
-              since: open[target.id]?.startedAt ?? null,
+              since:
+                state === 'degraded'
+                  ? (degradedSince?.since(target.id, thresholds.get(target.id), lastAttempt) ??
+                    null)
+                  : (incident?.startedAt ?? null),
+              reason: reason && safeReasons.has(reason) ? reason : null,
+              httpStatus:
+                typeof code === 'number' && Number.isInteger(code) && code >= 100 && code <= 599
+                  ? code
+                  : null,
+              isService: cardsById.has(target.id),
             });
+          }
         }
-        problems.sort((a, b) => (a.state === b.state ? a.id - b.id : a.state === 'down' ? -1 : 1));
+        const orderedProblems = orderMonitoringProblems(problems);
         value =
           kind === 'summary'
             ? summarySchema.parse({
@@ -276,8 +324,10 @@ export function registerWidgetMonitoringRoutes(
               })
             : problemsSchema.parse({
                 generatedAt: now,
-                items: problems.slice(0, limit),
+                items: orderedProblems.slice(0, limit),
                 truncated: problems.length > limit,
+                total: problems.length,
+                unmeasured,
               });
       }
       // Bound cache cardinality even when clients use many parameter combinations.

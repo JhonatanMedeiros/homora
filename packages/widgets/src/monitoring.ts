@@ -32,11 +32,16 @@ export type MonitoringProblem = {
   stale: boolean;
   latencyMs: number | null;
   since: number | null;
+  reason: string | null;
+  httpStatus: number | null;
+  isService: boolean;
 };
 export type MonitoringProblems = {
   generatedAt: number;
   items: MonitoringProblem[];
   truncated: boolean;
+  total: number;
+  unmeasured: number;
 };
 export type MonitoringIncident = {
   id: number;
@@ -68,3 +73,13 @@ export type MonitoringIncidents = {
   items: MonitoringIncident[];
   truncated: boolean;
 };
+
+/** Offline first; known incident starts precede unknown starts, with a stable ID tie-break. */
+export function orderMonitoringProblems(items: readonly MonitoringProblem[]): MonitoringProblem[] {
+  return [...items].sort(
+    (a, b) =>
+      (a.state === b.state ? 0 : a.state === 'down' ? -1 : 1) ||
+      (a.since ?? Infinity) - (b.since ?? Infinity) ||
+      a.id - b.id,
+  );
+}

@@ -1,5 +1,6 @@
+import { monitoringReasonKey } from '@homora/widgets';
 import { isDegraded, type MonitorSettings, type UptimeBucket } from '@homora/shared';
-import { formatNumber, t } from '@/i18n';
+import { formatNumber, t, tOr } from '@/i18n';
 
 /** What one period of the history bar shows; `slow` is an online period above the degraded limit. */
 export type BarState = 'up' | 'slow' | 'down' | 'partial' | 'unknown';
@@ -33,31 +34,7 @@ export function formatDuration(ms: number): string {
 
 /** The monitor's own failure vocabulary as a short phrase; never anything from a response body. */
 export function reasonText(reason: string | undefined, httpStatus?: number | null): string {
-  const code = typeof httpStatus === 'number' ? httpStatus : null;
-  switch (reason) {
-    case 'destination-blocked':
-      return t('uptime.reason.destination-blocked');
-    case 'no-response':
-      return t('uptime.reason.no-response');
-    case 'not-found':
-      return t('uptime.reason.not-found');
-    case 'error-status':
-      return code === null
-        ? t('uptime.reason.error-status-generic')
-        : t('uptime.reason.error-status', { code });
-    case 'unexpected-status':
-      return code === null
-        ? t('uptime.reason.unexpected-status-generic')
-        : t('uptime.reason.unexpected-status', { code });
-    case 'content-mismatch':
-    case 'cert-expired':
-    case 'cert-invalid':
-    case 'cert-expiring':
-    case 'maintenance':
-      return t(`uptime.reason.${reason}`);
-    default:
-      return t('uptime.reason.other');
-  }
+  return tOr(monitoringReasonKey(reason, httpStatus), '', { code: httpStatus ?? 0 });
 }
 
 /** Points for a latency sparkline in a `width` x `height` box; gaps (no data) split the line. */
