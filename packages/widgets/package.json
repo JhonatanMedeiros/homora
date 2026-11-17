@@ -45,7 +45,8 @@
     "./homelab-summary/ui": "./src/widgets/homelab-summary/ui/index.tsx",
     "./recent-incidents/ui": "./src/widgets/recent-incidents/ui/index.tsx",
     "./current-problems/ui": "./src/widgets/current-problems/ui/index.tsx",
-    "./rss-feed/ui": "./src/widgets/rss-feed/ui/index.tsx"
+    "./rss-feed/ui": "./src/widgets/rss-feed/ui/index.tsx",
+    "./weather/ui": "./src/widgets/weather/ui/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

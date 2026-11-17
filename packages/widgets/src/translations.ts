@@ -1,3 +1,4 @@
+import { en as widgetWeather, ptBR as widgetWeatherPt } from './widgets/weather/messages.js';
 import { en as widgetRssFeed, ptBR as widgetRssFeedPt } from './widgets/rss-feed/messages.js';
 import { en as summary, ptBR as summaryPt } from './widgets/homelab-summary/messages.js';
 import { en as incidents, ptBR as incidentsPt } from './widgets/recent-incidents/messages.js';
@@ -20,6 +21,7 @@ export const widgetEnglish = {
 
   ...widgetProblems,
   ...widgetRssFeed,
+  ...widgetWeather,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -31,4 +33,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
 
   ...widgetProblemsPt,
   ...widgetRssFeedPt,
+  ...widgetWeatherPt,
 };

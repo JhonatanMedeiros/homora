@@ -1,4 +1,11 @@
 import type { MonitoringIncidents, MonitoringSummary, MonitoringProblems } from '../monitoring.js';
+import type {
+  WeatherGeocodeResponse,
+  WeatherObservation,
+  WeatherProviderId,
+  WeatherProviderSummary,
+  WeatherUnit,
+} from '../weather.js';
 import { createContext, useContext, type ReactNode } from 'react';
 
 export type MonitoringQuery = {
@@ -62,6 +69,41 @@ export class WidgetSourceError extends Error {
 
 export const FeedSourceError = WidgetSourceError;
 
+export type WeatherErrorCode =
+  | 'provider-not-configured'
+  | 'provider-auth-failed'
+  | 'rate-limited'
+  | 'provider-unavailable';
+
+export class WeatherSourceError extends Error {
+  code: WeatherErrorCode;
+  constructor(code: WeatherErrorCode, message: string) {
+    super(message);
+    this.name = 'WeatherSourceError';
+    this.code = code;
+  }
+}
+
+export type WeatherHost = {
+  read: (
+    query: {
+      provider: WeatherProviderId;
+      latitude: number;
+      longitude: number;
+      unit: WeatherUnit;
+      name?: string;
+    },
+    signal: AbortSignal,
+  ) => Promise<WeatherObservation>;
+  listProviders: (signal: AbortSignal) => Promise<WeatherProviderSummary[]>;
+  geocode: (
+    query: { provider: WeatherProviderId; query: string; limit?: number },
+    signal: AbortSignal,
+  ) => Promise<WeatherGeocodeResponse>;
+  saveApiKey?: (provider: WeatherProviderId, apiKey: string) => Promise<WeatherProviderSummary>;
+  clearApiKey?: (provider: WeatherProviderId) => Promise<void>;
+};
+
 export type WidgetSourceParams = Record<string, string | number | boolean | undefined>;
 
 export type WidgetHost = {
@@ -80,6 +122,7 @@ export type WidgetHost = {
     ) => Promise<{ groups: { id: number; name: string }[]; pages: { id: number; name: string }[] }>;
     filterStatus?: (state: 'ok' | 'down' | 'degraded' | 'maintenance' | 'unmeasured') => void;
   };
+  weather?: WeatherHost;
   readSource?: <T = unknown>(
     contract: string,
     params: WidgetSourceParams,

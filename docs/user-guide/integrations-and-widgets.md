@@ -138,3 +138,9 @@ Maintenance and unmeasured or policy-blocked monitors are not problems; a quiet 
 Add **RSS / Atom feed** to follow recent entries from an RSS 2.0 or Atom 1.0 feed directly on a dashboard page. Configure the feed URL, an optional display title, and how many entries to show (1–10, five by default). It supports normal and wide sizes and is included in configuration exports and imports without a connection.
 
 Feeds are fetched exclusively through the backend with an 8-second timeout, a 512 KB response limit, no redirects, and in-memory caching. By default, only HTTPS and public network addresses are allowed, and URLs with embedded credentials (`user:pass@`) are rejected. Enable **Allow HTTP and private/LAN network addresses** only for trusted feeds on your local network. Markup in feed titles is stripped to plain text, entry links are restricted to `http:` and `https:`, and failed refreshes retain the last cached entries marked as stale.
+
+### Weather
+
+Add **Weather** to display current conditions (temperature, condition, and today's high/low) and a short forecast on a dashboard page. It supports `normal` (3-day forecast) and `wide` (up to 5-day forecast plus feels-like temperature, humidity, wind speed, and precipitation probability) sizes, as well as `°C (Metric)` and `°F (Imperial)` units.
+
+Select between the keyless **Open-Meteo** provider (default) or **OpenWeatherMap** (requires an API key, which is stored encrypted on the server and never included in page configuration or exports). Configure the location via backend city search, manual coordinates and optional display label, or the on-demand browser geolocation button (available only in secure contexts such as `https:` or `localhost` and never triggered automatically on load). Weather requests run through the backend with a 10-minute in-memory cache, and failed refreshes retain the last cached forecast marked as stale.
