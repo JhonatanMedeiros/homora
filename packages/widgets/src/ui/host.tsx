@@ -1,4 +1,10 @@
-import type { MonitoringIncidents, MonitoringSummary, MonitoringProblems } from '../monitoring.js';
+import type {
+  AvailabilityRange,
+  MonitoringAvailability,
+  MonitoringIncidents,
+  MonitoringSummary,
+  MonitoringProblems,
+} from '../monitoring.js';
 import type {
   WeatherGeocodeResponse,
   WeatherObservation,
@@ -29,6 +35,14 @@ export type MonitoringProblemsReading =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'ready'; data: MonitoringProblems; stale: boolean; now: number };
+export type MonitoringAvailabilityQuery = {
+  target: string;
+  range: AvailabilityRange;
+};
+export type MonitoringTargetOption = {
+  name: string;
+  isService: boolean;
+};
 export type WidgetScopeOptions = {
   pages: string[];
   groups: string[];
@@ -112,6 +126,11 @@ export type WidgetHost = {
       query: MonitoringProblemsQuery,
       signal: AbortSignal,
     ) => Promise<MonitoringProblems>;
+    readAvailability?: (
+      query: MonitoringAvailabilityQuery,
+      signal: AbortSignal,
+    ) => Promise<MonitoringAvailability>;
+    readTargets?: (signal: AbortSignal) => Promise<MonitoringTargetOption[]>;
     readSummary: (
       groups: number[],
       pages: number[],

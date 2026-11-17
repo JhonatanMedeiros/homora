@@ -23,3 +23,4 @@ export { createMonitoringTrustStore } from './trust.js';
 export { createMonitoringSource, toMonitoringService } from './service-source.js';
 
 export { resolveCheckTarget } from './target.js';
+export { UPTIME_MIN_CHECKS, uptimeSummarizerOf } from './uptime.js';

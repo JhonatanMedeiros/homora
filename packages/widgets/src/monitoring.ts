@@ -6,6 +6,7 @@ export const monitoringSources = {
   summary: { contract: 'homora:monitoring-summary', version: 1 },
   problems: { contract: 'homora:monitoring-problems', version: 1 },
   incidents: { contract: 'homora:monitoring-incidents', version: 1 },
+  availability: { contract: 'homora:monitoring-availability', version: 1 },
 } as const satisfies Record<string, WidgetSource>;
 
 export function isInternalSource(source: WidgetSource | null): boolean {
@@ -72,6 +73,35 @@ export type MonitoringIncidents = {
   periodDays: number;
   items: MonitoringIncident[];
   truncated: boolean;
+};
+
+export const availabilityRanges = ['24h', '7d', '30d'] as const;
+export type AvailabilityRange = (typeof availabilityRanges)[number];
+export type MonitoringAvailabilityBucket = {
+  start: string;
+  status: 'up' | 'down' | 'partial' | 'unknown';
+  checks: number;
+};
+export type MonitoringAvailabilityTarget = {
+  id: number;
+  name: string;
+  isService: boolean;
+  state: MonitoringState;
+  lastAttempt: number | null;
+  stale: boolean;
+  uptimePct: number | null;
+  checks: number;
+  upChecks: number;
+  downChecks: number;
+  unknownChecks: number;
+  minChecks: number;
+  reconfigured: boolean;
+  buckets: MonitoringAvailabilityBucket[];
+};
+export type MonitoringAvailability = {
+  generatedAt: number;
+  range: AvailabilityRange;
+  target: MonitoringAvailabilityTarget | null;
 };
 
 /** Offline first; known incident starts precede unknown starts, with a stable ID tie-break. */

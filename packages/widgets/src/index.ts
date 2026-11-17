@@ -69,6 +69,7 @@ export function definePresenter<Input, Output>(
 
 import { isInternalSource } from './monitoring.js';
 export {
+  availabilityRanges,
   isInternalSource,
   monitoringSources,
   monitoringIncidentReasons,
@@ -83,6 +84,10 @@ export function isPortableWidget(definition: WidgetDefinition<unknown> | undefin
   );
 }
 export type {
+  AvailabilityRange,
+  MonitoringAvailability,
+  MonitoringAvailabilityBucket,
+  MonitoringAvailabilityTarget,
   MonitoringCounts,
   MonitoringSummary,
   MonitoringProblem,

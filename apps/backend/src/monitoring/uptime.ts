@@ -12,7 +12,7 @@ export const UPTIME_WINDOWS: Record<UptimeRange, { span: number; bucket: number 
   '30d': { span: 30 * 24 * 3_600_000, bucket: 6 * 3_600_000 },
 };
 /** Below this many up/down checks a percentage would mislead, so none is reported. */
-const UPTIME_MIN_CHECKS = 5;
+export const UPTIME_MIN_CHECKS = 5;
 // Virtual columns generated from the observation JSON (migration 0015) and covered by an index.
 export const STATUS_SQL = 'status';
 export const LATENCY_SQL = 'latency_ms';
