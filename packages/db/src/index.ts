@@ -142,7 +142,7 @@ function migrateWithoutForeignKeys(
     if (foreignKeyViolations(sqlite) > violationsBefore)
       throw new Error('Migration left rows that reference missing parents.');
     sqlite.exec('COMMIT');
-    const newest = migrations[migrations.length - 1];
+    const newest = migrations.at(-1);
     return {
       known: migrations.length,
       alreadyApplied,
@@ -158,6 +158,8 @@ export function createDatabase(path: string) {
   const sqlite = new DatabaseSync(path);
   let migrations: MigrationReport;
   try {
+    sqlite.exec('PRAGMA busy_timeout = 2000;');
+    if (path !== ':memory:') sqlite.exec('PRAGMA journal_mode = WAL;');
     migrations = migrate(sqlite);
   } catch (error) {
     sqlite.close();

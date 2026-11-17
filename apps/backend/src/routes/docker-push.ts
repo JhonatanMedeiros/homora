@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { errorBody } from '../api-error.js';
+import { errorBody, sendSanitizedError } from '../api-error.js';
+import { createIpRateLimiter } from '../rate-limit.js';
 import {
   fingerprintReview,
   importResults,
@@ -148,26 +149,19 @@ export function registerDockerPushRoutes(
       results: importResults(ids, entries, rejected, result.plan),
     };
   });
-  const attempts = new Map<string, { count: number; until: number }>();
+  const allowIp = createIpRateLimiter({ max: 60 });
   app.post(
     '/docker-push/inventory',
     {
       bodyLimit: 1024 * 1024,
-      errorHandler: (error, _request, reply) => {
+      errorHandler: (error, request, reply) => {
         if (error.code === 'FST_ERR_CTP_BODY_TOO_LARGE')
           return reply.code(413).send(errorBody('inventory-too-large'));
-        return reply.send(error);
+        return sendSanitizedError(error, request, reply);
       },
       onRequest: async (request, reply) => {
         if (request.headers.origin) return reply.code(403).send(errorBody('origin-not-allowed'));
-        const now = Date.now();
-        for (const [ip, entry] of attempts) if (entry.until <= now) attempts.delete(ip);
-        if (!attempts.has(request.ip) && attempts.size >= 10000)
-          return reply.code(429).send(errorBody('too-many-attempts'));
-        const entry = attempts.get(request.ip) ?? { count: 0, until: now + 60000 };
-        entry.count++;
-        attempts.set(request.ip, entry);
-        if (entry.count > 60) return reply.code(429).send(errorBody('too-many-attempts'));
+        if (!allowIp(request.ip)) return reply.code(429).send(errorBody('too-many-attempts'));
         if (!/^application\/json(?:\s*;|$)/i.test(request.headers['content-type'] ?? ''))
           return reply.code(415).send(errorBody('invalid-data'));
       },

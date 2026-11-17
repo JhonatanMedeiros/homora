@@ -47,7 +47,6 @@ type Props = {
   alerts?: ReactNode;
   /** Home page switcher pills rendered in the header outside management/account views. */
   pagesNav?: ReactNode;
-  /** Open alerts, for the count over the bell in the phone's bottom bar. */
   children: ReactNode;
 };
 
@@ -63,7 +62,7 @@ export function AppShell({
   pagesNav,
   children,
 }: Props) {
-  // The account is a page of its own: no sidebar and no search, just a way back.
+  // The account is a page of its own: no sidebar, just a way back.
   const standalone = tab === 'account' && !managing;
   const pendingProposals = usePendingProposals(tab, managing);
   const [releasesOpen, setReleasesOpen] = useState(false);
@@ -78,13 +77,11 @@ export function AppShell({
           className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-3 py-2 sm:gap-3 sm:px-4 md:px-8 ${managing ? 'max-w-none md:px-6' : tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
         >
           <div className="contents md:flex md:min-w-0 md:flex-1 md:items-center md:gap-3">
-            <button
-              type="button"
-              onClick={() => onTabChange('services')}
-              className={`cursor-pointer rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${managing || standalone ? 'max-md:hidden' : ''}`}
-            >
-              <BrandMark compact className="text-sidebar-foreground" />
-            </button>
+            <BrandMark
+              compact
+              onNavigate={() => onTabChange('services')}
+              className={`text-sidebar-foreground ${managing || standalone ? 'max-md:hidden' : ''}`}
+            />
             {build &&
               !managing &&
               !standalone &&

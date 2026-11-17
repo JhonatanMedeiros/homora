@@ -3,6 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { createDatabase } from '@homora/db';
 import { AGENT_SCOPES } from '../agents/agent-scopes.js';
+import { createIpRateLimiter } from '../rate-limit.js';
 import { createMcp } from './index.js';
 import { createIntegrationConnections } from '../integrations/integration-connections.js';
 import type { createProposalService } from '../proposals/index.js';
@@ -22,16 +23,9 @@ export function registerMcpHttp(
   const hosts = new Set([...origins].map((origin) => new URL(origin).host));
   hosts.add(`localhost:${apiPort}`);
   hosts.add(`127.0.0.1:${apiPort}`);
-  const attempts = new Map<string, { count: number; until: number }>();
+  const allowIp = createIpRateLimiter({ max: 120 });
   app.post('/mcp', async (request, reply) => {
-    const now = Date.now();
-    for (const [ip, entry] of attempts) if (entry.until <= now) attempts.delete(ip);
-    if (!attempts.has(request.ip) && attempts.size >= 10_000)
-      return reply.code(429).send({ error: 'Too many requests' });
-    const entry = attempts.get(request.ip) ?? { count: 0, until: now + 60_000 };
-    entry.count++;
-    attempts.set(request.ip, entry);
-    if (entry.count > 120) return reply.code(429).send({ error: 'Too many requests' });
+    if (!allowIp(request.ip)) return reply.code(429).send({ error: 'Too many requests' });
     if (!request.headers.host || !hosts.has(request.headers.host))
       return reply.code(403).send({ error: 'Host not allowed' });
     if (request.headers.origin && !origins.has(request.headers.origin))

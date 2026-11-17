@@ -27,7 +27,7 @@ import type { DockerSource } from './discovery/index.js';
 import { registerDiscoveryRoutes } from './routes/discovery.js';
 import { registerConfigTransferRoutes } from './routes/config-transfer.js';
 import { registerServiceConfigurationRoutes } from './routes/service-configuration.js';
-import { errorBody } from './api-error.js';
+import { errorBody, sendSanitizedError } from './api-error.js';
 import { buildInfo, isQuietRequest } from './logger.js';
 import { createServiceAttention } from './service-attention.js';
 import { createTagStore } from './service-tags.js';
@@ -367,29 +367,7 @@ export function createApp(
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);
 
-  app.setErrorHandler((error, request, reply) => {
-    const status =
-      typeof error === 'object' &&
-      error !== null &&
-      'statusCode' in error &&
-      typeof error.statusCode === 'number'
-        ? error.statusCode
-        : 500;
-    if (status >= 500) {
-      // The client only learns `internal-error`; the original error stays in the log.
-      request.log.error(
-        {
-          err: error,
-          method: request.method,
-          url: request.url.split('?')[0],
-          route: request.routeOptions.url ?? null,
-        },
-        'request failed',
-      );
-      return reply.code(status).send(errorBody('internal-error'));
-    }
-    return reply.send(error);
-  });
+  app.setErrorHandler(sendSanitizedError);
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));
   return app;
 }

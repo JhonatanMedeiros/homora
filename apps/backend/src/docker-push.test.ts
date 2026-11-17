@@ -244,6 +244,7 @@ it('rejects an outdated or revoked snapshot inside the card transaction', async 
   const dir = mkdtempSync(join(tmpdir(), 'homora-push-race-'));
   const first = createDatabase(join(dir, 'db.sqlite'));
   const second = createDatabase(join(dir, 'db.sqlite'));
+  getSqliteHandle(second.db).exec('PRAGMA busy_timeout = 0;');
   try {
     const one = createDockerPush(getSqliteHandle(first.db));
     const two = createDockerPush(getSqliteHandle(second.db));
