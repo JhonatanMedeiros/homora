@@ -31,3 +31,14 @@ The manual-preparation and merged-PR triggers were validated on GitHub with the 
 Each image carries the standard `org.opencontainers.image.*` labels. `version` (without the leading `v`) and `revision` (the commit of the tag) are set from the released tag, not from the branch that started the workflow, and `title` and `description` differ per image. After a release, `docker image inspect ghcr.io/<owner>/homora:<version>` should show the released version and the tag's commit, the same ones `/api/health` reports.
 
 The release is created as a draft (`draft` and `force-tag-creation` in `release-please-config.json`): the tag must exist immediately because the image workflow checks it out, and GitHub only creates a draft's tag when it is published. The publication of the draft by `publish-release` has not run on GitHub yet; the first release after this change validates it. If it does not publish, use the manual command above.
+
+## Workspace packages
+
+Release Please uses `release-type: "simple"` and does not expand globs in `extra-files`, so every `apps/*/package.json` and `packages/*/package.json` that declares a `version` field must be listed explicitly in `release-please-config.json` under `packages["."]["extra-files"]`.
+
+When creating a new workspace app or package with a `version` field:
+
+1. Add `{ "type": "json", "path": "<group>/<name>/package.json", "jsonpath": "$.version" }` to `release-please-config.json`.
+2. Set its `version` to match `apps/backend/package.json` and `.release-please-manifest.json`.
+
+`scripts/test/release-packages.test.mjs` (run by `pnpm check` and the CI `static` job) fails if any versioned workspace package is missing from `release-please-config.json` or has a divergent `version`.
