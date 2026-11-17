@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.4.0](https://github.com/JhonatanMedeiros/homora/compare/v0.3.0...v0.4.0) (2026-11-17)
+
+
+### 🚀 New features
+
+* add countdown page widget ([#264](https://github.com/JhonatanMedeiros/homora/issues/264)) ([e33b2f7](https://github.com/JhonatanMedeiros/homora/commit/e33b2f7ff04e026c7b866588fad1840f44df6e3a))
+* add current problems widget ([#277](https://github.com/JhonatanMedeiros/homora/issues/277)) ([eb3bf86](https://github.com/JhonatanMedeiros/homora/commit/eb3bf86fac52b9d9f7eedae5575db158cdd46966))
+* add homelab status summary widget ([#275](https://github.com/JhonatanMedeiros/homora/issues/275)) ([683b6f2](https://github.com/JhonatanMedeiros/homora/commit/683b6f203d7ad1abf7a70d5e557b89277cc27b6c))
+* add internal monitoring sources for widgets ([#274](https://github.com/JhonatanMedeiros/homora/issues/274)) ([efbbc0d](https://github.com/JhonatanMedeiros/homora/commit/efbbc0dafa7fd47077a4e92281334f09be3fc80d))
+* add monthly calendar widget ([#273](https://github.com/JhonatanMedeiros/homora/issues/273)) ([f1446d9](https://github.com/JhonatanMedeiros/homora/commit/f1446d9cbca8a01b18d48c9755a2fb6ecf99a4e7))
+* add recent incidents widget ([#276](https://github.com/JhonatanMedeiros/homora/issues/276)) ([b93c2f9](https://github.com/JhonatanMedeiros/homora/commit/b93c2f9c2ba1ed16bb6aef0e6a368addfa49a402))
+* add widget scaffolding and enforce module boundaries ([#271](https://github.com/JhonatanMedeiros/homora/issues/271)) ([f79aad1](https://github.com/JhonatanMedeiros/homora/commit/f79aad1f8be0025f12f75dc281a848f8f20e1719))
+* center command palette search bar in header and improve page overflow navigation ([#280](https://github.com/JhonatanMedeiros/homora/issues/280)) ([4493ea7](https://github.com/JhonatanMedeiros/homora/commit/4493ea7ad301151e7fe0498551af3b3158e46afb))
+* extract @homora/utils package and consolidate shared contracts ([#278](https://github.com/JhonatanMedeiros/homora/issues/278)) ([a199aae](https://github.com/JhonatanMedeiros/homora/commit/a199aae7ac83c367d8b1906fa9a5aa374c4213a2))
+* improve monitoring notification messages ([#253](https://github.com/JhonatanMedeiros/homora/issues/253)) ([f9a2b94](https://github.com/JhonatanMedeiros/homora/commit/f9a2b94467f1a318ec50d4951dc289a7b87288a1))
+* move multi-page navigation into the app header ([#279](https://github.com/JhonatanMedeiros/homora/issues/279)) ([65e8b2e](https://github.com/JhonatanMedeiros/homora/commit/65e8b2e8d68bfe3de2c257a126a2123adbb0017c))
+* support wide page widgets ([#272](https://github.com/JhonatanMedeiros/homora/issues/272)) ([1f217f5](https://github.com/JhonatanMedeiros/homora/commit/1f217f56efb63c4fe4165146e53dd4fa9f5b07ae))
+* **widgets:** add Markdown notes to dashboard pages ([#262](https://github.com/JhonatanMedeiros/homora/issues/262)) ([96fbafc](https://github.com/JhonatanMedeiros/homora/commit/96fbafcbcd9468f3fd734c35119916cbf621120e))
+
+
+### 📝 Documentation
+
+* clarify pull request title conventions ([#254](https://github.com/JhonatanMedeiros/homora/issues/254)) ([a9ae663](https://github.com/JhonatanMedeiros/homora/commit/a9ae6639ebe6526e6a44086c5afde3d96519997f))
+* link widget catalog items to their issues ([#268](https://github.com/JhonatanMedeiros/homora/issues/268)) ([c890da9](https://github.com/JhonatanMedeiros/homora/commit/c890da9cd517bad0e4aaeb7d6a5e6c04545d2f7b))
+
+
+### 🧰 Improvements
+
+* extract shared shadcn UI package ([#269](https://github.com/JhonatanMedeiros/homora/issues/269)) ([7b0af70](https://github.com/JhonatanMedeiros/homora/commit/7b0af706822862ac636e6ac168ed27c59a755ff5))
+* isolate page widget modules ([#270](https://github.com/JhonatanMedeiros/homora/issues/270)) ([d28badc](https://github.com/JhonatanMedeiros/homora/commit/d28badcc65f8697e057982171f184f6364801446))
+
 ## [0.3.0](https://github.com/JhonatanMedeiros/homora/compare/v0.2.0...v0.3.0) (2026-11-16)
 
 
