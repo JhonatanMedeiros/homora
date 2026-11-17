@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import { DatabaseSync } from 'node:sqlite';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { registerWidgetMonitoringRoutes } from './widget-monitoring.js';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from '../app.js';
@@ -489,6 +489,82 @@ it('returns availability for services and probes, enforcing min 5 checks and exc
 
   await app.close();
   db.close();
+});
+
+it('returns bounded maintenance with precise boundaries, scopes, ordering and no notes', async () => {
+  const now = 1_800_000_000_000;
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+  const db = new DatabaseSync(':memory:');
+  const app = Fastify();
+  try {
+    db.exec(`CREATE TABLE monitors(id INTEGER PRIMARY KEY, name TEXT);
+      CREATE TABLE services(id INTEGER, category TEXT);
+      CREATE TABLE service_groups(id INTEGER, name TEXT, page_id INTEGER);
+      CREATE TABLE pages(id INTEGER, name TEXT, position INTEGER);
+      CREATE TABLE service_maintenance(id INTEGER, service_id INTEGER, starts_at INTEGER, ends_at INTEGER, note TEXT);
+      INSERT INTO monitors VALUES(1,'A'),(2,'B'),(3,'Probe');
+      INSERT INTO services VALUES(1,'Infra'),(2,'Media');
+      INSERT INTO service_groups VALUES(1,'Infra',1),(2,'Media',2);
+      INSERT INTO pages VALUES(1,'Home',0),(2,'Other',1);`);
+    const insert = db.prepare('INSERT INTO service_maintenance VALUES(?,?,?,?,?)');
+    insert.run(1, 1, now - 100000000, now + 1, 'secret note');
+    insert.run(2, 2, now, now + 2000, 'secret note');
+    insert.run(3, 1, now + 1000, now + 3000, 'secret note');
+    insert.run(4, 3, now + 1000, now + 3000, 'secret note');
+    insert.run(5, 1, now - 1000, now, 'ended');
+    insert.run(6, 1, now + 86400000, now + 86401000, 'outside');
+    registerWidgetMonitoringRoutes(
+      app,
+      db,
+      { list: () => [] } as never,
+      { snapshot: () => ({}) } as never,
+      { open: () => ({}) } as never,
+      { current: () => null },
+    );
+    const response = await app.inject('/api/widget-sources/monitoring/maintenance?days=1&limit=3');
+    expect(response.statusCode).toBe(200);
+    expect(response.body).not.toContain('secret');
+    expect(response.json()).toMatchObject({ total: 4, items: [{ id: 1 }, { id: 2 }, { id: 3 }] });
+    expect(
+      (await app.inject('/api/widget-sources/monitoring/maintenance?days=1')).json(),
+    ).toMatchObject({
+      total: 4,
+      items: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4, hasService: false }],
+    });
+    const params = new URLSearchParams({
+      days: '1',
+      groups: JSON.stringify(['Infra']),
+      pages: JSON.stringify(['Home']),
+    });
+    expect(
+      (await app.inject(`/api/widget-sources/monitoring/maintenance?${params}`)).json(),
+    ).toMatchObject({ total: 2, items: [{ id: 1 }, { id: 3 }] });
+    params.set('groups', JSON.stringify(['Removed']));
+    expect(
+      (await app.inject(`/api/widget-sources/monitoring/maintenance?${params}`)).json(),
+    ).toMatchObject({ total: 0, items: [] });
+    expect(
+      (await app.inject('/api/widget-sources/monitoring/maintenance?limit=11')).statusCode,
+    ).toBe(400);
+    expect((await app.inject('/api/widget-sources/monitoring/maintenance?days=2')).statusCode).toBe(
+      400,
+    );
+    clock.mockReturnValue(now + 1);
+    expect(
+      (await app.inject('/api/widget-sources/monitoring/maintenance?days=1&limit=3')).json()
+        .items[0].id,
+    ).toBe(2);
+    db.prepare('DELETE FROM monitors WHERE id=2').run();
+    expect(
+      (await app.inject('/api/widget-sources/monitoring/maintenance?days=1&limit=3'))
+        .json()
+        .items.some((item: { monitorId: number }) => item.monitorId === 2),
+    ).toBe(false);
+  } finally {
+    await app.close();
+    db.close();
+    clock.mockRestore();
+  }
 });
 
 it('reads latency by local service identity and reports a missing deleted selection', async () => {

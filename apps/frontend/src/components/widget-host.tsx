@@ -12,6 +12,7 @@ import { tOr, useI18n } from '@/i18n';
 import type {
   MonitoringAvailability,
   MonitoringIncidents,
+  MonitoringMaintenance,
   WeatherGeocodeResponse,
   WeatherObservation,
   WeatherProviderSummary,
@@ -20,6 +21,7 @@ import { parseWidgetMonitoringSource } from '@/hooks/use-widget-monitoring-sourc
 import type {
   MonitoringAvailabilityQuery,
   MonitoringProblemsQuery,
+  MonitoringMaintenanceQuery,
   MonitoringTargetOption,
 } from '@homora/widgets/ui';
 
@@ -54,6 +56,16 @@ export async function readIncidents(
   if (options.groups.length > 0) query.set('groups', JSON.stringify(options.groups));
   if (options.pages.length > 0) query.set('pages', JSON.stringify(options.pages));
   return getJson(`/api/widget-sources/monitoring/incidents?${query}`, signal);
+}
+
+export async function readMaintenance(
+  query: MonitoringMaintenanceQuery,
+  signal: AbortSignal,
+): Promise<MonitoringMaintenance> {
+  const params = new URLSearchParams({ days: String(query.days), limit: String(query.limit) });
+  if (query.groups.length > 0) params.set('groups', JSON.stringify(query.groups));
+  if (query.pages.length > 0) params.set('pages', JSON.stringify(query.pages));
+  return getJson(`/api/widget-sources/monitoring/maintenance?${params}`, signal);
 }
 
 export async function readProblems(query: MonitoringProblemsQuery, signal: AbortSignal) {
@@ -229,6 +241,7 @@ export function WidgetHost({
           readSummary,
           readScopes,
           readProblems,
+          readMaintenance,
           readAvailability,
           readLatency,
           readServiceTargets,

@@ -1,3 +1,4 @@
+import { widgetMaintenanceScheduleWidget } from './widgets/maintenance-schedule/definition.js';
 import { widgetQuickLinksWidget } from './widgets/quick-links/definition.js';
 import { widgetLatencyHistoryWidget } from './widgets/latency-history/definition.js';
 import { widgetAvailabilityWidget } from './widgets/availability/definition.js';
@@ -31,6 +32,8 @@ const widgets = {
   'quick-links': widgetQuickLinksWidget,
   availability: widgetAvailabilityWidget,
   'latency-history': widgetLatencyHistoryWidget,
+
+  'maintenance-schedule': widgetMaintenanceScheduleWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];

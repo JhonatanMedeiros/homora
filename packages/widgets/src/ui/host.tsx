@@ -2,6 +2,7 @@ import type {
   AvailabilityRange,
   MonitoringAvailability,
   MonitoringIncidents,
+  MonitoringMaintenance,
   MonitoringSummary,
   MonitoringProblems,
   MonitoringLatency,
@@ -36,6 +37,12 @@ export type MonitoringProblemsReading =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'ready'; data: MonitoringProblems; stale: boolean; now: number };
+export type MonitoringMaintenanceQuery = {
+  days: 1 | 7 | 30;
+  limit: number;
+  pages: string[];
+  groups: string[];
+};
 export type MonitoringAvailabilityQuery = {
   target: string;
   range: AvailabilityRange;
@@ -128,6 +135,11 @@ export type WidgetHost = {
       signal: AbortSignal,
     ) => Promise<MonitoringLatency>;
     readServiceTargets?: (signal: AbortSignal) => Promise<{ target: string; name: string }[]>;
+
+    readMaintenance?: (
+      query: MonitoringMaintenanceQuery,
+      signal: AbortSignal,
+    ) => Promise<MonitoringMaintenance>;
     readProblems?: (
       query: MonitoringProblemsQuery,
       signal: AbortSignal,
