@@ -1,7 +1,7 @@
 # Widget catalog and roadmap
 
 This is a living inventory and a list of product hypotheses, not an implementation commitment.
-Last reviewed: 2026-11-13. Priorities express product judgment, not measured user demand; revisit
+Last reviewed: 2026-11-16. Priorities express product judgment, not measured user demand; revisit
 them with maintainer feedback. A candidate may be split, combined, deferred, or rejected. Do not
 implement this catalog wholesale: create and scope a separate issue before starting each item.
 Tracking epic: [issue #177](https://github.com/JhonatanMedeiros/homora/issues/177).
@@ -46,16 +46,16 @@ the epic synchronized; do not check off implementation based only on a proposal 
 
 | ID       | Candidate / initial slice                                    | Source and dependency                                                                             | Priority | Status / issue                                                              |
 | -------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------- |
-| MON-01   | Homelab summary: counts by monitor state.                    | Internal monitoring; define grouping and unknown states.                                          | H        | Idea — —                                                                    |
-| MON-02   | Problems: bounded list of offline and degraded services.     | Internal monitoring; define ordering and stale data.                                              | H        | Idea — —                                                                    |
-| MON-03   | Recent incidents: start, resolution and duration.            | Internal incident history; permissions and retention.                                             | H        | Idea — —                                                                    |
+| MON-01   | Homelab summary: counts by monitor state.                    | Internal monitoring; define grouping and unknown states.                                          | H        | Scoped — [#259](https://github.com/JhonatanMedeiros/homora/issues/259)      |
+| MON-02   | Problems: bounded list of offline and degraded services.     | Internal monitoring; define ordering and stale data.                                              | H        | Scoped — [#260](https://github.com/JhonatanMedeiros/homora/issues/260)      |
+| MON-03   | Recent incidents: start, resolution and duration.            | Internal incident history; permissions and retention.                                             | H        | Scoped — [#261](https://github.com/JhonatanMedeiros/homora/issues/261)      |
 | MON-04   | Availability for a chosen service and period.                | Internal uptime history; define insufficient data and maintenance.                                | M        | Idea — —                                                                    |
 | MON-05   | Latency and historical trend for a service.                  | Internal checks; sampling, missing data and units.                                                | M        | Idea — —                                                                    |
 | MON-06   | Active and upcoming maintenance windows.                     | Internal maintenance data; time zones and empty states.                                           | M        | Idea — —                                                                    |
 | MON-07   | Certificate expiration for selected monitored services.      | Existing TLS check; unknown versus expired, date and threshold.                                   | M        | Idea — —                                                                    |
 | MON-08   | Dependency impact summary for selected service or host.      | Existing dependency model; distinguish inferred impact from measured failure.                     | L        | Idea — —                                                                    |
-| LOCAL-01 | Monthly calendar, locale and first day of week.              | Device clock; no external source.                                                                 | H        | Idea — —                                                                    |
-| LOCAL-02 | Countdown to a named date and time.                          | Device clock; explicit time zone and past-event behavior.                                         | H        | Implemented — #258                                                          |
+| LOCAL-01 | Monthly calendar, locale and first day of week.              | Device clock; no external source.                                                                 | H        | Scoped — [#257](https://github.com/JhonatanMedeiros/homora/issues/257)      |
+| LOCAL-02 | Countdown to a named date and time.                          | Device clock; explicit time zone and past-event behavior.                                         | H        | Implemented — [#258](https://github.com/JhonatanMedeiros/homora/issues/258) |
 | LOCAL-03 | Short note or instructions with basic Markdown.              | Local configuration; safe rendering and 4,000-character limit.                                    | M        | Implemented — [#263](https://github.com/JhonatanMedeiros/homora/issues/263) |
 | LOCAL-04 | Image with alt text.                                         | Prefer local asset; storage, size, transfer and remote privacy need design.                       | L        | Idea — —                                                                    |
 | LOCAL-05 | Quick links or favorites selection.                          | Existing services and links; compare with existing cards before implementation.                   | L        | Idea — —                                                                    |
@@ -79,6 +79,19 @@ the epic synchronized; do not check off implementation based only on a proposal 
 | ADV-01   | Generic structured API result.                               | Arbitrary destinations, credentials and response mapping require a separate capability design.    | L        | Deferred — security design                                                  |
 | ADV-02   | Embedded page.                                               | Framing restrictions, isolation and privacy require separate design; normal link fallback.        | L        | Deferred — product and security design                                      |
 | ADV-03   | User-provided HTML or scripts.                               | Arbitrary execution conflicts with current boundaries; no implementation authorized.              | L        | Deferred — security design                                                  |
+
+## Foundations
+
+Work shared by several candidates, tracked under the same epic. Candidates depend on these
+as noted in each issue; execution order is in the epic.
+
+| Issue                                                         | Scope                                                                          | Status |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------ |
+| [#265](https://github.com/JhonatanMedeiros/homora/issues/265) | Move the shadcn primitives to a shared `@homora/ui` package.                   | Scoped |
+| [#266](https://github.com/JhonatanMedeiros/homora/issues/266) | Widget modules: contract, registry and UI isolated per widget.                 | Scoped |
+| [#267](https://github.com/JhonatanMedeiros/homora/issues/267) | `pnpm widget:create` scaffold and automated boundary rules for widget modules. | Scoped |
+| [#255](https://github.com/JhonatanMedeiros/homora/issues/255) | Normal and wide sizes for page widgets.                                        | Scoped |
+| [#256](https://github.com/JhonatanMedeiros/homora/issues/256) | Contract for an internal monitoring source used by widgets.                    | Scoped |
 
 ## Requirements for each future issue
 
