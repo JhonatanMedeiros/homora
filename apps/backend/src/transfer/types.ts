@@ -48,6 +48,7 @@ export type ImportedGroup = {
   services: ImportedService[];
 };
 export type PortableWidget = {
+  size?: 'normal' | 'wide';
   page: string;
   type: string;
   name: string;

@@ -221,3 +221,5 @@ Background-image editing is only available on larger screens, and the service ma
 screens.
 
 <p align="center"><img src="../screenshots/mobile-dashboard.png" alt="The dashboard on a phone" width="260"></p>
+
+When a page widget offers a size choice, its editor lets you choose normal or wide. Wide uses two columns above groups when there is room; the right panel and small screens use normal width. Current widgets use normal width.

@@ -1,5 +1,6 @@
 /** Internal widget contracts. The host owns placement, persistence and data access. */
 export type WidgetLocation = 'page' | 'card' | 'top-bar';
+export type WidgetSize = 'normal' | 'wide';
 export type WidgetStat = { label: string; value: string; id?: 'cpu' | 'memory' | 'disk' };
 
 /** Source identifiers name a data contract, not a transport or credentials. */
@@ -11,7 +12,7 @@ export type WidgetDefinition<Config> = {
   source: WidgetSource | null;
   portable?: boolean;
   defaultConfig?: Config;
-  sizes?: readonly string[];
+  sizes?: readonly WidgetSize[];
   parseConfig(value: unknown): Config | null;
 };
 export type WidgetState<Data> =
@@ -38,7 +39,10 @@ export function supportsSource(
 export function defineWidget<Config>(
   definition: WidgetDefinition<Config>,
 ): WidgetDefinition<Config> {
-  return definition;
+  const sizes = definition.sizes ?? ['normal'];
+  if (!sizes.includes('normal') || sizes.some((size) => size !== 'normal' && size !== 'wide'))
+    throw new Error('Invalid widget sizes');
+  return { ...definition, sizes };
 }
 
 /** Presentation is pure and receives only host-provided, validated observations. */

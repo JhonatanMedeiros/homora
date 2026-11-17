@@ -21,3 +21,5 @@ pnpm backup data/homora.sqlite backups/homora.sqlite
 ```
 
 Para restaurar, pare o Homora, preserve o banco atual e restaure para um novo arquivo; aponte `HOMORA_DATABASE_PATH` para ele. Teste a restauração antes de depender do backup. O [guia completo em inglês](/user-guide/import-export-backup) contém os comandos para copiar o banco e as chaves de uma instalação Docker Compose.
+
+A exportação preserva o tamanho largo de widgets de página quando disponível. Arquivos antigos são importados com tamanho normal; versões antigas do Homora ignoram o campo e exibem o widget em tamanho normal.

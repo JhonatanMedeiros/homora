@@ -21,3 +21,5 @@ Abra os detalhes de um serviço para consultar verificações, latência e hist�
 No celular, a interface adapta a navegação e os controles à tela. Pressione `?` para consultar os atalhos disponíveis.
 
 [Leia a referência completa do dashboard em inglês](/user-guide/dashboard).
+
+Quando um widget de página oferecer tamanhos, escolha normal ou largo no editor. Largo ocupa duas colunas acima dos grupos quando há espaço; no painel lateral e em telas pequenas usa a largura normal. Os widgets atuais usam tamanho normal.

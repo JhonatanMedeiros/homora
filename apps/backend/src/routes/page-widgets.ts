@@ -15,6 +15,7 @@ const bodySchema = z
     name: z.string().trim().max(80),
     config: z.unknown(),
     connectionId: id.nullable(),
+    size: z.enum(['normal', 'wide']).default('normal'),
   })
   .strict();
 const orderSchema = z.object({ pageId: id, ids: z.array(id).max(200) }).strict();
@@ -28,6 +29,7 @@ type Row = {
   version: number;
   connectionId: number | null;
   position: number;
+  size: string;
 };
 
 /** Page widget storage is independent of legacy integration widget identities. */
@@ -53,7 +55,7 @@ export function registerPageWidgetRoutes(
     (
       sqlite
         .prepare(
-          'SELECT id,page_id AS pageId,type,name,config,version,connection_id AS connectionId,position FROM page_widgets ORDER BY page_id,position,id',
+          'SELECT id,page_id AS pageId,type,name,config,version,connection_id AS connectionId,position,size FROM page_widgets ORDER BY page_id,position,id',
         )
         .all() as Row[]
     ).map((row) => {
@@ -63,7 +65,7 @@ export function registerPageWidgetRoutes(
       } catch {
         // Invalid saved data stays isolated: the widget is returned with `config: null`.
       }
-      return { ...row, config };
+      return { ...row, config, size: row.size === 'wide' ? 'wide' : 'normal' };
     });
   const validate = (raw: unknown) => {
     const parsed = bodySchema.safeParse(raw);
@@ -71,7 +73,7 @@ export function registerPageWidgetRoutes(
     const value = parsed.data;
     if (!sqlite.prepare('SELECT id FROM pages WHERE id=?').get(value.pageId)) return null;
     const definition = resolve(value.type);
-    if (!definition) return null;
+    if (!definition || !(definition.sizes ?? ['normal']).includes(value.size)) return null;
     const config = definition.parseConfig(value.config);
     if (config === null) return null;
     if (definition.source === null)
@@ -93,7 +95,7 @@ export function registerPageWidgetRoutes(
     const result = transaction(() =>
       sqlite
         .prepare(
-          'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position) VALUES(?,?,?,?,1,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
+          'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,?,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
         )
         .run(
           value.pageId,
@@ -101,6 +103,7 @@ export function registerPageWidgetRoutes(
           value.name,
           JSON.stringify(value.config),
           value.connectionId,
+          value.size,
           value.pageId,
         ),
     );
@@ -154,7 +157,7 @@ export function registerPageWidgetRoutes(
     transaction(() =>
       sqlite
         .prepare(
-          'UPDATE page_widgets SET page_id=?,type=?,name=?,config=?,version=1,connection_id=?,position=? WHERE id=?',
+          'UPDATE page_widgets SET page_id=?,type=?,name=?,config=?,version=1,connection_id=?,size=?,position=? WHERE id=?',
         )
         .run(
           value.pageId,
@@ -162,6 +165,7 @@ export function registerPageWidgetRoutes(
           value.name,
           JSON.stringify(value.config),
           value.connectionId,
+          value.size,
           position,
           widgetId,
         ),

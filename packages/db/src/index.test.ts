@@ -51,7 +51,8 @@ it('upgrades the monitoring view without changing cards, probes or history', asy
       INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(101,'old',1,'{"status":"available"}');
       DROP VIEW monitor_targets;
       CREATE VIEW monitor_targets AS SELECT m.id,m.name,COALESCE(s.url,m.check_url) AS url,m.allow_private,m.check_insecure,m.check_type,m.check_interval,m.expected_status,m.check_path,m.check_url,m.check_match,m.is_public FROM monitors m LEFT JOIN services s ON s.id=m.id;
-      DELETE FROM __drizzle_migrations WHERE created_at = 1794900000000;
+      ALTER TABLE page_widgets DROP COLUMN size;
+      DELETE FROM __drizzle_migrations WHERE created_at >= 1794900000000;
     `);
     first.close();
     const upgraded = createDatabase(path);
