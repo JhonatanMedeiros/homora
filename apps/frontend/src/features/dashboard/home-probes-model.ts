@@ -13,6 +13,7 @@ type Input = {
   statuses: Record<number, ServiceStatus>;
   monitorSettings: Record<number, Parameters<typeof statusBucket>[1]> | undefined;
   /** The status view only applies while browsing the plain Home. */
+  measurementReason?: string | null;
   browsing: boolean;
   statusFilter: StatusFilter;
   statusCounts: Record<StatusFilter, number>;
@@ -26,6 +27,7 @@ export function deriveHomeProbes({
   probes,
   statuses,
   monitorSettings,
+  measurementReason,
   browsing,
   statusFilter,
   statusCounts,
@@ -36,7 +38,12 @@ export function deriveHomeProbes({
       id: probe.id,
       name: probe.name,
       address: probe.address,
-      bucket: statusBucket(statuses[probe.id], monitorSettings?.[probe.id], false),
+      bucket: statusBucket(
+        statuses[probe.id],
+        monitorSettings?.[probe.id],
+        false,
+        measurementReason,
+      ),
       state: view.state,
       label: view.label,
       meta: view.meta,

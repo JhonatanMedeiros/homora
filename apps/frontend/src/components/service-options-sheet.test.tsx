@@ -7,7 +7,7 @@ import { ServiceOptionsSheet } from './service-options-sheet';
 beforeEach(() => setLocale('en'));
 afterEach(cleanup);
 
-const counts = { all: 18, down: 7, degraded: 0, maintenance: 0 };
+const counts = { all: 18, down: 7, degraded: 0, maintenance: 0, ok: 0, unmeasured: 0 };
 
 function setup(overrides: Partial<Parameters<typeof ServiceOptionsSheet>[0]> = {}) {
   const handlers = {

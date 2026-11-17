@@ -33,6 +33,8 @@ const DOT: Record<StatusFilter, string | null> = {
   down: 'bg-destructive',
   degraded: 'bg-warning',
   maintenance: 'bg-info',
+  ok: 'bg-success',
+  unmeasured: 'bg-muted-foreground',
 };
 
 const ITEM =

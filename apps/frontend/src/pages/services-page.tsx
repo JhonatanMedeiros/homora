@@ -1,3 +1,4 @@
+import { WidgetStatusFilterContext } from '@/components/widget-host';
 import { PageWidgets } from '@/components/page-widgets';
 import { useAcknowledgements } from '@/hooks/use-acknowledgements';
 import { isQuiet } from '@/lib/acknowledgements';
@@ -205,6 +206,7 @@ export function ServicesPage({
     tagFilter,
     tags: tagMap,
     monitorSettings: overview?.settings,
+    measurementReason: overview?.measurement?.reason,
   });
   const {
     allCategories,
@@ -251,6 +253,7 @@ export function ServicesPage({
       probes: probeList.probes,
       statuses,
       monitorSettings: overview?.settings,
+      measurementReason: overview?.measurement?.reason,
       browsing: !organizing && !hostView,
       statusFilter,
       statusCounts,
@@ -465,7 +468,11 @@ export function ServicesPage({
           }}
         />
       )}
-      {!hostView && !widgetsInRail && <PageWidgets pageId={activePageId} pages={pages} />}
+      {!hostView && !widgetsInRail && (
+        <WidgetStatusFilterContext.Provider value={setStatusFilter}>
+          <PageWidgets pageId={activePageId} pages={pages} />
+        </WidgetStatusFilterContext.Provider>
+      )}
       {!organizing && !hostView && allTags.length > 0 && (
         <div
           role="group"
@@ -749,7 +756,9 @@ export function ServicesPage({
       {body}
       {widgetsInRail && (
         <aside className="min-w-0">
-          <PageWidgets pageId={activePageId} pages={pages} layout="rail" />
+          <WidgetStatusFilterContext.Provider value={setStatusFilter}>
+            <PageWidgets pageId={activePageId} pages={pages} layout="rail" />
+          </WidgetStatusFilterContext.Provider>
         </aside>
       )}
     </div>

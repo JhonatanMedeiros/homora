@@ -1,3 +1,4 @@
+import { widgetHomelabSummaryWidget } from './widgets/homelab-summary/definition.js';
 import { widgetCalendarWidget } from './widgets/calendar/definition.js';
 import { clockWidget } from './clock.js';
 import { countdownWidget } from './countdown.js';
@@ -9,6 +10,7 @@ const widgets = {
   countdown: countdownWidget,
   note: noteWidget,
   calendar: widgetCalendarWidget,
+  'homelab-summary': widgetHomelabSummaryWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];
