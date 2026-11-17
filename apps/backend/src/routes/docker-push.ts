@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import { z } from 'zod';
 import { errorBody, sendSanitizedError } from '../api-error.js';
-import { createIpRateLimiter } from '../rate-limit.js';
 import {
   fingerprintReview,
   importResults,
@@ -149,29 +149,39 @@ export function registerDockerPushRoutes(
       results: importResults(ids, entries, rejected, result.plan),
     };
   });
-  const allowIp = createIpRateLimiter({ max: 60 });
-  app.post(
-    '/docker-push/inventory',
-    {
-      bodyLimit: 1024 * 1024,
-      errorHandler: (error, request, reply) => {
-        if (error.code === 'FST_ERR_CTP_BODY_TOO_LARGE')
-          return reply.code(413).send(errorBody('inventory-too-large'));
-        return sendSanitizedError(error, request, reply);
+  void app.register(async (scope) => {
+    await scope.register(rateLimit, {
+      max: 60,
+      timeWindow: '1 minute',
+      cache: 10_000,
+      errorResponseBuilder: () =>
+        Object.assign(new Error('Too many attempts.'), { statusCode: 429 }),
+    });
+    scope.setErrorHandler((error, request, reply) => {
+      if ((error as { code?: string }).code === 'FST_ERR_CTP_BODY_TOO_LARGE')
+        return reply.code(413).send(errorBody('inventory-too-large'));
+      if ((error as { statusCode?: number }).statusCode === 429)
+        return reply.code(429).header('Retry-After', '60').send(errorBody('too-many-attempts'));
+      return sendSanitizedError(error, request, reply);
+    });
+    scope.post(
+      '/docker-push/inventory',
+      {
+        bodyLimit: 1024 * 1024,
+        onRequest: async (request, reply) => {
+          if (request.headers.origin) return reply.code(403).send(errorBody('origin-not-allowed'));
+          if (!/^application\/json(?:\s*;|$)/i.test(request.headers['content-type'] ?? ''))
+            return reply.code(415).send(errorBody('invalid-data'));
+        },
       },
-      onRequest: async (request, reply) => {
-        if (request.headers.origin) return reply.code(403).send(errorBody('origin-not-allowed'));
-        if (!allowIp(request.ip)) return reply.code(429).send(errorBody('too-many-attempts'));
-        if (!/^application\/json(?:\s*;|$)/i.test(request.headers['content-type'] ?? ''))
-          return reply.code(415).send(errorBody('invalid-data'));
+      async (request, reply) => {
+        const token =
+          /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '')?.[1] ?? '';
+        const result = push.ingest(token, request.body);
+        if (result === 'unauthorized') return reply.code(401).send(errorBody('auth-required'));
+        if (result === 'invalid') return reply.code(400).send(errorBody('invalid-data'));
+        return reply.code(204).send();
       },
-    },
-    async (request, reply) => {
-      const token = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '')?.[1] ?? '';
-      const result = push.ingest(token, request.body);
-      if (result === 'unauthorized') return reply.code(401).send(errorBody('auth-required'));
-      if (result === 'invalid') return reply.code(400).send(errorBody('invalid-data'));
-      return reply.code(204).send();
-    },
-  );
+    );
+  });
 }
