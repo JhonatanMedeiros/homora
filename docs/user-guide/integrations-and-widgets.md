@@ -114,3 +114,7 @@ AI agents.
 Add a **Countdown** page widget for one named event. Enter its local date and time and choose an IANA time zone, or leave the browser zone selected. The countdown updates each minute while the tab is visible. After the event, it stays visible in muted text by default; choose **Hide automatically** to hide it. Hidden widgets remain saved; use **Manage hidden countdowns** to edit or remove them. Each event needs its own widget.
 
 When a clock change makes the entered time ambiguous, the first occurrence is used. If the time does not exist, it moves forward by the size of the clock change. The full resolved date and time remains visible; the timer does not announce every minute. Countdowns are included in exports and imports without a connection.
+
+### Monthly calendar
+
+Add a **Calendar** page widget to see the current month without a connection. Choose the first day of the week or **Automatic**, which follows the interface locale, and choose an IANA time zone or the browser time zone. Navigate between months and use **Today** to return. The displayed month is temporary; reloading returns to the current month. The date updates at midnight while visible and when returning to a hidden tab. Week numbers and events are not shown. The calendar supports normal and wide sizes; its configuration is included in exports and imports.

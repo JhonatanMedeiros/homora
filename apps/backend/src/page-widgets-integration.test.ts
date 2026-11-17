@@ -102,14 +102,24 @@ it('exports portable clock configuration and rejects a stale import preview', as
     config: { text: '**Hello**' },
   };
   expect((await req('POST', '/api/page-widgets', note)).statusCode).toBe(201);
+  const calendar = {
+    pageId,
+    type: 'calendar',
+    name: '',
+    connectionId: null,
+    config: { weekStart: '1', timeZone: 'UTC' },
+    size: 'wide',
+  };
+  expect((await req('POST', '/api/page-widgets', calendar)).statusCode).toBe(201);
   const content = (await req('GET', '/api/config/export?format=json')).body;
   expect(JSON.parse(content).widgets).toEqual([
     { page: 'Home', type: 'clock', name: 'UTC', config: widget.config },
     { page: 'Home', type: 'countdown', name: '', config: countdown.config },
     { page: 'Home', type: 'note', name: 'Reminder', config: note.config },
+    { page: 'Home', type: 'calendar', name: '', config: calendar.config, size: 'wide' },
   ]);
   const preview = (await req('POST', '/api/config/import/preview', { content })).json();
-  expect(preview.plan.summary.newWidgets).toBe(3);
+  expect(preview.plan.summary.newWidgets).toBe(4);
   await req('POST', '/api/page-widgets', { ...widget, name: 'Changed' });
   expect(
     (await req('POST', '/api/config/import/apply', { content, expectedVersion: preview.version }))
@@ -120,7 +130,12 @@ it('exports portable clock configuration and rejects a stale import preview', as
     (await req('POST', '/api/config/import/apply', { content, expectedVersion: next.version }))
       .statusCode,
   ).toBe(200);
-  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(7);
+  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(9);
+  expect(
+    (await req('GET', '/api/page-widgets'))
+      .json()
+      .filter((item: { type: string }) => item.type === 'calendar'),
+  ).toHaveLength(2);
   expect(
     (await req('GET', '/api/page-widgets'))
       .json()

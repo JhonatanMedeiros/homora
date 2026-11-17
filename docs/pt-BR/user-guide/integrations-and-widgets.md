@@ -30,3 +30,7 @@ Adicione o widget de página **Contagem regressiva** para um evento. Informe nom
 Se uma mudança de horário tornar a hora ambígua, vale a primeira ocorrência. Se a hora não existir, ela avança pelo intervalo da mudança. A data e hora resolvidas ficam visíveis; o contador não anuncia cada minuto. Contagens são incluídas na exportação e importação sem conexão.
 
 A arquitetura interna dos módulos de widget e suas fronteiras estão descritas no [ADR 0026 em inglês](/decisions/0026-widget-modules).
+
+## Calendário mensal
+
+Adicione um widget de página **Calendário** para ver o mês atual sem conexão. Escolha o primeiro dia da semana ou **Automático**, que segue o idioma da interface, e um fuso IANA ou o fuso do navegador. Navegue entre meses e use **Hoje** para voltar. O mês exibido é temporário; ao recarregar, volta ao mês atual. A data atualiza à meia-noite com a aba visível e ao retornar a uma aba oculta. Números de semana e eventos não são exibidos. O calendário aceita os tamanhos normal e largo; sua configuração é incluída na exportação e importação.

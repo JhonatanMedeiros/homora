@@ -36,7 +36,8 @@
       "types": "./dist/translations.d.ts",
       "default": "./dist/translations.js"
     },
-    "./note/ui/view": "./src/widgets/note/ui/view.tsx"
+    "./note/ui/view": "./src/widgets/note/ui/view.tsx",
+    "./calendar/ui": "./src/widgets/calendar/ui/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

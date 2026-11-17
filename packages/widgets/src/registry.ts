@@ -1,9 +1,15 @@
+import { widgetCalendarWidget } from './widgets/calendar/definition.js';
 import { clockWidget } from './clock.js';
 import { countdownWidget } from './countdown.js';
 import { noteWidget } from './note.js';
 import type { WidgetDefinition } from './index.js';
 
-const widgets = { clock: clockWidget, countdown: countdownWidget, note: noteWidget } as const;
+const widgets = {
+  clock: clockWidget,
+  countdown: countdownWidget,
+  note: noteWidget,
+  calendar: widgetCalendarWidget,
+} as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];
 
