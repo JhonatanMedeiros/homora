@@ -7,12 +7,19 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
+  type WheelEvent,
 } from 'react';
-import { Plus } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { MAX_PAGES, PAGE_NAME_MAX } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import { ButtonGroup, ButtonGroupSeparator } from '@homora/ui/button-group';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@homora/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@homora/ui/dropdown-menu';
 import { Input } from '@homora/ui/input';
 import { cn } from '@homora/ui/lib/utils';
 import { FormError } from '@/components/form-error';
@@ -157,6 +164,29 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
     }
   }
 
+  function onTabListWheel(event: WheelEvent<HTMLDivElement>) {
+    const node = listRef.current;
+    if (!node || node.scrollWidth <= node.clientWidth) return;
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      event.preventDefault();
+      node.scrollLeft += event.deltaY;
+    }
+  }
+
+  function scrollTabs(direction: -1 | 1) {
+    listRef.current?.scrollBy?.({ left: direction * 160, behavior: 'smooth' });
+  }
+
+  const scrollToPage = useCallback((id: number) => {
+    const target = listRef.current?.querySelector<HTMLElement>(`[data-page-id="${id}"]`);
+    target?.scrollIntoView?.({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    scrollToPage(activeId);
+  }, [activeId, scrollToPage]);
+
+  const hasOverflow = edge.left || edge.right;
   const overflowMask =
     edge.left && edge.right
       ? 'mask-[linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]'
@@ -168,12 +198,25 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
 
   return (
     <div className="flex min-w-0 items-center gap-1">
+      {edge.left && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t('pages.moveEarlier')}
+          className="hidden size-7 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:inline-flex"
+          onClick={() => scrollTabs(-1)}
+        >
+          <ChevronLeft aria-hidden="true" className="size-4" />
+        </Button>
+      )}
       <div
         ref={listRef}
         role="tablist"
         aria-label={t('pages.tabs')}
         data-homora="page-tabs"
         onScroll={syncOverflow}
+        onWheel={onTabListWheel}
         onKeyDown={onTabListKeyDown}
         className={cn(
           'flex min-w-0 max-w-full items-center gap-1 overflow-x-auto overscroll-x-contain p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
@@ -197,6 +240,7 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
           const tabButton = (
             <Button
               key={page.id}
+              data-page-id={active && onChanged ? undefined : page.id}
               type="button"
               role="tab"
               variant="ghost"
@@ -220,7 +264,7 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
 
           if (active && onChanged) {
             return (
-              <ButtonGroup key={page.id} className="shrink-0">
+              <ButtonGroup key={page.id} data-page-id={page.id} className="shrink-0">
                 {tabButton}
                 <ButtonGroupSeparator className="bg-sidebar-primary/25" />
                 <PageTabMenu
@@ -236,6 +280,62 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
           return tabButton;
         })}
       </div>
+      {edge.right && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t('pages.moveLater')}
+          className="hidden size-7 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:inline-flex"
+          onClick={() => scrollTabs(1)}
+        >
+          <ChevronRight aria-hidden="true" className="size-4" />
+        </Button>
+      )}
+      {hasOverflow && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t('pages.tabs')}
+              title={t('pages.tabs')}
+              className="size-8 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground pointer-coarse:size-11"
+            >
+              <ChevronDown aria-hidden="true" className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-48">
+            {pages.map((page) => {
+              const { total, down } = counts(page.id);
+              const active = page.id === activeId;
+              return (
+                <DropdownMenuItem
+                  key={page.id}
+                  onSelect={() => {
+                    onSelect(page.id);
+                    scrollToPage(page.id);
+                  }}
+                  className="gap-2"
+                >
+                  <Check
+                    aria-hidden="true"
+                    className={cn('size-4', active ? 'opacity-100' : 'opacity-0')}
+                  />
+                  <span className="flex-1 truncate">{page.name}</span>
+                  <small className="font-mono text-xs text-muted-foreground">{total}</small>
+                  {down > 0 && (
+                    <small className="rounded-full bg-destructive px-1.5 font-mono text-xs text-white">
+                      {t('pages.down', { count: down })}
+                    </small>
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       {onChanged && pages.length < MAX_PAGES && (
         <PageCreateButton pages={pages} onChanged={onChanged} onCreated={onSelect} />
       )}

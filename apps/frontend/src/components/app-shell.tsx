@@ -77,51 +77,53 @@ export function AppShell({
         <div
           className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-3 py-2 sm:gap-3 sm:px-4 md:px-8 ${managing ? 'max-w-none md:px-6' : tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
         >
-          <button
-            type="button"
-            onClick={() => onTabChange('services')}
-            className={`cursor-pointer rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${managing || standalone ? 'max-md:hidden' : ''}`}
-          >
-            <BrandMark compact className="text-sidebar-foreground" />
-          </button>
-          {build &&
-            !managing &&
-            !standalone &&
-            (build.releaseTag ? (
-              <a
-                href={releaseUrl(build.releaseTag)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden text-xs text-sidebar-foreground/70 underline-offset-4 hover:underline sm:inline"
-              >
-                v{build.version}
-              </a>
-            ) : (
-              <span className="hidden text-xs text-sidebar-foreground/70 sm:inline">
-                v{build.version}
-              </span>
-            ))}
-          {pagesNav && !managing && !standalone && (
-            <div className="order-last flex w-full min-w-0 items-center border-t border-sidebar-border/50 pt-1.5 md:order-none md:w-auto md:flex-1 md:border-t-0 md:pt-0">
-              {pagesNav}
-            </div>
-          )}
-          <span
-            className={pagesNav && !managing && !standalone ? 'mr-auto md:hidden' : 'mr-auto'}
-          />
-          <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
-            <Button
-              variant="ghost"
-              aria-label={t('palette.button')}
-              aria-keyshortcuts="Control+K Meta+K"
-              onClick={onOpenPalette}
-              className="size-9 gap-2 px-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:w-auto sm:px-2.5"
+          <div className="contents md:flex md:min-w-0 md:flex-1 md:items-center md:gap-3">
+            <button
+              type="button"
+              onClick={() => onTabChange('services')}
+              className={`cursor-pointer rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${managing || standalone ? 'max-md:hidden' : ''}`}
             >
-              <Search aria-hidden="true" />
-              <Kbd className="hidden bg-sidebar-accent text-sidebar-foreground md:inline-flex">
-                Ctrl K
-              </Kbd>
-            </Button>
+              <BrandMark compact className="text-sidebar-foreground" />
+            </button>
+            {build &&
+              !managing &&
+              !standalone &&
+              (build.releaseTag ? (
+                <a
+                  href={releaseUrl(build.releaseTag)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden shrink-0 text-xs text-sidebar-foreground/70 underline-offset-4 hover:underline sm:inline"
+                >
+                  v{build.version}
+                </a>
+              ) : (
+                <span className="hidden shrink-0 text-xs text-sidebar-foreground/70 sm:inline">
+                  v{build.version}
+                </span>
+              ))}
+            {pagesNav && !managing && !standalone && (
+              <div className="order-last flex w-full min-w-0 items-center border-t border-sidebar-border/50 pt-1.5 md:order-none md:w-auto md:flex-1 md:border-t-0 md:pt-0">
+                {pagesNav}
+              </div>
+            )}
+          </div>
+          <span className="mr-auto md:hidden" />
+          <Button
+            type="button"
+            variant="outline"
+            aria-label={t('palette.button')}
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={onOpenPalette}
+            className="order-2 h-9 w-full cursor-pointer justify-start gap-2 border-sidebar-border bg-sidebar-accent/40 px-3 font-normal text-sidebar-foreground/65 shadow-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:order-none md:w-56 md:shrink-0 lg:w-72 xl:w-80"
+          >
+            <Search aria-hidden="true" className="size-4 shrink-0" />
+            <span className="truncate text-sm">{t('palette.placeholder')}</span>
+            <Kbd className="ml-auto hidden bg-sidebar-accent text-sidebar-foreground md:inline-flex">
+              Ctrl K
+            </Kbd>
+          </Button>
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-2 md:flex-1 md:justify-end">
             <HeaderStatusSlot />
             {alerts}
             <DropdownMenu>
