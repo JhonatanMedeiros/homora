@@ -85,6 +85,9 @@ export const ERROR_MESSAGES = {
   'integration-changed': 'The integration changed while it was being queried. Try again.',
   'widget-not-found': 'Widget not found.',
   'widget-limit': 'This page already has the most widgets it can hold.',
+  'policy-blocked': 'Blocked by network policy.',
+  'feed-fetch-failed': 'Could not fetch this feed.',
+  'feed-parse-failed': 'Could not parse this feed as RSS 2.0 or Atom 1.0.',
   'resource-link-not-found': 'This card is not linked to a resource.',
   'account-exists': 'Account already configured.',
   'account-setup-failed':

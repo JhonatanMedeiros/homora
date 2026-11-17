@@ -1,6 +1,9 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import {
+  FeedSourceError,
   WidgetHostProvider,
+  type FeedData,
+  type FeedQuery,
   type WidgetHost as Host,
   type MonitoringQuery,
 } from '@homora/widgets/ui';
@@ -65,6 +68,22 @@ export async function readProblems(query: MonitoringProblemsQuery, signal: Abort
   );
 }
 
+export async function readFeed(query: FeedQuery, signal: AbortSignal): Promise<FeedData> {
+  const params = new URLSearchParams({
+    url: query.feedUrl,
+    limit: String(query.limit),
+    allowPrivateNetwork: String(query.allowPrivateNetwork),
+  });
+  const response = await fetch(`/api/widget-sources/feed?${params}`, { signal });
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new FeedSourceError('policy-blocked', 'Feed blocked by network policy');
+    }
+    throw new FeedSourceError('fetch-failed', 'Feed source failed');
+  }
+  return response.json() as Promise<FeedData>;
+}
+
 type FilterStatus = NonNullable<NonNullable<Host['monitoring']>['filterStatus']>;
 export const WidgetStatusFilterContext = createContext<FilterStatus | undefined>(undefined);
 
@@ -88,6 +107,7 @@ export function WidgetHost({
           readProblems,
           filterStatus,
         },
+        readFeed,
       }}
     >
       {children}

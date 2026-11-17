@@ -91,3 +91,20 @@ export type {
   MonitoringIncidentReason,
   MonitoringIncidents,
 } from './monitoring.js';
+export {
+  MAX_FEED_BYTES,
+  FeedParseError,
+  parseFeedXml,
+  sanitizeFeedLink,
+  stripMarkupToPlainText,
+  type ParsedFeed,
+  type ParsedFeedEntry,
+} from './widgets/rss-feed/parser.js';
+export {
+  DEFAULT_FEED_LIMIT,
+  MAX_FEED_LIMIT,
+  MAX_FEED_TITLE_LENGTH,
+  MAX_FEED_URL_LENGTH,
+  parseFeedUrl,
+  type RssFeedConfig,
+} from './widgets/rss-feed/definition.js';
