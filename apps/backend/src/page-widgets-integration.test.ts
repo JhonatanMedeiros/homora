@@ -365,3 +365,76 @@ it('persists, resizes, transfers, and validates rss-feed widgets', async () => {
   expect((await req('DELETE', `/api/page-widgets/${created.id}`)).statusCode).toBe(204);
   await app.close();
 });
+
+it('persists, resizes, transfers, and validates weather widgets without storing API keys', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'homora-weather-widget-')), 'data.sqlite');
+  const { db } = createDatabase(path);
+  const { auth, cookie } = await createTestSession();
+  const app = createApp(db, 5173, auth, createVault(path));
+  const headers = { cookie, origin: 'http://localhost:5173' };
+  const req = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: unknown) =>
+    app.inject({ method, url, headers, payload: payload as object | undefined });
+  const pageId = (await req('GET', '/api/pages')).json()[0].id;
+
+  const invalidWeather = {
+    pageId,
+    type: 'weather',
+    name: 'Weather',
+    connectionId: null,
+    config: {
+      provider: 'open-meteo',
+      unit: 'metric',
+      latitude: 95,
+      longitude: 0,
+      locationName: '',
+    },
+  };
+  expect((await req('POST', '/api/page-widgets', invalidWeather)).statusCode).toBe(400);
+
+  const validWeather = {
+    pageId,
+    type: 'weather',
+    name: 'Local Weather',
+    connectionId: null,
+    size: 'normal',
+    config: {
+      provider: 'open-meteo',
+      unit: 'metric',
+      latitude: -23.5505,
+      longitude: -46.6333,
+      locationName: 'São Paulo',
+    },
+  };
+  const created = (await req('POST', '/api/page-widgets', validWeather)).json();
+  expect(created.size).toBe('normal');
+
+  const updated = (
+    await req('PUT', `/api/page-widgets/${created.id}`, {
+      ...validWeather,
+      size: 'wide',
+      config: { ...validWeather.config, provider: 'openweathermap', unit: 'imperial' },
+    })
+  ).json();
+  expect(updated.size).toBe('wide');
+  expect(updated.config.provider).toBe('openweathermap');
+  expect(updated.config.unit).toBe('imperial');
+
+  const content = (await req('GET', '/api/config/export?format=json')).body;
+  expect(JSON.parse(content).widgets).toContainEqual({
+    page: 'Home',
+    type: 'weather',
+    name: 'Local Weather',
+    size: 'wide',
+    config: updated.config,
+  });
+
+  const preview = (await req('POST', '/api/config/import/preview', { content })).json();
+  expect(preview.plan.summary.newWidgets).toBe(1);
+  expect(
+    (await req('POST', '/api/config/import/apply', { content, expectedVersion: preview.version }))
+      .statusCode,
+  ).toBe(200);
+  expect((await req('GET', '/api/page-widgets')).json()).toHaveLength(2);
+  expect((await req('DELETE', `/api/page-widgets/${created.id}`)).statusCode).toBe(204);
+  await app.close();
+});
