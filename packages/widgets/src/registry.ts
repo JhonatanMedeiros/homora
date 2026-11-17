@@ -1,3 +1,4 @@
+import { widgetCertificateExpiryWidget } from './widgets/certificate-expiry/definition.js';
 import { widgetMaintenanceScheduleWidget } from './widgets/maintenance-schedule/definition.js';
 import { widgetQuickLinksWidget } from './widgets/quick-links/definition.js';
 import { widgetAvailabilityWidget } from './widgets/availability/definition.js';
@@ -30,6 +31,7 @@ const widgets = {
   'domain-expiry': widgetDomainExpiryWidget,
   'quick-links': widgetQuickLinksWidget,
   availability: widgetAvailabilityWidget,
+  'certificate-expiry': widgetCertificateExpiryWidget,
   'maintenance-schedule': widgetMaintenanceScheduleWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;

@@ -24,3 +24,5 @@ export { createMonitoringSource, toMonitoringService } from './service-source.js
 
 export { resolveCheckTarget } from './target.js';
 export { UPTIME_MIN_CHECKS, uptimeSummarizerOf } from './uptime.js';
+
+export { certificateReading } from './certificate-reading.js';

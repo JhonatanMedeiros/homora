@@ -37,6 +37,10 @@ A typed host callback opens a card's existing ServiceDrawer or the probe managem
 
 `homora:monitoring-availability` (v1) is added to `monitoringSources` and served by `GET /api/widget-sources/monitoring/availability`, reusing `uptimeSummarizerOf` (`24h`, `7d`, `30d`, minimum 5 counted `up + down` checks). Maintenance, unknown and policy-blocked observations are excluded from both failures and the percentage denominator; when fewer than 5 counted checks exist, `uptimePct` is `null` and the widget reports insufficient data. The widget stores the target's portable name rather than an installation-specific ID, supporting both service cards and standalone probes; missing or renamed targets return `target: null` with HTTP 200 so the widget distinguishes a deleted or renamed target from a source failure. Normal and wide sizes are supported, and failed refreshes retain the last good reading as stale.
 
+## Certificate expiry source (#302)
+
+The version 1 certificate source reads retained TLS observations for service cards, scoped by portable page and group names. A missing selected name prevents matches. It exposes only names, IDs, derived state and expiry/observation times. It uses the current monitor signature, including trust, and never initiates a check. The presentation threshold is independent of monitor policy. A prior or aged observation is marked stale; retention limits historical lookup to 30 days. The existing per-query bounded cache and session authentication apply.
+
 ## MON-06: maintenance schedule (#301)
 
 `homora:monitoring-maintenance` version 1 reads existing maintenance without notes, URLs or network access. A window matches when `ends_at > now` and `starts_at < now + horizon`; the upper horizon is exclusive. It is ongoing when `starts_at <= now < ends_at`, matching the store's active rule. The source counts after filtering, sorts active first and then by start and ID, and returns at most the configured 1–10 rows (default 5). The horizons are exactly 24 hours, 7 days and 30 days. The source does not cache responses, so transitions and deletions are reflected on the next request.

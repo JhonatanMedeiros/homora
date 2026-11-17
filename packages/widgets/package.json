@@ -51,6 +51,7 @@
     "./domain-expiry/ui": "./src/widgets/domain-expiry/ui/index.tsx",
     "./quick-links/ui": "./src/widgets/quick-links/ui/index.tsx",
     "./availability/ui": "./src/widgets/availability/ui/index.tsx",
+    "./certificate-expiry/ui": "./src/widgets/certificate-expiry/ui/index.tsx",
     "./maintenance-schedule/ui": "./src/widgets/maintenance-schedule/ui/index.tsx"
   },
   "scripts": {

@@ -144,3 +144,9 @@ Feeds are fetched exclusively through the backend with an 8-second timeout, a 51
 Add **Weather** to display current conditions (temperature, condition, and today's high/low) and a short forecast on a dashboard page. It supports `normal` (3-day forecast) and `wide` (up to 5-day forecast plus feels-like temperature, humidity, wind speed, and precipitation probability) sizes, as well as `°C (Metric)` and `°F (Imperial)` units.
 
 Select between the keyless **Open-Meteo** provider (default) or **OpenWeatherMap** (requires an API key, which is stored encrypted on the server and never included in page configuration or exports). Configure the location via backend city search, manual coordinates and optional display label, or the on-demand browser geolocation button (available only in secure contexts such as `https:` or `localhost` and never triggered automatically on load). Weather requests run through the backend with a 10-minute in-memory cache, and failed refreshes retain the last cached forecast marked as stale.
+
+### Certificate expiry
+
+The **Certificate expiry** page widget lists service cards configured with a TLS check, earliest expiry first. It shows up to five and reports additional matches. The 7, 14, 30 or 60 day warning is a display setting; it does not change monitoring or alerts. An unexpired certificate can still be invalid. A failed check may show an earlier observation, labeled with its time; unknown expiry is never treated as expired. Observations are retained for up to 30 days and only matched to the current check configuration. The widget does not perform additional checks.
+
+Page and group filters are optional and use names for portability. If a selected name is removed or renamed, edit the widget: it will not expand the selection automatically. A failed refresh keeps the last result marked as outdated. Select a row to open service details.
