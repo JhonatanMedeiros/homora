@@ -49,6 +49,7 @@
     "./weather/ui": "./src/widgets/weather/ui/index.tsx",
     "./public-ip/ui": "./src/widgets/public-ip/ui/index.tsx",
     "./domain-expiry/ui": "./src/widgets/domain-expiry/ui/index.tsx",
+    "./quick-links/ui": "./src/widgets/quick-links/ui/index.tsx",
     "./availability/ui": "./src/widgets/availability/ui/index.tsx"
   },
   "scripts": {

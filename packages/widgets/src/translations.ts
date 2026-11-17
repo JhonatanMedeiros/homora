@@ -1,4 +1,8 @@
 import {
+  en as widgetQuickLinks,
+  ptBR as widgetQuickLinksPt,
+} from './widgets/quick-links/messages.js';
+import {
   en as widgetAvailability,
   ptBR as widgetAvailabilityPt,
 } from './widgets/availability/messages.js';
@@ -33,6 +37,7 @@ export const widgetEnglish = {
   ...widgetWeather,
   ...widgetPublicIp,
   ...widgetDomainExpiry,
+  ...widgetQuickLinks,
   ...widgetAvailability,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
@@ -48,5 +53,6 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetWeatherPt,
   ...widgetPublicIpPt,
   ...widgetDomainExpiryPt,
+  ...widgetQuickLinksPt,
   ...widgetAvailabilityPt,
 };

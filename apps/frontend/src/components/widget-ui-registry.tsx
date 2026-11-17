@@ -1,3 +1,4 @@
+import { widgetUI as widgetQuickLinks } from '@homora/widgets/quick-links/ui';
 import { widgetUI as widgetAvailability } from '@homora/widgets/availability/ui';
 import { widgetUI as widgetDomainExpiry } from '@homora/widgets/domain-expiry/ui';
 import { widgetUI as widgetPublicIp } from '@homora/widgets/public-ip/ui';
@@ -29,6 +30,7 @@ const widgets = {
   weather: widgetWeather,
   'public-ip': widgetPublicIp,
   'domain-expiry': widgetDomainExpiry,
+  'quick-links': widgetQuickLinks,
   availability: widgetAvailability,
 } satisfies Record<LocalWidgetType, WidgetUI>;
 export function getWidgetUI(type: string): WidgetUI | undefined {
