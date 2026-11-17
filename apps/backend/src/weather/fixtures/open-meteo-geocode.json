@@ -1,0 +1,20 @@
+{
+  "_source": {
+    "kind": "hand-written-from-official-docs",
+    "docs": "https://open-meteo.com/en/docs/geocoding-api",
+    "note": "Constructed from Open-Meteo Geocoding API v1 documentation (checked 2026-11-17), not recorded from a live request."
+  },
+  "body": {
+    "results": [
+      {
+        "id": 2950159,
+        "name": "Berlin",
+        "latitude": 52.52437,
+        "longitude": 13.41053,
+        "country": "Germany",
+        "admin1": "State of Berlin",
+        "timezone": "Europe/Berlin"
+      }
+    ]
+  }
+}

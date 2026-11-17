@@ -90,6 +90,14 @@ export const en = {
   'apiError.proposal-limit': 'The agent has reached its pending proposal limit.',
   'apiError.batch-conflict': 'The batch changes conflict. Nothing was applied.',
   'apiError.config-changed': 'The configuration changed. Review it again.',
+  'apiError.invalid-weather-provider': 'Unsupported weather provider.',
+  'apiError.weather-provider-keyless': 'This weather provider does not use an API key.',
+  'apiError.invalid-weather-api-key': 'Provide a valid weather API key.',
+  'apiError.weather-provider-not-configured': 'Weather provider credentials are not configured.',
+  'apiError.weather-provider-auth-failed': 'Weather provider rejected credentials.',
+  'apiError.weather-rate-limited': 'Weather provider rate limit exceeded.',
+  'apiError.weather-provider-unavailable': 'Weather provider is unavailable.',
+  'apiError.vault-unavailable': 'Credential vault is unavailable.',
 } as const;
 
 export const ptBR = {
@@ -183,4 +191,13 @@ export const ptBR = {
   'apiError.proposal-limit': 'O agente atingiu o limite de propostas pendentes.',
   'apiError.batch-conflict': 'As alterações do lote entram em conflito. Nada foi aplicado.',
   'apiError.config-changed': 'A configuração mudou. Revise novamente.',
+  'apiError.invalid-weather-provider': 'Provedor de clima não suportado.',
+  'apiError.weather-provider-keyless': 'Este provedor de clima não usa chave de API.',
+  'apiError.invalid-weather-api-key': 'Informe uma chave de API de clima válida.',
+  'apiError.weather-provider-not-configured':
+    'As credenciais do provedor de clima não estão configuradas.',
+  'apiError.weather-provider-auth-failed': 'O provedor de clima recusou as credenciais.',
+  'apiError.weather-rate-limited': 'Limite de requisições do provedor de clima excedido.',
+  'apiError.weather-provider-unavailable': 'O provedor de clima está indisponível.',
+  'apiError.vault-unavailable': 'O cofre de credenciais está indisponível.',
 } as const;

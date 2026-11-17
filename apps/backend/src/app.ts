@@ -61,6 +61,8 @@ import { registerAppearanceRoutes } from './routes/appearance.js';
 import { registerNotificationRoutes } from './routes/notifications.js';
 import { createMonitoringTrustStore } from './monitoring/index.js';
 import { registerMonitoringTrustRoutes } from './routes/monitoring-trust.js';
+import { createWeatherService } from './weather/index.js';
+import { registerWeatherRoutes } from './routes/weather.js';
 
 export const HEALTH_PATH = '/api/health';
 /** The monitor ticks every 10 seconds; this many without a finished cycle means it stopped. */
@@ -368,6 +370,7 @@ export function createApp(
   });
   registerDiscoveryRoutes(app, configuration, serviceMonitor, dockerSource);
   registerDockerPushRoutes(app, createDockerPush(sqlite), configuration, serviceMonitor, auth);
+  registerWeatherRoutes(app, createWeatherService(sqlite, vault), auth, audit);
 
   app.setErrorHandler(sendSanitizedError);
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(errorBody('not-found')));

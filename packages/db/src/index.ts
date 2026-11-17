@@ -13,6 +13,7 @@ export {
   serviceProposals,
   configVersion,
   auditEvents,
+  weatherProviders,
 } from './schema.js';
 const sqliteHandles = new WeakMap<object, DatabaseSync>();
 export function getSqliteHandle(db: object) {

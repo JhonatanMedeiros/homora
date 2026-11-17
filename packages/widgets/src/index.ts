@@ -118,3 +118,20 @@ export {
   type WidgetSourceContext,
   type WidgetSourceReader,
 } from './source.js';
+export {
+  weatherSources,
+  isWeatherSource,
+  WEATHER_PROVIDER_IDS,
+  WEATHER_UNITS,
+  WEATHER_CONDITION_CODES,
+  WEATHER_MAX_FORECAST_DAYS,
+  type WeatherProviderId,
+  type WeatherUnit,
+  type WeatherConditionCode,
+  type WeatherCurrent,
+  type WeatherDailyForecast,
+  type WeatherObservation,
+  type WeatherLocationResult,
+  type WeatherGeocodeResponse,
+  type WeatherProviderSummary,
+} from './weather.js';

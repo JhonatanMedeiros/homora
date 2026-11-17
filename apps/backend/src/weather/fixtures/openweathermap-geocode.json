@@ -1,0 +1,16 @@
+{
+  "_source": {
+    "kind": "hand-written-from-official-docs",
+    "docs": "https://openweathermap.org/api/geocoding-api",
+    "note": "Constructed from OpenWeatherMap Geocoding API v1.0 documentation (checked 2026-11-17), not recorded from a live request."
+  },
+  "body": [
+    {
+      "name": "Berlin",
+      "lat": 52.5170365,
+      "lon": 13.3888599,
+      "country": "DE",
+      "state": "Berlin"
+    }
+  ]
+}

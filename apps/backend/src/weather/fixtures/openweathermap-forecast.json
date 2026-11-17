@@ -1,0 +1,50 @@
+{
+  "_source": {
+    "kind": "hand-written-from-official-docs",
+    "docs": "https://openweathermap.org/forecast5",
+    "note": "Constructed from OpenWeatherMap 5 Day / 3 Hour Forecast API v2.5 documentation (checked 2026-11-17), not recorded from a live request."
+  },
+  "body": {
+    "city": {
+      "timezone": 3600
+    },
+    "list": [
+      {
+        "dt": 1794916800,
+        "main": { "temp_min": 3.2, "temp_max": 9.5 },
+        "weather": [{ "id": 801 }],
+        "pop": 0.15
+      },
+      {
+        "dt": 1794927600,
+        "main": { "temp_min": 4.0, "temp_max": 8.8 },
+        "weather": [{ "id": 802 }],
+        "pop": 0.1
+      },
+      {
+        "dt": 1795003200,
+        "main": { "temp_min": 4.5, "temp_max": 10.1 },
+        "weather": [{ "id": 500 }],
+        "pop": 0.8
+      },
+      {
+        "dt": 1795089600,
+        "main": { "temp_min": 2.1, "temp_max": 7.8 },
+        "weather": [{ "id": 804 }],
+        "pop": 0.25
+      },
+      {
+        "dt": 1795176000,
+        "main": { "temp_min": -0.5, "temp_max": 6.4 },
+        "weather": [{ "id": 800 }],
+        "pop": 0
+      },
+      {
+        "dt": 1795262400,
+        "main": { "temp_min": -3.0, "temp_max": 2.3 },
+        "weather": [{ "id": 600 }],
+        "pop": 0.6
+      }
+    ]
+  }
+}
