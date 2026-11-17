@@ -1,3 +1,4 @@
+import { registerWidgetMonitoringRoutes } from './routes/widget-monitoring.js';
 import { registerPageWidgetRoutes } from './routes/page-widgets.js';
 import Fastify, { LogController, type FastifyBaseLogger, type FastifyServerOptions } from 'fastify';
 import { createDatabase, getSqliteHandle } from '@homora/db';
@@ -117,7 +118,7 @@ export function createApp(
         incident: transition.incidentId,
         service: transition.serviceId,
         reason: transition.reason,
-        ...(transition.httpStatus !== null ? { httpStatus: transition.httpStatus } : {}),
+        ...(transition.httpStatus === null ? {} : { httpStatus: transition.httpStatus }),
       },
       transition.kind === 'down' ? 'incident opened' : 'incident closed',
     );
@@ -326,6 +327,14 @@ export function createApp(
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceIncidentRoutes(app, incidents, observations, measurement, auth, audit);
+  registerWidgetMonitoringRoutes(
+    app,
+    sqlite,
+    monitoringSource,
+    serviceMonitor,
+    incidents,
+    measurement,
+  );
   registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
   registerServiceTagRoutes(app, tagStore);
   registerServiceConfigurationRoutes(

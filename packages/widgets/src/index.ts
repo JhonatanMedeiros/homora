@@ -1,3 +1,6 @@
+export { isHomePrivateHost } from './private-host.js';
+export { monitoringState, type MonitoringState } from './monitoring-state.js';
+
 /** Internal widget contracts. The host owns placement, persistence and data access. */
 export type WidgetLocation = 'page' | 'card' | 'top-bar';
 export type WidgetSize = 'normal' | 'wide';
@@ -62,3 +65,22 @@ export function definePresenter<Input, Output>(
 ): WidgetPresenter<Input, Output> {
   return presenter;
 }
+
+import { isInternalSource } from './monitoring.js';
+export { isInternalSource, monitoringSources } from './monitoring.js';
+
+/** Internal sources are supplied by every host and need no connection binding. */
+export function isPortableWidget(definition: WidgetDefinition<unknown> | undefined): boolean {
+  return (
+    definition !== undefined &&
+    (definition.portable === true || isInternalSource(definition.source))
+  );
+}
+export type {
+  MonitoringCounts,
+  MonitoringSummary,
+  MonitoringProblem,
+  MonitoringProblems,
+  MonitoringIncident,
+  MonitoringIncidents,
+} from './monitoring.js';

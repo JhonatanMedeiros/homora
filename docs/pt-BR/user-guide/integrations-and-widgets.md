@@ -34,3 +34,5 @@ A arquitetura interna dos módulos de widget e suas fronteiras estão descritas 
 ## Calendário mensal
 
 Adicione um widget de página **Calendário** para ver o mês atual sem conexão. Escolha o primeiro dia da semana ou **Automático**, que segue o idioma da interface, e um fuso IANA ou o fuso do navegador. Navegue entre meses e use **Hoje** para voltar. O mês exibido é temporário; ao recarregar, volta ao mês atual. A data atualiza à meia-noite com a aba visível e ao retornar a uma aba oculta. Números de semana e eventos não são exibidos. O calendário aceita os tamanhos normal e largo; sua configuração é incluída na exportação e importação.
+
+A fonte interna de monitoramento é uma base para futuros widgets de página. Ela ainda não adiciona widgets de monitoramento à galeria; o monitoramento de serviços existente continua disponível.

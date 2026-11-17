@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
-import { defineWidget } from '@homora/widgets';
+import { defineWidget, monitoringSources } from '@homora/widgets';
 import { registerPageWidgetRoutes } from './page-widgets.js';
 
 it('validates and persists an injected synthetic widget without type-specific host code', async () => {
@@ -32,9 +32,11 @@ it('validates and persists an injected synthetic widget without type-specific ho
   registerPageWidgetRoutes(app, db, (type) =>
     type === synthetic.type
       ? synthetic
-      : type === 'narrow'
-        ? { ...synthetic, sizes: ['normal'] }
-        : undefined,
+      : type === 'internal'
+        ? { ...synthetic, type: 'internal', source: monitoringSources.summary }
+        : type === 'narrow'
+          ? { ...synthetic, sizes: ['normal'] }
+          : undefined,
   );
   const body = {
     pageId: 1,
@@ -49,6 +51,33 @@ it('validates and persists an injected synthetic widget without type-specific ho
     payload: { ...body, size: 'wide' },
   });
   expect(created.json()).toMatchObject({ config: { label: 'test' }, size: 'wide' });
+  expect(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/page-widgets',
+        payload: { ...body, type: 'internal' },
+      })
+    ).statusCode,
+  ).toBe(201);
+  expect(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/page-widgets',
+        payload: { ...body, type: 'internal', connectionId: 1 },
+      })
+    ).statusCode,
+  ).toBe(400);
+  expect(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/page-widgets',
+        payload: { ...body, type: 'future' },
+      })
+    ).statusCode,
+  ).toBe(400);
   db.prepare('UPDATE page_widgets SET size=? WHERE id=?').run('future', created.json().id);
   expect((await app.inject({ method: 'GET', url: '/api/page-widgets' })).json()[0].size).toBe(
     'normal',

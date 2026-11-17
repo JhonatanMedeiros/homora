@@ -105,3 +105,35 @@ it('says the monitor cannot measure when it has a measurement failure', () => {
   expect(summary.tone).toBe('warn');
   expect(pillText(summary)).toBe('Cannot measure');
 });
+
+it('uses the same monitor classification as a widget host for the same facts', async () => {
+  const { monitoringState } = await import('@homora/widgets');
+  const statuses = {
+    1: { ...down, reason: 'maintenance' as const },
+    2: { ...ok, latencyMs: 1900 },
+    3: down,
+  };
+  const settings = { 2: { failureThreshold: 1, recoveryThreshold: 1, degradedLatencyMs: 800 } };
+  const summary = summarizeStatus({
+    services,
+    statuses,
+    blockedIds: new Set([3]),
+    overview: overview({ settings }),
+    now,
+  });
+  expect(summary.windows.map((item) => item.state)).toEqual(
+    services.map(({ id }) => {
+      const status = statuses[id as 1 | 2 | 3];
+      const state = monitoringState({
+        status: status.status,
+        reason: 'reason' in status ? status.reason : undefined,
+        latencyMs: 'latencyMs' in status ? status.latencyMs : undefined,
+        degradedLatencyMs: id === 2 ? 800 : undefined,
+        blocked: id === 3,
+      });
+      return state === 'blocked' ? 'unknown' : state;
+    }),
+  );
+  expect(summary.problems).toBe(1);
+  expect(summary.blocked).toBe(1);
+});

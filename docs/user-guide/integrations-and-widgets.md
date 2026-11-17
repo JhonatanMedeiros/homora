@@ -118,3 +118,5 @@ When a clock change makes the entered time ambiguous, the first occurrence is us
 ### Monthly calendar
 
 Add a **Calendar** page widget to see the current month without a connection. Choose the first day of the week or **Automatic**, which follows the interface locale, and choose an IANA time zone or the browser time zone. Navigate between months and use **Today** to return. The displayed month is temporary; reloading returns to the current month. The date updates at midnight while visible and when returning to a hidden tab. Week numbers and events are not shown. The calendar supports normal and wide sizes; its configuration is included in exports and imports.
+
+The internal monitoring source is a foundation for future page widgets. It does not add a monitoring widget to the gallery yet; existing service monitoring remains available.

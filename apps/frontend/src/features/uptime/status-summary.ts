@@ -1,4 +1,5 @@
-import { isDegraded, type StatusOverview } from '@homora/shared';
+import type { StatusOverview } from '@homora/shared';
+import { monitoringState } from '@homora/widgets';
 import { t } from '@/i18n';
 import type { ServiceStatus } from '@/lib/services';
 import { formatDuration } from '@/features/uptime/uptime-view';
@@ -58,34 +59,22 @@ export function summarizeStatus({
         name: service.name,
         days: Math.floor((status.certExpiresAt - now) / 86_400_000),
       });
-    // Maintenance is planned: neither a problem nor missing information.
-    if (status?.reason === 'maintenance') {
-      windows.push({ id: service.id, name: service.name, state: 'maintenance' });
-      continue;
-    }
-    // Failures that belong to the monitor's own failure say nothing about the service.
-    const isBlocked =
-      (blockedIds.has(service.id) && status?.status !== 'available') ||
-      (overview?.measurement !== undefined &&
-        overview.measurement !== null &&
-        status?.status === 'unavailable' &&
-        status.reason === overview.measurement.reason);
-    const slowNow =
-      status?.status === 'available' &&
-      isDegraded(overview?.settings[service.id], status.status, status.latencyMs);
+    const state = monitoringState({
+      status: status?.status,
+      reason: status?.reason,
+      latencyMs: status?.latencyMs,
+      degradedLatencyMs: overview?.settings[service.id]?.degradedLatencyMs,
+      blocked: blockedIds.has(service.id),
+      measurementReason: overview?.measurement?.reason,
+    });
     windows.push({
       id: service.id,
       name: service.name,
-      state: isBlocked
-        ? 'unknown'
-        : status?.status === 'unavailable'
-          ? 'down'
-          : slowNow
-            ? 'degraded'
-            : status?.status === 'available'
-              ? 'ok'
-              : 'unknown',
+      state: state === 'blocked' ? 'unknown' : state,
     });
+    if (state === 'maintenance') continue;
+    const isBlocked = state === 'blocked';
+    const slowNow = state === 'degraded';
     if (isBlocked) blocked++;
     else if (status?.status === 'unavailable') {
       const since = overview?.open[service.id]?.startedAt;

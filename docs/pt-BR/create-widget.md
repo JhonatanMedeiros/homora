@@ -12,3 +12,5 @@ Execute `pnpm widget:create meu-widget` com um tipo único, minúsculo e separad
 Execute os testes específicos, `pnpm check` e `pnpm build`; valide a galeria e os layouts relevantes no navegador e registre o que não foi verificado. O scaffold é interno e não é uma API de plugins nem uma autorização para acesso à rede.
 
 Widgets de página podem declarar `sizes: ['normal', 'wide']` na definição quando esse escopo for aprovado; omitir o campo significa apenas normal. O host guarda a escolha. Largo ocupa duas colunas na faixa a partir de `sm` e aparece normal no painel lateral e em telas pequenas; todo widget deve funcionar na largura normal.
+
+As fontes internas de monitoramento são registradas por contrato e versão, não exigem conexão e são portáveis. Consulte o [ADR 0027](../decisions/0027-widget-internal-monitoring.md) (em inglês) para contratos, limites, dados desatualizados e privacidade. O host fornece a leitura; o widget não deve acessar a infraestrutura de monitoramento diretamente. As apresentações MON ficam para outras issues.

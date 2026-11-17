@@ -1,3 +1,4 @@
+import { isPortableWidget } from '@homora/widgets';
 import { resolveWidget } from '@homora/integrations';
 import { parse } from 'yaml';
 import { MAX_GROUP_COLUMNS } from '../group-limits.js';
@@ -219,7 +220,7 @@ export function parseTransfer(content: string): ParsedImport {
           issues.push({ path, code: 'widget-invalid', severity: 'warning' });
           return;
         }
-        if (definition?.portable) {
+        if (definition && isPortableWidget(definition)) {
           const config = definition.parseConfig(item.config);
           if (config !== null && item.source === undefined)
             document.widgets!.push({ page, type: item.type, name: item.name, config, size });

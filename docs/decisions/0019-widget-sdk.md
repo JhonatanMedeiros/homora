@@ -68,3 +68,7 @@ depend on integration code. A workspace graph checks transitive runtime dependen
 `@homora/widgets`, while a synthetic minimal-host test exercises the public widget contracts.
 The graph does not resolve computed imports, TypeScript aliases, development dependencies or external
 packages; the synthetic host does not replace real host, browser or live-service validation.
+
+## Internal monitoring source
+
+[ADR 0027](0027-widget-internal-monitoring.md) defines the versioned host-owned monitoring contracts, their authenticated bounded readers and connection-free portability. No MON widget presentation is included in that foundation.

@@ -1,3 +1,4 @@
+import { isPortableWidget } from '@homora/widgets';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { resolveWidget } from '@homora/integrations';
 import { createServiceAttention } from './service-attention.js';
@@ -93,7 +94,7 @@ export function createConfigurationTransfer({
             return [];
           }
           const definition = resolveWidget(row.type);
-          if (definition?.portable) {
+          if (definition && isPortableWidget(definition)) {
             const config = definition.parseConfig(raw);
             return config === null
               ? []

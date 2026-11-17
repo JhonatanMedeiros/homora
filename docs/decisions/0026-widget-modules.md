@@ -14,7 +14,7 @@ Page widget validation, transfer, editing and presentation were scattered throug
 4. Widget UI receives locale and translation through a host context. Widget messages are merged into the application resources alongside integration messages, retaining existing keys and text.
 5. The host owns placement, persistence, connection reads, menus and generic dialogs. Modules provide editors, gallery content, previews, display and visibility behavior. The host does not receive credentials from widgets or grant new network access.
 6. The top bar renders a registry-provided slot without importing a widget module. The registry binds that slot to the clock module and its browser-local preferences.
-7. `sizes` and versioned `source` metadata leave room for future capabilities; wide layout is specified below; an internal monitoring source is not implemented.
+7. `sizes` and versioned `source` metadata leave room for future capabilities; wide layout is specified below; internal monitoring contracts are defined in [ADR 0027](0027-widget-internal-monitoring.md).
 
 ## Consequences
 
@@ -27,3 +27,5 @@ The host owns the saved layout size, separate from widget configuration. Definit
 In the strip, wide spans two columns from `sm`; small screens and the rail use one column. Grid auto-placement preserves DOM and keyboard order: a wide item that does not fit moves to the next row, leaving the gap empty rather than backfilling it. Reordering changes position, not size. The 12-widget limit counts instances, not columns; page deletion moves widgets subject to the existing limit, and removing an instance removes its size with it. Size does not add MCP capabilities.
 
 Portable exports retain the current format and include optional `size: wide` only when needed. Older files default to normal. Older readers ignore this optional field, so they can import new files while displaying the widget as normal; they cannot preserve wide through a re-export. Storing size in config was rejected because it mixes host layout with widget data; a new transfer version would cause older readers to reject files. Unknown size values in imports are rejected as invalid widgets.
+
+Internal monitoring sources are portable without a connection; see [ADR 0027](0027-widget-internal-monitoring.md). A module declares the contract and the host supplies its reader.
