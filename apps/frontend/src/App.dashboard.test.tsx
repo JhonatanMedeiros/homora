@@ -252,7 +252,7 @@ it('keeps services dashboard usable when optional integrations fail', async () =
   );
   render(<App />);
   expect(await screen.findByRole('link', { name: /Local/ })).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Gerenciar' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /Menu da conta de/ })).toBeTruthy();
 });
 
 it('notes when availability cannot be refreshed', async () => {

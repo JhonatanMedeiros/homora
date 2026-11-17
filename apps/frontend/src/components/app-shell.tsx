@@ -24,9 +24,7 @@ import {
 } from '@homora/ui/dropdown-menu';
 import { initials, type Profile } from '@/features/account/account-model';
 import { BrandMark } from '@/components/brand-mark';
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { t } from '@/i18n';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { navGroups, navItems, type Tab } from '@/components/app-nav';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
 import { MobileTabs } from '@/components/mobile-tabs';
@@ -47,6 +45,8 @@ type Props = {
   profile: Profile | null;
   /** The alerts bell, when the dashboard has data to count. */
   alerts?: ReactNode;
+  /** Home page switcher pills rendered in the header outside management/account views. */
+  pagesNav?: ReactNode;
   /** Open alerts, for the count over the bell in the phone's bottom bar. */
   children: ReactNode;
 };
@@ -60,6 +60,7 @@ export function AppShell({
   onOpenPalette,
   profile,
   alerts,
+  pagesNav,
   children,
 }: Props) {
   // The account is a page of its own: no sidebar and no search, just a way back.
@@ -74,12 +75,15 @@ export function AppShell({
     <div className="min-h-svh">
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
         <div
-          className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-4 py-2 sm:gap-3 md:px-8 ${managing ? 'max-w-none md:px-6' : tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
+          className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-3 py-2 sm:gap-3 sm:px-4 md:px-8 ${managing ? 'max-w-none md:px-6' : tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
         >
-          <BrandMark
-            compact
-            className={`text-sidebar-foreground ${managing || standalone ? 'max-md:hidden' : ''}`}
-          />
+          <button
+            type="button"
+            onClick={() => onTabChange('services')}
+            className={`cursor-pointer rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${managing || standalone ? 'max-md:hidden' : ''}`}
+          >
+            <BrandMark compact className="text-sidebar-foreground" />
+          </button>
           {build &&
             !managing &&
             !standalone &&
@@ -97,96 +101,98 @@ export function AppShell({
                 v{build.version}
               </span>
             ))}
-          <span className="mr-auto" />
-          <Button
-            variant="ghost"
-            aria-label={t('palette.button')}
-            aria-keyshortcuts="Control+K Meta+K"
-            onClick={onOpenPalette}
-            className="gap-2 px-2.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <Search aria-hidden="true" />
-            <Kbd className="hidden bg-sidebar-accent text-sidebar-foreground md:inline-flex">
-              Ctrl K
-            </Kbd>
-          </Button>
-          <HeaderStatusSlot />
-          {alerts}
-          <LocaleSwitcher className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
-          <ThemeToggle className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                aria-label={`${t('userMenu.label', { name: profile?.name ?? '' })}${updateAvailable ? ` · ${t('releases.update')}` : ''}`}
-                className="h-11 gap-1.5 rounded-full px-1.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-expanded:bg-sidebar-accent"
-              >
-                <Avatar className="size-8">
-                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
-                    {profile ? initials(profile.name) : <UserRound className="size-4" />}
-                  </AvatarFallback>
-                </Avatar>
-                <ChevronDown aria-hidden="true" className="size-3.5" />
-                {updateAvailable && (
-                  <span aria-hidden="true" className="size-2 rounded-full bg-primary" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-56">
-              {profile && (
-                <>
-                  <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">
-                    <span className="text-sm font-medium text-foreground">{profile.name}</span>
-                    <span className="text-xs text-muted-foreground">{profile.email}</span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem onSelect={() => onTabChange('account')}>
-                <UserRound /> {t('nav.account')}
-              </DropdownMenuItem>
-              {!managing && !standalone && (
-                <DropdownMenuItem onSelect={() => onManageChange(true)} className="md:hidden">
-                  <Settings /> {t('manage.open')}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onSelect={() => onTabChange('activity')}>
-                <Activity /> {t('nav.activity')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setReleasesOpen(true)}>
-                <Sparkles /> {t('releases.title')}
-                {updateAvailable && <Badge className="ml-auto">{t('releases.update')}</Badge>}
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a
-                  href="https://github.com/JhonatanMedeiros/homora"
-                  target="_blank"
-                  rel="noopener noreferrer"
+          {pagesNav && !managing && !standalone && (
+            <div className="order-last flex w-full min-w-0 items-center border-t border-sidebar-border/50 pt-1.5 md:order-none md:w-auto md:flex-1 md:border-t-0 md:pt-0">
+              {pagesNav}
+            </div>
+          )}
+          <span
+            className={pagesNav && !managing && !standalone ? 'mr-auto md:hidden' : 'mr-auto'}
+          />
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
+            <Button
+              variant="ghost"
+              aria-label={t('palette.button')}
+              aria-keyshortcuts="Control+K Meta+K"
+              onClick={onOpenPalette}
+              className="size-9 gap-2 px-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:w-auto sm:px-2.5"
+            >
+              <Search aria-hidden="true" />
+              <Kbd className="hidden bg-sidebar-accent text-sidebar-foreground md:inline-flex">
+                Ctrl K
+              </Kbd>
+            </Button>
+            <HeaderStatusSlot />
+            {alerts}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label={`${t('userMenu.label', { name: profile?.name ?? '' })}${updateAvailable ? ` · ${t('releases.update')}` : ''}`}
+                  className="h-11 gap-1 rounded-full px-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-expanded:bg-sidebar-accent sm:gap-1.5 sm:px-1.5"
                 >
-                  <ExternalLink /> GitHub
-                </a>
-              </DropdownMenuItem>
-              <VersionMenuItem />
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={onLogout}>
-                <LogOut /> {t('app.logout')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            variant="outline"
-            onClick={() => onManageChange(!(managing || standalone))}
-            className={`border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${
-              managing || standalone
-                ? 'max-md:order-first max-md:-ml-2 max-md:size-11 max-md:border-0 max-md:px-0'
-                : 'max-md:hidden'
-            }`}
-          >
-            {managing || standalone ? <ArrowLeft /> : <Settings />}{' '}
-            <span className="max-md:sr-only">
-              {managing || standalone ? t('manage.back') : t('manage.open')}
-            </span>
-          </Button>
+                  <Avatar className="size-8">
+                    <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                      {profile ? initials(profile.name) : <UserRound className="size-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown aria-hidden="true" className="size-3.5" />
+                  {updateAvailable && (
+                    <span aria-hidden="true" className="size-2 rounded-full bg-primary" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-56">
+                {profile && (
+                  <>
+                    <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">
+                      <span className="text-sm font-medium text-foreground">{profile.name}</span>
+                      <span className="text-xs text-muted-foreground">{profile.email}</span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onSelect={() => onTabChange('account')}>
+                  <UserRound /> {t('nav.account')}
+                </DropdownMenuItem>
+                {!managing && !standalone && (
+                  <DropdownMenuItem onSelect={() => onManageChange(true)}>
+                    <Settings /> {t('manage.open')}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => onTabChange('activity')}>
+                  <Activity /> {t('nav.activity')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setReleasesOpen(true)}>
+                  <Sparkles /> {t('releases.title')}
+                  {updateAvailable && <Badge className="ml-auto">{t('releases.update')}</Badge>}
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href="https://github.com/JhonatanMedeiros/homora"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink /> GitHub
+                  </a>
+                </DropdownMenuItem>
+                <VersionMenuItem />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={onLogout}>
+                  <LogOut /> {t('app.logout')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {(managing || standalone) && (
+            <Button
+              variant="outline"
+              onClick={() => onManageChange(false)}
+              className="border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground max-md:order-first max-md:-ml-2 max-md:size-11 max-md:border-0 max-md:px-0"
+            >
+              <ArrowLeft /> <span className="max-md:sr-only">{t('manage.back')}</span>
+            </Button>
+          )}
         </div>
       </header>
       <ReleasesDialog

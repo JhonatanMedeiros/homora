@@ -3,7 +3,15 @@ import { PageWidgets } from '@/components/page-widgets';
 import { useAcknowledgements } from '@/hooks/use-acknowledgements';
 import { isQuiet } from '@/lib/acknowledgements';
 import { onProblemsRequest, takeProblemsRequest } from '@/features/dashboard/home-intent';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { cn } from '@homora/ui/lib/utils';
 import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
@@ -12,14 +20,12 @@ import { dependentsOf } from '@/features/hosts/dependencies';
 import { hostLabel, hostRailItems } from '@/features/hosts/hosts';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
 import { useUptime } from '@/features/uptime/use-uptime';
-import { PageTabs } from '@/components/page-tabs';
 import { CategoryFilter } from '@/features/dashboard/category-filter';
 import { StatusFilter } from '@/features/dashboard/status-filter';
 import { StatusBanner } from '@/components/status-banner';
 import { HomeStatusPill } from '@/components/home-status-pill';
 import { HeaderStatusPortal } from '@/components/header-status-slot';
 import { summarizeStatus } from '@/features/uptime/status-summary';
-import { PageTabMenu } from '@/components/page-tab-menu';
 import { PinnedRow } from '@/features/dashboard/pinned-row';
 import { HomeRail } from '@/features/dashboard/home-rail';
 import { useProbeList } from '@/hooks/use-probes';
@@ -131,7 +137,22 @@ export function ServicesPage({
     return onProblemsRequest(show);
   }, []);
   const list = view === 'list';
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedState, setSelectedState] = useState<{
+    pageId: number;
+    category: string | null;
+  }>({ pageId: activePageId, category: null });
+  const selected = selectedState.pageId === activePageId ? selectedState.category : null;
+  const setSelected: Dispatch<SetStateAction<string | null>> = useCallback(
+    (value) =>
+      setSelectedState((prev) => ({
+        pageId: activePageId,
+        category:
+          typeof value === 'function'
+            ? value(prev.pageId === activePageId ? prev.category : null)
+            : value,
+      })),
+    [activePageId],
+  );
   const deps = useDependencies();
   // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
   const [localFocus, setLocalFocus] = useState<FocusRequest | null>(null);
@@ -236,7 +257,6 @@ export function ServicesPage({
             items: [...group.items].sort((a, b) => Number(isDown(b)) - Number(isDown(a))),
           }))
       : groups;
-  const activePage = pages.find((page) => page.id === activePageId);
   const pinnedServices = services
     .filter((service) => service.pinned)
     .sort((a, b) => (a.pinnedPosition ?? Infinity) - (b.pinnedPosition ?? Infinity));
@@ -449,25 +469,6 @@ export function ServicesPage({
       <p role="status" className="sr-only">
         {srNote}
       </p>
-      {paged && !hostView && (
-        <PageTabs
-          menu={
-            activePage ? (
-              <PageTabMenu page={activePage} onChanged={() => data.refresh()} />
-            ) : undefined
-          }
-          pages={pages}
-          activeId={activePageId}
-          onSelect={(id) => {
-            data.selectPage(id);
-            setSelected(null);
-          }}
-          counts={(pageId) => {
-            const onThis = services.filter((s) => pageIdOf(s.category) === pageId);
-            return { total: onThis.length, down: onThis.filter(isDown).length };
-          }}
-        />
-      )}
       {!hostView && !widgetsInRail && (
         <WidgetStatusFilterContext.Provider value={setStatusFilter}>
           <PageWidgets pageId={activePageId} pages={pages} />
