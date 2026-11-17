@@ -1,8 +1,12 @@
 import type { ComponentType } from 'react';
 import type { MonitoringQuery } from './host.js';
+export type WidgetCategory = 'time' | 'monitoring' | 'feeds' | 'utilities';
+
 export type WidgetUI = {
   name: string;
   description: string;
+  category?: WidgetCategory;
+  keywords?: readonly string[];
   defaultConfig: unknown;
   parse: (config: unknown) => unknown | null;
   monitoringQuery?: (config: unknown) => MonitoringQuery;

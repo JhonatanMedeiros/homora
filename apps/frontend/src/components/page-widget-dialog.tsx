@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@homora/ui/button';
 import { Input } from '@homora/ui/input';
@@ -6,8 +5,9 @@ import { Field, FieldGroup, FieldLabel } from '@homora/ui/field';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
+import { WidgetGallery } from '@/components/widget-gallery';
 import { WidgetHost } from '@/components/widget-host';
-import { getWidgetUI, listWidgetUI } from '@/components/widget-ui-registry';
+import { getWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
 import type { PageRow } from '@/hooks/use-pages';
 import { t, tOr } from '@/i18n';
@@ -52,19 +52,8 @@ function DialogContents({
   onSubmit,
   onClose,
 }: Props) {
-  const [query, setQuery] = useState('');
   const gallery = draft !== null && draft.id === null && !chosen;
   const pageName = pages.find((page) => page.id === draft?.pageId)?.name ?? '';
-  const needle = query.trim().toLowerCase();
-  const localOptions = listWidgetUI().filter(
-    ([, entry]) => !needle || tOr(entry.name, entry.name).toLowerCase().includes(needle),
-  );
-  const shown = connections.filter(
-    (connection) =>
-      !needle ||
-      connection.name.toLowerCase().includes(needle) ||
-      connection.type.toLowerCase().includes(needle),
-  );
   const entry = draft ? getWidgetUI(draft.type) : undefined;
   const sizes = (draft && resolveWidget(draft.type)?.sizes) || ['normal'];
   const Editor = entry?.Editor;
@@ -91,12 +80,9 @@ function DialogContents({
     <ResponsiveDialog
       open={draft !== null}
       onOpenChange={(open) => {
-        if (!open) {
-          setQuery('');
-          onClose();
-        }
+        if (!open) onClose();
       }}
-      wide
+      size={gallery ? 'gallery' : 'wide'}
       title={gallery ? t('pageWidgets.add') : draft?.id ? t('pageWidgets.edit') : kindName}
       description={
         gallery
@@ -106,69 +92,7 @@ function DialogContents({
             : t('pageWidgets.willAdd', { page: pageName })
       }
     >
-      {draft && gallery && (
-        <div className="flex flex-col gap-4">
-          <Input
-            type="search"
-            aria-label={t('pageWidgets.search')}
-            placeholder={t('pageWidgets.search')}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          {localOptions.length > 0 && (
-            <section aria-labelledby="pw-group-homora" className="flex flex-col gap-2">
-              <h3
-                id="pw-group-homora"
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {t('pageWidgets.groupHomora')}
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {localOptions.map(([type, option]) => {
-                  const Gallery = option.Gallery;
-                  return (
-                    <GalleryOption
-                      key={type}
-                      title={tOr(option.name, option.name)}
-                      description={tOr(option.description, option.description)}
-                      onPick={() => pick(null, type)}
-                    >
-                      <Gallery />
-                    </GalleryOption>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-          {shown.length > 0 && (
-            <section aria-labelledby="pw-group-connections" className="flex flex-col gap-2">
-              <h3
-                id="pw-group-connections"
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {t('pageWidgets.groupConnections')}
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {shown.map((connection) => (
-                  <GalleryOption
-                    key={connection.id}
-                    title={connection.name}
-                    description={t('pageWidgets.connectionDesc')}
-                    onPick={() => pick(connection, connection.type)}
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {connection.type}
-                    </span>
-                  </GalleryOption>
-                ))}
-              </div>
-            </section>
-          )}
-          {localOptions.length === 0 && shown.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t('pageWidgets.noMatch')}</p>
-          )}
-        </div>
-      )}
+      {draft && gallery && <WidgetGallery connections={connections} onPick={pick} />}
       {draft && !gallery && (
         <form
           className="flex flex-col gap-4"
@@ -279,29 +203,5 @@ export function PageWidgetDialog(props: Props) {
     <WidgetHost groups={props.groups} pages={props.pages}>
       <DialogContents {...props} />
     </WidgetHost>
-  );
-}
-
-function GalleryOption({
-  title,
-  description,
-  onPick,
-  children,
-}: {
-  title: string;
-  description: string;
-  onPick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      className="flex min-w-0 flex-col items-start gap-2 rounded-md border bg-card p-3 text-left transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-    >
-      <span className="rounded bg-muted/60 px-2 py-1">{children}</span>
-      <span className="text-sm font-medium">{title}</span>
-      <span className="text-xs text-muted-foreground">{description}</span>
-    </button>
   );
 }

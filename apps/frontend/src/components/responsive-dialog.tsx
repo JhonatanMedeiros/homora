@@ -19,6 +19,8 @@ type Props = {
   locked?: boolean;
   /** A wider dialog, for content laid out in columns. */
   wide?: boolean;
+  /** Explicit dialog width/layout preset; `'gallery'` uses a fixed-height flex shell for scrollable grids. */
+  size?: 'default' | 'wide' | 'gallery';
   children: ReactNode;
 };
 
@@ -30,9 +32,11 @@ export function ResponsiveDialog({
   description,
   locked = false,
   wide = false,
+  size,
   children,
 }: Props) {
   const mobile = useIsMobile();
+  const resolvedSize = size ?? (wide ? 'wide' : 'default');
   const guard = locked
     ? {
         onEscapeKeyDown: (event: Event) => event.preventDefault(),
@@ -45,10 +49,13 @@ export function ResponsiveDialog({
         <SheetContent
           side="bottom"
           showCloseButton={!locked}
-          className="max-h-[90svh] overflow-y-auto rounded-t-xl px-4 pb-6"
+          className={cn(
+            'max-h-[90svh] rounded-t-xl px-4 pb-6',
+            resolvedSize === 'gallery' ? 'flex flex-col overflow-hidden' : 'overflow-y-auto',
+          )}
           {...guard}
         >
-          <SheetHeader className="px-0">
+          <SheetHeader className="shrink-0 px-0">
             <SheetTitle>{title}</SheetTitle>
             {description ? (
               <SheetDescription>{description}</SheetDescription>
@@ -64,7 +71,13 @@ export function ResponsiveDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={!locked}
-        className={cn('max-h-[calc(100svh-2rem)] overflow-y-auto', wide && 'sm:max-w-2xl')}
+        className={cn(
+          'max-h-[calc(100svh-2rem)]',
+          resolvedSize === 'gallery'
+            ? 'flex flex-col overflow-hidden sm:max-w-3xl lg:max-w-4xl'
+            : 'overflow-y-auto',
+          resolvedSize === 'wide' && 'sm:max-w-2xl',
+        )}
         {...guard}
       >
         <DialogHeader>

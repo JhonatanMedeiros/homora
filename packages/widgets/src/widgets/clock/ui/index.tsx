@@ -63,6 +63,8 @@ import type { WidgetUI } from '../../../ui/types.js';
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.clock',
   description: 'pageWidgets.clockDesc',
+  category: 'time',
+  keywords: ['time', 'date', 'timezone', 'hora', 'data', 'fuso', 'relógio'],
   defaultConfig: defaultClockConfig,
   parse: clockWidget.parseConfig,
   View: ({ config }) => <Clock preferences={config as ClockConfig} />,
