@@ -24,14 +24,18 @@ import {
   DropdownMenuTrigger,
 } from '@homora/ui/dropdown-menu';
 import { Input } from '@homora/ui/input';
-import { usePages, type PageRow } from '@/hooks/use-pages';
+import { removePage, renamePage, reorderPages, usePages, type PageRow } from '@/hooks/use-pages';
 import { t } from '@/i18n';
 
 type Props = {
   /** The page whose tab is selected; the menu acts on it. */
   page: PageRow;
+  /** Optional full page list; when omitted, `usePages` loads it. */
+  pages?: PageRow[];
   /** Called after a change was saved, so the Home reloads its pages. */
-  onChanged: () => void | Promise<void>;
+  onChanged: () => unknown | Promise<unknown>;
+  /** Optional class for the "..." trigger button (e.g. inside a header pill). */
+  triggerClassName?: string;
 };
 
 /**
@@ -39,8 +43,9 @@ type Props = {
  * Settings → Pages, kept here so a page can be tidied without leaving the Home. Deleting a page
  * that holds groups or widgets asks where they go; nothing is lost silently.
  */
-export function PageTabMenu({ page, onChanged }: Props) {
-  const { pages, rename, remove, reorder } = usePages();
+export function PageTabMenu({ page, pages: providedPages, onChanged, triggerClassName }: Props) {
+  const loaded = usePages(providedPages === undefined);
+  const pages = providedPages ?? loaded.pages;
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
@@ -64,19 +69,19 @@ export function PageTabMenu({ page, onChanged }: Props) {
   }
   async function submitRename(event: FormEvent) {
     event.preventDefault();
-    if (await finish(await rename(page.id, draft))) setRenaming(false);
+    if (await finish(await renamePage(page.id, draft))) setRenaming(false);
   }
   async function move(direction: -1 | 1) {
     const ids = pages.map((item) => item.id);
     const to = index + direction;
     if (index < 0 || to < 0 || to >= ids.length) return;
     [ids[index], ids[to]] = [ids[to]!, ids[index]!];
-    await finish(await reorder(ids));
+    await finish(await reorderPages(ids));
   }
   async function confirmDelete() {
     const target = holdsContent ? Number(moveTo) : undefined;
     setDeleting(false);
-    await finish(await remove(page.id, target));
+    await finish(await removePage(page.id, target));
   }
 
   return (
@@ -88,6 +93,7 @@ export function PageTabMenu({ page, onChanged }: Props) {
             variant="ghost"
             size="icon-sm"
             aria-label={t('pages.menu', { name: page.name })}
+            className={triggerClassName}
           >
             <MoreHorizontal />
           </Button>

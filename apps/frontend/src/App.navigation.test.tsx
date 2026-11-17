@@ -36,7 +36,8 @@ it('opens service management directly and returns to dashboard', async () => {
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
   const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: /Menu da conta de/ }), { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   expect(window.location.pathname).toBe('/manage/integrations');
   const navigation = screen.getByRole('navigation', { name: 'Gerenciamento' });
   // Services and groups are managed on the Home (Organize), so they are not a section here.
@@ -129,9 +130,7 @@ it('shows compact tiles by default and opens the command palette with Ctrl K', a
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
   fireEvent.click(screen.getByRole('button', { name: 'Exibição' }));
-  expect((await screen.findByRole('radio', { name: 'Compacto' })).getAttribute('data-state')).toBe(
-    'on',
-  );
+  expect((await screen.findByRole('radio', { name: 'Compacto' })).dataset.state).toBe('on');
   fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
   fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
   expect(await screen.findByPlaceholderText('Buscar serviços ou executar um comando')).toBeTruthy();
@@ -164,15 +163,18 @@ it('opens the palette from the header button and goes to a card inside a collaps
   );
   render(<App />);
   await screen.findByRole('link', { name: /Wiki/ });
-  expect(document.getElementById('service-2')).toBeNull();
+  expect(document.querySelector('#service-2')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Buscar ou executar um comando' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Ir para o card de Proxmox' }));
-  await waitFor(() => expect(document.getElementById('service-2')?.dataset.highlight).toBe('true'));
+  await waitFor(() =>
+    expect(document.querySelector<HTMLElement>('#service-2')?.dataset.highlight).toBe('true'),
+  );
   expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
   // The expansion is temporary: the saved preference is kept.
   expect(localStorage.getItem('homora-collapsed-groups')).toContain('Infra');
   await waitFor(
-    () => expect(document.getElementById('service-2')?.dataset.highlight).toBeUndefined(),
+    () =>
+      expect(document.querySelector<HTMLElement>('#service-2')?.dataset.highlight).toBeUndefined(),
     {
       timeout: 3000,
     },

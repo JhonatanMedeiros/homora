@@ -44,7 +44,8 @@ it('shows pending proposals in clear language and approves with a single click',
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: /Menu da conta de/ }), { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
       name: 'Agentes',
@@ -146,7 +147,8 @@ it('shows before and after of an update proposal', async () => {
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar' }));
+  fireEvent.keyDown(screen.getByRole('button', { name: /Menu da conta de/ }), { key: 'Enter' });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
       name: 'Agentes',

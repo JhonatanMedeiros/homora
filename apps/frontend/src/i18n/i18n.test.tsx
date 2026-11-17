@@ -89,12 +89,12 @@ it('displays the interface in English and switches to Portuguese without reload'
     'fetch',
     vi.fn(async (url: string) => {
       if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+        return { ok: true, json: async () => ({ configured: true, authenticated: false }) };
       return { ok: true, json: async () => [] };
     }),
   );
   render(<App />);
-  expect(await screen.findByText('Your dashboard is empty')).toBeTruthy();
+  expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
   fireEvent.pointerDown(screen.getByRole('button', { name: 'Language: English' }), {
     button: 0,
     ctrlKey: false,
@@ -103,7 +103,7 @@ it('displays the interface in English and switches to Portuguese without reload'
     'true',
   );
   fireEvent.click(screen.getByRole('menuitemradio', { name: 'Português (Brasil)' }));
-  expect(await screen.findByText('Seu painel está vazio')).toBeTruthy();
+  expect(await screen.findByRole('button', { name: 'Entrar' })).toBeTruthy();
   expect(getLocale()).toBe('pt-BR');
 });
 
@@ -117,7 +117,10 @@ it('keeps management and settings accessible in English', async () => {
     }),
   );
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Manage' }));
+  fireEvent.keyDown(await screen.findByRole('button', { name: /Account menu for/ }), {
+    key: 'Enter',
+  });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Manage' }));
   fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Back to dashboard' }));

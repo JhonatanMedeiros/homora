@@ -3,6 +3,7 @@ import { AlertsBell } from '@/components/alerts-bell';
 import { requestProblemsView } from '@/features/dashboard/home-intent';
 import { useNavigate } from 'react-router';
 import { AppShell } from '@/components/app-shell';
+import { PageTabs } from '@/components/page-tabs';
 import { CommandPalette } from '@/components/command-palette';
 import { ShortcutsDialog } from '@/components/shortcuts-dialog';
 import { SafeModeBanner } from '@/components/safe-mode-banner';
@@ -114,11 +115,32 @@ export function DashboardPage({
         navigate(value ? tabPath('integrations') : '/');
       }}
       onTabChange={(next) => {
-        navigate(tabPath(next));
+        navigate(next === 'services' ? '/' : tabPath(next));
       }}
       onLogout={onLogout}
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
+      pagesNav={
+        data.pages.length > 0 ? (
+          <PageTabs
+            pages={data.pages}
+            activeId={data.activePageId}
+            onSelect={(id) => {
+              data.selectPage(id);
+              if (viewPrefs.arrange !== 'group') viewPrefs.setArrange('group');
+              if (tab !== 'services' || detail !== null || managing) navigate('/');
+            }}
+            counts={(pageId) => {
+              const onThis = data.services.filter((s) => data.pageIdOf(s.category) === pageId);
+              const down = onThis.filter(
+                (s) => data.statuses[s.id]?.status === 'unavailable' && !data.blockedIds.has(s.id),
+              ).length;
+              return { total: onThis.length, down };
+            }}
+            onChanged={() => data.refresh()}
+          />
+        ) : undefined
+      }
       alerts={
         <AlertsBell
           onService={(id, probe) => routerNavigate(probe ? '/manage/probes' : `/services/${id}`)}
@@ -130,7 +152,7 @@ export function DashboardPage({
         onEdit={() => {
           routerNavigate(settingsPath('appearance'), { state: { advanced: true } });
           window.setTimeout(
-            () => document.getElementById('ui-css')?.scrollIntoView({ behavior: 'smooth' }),
+            () => document.querySelector('#ui-css')?.scrollIntoView({ behavior: 'smooth' }),
             150,
           );
         }}
@@ -172,14 +194,7 @@ export function DashboardPage({
         showDescriptions={viewPrefs.showDescriptions}
         onShowDescriptionsChange={viewPrefs.setShowDescriptions}
       />
-      {!route.valid ? (
-        <section>
-          <h1 className="text-3xl">{t('route.notFound')}</h1>
-          <Button className="mt-4" onClick={() => navigate('/')}>
-            {t('route.home')}
-          </Button>
-        </section>
-      ) : (
+      {route.valid ? (
         tab === 'services' &&
         (detail !== null ? (
           <ServiceDetailPage
@@ -203,6 +218,13 @@ export function DashboardPage({
             }}
           />
         ))
+      ) : (
+        <section>
+          <h1 className="text-3xl">{t('route.notFound')}</h1>
+          <Button className="mt-4" onClick={() => navigate('/')}>
+            {t('route.home')}
+          </Button>
+        </section>
       )}
       {managing && tab === 'integrations' && (
         <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
