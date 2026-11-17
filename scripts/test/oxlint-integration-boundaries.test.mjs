@@ -103,3 +103,22 @@ test('oxlint enforces integration imports without blocking test helpers or capab
     0,
   );
 });
+
+test('oxlint rejects React and application imports in compiled widget modules', async () => {
+  const file = 'packages/widgets/src/widgets/example/boundary-probe.ts';
+  assert.equal((await restricted(file, "import React from 'react';")).length, 1);
+  assert.equal((await restricted(file, "import { Button } from '@homora/ui';")).length, 1);
+  assert.equal(
+    (await restricted(file, "import x from '../../../../../apps/backend/src/index.js';")).length,
+    1,
+  );
+  assert.equal(
+    (
+      await restricted(
+        'packages/widgets/src/widgets/example/ui/boundary-probe.tsx',
+        "import React from 'react';",
+      )
+    ).length,
+    0,
+  );
+});

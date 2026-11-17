@@ -49,3 +49,7 @@ the checks executed along with known limitations. There is no guaranteed review
 turnaround while the project is in early development.
 
 Maintainers can find the versioning and publication workflow in [the release guide](docs/maintainers/releases.md).
+
+## Local widget contributions
+
+Use `pnpm widget:create <type>` and follow the [widget creation guide](docs/create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.

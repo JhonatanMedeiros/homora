@@ -121,3 +121,7 @@ as noted in each issue; execution order is in the epic.
 Related evaluation: [issue #163](https://github.com/JhonatanMedeiros/homora/issues/163) covers a
 bounded integration-selection and validation round. Its historical inventory can be stale; the
 integration reference and code are authoritative for current implementation and validation.
+
+## Local widget contributions
+
+Use `pnpm widget:create <type>` and follow the [widget creation guide](create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.

@@ -12,3 +12,7 @@ Homora is open source, and contributions of all sizes are welcome. You can repor
 Please follow the [code of conduct](https://github.com/JhonatanMedeiros/homora/blob/main/CODE_OF_CONDUCT.md). Report security vulnerabilities privately using the [security policy](https://github.com/JhonatanMedeiros/homora/blob/main/SECURITY.md), rather than opening a public issue.
 
 The [product vision](product.md) and [evolution plan](evolution.md) provide context. The plan is a guide, and planned work is not necessarily implemented.
+
+## Local widget contributions
+
+Use `pnpm widget:create <type>` and follow the [widget creation guide](create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.

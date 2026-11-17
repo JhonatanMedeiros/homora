@@ -18,4 +18,4 @@ Page widget validation, transfer, editing and presentation were scattered throug
 
 ## Consequences
 
-The source-only UI requires React, shared primitives and Tailwind source scanning in frontend builds; compiled definitions must remain independent of them. Module registration remains manual until the separate scaffold and boundary work. Configuration remains validated on each import and save. Future size and source changes require their own design and validation.
+The source-only UI requires React, shared primitives and Tailwind source scanning in frontend builds; compiled definitions must remain independent of them. The scaffold updates the explicit definition, translation, UI and package registrations together; this keeps the catalog static and avoids runtime discovery. Configuration remains validated on each import and save. Future size and source changes require their own design and validation.

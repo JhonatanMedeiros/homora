@@ -216,6 +216,21 @@ export default defineConfig({
       ]),
     },
     {
+      files: [`packages/widgets/src/widgets/**/*.${src}`],
+      excludeFiles: ['packages/widgets/src/widgets/**/ui/**'],
+      rules: restrict([
+        {
+          regex: '^react(?:/|$)|^react-dom(?:/|$)|^@homora/ui(?:/|$)',
+          message: 'Compiled widget modules cannot import UI.',
+        },
+        {
+          regex:
+            '^@homora/(backend|frontend|db|shared|integrations)(/|$)|(^|/)apps/|(^|/)integrations/',
+          message: 'Widgets cannot depend on applications or integrations.',
+        },
+      ]),
+    },
+    {
       files: ['apps/frontend/src/**/*.{ts,tsx}'],
       excludeFiles: ['**/*.test.*', '**/*.spec.*'],
       rules: restrict(integrationImports),
