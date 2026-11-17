@@ -22,6 +22,7 @@ export const pageWidgets = sqliteTable('page_widgets', {
   name: text('name').notNull().default(''),
   config: text('config').notNull(),
   version: integer('version').notNull().default(1),
+  size: text('size').notNull().default('normal'),
   connectionId: integer('connection_id').references(() => integrationInstances.id, {
     onDelete: 'restrict',
   }),

@@ -103,6 +103,7 @@ export function PageWidgetCard({
       name: item.name,
       connectionId: item.connectionId,
       config: ui ? (config ?? ui.defaultConfig) : {},
+      size: item.size,
     });
   };
   const movePage = (target: number) =>
@@ -112,6 +113,7 @@ export function PageWidgetCard({
       name: item.name,
       connectionId: item.connectionId,
       config: ui ? item.config : {},
+      size: item.size,
     });
   if (!showHidden && item.version === 1 && ui?.isHidden?.(item.config, visibilityNow)) return null;
   return (
@@ -141,6 +143,7 @@ export function PageWidgetCard({
       }}
       className={cn(
         'group relative flex min-w-0 flex-col gap-3 rounded-md border bg-card p-3',
+        layout === 'strip' && item.size === 'wide' && 'sm:col-span-2',
         current.length > 1 && 'cursor-grab active:cursor-grabbing pointer-coarse:cursor-default',
         dragId === item.id && 'border-dashed opacity-40',
       )}

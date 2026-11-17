@@ -1,5 +1,8 @@
 export const en = {
   'pageWidgets.title': 'Page widgets',
+  'pageWidgets.size': 'Size',
+  'pageWidgets.sizeNormal': 'Normal',
+  'pageWidgets.sizeWide': 'Wide',
   'pageWidgets.add': 'Add widget',
   'pageWidgets.edit': 'Edit widget',
   'pageWidgets.kind': 'Widget',
@@ -37,6 +40,9 @@ export const en = {
 } as const;
 export const ptBR: Record<keyof typeof en, string> = {
   'pageWidgets.title': 'Widgets da página',
+  'pageWidgets.size': 'Tamanho',
+  'pageWidgets.sizeNormal': 'Normal',
+  'pageWidgets.sizeWide': 'Largo',
   'pageWidgets.add': 'Adicionar widget',
   'pageWidgets.edit': 'Editar widget',
   'pageWidgets.kind': 'Widget',

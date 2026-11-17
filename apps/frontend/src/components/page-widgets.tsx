@@ -27,6 +27,7 @@ function newWidgetDraft(pageId: number): WidgetDraft {
     name: '',
     config: listWidgetUI()[0]![1].defaultConfig,
     connectionId: null,
+    size: 'normal',
   };
 }
 

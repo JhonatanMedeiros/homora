@@ -10,3 +10,5 @@ Execute `pnpm widget:create meu-widget` com um tipo único, minúsculo e separad
 - Amplie o teste de definição e adicione testes de UI para comportamento, configuração inválida, acessibilidade e casos relevantes. Preserve configurações armazenadas e exportações portáveis ao alterar um widget.
 
 Execute os testes específicos, `pnpm check` e `pnpm build`; valide a galeria e os layouts relevantes no navegador e registre o que não foi verificado. O scaffold é interno e não é uma API de plugins nem uma autorização para acesso à rede.
+
+Widgets de página podem declarar `sizes: ['normal', 'wide']` na definição quando esse escopo for aprovado; omitir o campo significa apenas normal. O host guarda a escolha. Largo ocupa duas colunas na faixa a partir de `sm` e aparece normal no painel lateral e em telas pequenas; todo widget deve funcionar na largura normal.

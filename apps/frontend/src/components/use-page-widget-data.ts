@@ -12,6 +12,7 @@ export type PageWidget = {
   connectionId: number | null;
   position: number;
   version: number;
+  size: 'normal' | 'wide';
 };
 
 export function usePageWidgetData(pageId: number) {

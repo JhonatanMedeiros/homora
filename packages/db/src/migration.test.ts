@@ -1263,3 +1263,43 @@ it('lets inbox notifications point at probes and keeps the ones already stored',
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('adds the page widget size without changing existing rows', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-widget-size-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO page_widgets(id,page_id,type,name,config,version,position) VALUES(7,1,'clock','Existing','{}',1,3)",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    expect(
+      check
+        .prepare('SELECT id,page_id,type,name,config,version,position,size FROM page_widgets')
+        .get(),
+    ).toEqual({
+      id: 7,
+      page_id: 1,
+      type: 'clock',
+      name: 'Existing',
+      config: '{}',
+      version: 1,
+      position: 3,
+      size: 'normal',
+    });
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

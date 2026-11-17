@@ -211,10 +211,18 @@ export function parseTransfer(content: string): ParsedImport {
         }
         const page = normalizePageName(item.page)!;
         const definition = resolveWidget(item.type);
+        const size = item.size === undefined ? 'normal' : item.size;
+        if (
+          (size !== 'normal' && size !== 'wide') ||
+          !(definition?.sizes ?? ['normal']).includes(size)
+        ) {
+          issues.push({ path, code: 'widget-invalid', severity: 'warning' });
+          return;
+        }
         if (definition?.portable) {
           const config = definition.parseConfig(item.config);
           if (config !== null && item.source === undefined)
-            document.widgets!.push({ page, type: item.type, name: item.name, config });
+            document.widgets!.push({ page, type: item.type, name: item.name, config, size });
           else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
         } else if (
           definition?.source &&
@@ -230,6 +238,7 @@ export function parseTransfer(content: string): ParsedImport {
             type: item.type,
             name: item.name,
             config: {},
+            size,
             source: { type: item.type, name: item.source.name },
           });
           issues.push({ path, code: 'widget-source-unavailable', severity: 'warning' });

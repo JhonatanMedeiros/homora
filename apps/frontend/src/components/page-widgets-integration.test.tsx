@@ -409,6 +409,7 @@ it('saves a clock without leaking note text into its configuration', async () =>
           name: '',
           config: { hourFormat: 'auto', timeZone: '', seconds: false, date: true },
           connectionId: null,
+          size: 'normal',
         }),
       }),
     ),

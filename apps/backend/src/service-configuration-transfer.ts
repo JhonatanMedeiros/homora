@@ -74,12 +74,13 @@ export function createConfigurationTransfer({
         widgets: (
           sqlite
             .prepare(
-              `SELECT w.type,w.name,w.config,p.name AS page,c.name AS sourceName FROM page_widgets w JOIN pages p ON p.id=w.page_id LEFT JOIN integration_instances c ON c.id=w.connection_id WHERE w.version=1 ORDER BY p.position,w.position,w.id`,
+              `SELECT w.type,w.name,w.config,w.size,p.name AS page,c.name AS sourceName FROM page_widgets w JOIN pages p ON p.id=w.page_id LEFT JOIN integration_instances c ON c.id=w.connection_id WHERE w.version=1 ORDER BY p.position,w.position,w.id`,
             )
             .all() as {
             type: string;
             name: string;
             config: string;
+            size: string;
             page: string;
             sourceName: string | null;
           }[]
@@ -96,7 +97,15 @@ export function createConfigurationTransfer({
             const config = definition.parseConfig(raw);
             return config === null
               ? []
-              : [{ page: row.page, type: row.type, name: row.name, config }];
+              : [
+                  {
+                    page: row.page,
+                    type: row.type,
+                    name: row.name,
+                    config,
+                    ...(row.size === 'wide' ? { size: 'wide' } : {}),
+                  },
+                ];
           }
           if (!definition?.source || row.sourceName === null) return [];
           return [
@@ -105,6 +114,7 @@ export function createConfigurationTransfer({
               type: row.type,
               name: row.name,
               config: {},
+              ...(row.size === 'wide' ? { size: 'wide' } : {}),
               source: { type: row.type, name: row.sourceName },
             },
           ];
@@ -310,9 +320,16 @@ export function createConfigurationTransfer({
           if (onPage >= MAX_WIDGETS_PER_PAGE) continue;
           sqlite
             .prepare(
-              'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,position) VALUES(?,?,?,?,1,NULL,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
+              'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,NULL,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
             )
-            .run(pageId, widget.type, widget.name, JSON.stringify(widget.config), pageId);
+            .run(
+              pageId,
+              widget.type,
+              widget.name,
+              JSON.stringify(widget.config),
+              widget.size ?? 'normal',
+              pageId,
+            );
           widgetsCreated += 1;
         }
         if (created || widgetsCreated) bumpVersion();

@@ -11,6 +11,8 @@ import { getWidgetUI, listWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
 import type { PageRow } from '@/hooks/use-pages';
 import { t, tOr } from '@/i18n';
+import { resolveWidget } from '@homora/integrations';
+import type { WidgetSize } from '@homora/widgets';
 
 export type WidgetDraft = {
   id: number | null;
@@ -19,6 +21,7 @@ export type WidgetDraft = {
   name: string;
   config: unknown;
   connectionId: number | null;
+  size: WidgetSize;
 };
 
 type Props = {
@@ -62,6 +65,7 @@ function DialogContents({
       connection.type.toLowerCase().includes(needle),
   );
   const entry = draft ? getWidgetUI(draft.type) : undefined;
+  const sizes = (draft && resolveWidget(draft.type)?.sizes) || ['normal'];
   const Editor = entry?.Editor;
   const Preview = entry?.Preview;
   const kindName =
@@ -78,6 +82,7 @@ function DialogContents({
       type: connection?.type ?? type,
       config: connection ? {} : (getWidgetUI(type)?.defaultConfig ?? {}),
       connectionId: connection?.id ?? null,
+      size: 'normal',
     });
     onChoose(true);
   };
@@ -178,6 +183,24 @@ function DialogContents({
           )}
           <div className={Preview ? 'grid gap-4 md:grid-cols-[1fr_16rem]' : 'flex flex-col gap-4'}>
             <FieldGroup>
+              {sizes.length > 1 && (
+                <Field>
+                  <FieldLabel htmlFor="pw-size">{t('pageWidgets.size')}</FieldLabel>
+                  <FormSelect
+                    id="pw-size"
+                    value={draft.size}
+                    onChange={(event) =>
+                      onChange({ ...draft, size: event.target.value as WidgetSize })
+                    }
+                  >
+                    {sizes.map((size) => (
+                      <FormSelectOption key={size} value={size}>
+                        {t(size === 'wide' ? 'pageWidgets.sizeWide' : 'pageWidgets.sizeNormal')}
+                      </FormSelectOption>
+                    ))}
+                  </FormSelect>
+                </Field>
+              )}
               {Editor && (
                 <Editor
                   config={draft.config}

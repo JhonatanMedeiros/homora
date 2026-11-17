@@ -80,3 +80,5 @@ docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11
 ```
 
 Skip a copy if the file does not exist. Copy `homora.sqlite.background` the same way if you use a background image.
+
+Page widget exports preserve wide size when supported. Older exports import at normal size; older Homora versions ignore the size field and display the widget at normal width.
