@@ -23,6 +23,7 @@ import {
   type createServiceMonitor,
   type createIncidentStore,
   type createMeasurementGuard,
+  type createObservationStore,
 } from '../monitoring/index.js';
 import { errorBody } from '../api-error.js';
 
@@ -49,6 +50,36 @@ const countsSchema = z
   })
   .strict();
 const timestamp = z.number().int().nonnegative();
+const latencySchema = z
+  .object({
+    generatedAt: timestamp,
+    range: z.enum(availabilityRanges),
+    target: z
+      .object({
+        id: z.number().int().positive(),
+        name: z.string().max(200),
+        state: z.enum(['down', 'degraded', 'ok', 'maintenance', 'blocked', 'unknown']),
+        stale: z.boolean(),
+        lastAttempt: timestamp.nullable(),
+        lastValid: z
+          .object({ observedAt: timestamp, latencyMs: z.number().finite().nonnegative() })
+          .strict()
+          .nullable(),
+        points: z
+          .array(
+            z
+              .object({ start: timestamp, p50: z.number().finite().nonnegative().nullable() })
+              .strict(),
+          )
+          .max(120),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+const serviceTargetsSchema = z.array(
+  z.object({ target: z.string().regex(/^[0-9a-f]{32}$/), name: z.string().max(200) }).strict(),
+);
 const summarySchema: z.ZodType<MonitoringSummary> = z
   .object({
     generatedAt: timestamp,
@@ -163,6 +194,7 @@ export function registerWidgetMonitoringRoutes(
   measurement: Pick<ReturnType<typeof createMeasurementGuard>, 'current'>,
   degradedSince?: Pick<ReturnType<typeof createDegradedSince>, 'since'>,
   caHash?: () => string | undefined,
+  observations?: Pick<ReturnType<typeof createObservationStore>, 'latency' | 'lastValidLatency'>,
 ) {
   const cache = new Map<string, { at: number; value: unknown }>();
   app.get<{ Params: { kind: string }; Querystring: Record<string, string> }>(
@@ -210,6 +242,7 @@ export function registerWidgetMonitoringRoutes(
         return reply.code(400).send(errorBody('invalid-query'));
       switch (kind) {
         case 'availability':
+        case 'latency':
           if (!target || groups || pages || minimumMinutes)
             return reply.code(400).send(errorBody('invalid-query'));
           break;
@@ -229,9 +262,68 @@ export function registerWidgetMonitoringRoutes(
         range,
       ]);
       const cached = cache.get(key);
-      if (cached && now - cached.at < 10_000) return cached.value;
+      if (cached && kind !== 'latency' && kind !== 'serviceTargets' && now - cached.at < 10_000)
+        return cached.value;
       let value: unknown;
       switch (kind) {
+        case 'serviceTargets': {
+          value = serviceTargetsSchema.parse(
+            db
+              .prepare(
+                `SELECT i.identity AS target,m.name FROM service_identities i JOIN services s ON s.id=i.service_id JOIN monitors m ON m.id=s.id ORDER BY m.name, i.identity`,
+              )
+              .all(),
+          );
+          break;
+        }
+        case 'latency': {
+          if (!target || !/^[0-9a-f]{32}$/.test(target))
+            return reply.code(400).send(errorBody('invalid-query'));
+          if (!observations) return reply.code(503).send(errorBody('internal-error'));
+          const identity = db
+            .prepare('SELECT service_id AS id FROM service_identities WHERE identity=?')
+            .get(target) as { id: number } | undefined;
+          const match = identity && source.list().find((item) => item.id === identity.id);
+          if (!match) {
+            value = latencySchema.parse({ generatedAt: now, range, target: null });
+            break;
+          }
+          const status = monitor.snapshot()[match.id];
+          const threshold = db
+            .prepare(
+              'SELECT degraded_latency_ms AS threshold FROM service_monitor_settings WHERE service_id=?',
+            )
+            .get(match.id) as { threshold: number | null } | undefined;
+          const state = monitoringState({
+            status: status?.status,
+            reason: status?.reason,
+            latencyMs: status?.latencyMs,
+            degradedLatencyMs: threshold?.threshold,
+            blocked: match.url !== null && !match.allowPrivate && isHomePrivateHost(match.url),
+            measurementReason: measurement.current()?.reason,
+          });
+          const parsed = status?.lastAttempt ? Date.parse(status.lastAttempt) : NaN;
+          const lastAttempt = Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+          const stale =
+            lastAttempt !== null &&
+            (now < lastAttempt ||
+              now - lastAttempt > (match.checkInterval ?? CHECK_INTERVAL_DEFAULT) * 2_000);
+          const series = observations.latency(match.id, range, now);
+          value = latencySchema.parse({
+            generatedAt: now,
+            range,
+            target: {
+              id: match.id,
+              name: match.name,
+              state,
+              stale,
+              lastAttempt,
+              lastValid: observations.lastValidLatency(match.id, now),
+              points: series.points.map(({ start, p50 }) => ({ start, p50 })),
+            },
+          });
+          break;
+        }
         case 'availability': {
           const match = source.list().find((item) => item.name === target);
           if (match) {

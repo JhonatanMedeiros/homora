@@ -112,6 +112,13 @@ async function readTargets(signal: AbortSignal): Promise<MonitoringTargetOption[
   return items.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+async function readLatency(query: { target: string; range: string }, signal: AbortSignal) {
+  return getJson(`/api/widget-sources/monitoring/latency?${new URLSearchParams(query)}`, signal);
+}
+async function readServiceTargets(signal: AbortSignal) {
+  return getJson('/api/widget-sources/monitoring/serviceTargets', signal);
+}
+
 export async function readWidgetSource<T = unknown>(
   contract: string,
   params: WidgetSourceParams,
@@ -223,6 +230,8 @@ export function WidgetHost({
           readScopes,
           readProblems,
           readAvailability,
+          readLatency,
+          readServiceTargets,
           readTargets,
           filterStatus,
         },

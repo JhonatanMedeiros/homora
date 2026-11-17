@@ -490,3 +490,69 @@ it('returns availability for services and probes, enforcing min 5 checks and exc
   await app.close();
   db.close();
 });
+
+it('reads latency by local service identity and reports a missing deleted selection', async () => {
+  const now = Date.now();
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER PRIMARY KEY);
+    CREATE TABLE monitors(id INTEGER PRIMARY KEY,name TEXT);
+    CREATE TABLE service_identities(service_id INTEGER PRIMARY KEY,identity TEXT);
+    CREATE TABLE service_monitor_settings(service_id INTEGER,degraded_latency_ms INTEGER);
+    INSERT INTO services VALUES(1); INSERT INTO monitors VALUES(1,'Server');
+    INSERT INTO service_identities VALUES(1,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');`);
+  const app = Fastify();
+  const targets = [
+    { id: 1, name: 'Server', url: 'https://example.test', allowPrivate: false, checkInterval: 30 },
+  ];
+  const observations = {
+    latency: () => ({
+      points: [
+        { start: now - 1000, p50: null },
+        { start: now, p50: 12 },
+      ],
+    }),
+    lastValidLatency: () => ({ observedAt: now - 1000, latencyMs: 12 }),
+  };
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => targets } as never,
+    {
+      snapshot: () => ({
+        1: {
+          status: 'unavailable',
+          reason: 'no-response',
+          lastAttempt: new Date(now - 61_000).toISOString(),
+        },
+      }),
+    } as never,
+    { open: () => ({}) } as never,
+    { current: () => null },
+    undefined,
+    undefined,
+    observations as never,
+  );
+  try {
+    expect((await app.inject('/api/widget-sources/monitoring/serviceTargets')).json()).toEqual([
+      { target: 'a'.repeat(32), name: 'Server' },
+    ]);
+    const path = `/api/widget-sources/monitoring/latency?target=${'a'.repeat(32)}&range=24h`;
+    expect((await app.inject(path)).json()).toMatchObject({
+      target: {
+        id: 1,
+        state: 'down',
+        stale: true,
+        lastValid: { latencyMs: 12 },
+        points: [{ p50: null }, { p50: 12 }],
+      },
+    });
+    db.exec('DELETE FROM service_identities');
+    expect((await app.inject(path)).json().target).toBeNull();
+    expect((await app.inject('/api/widget-sources/monitoring/latency?target=1')).statusCode).toBe(
+      400,
+    );
+  } finally {
+    await app.close();
+    db.close();
+  }
+});

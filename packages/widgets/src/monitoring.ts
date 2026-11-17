@@ -7,6 +7,8 @@ export const monitoringSources = {
   problems: { contract: 'homora:monitoring-problems', version: 1 },
   incidents: { contract: 'homora:monitoring-incidents', version: 1 },
   availability: { contract: 'homora:monitoring-availability', version: 1 },
+  latency: { contract: 'homora:monitoring-latency', version: 1 },
+  serviceTargets: { contract: 'homora:monitoring-service-targets', version: 1 },
 } as const satisfies Record<string, WidgetSource>;
 
 export function isInternalSource(source: WidgetSource | null): boolean {
@@ -102,6 +104,20 @@ export type MonitoringAvailability = {
   generatedAt: number;
   range: AvailabilityRange;
   target: MonitoringAvailabilityTarget | null;
+};
+
+export type MonitoringLatency = {
+  generatedAt: number;
+  range: AvailabilityRange;
+  target: null | {
+    id: number;
+    name: string;
+    state: MonitoringState;
+    stale: boolean;
+    lastAttempt: number | null;
+    lastValid: { observedAt: number; latencyMs: number } | null;
+    points: { start: number; p50: number | null }[];
+  };
 };
 
 /** Offline first; known incident starts precede unknown starts, with a stable ID tie-break. */

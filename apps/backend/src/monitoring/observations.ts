@@ -296,6 +296,23 @@ export function createObservationStore(db: DatabaseSync, rollup?: RollupStore) {
         max: round(all.at(-1) ?? null),
       };
     },
+    /** Latest valid latency within retained raw history and the current monitor configuration. */
+    lastValidLatency(id: number, now = Date.now()) {
+      const row = uptimeServicesOf(db, id)[0];
+      if (!row) throw new Error('Service not found');
+      return (
+        (db
+          .prepare(
+            `SELECT observed_at AS observedAt,${LATENCY_SQL} AS latencyMs FROM service_observation_history
+         WHERE service_id=? AND signature=? AND observed_at>=? AND observed_at<=?
+           AND ${STATUS_SQL}='available' AND ${LATENCY_SQL} IS NOT NULL AND ${LATENCY_SQL}>=0
+         ORDER BY observed_at DESC LIMIT 1`,
+          )
+          .get(id, signature(row, trust()?.hash), now - HISTORY_RETENTION, now) as
+          | { observedAt: number; latencyMs: number }
+          | undefined) ?? null
+      );
+    },
     /**
      * What the detail page shows besides the charts: the hourly counts of the last 90 days (the
      * client groups them into its own days), why checks failed over the last 30 days and the latest

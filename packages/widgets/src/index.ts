@@ -18,6 +18,8 @@ export type WidgetDefinition<Config> = {
   defaultConfig?: Config;
   sizes?: readonly WidgetSize[];
   parseConfig(value: unknown): Config | null;
+  /** Remove installation-local references when crossing the configuration transfer boundary. */
+  portableConfig?(config: Config): Config;
 };
 export type WidgetState<Data> =
   | { status: 'loading' }
@@ -88,6 +90,7 @@ export type {
   MonitoringAvailability,
   MonitoringAvailabilityBucket,
   MonitoringAvailabilityTarget,
+  MonitoringLatency,
   MonitoringCounts,
   MonitoringSummary,
   MonitoringProblem,

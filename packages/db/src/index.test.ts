@@ -52,6 +52,8 @@ it('upgrades the monitoring view without changing cards, probes or history', asy
       DROP VIEW monitor_targets;
       CREATE VIEW monitor_targets AS SELECT m.id,m.name,COALESCE(s.url,m.check_url) AS url,m.allow_private,m.check_insecure,m.check_type,m.check_interval,m.expected_status,m.check_path,m.check_url,m.check_match,m.is_public FROM monitors m LEFT JOIN services s ON s.id=m.id;
       ALTER TABLE page_widgets DROP COLUMN size;
+      DROP TRIGGER service_identity_insert;
+      DROP TABLE service_identities;
       DELETE FROM __drizzle_migrations WHERE created_at >= 1794900000000;
     `);
     first.close();
@@ -77,10 +79,79 @@ it('upgrades the monitoring view without changing cards, probes or history', asy
         url: 'https://example.test/',
       });
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      expect(
+        db.prepare('SELECT identity FROM service_identities WHERE service_id=101').get(),
+      ).toMatchObject({ identity: expect.stringMatching(/^[0-9a-f]{32}$/) });
     } finally {
       upgraded.close();
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it('keeps service identities across renames and replaces them after deletion and recreation', () => {
+  const database = createDatabase(':memory:');
+  const sqlite = getSqliteHandle(database.db);
+  try {
+    sqlite.exec(
+      "INSERT INTO monitors(id,name) VALUES(42,'First'); INSERT INTO services(id,url,category,description) VALUES(42,'https://example.test','Home','');",
+    );
+    const read = () =>
+      (
+        sqlite.prepare('SELECT identity FROM service_identities WHERE service_id=42').get() as {
+          identity: string;
+        }
+      ).identity;
+    const original = read();
+    expect(original).toMatch(/^[0-9a-f]{32}$/);
+    sqlite.exec("UPDATE monitors SET name='Renamed' WHERE id=42");
+    expect(read()).toBe(original);
+    sqlite.exec(
+      "DELETE FROM monitors WHERE id=42; INSERT INTO monitors(id,name) VALUES(42,'First'); INSERT INTO services(id,url,category,description) VALUES(42,'https://example.test','Home','');",
+    );
+    expect(read()).not.toBe(original);
+  } finally {
+    sqlite.close();
+  }
+});
+
+it('preserves a service identity and its widget selection in a SQLite backup', async () => {
+  const { backup, DatabaseSync } = await import('node:sqlite');
+  const { mkdtempSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const dir = mkdtempSync(join(tmpdir(), 'homora-latency-backup-'));
+  const source = createDatabase(':memory:');
+  const db = getSqliteHandle(source.db);
+  try {
+    db.exec(
+      "INSERT INTO monitors(id,name) VALUES(42,'Service'); INSERT INTO services(id,url,category,description) VALUES(42,'https://example.test','Home','');",
+    );
+    const { identity } = db
+      .prepare('SELECT identity FROM service_identities WHERE service_id=42')
+      .get() as { identity: string };
+    const { id } = db.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number };
+    db.prepare(
+      "INSERT INTO page_widgets(page_id,type,name,config,version,size,position) VALUES(?,'latency-history','',?,1,'wide',0)",
+    ).run(id, JSON.stringify({ target: identity, range: '7d' }));
+    const path = join(dir, 'backup.sqlite');
+    await backup(db, path);
+    const restored = new DatabaseSync(path);
+    try {
+      expect(
+        restored.prepare('SELECT identity FROM service_identities WHERE service_id=42').get(),
+      ).toEqual({ identity });
+      expect(
+        JSON.parse(
+          (restored.prepare('SELECT config FROM page_widgets').get() as { config: string }).config,
+        ),
+      ).toEqual({ target: identity, range: '7d' });
+    } finally {
+      restored.close();
+    }
+  } finally {
+    source.close();
+    rmSync(dir, { recursive: true, force: true });
   }
 });

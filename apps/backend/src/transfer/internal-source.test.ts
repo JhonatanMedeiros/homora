@@ -122,3 +122,29 @@ it('round trips a recent incidents widget with portable filters and no connectio
   a.close();
   b.close();
 });
+
+it('strips local references from exports and even manually edited imports', () => {
+  const first = createDatabase(':memory:');
+  const a = getSqliteHandle(first.db);
+  try {
+    const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
+    const config = { target: 'a'.repeat(32), range: '30d' };
+    a.prepare(
+      'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,NULL,?,0)',
+    ).run(page, 'latency-history', 'Latency', JSON.stringify(config), 'wide');
+    const data = createServiceConfiguration(a).exportData();
+    expect(data.widgets[0]).toMatchObject({ config: { target: null, range: '30d' }, size: 'wide' });
+    const text = serializeConfiguration(data.groups, data.services, 'json', {
+      pages: data.pages,
+      widgets: data.widgets,
+    });
+    const edited = JSON.parse(text);
+    edited.widgets[0].config.target = config.target;
+    expect(parseTransfer(JSON.stringify(edited)).document.widgets?.[0].config).toEqual({
+      target: null,
+      range: '30d',
+    });
+  } finally {
+    a.close();
+  }
+});

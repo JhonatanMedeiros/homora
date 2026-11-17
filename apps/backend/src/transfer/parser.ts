@@ -221,7 +221,8 @@ export function parseTransfer(content: string): ParsedImport {
           return;
         }
         if (definition && isPortableWidget(definition)) {
-          const config = definition.parseConfig(item.config);
+          const parsed = definition.parseConfig(item.config);
+          const config = parsed === null ? null : (definition.portableConfig?.(parsed) ?? parsed);
           if (config !== null && item.source === undefined)
             document.widgets!.push({ page, type: item.type, name: item.name, config, size });
           else issues.push({ path, code: 'widget-invalid', severity: 'warning' });

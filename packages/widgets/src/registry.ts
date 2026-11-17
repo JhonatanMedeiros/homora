@@ -1,4 +1,5 @@
 import { widgetQuickLinksWidget } from './widgets/quick-links/definition.js';
+import { widgetLatencyHistoryWidget } from './widgets/latency-history/definition.js';
 import { widgetAvailabilityWidget } from './widgets/availability/definition.js';
 import { widgetDomainExpiryWidget } from './widgets/domain-expiry/definition.js';
 import { widgetPublicIpWidget } from './widgets/public-ip/definition.js';
@@ -29,6 +30,7 @@ const widgets = {
   'domain-expiry': widgetDomainExpiryWidget,
   'quick-links': widgetQuickLinksWidget,
   availability: widgetAvailabilityWidget,
+  'latency-history': widgetLatencyHistoryWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];

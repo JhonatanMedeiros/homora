@@ -144,3 +144,9 @@ Feeds are fetched exclusively through the backend with an 8-second timeout, a 51
 Add **Weather** to display current conditions (temperature, condition, and today's high/low) and a short forecast on a dashboard page. It supports `normal` (3-day forecast) and `wide` (up to 5-day forecast plus feels-like temperature, humidity, wind speed, and precipitation probability) sizes, as well as `°C (Metric)` and `°F (Imperial)` units.
 
 Select between the keyless **Open-Meteo** provider (default) or **OpenWeatherMap** (requires an API key, which is stored encrypted on the server and never included in page configuration or exports). Configure the location via backend city search, manual coordinates and optional display label, or the on-demand browser geolocation button (available only in secure contexts such as `https:` or `localhost` and never triggered automatically on load). Weather requests run through the backend with a 10-minute in-memory cache, and failed refreshes retain the last cached forecast marked as stale.
+
+### Service latency history
+
+Add **Latency history** and select a service card. Choose 24 hours, 7 days or 30 days and a normal or wide size. The chart shows the median of successful checks in each interval; gaps mean no valid reading was recorded. A short outage can be hidden inside an interval that also contains successful checks. Only raw checks retained for up to 30 days and matching the current monitor configuration are shown.
+
+When a reading is stale or the service cannot be measured, the widget labels the last valid reading and its time rather than calling it current. A check is stale after more than twice its configured interval. If the card is deleted, select another card explicitly. Configuration export preserves the period and size but clears the local service selection; select it again after import. Database backups preserve the selection.

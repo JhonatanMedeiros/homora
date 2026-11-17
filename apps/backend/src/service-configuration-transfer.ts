@@ -95,7 +95,8 @@ export function createConfigurationTransfer({
           }
           const definition = resolveWidget(row.type);
           if (definition && isPortableWidget(definition)) {
-            const config = definition.parseConfig(raw);
+            const parsed = definition.parseConfig(raw);
+            const config = parsed === null ? null : (definition.portableConfig?.(parsed) ?? parsed);
             return config === null
               ? []
               : [

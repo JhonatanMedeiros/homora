@@ -87,6 +87,14 @@ export const services = sqliteTable('services', {
   hostType: text('host_type'),
 });
 
+/** Stable local identities for service references that must survive renames but not deletion. */
+export const serviceIdentities = sqliteTable('service_identities', {
+  serviceId: integer('service_id')
+    .primaryKey()
+    .references(() => services.id, { onDelete: 'cascade' }),
+  identity: text('identity').notNull().unique(),
+});
+
 /**
  * Types of extra address ("Public", "LAN", ...): a name and a color, shared by every service.
  * Names are unique ignoring case; at most 20; created and edited from the service form.
