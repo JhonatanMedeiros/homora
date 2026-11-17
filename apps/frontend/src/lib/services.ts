@@ -59,19 +59,7 @@ export function hostOf(url: string) {
   }
 }
 
-// Addresses that the monitor network policy only polls with explicit authorization.
-export function isPrivateHost(url: string) {
-  let host: string;
-  try {
-    host = new URL(url).hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  } catch {
-    return false;
-  }
-  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.lan')) return true;
-  if (/^(10|127)\./.test(host) || /^192\.168\./.test(host)) return true;
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host) || /^169\.254\./.test(host)) return true;
-  return host === '::1' || /^f[cd][0-9a-f]{2}:/.test(host) || /^fe80:/.test(host);
-}
+export { isHomePrivateHost as isPrivateHost } from '@homora/widgets';
 
 export const formatAttempt = formatDateTime;
 

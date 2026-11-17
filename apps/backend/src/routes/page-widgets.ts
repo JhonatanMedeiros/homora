@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { integrationWidgetDefinition, resolveWidget } from '@homora/integrations';
-import { supportsSource, type WidgetDefinition } from '@homora/widgets';
+import { isInternalSource, supportsSource, type WidgetDefinition } from '@homora/widgets';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { parseId } from '../input-schemas.js';
@@ -76,7 +76,7 @@ export function registerPageWidgetRoutes(
     if (!definition || !(definition.sizes ?? ['normal']).includes(value.size)) return null;
     const config = definition.parseConfig(value.config);
     if (config === null) return null;
-    if (definition.source === null)
+    if (definition.source === null || isInternalSource(definition.source))
       return value.connectionId === null ? { ...value, config } : null;
     if (value.connectionId === null) return null;
     const connection = sqlite

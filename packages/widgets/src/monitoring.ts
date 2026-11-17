@@ -1,0 +1,53 @@
+import type { WidgetSource } from './index.js';
+import type { MonitoringState } from './monitoring-state.js';
+
+/** Host-owned, versioned sources. They never name a connection or grant network access. */
+export const monitoringSources = {
+  summary: { contract: 'homora:monitoring-summary', version: 1 },
+  problems: { contract: 'homora:monitoring-problems', version: 1 },
+  incidents: { contract: 'homora:monitoring-incidents', version: 1 },
+} as const satisfies Record<string, WidgetSource>;
+
+export function isInternalSource(source: WidgetSource | null): boolean {
+  return (
+    source !== null &&
+    Object.values(monitoringSources).some(
+      (candidate) => candidate.contract === source.contract && candidate.version === source.version,
+    )
+  );
+}
+
+export type MonitoringCounts = Record<MonitoringState, number>;
+export type MonitoringSummary = {
+  generatedAt: number;
+  counts: MonitoringCounts;
+  stale: number;
+  measurementFailure: boolean;
+};
+export type MonitoringProblem = {
+  id: number;
+  name: string;
+  state: 'down' | 'degraded';
+  lastAttempt: number | null;
+  stale: boolean;
+  latencyMs: number | null;
+  since: number | null;
+};
+export type MonitoringProblems = {
+  generatedAt: number;
+  items: MonitoringProblem[];
+  truncated: boolean;
+};
+export type MonitoringIncident = {
+  id: number;
+  monitorId: number;
+  name: string;
+  startedAt: number;
+  endedAt: number | null;
+};
+export type MonitoringIncidents = {
+  generatedAt: number;
+  periodDays: number;
+  items: MonitoringIncident[];
+  truncated: boolean;
+};

@@ -1,3 +1,4 @@
+import { isPortableWidget } from '@homora/widgets';
 import { resolveWidget } from '@homora/integrations';
 import { samePageName } from '@homora/shared';
 import type { ImportPlan, ParsedImport } from './types.js';
@@ -72,7 +73,7 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
   });
   let remainingWidgets = Math.max(0, 200 - (existing.widgetCount ?? 0));
   const widgets = (parsed.document.widgets ?? []).map((widget, index) => {
-    const portable = resolveWidget(widget.type)?.portable === true;
+    const portable = isPortableWidget(resolveWidget(widget.type));
     const canCreate = portable && remainingWidgets > 0;
     if (canCreate) remainingWidgets -= 1;
     else if (portable)

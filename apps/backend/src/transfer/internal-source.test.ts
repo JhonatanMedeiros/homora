@@ -1,0 +1,55 @@
+import { createDatabase, getSqliteHandle } from '@homora/db';
+import { expect, it, vi } from 'vitest';
+import { createServiceConfiguration } from '../service-configuration.js';
+import { parseTransfer, serializeConfiguration } from './index.js';
+
+vi.mock('@homora/integrations', async (original) => {
+  const actual = await original<typeof import('@homora/integrations')>();
+  return {
+    ...actual,
+    resolveWidget: (type: string) =>
+      type === 'synthetic-internal'
+        ? {
+            type,
+            version: 1,
+            locations: ['page'],
+            source: { contract: 'homora:monitoring-summary', version: 1 },
+            parseConfig: (value: unknown) => value,
+          }
+        : actual.resolveWidget(type),
+  };
+});
+
+it('exports, previews, and imports an internal widget without a connection, including version 3 files', () => {
+  const first = createDatabase(':memory:');
+  const second = createDatabase(':memory:');
+  const a = getSqliteHandle(first.db);
+  const b = getSqliteHandle(second.db);
+  const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
+  a.prepare(
+    "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,'synthetic-internal','Summary','{}',1,NULL,'normal',0)",
+  ).run(page);
+  const data = createServiceConfiguration(a).exportData();
+  expect(data.widgets).toEqual([
+    { page: 'Home', type: 'synthetic-internal', name: 'Summary', config: {} },
+  ]);
+  const text = serializeConfiguration(data.groups, data.services, 'json', {
+    pages: data.pages,
+    widgets: data.widgets,
+  });
+  const old = JSON.parse(text);
+  old.version = 3;
+  const parsed = parseTransfer(JSON.stringify(old));
+  const target = createServiceConfiguration(b);
+  expect(target.previewImport(parsed).plan.widgets[0].status).toBe('new');
+  expect(target.applyImport(parsed, { keepPrivate: false })).toMatchObject({
+    status: 'applied',
+    widgetsCreated: 1,
+  });
+  expect(b.prepare('SELECT type,connection_id AS connectionId FROM page_widgets').get()).toEqual({
+    type: 'synthetic-internal',
+    connectionId: null,
+  });
+  a.close();
+  b.close();
+});
