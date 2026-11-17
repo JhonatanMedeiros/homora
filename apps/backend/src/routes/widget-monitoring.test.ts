@@ -115,3 +115,42 @@ it('returns explicit empty responses', async () => {
   await app.close();
   db.close();
 });
+
+it('scopes summary to selected groups and pages without changing the default', async () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE service_monitor_settings(service_id INTEGER, degraded_latency_ms INTEGER);
+    CREATE TABLE pages(id INTEGER PRIMARY KEY, position INTEGER);
+    CREATE TABLE service_groups(id INTEGER PRIMARY KEY, name TEXT, page_id INTEGER);
+    CREATE TABLE services(id INTEGER PRIMARY KEY, category TEXT);
+    INSERT INTO pages VALUES (1,0),(2,1);
+    INSERT INTO service_groups VALUES (10,'One',1),(20,'Two',2);
+    INSERT INTO services VALUES (1,'One'),(2,'Two');`);
+  const rows = [1, 2, 3].map((id) => ({ id, name: String(id), url: null, allowPrivate: false }));
+  const app = Fastify();
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => rows } as never,
+    { snapshot: () => ({}) } as never,
+    { open: () => ({}) } as never,
+    { current: () => null },
+  );
+  expect((await app.inject('/api/widget-sources/monitoring/summary')).json().counts.unknown).toBe(
+    3,
+  );
+  expect(
+    (await app.inject('/api/widget-sources/monitoring/summary?groups=10')).json().counts.unknown,
+  ).toBe(1);
+  expect(
+    (await app.inject('/api/widget-sources/monitoring/summary?pages=2')).json().counts.unknown,
+  ).toBe(1);
+  expect(
+    (await app.inject('/api/widget-sources/monitoring/summary?groups=10&pages=2')).json().counts
+      .unknown,
+  ).toBe(0);
+  expect((await app.inject('/api/widget-sources/monitoring/problems?groups=10')).statusCode).toBe(
+    400,
+  );
+  await app.close();
+  db.close();
+});

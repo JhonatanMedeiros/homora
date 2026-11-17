@@ -1,6 +1,18 @@
+import type { MonitoringSummary } from '../monitoring.js';
 import { createContext, useContext, type ReactNode } from 'react';
 
 export type WidgetHost = {
+  monitoring?: {
+    readSummary: (
+      groups: number[],
+      pages: number[],
+      signal: AbortSignal,
+    ) => Promise<MonitoringSummary>;
+    readScopes: (
+      signal: AbortSignal,
+    ) => Promise<{ groups: { id: number; name: string }[]; pages: { id: number; name: string }[] }>;
+    filterStatus?: (state: 'ok' | 'down' | 'degraded' | 'maintenance' | 'unmeasured') => void;
+  };
   locale: string;
   t: (key: string, params?: Record<string, string | number>) => string;
 };

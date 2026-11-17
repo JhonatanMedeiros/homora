@@ -29,6 +29,7 @@ type Options = {
   tags: Record<number, string[]>;
   /** Alert settings per service (the degraded limit decides the "degraded" bucket). */
   monitorSettings?: Record<number, MonitorSettings>;
+  measurementReason?: string | null;
 };
 
 /** Derived service-screen data: page/filter membership, grouped cards, host impact, and summary. */
@@ -44,6 +45,7 @@ export function useServicePageModel({
   tagFilter,
   tags,
   monitorSettings,
+  measurementReason,
 }: Options) {
   const { services, statuses, blockedIds, sortedIn, pages, categories: allCategories } = data;
   const { activePageId, pageIdOf } = data;
@@ -98,7 +100,12 @@ export function useServicePageModel({
   // Status and tag filters apply only while browsing the plain Home view.
   const filtering = !organizing && !hostView;
   const bucketOf = (service: Service) =>
-    statusBucket(statuses[service.id], monitorSettings?.[service.id], blockedIds.has(service.id));
+    statusBucket(
+      statuses[service.id],
+      monitorSettings?.[service.id],
+      blockedIds.has(service.id),
+      measurementReason,
+    );
   const activeStatusFilter = filtering ? statusFilter : 'all';
   const activeTag = filtering ? tagFilter : null;
   const filteredIds = new Set(

@@ -1,3 +1,4 @@
+import { widgetUI as summary } from '@homora/widgets/homelab-summary/ui';
 import { widgetUI as widgetCalendar } from '@homora/widgets/calendar/ui';
 import { widgetUI as clock } from '@homora/widgets/clock/ui';
 import { widgetUI as countdown } from '@homora/widgets/countdown/ui';
@@ -7,10 +8,13 @@ import type { WidgetUI } from '@homora/widgets/ui';
 import { useClockPreferences } from '@/hooks/use-clock-preferences';
 import { WidgetHost } from '@/components/widget-host';
 
-const widgets = { clock, countdown, note, calendar: widgetCalendar } satisfies Record<
-  LocalWidgetType,
-  WidgetUI
->;
+const widgets = {
+  clock,
+  countdown,
+  note,
+  calendar: widgetCalendar,
+  'homelab-summary': summary,
+} satisfies Record<LocalWidgetType, WidgetUI>;
 export function getWidgetUI(type: string): WidgetUI | undefined {
   return Object.hasOwn(widgets, type) ? widgets[type as LocalWidgetType] : undefined;
 }

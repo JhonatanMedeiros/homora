@@ -8,7 +8,7 @@ afterEach(cleanup);
 const show = (extra: Partial<Parameters<typeof HomeRail>[0]> = {}) => {
   const props = {
     statusFilter: 'all' as const,
-    counts: { all: 5, down: 2, degraded: 0, maintenance: 1 },
+    counts: { all: 5, down: 2, degraded: 0, maintenance: 1, ok: 0, unmeasured: 0 },
     onStatusFilter: vi.fn(),
     groups: [
       { name: 'Media', total: 3, down: 2 },

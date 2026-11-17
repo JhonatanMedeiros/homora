@@ -23,6 +23,16 @@ const querySchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(50).default(20),
     days: z.coerce.number().int().min(1).max(30).default(7),
+    groups: z
+      .string()
+      .regex(/^\d+(,\d+)*$/)
+      .max(1000)
+      .optional(),
+    pages: z
+      .string()
+      .regex(/^\d+(,\d+)*$/)
+      .max(1000)
+      .optional(),
   })
   .strict();
 const countsSchema = z
@@ -104,9 +114,11 @@ export function registerWidgetMonitoringRoutes(
         return reply.code(404).send(errorBody('not-found'));
       const query = querySchema.safeParse(request.query);
       if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
-      const { limit, days } = query.data;
+      const { limit, days, groups, pages } = query.data;
+      if (kind !== 'summary' && (groups || pages))
+        return reply.code(400).send(errorBody('invalid-query'));
       const now = Date.now();
-      const key = `${kind}:${limit}:${days}`;
+      const key = `${kind}:${limit}:${days}:${groups ?? ''}:${pages ?? ''}`;
       const cached = cache.get(key);
       if (cached && now - cached.at < 10_000) return cached.value;
       let value: unknown;
@@ -123,7 +135,26 @@ export function registerWidgetMonitoringRoutes(
           truncated: rows.length > limit,
         });
       } else {
-        const targets = source.list();
+        let targets = source.list();
+        if (groups || pages) {
+          const groupIds = new Set(groups?.split(',').map(Number));
+          const pageIds = new Set(pages?.split(',').map(Number));
+          const rows = db
+            .prepare(`SELECT s.id, g.id AS groupId,
+            COALESCE(g.page_id, (SELECT id FROM pages ORDER BY position, id LIMIT 1)) AS pageId
+            FROM services s LEFT JOIN service_groups g ON g.name = s.category`)
+            .all() as { id: number; groupId: number | null; pageId: number | null }[];
+          const selected = new Set(
+            rows
+              .filter(
+                (row) =>
+                  (!groups || (row.groupId !== null && groupIds.has(row.groupId))) &&
+                  (!pages || (row.pageId !== null && pageIds.has(row.pageId))),
+              )
+              .map((row) => row.id),
+          );
+          targets = targets.filter((target) => selected.has(target.id));
+        }
         const states = monitor.snapshot();
         const open = incidents.open();
         const settings = db
