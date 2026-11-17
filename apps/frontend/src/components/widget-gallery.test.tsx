@@ -50,8 +50,8 @@ it('filters widgets by category and shows connections only when matching', () =>
   expect(screen.getByRole('button', { name: /Relógio/ })).toBeTruthy();
   expect(screen.getByRole('button', { name: /Proxmox Lab/ })).toBeTruthy();
 
-  const navs = screen.getAllByRole('navigation', { name: 'Categorias de widgets' });
-  const monitoringButton = within(navs[0]).getByRole('button', { name: /Monitoramento/ });
+  const nav = screen.getByRole('navigation', { name: 'Categorias de widgets' });
+  const monitoringButton = within(nav).getByRole('button', { name: /Monitoramento/ });
   fireEvent.click(monitoringButton);
 
   expect(screen.queryByRole('button', { name: /Relógio/ })).toBeNull();
@@ -62,8 +62,8 @@ it('filters widgets by category and shows connections only when matching', () =>
 it('searches across all categories using keywords and description', () => {
   renderGallery();
 
-  const navs = screen.getAllByRole('navigation', { name: 'Categorias de widgets' });
-  fireEvent.click(within(navs[0]).getByRole('button', { name: /Monitoramento/ }));
+  const nav = screen.getByRole('navigation', { name: 'Categorias de widgets' });
+  fireEvent.click(within(nav).getByRole('button', { name: /Monitoramento/ }));
 
   const search = screen.getByRole('searchbox', { name: 'Buscar widget ou conexão' });
   fireEvent.change(search, { target: { value: 'timezone' } });
@@ -85,7 +85,9 @@ it('picks a single search match on Enter and clears empty search state', () => {
   expect(screen.getByText('Nenhum widget corresponde à busca.')).toBeTruthy();
 
   const clearButtons = screen.getAllByRole('button', { name: 'Limpar busca' });
-  fireEvent.click(clearButtons.at(-1));
+  const clearButton = clearButtons.at(-1);
+  expect(clearButton).toBeTruthy();
+  fireEvent.click(clearButton!);
   expect((search as HTMLInputElement).value).toBe('');
   expect(screen.getByRole('button', { name: /Relógio/ })).toBeTruthy();
 });
@@ -99,8 +101,8 @@ it('records recent picks and displays the Recent category', () => {
   cleanup();
   renderGallery();
 
-  const navs = screen.getAllByRole('navigation', { name: 'Categorias de widgets' });
-  const recentTab = within(navs[0]).getByRole('button', { name: /Recentes/ });
+  const nav = screen.getByRole('navigation', { name: 'Categorias de widgets' });
+  const recentTab = within(nav).getByRole('button', { name: /Recentes/ });
   fireEvent.click(recentTab);
 
   const recentHeading = screen.getByRole('heading', { name: 'Recentes' });

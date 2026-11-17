@@ -5,14 +5,17 @@ import { Field, FieldGroup, FieldLabel } from '@homora/ui/field';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
+import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
 import { WidgetGallery } from '@/components/widget-gallery';
 import { WidgetHost } from '@/components/widget-host';
 import { getWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
+import { useWidgetMonitoring } from '@/hooks/use-widget-monitoring';
 import type { PageRow } from '@/hooks/use-pages';
 import { t, tOr } from '@/i18n';
 import { resolveWidget } from '@homora/integrations';
 import type { WidgetSize } from '@homora/widgets';
+import type { WidgetUI } from '@homora/widgets/ui';
 
 export type WidgetDraft = {
   id: number | null;
@@ -45,6 +48,7 @@ function DialogContents({
   chosen,
   connections,
   pages,
+  groups,
   busy,
   error,
   onChange,
@@ -58,6 +62,13 @@ function DialogContents({
   const sizes = (draft && resolveWidget(draft.type)?.sizes) || ['normal'];
   const Editor = entry?.Editor;
   const Preview = entry?.Preview;
+  const parsedConfig = !gallery && draft && entry ? entry.parse(draft.config) : null;
+  const monitoring = useWidgetMonitoring(
+    !Preview && parsedConfig != null && entry?.monitoringQuery
+      ? entry.monitoringQuery(parsedConfig)
+      : null,
+  );
+  const hasPreview = Boolean(Preview || entry?.View);
   const kindName =
     draft?.connectionId == null
       ? entry
@@ -82,7 +93,7 @@ function DialogContents({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      size={gallery ? 'gallery' : 'wide'}
+      size="gallery"
       title={gallery ? t('pageWidgets.add') : draft?.id ? t('pageWidgets.edit') : kindName}
       description={
         gallery
@@ -95,7 +106,7 @@ function DialogContents({
       {draft && gallery && <WidgetGallery connections={connections} onPick={pick} />}
       {draft && !gallery && (
         <form
-          className="flex flex-col gap-4"
+          className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
           onSubmit={(event) => {
             event.preventDefault();
             onSubmit();
@@ -106,7 +117,15 @@ function DialogContents({
               {error}
             </p>
           )}
-          <div className={Preview ? 'grid gap-4 md:grid-cols-[1fr_16rem]' : 'flex flex-col gap-4'}>
+          <div
+            className={
+              hasPreview
+                ? draft.size === 'wide'
+                  ? 'grid gap-4 md:grid-cols-[1fr_24rem]'
+                  : 'grid gap-4 md:grid-cols-[1fr_18rem]'
+                : 'flex flex-col gap-4'
+            }
+          >
             <FieldGroup>
               {sizes.length > 1 && (
                 <Field>
@@ -169,7 +188,22 @@ function DialogContents({
                 </CollapsibleContent>
               </Collapsible>
             </FieldGroup>
-            {Preview && <Preview config={draft.config} name={draft.name} />}
+            {Preview ? (
+              <Preview config={draft.config} name={draft.name} />
+            ) : (
+              entry?.View && (
+                <GenericPreview
+                  type={draft.type}
+                  entry={entry}
+                  parsedConfig={parsedConfig}
+                  name={draft.name}
+                  wide={draft.size === 'wide'}
+                  groups={groups}
+                  pages={pages}
+                  monitoring={monitoring}
+                />
+              )
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             {draft.id === null ? (
@@ -203,5 +237,50 @@ export function PageWidgetDialog(props: Props) {
     <WidgetHost groups={props.groups} pages={props.pages}>
       <DialogContents {...props} />
     </WidgetHost>
+  );
+}
+
+function GenericPreview({
+  type,
+  entry,
+  parsedConfig,
+  name,
+  wide,
+  groups,
+  pages,
+  monitoring,
+}: {
+  type: string;
+  entry: WidgetUI;
+  parsedConfig: unknown | null;
+  name: string;
+  wide: boolean;
+  groups?: { name: string; pageId: number | null }[];
+  pages: PageRow[];
+  monitoring: ReturnType<typeof useWidgetMonitoring>;
+}) {
+  const View = entry.View;
+  return (
+    <aside
+      aria-label={t('pageWidgets.preview')}
+      className="flex flex-col gap-2 rounded-md bg-muted/50 p-3"
+    >
+      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        {t('pageWidgets.preview')}
+      </span>
+      <div className="flex min-w-0 flex-col gap-3 rounded-md border bg-card p-3">
+        <span className="truncate text-sm font-medium">{name || tOr(entry.name, entry.name)}</span>
+        {parsedConfig === null ? (
+          <p className="text-xs text-muted-foreground">{t('pageWidgets.previewIncomplete')}</p>
+        ) : (
+          <WidgetErrorBoundary key={type}>
+            <WidgetHost incidentReading={monitoring} wide={wide} groups={groups} pages={pages}>
+              <View config={parsedConfig} />
+            </WidgetHost>
+          </WidgetErrorBoundary>
+        )}
+      </div>
+      <span className="text-xs text-muted-foreground">{t('pageWidgets.previewHint')}</span>
+    </aside>
   );
 }

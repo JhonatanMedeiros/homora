@@ -269,38 +269,11 @@ export function WidgetGallery({ connections, onPick }: Props) {
         )}
       </div>
 
-      {/* Mobile horizontal category chips */}
-      <nav
-        aria-label={t('pageWidgets.categories')}
-        className="flex shrink-0 gap-1.5 overflow-x-auto pb-1 sm:hidden"
-      >
-        {categories.map((category) => {
-          const active = !isSearching && activeTab === category.key;
-          return (
-            <Button
-              key={category.key}
-              type="button"
-              size="sm"
-              variant={active ? 'secondary' : 'outline'}
-              aria-pressed={active}
-              onClick={() => {
-                if (isSearching) setQuery('');
-                setActiveTab(category.key);
-              }}
-              className="h-7 shrink-0 gap-1.5 rounded-full px-3 text-xs"
-            >
-              <span>{category.label}</span>
-              <span className="text-muted-foreground tabular-nums">{category.count}</span>
-            </Button>
-          );
-        })}
-      </nav>
-
-      {/* Desktop sidebar + scrollable grid */}
-      <div className="flex min-h-0 flex-1 gap-4">
+      {/* Responsive category navigation (horizontal chips on mobile, sidebar on desktop) + scrollable grid */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 sm:flex-row sm:gap-4">
         <nav
           aria-label={t('pageWidgets.categories')}
-          className="hidden sm:flex sm:w-48 sm:shrink-0 sm:flex-col sm:gap-1 sm:border-r sm:pr-3"
+          className="flex shrink-0 gap-1.5 overflow-x-auto pb-1 sm:w-48 sm:flex-col sm:gap-1 sm:overflow-visible sm:border-r sm:pr-3 sm:pb-0"
         >
           {categories.map((category) => {
             const active = !isSearching && activeTab === category.key;
@@ -315,7 +288,7 @@ export function WidgetGallery({ connections, onPick }: Props) {
                   if (isSearching) setQuery('');
                   setActiveTab(category.key);
                 }}
-                className="justify-between px-2.5 font-normal"
+                className="h-7 shrink-0 gap-1.5 rounded-full border px-3 text-xs font-normal sm:h-8 sm:w-full sm:justify-between sm:rounded-md sm:border-transparent sm:px-2.5 sm:text-sm"
               >
                 <span className={cn('truncate', active && 'font-medium')}>{category.label}</span>
                 <span className="text-xs text-muted-foreground tabular-nums">{category.count}</span>
