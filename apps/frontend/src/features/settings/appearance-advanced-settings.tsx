@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Appearance, BackgroundImage, ImagePosition } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@homora/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { SettingRow } from './setting-row';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Spinner } from '@/components/ui/spinner';
+import { Slider } from '@homora/ui/slider';
+import { Switch } from '@homora/ui/switch';
+import { Spinner } from '@homora/ui/spinner';
 import { Segmented } from './segmented';
 import { t, type MessageKey } from '@/i18n';
 import {

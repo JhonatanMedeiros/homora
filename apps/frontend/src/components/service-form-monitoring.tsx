@@ -11,14 +11,8 @@ import {
   type ServiceInput,
 } from '@homora/shared';
 import { CheckTypePicker } from '@/components/check-type-picker';
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-} from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { t } from '@/i18n';
 
 /** Alert settings of the service, saved separately from the card; omitted where there is nothing to save to. */

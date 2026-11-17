@@ -2,9 +2,9 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import type { Maintenance } from '@homora/shared';
 import { CalendarClock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Skeleton } from '@homora/ui/skeleton';
 import { apiError, formatDateTime, t } from '@/i18n';
 
 /** The maintenance windows of one service: open, scheduled and recently finished. */

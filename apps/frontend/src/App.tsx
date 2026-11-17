@@ -1,3 +1,4 @@
+import { useTheme } from '@/hooks/use-theme';
 import { isServiceAlias } from '@homora/shared';
 import { Fragment, useEffect, useState } from 'react';
 import {
@@ -16,7 +17,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { AuthPage } from '@/pages/auth-page';
 import { AuthLoading } from '@/features/auth/auth-loading';
 import { StatusPage } from '@/pages/status-page';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@homora/ui/sonner';
 import { DashboardPage } from '@/pages/dashboard-page';
 
 const validPaths = [
@@ -229,9 +230,10 @@ function AppRoutes() {
 }
 
 export function App() {
+  const { theme } = useTheme();
   return (
     <BrowserRouter>
-      <Toaster position="bottom-center" mobileOffset={{ bottom: 136 }} />
+      <Toaster theme={theme} position="bottom-center" mobileOffset={{ bottom: 136 }} />
       <Routes>
         {/* Anonymous and outside the authenticated shell: AppRoutes (and its auth calls) never mount here. */}
         <Route path="/status" element={<StatusPage />} />

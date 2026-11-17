@@ -1,7 +1,7 @@
 import { LayoutGrid, Map as MapIcon, Server, SlidersHorizontal, Sparkles } from 'lucide-react';
 import type { UptimeRange } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@homora/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { ViewOptions } from '@/features/dashboard/view-options';
 import type { Arrange, View } from '@/features/dashboard/use-view-preferences';
 import { t } from '@/i18n';

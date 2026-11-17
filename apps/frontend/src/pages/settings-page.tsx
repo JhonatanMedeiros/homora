@@ -8,7 +8,7 @@ import {
   ItemGroup,
   ItemMedia,
   ItemTitle,
-} from '@/components/ui/item';
+} from '@homora/ui/item';
 import { PublicStatusSettings } from '@/features/public-status/public-status-settings';
 import { SettingsSearch } from '@/features/settings/settings-search';
 import { AlertsSettings } from '@/features/settings/alerts-settings';
@@ -22,7 +22,7 @@ import {
   type SettingsSection,
 } from '@/features/settings/sections';
 import { ConfigTransfer } from '@/features/transfer/config-transfer';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 
 /**

@@ -2,7 +2,7 @@ import { toast } from 'sonner';
 import { useState, type FormEvent } from 'react';
 import { MAINTENANCE_NOTE_MAX } from '@homora/shared';
 import { FormError } from '@/components/form-error';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
+} from '@homora/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Spinner } from '@homora/ui/spinner';
 import { apiError, t } from '@/i18n';
 import { fromLocalInput, toLocalInput, validWindow } from '@/features/uptime/maintenance-view';
 

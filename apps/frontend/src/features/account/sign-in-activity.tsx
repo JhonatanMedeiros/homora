@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@homora/ui/badge';
 import { FormError } from '@/components/form-error';
 import { SectionTitle } from '@/components/section-title';
 import {
@@ -9,7 +9,7 @@ import {
   type ActivityPage,
 } from '@/features/activity/activity-model';
 import { formatAgo, formatDateTime, t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 const SHOWN = 5;
 const DAY = 24 * 60 * 60 * 1000;

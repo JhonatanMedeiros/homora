@@ -1,7 +1,7 @@
 import { Plus, RefreshCw, Server } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import {
   Empty,
   EmptyContent,
@@ -9,7 +9,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '@/components/ui/empty';
+} from '@homora/ui/empty';
 import { CopyButton } from '@/components/copy-button';
 import { t } from '@/i18n';
 import { PushSourceList } from './push-source-list';

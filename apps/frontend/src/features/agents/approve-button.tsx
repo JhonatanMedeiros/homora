@@ -8,10 +8,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Kbd } from '@/components/ui/kbd';
-import { cn } from '@/lib/utils';
+} from '@homora/ui/alert-dialog';
+import { Button } from '@homora/ui/button';
+import { Kbd } from '@homora/ui/kbd';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 import { shortcutAllowed } from './review-shortcuts';
 

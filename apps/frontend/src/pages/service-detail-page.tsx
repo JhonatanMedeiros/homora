@@ -11,18 +11,11 @@ import { MaintenanceDialog } from '@/features/uptime/maintenance-dialog';
 import { MaintenancePanel } from '@/features/uptime/maintenance-panel';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusLight } from '@/components/status-light';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Skeleton } from '@homora/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@homora/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { useNow } from '@/hooks/use-now';
 import { useStatusOverview } from '@/hooks/use-status-overview';
 import { useServiceDetail } from '@/hooks/use-service-detail';
@@ -31,7 +24,7 @@ import { deltaPoints, heatUptime, longestClean, reasonShares } from '@/lib/detai
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { describeStatus } from '@/lib/status-text';
 import { formatDuration, reasonText } from '@/features/uptime/uptime-view';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import {
   Panel,
   Kpi,

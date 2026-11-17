@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { PROBE_DOT } from '@/lib/probe-dot';
 import { t } from '@/i18n';
 import type { LightState } from '@/lib/services';

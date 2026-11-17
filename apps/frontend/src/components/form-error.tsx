@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 /** Form error region: announced, and empty (no height) when there is no error. */
 export function FormError({ className, children, ...props }: ComponentProps<'p'>) {

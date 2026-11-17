@@ -51,3 +51,10 @@ test('a change in a workspace package selects the tests of every package and app
 test('a changed test file always runs', () => {
   assert.ok(select('apps/backend/src/vault.test.ts').includes('apps/backend/src/vault.test.ts'));
 });
+
+test('source-only UI changes select frontend tests', () => {
+  const selected = select('packages/ui/src/components/button.tsx');
+  assert.ok(
+    selected.some((file) => file.startsWith('apps/frontend/') && /\.test\.tsx?$/.test(file)),
+  );
+});

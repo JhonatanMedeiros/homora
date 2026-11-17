@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 
 export function BrandMark({ className, compact }: { className?: string; compact?: boolean }) {

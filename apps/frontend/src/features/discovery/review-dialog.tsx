@@ -1,6 +1,6 @@
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@homora/ui/badge';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,10 +8,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
+} from '@homora/ui/dialog';
+import { Field, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Spinner } from '@homora/ui/spinner';
 import { t, type MessageKey } from '@/i18n';
 import type { DiscoveryReview } from '@/hooks/use-discovery-review';
 import type { ReviewField, ReviewResult } from './review-model';

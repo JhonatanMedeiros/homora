@@ -3,7 +3,7 @@ import {
   STATUS_FILTERS,
   type StatusFilter as Filter,
 } from '@/features/dashboard/status-filter-model';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 type Props = {
   selected: Filter;

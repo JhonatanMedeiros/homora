@@ -1,5 +1,5 @@
 import { CircleAlert, TriangleAlert } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@homora/ui/badge';
 import { t, type MessageKey } from '@/i18n';
 import type { Plan } from './transfer-model';
 

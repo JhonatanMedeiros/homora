@@ -1,22 +1,16 @@
 import { useEffect } from 'react';
 import type { Service } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@homora/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Spinner } from '@homora/ui/spinner';
 import { FormError } from '@/components/form-error';
 import { EmptyNote } from '@/components/empty-note';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useHostSuggestions } from '@/features/hosts/use-host-suggestions';
 import { useHostSuggestionReview } from '@/features/hosts/use-host-suggestion-review';
 import { t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { HostSuggestionCandidateRow, HostSuggestionManualRow } from './host-suggestion-rows';
 
 type Props = {

@@ -11,9 +11,9 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react';
-import { Kbd } from '@/components/ui/kbd';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Kbd } from '@homora/ui/kbd';
+import { Avatar, AvatarFallback } from '@homora/ui/avatar';
+import { Button } from '@homora/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@homora/ui/dropdown-menu';
 import { initials, type Profile } from '@/features/account/account-model';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -31,7 +31,7 @@ import { navGroups, navItems, type Tab } from '@/components/app-nav';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
 import { MobileTabs } from '@/components/mobile-tabs';
 import { VersionMenuItem } from '@/components/version-menu-item';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@homora/ui/badge';
 import { releaseUrl, useBuildVersion } from '@/hooks/use-build-version';
 import { hasUpdate } from '@/features/releases/release-feed';
 import { useReleaseFeed } from '@/features/releases/use-release-feed';

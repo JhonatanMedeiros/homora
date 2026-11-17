@@ -2,19 +2,13 @@ import { useState } from 'react';
 import { copyAddress } from '@/lib/copy-address';
 import { ChevronDown, Copy, ExternalLink, Link2 } from 'lucide-react';
 import { linkLabel, linkOpenTarget, type OpenTarget, type Service } from '@homora/shared';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Button } from '@homora/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@homora/ui/popover';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LINK_COLOR_CLASS } from '@/lib/service-links';
 import { hostOf } from '@/lib/services';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 
 const targetWord = (target: OpenTarget) =>

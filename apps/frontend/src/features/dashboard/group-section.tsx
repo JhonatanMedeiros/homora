@@ -1,9 +1,9 @@
 import { useRef, type DragEvent, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { t } from '@/i18n';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@homora/ui/lib/utils';
+import { Button } from '@homora/ui/button';
+import { Separator } from '@homora/ui/separator';
 import { useGroupCollapse } from '@/features/dashboard/use-group-collapse';
 import {
   DropdownMenu,
@@ -14,7 +14,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@homora/ui/dropdown-menu';
 
 type Props = {
   category: string;

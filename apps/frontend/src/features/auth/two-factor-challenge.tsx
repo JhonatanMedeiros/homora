@@ -1,9 +1,9 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@homora/ui/button';
+import { CardContent, CardDescription, CardHeader } from '@homora/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Spinner } from '@homora/ui/spinner';
 import { OtpInput } from '@/features/auth/otp-input';
 import { FormError } from '@/components/form-error';
 import { t } from '@/i18n';

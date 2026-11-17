@@ -1,12 +1,12 @@
 import { toast } from 'sonner';
 import { useState, type ChangeEvent } from 'react';
 import { Download } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@homora/ui/card';
+import { Checkbox } from '@homora/ui/checkbox';
+import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, t } from '@/i18n';
 import { useConfigTransferApi } from '@/hooks/use-config-transfer-api';

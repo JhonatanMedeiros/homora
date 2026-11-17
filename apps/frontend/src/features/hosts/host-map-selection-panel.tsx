@@ -5,7 +5,7 @@ import {
   HostMapServicePanel,
   type HostMapServicePanelProps,
 } from '@/features/hosts/host-map-service-panel';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import type { ServiceStatus } from '@/lib/services';
 import { t } from '@/i18n';
 import type { layoutMap } from '@/features/hosts/map-layout';

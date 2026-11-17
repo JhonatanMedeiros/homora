@@ -1,13 +1,6 @@
-import { Checkbox } from '@/components/ui/checkbox';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Checkbox } from '@homora/ui/checkbox';
+import { DropdownMenuItem } from '@homora/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@homora/ui/table';
 import { ResourceStateBadge } from '@/components/resource-state';
 import { t } from '@/i18n';
 import { RowMenu } from './row-menu';

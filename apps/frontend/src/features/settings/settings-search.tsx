@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router';
-import { Input } from '@/components/ui/input';
+import { Input } from '@homora/ui/input';
 import { t, type MessageKey } from '@/i18n';
 import { settingsPath, type SettingsSection } from './sections';
 

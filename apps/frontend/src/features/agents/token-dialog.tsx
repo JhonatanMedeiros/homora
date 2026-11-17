@@ -10,9 +10,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+} from '@homora/ui/alert-dialog';
+import { Button } from '@homora/ui/button';
+import { Checkbox } from '@homora/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -20,10 +20,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Field, FieldLabel } from '@/components/ui/field';
+} from '@homora/ui/dialog';
+import { Field, FieldLabel } from '@homora/ui/field';
 import { ConnectGuide } from './connect-guide';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { SHEET_CLASS } from './sheet-class';
 import { t } from '@/i18n';
 

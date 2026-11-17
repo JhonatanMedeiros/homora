@@ -1,10 +1,10 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@homora/ui/tabs';
 import { buildSnippet, CLIENTS, FOLDER_PLACEHOLDER, type ClientId } from './connect-snippets';
 import { t } from '@/i18n';
 

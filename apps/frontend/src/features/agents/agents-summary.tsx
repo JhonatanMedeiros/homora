@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@homora/ui/button';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 
 function Stat({

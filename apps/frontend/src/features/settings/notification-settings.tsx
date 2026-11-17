@@ -1,11 +1,11 @@
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@homora/ui/spinner';
 import { Bell, MessageSquare, Plus, Send, Webhook } from 'lucide-react';
 import { SectionTitle } from '@/components/section-title';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
+import { Checkbox } from '@homora/ui/checkbox';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { t, formatDateTime } from '@/i18n';
 import { SectionSkeleton } from '@/components/skeletons';

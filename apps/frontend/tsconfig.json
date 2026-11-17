@@ -3,7 +3,11 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "noEmit": true,
-    "paths": { "@/*": ["./src/*"] },
+    "paths": {
+      "@/*": ["./src/*"],
+      "@homora/ui": ["../../packages/ui/src/components"],
+      "@homora/ui/lib/utils": ["../../packages/ui/src/lib/utils.ts"]
+    },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client"]
   },

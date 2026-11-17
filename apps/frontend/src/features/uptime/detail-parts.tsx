@@ -6,10 +6,10 @@ import {
   type UptimeRange,
 } from '@homora/shared';
 import { LoadingRegion } from '@/components/skeletons';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@homora/ui/skeleton';
 import { formatNumber, formatTime, t } from '@/i18n';
 import { CHART, heatDays, latencyGeometry } from '@/lib/detail-view';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { pct, shortDate, HEAT_CLASS } from '@/features/uptime/detail-format';
 
 export function Panel({

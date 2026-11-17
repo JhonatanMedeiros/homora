@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Incident, Service } from '@homora/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { groupCauses, type Cause } from '@/features/uptime/causes';
 import { reasonText } from '@/features/uptime/uptime-view';
 import type { Impact } from '@/features/hosts/hosts';
 import { formatTime, t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 const OPEN_KEY = 'homora-causes-open';
 

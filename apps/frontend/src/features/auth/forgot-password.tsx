@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { CopyButton } from '@/components/copy-button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { t } from '@/i18n';
 
 // Local recovery only (see `scripts/auth-reset.mjs`): there is no remote bypass. Without --yes

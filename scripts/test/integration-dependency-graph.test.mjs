@@ -21,6 +21,19 @@ test('widget SDK has no direct or transitive dependency on applications or integ
   );
 });
 
+test('UI has no dependency on applications or domain packages', async () => {
+  const graph = await workspaceGraph(resolve(import.meta.dirname, '../..'));
+  assert.equal(graph.has('@homora/ui'), true);
+  assert.equal(
+    findForbiddenPath(
+      graph,
+      '@homora/ui',
+      new Set([...forbidden, '@homora/integrations', '@homora/widgets']),
+    ),
+    null,
+  );
+});
+
 test('detects indirect workspace dependencies and source imports, and handles cycles', async () => {
   const root = await mkdtemp(join(tmpdir(), 'homora-graph-'));
   try {
@@ -38,6 +51,13 @@ test('detects indirect workspace dependencies and source imports, and handles cy
       '@homora/integrations': 'workspace:*',
     });
     const widgets = await workspace('packages', 'widgets', '@homora/widgets');
+    const ui = await workspace('packages', 'ui', '@homora/ui');
+    await workspace('apps', 'frontend', '@homora/frontend');
+    await writeFile(join(ui, 'src', 'probe.ts'), "import '../../../apps/frontend/src/app';");
+    assert.deepEqual(findForbiddenPath(await workspaceGraph(root), '@homora/ui', forbidden), [
+      '@homora/ui',
+      '@homora/frontend',
+    ]);
     await workspace('apps', 'backend', '@homora/backend');
     assert.equal(
       findForbiddenPath(await workspaceGraph(root), '@homora/integrations', forbidden),

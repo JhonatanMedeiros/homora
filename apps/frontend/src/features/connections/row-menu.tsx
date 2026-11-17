@@ -1,11 +1,7 @@
 import type { ReactNode } from 'react';
 import { MoreHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Button } from '@homora/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@homora/ui/dropdown-menu';
 
 /** The "⋯" menu at the end of a connection or widget row. */
 export function RowMenu({

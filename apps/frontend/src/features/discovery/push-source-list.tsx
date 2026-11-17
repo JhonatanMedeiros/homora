@@ -1,13 +1,13 @@
 import { EllipsisVertical } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@homora/ui/dropdown-menu';
 import { formatDateTime, t } from '@/i18n';
 
 import type { PushSource, SourceChange } from './push-source-model';

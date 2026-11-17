@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
+import { Button } from '@homora/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@homora/ui/popover';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Empty, EmptyDescription, EmptyHeader } from '@homora/ui/empty';
 import { RowListSkeleton } from '@/components/skeletons';
 import { formatDateTime, t } from '@/i18n';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';

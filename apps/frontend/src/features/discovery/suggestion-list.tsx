@@ -1,7 +1,7 @@
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@homora/ui/badge';
+import { Checkbox } from '@homora/ui/checkbox';
+import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
+import { Label } from '@homora/ui/label';
 import { t } from '@/i18n';
 
 import type { Suggestion } from './local-discovery-model';

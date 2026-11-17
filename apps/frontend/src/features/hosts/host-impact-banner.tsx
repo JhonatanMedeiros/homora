@@ -1,6 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
 import type { OfflineNode } from '@/features/hosts/hosts';
 import { t } from '@/i18n';
 

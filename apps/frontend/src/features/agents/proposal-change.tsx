@@ -1,5 +1,5 @@
 import type { Service } from '@homora/shared';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { textDiff, type TextDiff } from './proposal-text-diff';
 import type { Diff } from './agent-model';
 import { diffRows } from './proposal-diff';

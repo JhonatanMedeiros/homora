@@ -9,7 +9,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { clockWidget, defaultClockConfig } from '@homora/widgets/clock';
 import { noteWidget } from '@homora/widgets/note';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@homora/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +29,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@homora/ui/alert-dialog';
 import { Clock } from '@/components/top-bar';
 import { CardWidgets } from '@/components/card-widgets';
 import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
@@ -37,7 +37,7 @@ import { widgetStats, type Connection } from '@/features/connections/connection-
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import type { PageRow } from '@/hooks/use-pages';
 import { PageWidgetDialog, type WidgetDraft } from '@/components/page-widget-dialog';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 
 const NoteContent = lazy(() =>

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import type { LightState } from '@/lib/services';
 import { t } from '@/i18n';
 import { useEffect, useRef, useState } from 'react';

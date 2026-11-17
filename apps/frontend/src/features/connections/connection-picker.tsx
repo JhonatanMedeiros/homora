@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Input } from '@homora/ui/input';
+import { ScrollArea } from '@homora/ui/scroll-area';
 import { ConnectionMark } from './connection-mark';
 import { labels, type Kind } from './connection-model';
 import { t, tOr } from '@/i18n';

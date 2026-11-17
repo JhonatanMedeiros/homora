@@ -1,4 +1,4 @@
-import { Toggle } from '@/components/ui/toggle';
+import { Toggle } from '@homora/ui/toggle';
 import { t } from '@/i18n';
 
 type Props = {

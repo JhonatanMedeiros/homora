@@ -10,8 +10,8 @@ import {
 import { toast } from 'sonner';
 import { CheckTypePicker } from '@/components/check-type-picker';
 import { FormError } from '@/components/form-error';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@homora/ui/button';
+import { Checkbox } from '@homora/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,10 +19,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
+} from '@homora/ui/dialog';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Spinner } from '@homora/ui/spinner';
 import { t } from '@/i18n';
 
 import type { ProbeDraft } from '@/features/probes/probe-model';

@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
 import { t } from '@/i18n';
 

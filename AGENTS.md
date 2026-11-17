@@ -66,7 +66,7 @@ not necessarily the existing implementation.
 
 - `apps/frontend`: React, Vite, Tailwind v4, and shadcn/ui (use the `shadcn` skill and UI conventions in `docs/standards.md`); `apps/backend`: Fastify API, Proxmox, and MCP.
 - In frontend work, prioritize existing shadcn components and compose product UI from them; avoid raw HTML controls where a shadcn primitive fits. Follow the component selection and exception rules in `docs/standards.md`.
-- `packages/db`: SQLite schema and migrations; `packages/shared`: shared
+- `packages/ui`: shared shadcn primitives; `packages/db`: SQLite schema and migrations; `packages/shared`: shared
   contracts and validation; `packages/integrations`: integration SDK; `packages/icons`: brand assets. `scripts/` contains backup utilities and tests.
 - Consult [engineering standards](docs/standards.md) for module boundaries,
   validation, persistence, tests, and recording architectural decisions.

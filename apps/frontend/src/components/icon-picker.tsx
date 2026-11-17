@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -8,8 +8,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from '@homora/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@homora/ui/popover';
 import { brandIconNames, brandIconUrl, iconNames, iconRegistry } from '@/lib/icons';
 import { t } from '@/i18n';
 

@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "paths": {
+      "@homora/ui/*": ["./src/components/*"],
+      "@homora/ui/lib/*": ["./src/lib/*"],
+      "@homora/ui": ["./src/components"],
+      "@homora/ui/lib/utils": ["./src/lib/utils.ts"]
+    }
+  },
+  "include": ["src"]
+}

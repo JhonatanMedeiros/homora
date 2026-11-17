@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
 import { eventTitleKey, type ActivityEvent } from '@/features/activity/activity-model';
 import { formatAgo, t } from '@/i18n';

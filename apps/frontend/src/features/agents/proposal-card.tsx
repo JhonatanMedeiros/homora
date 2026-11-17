@@ -1,11 +1,11 @@
 import type { Service } from '@homora/shared';
 import { useState } from 'react';
 import { Check, ChevronDown, RefreshCw, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Kbd } from '@/components/ui/kbd';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Kbd } from '@homora/ui/kbd';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
+import { cn } from '@homora/ui/lib/utils';
 import { formatDate, parseDiff, proposalSummary, STATES, type Proposal } from './agent-model';
 import { ApproveButton } from './approve-button';
 import { diffRisk, needsHold } from './proposal-risk';

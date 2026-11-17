@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Skeleton as BaseSkeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Skeleton as BaseSkeleton } from '@homora/ui/skeleton';
+import { cn } from '@homora/ui/lib/utils';
 
 /** The shadcn skeleton, but still for people who ask the system to reduce motion. */
 function Bone({ className, ...props }: React.ComponentProps<'div'>) {

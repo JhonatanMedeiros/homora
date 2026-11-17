@@ -1,5 +1,5 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Switch } from '@homora/ui/switch';
 import { useMonitoringDefaults } from './use-monitoring-defaults';
 import { MonitoringTrustSettings } from './monitoring-trust-settings';
 import { t } from '@/i18n';

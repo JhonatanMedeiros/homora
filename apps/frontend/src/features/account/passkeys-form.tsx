@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import {
   Item,
   ItemActions,
@@ -13,8 +13,8 @@ import {
   ItemGroup,
   ItemMedia,
   ItemTitle,
-} from '@/components/ui/item';
-import { Spinner } from '@/components/ui/spinner';
+} from '@homora/ui/item';
+import { Spinner } from '@homora/ui/spinner';
 import { FormError } from '@/components/form-error';
 import { PasswordInput } from '@/components/password-input';
 import { SectionTitle } from '@/components/section-title';

@@ -11,9 +11,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from '@homora/ui/alert-dialog';
+import { Badge } from '@homora/ui/badge';
+import { Button } from '@homora/ui/button';
 import {
   Empty,
   EmptyContent,
@@ -21,7 +21,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '@/components/ui/empty';
+} from '@homora/ui/empty';
 import { FormError } from '@/components/form-error';
 import { PageHeader } from '@/components/page-header';
 import { SectionSkeleton } from '@/components/skeletons';

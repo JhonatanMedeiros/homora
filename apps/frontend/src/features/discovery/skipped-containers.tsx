@@ -1,4 +1,4 @@
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { t } from '@/i18n';
 import type { Skipped } from './local-discovery-model';
 

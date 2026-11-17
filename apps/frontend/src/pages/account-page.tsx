@@ -3,7 +3,7 @@ import { KeyRound, Lock, Smartphone } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { FormError } from '@/components/form-error';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   IdentityCard,
   ProtectionSummary,

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CUSTOM_CSS_MAX_BYTES, customCssProblem } from '@homora/shared';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
 import { FormError } from '@/components/form-error';
-import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@homora/ui/spinner';
+import { Switch } from '@homora/ui/switch';
+import { Textarea } from '@homora/ui/textarea';
 import { useCustomCss } from '@/hooks/use-custom-css';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { t, type MessageKey } from '@/i18n';

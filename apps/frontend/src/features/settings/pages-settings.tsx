@@ -13,9 +13,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from '@homora/ui/alert-dialog';
+import { Button } from '@homora/ui/button';
+import { Input } from '@homora/ui/input';
 import { usePages, type PageRow } from '@/hooks/use-pages';
 import { t } from '@/i18n';
 import { SettingsGroup } from './setting-row';

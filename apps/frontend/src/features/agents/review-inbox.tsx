@@ -10,18 +10,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Kbd, KbdGroup } from '@/components/ui/kbd';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { cn } from '@/lib/utils';
+} from '@homora/ui/alert-dialog';
+import { Button } from '@homora/ui/button';
+import { Kbd, KbdGroup } from '@homora/ui/kbd';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
+import { cn } from '@homora/ui/lib/utils';
 import { t } from '@/i18n';
 import { parseDiff, proposalSummary, type Proposal, type Service } from './agent-model';
 import { ApproveButton } from './approve-button';

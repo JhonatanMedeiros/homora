@@ -1,6 +1,6 @@
 import { CHECK_TYPES, type CheckType } from '@homora/shared';
 import { t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 
 /**
  * The kind of check as a set of tiles (a radio group): picking one changes the fields the form

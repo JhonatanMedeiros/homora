@@ -5,7 +5,7 @@
 //  1. Full-run triggers: files that are not imported by tests but can change any result
 //     (lockfile, package manifests, configs, test setup, CI scripts, migrations, generated data).
 //  2. Vitest's own import graph (`vitest list --changed`), which covers direct imports.
-//  3. Workspace dependents: tests import compiled `dist` of sibling packages, so the import graph
+//  3. Workspace dependents: tests may import compiled `dist` of sibling packages, so the import graph
 //     stops at the package boundary. A change in packages/<x> also selects every test of the
 //     workspaces that depend on <x>, transitively.
 import { execFileSync } from 'node:child_process';

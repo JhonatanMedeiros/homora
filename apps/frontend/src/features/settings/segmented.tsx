@@ -1,4 +1,4 @@
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 
 /** Single-choice control for a few short options; unlike a bare ToggleGroup it cannot be emptied. */
 export function Segmented<T extends string>({

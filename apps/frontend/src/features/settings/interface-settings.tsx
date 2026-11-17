@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLocation } from 'react-router';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@homora/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { useTheme } from '@/hooks/use-theme';
 import { locales, t, useI18n } from '@/i18n';

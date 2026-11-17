@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { Service } from '@homora/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import { ServiceIcon } from '@/components/service-icon';
 import { StatusMeta } from '@/features/dashboard/service-card-common';
 import { CardWidgets } from '@/components/card-widgets';

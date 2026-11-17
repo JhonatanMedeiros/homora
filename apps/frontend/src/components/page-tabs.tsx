@@ -1,5 +1,5 @@
 import type { PageRow } from '@/hooks/use-pages';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@homora/ui/tabs';
 import type { ReactNode } from 'react';
 import { t } from '@/i18n';
 

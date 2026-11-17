@@ -8,7 +8,7 @@ import {
   SUGGESTED_LINK_TYPES,
   type LinkColor,
 } from '@homora/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@homora/ui/button';
 import {
   Command,
   CommandGroup,
@@ -16,14 +16,14 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@/components/ui/command';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+} from '@homora/ui/command';
+import { Field, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@homora/ui/popover';
+import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import type { LinkTypesApi } from '@/hooks/use-link-types';
 import { LINK_COLOR_CLASS, LINK_COLOR_DOT } from '@/lib/service-links';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { t, type MessageKey } from '@/i18n';
 
 const SUGGESTION_KEY: Record<string, MessageKey> = {

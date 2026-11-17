@@ -1,8 +1,8 @@
 import { ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from '@homora/ui/button';
+import { Card } from '@homora/ui/card';
 import { formatAgo, t } from '@/i18n';
-import { cn } from '@/lib/utils';
+import { cn } from '@homora/ui/lib/utils';
 import { ConnectionMark } from './connection-mark';
 import { HealthLight } from './health-light';
 import { healthOf, hostOf, labels, reasonKey, type Connection } from './connection-model';

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@homora/ui/alert';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
+import { Skeleton } from '@homora/ui/skeleton';
+import { Spinner } from '@homora/ui/spinner';
 import { LoadingRegion } from '@/components/skeletons';
 import { t } from '@/i18n';
 import { SettingsGroup } from './setting-row';

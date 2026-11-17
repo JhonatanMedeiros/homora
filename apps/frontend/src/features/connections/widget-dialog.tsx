@@ -1,7 +1,7 @@
-import { Spinner } from '@/components/ui/spinner';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Spinner } from '@homora/ui/spinner';
+import { Button } from '@homora/ui/button';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Input } from '@homora/ui/input';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
 import { t } from '@/i18n';
