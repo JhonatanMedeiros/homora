@@ -38,7 +38,8 @@
     },
     "./note/ui/view": "./src/widgets/note/ui/view.tsx",
     "./calendar/ui": "./src/widgets/calendar/ui/index.tsx",
-    "./homelab-summary/ui": "./src/widgets/homelab-summary/ui/index.tsx"
+    "./homelab-summary/ui": "./src/widgets/homelab-summary/ui/index.tsx",
+    "./recent-incidents/ui": "./src/widgets/recent-incidents/ui/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

@@ -14,6 +14,7 @@ import { cn } from '@homora/ui/lib/utils';
 import { CardWidgets } from '@/components/card-widgets';
 import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
 import { WidgetHost } from '@/components/widget-host';
+import { useWidgetMonitoring } from '@/hooks/use-widget-monitoring';
 import { getWidgetUI } from '@/components/widget-ui-registry';
 import type { WidgetDraft } from '@/components/page-widget-dialog';
 import type { PageWidget } from '@/components/use-page-widget-data';
@@ -32,6 +33,8 @@ export function PageWidgetCard({
   pages,
   fullPages,
   layout,
+  groups,
+  openMonitor,
   showHidden,
   visibilityNow,
   dragId,
@@ -55,6 +58,8 @@ export function PageWidgetCard({
   pages: PageRow[];
   fullPages: Set<number>;
   layout: 'rail' | 'strip';
+  groups: { name: string; pageId: number | null }[];
+  openMonitor?: (id: number, hasService: boolean) => void;
   showHidden: boolean;
   visibilityNow: Date;
   dragId: number | null;
@@ -72,6 +77,9 @@ export function PageWidgetCard({
   const ui = getWidgetUI(item.type);
   const config = item.version === 1 ? ui?.parse(item.config) : null;
   const View = ui?.View;
+  const monitoring = useWidgetMonitoring(
+    config != null && ui?.monitoringQuery ? ui.monitoringQuery(config) : null,
+  );
   const displayName =
     item.name ||
     (ui
@@ -156,7 +164,13 @@ export function PageWidgetCard({
       <WidgetErrorBoundary key={`${item.type}:${item.id}`}>
         {View ? (
           config !== null && config !== undefined ? (
-            <WidgetHost>
+            <WidgetHost
+              incidentReading={monitoring}
+              wide={layout === 'strip' && item.size === 'wide'}
+              groups={groups}
+              pages={pages}
+              openMonitor={openMonitor}
+            >
               <View config={config} />
             </WidgetHost>
           ) : (

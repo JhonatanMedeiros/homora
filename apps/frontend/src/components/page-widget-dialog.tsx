@@ -30,6 +30,7 @@ type Props = {
   chosen: boolean;
   connections: Connection[];
   pages: PageRow[];
+  groups?: { name: string; pageId: number | null }[];
   busy: boolean;
   error: string;
   onChange: (draft: WidgetDraft) => void;
@@ -275,7 +276,7 @@ function DialogContents({
 
 export function PageWidgetDialog(props: Props) {
   return (
-    <WidgetHost>
+    <WidgetHost groups={props.groups} pages={props.pages}>
       <DialogContents {...props} />
     </WidgetHost>
   );

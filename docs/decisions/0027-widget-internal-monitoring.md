@@ -20,3 +20,9 @@ Page widgets need the same monitoring facts and state rules as Home, without a c
 ## Consequences
 
 The contracts provide data only; no MON widget or visual presentation is included. Reader validation failures fail that request without poisoning another reader's cache. Current classification and cache tests are synthetic, not live-service validation. Future work must assess the display, accessibility, stale and failure behavior of each widget independently.
+
+## Recent incidents widget (#261)
+
+The incidents reader applies the period to overlap (an open incident remains eligible regardless of its start), minimum duration and optional page/group name filters before sorting and limiting. Open incidents sort first, then start and ID descending. Names are used because installation-specific IDs do not survive transfer; a rename requires editing the saved filter. Both selected filter sets intersect. Unfiltered results include standalone probes. A bounded vocabulary and validated HTTP status are the only reason details returned; unknown stored values map to `other`. No response body or raw error is returned.
+
+The widget uses a typed host action to open a monitor: service cards open the existing drawer and standalone probes navigate to probe management. An application import from the widget was rejected to preserve module boundaries. Rows remain separate rather than grouping by service, preserving start and end for each event; truncation is explicit. Long durations use days and hours, rather than unbounded hours. Absolute localized dates avoid ambiguous relative labels. The reader refreshes per instance; an unsuccessful refresh preserves its last good result as stale. The maximum query period remains 30 days and is not a promise of historical coverage.

@@ -1,6 +1,17 @@
-import type { MonitoringSummary } from '../monitoring.js';
+import type { MonitoringIncidents, MonitoringSummary } from '../monitoring.js';
 import { createContext, useContext, type ReactNode } from 'react';
 
+export type MonitoringQuery = {
+  days: number;
+  limit: number;
+  minimumMinutes: number;
+  groups: string[];
+  pages: string[];
+};
+export type MonitoringReading =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; data: MonitoringIncidents; stale: boolean };
 export type WidgetHost = {
   monitoring?: {
     readSummary: (
@@ -13,7 +24,13 @@ export type WidgetHost = {
     ) => Promise<{ groups: { id: number; name: string }[]; pages: { id: number; name: string }[] }>;
     filterStatus?: (state: 'ok' | 'down' | 'degraded' | 'maintenance' | 'unmeasured') => void;
   };
+
   locale: string;
+  incidentReading?: MonitoringReading;
+  openMonitor?: (id: number, hasService: boolean) => void;
+  groups?: { name: string; pageId: number | null }[];
+  pages?: { id: number; name: string }[];
+  wide?: boolean;
   t: (key: string, params?: Record<string, string | number>) => string;
 };
 const HostContext = createContext<WidgetHost | null>(null);

@@ -44,7 +44,24 @@ export type MonitoringIncident = {
   name: string;
   startedAt: number;
   endedAt: number | null;
+  reason: MonitoringIncidentReason;
+  httpStatus: number | null;
+  hasService: boolean;
 };
+export const monitoringIncidentReasons = [
+  'destination-blocked',
+  'no-response',
+  'not-found',
+  'error-status',
+  'unexpected-status',
+  'content-mismatch',
+  'cert-expired',
+  'cert-invalid',
+  'cert-expiring',
+  'maintenance',
+  'other',
+] as const;
+export type MonitoringIncidentReason = (typeof monitoringIncidentReasons)[number];
 export type MonitoringIncidents = {
   generatedAt: number;
   periodDays: number;

@@ -470,7 +470,14 @@ export function ServicesPage({
       )}
       {!hostView && !widgetsInRail && (
         <WidgetStatusFilterContext.Provider value={setStatusFilter}>
-          <PageWidgets pageId={activePageId} pages={pages} />
+          <PageWidgets
+            pageId={activePageId}
+            pages={pages}
+            groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
+            openMonitor={(id, hasService) =>
+              hasService ? setDetailsId(id) : navigate('/manage/probes')
+            }
+          />
         </WidgetStatusFilterContext.Provider>
       )}
       {!organizing && !hostView && allTags.length > 0 && (
@@ -757,7 +764,18 @@ export function ServicesPage({
       {widgetsInRail && (
         <aside className="min-w-0">
           <WidgetStatusFilterContext.Provider value={setStatusFilter}>
-            <PageWidgets pageId={activePageId} pages={pages} layout="rail" />
+            <PageWidgets
+              pageId={activePageId}
+              pages={pages}
+              layout="rail"
+              groups={groupRows.map((group) => ({
+                name: group.name,
+                pageId: group.pageId ?? null,
+              }))}
+              openMonitor={(id, hasService) =>
+                hasService ? setDetailsId(id) : navigate('/manage/probes')
+              }
+            />
           </WidgetStatusFilterContext.Provider>
         </aside>
       )}

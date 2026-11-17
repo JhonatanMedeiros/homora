@@ -6,6 +6,7 @@ import {
   isHomePrivateHost,
   monitoringState,
   monitoringSources,
+  monitoringIncidentReasons,
   type MonitoringCounts,
   type MonitoringSummary,
   type MonitoringProblems,
@@ -23,16 +24,9 @@ const querySchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(50).default(20),
     days: z.coerce.number().int().min(1).max(30).default(7),
-    groups: z
-      .string()
-      .regex(/^\d+(,\d+)*$/)
-      .max(1000)
-      .optional(),
-    pages: z
-      .string()
-      .regex(/^\d+(,\d+)*$/)
-      .max(1000)
-      .optional(),
+    groups: z.string().max(12000).optional(),
+    pages: z.string().max(12000).optional(),
+    minimumMinutes: z.coerce.number().int().min(0).max(43200).default(0),
   })
   .strict();
 const countsSchema = z
@@ -88,6 +82,9 @@ const incidentsSchema: z.ZodType<MonitoringIncidents> = z
             name: z.string().max(200),
             startedAt: timestamp,
             endedAt: timestamp.nullable(),
+            reason: z.enum(monitoringIncidentReasons),
+            httpStatus: z.number().int().min(100).max(599).nullable(),
+            hasService: z.boolean(),
           })
           .strict(),
       )
@@ -114,24 +111,89 @@ export function registerWidgetMonitoringRoutes(
         return reply.code(404).send(errorBody('not-found'));
       const query = querySchema.safeParse(request.query);
       if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
-      const { limit, days, groups, pages } = query.data;
-      if (kind !== 'summary' && (groups || pages))
+      const { limit, days, groups, pages, minimumMinutes } = query.data;
+      const parseNames = (value: string | undefined): string[] | null => {
+        if (!value) return [];
+        try {
+          const parsed: unknown = JSON.parse(value);
+          if (
+            !Array.isArray(parsed) ||
+            parsed.length > 100 ||
+            parsed.some(
+              (name) =>
+                typeof name !== 'string' ||
+                !name.trim() ||
+                name.trim() !== name ||
+                name.length > 100,
+            ) ||
+            new Set(parsed).size !== parsed.length
+          )
+            return null;
+          return parsed as string[];
+        } catch {
+          return null;
+        }
+      };
+      const groupNames = kind === 'incidents' ? parseNames(groups) : [];
+      const pageNames = kind === 'incidents' ? parseNames(pages) : [];
+      if (!groupNames || !pageNames) return reply.code(400).send(errorBody('invalid-query'));
+      if (
+        kind === 'summary' &&
+        ([groups, pages].some(
+          (value) => value !== undefined && (!/^\d+(,\d+)*$/.test(value) || value.length > 1000),
+        ) ||
+          minimumMinutes)
+      )
+        return reply.code(400).send(errorBody('invalid-query'));
+      if (kind === 'problems' && (groups || pages || minimumMinutes))
         return reply.code(400).send(errorBody('invalid-query'));
       const now = Date.now();
-      const key = `${kind}:${limit}:${days}:${groups ?? ''}:${pages ?? ''}`;
+      const key = `${kind}:${limit}:${days}:${groups ?? ''}:${pages ?? ''}:${minimumMinutes}`;
       const cached = cache.get(key);
       if (cached && now - cached.at < 10_000) return cached.value;
       let value: unknown;
       if (kind === 'incidents') {
+        const groupFilter =
+          groupNames.length > 0 ? `AND g.name IN (${groupNames.map(() => '?').join(',')})` : '';
+        const pageFilter =
+          pageNames.length > 0 ? `AND p.name IN (${pageNames.map(() => '?').join(',')})` : '';
         const rows = db
           .prepare(
-            `SELECT i.id, i.service_id AS monitorId, m.name, i.started_at AS startedAt, i.ended_at AS endedAt FROM service_incidents i JOIN monitors m ON m.id=i.service_id WHERE i.started_at>=? AND i.started_at<=? ORDER BY i.started_at DESC,i.id DESC LIMIT ?`,
+            `SELECT i.id, i.service_id AS monitorId, m.name, i.started_at AS startedAt, i.ended_at AS endedAt, i.reason, i.http_status AS httpStatus, s.id IS NOT NULL AS hasService FROM service_incidents i JOIN monitors m ON m.id=i.service_id LEFT JOIN services s ON s.id=m.id LEFT JOIN service_groups g ON g.name=s.category LEFT JOIN pages p ON p.id=g.page_id WHERE (i.ended_at IS NULL OR i.ended_at>=?) AND i.started_at<=? AND COALESCE(i.ended_at, ?)-i.started_at>=? ${groupFilter} ${pageFilter} ORDER BY i.ended_at IS NOT NULL, i.started_at DESC,i.id DESC LIMIT ?`,
           )
-          .all(now - days * 86_400_000, now, limit + 1);
+          .all(
+            now - days * 86_400_000,
+            now,
+            now,
+            minimumMinutes * 60_000,
+            ...groupNames,
+            ...pageNames,
+            limit + 1,
+          ) as Array<
+          { reason: string; httpStatus: number | null; hasService: number } & Record<
+            string,
+            unknown
+          >
+        >;
         value = incidentsSchema.parse({
           generatedAt: now,
           periodDays: days,
-          items: rows.slice(0, limit),
+          items: rows.slice(0, limit).map((row) => ({
+            ...row,
+            reason: monitoringIncidentReasons.includes(
+              row.reason as (typeof monitoringIncidentReasons)[number],
+            )
+              ? row.reason
+              : 'other',
+            httpStatus:
+              row.httpStatus !== null &&
+              Number.isInteger(row.httpStatus) &&
+              row.httpStatus >= 100 &&
+              row.httpStatus <= 599
+                ? row.httpStatus
+                : null,
+            hasService: Boolean(row.hasService),
+          })),
           truncated: rows.length > limit,
         });
       } else {
