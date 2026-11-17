@@ -1,11 +1,11 @@
 import { createServer } from 'node:http';
 import Fastify from 'fastify';
 import { createDatabase, getSqliteHandle } from '@homora/db';
-import { MAX_FEED_BYTES } from '@homora/widgets';
+import { MAX_FEED_BYTES, type WidgetSourceReader } from '@homora/widgets';
 import { expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import { createTestSession } from '../test-auth.js';
-import { registerWidgetFeedRoutes, type FeedFetcher } from './widget-feed.js';
+import { registerWidgetSourceRoutes, type SourceFetcher } from './widget-sources.js';
 
 const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -24,7 +24,7 @@ const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
   </channel>
 </rss>`;
 
-it('requires an authenticated session on /api/widget-sources/feed', async () => {
+it('requires an authenticated session on /api/widget-sources/:contract', async () => {
   const database = createDatabase(':memory:');
   const { auth, cookie } = await createTestSession();
   const app = createApp(database.db, 5173, auth);
@@ -39,18 +39,24 @@ it('requires an authenticated session on /api/widget-sources/feed', async () => 
   });
   expect(missingUrl.statusCode).toBe(400);
 
+  const unknownContract = await app.inject({
+    url: '/api/widget-sources/does-not-exist',
+    headers: { cookie, origin: 'http://localhost:5173' },
+  });
+  expect(unknownContract.statusCode).toBe(404);
+
   await app.close();
   getSqliteHandle(database.db).close();
 });
 
 it('enforces network policy for HTTP, embedded credentials, and disallowed destinations', async () => {
   const app = Fastify();
-  const fetcher: FeedFetcher = vi.fn(async () => {
+  const fetcher: SourceFetcher = vi.fn(async () => {
     throw Object.assign(new Error('Destination points to disallowed address.'), {
       code: 'destination-disallowed',
     });
   });
-  registerWidgetFeedRoutes(app, fetcher);
+  registerWidgetSourceRoutes(app, fetcher);
 
   const httpBlocked = await app.inject(
     '/api/widget-sources/feed?url=http://example.com/feed.xml&allowPrivateNetwork=false',
@@ -86,7 +92,7 @@ it('caches responses, deduplicates concurrent requests, and falls back to stale 
   let failNext = false;
   let resolveFetch: (() => void) | undefined;
 
-  const fetcher: FeedFetcher = async (_dest, policy, options) => {
+  const fetcher: SourceFetcher = async (_dest, policy, options) => {
     expect(policy.allowPrivate).toBe(true);
     expect(options?.timeoutMs).toBe(8000);
     expect(options?.maxBodyBytes).toBe(MAX_FEED_BYTES);
@@ -101,7 +107,7 @@ it('caches responses, deduplicates concurrent requests, and falls back to stale 
   };
 
   const app = Fastify();
-  registerWidgetFeedRoutes(app, fetcher, () => currentTime);
+  registerWidgetSourceRoutes(app, fetcher, () => currentTime);
 
   const p1 = app.inject(
     '/api/widget-sources/feed?url=http://10.0.0.5/feed.xml&limit=2&allowPrivateNetwork=true',
@@ -121,7 +127,6 @@ it('caches responses, deduplicates concurrent requests, and falls back to stale 
   expect(r2.statusCode).toBe(200);
   expect(r2.json().entries).toHaveLength(1);
 
-  // Within TTL: served from cache
   currentTime += 60_000;
   const cached = await app.inject(
     '/api/widget-sources/feed?url=http://10.0.0.5/feed.xml&limit=5&allowPrivateNetwork=true',
@@ -130,7 +135,6 @@ it('caches responses, deduplicates concurrent requests, and falls back to stale 
   expect(cached.statusCode).toBe(200);
   expect(cached.json().stale).toBe(false);
 
-  // Expired TTL + upstream failure: falls back to stale cache
   currentTime += 10 * 60_000;
   failNext = true;
   const staleRes = await app.inject(
@@ -154,9 +158,8 @@ it('rejects redirects and loopback destinations when using the real restricted t
   const port = typeof addr === 'object' && addr ? addr.port : 0;
 
   const app = Fastify();
-  registerWidgetFeedRoutes(app);
+  registerWidgetSourceRoutes(app);
 
-  // Loopback is always blocked by network-policy.ts even with allowPrivateNetwork=true.
   const res = await app.inject(
     `/api/widget-sources/feed?url=${encodeURIComponent(`http://127.0.0.1:${port}/feed.xml`)}&allowPrivateNetwork=true`,
   );
@@ -165,4 +168,36 @@ it('rejects redirects and loopback destinations when using the real restricted t
 
   await app.close();
   await new Promise<void>((resolve) => server.close(() => resolve()));
+});
+
+it('serves arbitrary registered widget source contracts generically with injected restricted fetch', async () => {
+  const customSource: WidgetSourceReader<{ city: string }, { city: string; temp: number }> = {
+    contract: 'weather-sample',
+    cacheTtlMs: 60_000,
+    parseQuery: (q) => (q.city ? { cacheKey: q.city, params: { city: q.city } } : null),
+    read: async (params, ctx) => {
+      const res = await ctx.fetch(`https://weather.example.test/${params.city}`, {
+        allowPrivate: false,
+        timeoutMs: 99_999, // clamped to 8000 by host
+        maxBodyBytes: 9_999_999, // clamped to 512 KB by host
+      });
+      return { city: params.city, temp: Number(res.body) };
+    },
+  };
+  const fetcher: SourceFetcher = vi.fn(async (_dest, _policy, options) => {
+    expect(options?.timeoutMs).toBe(8000);
+    expect(options?.maxBodyBytes).toBe(MAX_FEED_BYTES);
+    return { status: 200, body: '24' };
+  });
+
+  const app = Fastify();
+  registerWidgetSourceRoutes(app, fetcher, Date.now, (contract) =>
+    contract === 'weather-sample' ? customSource : undefined,
+  );
+
+  const res = await app.inject('/api/widget-sources/weather-sample?city=recife');
+  expect(res.statusCode).toBe(200);
+  expect(res.json()).toEqual({ city: 'recife', temp: 24 });
+
+  await app.close();
 });

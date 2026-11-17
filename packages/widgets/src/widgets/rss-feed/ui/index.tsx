@@ -18,13 +18,14 @@ import {
 import { useFeedReading, type FeedReading } from './use-feed-reading.js';
 
 export function RssFeedView({ config }: { config: RssFeedConfig }) {
-  const { readFeed } = useWidgetHost();
+  const { readSource, readFeed } = useWidgetHost();
   const reading = useFeedReading(
     {
       feedUrl: config.feedUrl,
       limit: config.limit,
       allowPrivateNetwork: config.allowPrivateNetwork,
     },
+    readSource,
     readFeed,
   );
   return <RssFeedContent config={config} reading={reading} />;

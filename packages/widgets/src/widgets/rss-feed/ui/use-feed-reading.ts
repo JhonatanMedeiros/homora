@@ -16,7 +16,11 @@ export type FeedReading =
 
 const REFRESH_INTERVAL_MS = 5 * 60_000;
 
-export function useFeedReading(query: FeedQuery, readFeed: WidgetHost['readFeed']): FeedReading {
+export function useFeedReading(
+  query: FeedQuery,
+  readSource: WidgetHost['readSource'],
+  readFeed?: WidgetHost['readFeed'],
+): FeedReading {
   const validUrl = parseFeedUrl(query.feedUrl);
   const key = validUrl
     ? JSON.stringify({
@@ -43,8 +47,22 @@ export function useFeedReading(query: FeedQuery, readFeed: WidgetHost['readFeed'
       const request = new AbortController();
       controller = request;
       try {
-        if (!readFeed) throw new FeedSourceError('fetch-failed', 'Feed source unavailable');
-        const data = await readFeed(current, request.signal);
+        let data: FeedData;
+        if (readSource) {
+          data = await readSource<FeedData>(
+            'feed',
+            {
+              url: current.feedUrl,
+              limit: current.limit,
+              allowPrivateNetwork: current.allowPrivateNetwork,
+            },
+            request.signal,
+          );
+        } else if (readFeed) {
+          data = await readFeed(current, request.signal);
+        } else {
+          throw new FeedSourceError('fetch-failed', 'Feed source unavailable');
+        }
         if (active && !request.signal.aborted) {
           setState({ key, data, error: 'none' });
         }
@@ -79,7 +97,7 @@ export function useFeedReading(query: FeedQuery, readFeed: WidgetHost['readFeed'
       controller?.abort();
       window.clearInterval(timer);
     };
-  }, [key, readFeed]);
+  }, [key, readSource, readFeed]);
 
   if (!key) return { status: 'unconfigured' };
   if (state.key !== key) return { status: 'loading' };

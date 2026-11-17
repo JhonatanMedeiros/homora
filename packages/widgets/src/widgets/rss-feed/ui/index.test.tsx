@@ -11,7 +11,7 @@ function renderWithHost(
   ui: React.ReactNode,
   options: {
     wide?: boolean;
-    readFeed?: (query: unknown, signal: AbortSignal) => Promise<FeedData>;
+    readSource?: (contract: string, params: unknown, signal: AbortSignal) => Promise<FeedData>;
   } = {},
 ) {
   return render(
@@ -19,7 +19,7 @@ function renderWithHost(
       value={{
         locale: 'en-US',
         wide: options.wide,
-        readFeed: options.readFeed as never,
+        readSource: options.readSource as never,
         t: (key, params) => (params ? `${key}:${Object.values(params).join(',')}` : key),
       }}
     >
@@ -72,7 +72,7 @@ describe('rss-feed UI', () => {
       limit: 5,
       allowPrivateNetwork: false,
     };
-    const readFeed = vi.fn().mockResolvedValueOnce({
+    const readSource = vi.fn().mockResolvedValueOnce({
       feedTitle: 'Homelab Blog',
       fetchedAt: Date.UTC(2026, 10, 17, 12, 0),
       stale: true,
@@ -92,7 +92,7 @@ describe('rss-feed UI', () => {
       ],
     });
 
-    renderWithHost(<RssFeedView config={config} />, { wide: true, readFeed });
+    renderWithHost(<RssFeedView config={config} />, { wide: true, readSource });
 
     await waitFor(() => expect(screen.getByText('Release v2.0')).toBeTruthy());
     expect(screen.getByText('Homelab Blog')).toBeTruthy();
@@ -107,8 +107,8 @@ describe('rss-feed UI', () => {
     expect(screen.getByText('rssWidget.noDate')).toBeTruthy();
   });
 
-  it('shows policy-blocked state when readFeed throws FeedSourceError(policy-blocked)', async () => {
-    const readFeed = vi.fn().mockRejectedValue(new FeedSourceError('policy-blocked', 'Blocked'));
+  it('shows policy-blocked state when readSource throws FeedSourceError(policy-blocked)', async () => {
+    const readSource = vi.fn().mockRejectedValue(new FeedSourceError('policy-blocked', 'Blocked'));
     renderWithHost(
       <RssFeedView
         config={{
@@ -118,7 +118,7 @@ describe('rss-feed UI', () => {
           allowPrivateNetwork: false,
         }}
       />,
-      { readFeed },
+      { readSource },
     );
 
     await waitFor(() =>

@@ -108,3 +108,14 @@ export {
   parseFeedUrl,
   type RssFeedConfig,
 } from './widgets/rss-feed/definition.js';
+export {
+  SourceInvalidQueryError,
+  SourceParseError,
+  SourcePolicyBlockedError,
+  type ParsedSourceQuery,
+  type RestrictedFetch,
+  type RestrictedFetchOptions,
+  type WidgetSourceContext,
+  type WidgetSourceReader,
+} from './source.js';
+export { getWidgetSource, listWidgetSources } from './source-registry.js';

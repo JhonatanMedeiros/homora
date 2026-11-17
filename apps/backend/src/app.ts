@@ -1,5 +1,5 @@
 import { registerWidgetMonitoringRoutes } from './routes/widget-monitoring.js';
-import { registerWidgetFeedRoutes } from './routes/widget-feed.js';
+import { registerWidgetSourceRoutes } from './routes/widget-sources.js';
 import { registerPageWidgetRoutes } from './routes/page-widgets.js';
 import Fastify, { LogController, type FastifyBaseLogger, type FastifyServerOptions } from 'fastify';
 import { createDatabase, getSqliteHandle } from '@homora/db';
@@ -344,7 +344,7 @@ export function createApp(
     measurement,
     degradedSince,
   );
-  registerWidgetFeedRoutes(app);
+  registerWidgetSourceRoutes(app);
   registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
   registerServiceTagRoutes(app, tagStore);
   registerServiceConfigurationRoutes(

@@ -49,14 +49,20 @@ export type FeedData = {
   stale: boolean;
 };
 
-export class FeedSourceError extends Error {
-  code: 'policy-blocked' | 'fetch-failed';
-  constructor(code: 'policy-blocked' | 'fetch-failed', message: string) {
+export type WidgetSourceErrorCode = 'policy-blocked' | 'fetch-failed';
+
+export class WidgetSourceError extends Error {
+  code: WidgetSourceErrorCode;
+  constructor(code: WidgetSourceErrorCode, message: string) {
     super(message);
-    this.name = 'FeedSourceError';
+    this.name = 'WidgetSourceError';
     this.code = code;
   }
 }
+
+export const FeedSourceError = WidgetSourceError;
+
+export type WidgetSourceParams = Record<string, string | number | boolean | undefined>;
 
 export type WidgetHost = {
   monitoring?: {
@@ -74,6 +80,11 @@ export type WidgetHost = {
     ) => Promise<{ groups: { id: number; name: string }[]; pages: { id: number; name: string }[] }>;
     filterStatus?: (state: 'ok' | 'down' | 'degraded' | 'maintenance' | 'unmeasured') => void;
   };
+  readSource?: <T = unknown>(
+    contract: string,
+    params: WidgetSourceParams,
+    signal: AbortSignal,
+  ) => Promise<T>;
   readFeed?: (query: FeedQuery, signal: AbortSignal) => Promise<FeedData>;
 
   locale: string;

@@ -1,11 +1,10 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import {
-  FeedSourceError,
   WidgetHostProvider,
-  type FeedData,
-  type FeedQuery,
+  WidgetSourceError,
   type WidgetHost as Host,
   type MonitoringQuery,
+  type WidgetSourceParams,
 } from '@homora/widgets/ui';
 import { tOr, useI18n } from '@/i18n';
 import type { MonitoringIncidents } from '@homora/widgets';
@@ -68,20 +67,27 @@ export async function readProblems(query: MonitoringProblemsQuery, signal: Abort
   );
 }
 
-export async function readFeed(query: FeedQuery, signal: AbortSignal): Promise<FeedData> {
-  const params = new URLSearchParams({
-    url: query.feedUrl,
-    limit: String(query.limit),
-    allowPrivateNetwork: String(query.allowPrivateNetwork),
-  });
-  const response = await fetch(`/api/widget-sources/feed?${params}`, { signal });
+export async function readWidgetSource<T = unknown>(
+  contract: string,
+  params: WidgetSourceParams,
+  signal: AbortSignal,
+): Promise<T> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) query.set(key, String(value));
+  }
+  const qs = query.toString();
+  const response = await fetch(
+    `/api/widget-sources/${encodeURIComponent(contract)}${qs ? `?${qs}` : ''}`,
+    { signal },
+  );
   if (!response.ok) {
     if (response.status === 403) {
-      throw new FeedSourceError('policy-blocked', 'Feed blocked by network policy');
+      throw new WidgetSourceError('policy-blocked', 'Blocked by network policy');
     }
-    throw new FeedSourceError('fetch-failed', 'Feed source failed');
+    throw new WidgetSourceError('fetch-failed', 'Widget source failed');
   }
-  return response.json() as Promise<FeedData>;
+  return response.json() as Promise<T>;
 }
 
 type FilterStatus = NonNullable<NonNullable<Host['monitoring']>['filterStatus']>;
@@ -107,7 +113,7 @@ export function WidgetHost({
           readProblems,
           filterStatus,
         },
-        readFeed,
+        readSource: readWidgetSource,
       }}
     >
       {children}
