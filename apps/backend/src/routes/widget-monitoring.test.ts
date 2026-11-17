@@ -11,6 +11,7 @@ it('requires the existing authenticated session', async () => {
   const { auth, cookie } = await createTestSession();
   const app = createApp(database.db, 5173, auth);
   expect((await app.inject('/api/widget-sources/monitoring/summary')).statusCode).toBe(401);
+  expect((await app.inject('/api/widget-sources/monitoring/certificates')).statusCode).toBe(401);
   const authenticated = await app.inject({
     url: '/api/widget-sources/monitoring/summary',
     headers: { cookie, origin: 'http://localhost:5173' },
@@ -487,6 +488,104 @@ it('returns availability for services and probes, enforcing min 5 checks and exc
   expect(missingRes.statusCode).toBe(200);
   expect(missingRes.json()).toMatchObject({ range: '30d', target: null });
 
+  await app.close();
+  db.close();
+});
+
+it('filters certificate readings safely and returns only bounded public fields', async () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE services(id INTEGER, category TEXT); CREATE TABLE service_groups(id INTEGER, name TEXT, page_id INTEGER); CREATE TABLE pages(id INTEGER, name TEXT, position INTEGER); CREATE TABLE service_observation_history(service_id INTEGER, signature TEXT, observed_at INTEGER, observation TEXT); CREATE TABLE service_observations(service_id INTEGER, signature TEXT, observation TEXT); CREATE TABLE config_version(id INTEGER PRIMARY KEY, version INTEGER); INSERT INTO config_version VALUES (1, 1);
+    INSERT INTO pages VALUES (1, 'Home', 0); INSERT INTO service_groups VALUES (1, 'Media', 1); INSERT INTO services VALUES (1, 'Media'), (2, 'Media');`);
+  const app = Fastify();
+  const tls = {
+    id: 1,
+    name: 'Media',
+    url: 'https://private.example',
+    allowPrivate: false,
+    checkInsecure: false,
+    checkType: 'tls',
+    checkInterval: 60,
+    expectedStatus: null,
+    checkPath: null,
+    checkUrl: null,
+    checkMatch: null,
+  };
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => [tls, { ...tls, id: 2, checkType: 'http' }] } as never,
+    { snapshot: () => ({}) } as never,
+    { open: () => ({}) } as never,
+    { current: () => null },
+  );
+  const response = await app.inject('/api/widget-sources/monitoring/certificates?limit=5');
+  expect(response.statusCode).toBe(200);
+  expect(response.json()).toMatchObject({
+    total: 1,
+    missingFilter: false,
+    items: [{ id: 1, expiresAt: null }],
+  });
+  expect(response.body).not.toContain('private.example');
+  const missing = await app.inject(
+    `/api/widget-sources/monitoring/certificates?pages=${encodeURIComponent(JSON.stringify(['deleted']))}`,
+  );
+  expect(missing.json()).toMatchObject({ missingFilter: true, total: 0, items: [] });
+  const match = await app.inject(
+    `/api/widget-sources/monitoring/certificates?groups=${encodeURIComponent(JSON.stringify(['Media']))}`,
+  );
+  expect(match.json()).toMatchObject({ missingFilter: false, total: 1 });
+  await app.close();
+  db.close();
+});
+
+it('sorts and counts certificate expiry before limiting and invalidates the cache on configuration changes', async () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(
+    `CREATE TABLE services(id INTEGER, category TEXT); CREATE TABLE service_groups(id INTEGER, name TEXT, page_id INTEGER); CREATE TABLE pages(id INTEGER, name TEXT, position INTEGER); CREATE TABLE service_observation_history(service_id INTEGER, signature TEXT, observed_at INTEGER, observation TEXT); CREATE TABLE service_observations(service_id INTEGER, signature TEXT, observation TEXT); CREATE TABLE config_version(id INTEGER PRIMARY KEY, version INTEGER); INSERT INTO config_version VALUES (1, 1); INSERT INTO pages VALUES (1, 'Home', 0); INSERT INTO service_groups VALUES (1, 'Media', 1);`,
+  );
+  const now = Date.now();
+  const { serviceSignature } = await import('../monitoring/index.js');
+  const services = Array.from({ length: 7 }, (_, index) => ({
+    id: index + 1,
+    name: `Service ${index + 1}`,
+    url: 'https://example.test',
+    allowPrivate: false,
+    checkInsecure: false,
+    checkType: 'tls',
+    checkInterval: 60,
+    expectedStatus: null,
+    checkPath: null,
+    checkUrl: null,
+    checkMatch: null,
+  }));
+  for (const service of services) {
+    db.prepare("INSERT INTO services VALUES (?, 'Media')").run(service.id);
+    if (service.id < 7)
+      db.prepare('INSERT INTO service_observation_history VALUES (?, ?, ?, ?)').run(
+        service.id,
+        serviceSignature(service as never),
+        now - 1000,
+        JSON.stringify({ certExpiresAt: now + (4 - service.id) * 1000 }),
+      );
+  }
+  const app = Fastify();
+  registerWidgetMonitoringRoutes(
+    app,
+    db,
+    { list: () => services } as never,
+    { snapshot: () => ({}) } as never,
+    { open: () => ({}) } as never,
+    { current: () => null },
+  );
+  const query = '/api/widget-sources/monitoring/certificates?limit=5';
+  const result = (await app.inject(query)).json();
+  expect(result.total).toBe(7);
+  expect(result.items.map((item: { id: number }) => item.id)).toEqual([6, 5, 4, 3, 2]);
+  db.prepare('DELETE FROM services WHERE id=6').run();
+  db.prepare('UPDATE config_version SET version=version+1').run();
+  const next = (await app.inject(query)).json();
+  expect(next.total).toBe(6);
+  expect(next.items.map((item: { id: number }) => item.id)).toEqual([5, 4, 3, 2, 1]);
   await app.close();
   db.close();
 });

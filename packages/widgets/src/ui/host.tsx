@@ -1,6 +1,7 @@
 import type {
   AvailabilityRange,
   MonitoringAvailability,
+  MonitoringCertificates,
   MonitoringIncidents,
   MonitoringSummary,
   MonitoringProblems,
@@ -122,6 +123,10 @@ export type WidgetSourceParams = Record<string, string | number | boolean | unde
 
 export type WidgetHost = {
   monitoring?: {
+    readCertificates?: (
+      query: { pages: string[]; groups: string[] },
+      signal: AbortSignal,
+    ) => Promise<MonitoringCertificates>;
     readProblems?: (
       query: MonitoringProblemsQuery,
       signal: AbortSignal,

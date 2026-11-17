@@ -1,3 +1,4 @@
+import { widgetCertificateExpiryWidget } from './widgets/certificate-expiry/definition.js';
 import { widgetQuickLinksWidget } from './widgets/quick-links/definition.js';
 import { widgetAvailabilityWidget } from './widgets/availability/definition.js';
 import { widgetDomainExpiryWidget } from './widgets/domain-expiry/definition.js';
@@ -29,6 +30,7 @@ const widgets = {
   'domain-expiry': widgetDomainExpiryWidget,
   'quick-links': widgetQuickLinksWidget,
   availability: widgetAvailabilityWidget,
+  'certificate-expiry': widgetCertificateExpiryWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];

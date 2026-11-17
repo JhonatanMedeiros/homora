@@ -1,4 +1,8 @@
 import {
+  en as widgetCertificateExpiry,
+  ptBR as widgetCertificateExpiryPt,
+} from './widgets/certificate-expiry/messages.js';
+import {
   en as widgetQuickLinks,
   ptBR as widgetQuickLinksPt,
 } from './widgets/quick-links/messages.js';
@@ -39,6 +43,7 @@ export const widgetEnglish = {
   ...widgetDomainExpiry,
   ...widgetQuickLinks,
   ...widgetAvailability,
+  ...widgetCertificateExpiry,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -55,4 +60,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetDomainExpiryPt,
   ...widgetQuickLinksPt,
   ...widgetAvailabilityPt,
+  ...widgetCertificateExpiryPt,
 };

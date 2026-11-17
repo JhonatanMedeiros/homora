@@ -90,6 +90,8 @@ export type {
   MonitoringAvailabilityTarget,
   MonitoringCounts,
   MonitoringSummary,
+  MonitoringCertificate,
+  MonitoringCertificates,
   MonitoringProblem,
   MonitoringProblems,
   MonitoringIncident,
