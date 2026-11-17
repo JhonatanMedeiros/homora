@@ -48,7 +48,8 @@
     "./rss-feed/ui": "./src/widgets/rss-feed/ui/index.tsx",
     "./weather/ui": "./src/widgets/weather/ui/index.tsx",
     "./public-ip/ui": "./src/widgets/public-ip/ui/index.tsx",
-    "./domain-expiry/ui": "./src/widgets/domain-expiry/ui/index.tsx"
+    "./domain-expiry/ui": "./src/widgets/domain-expiry/ui/index.tsx",
+    "./availability/ui": "./src/widgets/availability/ui/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

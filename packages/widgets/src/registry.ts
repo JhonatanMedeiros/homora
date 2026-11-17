@@ -1,3 +1,4 @@
+import { widgetAvailabilityWidget } from './widgets/availability/definition.js';
 import { widgetDomainExpiryWidget } from './widgets/domain-expiry/definition.js';
 import { widgetPublicIpWidget } from './widgets/public-ip/definition.js';
 import { widgetWeatherWidget } from './widgets/weather/definition.js';
@@ -25,6 +26,7 @@ const widgets = {
   weather: widgetWeatherWidget,
   'public-ip': widgetPublicIpWidget,
   'domain-expiry': widgetDomainExpiryWidget,
+  availability: widgetAvailabilityWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];

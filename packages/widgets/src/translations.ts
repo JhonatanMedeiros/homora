@@ -1,4 +1,8 @@
 import {
+  en as widgetAvailability,
+  ptBR as widgetAvailabilityPt,
+} from './widgets/availability/messages.js';
+import {
   en as widgetDomainExpiry,
   ptBR as widgetDomainExpiryPt,
 } from './widgets/domain-expiry/messages.js';
@@ -29,6 +33,7 @@ export const widgetEnglish = {
   ...widgetWeather,
   ...widgetPublicIp,
   ...widgetDomainExpiry,
+  ...widgetAvailability,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -43,4 +48,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetWeatherPt,
   ...widgetPublicIpPt,
   ...widgetDomainExpiryPt,
+  ...widgetAvailabilityPt,
 };

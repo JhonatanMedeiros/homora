@@ -10,13 +10,18 @@ import {
 } from '@homora/widgets/ui';
 import { tOr, useI18n } from '@/i18n';
 import type {
+  MonitoringAvailability,
   MonitoringIncidents,
   WeatherGeocodeResponse,
   WeatherObservation,
   WeatherProviderSummary,
 } from '@homora/widgets';
 import { parseWidgetMonitoringSource } from '@/hooks/use-widget-monitoring-source';
-import type { MonitoringProblemsQuery } from '@homora/widgets/ui';
+import type {
+  MonitoringAvailabilityQuery,
+  MonitoringProblemsQuery,
+  MonitoringTargetOption,
+} from '@homora/widgets/ui';
 
 async function getJson(path: string, signal: AbortSignal) {
   const response = await fetch(path, { signal });
@@ -72,6 +77,39 @@ export async function readProblems(query: MonitoringProblemsQuery, signal: Abort
   return parseWidgetMonitoringSource(
     await getJson(`/api/widget-sources/monitoring/problems?${params}`, signal),
   );
+}
+
+export async function readAvailability(
+  query: MonitoringAvailabilityQuery,
+  signal: AbortSignal,
+): Promise<MonitoringAvailability> {
+  const params = new URLSearchParams({
+    target: query.target,
+    range: query.range,
+  });
+  return getJson(`/api/widget-sources/monitoring/availability?${params}`, signal);
+}
+
+async function readTargets(signal: AbortSignal): Promise<MonitoringTargetOption[]> {
+  const [services, probes] = await Promise.all([
+    getJson('/api/services', signal) as Promise<{ name: string }[]>,
+    getJson('/api/probes', signal) as Promise<{ name: string }[]>,
+  ]);
+  const seen = new Set<string>();
+  const items: MonitoringTargetOption[] = [];
+  for (const service of services) {
+    if (!seen.has(service.name)) {
+      seen.add(service.name);
+      items.push({ name: service.name, isService: true });
+    }
+  }
+  for (const probe of probes) {
+    if (!seen.has(probe.name)) {
+      seen.add(probe.name);
+      items.push({ name: probe.name, isService: false });
+    }
+  }
+  return items.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function readWidgetSource<T = unknown>(
@@ -184,6 +222,8 @@ export function WidgetHost({
           readSummary,
           readScopes,
           readProblems,
+          readAvailability,
+          readTargets,
           filterStatus,
         },
         weather: weatherHost,
