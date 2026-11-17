@@ -1,3 +1,4 @@
+import { splitDurationMs } from '@homora/utils';
 import i18next from 'i18next';
 import type { Locale } from '@homora/i18n';
 import { notificationEnglish, notificationPortuguese } from '@homora/i18n/notifications';
@@ -25,16 +26,14 @@ export function notificationText(locale: Locale, event: NotificationEvent): stri
   );
   if (event.latencyMs !== null) lines.push(`${t('latency')}: ${event.latencyMs} ms`);
   if (event.outageDurationMs !== undefined) {
-    let seconds = Math.floor(event.outageDurationMs / 1000);
+    const duration = splitDurationMs(event.outageDurationMs);
     const parts: string[] = [];
-    for (const [unit, size] of [
-      ['day', 86400],
-      ['hour', 3600],
-      ['minute', 60],
-      ['second', 1],
+    for (const [unit, value] of [
+      ['day', duration.days],
+      ['hour', duration.hours],
+      ['minute', duration.minutes],
+      ['second', duration.seconds],
     ] as const) {
-      const value = Math.floor(seconds / size);
-      seconds %= size;
       if (value) parts.push(`${value} ${t(unit)}`);
     }
     lines.push(`${t('duration')}: ${parts.join(' ') || `0 ${t('second')}`}`);

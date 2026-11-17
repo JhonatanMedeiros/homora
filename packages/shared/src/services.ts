@@ -1,4 +1,5 @@
 import { BRAND_ICON_NAMES } from '@homora/icons';
+import { hasControlChars, parseHttpUrl } from '@homora/utils';
 import type { HostLink } from './hosts.js';
 import type { ServiceLink } from './service-links.js';
 
@@ -19,9 +20,9 @@ export const CERT_WARNING_DAYS = 14;
 /** A keyword, or `path=value` for the JSON check; printable text only. */
 export const isCheckMatch = (value: unknown): value is string =>
   typeof value === 'string' &&
-  value.length >= 1 &&
+  value.length > 0 &&
   value.length <= CHECK_MATCH_MAX &&
-  !Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127);
+  !hasControlChars(value);
 export type ExpectedStatus = string | number;
 
 export const isExpectedStatus = (value: unknown): value is ExpectedStatus =>
@@ -33,27 +34,16 @@ export const isCheckPath = (value: unknown): value is string =>
   value.length <= 2048 &&
   /^\/(?!\/)/.test(value) &&
   !/[\s\\#]/.test(value) &&
-  !Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127) &&
+  !hasControlChars(value) &&
   !value.includes('://');
 
 /** A complete monitoring target, without credentials, query, or fragment. */
-export const isCheckUrl = (value: unknown): value is string => {
-  if (typeof value !== 'string' || value.length > 2048 || /[\s\\]/.test(value)) return false;
-  try {
-    const url = new URL(value);
-    return (
-      ['http:', 'https:'].includes(url.protocol) &&
-      !url.username &&
-      !url.password &&
-      !url.search &&
-      !url.hash &&
-      !value.includes('?') &&
-      !value.includes('#')
-    );
-  } catch {
-    return false;
-  }
-};
+export const isCheckUrl = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  !/[\s\\]/.test(value) &&
+  !value.includes('?') &&
+  !value.includes('#') &&
+  parseHttpUrl(value, { allowQuery: false, allowHash: false, maxLength: 2048 }) !== null;
 
 export const CHECK_INTERVAL_MIN = 30;
 export const CHECK_INTERVAL_MAX = 3600;
@@ -267,7 +257,7 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
     name,
     category,
     url: url.href,
-    ...(input.alias !== undefined ? { alias: input.alias } : {}),
+    ...(input.alias === undefined ? {} : { alias: input.alias }),
     description: String(input.description ?? '')
       .trim()
       .slice(0, 140),
@@ -277,7 +267,7 @@ export function validateService(input: Partial<ServiceInput>): ServiceInput {
         ? Number(input.position)
         : 0,
     allowPrivate: input.allowPrivate === true,
-    ...(input.checkInsecure !== undefined ? { checkInsecure: input.checkInsecure === true } : {}),
+    ...(input.checkInsecure === undefined ? {} : { checkInsecure: input.checkInsecure === true }),
     ...(OPEN_TARGETS.some((target) => target === input.openTarget)
       ? { openTarget: input.openTarget }
       : {}),

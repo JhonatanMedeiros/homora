@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { MAX_DEPENDENCIES_PER_SERVICE, type Dependency } from '@homora/shared';
 
-export const MAX_DEPENDENCIES_PER_SERVICE = 50;
+export { MAX_DEPENDENCIES_PER_SERVICE, type Dependency };
 
 export class DependencyError extends Error {
   constructor(
@@ -14,8 +15,6 @@ export class DependencyError extends Error {
     this.name = 'DependencyError';
   }
 }
-
-export type Dependency = { serviceId: number; dependsOnId: number };
 
 /**
  * Manual "service A depends on service B" records. Homora's own data: nothing here reads or

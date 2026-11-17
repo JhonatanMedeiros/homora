@@ -15,6 +15,7 @@
     "@homora/integrations": "workspace:*",
     "@homora/shared": "workspace:*",
     "@homora/ui": "workspace:*",
+    "@homora/utils": "workspace:*",
     "@homora/widgets": "workspace:*",
     "@simplewebauthn/browser": "13.3.0",
     "@tailwindcss/vite": "4.3.5",

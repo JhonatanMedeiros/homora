@@ -1,4 +1,4 @@
-import type { CheckType, Service } from '@homora/shared';
+import { CORE_AGENT_SCOPES, type CheckType, type Service } from '@homora/shared';
 import { integrationScopeOptions } from '@homora/integrations';
 import { formatDateTime, t, tOr, type MessageKey } from '@/i18n';
 
@@ -52,61 +52,16 @@ export type Diff = {
   before?: unknown;
 };
 
+const coreScopeOption = (id: (typeof CORE_AGENT_SCOPES)[number]) => ({
+  id,
+  label: `scope.${id}` as const,
+  hint: `scope.${id}.hint` as const,
+});
+
 export const SCOPES = [
-  { id: 'services:read', label: 'scope.services:read', hint: 'scope.services:read.hint' },
-  { id: 'probes:read', label: 'scope.probes:read', hint: 'scope.probes:read.hint' },
-  { id: 'incidents:read', label: 'scope.incidents:read', hint: 'scope.incidents:read.hint' },
-  {
-    id: 'notifications:read',
-    label: 'scope.notifications:read',
-    hint: 'scope.notifications:read.hint',
-  },
-  {
-    id: 'organization:propose',
-    label: 'scope.organization:propose',
-    hint: 'scope.organization:propose.hint',
-  },
-  { id: 'probes:propose', label: 'scope.probes:propose', hint: 'scope.probes:propose.hint' },
-  {
-    id: 'incidents:propose',
-    label: 'scope.incidents:propose',
-    hint: 'scope.incidents:propose.hint',
-  },
-  { id: 'agents:read', label: 'scope.agents:read', hint: 'scope.agents:read.hint' },
-  { id: 'agents:propose', label: 'scope.agents:propose', hint: 'scope.agents:propose.hint' },
-  { id: 'audit:read', label: 'scope.audit:read', hint: 'scope.audit:read.hint' },
+  ...CORE_AGENT_SCOPES.slice(0, 10).map(coreScopeOption),
   ...integrationScopeOptions,
-  {
-    id: 'proposals:create',
-    label: 'scope.proposals:create',
-    hint: 'scope.proposals:create.hint',
-  },
-  { id: 'groups:propose', label: 'scope.groups:propose', hint: 'scope.groups:propose.hint' },
-  {
-    id: 'maintenance:propose',
-    label: 'scope.maintenance:propose',
-    hint: 'scope.maintenance:propose.hint',
-  },
-  {
-    id: 'public-status:propose',
-    label: 'scope.public-status:propose',
-    hint: 'scope.public-status:propose.hint',
-  },
-  { id: 'hosts:read', label: 'scope.hosts:read', hint: 'scope.hosts:read.hint' },
-  { id: 'hosts:propose', label: 'scope.hosts:propose', hint: 'scope.hosts:propose.hint' },
-  { id: 'widgets:read', label: 'scope.widgets:read', hint: 'scope.widgets:read.hint' },
-  { id: 'widgets:propose', label: 'scope.widgets:propose', hint: 'scope.widgets:propose.hint' },
-  {
-    id: 'integrations:read',
-    label: 'scope.integrations:read',
-    hint: 'scope.integrations:read.hint',
-  },
-  {
-    id: 'connections:propose',
-    label: 'scope.connections:propose',
-    hint: 'scope.connections:propose.hint',
-  },
-  { id: 'discovery:read', label: 'scope.discovery:read', hint: 'scope.discovery:read.hint' },
+  ...CORE_AGENT_SCOPES.slice(10).map(coreScopeOption),
 ] as const;
 /** Scopes that let an agent suggest changes (everything else only reads). */
 export const isWriteScope = (id: string) => id === 'proposals:create' || id.endsWith(':propose');

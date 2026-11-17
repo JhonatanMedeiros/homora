@@ -18,6 +18,7 @@
     "@homora/icons": "workspace:*",
     "@homora/integrations": "workspace:*",
     "@homora/shared": "workspace:*",
+    "@homora/utils": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.2",
     "better-auth": "1.7.21",
     "drizzle-orm": "0.45.4",

@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@homora/integrations": "workspace:*",
-    "@homora/icons": "workspace:*"
+    "@homora/icons": "workspace:*",
+    "@homora/utils": "workspace:*"
   },
   "devDependencies": {
     "typescript": "6.0.3"

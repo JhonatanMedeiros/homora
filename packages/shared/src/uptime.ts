@@ -1,3 +1,5 @@
+import { hasControlChars } from '@homora/utils';
+
 export const UPTIME_RANGES = ['24h', '7d', '30d'] as const;
 export type UptimeRange = (typeof UPTIME_RANGES)[number];
 export type UptimeBucketStatus = 'up' | 'down' | 'partial' | 'unknown';
@@ -41,7 +43,7 @@ export function parseMonitorSettings(value: unknown): MonitorSettings | null {
     string,
     unknown
   >;
-  if (Object.keys(rest).length) return null;
+  if (Object.keys(rest).length > 0) return null;
   const threshold = (n: unknown): n is number =>
     Number.isSafeInteger(n) && Number(n) >= 1 && Number(n) <= THRESHOLD_MAX;
   if (!threshold(failureThreshold) || !threshold(recoveryThreshold)) return null;
@@ -175,10 +177,12 @@ export const TAGS_MAX_PER_SERVICE = 6;
 /** Lower-case, trimmed, inner whitespace collapsed to "-"; `null` when nothing usable is left. */
 export function normalizeTag(value: unknown): string | null {
   if (typeof value !== 'string') return null;
-  const tag = value.trim().toLowerCase().replace(/\s+/g, '-');
+  const tag = value.trim().toLowerCase().replaceAll(/\s+/g, '-');
   return tag.length > 0 &&
     tag.length <= TAG_MAX_LENGTH &&
-    ![...tag].some((char) => char.charCodeAt(0) < 32 || char === '<' || char === '>')
+    !hasControlChars(tag) &&
+    !tag.includes('<') &&
+    !tag.includes('>')
     ? tag
     : null;
 }

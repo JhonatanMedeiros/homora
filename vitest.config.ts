@@ -39,7 +39,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['packages/shared/src/**/*.ts', 'packages/db/src/**/*.ts'],
+      include: [
+        'packages/shared/src/**/*.ts',
+        'packages/utils/src/**/*.ts',
+        'packages/db/src/**/*.ts',
+      ],
     },
   },
 });

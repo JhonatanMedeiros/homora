@@ -1,3 +1,4 @@
+import { hasControlChars, parseHttpUrl } from '@homora/utils';
 import type { ManifestValidationHost } from './backend-manifest-validation.js';
 export type ManifestHost = ManifestValidationHost & { inputError(code: string): Error };
 import type { IntegrationManifest, ManifestField } from './integration-manifest.js';
@@ -18,31 +19,18 @@ import {
 /** Flat configuration: `url`, public text fields, and the credentials (`secret`, `tokenId`). */
 export type { ManifestConfig, ManifestData } from './backend-manifest-response.js';
 
-const hasControl = (value: string) =>
-  Array.from(value).some((char) => {
-    const code = char.charCodeAt(0);
-    return code < 32 || code === 127;
-  });
 const invalidResponse = (label: string) => new Error(`Invalid response from ${label}.`);
 
 function validateUrl(field: ManifestField, input: unknown, inputError: ManifestHost['inputError']) {
   const code = field.errorCode ?? (field.httpsOnly ? 'https-url-required' : 'invalid-url');
-  if (typeof input !== 'string' || input.length > field.maxLength) throw inputError(code);
-  let url: URL;
-  try {
-    url = new URL(input);
-  } catch {
-    throw inputError(code);
-  }
-  if (
-    !(field.httpsOnly ? url.protocol === 'https:' : ['http:', 'https:'].includes(url.protocol)) ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    (!field.allowPath && url.pathname !== '/')
-  )
-    throw inputError(code);
+  const url = parseHttpUrl(input, {
+    httpsOnly: field.httpsOnly,
+    allowPath: Boolean(field.allowPath),
+    allowQuery: false,
+    allowHash: false,
+    maxLength: field.maxLength,
+  });
+  if (!url) throw inputError(code);
   return field.allowPath ? url.toString().replace(/\/+$/, '') : url.origin;
 }
 
@@ -60,7 +48,7 @@ function validateField(
   if (
     typeof input !== 'string' ||
     input.length > field.maxLength ||
-    hasControl(input) ||
+    hasControlChars(input) ||
     (field.pattern !== undefined && !new RegExp(`^(?:${field.pattern})$`).test(input))
   )
     throw inputError(code);
@@ -102,7 +90,7 @@ function authorization(manifest: IntegrationManifest, config: ManifestConfig) {
 }
 
 function buildPath(template: string, config: ManifestConfig) {
-  return template.replace(/\{([A-Za-z0-9]+)\}/g, (_match, key: string) =>
+  return template.replaceAll(/\{([A-Za-z0-9]+)\}/g, (_match, key: string) =>
     encodeURIComponent(config[key] ?? ''),
   );
 }

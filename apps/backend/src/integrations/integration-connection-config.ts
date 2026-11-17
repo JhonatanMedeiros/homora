@@ -1,4 +1,4 @@
-import { X509Certificate } from 'node:crypto';
+import { isValidCaPem } from '@homora/utils/node';
 import { integrationInstances } from '@homora/db';
 import { z } from 'zod';
 import { InputError } from '../api-error.js';
@@ -42,18 +42,7 @@ const credentialsSchema = z
   .strict();
 
 function validateCa(ca: string) {
-  if (
-    Buffer.byteLength(ca) > 65536 ||
-    !/^\s*-----BEGIN CERTIFICATE-----[\r\n]+[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----\s*$/.test(
-      ca,
-    )
-  )
-    throw new InputError('invalid-ca');
-  try {
-    if (!new X509Certificate(ca).ca) throw new Error();
-  } catch {
-    throw new InputError('invalid-ca');
-  }
+  if (!isValidCaPem(ca)) throw new InputError('invalid-ca');
 }
 
 export function parseConnectionData(row: Row): ConnectionData {

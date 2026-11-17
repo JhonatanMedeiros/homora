@@ -62,7 +62,7 @@ Backend (`apps/backend/src`). Folders are capabilities; the first group has an o
 
 `mcp-server.ts` stays at the root because `dist/mcp-server.js` is the stdio entry point users configure in their clients.
 
-Packages: `@homora/db` (schema, migrations), `@homora/shared` (contracts and validation shared by both apps; it does
+Packages: `@homora/utils` (pure, domain-agnostic helpers for URL/host checks, text, safe object traversal, time/durations and WCAG colour maths; `@homora/utils/node` adds Node-only PEM CA validation), `@homora/db` (schema, migrations), `@homora/shared` (contracts and validation shared by both apps; it does
 **not** re-export the integration SDK or icons, so import those from `@homora/integrations` and `@homora/icons`),
 `@homora/integrations` (SDK and one folder per service), `@homora/widgets` (widget contract), `@homora/i18n`,
 `@homora/icons`. `@homora/shared` still imports the guest-name helpers of `@homora/integrations` in `hosts.ts`;

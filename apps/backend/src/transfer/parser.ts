@@ -1,3 +1,4 @@
+import { isRecord } from '@homora/utils';
 import { isPortableWidget } from '@homora/widgets';
 import { resolveWidget } from '@homora/integrations';
 import { parse } from 'yaml';
@@ -47,8 +48,7 @@ export function withinParseBudget(content: string): boolean {
   return true;
 }
 
-export const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+export { isRecord };
 
 /** Reads the optional `links` of a service; invalid items are dropped with a warning. */
 function parseLinks(raw: unknown, path: string, issues: ImportIssue[]): ImportedLink[] {

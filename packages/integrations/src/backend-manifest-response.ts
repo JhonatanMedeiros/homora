@@ -1,3 +1,4 @@
+import { getOwnPath } from '@homora/utils';
 import type { Extraction, IntegrationManifest, JsonPath, Literal } from './integration-manifest.js';
 
 export type ManifestRow = Record<string, string | number | boolean>;
@@ -13,18 +14,7 @@ export type ManifestConfig = Record<string, string>;
 
 /** Reads only own properties and valid array indexes from an untrusted response body. */
 export function walkManifestPath(value: unknown, path: JsonPath): unknown {
-  let current = value;
-  for (const step of path) {
-    if (typeof step === 'number') {
-      if (!Array.isArray(current)) return undefined;
-      current = current[step];
-    } else {
-      if (!current || typeof current !== 'object' || Array.isArray(current)) return undefined;
-      if (!Object.hasOwn(current, step)) return undefined;
-      current = (current as Record<string, unknown>)[step];
-    }
-  }
-  return current;
+  return getOwnPath(value, path);
 }
 
 const maxEntries = 10_000;
@@ -200,7 +190,7 @@ export function requiredValuesMatch(
   return (
     manifest.require?.every((rule) => {
       const actual = walkManifestPath(body(rule.request), rule.path);
-      const expected = rule.equalsConfig !== undefined ? config[rule.equalsConfig] : rule.equals;
+      const expected = rule.equalsConfig === undefined ? rule.equals : config[rule.equalsConfig];
       return expected !== undefined && actual === expected;
     }) ?? true
   );

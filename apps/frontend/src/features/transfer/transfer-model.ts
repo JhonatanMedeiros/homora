@@ -1,49 +1,22 @@
-export type IssueCode =
-  | 'invalid-syntax'
-  | 'invalid-document'
-  | 'unsupported-version'
-  | 'too-many-groups'
-  | 'too-many-services'
-  | 'invalid-group'
-  | 'invalid-service'
-  | 'invalid-name'
-  | 'invalid-url'
-  | 'icon-ignored'
-  | 'duplicate-in-file'
-  | 'icon-unsupported'
-  | 'columns-ignored'
-  | 'open-target-ignored'
-  | 'link-ignored'
-  | 'link-limit'
-  | 'check-ignored'
-  | 'widget-ignored'
-  | 'widget-source-unavailable'
-  | 'widget-invalid'
-  | 'widget-limit'
-  | 'pages-ignored'
-  | 'group-renamed'
-  | 'page-invalid'
-  | 'page-limit';
-export type Issue = { path: string; code: IssueCode; severity: 'error' | 'warning' };
-export type Plan = {
-  pages?: { name: string; status: 'new' | 'existing' }[];
-  groups: { name: string; status: 'new' | 'existing' }[];
-  services: { group: string; name: string; url: string; status: 'new' | 'duplicate' }[];
-  widgets?: { page: string; name: string; type: string; status: 'new' | 'skipped' }[];
-  issues: Issue[];
-  summary: {
-    newGroups: number;
+import {
+  MAX_TRANSFER_CHARS,
+  TRANSFER_SOURCES,
+  type ImportIssue,
+  type ImportPlan,
+  type IssueCode,
+  type TransferSource,
+} from '@homora/shared';
+
+export type { IssueCode, ImportIssue as Issue, TransferSource as Source };
+export type Plan = Omit<ImportPlan, 'pages' | 'widgets' | 'summary'> & {
+  pages?: ImportPlan['pages'];
+  widgets?: ImportPlan['widgets'];
+  summary: Omit<ImportPlan['summary'], 'newPages' | 'newWidgets'> & {
     newPages?: number;
-    newServices: number;
     newWidgets?: number;
-    duplicates: number;
-    errors: number;
-    warnings: number;
   };
 };
 export type Preview = { version: number; plan: Plan };
 
-export const MAX_FILE_BYTES = 1_000_000;
-
-export type Source = 'homora' | 'homepage' | 'dashy';
-export const SOURCES: Source[] = ['homora', 'homepage', 'dashy'];
+export const MAX_FILE_BYTES = MAX_TRANSFER_CHARS;
+export const SOURCES: TransferSource[] = [...TRANSFER_SOURCES];

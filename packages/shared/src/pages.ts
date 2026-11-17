@@ -1,3 +1,5 @@
+import { hasControlChars } from '@homora/utils';
+
 /** Pages are the tabs of the Home. Every group lives on exactly one page. */
 export const MAX_PAGES = 12;
 export const PAGE_NAME_MAX = 40;
@@ -10,9 +12,7 @@ export type Page = { id: number; name: string; position: number };
 export function normalizePageName(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const name = value.trim();
-  // eslint-disable-next-line no-control-regex
-  if (name.length < 1 || name.length > PAGE_NAME_MAX || /[\u0000-\u001f\u007f]/.test(name))
-    return null;
+  if (name.length === 0 || name.length > PAGE_NAME_MAX || hasControlChars(name)) return null;
   return name;
 }
 

@@ -45,6 +45,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
+  "dependencies": {
+    "@homora/utils": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "6.0.3",
     "@types/react": "19.3.0",

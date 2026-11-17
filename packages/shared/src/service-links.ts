@@ -1,3 +1,4 @@
+import { hasControlChars, hostOf, parseHttpUrl } from '@homora/utils';
 import { OPEN_TARGETS, type OpenTarget } from './services.js';
 
 /**
@@ -58,10 +59,8 @@ export const SUGGESTED_LINK_TYPES: readonly { key: string; color: LinkColor }[] 
 /** A trimmed type name of 1 to 24 characters without control characters, or `null`. */
 export function normalizeLinkTypeName(value: unknown): string | null {
   if (typeof value !== 'string') return null;
-  const name = value.trim().replace(/\s+/g, ' ');
-  // eslint-disable-next-line no-control-regex
-  if (name.length < 1 || name.length > LINK_TYPE_NAME_MAX || /[\u0000-\u001f\u007f]/.test(name))
-    return null;
+  const name = value.trim().replaceAll(/\s+/g, ' ');
+  if (name.length === 0 || name.length > LINK_TYPE_NAME_MAX || hasControlChars(name)) return null;
   return name;
 }
 
@@ -72,14 +71,8 @@ export const sameLinkTypeName = (a: string, b: string) =>
 /** Same policy as the main URL: HTTP or HTTPS, no credentials. Returns the normalized URL or `null`. */
 export function normalizeLinkUrl(value: unknown): string | null {
   if (typeof value !== 'string' || value.length > LINK_URL_MAX) return null;
-  let url: URL;
-  try {
-    url = new URL(value.trim());
-  } catch {
-    return null;
-  }
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return null;
-  return url.href.length > LINK_URL_MAX ? null : url.href;
+  const url = parseHttpUrl(value.trim());
+  return url && url.href.length <= LINK_URL_MAX ? url.href : null;
 }
 
 /** A link name: trimmed, up to 80 characters, no control characters; `null` when invalid. */
@@ -87,8 +80,7 @@ export function normalizeLinkName(value: unknown): string | null {
   if (value === undefined || value === null) return '';
   if (typeof value !== 'string') return null;
   const name = value.trim();
-  // eslint-disable-next-line no-control-regex
-  if (name.length > LINK_NAME_MAX || /[\u0000-\u001f\u007f]/.test(name)) return null;
+  if (name.length > LINK_NAME_MAX || hasControlChars(name)) return null;
   return name;
 }
 
@@ -129,11 +121,7 @@ export function validateServiceLinks(input: unknown): ValidLinkInput[] | null {
 export function linkLabel(link: Pick<ServiceLink, 'name' | 'url' | 'type'>): string {
   if (link.name) return link.name;
   if (link.type) return link.type.name;
-  try {
-    return new URL(link.url).host;
-  } catch {
-    return link.url;
-  }
+  return hostOf(link.url);
 }
 
 /** How a link opens: its own choice, else the service's, else a new tab. */

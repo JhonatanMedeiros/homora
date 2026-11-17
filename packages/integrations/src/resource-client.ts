@@ -1,3 +1,4 @@
+import { isHttpUrl, isRecord, sameUrl } from '@homora/utils';
 import {
   RESOURCE_ID_PATTERN,
   type IntegrationResource,
@@ -6,9 +7,7 @@ import {
 } from './resource-contracts.js';
 
 /** Everything here treats the inventory as untrusted: shapes and sizes are checked before use. */
-const STATES: readonly ResourceState[] = ['running', 'degraded', 'stopped', 'unknown'];
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === 'object' && !Array.isArray(value);
+const STATES = new Set<ResourceState>(['running', 'degraded', 'stopped', 'unknown']);
 const count = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 const text = (value: unknown, max: number): value is string =>
@@ -25,7 +24,7 @@ function parseResource(value: unknown): IntegrationResource | null {
     type,
     name,
     description: text(description, 1024) ? description : null,
-    state: STATES.includes(state as ResourceState) ? (state as ResourceState) : 'unknown',
+    state: STATES.has(state as ResourceState) ? (state as ResourceState) : 'unknown',
     rawStatus: text(rawStatus, 64) ? rawStatus : null,
     urls: Array.isArray(urls)
       ? urls.filter((url): url is string => text(url, 2048) && isHttpUrl(url)).slice(0, 5)
@@ -79,28 +78,7 @@ export function parseLinks(body: unknown): ResourceLink[] {
   return links;
 }
 
-export function isHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;
-  } catch {
-    return false;
-  }
-}
-
-/** Addresses compare by host and path, ignoring case, a trailing slash and the default port. */
-export function sameUrl(a: string | null | undefined, b: string | null | undefined): boolean {
-  if (!a || !b) return false;
-  const key = (value: string) => {
-    try {
-      const url = new URL(value);
-      return `${url.protocol}//${url.host.toLowerCase()}${url.pathname.replace(/\/+$/, '')}`;
-    } catch {
-      return value.trim().toLowerCase();
-    }
-  };
-  return key(a) === key(b);
-}
+export { isHttpUrl, sameUrl };
 
 export type LinkView =
   | { kind: 'unavailable' }
@@ -121,7 +99,7 @@ export function viewLink(link: ResourceLink, inventory: IntegrationResource[] | 
   const resource = inventory.find((item) => item.uuid === link.resourceUuid);
   if (!resource) return { kind: 'missing' };
   const known = link.seenUrl !== null && resource.urls.some((url) => sameUrl(url, link.seenUrl));
-  const urlChanged = link.seenUrl !== null ? !known : resource.urls.length > 0;
+  const urlChanged = link.seenUrl === null ? resource.urls.length > 0 : !known;
   return {
     kind: 'found',
     resource,

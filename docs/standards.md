@@ -11,7 +11,10 @@ are documented in [architecture](architecture.md).
   integration credentials, or infrastructure APIs directly.
 - `apps/backend` is the trusted boundary for authentication, authorization, validation,
   business logic, integrations, and persistence.
-- `packages/shared` contains shared schemas, types, and pure utility functions. It never
+- `packages/utils` contains pure, domain-agnostic utilities (URL/host helpers, text,
+  safe object traversal, time/durations, WCAG color math) with no `@homora/*`
+  dependencies; `@homora/utils/node` isolates Node-only helpers such as PEM CA validation.
+- `packages/shared` contains shared schemas, types, and domain-specific helpers. It never
   imports application-specific code, Node-only runtime modules, or secrets.
 - `packages/db` defines the SQLite schema, migrations, and technical database access.
   Authorization logic and product workflows belong in application services, not

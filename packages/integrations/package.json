@@ -106,6 +106,7 @@
   },
   "dependencies": {
     "zod": "4.6.7",
+    "@homora/utils": "workspace:*",
     "@homora/widgets": "workspace:*"
   }
 }
