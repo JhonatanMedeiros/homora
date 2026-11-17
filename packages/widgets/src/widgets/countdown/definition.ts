@@ -1,5 +1,5 @@
 import { defineWidget } from '../../index.js';
-import { isTimeZone } from '../clock/definition.js';
+import { isTimeZone } from '../../time-zone.js';
 
 export type CountdownConfig = {
   eventName: string;

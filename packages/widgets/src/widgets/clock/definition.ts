@@ -14,15 +14,8 @@ export const defaultClockConfig: ClockConfig = {
   date: true,
 };
 
-export function isTimeZone(value: string): boolean {
-  if (!value) return false;
-  try {
-    new Intl.DateTimeFormat('en', { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { isTimeZone } from '../../time-zone.js';
+export { isTimeZone, listTimeZones } from '../../time-zone.js';
 
 export const clockWidget = defineWidget<ClockConfig>({
   type: 'clock',
@@ -86,15 +79,3 @@ export const clockPresentation = definePresenter({
   present: (input: { locale: string; config: ClockConfig; now: Date }) =>
     formatClock(input.locale, input.config, input.now),
 });
-
-export function listTimeZones(): string[] {
-  try {
-    const supported = (
-      Intl as unknown as { supportedValuesOf?: (key: string) => string[] }
-    ).supportedValuesOf?.('timeZone');
-    if (supported?.length) return supported.includes('UTC') ? supported : ['UTC', ...supported];
-  } catch {
-    // Older runtimes: fall back to the zones that matter most.
-  }
-  return ['UTC'];
-}

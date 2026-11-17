@@ -28,7 +28,8 @@
     "integration:catalog": "node packages/integrations/scripts/integration-catalog.mjs --write",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "widget:create": "node scripts/create-widget.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",

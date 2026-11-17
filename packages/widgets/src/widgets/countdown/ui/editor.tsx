@@ -10,7 +10,7 @@ import { Input } from '@homora/ui/input';
 import { FieldGroup } from '@homora/ui/field';
 import { CalendarDays } from 'lucide-react';
 import { type CountdownConfig } from '../../../countdown.js';
-import { listTimeZones } from '../../../clock.js';
+import { listTimeZones } from '../../../time-zone.js';
 export function Editor({
   config,
   onChange,
