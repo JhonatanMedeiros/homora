@@ -2,6 +2,7 @@ import type {
   AvailabilityRange,
   MonitoringAvailability,
   MonitoringIncidents,
+  MonitoringMaintenance,
   MonitoringSummary,
   MonitoringProblems,
 } from '../monitoring.js';
@@ -35,6 +36,12 @@ export type MonitoringProblemsReading =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'ready'; data: MonitoringProblems; stale: boolean; now: number };
+export type MonitoringMaintenanceQuery = {
+  days: 1 | 7 | 30;
+  limit: number;
+  pages: string[];
+  groups: string[];
+};
 export type MonitoringAvailabilityQuery = {
   target: string;
   range: AvailabilityRange;
@@ -122,6 +129,10 @@ export type WidgetSourceParams = Record<string, string | number | boolean | unde
 
 export type WidgetHost = {
   monitoring?: {
+    readMaintenance?: (
+      query: MonitoringMaintenanceQuery,
+      signal: AbortSignal,
+    ) => Promise<MonitoringMaintenance>;
     readProblems?: (
       query: MonitoringProblemsQuery,
       signal: AbortSignal,
