@@ -1,0 +1,73 @@
+export const en = {
+  'pageWidgets.widgetDomainExpiry': 'Domain expiration (RDAP)',
+  'pageWidgets.widgetDomainExpiryDesc':
+    'Track public domain registration expiration via RDAP (not TLS certificates)',
+  'domainExpiryWidget.title': 'Display title (optional)',
+  'domainExpiryWidget.titlePlaceholder': 'Domains',
+  'domainExpiryWidget.domains': 'Public domains (up to {max})',
+  'domainExpiryWidget.domainsHint':
+    'Enter public hostnames only (e.g. example.com). IPs, ports, paths, and local domains are rejected.',
+  'domainExpiryWidget.domainPlaceholder': 'example.com',
+  'domainExpiryWidget.addDomain': 'Add domain',
+  'domainExpiryWidget.removeDomain': 'Remove domain {domain}',
+  'domainExpiryWidget.invalidDomain': 'Enter a valid public domain name.',
+  'domainExpiryWidget.warnDays': 'Warning threshold (days)',
+  'domainExpiryWidget.warnDaysHint':
+    'Highlight domains expiring within this many days (1–365). Default is 30.',
+  'domainExpiryWidget.sourceLabel': 'Domain registration (RDAP) — not TLS expiry',
+  'domainExpiryWidget.unconfigured':
+    'Add at least one public domain to track RDAP registration expiration.',
+  'domainExpiryWidget.loading': 'Checking domain registration expiration…',
+  'domainExpiryWidget.policyBlocked': 'RDAP lookup blocked by network policy.',
+  'domainExpiryWidget.error': 'Could not load domain registration expiration data.',
+  'domainExpiryWidget.stale': 'Showing cached RDAP data; refresh failed.',
+  'domainExpiryWidget.statusOk': 'Active',
+  'domainExpiryWidget.statusSoon': 'Expiring soon',
+  'domainExpiryWidget.statusExpired': 'Expired',
+  'domainExpiryWidget.statusUnknown': 'Unknown / unavailable',
+  'domainExpiryWidget.statusNotFound': 'Not found (unknown)',
+  'domainExpiryWidget.statusError': 'Lookup failed',
+  'domainExpiryWidget.statusPolicyBlocked': 'Blocked by policy',
+  'domainExpiryWidget.daysRemaining': '{days}d left',
+  'domainExpiryWidget.expiredAgo': 'Expired {days}d ago',
+  'domainExpiryWidget.expiredToday': 'Expired today',
+  'domainExpiryWidget.expiresToday': 'Expires today',
+  'domainExpiryWidget.noExpiryDate': 'No RDAP expiration date',
+} as const;
+
+export const ptBR: Record<keyof typeof en, string> = {
+  'pageWidgets.widgetDomainExpiry': 'Expiração de domínio (RDAP)',
+  'pageWidgets.widgetDomainExpiryDesc':
+    'Acompanhe a expiração do registro de domínios públicos via RDAP (não certificados TLS)',
+  'domainExpiryWidget.title': 'Título de exibição (opcional)',
+  'domainExpiryWidget.titlePlaceholder': 'Domínios',
+  'domainExpiryWidget.domains': 'Domínios públicos (até {max})',
+  'domainExpiryWidget.domainsHint':
+    'Informe apenas nomes de domínio públicos (ex.: example.com). IPs, portas, caminhos e domínios locais são rejeitados.',
+  'domainExpiryWidget.domainPlaceholder': 'example.com',
+  'domainExpiryWidget.addDomain': 'Adicionar domínio',
+  'domainExpiryWidget.removeDomain': 'Remover domínio {domain}',
+  'domainExpiryWidget.invalidDomain': 'Informe um nome de domínio público válido.',
+  'domainExpiryWidget.warnDays': 'Limite de aviso (dias)',
+  'domainExpiryWidget.warnDaysHint':
+    'Destaca domínios que expiram dentro dessa quantidade de dias (1–365). O padrão é 30.',
+  'domainExpiryWidget.sourceLabel': 'Registro de domínio (RDAP) — não expiração TLS',
+  'domainExpiryWidget.unconfigured':
+    'Adicione pelo menos um domínio público para acompanhar a expiração do registro via RDAP.',
+  'domainExpiryWidget.loading': 'Consultando expiração do registro de domínio…',
+  'domainExpiryWidget.policyBlocked': 'Consulta RDAP bloqueada pela política de rede.',
+  'domainExpiryWidget.error': 'Não foi possível carregar os dados de expiração de domínio.',
+  'domainExpiryWidget.stale': 'Exibindo dados RDAP em cache; a atualização falhou.',
+  'domainExpiryWidget.statusOk': 'Ativo',
+  'domainExpiryWidget.statusSoon': 'Expira em breve',
+  'domainExpiryWidget.statusExpired': 'Expirado',
+  'domainExpiryWidget.statusUnknown': 'Desconhecido / indisponível',
+  'domainExpiryWidget.statusNotFound': 'Não encontrado (desconhecido)',
+  'domainExpiryWidget.statusError': 'Falha na consulta',
+  'domainExpiryWidget.statusPolicyBlocked': 'Bloqueado pela política',
+  'domainExpiryWidget.daysRemaining': '{days}d restantes',
+  'domainExpiryWidget.expiredAgo': 'Expirou há {days}d',
+  'domainExpiryWidget.expiredToday': 'Expirou hoje',
+  'domainExpiryWidget.expiresToday': 'Expira hoje',
+  'domainExpiryWidget.noExpiryDate': 'Sem data de expiração RDAP',
+};

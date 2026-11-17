@@ -1,3 +1,4 @@
+import { widgetUI as widgetDomainExpiry } from '@homora/widgets/domain-expiry/ui';
 import { widgetUI as widgetPublicIp } from '@homora/widgets/public-ip/ui';
 import { widgetUI as widgetWeather } from '@homora/widgets/weather/ui';
 import { widgetUI as widgetRssFeed } from '@homora/widgets/rss-feed/ui';
@@ -26,6 +27,7 @@ const widgets = {
   'rss-feed': widgetRssFeed,
   weather: widgetWeather,
   'public-ip': widgetPublicIp,
+  'domain-expiry': widgetDomainExpiry,
 } satisfies Record<LocalWidgetType, WidgetUI>;
 export function getWidgetUI(type: string): WidgetUI | undefined {
   return Object.hasOwn(widgets, type) ? widgets[type as LocalWidgetType] : undefined;
