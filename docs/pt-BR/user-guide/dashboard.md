@@ -18,8 +18,10 @@ Em **Organizar**, adicione, edite, mova ou remova cartões e grupos. É possíve
 
 Abra os detalhes de um serviço para consultar verificações, latência e histórico. Marque serviços como favoritos para acessá-los com facilidade. Widgets de página exibem informações como relógio e dados de integrações; widgets de cartão aparecem junto ao serviço.
 
+O widget **Agenda de manutenção** mostra janelas em andamento e futuras no fuso horário do navegador. Escolha um horizonte de 24 horas, 7 dias ou 30 dias, até 10 linhas e filtros opcionais por página e grupo. Janelas em andamento aparecem independentemente de quando começaram. Seleções renomeadas ou removidas permanecem no editor para atualização e não passam a incluir tudo. Falhas de atualização são distintas de uma agenda vazia, e leituras anteriores são identificadas como desatualizadas. Sem filtros, sondas independentes também podem aparecer; selecioná-las abre o gerenciamento de sondas.
+
 No celular, a interface adapta a navegação e os controles à tela. Pressione `?` para consultar os atalhos disponíveis.
 
 [Leia a referência completa do dashboard em inglês](/user-guide/dashboard).
 
-Quando um widget de página oferecer tamanhos, escolha normal ou largo no editor. Largo ocupa duas colunas acima dos grupos quando há espaço; no painel lateral e em telas pequenas usa a largura normal. Os widgets atuais usam tamanho normal.
+Quando um widget de página oferecer tamanhos, escolha normal ou largo no editor. Largo ocupa duas colunas acima dos grupos quando há espaço; no painel lateral e em telas pequenas usa a largura normal. Os tamanhos disponíveis dependem do widget.

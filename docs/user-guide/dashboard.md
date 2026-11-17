@@ -182,7 +182,9 @@ integration such as Proxmox. A page holds up to 12; at the limit, the **Add widg
 disabled in **Move to page**.
 
 The dashed **Add widget** tile opens a searchable gallery. Each widget has a **⋯** menu to edit it, move it earlier or
-later, move it to another page or remove it, and you can drag widgets to reorder them. Widgets can also be attached
+later, move it to another page or remove it, and you can drag widgets to reorder them. The **Maintenance schedule** widget shows ongoing and upcoming windows in your browser's time zone. Choose a future horizon of 24 hours, 7 days or 30 days, up to 10 rows, and optional page and group filters. Ongoing windows are included regardless of when they started. A renamed or removed selection remains in the editor and must be updated; it does not silently include everything. A failed refresh is shown separately from an empty schedule, and any retained reading is marked outdated. Unfiltered results may include standalone probes; selecting one opens probe management.
+
+Widgets can also be attached
 _inside_ a card. See [Integrations and widgets](integrations-and-widgets.md).
 
 ## Other addresses (Links)
@@ -221,4 +223,4 @@ screens.
 
 <p align="center"><img src="../screenshots/mobile-dashboard.png" alt="The dashboard on a phone" width="260"></p>
 
-When a page widget offers a size choice, its editor lets you choose normal or wide. Wide uses two columns above groups when there is room; the right panel and small screens use normal width. Current widgets use normal width.
+When a page widget offers a size choice, its editor lets you choose normal or wide. Wide uses two columns above groups when there is room; the right panel and small screens use normal width. Available sizes depend on the widget.
