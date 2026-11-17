@@ -26,6 +26,8 @@ export { Editor };
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.note',
   description: 'pageWidgets.noteDesc',
+  category: 'utilities',
+  keywords: ['text', 'markdown', 'memo', 'nota', 'texto', 'lembrete'],
   defaultConfig: defaultNoteConfig,
   parse: noteWidget.parseConfig,
   View,

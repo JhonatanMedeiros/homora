@@ -209,6 +209,8 @@ function Editor({
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.widgetProblems',
   description: 'pageWidgets.widgetProblemsDesc',
+  category: 'monitoring',
+  keywords: ['alerts', 'down', 'issues', 'alertas', 'problemas', 'falhas'],
   defaultConfig: widgetProblemsWidget.defaultConfig,
   parse: widgetProblemsWidget.parseConfig,
   View: ({ config }) => <ProblemsView config={config as ProblemsConfig} />,

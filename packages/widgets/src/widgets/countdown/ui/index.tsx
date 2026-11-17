@@ -61,6 +61,8 @@ import type { WidgetUI } from '../../../ui/types.js';
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.countdown',
   description: 'pageWidgets.countdownDesc',
+  category: 'time',
+  keywords: ['timer', 'event', 'contagem', 'regressiva', 'prazo'],
   defaultConfig: defaultCountdownConfig,
   parse: countdownWidget.parseConfig,
   View: ({ config }) => <Countdown config={config as CountdownConfig} />,

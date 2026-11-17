@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@homora/ui/button';
 import { Input } from '@homora/ui/input';
@@ -6,13 +5,17 @@ import { Field, FieldGroup, FieldLabel } from '@homora/ui/field';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
+import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
+import { WidgetGallery } from '@/components/widget-gallery';
 import { WidgetHost } from '@/components/widget-host';
-import { getWidgetUI, listWidgetUI } from '@/components/widget-ui-registry';
+import { getWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
+import { useWidgetMonitoring } from '@/hooks/use-widget-monitoring';
 import type { PageRow } from '@/hooks/use-pages';
 import { t, tOr } from '@/i18n';
 import { resolveWidget } from '@homora/integrations';
 import type { WidgetSize } from '@homora/widgets';
+import type { WidgetUI } from '@homora/widgets/ui';
 
 export type WidgetDraft = {
   id: number | null;
@@ -45,6 +48,7 @@ function DialogContents({
   chosen,
   connections,
   pages,
+  groups,
   busy,
   error,
   onChange,
@@ -52,23 +56,19 @@ function DialogContents({
   onSubmit,
   onClose,
 }: Props) {
-  const [query, setQuery] = useState('');
   const gallery = draft !== null && draft.id === null && !chosen;
   const pageName = pages.find((page) => page.id === draft?.pageId)?.name ?? '';
-  const needle = query.trim().toLowerCase();
-  const localOptions = listWidgetUI().filter(
-    ([, entry]) => !needle || tOr(entry.name, entry.name).toLowerCase().includes(needle),
-  );
-  const shown = connections.filter(
-    (connection) =>
-      !needle ||
-      connection.name.toLowerCase().includes(needle) ||
-      connection.type.toLowerCase().includes(needle),
-  );
   const entry = draft ? getWidgetUI(draft.type) : undefined;
   const sizes = (draft && resolveWidget(draft.type)?.sizes) || ['normal'];
   const Editor = entry?.Editor;
   const Preview = entry?.Preview;
+  const parsedConfig = !gallery && draft && entry ? entry.parse(draft.config) : null;
+  const monitoring = useWidgetMonitoring(
+    !Preview && parsedConfig != null && entry?.monitoringQuery
+      ? entry.monitoringQuery(parsedConfig)
+      : null,
+  );
+  const hasPreview = Boolean(Preview || entry?.View);
   const kindName =
     draft?.connectionId == null
       ? entry
@@ -91,12 +91,9 @@ function DialogContents({
     <ResponsiveDialog
       open={draft !== null}
       onOpenChange={(open) => {
-        if (!open) {
-          setQuery('');
-          onClose();
-        }
+        if (!open) onClose();
       }}
-      wide
+      size="gallery"
       title={gallery ? t('pageWidgets.add') : draft?.id ? t('pageWidgets.edit') : kindName}
       description={
         gallery
@@ -106,72 +103,10 @@ function DialogContents({
             : t('pageWidgets.willAdd', { page: pageName })
       }
     >
-      {draft && gallery && (
-        <div className="flex flex-col gap-4">
-          <Input
-            type="search"
-            aria-label={t('pageWidgets.search')}
-            placeholder={t('pageWidgets.search')}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          {localOptions.length > 0 && (
-            <section aria-labelledby="pw-group-homora" className="flex flex-col gap-2">
-              <h3
-                id="pw-group-homora"
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {t('pageWidgets.groupHomora')}
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {localOptions.map(([type, option]) => {
-                  const Gallery = option.Gallery;
-                  return (
-                    <GalleryOption
-                      key={type}
-                      title={tOr(option.name, option.name)}
-                      description={tOr(option.description, option.description)}
-                      onPick={() => pick(null, type)}
-                    >
-                      <Gallery />
-                    </GalleryOption>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-          {shown.length > 0 && (
-            <section aria-labelledby="pw-group-connections" className="flex flex-col gap-2">
-              <h3
-                id="pw-group-connections"
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {t('pageWidgets.groupConnections')}
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {shown.map((connection) => (
-                  <GalleryOption
-                    key={connection.id}
-                    title={connection.name}
-                    description={t('pageWidgets.connectionDesc')}
-                    onPick={() => pick(connection, connection.type)}
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {connection.type}
-                    </span>
-                  </GalleryOption>
-                ))}
-              </div>
-            </section>
-          )}
-          {localOptions.length === 0 && shown.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t('pageWidgets.noMatch')}</p>
-          )}
-        </div>
-      )}
+      {draft && gallery && <WidgetGallery connections={connections} onPick={pick} />}
       {draft && !gallery && (
         <form
-          className="flex flex-col gap-4"
+          className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
           onSubmit={(event) => {
             event.preventDefault();
             onSubmit();
@@ -182,7 +117,15 @@ function DialogContents({
               {error}
             </p>
           )}
-          <div className={Preview ? 'grid gap-4 md:grid-cols-[1fr_16rem]' : 'flex flex-col gap-4'}>
+          <div
+            className={
+              hasPreview
+                ? draft.size === 'wide'
+                  ? 'grid gap-4 md:grid-cols-[1fr_24rem]'
+                  : 'grid gap-4 md:grid-cols-[1fr_18rem]'
+                : 'flex flex-col gap-4'
+            }
+          >
             <FieldGroup>
               {sizes.length > 1 && (
                 <Field>
@@ -245,7 +188,22 @@ function DialogContents({
                 </CollapsibleContent>
               </Collapsible>
             </FieldGroup>
-            {Preview && <Preview config={draft.config} name={draft.name} />}
+            {Preview ? (
+              <Preview config={draft.config} name={draft.name} />
+            ) : (
+              entry?.View && (
+                <GenericPreview
+                  type={draft.type}
+                  entry={entry}
+                  parsedConfig={parsedConfig}
+                  name={draft.name}
+                  wide={draft.size === 'wide'}
+                  groups={groups}
+                  pages={pages}
+                  monitoring={monitoring}
+                />
+              )
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             {draft.id === null ? (
@@ -282,26 +240,47 @@ export function PageWidgetDialog(props: Props) {
   );
 }
 
-function GalleryOption({
-  title,
-  description,
-  onPick,
-  children,
+function GenericPreview({
+  type,
+  entry,
+  parsedConfig,
+  name,
+  wide,
+  groups,
+  pages,
+  monitoring,
 }: {
-  title: string;
-  description: string;
-  onPick: () => void;
-  children: React.ReactNode;
+  type: string;
+  entry: WidgetUI;
+  parsedConfig: unknown | null;
+  name: string;
+  wide: boolean;
+  groups?: { name: string; pageId: number | null }[];
+  pages: PageRow[];
+  monitoring: ReturnType<typeof useWidgetMonitoring>;
 }) {
+  const View = entry.View;
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      className="flex min-w-0 flex-col items-start gap-2 rounded-md border bg-card p-3 text-left transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+    <aside
+      aria-label={t('pageWidgets.preview')}
+      className="flex flex-col gap-2 rounded-md bg-muted/50 p-3"
     >
-      <span className="rounded bg-muted/60 px-2 py-1">{children}</span>
-      <span className="text-sm font-medium">{title}</span>
-      <span className="text-xs text-muted-foreground">{description}</span>
-    </button>
+      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        {t('pageWidgets.preview')}
+      </span>
+      <div className="flex min-w-0 flex-col gap-3 rounded-md border bg-card p-3">
+        <span className="truncate text-sm font-medium">{name || tOr(entry.name, entry.name)}</span>
+        {parsedConfig === null ? (
+          <p className="text-xs text-muted-foreground">{t('pageWidgets.previewIncomplete')}</p>
+        ) : (
+          <WidgetErrorBoundary key={type}>
+            <WidgetHost incidentReading={monitoring} wide={wide} groups={groups} pages={pages}>
+              <View config={parsedConfig} />
+            </WidgetHost>
+          </WidgetErrorBoundary>
+        )}
+      </div>
+      <span className="text-xs text-muted-foreground">{t('pageWidgets.previewHint')}</span>
+    </aside>
   );
 }

@@ -729,6 +729,17 @@ export function Editor({
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.widgetWeather',
   description: 'pageWidgets.widgetWeatherDesc',
+  category: 'utilities',
+  keywords: [
+    'weather',
+    'forecast',
+    'temperature',
+    'rain',
+    'clima',
+    'tempo',
+    'previsão',
+    'temperatura',
+  ],
   defaultConfig: defaultWeatherConfig,
   parse: widgetWeatherWidget.parseConfig,
   View: ({ config }) => <WeatherView config={config as WeatherConfig} />,

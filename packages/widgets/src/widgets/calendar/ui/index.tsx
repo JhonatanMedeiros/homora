@@ -204,6 +204,8 @@ const parse = (value: unknown) => {
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.widgetCalendar',
   description: 'pageWidgets.widgetCalendarDesc',
+  category: 'time',
+  keywords: ['month', 'week', 'schedule', 'mês', 'semana', 'calendário', 'agenda'],
   defaultConfig: defaultCalendarConfig,
   parse,
   View: ({ config }) => <CalendarView config={config as CalendarConfig} />,

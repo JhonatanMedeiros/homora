@@ -154,4 +154,4 @@ export function useWidgetHost(): WidgetHost {
   return host;
 }
 
-export type { WidgetUI } from './types.js';
+export type { WidgetCategory, WidgetUI } from './types.js';

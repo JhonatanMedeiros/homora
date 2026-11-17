@@ -278,6 +278,8 @@ function ScopeEditor({
 export const widgetUI: WidgetUI = {
   name: 'summary.name',
   description: 'summary.desc',
+  category: 'monitoring',
+  keywords: ['status', 'services', 'health', 'resumo', 'serviços', 'saúde'],
   defaultConfig: defaultHomelabSummaryConfig,
   parse: widgetHomelabSummaryWidget.parseConfig,
   View: ({ config }) => <View config={config as HomelabSummaryConfig} />,

@@ -189,6 +189,8 @@ function Editor({
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.widgetRecentIncidents',
   description: 'pageWidgets.widgetRecentIncidentsDesc',
+  category: 'monitoring',
+  keywords: ['history', 'downtime', 'outages', 'incidentes', 'histórico', 'quedas'],
   defaultConfig: defaultRecentIncidentsConfig,
   parse: widgetRecentIncidentsWidget.parseConfig,
   monitoringQuery: (value) => {

@@ -231,6 +231,8 @@ export function Editor({
 export const widgetUI: WidgetUI = {
   name: 'pageWidgets.widgetRssFeed',
   description: 'pageWidgets.widgetRssFeedDesc',
+  category: 'feeds',
+  keywords: ['rss', 'atom', 'news', 'blog', 'notícias', 'feed'],
   defaultConfig: defaultRssFeedConfig,
   parse: widgetRssFeedWidget.parseConfig,
   View: ({ config }) => <RssFeedView config={config as RssFeedConfig} />,
