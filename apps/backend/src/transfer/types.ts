@@ -1,6 +1,3 @@
-import type { CountdownConfig } from '@homora/widgets/countdown';
-import type { NoteConfig } from '@homora/widgets/note';
-import type { ClockConfig } from '@homora/widgets/clock';
 import type { Appearance, CheckType, LinkColor, OpenTarget } from '@homora/shared';
 
 /**
@@ -54,7 +51,7 @@ export type PortableWidget = {
   page: string;
   type: string;
   name: string;
-  config: ClockConfig | CountdownConfig | NoteConfig | Record<string, never>;
+  config: unknown;
   source?: { type: string; name: string };
 };
 export type ImportDocument = {

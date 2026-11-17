@@ -85,13 +85,13 @@ the epic synchronized; do not check off implementation based only on a proposal 
 Work shared by several candidates, tracked under the same epic. Candidates depend on these
 as noted in each issue; execution order is in the epic.
 
-| Issue                                                         | Scope                                                                          | Status |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------ |
-| [#265](https://github.com/JhonatanMedeiros/homora/issues/265) | Move the shadcn primitives to a shared `@homora/ui` package.                   | Scoped |
-| [#266](https://github.com/JhonatanMedeiros/homora/issues/266) | Widget modules: contract, registry and UI isolated per widget.                 | Scoped |
-| [#267](https://github.com/JhonatanMedeiros/homora/issues/267) | `pnpm widget:create` scaffold and automated boundary rules for widget modules. | Scoped |
-| [#255](https://github.com/JhonatanMedeiros/homora/issues/255) | Normal and wide sizes for page widgets.                                        | Scoped |
-| [#256](https://github.com/JhonatanMedeiros/homora/issues/256) | Contract for an internal monitoring source used by widgets.                    | Scoped |
+| Issue                                                         | Scope                                                                          | Status      |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- |
+| [#265](https://github.com/JhonatanMedeiros/homora/issues/265) | Move the shadcn primitives to a shared `@homora/ui` package.                   | Delivered   |
+| [#266](https://github.com/JhonatanMedeiros/homora/issues/266) | Widget modules: contract, registry and UI isolated per widget.                 | Implemented |
+| [#267](https://github.com/JhonatanMedeiros/homora/issues/267) | `pnpm widget:create` scaffold and automated boundary rules for widget modules. | Scoped      |
+| [#255](https://github.com/JhonatanMedeiros/homora/issues/255) | Normal and wide sizes for page widgets.                                        | Scoped      |
+| [#256](https://github.com/JhonatanMedeiros/homora/issues/256) | Contract for an internal monitoring source used by widgets.                    | Scoped      |
 
 ## Requirements for each future issue
 

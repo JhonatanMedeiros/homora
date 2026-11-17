@@ -2,7 +2,7 @@ import { configDefaults, defineConfig } from 'vitest/config';
 import { globSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const include = ['apps/**/*.test.{ts,tsx}', 'packages/**/*.test.ts'];
+const include = ['apps/**/*.test.{ts,tsx}', 'packages/**/*.test.{ts,tsx}'];
 
 // Test files share one module graph per worker (`isolate: false`), so the app is not reloaded for
 // every file. `vi.mock` cannot work in that mode: a module that an earlier file already loaded keeps

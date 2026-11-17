@@ -1,3 +1,4 @@
+import { getWidget } from '@homora/widgets/registry';
 import { defineWidget, type WidgetDefinition } from '@homora/widgets';
 import { hasSystemTelemetry, integrationDefinition } from './integration-manifest.js';
 
@@ -25,4 +26,9 @@ export function integrationWidgetDefinition(
 /** Only integrations declaring the capability offer the shared telemetry contract. */
 export function integrationTelemetrySource(type: string) {
   return hasSystemTelemetry(type) ? { contract: 'system-telemetry', version: 1 } : null;
+}
+
+/** Resolve a local or integration widget without requiring the host to know its type. */
+export function resolveWidget(type: string): WidgetDefinition<unknown> | undefined {
+  return getWidget(type) ?? integrationWidgetDefinition(type);
 }

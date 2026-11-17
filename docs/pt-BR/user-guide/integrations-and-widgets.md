@@ -28,3 +28,5 @@ Para criar uma integração, siga o [guia do SDK em inglês](/adapters). Para co
 Adicione o widget de página **Contagem regressiva** para um evento. Informe nome, data e hora locais e escolha um fuso IANA ou o fuso do navegador. O contador atualiza a cada minuto enquanto a aba está visível. Após o evento, ele permanece visível em texto atenuado por padrão; selecione **Ocultar automaticamente** para escondê-lo. Widgets ocultos permanecem salvos; use **Gerenciar contagens ocultas** para editá-los ou removê-los. Cada evento usa um widget.
 
 Se uma mudança de horário tornar a hora ambígua, vale a primeira ocorrência. Se a hora não existir, ela avança pelo intervalo da mudança. A data e hora resolvidas ficam visíveis; o contador não anuncia cada minuto. Contagens são incluídas na exportação e importação sem conexão.
+
+A arquitetura interna dos módulos de widget e suas fronteiras estão descritas no [ADR 0026 em inglês](/decisions/0026-widget-modules).

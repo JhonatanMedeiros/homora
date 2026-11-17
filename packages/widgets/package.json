@@ -23,12 +23,37 @@
     "./countdown": {
       "types": "./dist/countdown.d.ts",
       "default": "./dist/countdown.js"
-    }
+    },
+    "./registry": {
+      "types": "./dist/registry.d.ts",
+      "default": "./dist/registry.js"
+    },
+    "./clock/ui": "./src/widgets/clock/ui/index.tsx",
+    "./countdown/ui": "./src/widgets/countdown/ui/index.tsx",
+    "./note/ui": "./src/widgets/note/ui/index.tsx",
+    "./ui": "./src/ui/host.tsx",
+    "./translations": {
+      "types": "./dist/translations.d.ts",
+      "default": "./dist/translations.js"
+    },
+    "./note/ui/view": "./src/widgets/note/ui/view.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
   "devDependencies": {
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@homora/ui": "workspace:*",
+    "date-fns": "^4.4.0",
+    "lucide-react": "1.72.0",
+    "react-markdown": "^10.1.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

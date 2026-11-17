@@ -1,11 +1,8 @@
-import { countdownWidget } from '@homora/widgets/countdown';
 import type { FastifyInstance } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { integrationWidgetDefinition } from '@homora/integrations';
-import { supportsSource } from '@homora/widgets';
-import { clockWidget } from '@homora/widgets/clock';
-import { noteWidget } from '@homora/widgets/note';
+import { integrationWidgetDefinition, resolveWidget } from '@homora/integrations';
+import { supportsSource, type WidgetDefinition } from '@homora/widgets';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { parseId } from '../input-schemas.js';
@@ -34,7 +31,11 @@ type Row = {
 };
 
 /** Page widget storage is independent of legacy integration widget identities. */
-export function registerPageWidgetRoutes(app: FastifyInstance, sqlite: DatabaseSync) {
+export function registerPageWidgetRoutes(
+  app: FastifyInstance,
+  sqlite: DatabaseSync,
+  resolve: (type: string) => WidgetDefinition<unknown> | undefined = resolveWidget,
+) {
   const bump = () => sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
   const transaction = <T>(work: () => T): T => {
     sqlite.exec('BEGIN IMMEDIATE');
@@ -69,19 +70,13 @@ export function registerPageWidgetRoutes(app: FastifyInstance, sqlite: DatabaseS
     if (!parsed.success) return null;
     const value = parsed.data;
     if (!sqlite.prepare('SELECT id FROM pages WHERE id=?').get(value.pageId)) return null;
-    if (value.type === 'clock' || value.type === 'countdown' || value.type === 'note') {
-      const config = (
-        value.type === 'clock'
-          ? clockWidget
-          : value.type === 'countdown'
-            ? countdownWidget
-            : noteWidget
-      ).parseConfig(value.config);
-      return config && value.connectionId === null ? { ...value, config } : null;
-    }
-    const definition = integrationWidgetDefinition(value.type);
-    if (!definition || value.connectionId === null || !definition.parseConfig(value.config))
-      return null;
+    const definition = resolve(value.type);
+    if (!definition) return null;
+    const config = definition.parseConfig(value.config);
+    if (config === null) return null;
+    if (definition.source === null)
+      return value.connectionId === null ? { ...value, config } : null;
+    if (value.connectionId === null) return null;
     const connection = sqlite
       .prepare('SELECT type FROM integration_instances WHERE id=?')
       .get(value.connectionId) as { type: string } | undefined;

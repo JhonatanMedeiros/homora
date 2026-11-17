@@ -114,3 +114,32 @@ test('detects indirect workspace dependencies and source imports, and handles cy
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('backend and compiled widget sources do not import React or widget UI', async () => {
+  const root = resolve(import.meta.dirname, '../..');
+  const forbiddenImport =
+    /(?:from\s*|import\s*(?:\(\s*)?|require\s*\(\s*)['"](?:react(?:\/[^'"]*)?|react-dom(?:\/[^'"]*)?|@homora\/ui(?:\/[^'"]*)?|@homora\/widgets\/(?:ui|[^'"]*\/ui(?:\/[^'"]*)?)|(?:\.\.?\/)+[^'"]*\/ui(?:\/[^'"]*)?)['"]/;
+  for (const probe of [
+    "import 'react'",
+    "import x from '@homora/ui/button'",
+    "import('@homora/widgets/clock/ui')",
+  ])
+    assert.match(probe, forbiddenImport);
+  async function scan(folder, skipUi) {
+    const { readdir, readFile } = await import('node:fs/promises');
+    const entries = await readdir(folder, { withFileTypes: true });
+    for (const entry of entries) {
+      if (skipUi && entry.isDirectory() && entry.name === 'ui') continue;
+      const path = join(folder, entry.name);
+      if (entry.isDirectory()) await scan(path, skipUi);
+      else if (/\.[cm]?[jt]sx?$/.test(entry.name) && !/\.(test|spec)\.[jt]sx?$/.test(entry.name)) {
+        const text = await readFile(path, 'utf8');
+        assert.doesNotMatch(text, forbiddenImport, path);
+      }
+    }
+  }
+  await scan(join(root, 'apps/backend/src'), false);
+  await scan(join(root, 'packages/widgets/src'), true);
+  for (const name of ['integrations', 'shared', 'i18n', 'db', 'icons'])
+    await scan(join(root, 'packages', name, 'src'), false);
+});

@@ -1,10 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import {
-  defaultClockPreferences,
-  isTimeZone,
-  type ClockPreferences,
-  type HourFormat,
-} from '@/lib/clock';
+import { defaultClockConfig, isTimeZone, type ClockConfig } from '@homora/widgets/clock';
 
 const KEYS = {
   hourFormat: 'homora-clock-hours',
@@ -44,16 +39,19 @@ const serverSnapshot = () => '|||';
 /** Browser-local clock preferences for the top bar: hour format, time zone, seconds and date. */
 export function useClockPreferences() {
   const raw = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
-  const preferences = useMemo<ClockPreferences>(() => {
+  const preferences = useMemo<ClockConfig>(() => {
     const [hours, zone, seconds, date] = raw.split('|');
     return {
-      hourFormat: hours === '12h' || hours === '24h' ? hours : defaultClockPreferences.hourFormat,
+      hourFormat: hours === '12h' || hours === '24h' ? hours : defaultClockConfig.hourFormat,
       timeZone: isTimeZone(zone) ? zone : '',
       seconds: seconds === 'on',
       date: date !== 'off',
     };
   }, [raw]);
-  const setHourFormat = useCallback((value: HourFormat) => write(KEYS.hourFormat, value), []);
+  const setHourFormat = useCallback(
+    (value: ClockConfig['hourFormat']) => write(KEYS.hourFormat, value),
+    [],
+  );
   const setTimeZone = useCallback((value: string) => write(KEYS.timeZone, value), []);
   const setSeconds = useCallback((value: boolean) => write(KEYS.seconds, value ? 'on' : 'off'), []);
   const setDate = useCallback((value: boolean) => write(KEYS.date, value ? 'on' : 'off'), []);

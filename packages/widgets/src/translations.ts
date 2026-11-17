@@ -1,0 +1,9 @@
+import { en as clock, ptBR as clockPt } from './widgets/clock/messages.js';
+import { en as countdown, ptBR as countdownPt } from './widgets/countdown/messages.js';
+import { en as note, ptBR as notePt } from './widgets/note/messages.js';
+export const widgetEnglish = { ...clock, ...countdown, ...note } as const;
+export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
+  ...clockPt,
+  ...countdownPt,
+  ...notePt,
+};

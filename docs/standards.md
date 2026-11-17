@@ -177,3 +177,7 @@ concrete duplication or risk it eliminates and who consumes it. Prefer two small
 explicit implementations over a complex, speculative abstraction. Extract services,
 ports, or repositories only when doing so reduces tangible coupling, shares a rule,
 or simplifies testing without obscuring execution flow.
+
+## Local widget modules
+
+Keep each local widget's definition, configuration logic, translations and UI in `packages/widgets/src/widgets/<type>`. Compiled entries must not import React or shared UI; source-only UI uses `@homora/ui` and the widget host context for locale and translations. Register the definition and UI, validate portable configuration through the definition and preserve existing storage and transfer formats. See [ADR 0026](decisions/0026-widget-modules.md). New source contracts or permissions need separate design and review.
