@@ -1,9 +1,9 @@
 import type { DatabaseSync } from 'node:sqlite';
+import type { AuditKind, AuditOutcome } from '@homora/shared';
 
 import { noopLog, type Log } from './logger.js';
 
-export type AuditKind = 'access' | 'account' | 'proposal' | 'agent';
-export type AuditOutcome = 'success' | 'failure' | 'refused';
+export type { AuditKind, AuditOutcome };
 
 const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
   access: ['login', 'logout', 'two-factor-recovery-used'],
@@ -191,7 +191,7 @@ export function createAuditLog(
            FROM audit_events e
            LEFT JOIN "user" u ON e.actor = 'user:' || u.id
            LEFT JOIN agent_identities a ON e.actor = a.id
-           ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+           ${where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''}
            ORDER BY e.id DESC LIMIT ?`,
         )
         .all(...params, size + 1) as Row[];

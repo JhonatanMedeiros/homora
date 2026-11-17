@@ -1,4 +1,6 @@
-import { apiError, t, tOr, type MessageKey } from '@/i18n';
+import { hostOf, isRecord, parseHttpUrl } from '@homora/utils';
+import { t, tOr, type MessageKey } from '@/i18n';
+import { requestJson } from '@/lib/api';
 import { createWidgetRenderer } from '@homora/integrations/frontend/catalog';
 import {
   integrationDefinition,
@@ -87,28 +89,16 @@ export const secretField = (type: Kind) =>
   integrationDefinition(type)?.fields.find(({ kind }) => kind === 'secret');
 /** Only public fields from an approved suggestion can prefill this form. */
 export function connectionDraft(value: unknown): ConnectionFormState | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const input = value as Record<string, unknown>;
+  if (!isRecord(value)) return null;
+  const input = value;
   if (
     typeof input.type !== 'string' ||
     !Object.hasOwn(labels, input.type) ||
     typeof input.name !== 'string' ||
-    typeof input.url !== 'string'
+    typeof input.url !== 'string' ||
+    !parseHttpUrl(input.url, { allowQuery: false, allowHash: false })
   )
     return null;
-  try {
-    const url = new URL(input.url);
-    if (
-      !['http:', 'https:'].includes(url.protocol) ||
-      url.username ||
-      url.password ||
-      url.search ||
-      url.hash
-    )
-      return null;
-  } catch {
-    return null;
-  }
   return {
     ...emptyForm,
     type: input.type as Kind,
@@ -121,21 +111,15 @@ export function connectionDraft(value: unknown): ConnectionFormState | null {
     ),
   };
 }
-export async function request(url: string, init?: RequestInit): Promise<unknown> {
-  const response = await fetch(url, init);
-  const data: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(apiError(data, t('connections.operationFailed')));
-  }
-  return data;
-}
+export const request = (url: string, init?: RequestInit): Promise<unknown> =>
+  requestJson(url, t('connections.operationFailed'), init);
 
 export const describeData = widgets.describe;
 export const widgetStats = widgets.stats;
 
 export type Health = 'ok' | 'failed' | 'untested';
 export const healthOf = (item: Pick<Connection, 'lastTest'>): Health =>
-  !item.lastTest ? 'untested' : item.lastTest.result === 'ok' ? 'ok' : 'failed';
+  item.lastTest ? (item.lastTest.result === 'ok' ? 'ok' : 'failed') : 'untested';
 
 const REASONS: Record<string, MessageKey> = {
   rejected: 'connections.reason.rejected',
@@ -148,10 +132,4 @@ const REASONS: Record<string, MessageKey> = {
 export const reasonKey = (result: string): MessageKey =>
   REASONS[result] ?? 'connections.reason.failed';
 
-export function hostOf(url: string) {
-  try {
-    return new URL(url).host;
-  } catch {
-    return url;
-  }
-}
+export { hostOf };

@@ -1,5 +1,9 @@
-import type { ServiceInput } from '@homora/shared';
+import type { Availability, ServiceInput, ServiceStatus, StatusReason } from '@homora/shared';
+import { hostOf, isPrivateHost } from '@homora/utils';
 import { formatDateTime } from '@/i18n';
+
+export type { Availability, ServiceStatus, StatusReason };
+export { hostOf, isPrivateHost };
 
 export const emptyService: ServiceInput = {
   name: '',
@@ -20,46 +24,8 @@ export type ServiceGroup = {
   /** Grid columns on wide viewports (1 to 6); null falls back to automatic responsive grid. */
   columns?: number | null;
 };
-export type Availability = 'available' | 'unavailable' | 'unknown';
 /** What the status light shows: an online service that is slower than its limit reads `degraded`. */
 export type LightState = Availability | 'degraded' | 'maintenance';
-/** Health probe status reason from monitor; absent in responses from older versions. */
-export type StatusReason =
-  | 'responding'
-  | 'redirect'
-  | 'login-required'
-  | 'unexpected-status'
-  | 'not-found'
-  | 'error-status'
-  | 'reachable'
-  | 'destination-blocked'
-  | 'no-response'
-  | 'content-mismatch'
-  | 'cert-expired'
-  | 'cert-invalid'
-  | 'cert-expiring'
-  | 'maintenance'
-  | 'unchecked';
-export type ServiceStatus = {
-  status: Availability;
-  lastAttempt: string | null;
-  reason?: StatusReason;
-  httpStatus?: number | null;
-  latencyMs?: number | null;
-  expectedStatus?: string | null;
-  /** TLS checks: when the certificate expires (epoch milliseconds). */
-  certExpiresAt?: number;
-};
-
-export function hostOf(url: string) {
-  try {
-    return new URL(url).host;
-  } catch {
-    return url;
-  }
-}
-
-export { isHomePrivateHost as isPrivateHost } from '@homora/widgets';
 
 export const formatAttempt = formatDateTime;
 

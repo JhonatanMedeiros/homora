@@ -1,15 +1,12 @@
 import type { Service } from '@homora/shared';
-import { apiError, t } from '@/i18n';
+import { t } from '@/i18n';
+import { requestJson } from '@/lib/api';
 import type { ResourceType } from '@homora/integrations';
 
 const json = { 'Content-Type': 'application/json' };
 
-async function send(url: string, init: RequestInit): Promise<unknown> {
-  const response = await fetch(url, init);
-  const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(apiError(body, t('connections.operationFailed')));
-  return body;
-}
+const send = (url: string, init: RequestInit) =>
+  requestJson(url, t('connections.operationFailed'), init);
 
 export type LinkTarget = {
   integrationId: number;
@@ -48,7 +45,7 @@ export async function createCard(card: NewCard): Promise<number> {
     body: JSON.stringify(card),
   });
   const id = (body as { id?: unknown } | null)?.id;
-  if (typeof id !== 'number') throw new Error(t('connections.operationFailed'));
+  if (typeof id !== 'number') throw new TypeError(t('connections.operationFailed'));
   return id;
 }
 

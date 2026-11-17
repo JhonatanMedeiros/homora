@@ -1,4 +1,15 @@
-import type { Appearance, CheckType, LinkColor, OpenTarget } from '@homora/shared';
+import {
+  MAX_TRANSFER_CHARS,
+  type ImportIssue,
+  type ImportPlan,
+  type IssueCode,
+  type Appearance,
+  type CheckType,
+  type LinkColor,
+  type OpenTarget,
+} from '@homora/shared';
+
+export { MAX_TRANSFER_CHARS, type ImportIssue, type ImportPlan, type IssueCode };
 
 /**
  * Homora export format version. Version 2 added pages (`pages` and a `page` on each group);
@@ -8,7 +19,6 @@ import type { Appearance, CheckType, LinkColor, OpenTarget } from '@homora/share
  */
 export const TRANSFER_VERSION = 6;
 export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4, 5, 6];
-export const MAX_TRANSFER_CHARS = 1_000_000;
 export const MAX_GROUPS = 200;
 export const MAX_SERVICES = 1000;
 /**
@@ -61,61 +71,7 @@ export type ImportDocument = {
   widgets?: PortableWidget[];
 };
 
-/** Stable codes: the UI translates them; the server returns no language-specific text. */
-export type IssueCode =
-  | 'alias-ignored'
-  | 'alias-conflict'
-  | 'invalid-syntax'
-  | 'invalid-document'
-  | 'unsupported-version'
-  | 'too-many-groups'
-  | 'too-many-services'
-  | 'invalid-group'
-  | 'invalid-service'
-  | 'invalid-name'
-  | 'invalid-url'
-  | 'icon-ignored'
-  | 'duplicate-in-file'
-  | 'icon-unsupported'
-  | 'columns-ignored'
-  | 'open-target-ignored'
-  | 'link-ignored'
-  | 'link-limit'
-  | 'check-ignored'
-  | 'widget-ignored'
-  | 'widget-source-unavailable'
-  | 'widget-invalid'
-  | 'widget-limit'
-  | 'pages-ignored'
-  | 'page-invalid'
-  | 'page-limit'
-  | 'group-renamed';
-export type ImportIssue = { path: string; code: IssueCode; severity: 'error' | 'warning' };
 export type ParsedImport = { document: ImportDocument; issues: ImportIssue[] };
-
-export type ImportPlan = {
-  groups: { name: string; status: 'new' | 'existing'; page?: string }[];
-  /** Pages the file asks for, and whether they exist already. */
-  pages: { name: string; status: 'new' | 'existing' }[];
-  services: {
-    group: string;
-    name: string;
-    url: string;
-    alias?: string;
-    status: 'new' | 'duplicate';
-  }[];
-  widgets: { page: string; name: string; type: string; status: 'new' | 'skipped' }[];
-  issues: ImportIssue[];
-  summary: {
-    newGroups: number;
-    newPages: number;
-    newServices: number;
-    newWidgets: number;
-    duplicates: number;
-    errors: number;
-    warnings: number;
-  };
-};
 
 /** Instance look and feel that travels in an export. The background picture does not. */
 export type ExportedSettings = {

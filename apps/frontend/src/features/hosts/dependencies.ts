@@ -1,16 +1,15 @@
-import type { Service } from '@homora/shared';
+import type { Dependency, Service } from '@homora/shared';
 import type { Impact } from '@/features/hosts/hosts';
 
-/** "serviceId depends on dependsOnId", recorded by hand. */
-export type Dependency = { serviceId: number; dependsOnId: number };
+export type { Dependency };
 
 export const dependsOn = (id: number, dependencies: readonly Dependency[]) =>
   dependencies.filter((item) => item.serviceId === id).map((item) => item.dependsOnId);
 export const usedBy = (id: number, dependencies: readonly Dependency[]) =>
   dependencies.filter((item) => item.dependsOnId === id).map((item) => item.serviceId);
 
-const IMPAIRED: readonly Impact[] = ['host-offline', 'guest-stopped', 'service-down'];
-export const isImpaired = (impact: Impact | undefined) => !!impact && IMPAIRED.includes(impact);
+const IMPAIRED = new Set<Impact>(['host-offline', 'guest-stopped', 'service-down']);
+export const isImpaired = (impact: Impact | undefined) => !!impact && IMPAIRED.has(impact);
 
 /**
  * For each service, the services it depends on (directly or through others) that are impaired.
@@ -27,14 +26,14 @@ export function impairedUpstream(
     const seen = new Set<number>([id]);
     const queue = [...dependsOn(id, dependencies)];
     const found: number[] = [];
-    while (queue.length) {
+    while (queue.length > 0) {
       const next = queue.shift()!;
       if (seen.has(next)) continue;
       seen.add(next);
       if (isImpaired(impacts.get(next))) found.push(next);
       queue.push(...dependsOn(next, dependencies));
     }
-    if (found.length) result.set(id, found);
+    if (found.length > 0) result.set(id, found);
   }
   return result;
 }
@@ -44,7 +43,7 @@ export function dependentsOf(roots: readonly number[], dependencies: readonly De
   const seen = new Set<number>(roots);
   const queue = [...roots];
   const found: number[] = [];
-  while (queue.length) {
+  while (queue.length > 0) {
     for (const user of usedBy(queue.shift()!, dependencies)) {
       if (seen.has(user)) continue;
       seen.add(user);

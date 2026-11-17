@@ -1,5 +1,6 @@
 import { monitoringReasonKey } from '@homora/widgets';
 import { isDegraded, type MonitorSettings, type UptimeBucket } from '@homora/shared';
+import { splitDurationMs } from '@homora/utils';
 import { formatNumber, t, tOr } from '@/i18n';
 
 /** What one period of the history bar shows; `slow` is an online period above the degraded limit. */
@@ -14,17 +15,10 @@ export function barState(
     : bucket.status;
 }
 
-const MIN = 60_000;
-const HOUR = 60 * MIN;
-const DAY = 24 * HOUR;
-
 /** "7 min", "1 h 12 min", "3 d 4 h": two units at most, minutes as the floor. */
 export function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.round(ms));
-  if (total < MIN) return t('duration.lessThanMinute');
-  const days = Math.floor(total / DAY);
-  const hours = Math.floor((total % DAY) / HOUR);
-  const minutes = Math.floor((total % HOUR) / MIN);
+  const { days, hours, minutes } = splitDurationMs(ms);
+  if (days === 0 && hours === 0 && minutes === 0) return t('duration.lessThanMinute');
   const parts: string[] = [];
   if (days) parts.push(t('duration.d', { n: days }));
   if (hours && (days === 0 || parts.length < 2)) parts.push(t('duration.h', { n: hours }));

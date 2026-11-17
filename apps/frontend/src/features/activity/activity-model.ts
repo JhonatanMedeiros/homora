@@ -1,7 +1,8 @@
+import type { AuditKind, AuditOutcome } from '@homora/shared';
 import type { MessageKey } from '@/i18n';
 
-export type ActivityKind = 'access' | 'account' | 'proposal' | 'agent';
-export type ActivityOutcome = 'success' | 'failure' | 'refused';
+export type ActivityKind = AuditKind;
+export type ActivityOutcome = AuditOutcome;
 
 export type ActivityEvent = {
   id: number;

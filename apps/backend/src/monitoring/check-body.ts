@@ -1,3 +1,5 @@
+import { getOwnPath } from '@homora/utils';
+
 /** Largest response the content checks read (the network helper caps bodies at 2 MB). */
 export const CONTENT_CHECK_MAX_BYTES = 1_000_000;
 
@@ -8,13 +10,7 @@ export function matchesKeyword(body: string, keyword: string): boolean {
 
 /** `a.b.0.c`: object keys and array indexes only; no expressions, so nothing in a config can run code. */
 function valueAt(root: unknown, path: string): unknown {
-  let current: unknown = root;
-  for (const part of path.split('.')) {
-    if (current === null || typeof current !== 'object') return undefined;
-    if (!Object.hasOwn(current, part)) return undefined;
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
+  return getOwnPath(root, path.split('.'), { allowNumericArrayKeys: true });
 }
 
 /**

@@ -1,3 +1,4 @@
+import { hasControlChars, parseHttpUrl } from '@homora/utils';
 import type { IntegrationAdapter, IntegrationTransport, InputErrorFactory } from '../../backend.js';
 import { piHoleDefinition } from './definition.js';
 
@@ -9,31 +10,19 @@ export function createPiHoleAdapter(
 ): IntegrationAdapter<Config, Summary> {
   function validate(config: Config): Config {
     if (!config || typeof config !== 'object') throw inputError('invalid-data');
-    if (typeof config.url !== 'string' || config.url.length > 2048)
-      throw inputError('https-url-required');
-    let url: URL;
-    try {
-      url = new URL(config.url);
-    } catch {
-      throw inputError('https-url-required');
-    }
-    if (
-      url.protocol !== 'https:' ||
-      url.username ||
-      url.password ||
-      url.search ||
-      url.hash ||
-      url.pathname !== '/'
-    )
-      throw inputError('https-url-required');
+    const url = parseHttpUrl(config.url, {
+      httpsOnly: true,
+      allowPath: false,
+      allowQuery: false,
+      allowHash: false,
+      maxLength: 2048,
+    });
+    if (!url) throw inputError('https-url-required');
     if (
       typeof config.secret !== 'string' ||
-      config.secret.length < 1 ||
+      config.secret.length === 0 ||
       config.secret.length > 256 ||
-      [...config.secret].some((character) => {
-        const code = character.charCodeAt(0);
-        return code < 32 || code === 127;
-      })
+      hasControlChars(config.secret)
     )
       throw inputError('invalid-token');
     return { url: url.origin, secret: config.secret };

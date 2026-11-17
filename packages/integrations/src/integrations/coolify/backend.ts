@@ -1,3 +1,4 @@
+import { parseHttpUrl } from '@homora/utils';
 import {
   COOLIFY_UUID_PATTERN,
   type CoolifyResource,
@@ -40,7 +41,7 @@ export class CoolifyBackoffError extends Error {
 const invalidResponse = () => new Error('Invalid response from Coolify.');
 const unavailable = () => new Error('Could not query Coolify.');
 
-const printable = /^[\x21-\x7e]+$/;
+const printable = /^[\x21-\x7E]+$/;
 const safePath = /^(?:\/[A-Za-z0-9._~-]+)*\/?$/;
 
 export type CoolifyInputError = (
@@ -53,23 +54,13 @@ export function validateCoolifyConfig(
 ): CoolifyConfig {
   if (!input || typeof input !== 'object') throw inputError('invalid-data');
   const { url, secret } = input;
-  if (typeof url !== 'string' || url.length === 0 || url.length > 2048)
-    throw inputError('https-url-required');
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw inputError('https-url-required');
-  }
-  if (
-    parsed.protocol !== 'https:' ||
-    parsed.username ||
-    parsed.password ||
-    parsed.search ||
-    parsed.hash ||
-    !safePath.test(parsed.pathname)
-  )
-    throw inputError('https-url-required');
+  const parsed = parseHttpUrl(url, {
+    httpsOnly: true,
+    allowQuery: false,
+    allowHash: false,
+    maxLength: 2048,
+  });
+  if (!parsed || !safePath.test(parsed.pathname)) throw inputError('https-url-required');
   if (typeof secret !== 'string' || secret.length > 512 || !printable.test(secret))
     throw inputError('invalid-token');
   return { url: parsed.toString().replace(/\/+$/, ''), secret };
