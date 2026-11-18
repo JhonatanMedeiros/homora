@@ -6,6 +6,7 @@ import type {
   MonitoringMaintenance,
   MonitoringSummary,
   MonitoringProblems,
+  MonitoringLatency,
 } from '../monitoring.js';
 import type {
   WeatherGeocodeResponse,
@@ -130,6 +131,12 @@ export type WidgetSourceParams = Record<string, string | number | boolean | unde
 
 export type WidgetHost = {
   monitoring?: {
+    readLatency?: (
+      query: { target: string; range: AvailabilityRange },
+      signal: AbortSignal,
+    ) => Promise<MonitoringLatency>;
+    readServiceTargets?: (signal: AbortSignal) => Promise<{ target: string; name: string }[]>;
+
     readCertificates?: (
       query: { pages: string[]; groups: string[] },
       signal: AbortSignal,

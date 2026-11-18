@@ -95,6 +95,55 @@ describe('uptime rollup', () => {
 });
 
 describe('latency and insights', () => {
+  it('keeps missing buckets empty, respects partial boundaries and excludes other signatures', () => {
+    const { db, store } = open();
+    try {
+      const now = Date.now();
+      const sig = serviceSignature(service);
+      const insert = db.prepare(
+        'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(1,?,?,?)',
+      );
+      const add = (at: number, latency: number, signature = sig) =>
+        insert.run(signature, at, JSON.stringify(state(at, 'available', latency)));
+      add(now - DAY - 1, 999);
+      add(now - DAY, 10);
+      add(now - DAY + 1000, 20);
+      add(now - DAY + 2000, 30);
+      add(now - 1000, 40);
+      add(now + 1, 999);
+      add(now - 2000, 999, 'old-configuration');
+      const series = store.latency(1, '24h', now);
+      expect(series.points[0]).toMatchObject({ p50: 20, checks: 3 });
+      expect(series.points[1]).toMatchObject({ p50: null, checks: 0 });
+      expect(series.points.at(-1)).toMatchObject({ p50: 40, checks: 1 });
+      expect(series.p50).toBe(20);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('finds the last valid latency within retention for the current configuration', () => {
+    const { db, store } = open();
+    try {
+      const now = Date.now();
+      const insert = db.prepare(
+        'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(1,?,?,?)',
+      );
+      const sig = serviceSignature(service);
+      insert.run(sig, now - 31 * DAY, JSON.stringify(state(now - 31 * DAY, 'available', 3)));
+      expect(store.lastValidLatency(1, now)).toBeNull();
+      insert.run(sig, now - DAY, JSON.stringify(state(now - DAY, 'available', 17)));
+      for (let i = 1; i <= 501; i++)
+        insert.run(sig, now - i * 1000, JSON.stringify(state(now - i * 1000, 'unavailable')));
+      expect(store.lastValidLatency(1, now)).toEqual({ observedAt: now - DAY, latencyMs: 17 });
+      db.prepare('UPDATE monitors SET check_interval=60 WHERE id=1').run();
+      expect(store.lastValidLatency(1, now)).toBeNull();
+      expect(() => store.lastValidLatency(9, now)).toThrow('Service not found');
+    } finally {
+      db.close();
+    }
+  });
+
   it('gives the median and 95th percentile of each slot and of the whole range', () => {
     const { store } = open();
     const now = Date.now();

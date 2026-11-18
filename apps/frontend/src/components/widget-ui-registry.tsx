@@ -1,6 +1,7 @@
 import { widgetUI as widgetCertificateExpiry } from '@homora/widgets/certificate-expiry/ui';
 import { widgetUI as widgetMaintenanceSchedule } from '@homora/widgets/maintenance-schedule/ui';
 import { widgetUI as widgetQuickLinks } from '@homora/widgets/quick-links/ui';
+import { widgetUI as latencyHistory } from '@homora/widgets/latency-history/ui';
 import { widgetUI as widgetAvailability } from '@homora/widgets/availability/ui';
 import { widgetUI as widgetDomainExpiry } from '@homora/widgets/domain-expiry/ui';
 import { widgetUI as widgetPublicIp } from '@homora/widgets/public-ip/ui';
@@ -34,6 +35,8 @@ const widgets = {
   'domain-expiry': widgetDomainExpiry,
   'quick-links': widgetQuickLinks,
   availability: widgetAvailability,
+  'latency-history': latencyHistory,
+
   'certificate-expiry': widgetCertificateExpiry,
   'maintenance-schedule': widgetMaintenanceSchedule,
 } satisfies Record<LocalWidgetType, WidgetUI>;

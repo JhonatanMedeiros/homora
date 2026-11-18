@@ -145,6 +145,12 @@ Add **Weather** to display current conditions (temperature, condition, and today
 
 Select between the keyless **Open-Meteo** provider (default) or **OpenWeatherMap** (requires an API key, which is stored encrypted on the server and never included in page configuration or exports). Configure the location via backend city search, manual coordinates and optional display label, or the on-demand browser geolocation button (available only in secure contexts such as `https:` or `localhost` and never triggered automatically on load). Weather requests run through the backend with a 10-minute in-memory cache, and failed refreshes retain the last cached forecast marked as stale.
 
+### Service latency history
+
+Add **Latency history** and select a service card. Choose 24 hours, 7 days or 30 days and a normal or wide size. The chart shows the median of successful checks in each interval; gaps mean no valid reading was recorded. A short outage can be hidden inside an interval that also contains successful checks. Only raw checks retained for up to 30 days and matching the current monitor configuration are shown.
+
+When a reading is stale or the service cannot be measured, the widget labels the last valid reading and its time rather than calling it current. A check is stale after more than twice its configured interval. If the card is deleted, select another card explicitly. Configuration export preserves the period and size but clears the local service selection; select it again after import. Database backups preserve the selection.
+
 ### Certificate expiry
 
 The **Certificate expiry** page widget lists service cards configured with a TLS check, earliest expiry first. It shows up to five and reports additional matches. The 7, 14, 30 or 60 day warning is a display setting; it does not change monitoring or alerts. An unexpired certificate can still be invalid. A failed check may show an earlier observation, labeled with its time; unknown expiry is never treated as expired. Observations are retained for up to 30 days and only matched to the current check configuration. The widget does not perform additional checks.

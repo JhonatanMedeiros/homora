@@ -61,6 +61,12 @@ Adicione **Clima** para exibir as condições atuais (temperatura, condição e 
 
 Escolha entre o provedor **Open-Meteo** sem chave de API (padrão) ou **OpenWeatherMap** (exige uma chave de API, armazenada criptografada no servidor e nunca incluída na configuração da página ou exportações). Configure o local pela busca de cidades no backend, coordenadas manuais e rótulo opcional, ou pelo botão sob demanda de geolocalização do navegador (disponível apenas em contextos seguros como `https:` ou `localhost` e nunca acionado automaticamente ao carregar). As requisições de clima passam pelo backend com cache em memória de 10 minutos, e falhas de atualização mantêm a última previsão em cache marcada como desatualizada.
 
+### Histórico de latência de serviço
+
+Adicione **Histórico de latência** e selecione um cartão de serviço. Escolha 24 horas, 7 dias ou 30 dias e tamanho normal ou largo. O gráfico mostra a mediana das verificações bem-sucedidas em cada intervalo; lacunas indicam que nenhuma medição válida foi registrada. Uma falha curta pode ficar oculta em um intervalo que também tenha verificações bem-sucedidas. São exibidas apenas verificações brutas retidas por até 30 dias e correspondentes à configuração atual do monitor.
+
+Quando a medição estiver desatualizada ou o serviço não puder ser medido, o widget identifica a última medição válida e seu horário, sem chamá-la de atual. Uma verificação fica desatualizada após mais de duas vezes o intervalo configurado. Se o cartão for excluído, selecione outro explicitamente. A exportação preserva período e tamanho, mas limpa a seleção local; escolha o serviço novamente após importar. Backups do banco preservam a seleção.
+
 ### Validade dos certificados
 
 O widget de página **Validade dos certificados** lista cartões de serviço configurados com verificação TLS, começando pela expiração mais próxima. Ele mostra até cinco e informa quando há mais resultados. O aviso de 7, 14, 30 ou 60 dias afeta apenas a apresentação, sem alterar o monitoramento ou os alertas. Um certificado não expirado ainda pode ser inválido. Após uma falha, uma observação anterior pode aparecer com seu horário; uma expiração desconhecida não é considerada expirada. As observações são mantidas por até 30 dias e correspondem à configuração atual da verificação. O widget não executa novas verificações.

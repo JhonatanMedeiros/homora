@@ -10,6 +10,7 @@ import {
   en as widgetQuickLinks,
   ptBR as widgetQuickLinksPt,
 } from './widgets/quick-links/messages.js';
+import { en as latency, ptBR as latencyPt } from './widgets/latency-history/messages.js';
 import {
   en as widgetAvailability,
   ptBR as widgetAvailabilityPt,
@@ -47,6 +48,8 @@ export const widgetEnglish = {
   ...widgetDomainExpiry,
   ...widgetQuickLinks,
   ...widgetAvailability,
+  ...latency,
+
   ...widgetCertificateExpiry,
   ...widgetMaintenanceSchedule,
 } as const;
@@ -65,6 +68,8 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetDomainExpiryPt,
   ...widgetQuickLinksPt,
   ...widgetAvailabilityPt,
+  ...latencyPt,
+
   ...widgetCertificateExpiryPt,
   ...widgetMaintenanceSchedulePt,
 };
