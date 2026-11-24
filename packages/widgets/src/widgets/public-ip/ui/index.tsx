@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Eye, EyeOff, Globe, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Check, Copy, Eye, EyeOff, MapPin, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Badge } from '@homora/ui/badge';
 import { Button } from '@homora/ui/button';
 import { Checkbox } from '@homora/ui/checkbox';
@@ -391,6 +391,6 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as PublicIpConfig} onChange={onChange} />
   ),
-  Gallery: () => <Globe aria-hidden="true" />,
+  Gallery: () => <MapPin aria-hidden="true" />,
   canSubmit: (config) => widgetPublicIpWidget.parseConfig(config) !== null,
 };

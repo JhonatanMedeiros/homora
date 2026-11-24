@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@homora/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
 import { FormSelect, FormSelectOption } from '@homora/ui/form-select';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { isTimeZone, listTimeZones } from '../../../time-zone.js';
 import { useWidgetHost } from '../../../ui/host.js';
 import type { WidgetUI } from '../../../ui/types.js';
@@ -212,6 +212,6 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as CalendarConfig} onChange={onChange} />
   ),
-  Gallery: () => <span aria-hidden="true">▦</span>,
+  Gallery: () => <CalendarDays aria-hidden="true" />,
   canSubmit: (config) => !!widgetCalendarWidget.parseConfig(config),
 };

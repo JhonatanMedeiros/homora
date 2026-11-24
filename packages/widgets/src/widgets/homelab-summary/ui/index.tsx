@@ -3,7 +3,7 @@ import type { MonitoringSummary } from '../../../monitoring.js';
 import { Button } from '@homora/ui/button';
 import { Checkbox } from '@homora/ui/checkbox';
 import { Skeleton } from '@homora/ui/skeleton';
-import { Activity } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
 import { useWidgetHost } from '../../../ui/host.js';
 import type { WidgetUI } from '../../../ui/types.js';
 import {
@@ -286,5 +286,5 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as HomelabSummaryConfig} onChange={onChange} />
   ),
-  Gallery: () => <Activity aria-hidden="true" />,
+  Gallery: () => <LayoutDashboard aria-hidden="true" />,
 };

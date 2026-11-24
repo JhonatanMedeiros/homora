@@ -4,7 +4,7 @@ import { Badge } from '@homora/ui/badge';
 import { Button } from '@homora/ui/button';
 import { Input } from '@homora/ui/input';
 import { cn } from '@homora/ui/lib/utils';
-import { resolveWidget } from '@homora/integrations';
+import { integrationDefinition, resolveWidget } from '@homora/integrations';
 import type { WidgetCategory, WidgetUI } from '@homora/widgets/ui';
 import { listWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
@@ -231,7 +231,7 @@ export function WidgetGallery({ connections, onPick }: Props) {
       description={t('pageWidgets.connectionDesc')}
       onPick={() => handlePickConnection(connection)}
     >
-      <span className="font-mono text-xs text-muted-foreground">{connection.type}</span>
+      <ConnectionLogo type={connection.type} />
     </GalleryOption>
   );
 
@@ -361,6 +361,23 @@ export function WidgetGallery({ connections, onPick }: Props) {
   );
 }
 
+function ConnectionLogo({ type }: { type: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span className="font-mono text-xs font-semibold">{type.slice(0, 2).toUpperCase()}</span>
+    );
+  }
+  return (
+    <img
+      src={`/brand-icons/${integrationDefinition(type)?.brandIcon ?? type}.svg`}
+      alt=""
+      className="size-5 object-contain"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function GalleryOption({
   title,
   description,
@@ -381,7 +398,12 @@ function GalleryOption({
       className="flex min-w-0 flex-col items-start gap-2 rounded-md border bg-card p-3 text-left transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <div className="flex h-8 w-full items-center justify-between gap-2">
-        <div className="flex max-h-8 min-w-0 items-center overflow-hidden">{children}</div>
+        <span
+          aria-hidden="true"
+          className="grid size-8 shrink-0 place-items-center rounded-md bg-secondary text-secondary-foreground [&_svg]:size-4"
+        >
+          {children}
+        </span>
         {badge && (
           <Badge variant="outline" className="shrink-0 text-[10px]">
             {badge}
