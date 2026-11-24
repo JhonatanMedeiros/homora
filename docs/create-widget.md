@@ -19,3 +19,5 @@ Internal monitoring sources are registered by contract and version, require no c
 For approved external-source widgets, implement a `WidgetSourceReader` in `source.ts`, register it in `packages/widgets/src/source-registry.ts`, and read it from `ui/` via `useWidgetHost().readSource(contract, params, signal)`. The backend host (`GET /api/widget-sources/:contract`) injects the restricted `context.fetch` transport (`network-policy.ts`) and owns caching, deduplication, and stale-cache fallback without widget-specific routes.
 
 Keep widget-specific source, parser, config, and UI tests inside `packages/widgets/src/widgets/<type>/` (e.g. `definition.test.ts`, `source.test.ts`, `ui/index.test.tsx`). Host tests in `apps/backend` should only cover generic host infrastructure (auth, caching, `network-policy.ts` enforcement, and `page_widgets` persistence/transfer).
+
+- When invalid editor input must block submission, expose `canSubmit` on the UI module and reuse the definition’s `parseConfig` where applicable. The dialog suppresses save errors while this client validation fails; server validation remains authoritative.

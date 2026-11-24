@@ -164,6 +164,7 @@ export const widgetUI: WidgetUI = {
   keywords: ['links', 'bookmarks', 'favorites', 'favoritos'],
   defaultConfig: defaultQuickLinksConfig,
   parse: widgetQuickLinksWidget.parseConfig,
+  canSubmit: (config) => widgetQuickLinksWidget.parseConfig(config) !== null,
   View: ({ config }) => <View config={config as QuickLinksConfig} />,
   Editor: ({ config, onChange }) => (
     <Editor config={config as QuickLinksConfig} onChange={onChange} />
