@@ -2,6 +2,7 @@ import { PROBE_DOT } from '@/lib/probe-dot';
 import { PanelRight, Star } from 'lucide-react';
 import type { HostRailItem } from '@/features/hosts/hosts';
 import type { LightState } from '@/lib/services';
+import type { CheckType } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import { STATUS_FILTERS, type StatusFilter } from '@/features/dashboard/status-filter-model';
 import { cn } from '@homora/ui/lib/utils';
@@ -9,7 +10,17 @@ import { t } from '@/i18n';
 
 type Group = { name: string; total: number; down: number };
 /** A monitor without a card: shown by name and state, and opens the probes screen. */
-export type RailProbe = { id: number; name: string; state: LightState; label: string };
+export type RailProbe = {
+  id: number;
+  name: string;
+  address: string;
+  checkType: CheckType;
+  state: LightState;
+  /** The state in words, so the light never carries the meaning alone. */
+  label: string;
+  /** Latency or a short fallback. */
+  meta: string | null;
+};
 
 type Props = {
   statusFilter: StatusFilter;
@@ -175,30 +186,7 @@ export function HomeRail({
           ))}
         </section>
       )}
-      {probes && probes.items.length > 0 && (
-        <section aria-label={t('rail.probes')} className="flex flex-col gap-0.5">
-          <h2 className="px-2.5 pb-1 text-xs font-medium text-muted-foreground">
-            {t('rail.probes')}
-          </h2>
-          {probes.items.map((probe) => (
-            <button
-              key={probe.id}
-              type="button"
-              onClick={probes.onOpen}
-              className={cn(ITEM, 'text-muted-foreground')}
-            >
-              <span className="truncate">{probe.name}</span>
-              <span className="flex shrink-0 items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  className={cn('size-2 rounded-full', PROBE_DOT[probe.state])}
-                />
-                <span className="sr-only">{probe.label}</span>
-              </span>
-            </button>
-          ))}
-        </section>
-      )}
+      {probes && probes.items.length > 0 && <ProbesBlock {...probes} />}
       <Button
         type="button"
         variant="ghost"
@@ -211,5 +199,105 @@ export function HomeRail({
         {widgetRail ? t('rail.hideWidgets') : t('rail.showWidgets')}
       </Button>
     </nav>
+  );
+}
+
+const PROBE_ORDER: Record<LightState, number> = {
+  unavailable: 0,
+  degraded: 1,
+  unknown: 2,
+  maintenance: 3,
+  available: 4,
+};
+
+const PROBE_BAR: Record<LightState, string> = {
+  available: 'bg-success/75',
+  degraded: 'bg-warning',
+  maintenance: 'bg-info',
+  unavailable: 'bg-destructive',
+  unknown: 'bg-muted-foreground/40',
+};
+
+/** Short protocol names are the same in every language. */
+const CHECK_BADGE: Record<CheckType, string> = {
+  http: 'HTTP',
+  keyword: 'HTTP',
+  json: 'HTTP',
+  tcp: 'TCP',
+  ping: 'ICMP',
+  dns: 'DNS',
+  tls: 'TLS',
+};
+
+/** "Rental Manager — origem" reads as a name and a detail; without a dash the detail is the host. */
+function splitProbeName(probe: RailProbe) {
+  const [head, ...rest] = probe.name.split(' — ');
+  if (rest.length > 0) return { title: head, detail: rest.join(' — ') };
+  let host = probe.address;
+  try {
+    host = new URL(probe.address).host;
+  } catch {
+    // keep the address as written
+  }
+  return { title: probe.name, detail: host };
+}
+
+function ProbesBlock({ items, onOpen }: { items: RailProbe[]; onOpen: () => void }) {
+  const sorted = [...items].sort((a, b) => PROBE_ORDER[a.state] - PROBE_ORDER[b.state]);
+  const ok = items.filter((probe) => probe.state === 'available').length;
+  return (
+    <section aria-label={t('rail.probes')} className="flex flex-col gap-0.5">
+      <div className="flex items-center justify-between px-2.5 pb-1">
+        <h2 className="text-xs font-medium text-muted-foreground">{t('rail.probes')}</h2>
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+          {t('rail.probes.summary', { ok, total: items.length })}
+        </span>
+      </div>
+      <div aria-hidden="true" className="flex gap-0.5 px-2.5 pb-2">
+        {sorted.map((probe) => (
+          <span key={probe.id} className={cn('h-1 flex-1 rounded-full', PROBE_BAR[probe.state])} />
+        ))}
+      </div>
+      {sorted.map((probe) => {
+        const { title, detail } = splitProbeName(probe);
+        const bad = probe.state === 'unavailable';
+        return (
+          <button
+            key={probe.id}
+            type="button"
+            onClick={onOpen}
+            className={cn(
+              ITEM,
+              'justify-start gap-2.5 py-2',
+              bad ? 'bg-destructive/10 ring-1 ring-destructive/30' : 'text-muted-foreground',
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={cn('size-2 shrink-0 rounded-full', PROBE_DOT[probe.state])}
+            />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-medium text-foreground">{title}</span>
+              <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="shrink-0 rounded border px-1 font-mono text-[10px] leading-4">
+                  {CHECK_BADGE[probe.checkType]}
+                </span>
+                <span className="truncate">{detail}</span>
+              </span>
+            </span>
+            <span
+              className={cn(
+                'shrink-0 font-mono text-xs tabular-nums',
+                bad && 'font-medium text-destructive',
+                probe.state === 'degraded' && 'text-warning',
+              )}
+            >
+              {probe.meta ?? probe.label}
+              {probe.meta && <span className="sr-only"> {probe.label}</span>}
+            </span>
+          </button>
+        );
+      })}
+    </section>
   );
 }

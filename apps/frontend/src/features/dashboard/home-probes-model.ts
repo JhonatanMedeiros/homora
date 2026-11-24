@@ -38,6 +38,7 @@ export function deriveHomeProbes({
       id: probe.id,
       name: probe.name,
       address: probe.address,
+      checkType: probe.checkType,
       bucket: statusBucket(
         statuses[probe.id],
         monitorSettings?.[probe.id],

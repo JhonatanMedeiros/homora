@@ -60,12 +60,37 @@ it('lists probes with their state in words and opens the probes screen', () => {
   const onOpen = vi.fn();
   show({
     probes: {
-      items: [{ id: 7, name: 'WAN', state: 'unavailable', label: 'Offline' }],
+      items: [
+        {
+          id: 7,
+          name: 'WAN — Internet',
+          address: 'http://1.1.1.1',
+          checkType: 'ping',
+          state: 'unavailable',
+          label: 'Offline',
+          meta: null,
+        },
+        {
+          id: 8,
+          name: 'PVE Host',
+          address: 'http://192.168.0.10',
+          checkType: 'ping',
+          state: 'available',
+          label: 'Online',
+          meta: '1 ms',
+        },
+      ],
       onOpen,
     },
   });
   const wan = screen.getByRole('button', { name: /WAN/ });
   expect(wan.textContent).toContain('Offline');
+  expect(wan.textContent).toContain('ICMP');
+  expect(wan.textContent).toContain('Internet');
+  expect(screen.getByText('1/2 ok')).toBeTruthy();
+  expect(screen.getByRole('button', { name: /PVE Host/ }).textContent).toContain('192.168.0.10');
+  const names = screen.getAllByRole('button', { name: /WAN|PVE Host/ });
+  expect(names[0]).toBe(wan);
   fireEvent.click(wan);
   expect(onOpen).toHaveBeenCalled();
 });

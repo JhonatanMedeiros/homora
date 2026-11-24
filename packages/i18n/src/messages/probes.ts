@@ -2,6 +2,7 @@
 export const en = {
   'nav.probes': 'Probes',
   'rail.probes': 'Probes',
+  'rail.probes.summary': '{ok}/{total} up',
   'home.probes.manage': 'Manage probes',
   'probes.title': 'Probes',
   'probes.description':
@@ -45,6 +46,7 @@ export const en = {
 export const ptBR: Record<keyof typeof en, string> = {
   'nav.probes': 'Probes',
   'rail.probes': 'Probes',
+  'rail.probes.summary': '{ok}/{total} ok',
   'home.probes.manage': 'Gerenciar probes',
   'probes.title': 'Probes',
   'probes.description':
