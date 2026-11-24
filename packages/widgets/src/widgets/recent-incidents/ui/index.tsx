@@ -1,3 +1,4 @@
+import { History } from 'lucide-react';
 import { Button } from '@homora/ui/button';
 import { Skeleton } from '@homora/ui/skeleton';
 import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
@@ -207,6 +208,6 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as RecentIncidentsConfig} onChange={onChange} />
   ),
-  Gallery: () => <span aria-hidden="true">◷</span>,
+  Gallery: () => <History aria-hidden="true" />,
   canSubmit: (config) => !!widgetRecentIncidentsWidget.parseConfig(config),
 };

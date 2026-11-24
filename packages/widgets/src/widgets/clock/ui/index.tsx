@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Clock as ClockIcon } from 'lucide-react';
 import { browserTimeZone, clockPresentation, type ClockConfig } from '../../../clock.js';
 import { useWidgetHost } from '../../../ui/host.js';
 
@@ -69,6 +70,6 @@ export const widgetUI: WidgetUI = {
   parse: clockWidget.parseConfig,
   View: ({ config }) => <Clock preferences={config as ClockConfig} />,
   Editor: ({ config, onChange }) => <Editor config={config as ClockConfig} onChange={onChange} />,
-  Gallery: () => <Clock preferences={defaultClockConfig} />,
+  Gallery: () => <ClockIcon aria-hidden="true" />,
   Preview: ({ config, name }) => <Preview config={config as ClockConfig} name={name} />,
 };

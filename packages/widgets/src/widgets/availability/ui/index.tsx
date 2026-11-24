@@ -1,4 +1,4 @@
-import { Activity, AlertCircle } from 'lucide-react';
+import { AlertCircle, Gauge } from 'lucide-react';
 import { Badge } from '@homora/ui/badge';
 import { Button } from '@homora/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@homora/ui/empty';
@@ -333,6 +333,6 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as AvailabilityConfig} onChange={onChange} />
   ),
-  Gallery: () => <Activity aria-hidden="true" />,
+  Gallery: () => <Gauge aria-hidden="true" />,
   canSubmit: (config) => !!widgetAvailabilityWidget.parseConfig(config),
 };

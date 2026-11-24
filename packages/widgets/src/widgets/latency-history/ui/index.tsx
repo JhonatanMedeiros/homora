@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity } from 'lucide-react';
+import { ChartLine } from 'lucide-react';
 import { Field, FieldLabel } from '@homora/ui/field';
 import { FormSelect, FormSelectOption } from '@homora/ui/form-select';
 import {
@@ -241,6 +241,6 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as LatencyHistoryConfig} onChange={onChange} />
   ),
-  Gallery: () => <Activity aria-hidden="true" />,
+  Gallery: () => <ChartLine aria-hidden="true" />,
   canSubmit: (config) => !!widgetLatencyHistoryWidget.parseConfig(config),
 };

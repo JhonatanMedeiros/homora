@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { Button } from '@homora/ui/button';
 import { Badge } from '@homora/ui/badge';
 import { Checkbox } from '@homora/ui/checkbox';
@@ -206,5 +207,5 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as CertificateConfig} onChange={onChange} />
   ),
-  Gallery: () => <span aria-hidden="true">◇</span>,
+  Gallery: () => <ShieldCheck aria-hidden="true" />,
 };

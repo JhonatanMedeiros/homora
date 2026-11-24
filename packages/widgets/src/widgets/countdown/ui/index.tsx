@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Hourglass } from 'lucide-react';
 import { countdownRemaining, type CountdownConfig } from '../../../countdown.js';
 import { useWidgetHost } from '../../../ui/host.js';
 
@@ -69,7 +70,7 @@ export const widgetUI: WidgetUI = {
   Editor: ({ config, onChange }) => (
     <Editor config={config as CountdownConfig} onChange={onChange} />
   ),
-  Gallery: () => '⌛',
+  Gallery: () => <Hourglass aria-hidden="true" />,
   canSubmit: (config) => Boolean((config as CountdownConfig).localDateTime),
   isHidden: (config, now) => {
     const parsed = countdownWidget.parseConfig(config);
