@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
-import { FileField } from '@/components/file-field';
+import { FileField } from '@homora/ui/file-field';
 import { Skeleton } from '@homora/ui/skeleton';
 import { Spinner } from '@homora/ui/spinner';
 import { LoadingRegion } from '@/components/skeletons';
@@ -89,6 +89,8 @@ export function MonitoringTrustSettings() {
             <Field>
               <FieldLabel htmlFor="monitoring-ca-file">{t('settings.trust.file')}</FieldLabel>
               <FileField
+                chooseLabel={t('common.chooseFile')}
+                removeLabel={(name) => t('common.removeFile', { name })}
                 id="monitoring-ca-file"
                 accept=".pem,.crt"
                 disabled={Boolean(busy)}

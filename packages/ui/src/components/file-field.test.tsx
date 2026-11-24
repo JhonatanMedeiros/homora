@@ -8,7 +8,15 @@ afterEach(cleanup);
 test('shows a picker while empty and forwards the chosen file', () => {
   const onSelect = vi.fn();
   const { container } = render(
-    <FileField id="f" accept=".pem" value={null} onSelect={onSelect} onClear={vi.fn()} />,
+    <FileField
+      id="f"
+      accept=".pem"
+      value={null}
+      onSelect={onSelect}
+      onClear={vi.fn()}
+      chooseLabel="Choose"
+      removeLabel={(n) => `Remove ${n}`}
+    />,
   );
   const file = new File(['x'], 'ca.pem');
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [file] } });
@@ -24,6 +32,8 @@ test('shows the chosen file with a remove action', () => {
       value={{ name: 'ca.pem', size: 2048 }}
       onSelect={vi.fn()}
       onClear={onClear}
+      chooseLabel="Choose"
+      removeLabel={(n) => `Remove ${n}`}
     />,
   );
   expect(screen.getByText('ca.pem')).toBeTruthy();

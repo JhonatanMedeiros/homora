@@ -6,7 +6,7 @@ import { Button } from '@homora/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@homora/ui/card';
 import { Checkbox } from '@homora/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
-import { FileField } from '@/components/file-field';
+import { FileField } from '@homora/ui/file-field';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, t } from '@/i18n';
 import { useConfigTransferApi } from '@/hooks/use-config-transfer-api';
@@ -186,6 +186,8 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
             <Field>
               <FieldLabel htmlFor="import-file">{t('transfer.file')}</FieldLabel>
               <FileField
+                chooseLabel={t('common.chooseFile')}
+                removeLabel={(name) => t('common.removeFile', { name })}
                 id="import-file"
                 accept=".yaml,.yml,.json"
                 disabled={busy}

@@ -3,7 +3,7 @@ import { PasswordInput } from '@/components/password-input';
 import type { FormEvent } from 'react';
 import { Button } from '@homora/ui/button';
 import { Checkbox } from '@homora/ui/checkbox';
-import { FileField } from '@/components/file-field';
+import { FileField } from '@homora/ui/file-field';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
 import { Input } from '@homora/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
@@ -168,6 +168,8 @@ export function ConnectionForm({
                 <Field>
                   <FieldLabel htmlFor="connection-ca">{t('connections.ca')}</FieldLabel>
                   <FileField
+                    chooseLabel={t('common.chooseFile')}
+                    removeLabel={(name) => t('common.removeFile', { name })}
                     id="connection-ca"
                     accept=".pem,.crt,.cer"
                     disabled={busy}
