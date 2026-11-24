@@ -1,6 +1,26 @@
 import { randomBytes } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { createServiceConfiguration } from '../service-configuration.js';
+import { applyManagedChange, managedChangeSchema } from './managed-proposals.js';
+
+/** Names the rejected batch item with a stable, sanitized reason; it never carries internal details. */
+export class BatchItemError extends Error {
+  constructor(
+    readonly index: number,
+    readonly kind: string,
+    readonly code: string,
+  ) {
+    super(`batch-item-invalid: items[${index}] (${kind}): ${code}`);
+  }
+}
+
+/** Reasons are static short phrases or kebab-case codes; anything else collapses to a generic code. */
+function reasonCode(error: unknown) {
+  const message = error instanceof Error ? error.message : '';
+  return /^[A-Za-z][A-Za-z -]{0,59}$/.test(message)
+    ? message.trim().toLowerCase().replaceAll(/ +/g, '-')
+    : 'invalid-change';
+}
 
 type ProposalBatchContext = {
   insideBatch: boolean;
@@ -32,20 +52,58 @@ export function createProposalBatches({
   proposeManaged: CreateProposal;
   proposeAgent: CreateProposal;
 }) {
+  /** Applies the managed items in order on the unchanged state, then reverts: later items see earlier ones. */
+  function validateTogether(entries: { kind: string; diff: unknown }[]) {
+    sqlite.exec('SAVEPOINT validate_batch');
+    let index = 0;
+    let kind = '';
+    try {
+      entries.forEach((entry, position) => {
+        index = position;
+        kind = entry.kind;
+        const decoded = entry.diff as {
+          kind?: unknown;
+          change?: unknown;
+        } | null;
+        if (decoded?.kind === 'managed')
+          applyManagedChange(sqlite, managedChangeSchema.parse(decoded.change));
+      });
+    } catch (error) {
+      throw new BatchItemError(index, kind, reasonCode(error));
+    } finally {
+      sqlite.exec('ROLLBACK TO validate_batch; RELEASE validate_batch');
+    }
+  }
+
   function proposeBatch(authorId: string, items: { kind: string; change: unknown }[]) {
-    if (!items.length || items.length > 20) throw new Error('Invalid batch');
+    if (items.length === 0 || items.length > 20) throw new Error('Invalid batch');
     return configuration.transaction(() => {
       context.insideBatch = true;
       try {
         const batchId = randomBytes(16).toString('hex');
         context.currentBatchId = batchId;
-        const proposals = items.map((item) => {
-          const proposal =
-            item.kind === 'service'
-              ? proposeService(authorId, item.change)
-              : proposeManaged(authorId, { kind: item.kind, change: item.change });
-          return { ...proposal, batchId };
+        const proposals = items.map((item, index) => {
+          try {
+            const proposal =
+              item.kind === 'service'
+                ? proposeService(authorId, item.change)
+                : proposeManaged(authorId, {
+                    kind: item.kind,
+                    change: item.change,
+                  });
+            return { ...proposal, batchId };
+          } catch (error) {
+            if (error instanceof Error && error.message === 'Pending proposal limit reached')
+              throw error;
+            throw new BatchItemError(index, item.kind, reasonCode(error));
+          }
         });
+        validateTogether(
+          items.map((item, index) => ({
+            kind: item.kind,
+            diff: proposals[index].diff,
+          })),
+        );
         return { batchId, proposals };
       } finally {
         context.insideBatch = false;
@@ -109,6 +167,13 @@ export function createProposalBatches({
             .run(human, 'proposal-recreate', result.id, 'created', now, row.id);
           return result;
         });
+        if (original.batch_id)
+          validateTogether(
+            recreated.map((item, index) => ({
+              kind: `item-${index}`,
+              diff: item.diff,
+            })),
+          );
         return { proposals: recreated, batchId: context.currentBatchId };
       } finally {
         context.insideBatch = false;

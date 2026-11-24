@@ -32,7 +32,12 @@ export function createManagedProposalCreator({
     diff: unknown,
     baseHash: string,
     baseVersion?: number,
-  ) => { id: string; diff: unknown; expiresAt: number; state: 'pending' } | null;
+  ) => {
+    id: string;
+    diff: unknown;
+    expiresAt: number;
+    state: 'pending';
+  } | null;
 }) {
   return function proposeManaged(authorId: string, input: unknown) {
     let parsedChange = managedChangeSchema.parse(input);
@@ -58,19 +63,25 @@ export function createManagedProposalCreator({
       if (parsedChange.kind === 'tag')
         parsedChange = {
           kind: 'tag',
-          change: { ...parsedChange.change, tags: normalizeTags(parsedChange.change.tags) },
+          change: {
+            ...parsedChange.change,
+            tags: normalizeTags(parsedChange.change.tags),
+          },
         };
       const change = parsedChange;
       checkPending(authorId);
       const snapshot = managedSnapshot(sqlite);
       const baseHash = managedBaseHash(change);
       const baseVersion = configuration.version();
-      // Validate the exact operation without retaining the simulated changes.
-      sqlite.exec('SAVEPOINT validate_proposal');
-      try {
-        applyManagedChange(sqlite, change);
-      } finally {
-        sqlite.exec('ROLLBACK TO validate_proposal; RELEASE validate_proposal');
+      // Validate the exact operation without retaining the simulated changes. Batch items are
+      // validated together, in order, once the whole batch exists (see proposal-batches.ts).
+      if (!getBatchId()) {
+        sqlite.exec('SAVEPOINT validate_proposal');
+        try {
+          applyManagedChange(sqlite, change);
+        } finally {
+          sqlite.exec('ROLLBACK TO validate_proposal; RELEASE validate_proposal');
+        }
       }
       const targetId = 'id' in change.change ? change.change.id : undefined;
       const integrationId =
@@ -80,10 +91,10 @@ export function createManagedProposalCreator({
           ? snapshot.widgets.filter((row) => row.id === targetId)
           : [];
       const widgetConnectionId = integrationId ?? widgetRows[0]?.integration_id;
-      const widgetServiceIds = [
+      const widgetServiceIds = new Set([
         widgetRows[0]?.service_id,
         'serviceId' in change.change ? change.change.serviceId : undefined,
-      ];
+      ]);
       const relevantGroups =
         change.kind === 'group'
           ? change.change.op === 'create'
@@ -252,9 +263,13 @@ export function createManagedProposalCreator({
                                     ),
                                     connections: snapshot.connections
                                       .filter((row) => row.id === widgetConnectionId)
-                                      .map(({ id, type, name }) => ({ id, type, name })),
+                                      .map(({ id, type, name }) => ({
+                                        id,
+                                        type,
+                                        name,
+                                      })),
                                     services: snapshot.services
-                                      .filter((row) => widgetServiceIds.includes(row.id))
+                                      .filter((row) => widgetServiceIds.has(row.id))
                                       .map(({ id, name }) => ({ id, name })),
                                   }
                                 : null;

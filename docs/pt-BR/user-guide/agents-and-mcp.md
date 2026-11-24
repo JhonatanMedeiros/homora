@@ -15,6 +15,8 @@ Agentes são opcionais. Uma identidade possui um token e escopos que determinam 
 
 O MCP oferece transporte local por `stdio` e HTTP sem estado. Ambos autenticam o token do agente e não dependem da sessão web. O processo `stdio` acessa diretamente o banco e o cofre; use-o somente com um cliente e usuário de sistema confiáveis. Para acesso por outro dispositivo, siga a configuração HTTPS de rede privada em [instalação e atualizações](deployment.md).
 
+Um lote (`propose_batch`) é tudo ou nada: os itens são validados em ordem, então é possível mover grupos para uma página junto com seus widgets. Se um item for inválido, o lote inteiro é rejeitado, nada é alterado e o erro indica o item (`items[n]`), o tipo e o motivo.
+
 Sugestões de configuração de conexão não criam uma conexão automaticamente: o usuário deve abrir o formulário e fornecer credenciais e permissões. Dados recebidos de serviços externos não são instruções confiáveis.
 
 [Leia o guia completo de MCP em inglês](/user-guide/agents-and-mcp) e o [inventário de capacidades em inglês](/agent-capabilities).
