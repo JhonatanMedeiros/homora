@@ -8,6 +8,10 @@ services:
       HOMORA_PASSKEY_RP_ID: ${HOMORA_PASSKEY_RP_ID:-}
       HOMORA_LOG_LEVEL: ${HOMORA_LOG_LEVEL:-info}
       HOMORA_TRUSTED_PROXY: ${HOMORA_TRUSTED_PROXY:-127.0.0.1}
+    extra_hosts:
+      # Optional: map a name that only your LAN resolves (for example an appliance's
+      # certificate name). Set HOMORA_EXTRA_HOST=name:address. The default is harmless.
+      - '${HOMORA_EXTRA_HOST:-localhost:127.0.0.1}'
     ports:
       - '${HOMORA_BIND_IP:-127.0.0.1}:8080:8080'
     volumes:
