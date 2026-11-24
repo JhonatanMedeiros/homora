@@ -64,7 +64,7 @@ export const en = {
   'managed.host': 'Host',
   'managed.strength': 'Evidence strength',
   'managed.evidence': 'Evidence',
-  'managed.connectionId': 'host inventory connection',
+  'managed.connectionId': 'Connection ID',
   'managed.vmid': 'Guest ID',
   'managed.hostNote':
     'Approving only saves the link in Homora. The external system is never changed. The evidence was computed by Homora, not by the agent.',
@@ -227,7 +227,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'managed.host': 'Host',
   'managed.strength': 'Força da evidência',
   'managed.evidence': 'Evidência',
-  'managed.connectionId': 'Conexão de inventário de hosts',
+  'managed.connectionId': 'ID da conexão',
   'managed.vmid': 'ID do convidado',
   'managed.hostNote':
     'Aprovar apenas salva o vínculo no Homora. O sistema externo nunca é alterado. A evidência foi calculada pelo Homora, não pelo agente.',

@@ -167,7 +167,9 @@ export function isDestructive(diff: Diff | null): boolean {
   if (diff.op === 'delete') return true;
   const inner = diff.change as { op?: unknown; change?: { op?: unknown } } | undefined;
   const op = diff.kind === 'agent' ? inner?.op : inner?.change?.op;
-  return op === 'delete' || op === 'revoke' || op === 'unlink' || op === 'cancel';
+  return (
+    op === 'delete' || op === 'page-delete' || op === 'revoke' || op === 'unlink' || op === 'cancel'
+  );
 }
 
 /** Newest first, with the id as tiebreaker: the order never depends on what was decided before. */

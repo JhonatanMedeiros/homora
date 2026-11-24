@@ -154,6 +154,8 @@ export const en = {
   'managed.delete': 'Remove',
   'managed.reorder': 'Reorder',
   'managed.move': 'Move',
+  'managed.pageCreate': 'Add widget to page',
+  'managed.pageDelete': 'Remove widget from page',
   'managed.link': 'Change card link',
 } as const;
 
@@ -311,5 +313,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'managed.delete': 'Remover',
   'managed.reorder': 'Reordenar',
   'managed.move': 'Mover',
+  'managed.pageCreate': 'Adicionar widget à página',
+  'managed.pageDelete': 'Remover widget da página',
   'managed.link': 'Alterar vínculo com card',
 };

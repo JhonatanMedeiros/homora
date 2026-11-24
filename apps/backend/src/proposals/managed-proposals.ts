@@ -2,7 +2,9 @@ import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { CHECK_TYPES, MAINTENANCE_NOTE_MAX, MAX_WIDGETS_PER_PAGE } from '@homora/shared';
+import { resolveWidget } from '@homora/integrations';
 import { createMaintenanceStore } from '../monitoring/index.js';
+import { checkPageWidget } from '../page-widget-validation.js';
 import {
   hasInventoryDomain,
   LEGACY_WIDGET_SOURCES,
@@ -146,6 +148,18 @@ export const widgetChangeSchema = z.discriminatedUnion('op', [
     })
     .strict(),
   z.object({ op: z.literal('delete'), id }).strict(),
+  /** Places a gallery tile on a page: same validation as the widget gallery, default configuration. */
+  z
+    .object({
+      op: z.literal('page-create'),
+      pageId: id,
+      type: z.string().min(1).max(80),
+      connectionId: id.nullable(),
+      name: widgetName,
+      position: z.number().int().nonnegative().max(199),
+    })
+    .strict(),
+  z.object({ op: z.literal('page-delete'), id }).strict(),
 ]);
 export const connectionSetupSchema = z
   .object({
@@ -268,6 +282,13 @@ export function managedHash(db: DatabaseSync) {
   return createHash('sha256')
     .update(JSON.stringify(managedSnapshot(db)))
     .digest('hex');
+}
+function pageWidgetIds(db: DatabaseSync, pageId: number) {
+  return (
+    db.prepare('SELECT id FROM page_widgets WHERE page_id=? ORDER BY position,id').all(pageId) as {
+      id: number;
+    }[]
+  ).map((row) => row.id);
 }
 function exactMembers(current: (string | number)[], requested: (string | number)[]) {
   return (
@@ -454,6 +475,47 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
       const update = db.prepare('UPDATE page_widgets SET position=? WHERE id=?');
       if (widget.pageId !== change.pageId) source.forEach((item, index) => update.run(index, item));
       destination.forEach((item, index) => update.run(index, item));
+    } else if (change.op === 'page-create') {
+      const checked = checkPageWidget(db, {
+        pageId: change.pageId,
+        type: change.type,
+        name: change.name,
+        config: resolveWidget(change.type)?.defaultConfig,
+        connectionId: change.connectionId,
+        size: 'normal',
+      });
+      if (!checked.ok) throw new Error(checked.code);
+      const siblings = pageWidgetIds(db, change.pageId);
+      if (siblings.length >= MAX_WIDGETS_PER_PAGE) throw new Error('widget-limit');
+      if (change.position > siblings.length) throw new Error('invalid-position');
+      const total = db.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number };
+      if (total.n >= 200) throw new Error('widget-limit');
+      const created = db
+        .prepare(
+          'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,?,?,?)',
+        )
+        .run(
+          checked.value.pageId,
+          checked.value.type,
+          checked.value.name,
+          JSON.stringify(checked.value.config),
+          checked.value.connectionId,
+          checked.value.size,
+          change.position,
+        );
+      affectedId = Number(created.lastInsertRowid);
+      siblings.splice(change.position, 0, affectedId);
+      const update = db.prepare('UPDATE page_widgets SET position=? WHERE id=?');
+      siblings.forEach((item, index) => update.run(index, item));
+    } else if (change.op === 'page-delete') {
+      const widget = db
+        .prepare('SELECT page_id AS pageId FROM page_widgets WHERE id=?')
+        .get(change.id) as { pageId: number } | undefined;
+      if (!widget) throw new Error('widget-not-found');
+      db.prepare('DELETE FROM page_widgets WHERE id=?').run(change.id);
+      const update = db.prepare('UPDATE page_widgets SET position=? WHERE id=?');
+      pageWidgetIds(db, widget.pageId).forEach((item, index) => update.run(index, item));
+      affectedId = change.id;
     } else if (change.op === 'create') {
       let connectionId = change.integrationId;
       if (change.source) {

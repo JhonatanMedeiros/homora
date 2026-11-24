@@ -46,6 +46,8 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'custom-css-reset',
     'page-update',
     'page-widget-move',
+    'page-widget-create',
+    'page-widget-delete',
   ],
   proposal: [
     'proposal',
