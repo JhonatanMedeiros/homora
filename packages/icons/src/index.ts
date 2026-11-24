@@ -101,6 +101,7 @@ export const BRAND_ICON_NAMES = [
   'nzbget',
   'octoprint',
   'ollama',
+  'omada',
   'ombi',
   'ookla-speedtest',
   'open-webui',
