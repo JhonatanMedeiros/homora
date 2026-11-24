@@ -196,17 +196,21 @@ export function PublicStatusSkeleton({ label }: { label: string }) {
   );
 }
 
-/** Integration data inside a service card; keeps the stat layout so the card does not jump. */
+/**
+ * Integration data inside a service card. Mirrors the ready state in CardWidgets: a wrapping
+ * row of inline "label value" pairs, each one text-sm line tall, so the card does not change
+ * height when the data arrives in the card, compact and list layouts.
+ */
 export function WidgetSkeleton({ label, count = 3 }: { label: string; count?: number }) {
   return (
     <LoadingRegion
       label={label}
-      className="grid w-full grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-x-4 gap-y-2"
+      className="flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-1"
     >
       {Array.from({ length: count }, (_, index) => (
-        <div key={index} className="flex min-w-0 flex-col gap-1">
-          <Bone className="h-3 w-3/4" />
-          <Bone className="h-4 w-1/2" />
+        <div key={index} className="flex h-5 min-w-0 items-center gap-1.5">
+          <Bone className="h-3 w-7 shrink-0" />
+          <Bone className="h-4 w-9" />
         </div>
       ))}
     </LoadingRegion>
