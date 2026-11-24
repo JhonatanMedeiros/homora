@@ -10,7 +10,7 @@ A pílula no cabeçalho responde "está tudo certo?" de relance: um ponto colori
 
 ## Navegação e organização
 
-Use a busca ou `Ctrl K` para localizar serviços e configurações. Os filtros ajudam a encontrar itens offline, degradados ou favoritos. Quando há um Proxmox conectado, a lista **Hosts** na lateral mostra cada nó com seu estado e quantos cartões rodam nele; selecioná-lo mostra os cartões daquele nó. O sino mostra eventos de indisponibilidade e recuperação. Páginas separam conjuntos de serviços; grupos organizam os cartões dentro de cada página.
+Use a busca ou `Ctrl K` para localizar serviços e configurações. Os filtros ajudam a encontrar itens offline, degradados ou favoritos. Quando há um Proxmox conectado, a lista **Hosts** na lateral mostra cada nó com seu estado e quantos cartões rodam nele; selecioná-lo mostra os cartões daquele nó. O sino mostra eventos de indisponibilidade e recuperação. Páginas separam conjuntos de serviços; grupos organizam os cartões dentro de cada página. As páginas ficam em uma barra própria abaixo do cabeçalho, com a contagem de serviços e quantos estão fora do ar; o botão de lista no fim da barra abre **Todas as páginas** (uma folha na parte de baixo no celular), com busca quando há mais de seis páginas, um menu `⋯` por página e o botão **Adicionar página**.
 
 Em **Organizar**, adicione, edite, mova ou remova cartões e grupos. É possível alterar a quantidade de colunas e a disposição. Os cartões podem ser exibidos em diferentes layouts; as visualizações de host e mapa ajudam a entender relações entre serviços e infraestrutura.
 

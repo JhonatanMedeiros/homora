@@ -99,11 +99,6 @@ export function AppShell({
                   v{build.version}
                 </span>
               ))}
-            {pagesNav && !managing && !standalone && (
-              <div className="order-last flex w-full min-w-0 items-center border-t border-sidebar-border/50 pt-1.5 md:order-none md:w-auto md:flex-1 md:border-t-0 md:pt-0">
-                {pagesNav}
-              </div>
-            )}
           </div>
           <span className="mr-auto md:hidden" />
           <Button
@@ -193,6 +188,18 @@ export function AppShell({
             </Button>
           )}
         </div>
+        {pagesNav && !managing && !standalone && (
+          <div
+            data-homora="pages-bar"
+            className="border-t border-sidebar-border/60 bg-sidebar-accent/20"
+          >
+            <div
+              className={`mx-auto flex min-h-12 items-center px-3 py-1 sm:px-4 md:px-8 ${tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
+            >
+              {pagesNav}
+            </div>
+          </div>
+        )}
       </header>
       <ReleasesDialog
         open={releasesOpen}
