@@ -81,6 +81,13 @@ it('shows the exact suggested connection and opens setup only after approval', (
     ca: '',
   });
   expect(connectionDraft({ ...change, url: 'https://user:pass@example.test' })).toBeNull();
+  expect(connectionDraft({ ...change, allowPrivate: true })).toMatchObject({ allowPrivate: true });
+  expect(connectionDraft({ ...change, url: 'https://192.0.2.10:8043' })).toMatchObject({
+    allowPrivate: false,
+  });
+  expect(connectionDraft({ ...change, url: 'https://192.168.0.10:8043' })).toMatchObject({
+    allowPrivate: true,
+  });
 });
 
 it('shows the target and requested permissions before an identity decision', () => {

@@ -102,26 +102,35 @@ export async function authorizeDestination(
     })
   )
     throw new Error('Unauthorized destination.');
-  const hostname = url.hostname.replace(/^\[|\]$/g, '');
+  const hostname = url.hostname.replaceAll(/^\[|\]$/g, '');
   const ipFamily = isIP(hostname);
   const addresses: Address[] = ipFamily
     ? [{ address: hostname, family: ipFamily as 4 | 6 }]
     : await resolver(hostname);
-  if (
-    !addresses.length ||
-    addresses.some(({ address, family }) => {
-      if (isIP(address) !== family) return true;
-      const mapped = family === 6 ? mappedIPv4Address(address) : undefined;
-      const classifiedAddress = mapped ?? address;
-      const version = family === 4 || mapped ? 'ipv4' : 'ipv6';
-      return (
-        forbidden.check(classifiedAddress, version) ||
-        (privateNetworks.check(classifiedAddress, version) && (mapped || !policy.allowPrivate))
-      );
-    })
-  )
+  let onlyPrivateNotAuthorized = addresses.length > 0;
+  const blocked = addresses.some(({ address, family }) => {
+    if (isIP(address) !== family) {
+      onlyPrivateNotAuthorized = false;
+      return true;
+    }
+    const mapped = family === 6 ? mappedIPv4Address(address) : undefined;
+    const classifiedAddress = mapped ?? address;
+    const version = family === 4 || mapped ? 'ipv4' : 'ipv6';
+    if (forbidden.check(classifiedAddress, version)) {
+      onlyPrivateNotAuthorized = false;
+      return true;
+    }
+    if (privateNetworks.check(classifiedAddress, version) && (mapped || !policy.allowPrivate)) {
+      if (mapped) onlyPrivateNotAuthorized = false;
+      return true;
+    }
+    return false;
+  });
+  if (addresses.length === 0 || blocked)
     throw Object.assign(new Error('Destination points to disallowed address.'), {
       code: 'destination-disallowed',
+      // Set only when the one thing missing is the explicit "allow private network" consent.
+      privateNetwork: onlyPrivateNotAuthorized && blocked,
     });
   return { url, address: addresses[0] };
 }

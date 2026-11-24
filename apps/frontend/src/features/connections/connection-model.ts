@@ -90,6 +90,18 @@ export const urlField = (type: Kind) =>
   integrationDefinition(type)?.fields.find(({ kind }) => kind === 'url');
 export const secretField = (type: Kind) =>
   integrationDefinition(type)?.fields.find(({ kind }) => kind === 'secret');
+/** A URL whose host is a private IPv4 literal can only work with explicit consent, so the form proposes it. */
+function isPrivateIpv4Literal(value: string): boolean {
+  try {
+    const parts = new URL(value).hostname.split('.').map(Number);
+    if (parts.length !== 4 || parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255))
+      return false;
+    const [a, b] = parts as [number, number];
+    return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  } catch {
+    return false;
+  }
+}
 /** Only public fields from an approved suggestion can prefill this form. */
 export function connectionDraft(value: unknown): ConnectionFormState | null {
   if (!isRecord(value)) return null;
@@ -107,6 +119,7 @@ export function connectionDraft(value: unknown): ConnectionFormState | null {
     type: input.type as Kind,
     name: input.name.slice(0, 80),
     url: input.url.slice(0, 2048),
+    allowPrivate: input.allowPrivate === true || isPrivateIpv4Literal(input.url),
     values: Object.fromEntries(
       extraFields(input.type)
         .filter(({ kind }) => kind === 'text')
@@ -130,6 +143,7 @@ const REASONS: Record<string, MessageKey> = {
   timeout: 'connections.reason.timeout',
   unavailable: 'connections.reason.unavailable',
   'invalid-response': 'connections.reason.invalid-response',
+  'private-network': 'connections.reason.private-network',
 };
 /** Message for the reason code of a failed test; unknown codes read as a generic failure. */
 export const reasonKey = (result: string): MessageKey =>

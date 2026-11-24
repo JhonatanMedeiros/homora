@@ -73,6 +73,8 @@ export function publicConnection(row: Row) {
  */
 export function testFailureReason(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
+  if ((error as { privateNetwork?: unknown } | null)?.privateNetwork === true)
+    return 'private-network';
   if (/HTTP response (401|403)\b/.test(message)) return 'rejected';
   if (/HTTP response/.test(message)) return 'http-error';
   if (/time(d)? ?out|exceeded/i.test(message)) return 'timeout';

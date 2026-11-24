@@ -53,7 +53,7 @@ it.each([
   const family = address.includes(':') ? (6 as const) : (4 as const);
   await expect(
     authorizeDestination('https://service.example', policy, async () => [{ address, family }]),
-  ).rejects.toThrow('disallowed');
+  ).rejects.toMatchObject({ privateNetwork: false });
 });
 
 it('requires explicit permission for private destinations and rejects mixed DNS', async () => {
@@ -64,7 +64,7 @@ it('requires explicit permission for private destinations and rejects mixed DNS'
       { ...policy, allowPrivate: false },
       async () => [privateAddress],
     ),
-  ).rejects.toMatchObject({ code: 'destination-disallowed' });
+  ).rejects.toMatchObject({ code: 'destination-disallowed', privateNetwork: true });
   await expect(
     authorizeDestination('https://service.example', policy, async () => [
       privateAddress,

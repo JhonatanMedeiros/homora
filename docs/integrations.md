@@ -124,7 +124,9 @@ are never cached as successful states.
 
 Configure a name and URL for each connection, complete specific fields below, test the
 connection, and save. Explicitly enable private network access if the destination resides
-on an internal LAN address. The destination must be reachable from the backend process:
+on an internal LAN address; without it the test fails with a "private network" reason (not a
+generic "could not reach"). A connection suggested by an agent can propose it, and a private
+IPv4 address checks it for you, but saving the form is still your consent. The destination must be reachable from the backend process:
 `localhost` inside a container resolves to that container itself. Special IP ranges are
 blocked by network policy. Redirects are not followed.
 

@@ -171,6 +171,8 @@ export const connectionSetupSchema = z
           return false;
         }
       }),
+    /** Whether the suggested form starts with "Allow private network" checked; the person still decides. */
+    allowPrivate: z.boolean().optional(),
     ...publicFieldShape(255, true),
   })
   .strict()
