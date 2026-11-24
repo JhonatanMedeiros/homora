@@ -13,16 +13,27 @@ export type IntegrationMetadata = { type: string; label: string; capabilities: r
 /** A reviewed, built-in login exchange; service-specific wire formats stay with the integration. */
 export type SessionAuthProfile = {
   loginPath: string;
+  /**
+   * Fixed query parameters of the login request, owned by the registration. Never editable by the
+   * user and never credentials: the host bounds, validates and encodes them (ADR 0028).
+   */
+  loginQuery?: Readonly<Record<string, string>>;
   body: Readonly<
     Record<string, { source: 'secret' | 'tokenId' } | { source: 'config'; key: string }>
   >;
   tokenPath: readonly string[];
   validityPath?: readonly string[];
   validPath?: readonly string[];
+  /** The login response must hold exactly this integer at the path (for example `errorCode: 0`). */
+  successCode?: { path: readonly string[]; value: number };
   /** Used when the API does not return a lifetime. */
   defaultValiditySeconds?: number;
   tokenFormat: 'base64' | 'printable';
-  sendAs: { type: 'header'; name: 'x-ftl-sid' | 'x-api-key' } | { type: 'bearer' };
+  sendAs:
+    | { type: 'header'; name: 'x-ftl-sid' | 'x-api-key' }
+    | { type: 'bearer' }
+    /** `Authorization: <scheme>=<token>`; the scheme is one of a closed, enumerated set. */
+    | { type: 'authorization'; scheme: 'access-token' };
   refreshOnSuccess: boolean;
 };
 export type IntegrationTransport = (request: {
