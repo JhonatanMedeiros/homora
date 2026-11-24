@@ -15,6 +15,8 @@ export type WidgetDefinition<Config> = {
   locations: readonly WidgetLocation[];
   source: WidgetSource | null;
   portable?: boolean;
+  /** Select the existing authenticated connection observation. */
+  connectionData?: 'resources';
   defaultConfig?: Config;
   sizes?: readonly WidgetSize[];
   parseConfig(value: unknown): Config | null;

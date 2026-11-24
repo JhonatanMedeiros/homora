@@ -1,0 +1,46 @@
+export const en = {
+  'pageWidgets.widgetCoolifyResources': 'Coolify resources',
+  'pageWidgets.widgetCoolifyResourcesDesc': 'Resources and states reported by Coolify',
+  'coolifyResources.reported': 'Reported by Coolify',
+  'coolifyResources.type': 'Type',
+  'coolifyResources.state': 'State',
+  'coolifyResources.limit': 'Maximum rows',
+  'coolifyResources.all': 'All',
+  'coolifyResources.application': 'Application',
+  'coolifyResources.service': 'Service',
+  'coolifyResources.running': 'Running',
+  'coolifyResources.degraded': 'Degraded',
+  'coolifyResources.stopped': 'Stopped',
+  'coolifyResources.unknown': 'Unknown',
+  'coolifyResources.empty':
+    'No resources are visible for these filters. A limited token may return an empty list.',
+  'coolifyResources.error':
+    'Could not read the connection. Check its credentials and try again later.',
+  'coolifyResources.loading': 'Loading resources…',
+  'coolifyResources.preview': 'Resources appear after adding the widget.',
+  'coolifyResources.more': 'Showing {shown} of {total} resources',
+  'coolifyResources.link': 'Open address {number} for {name}',
+} as const;
+export const ptBR: Record<keyof typeof en, string> = {
+  'pageWidgets.widgetCoolifyResources': 'Recursos do Coolify',
+  'pageWidgets.widgetCoolifyResourcesDesc': 'Recursos e estados reportados pelo Coolify',
+  'coolifyResources.reported': 'Reportado pelo Coolify',
+  'coolifyResources.type': 'Tipo',
+  'coolifyResources.state': 'Estado',
+  'coolifyResources.limit': 'Máximo de linhas',
+  'coolifyResources.all': 'Todos',
+  'coolifyResources.application': 'Aplicação',
+  'coolifyResources.service': 'Serviço',
+  'coolifyResources.running': 'Em execução',
+  'coolifyResources.degraded': 'Degradado',
+  'coolifyResources.stopped': 'Parado',
+  'coolifyResources.unknown': 'Desconhecido',
+  'coolifyResources.empty':
+    'Nenhum recurso visível para estes filtros. Um token limitado pode retornar uma lista vazia.',
+  'coolifyResources.error':
+    'Não foi possível ler a conexão. Confira as credenciais e tente novamente mais tarde.',
+  'coolifyResources.loading': 'Carregando recursos…',
+  'coolifyResources.preview': 'Os recursos aparecem após adicionar o widget.',
+  'coolifyResources.more': 'Exibindo {shown} de {total} recursos',
+  'coolifyResources.link': 'Abrir endereço {number} de {name}',
+};

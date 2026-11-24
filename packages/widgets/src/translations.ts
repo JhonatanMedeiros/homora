@@ -1,4 +1,8 @@
 import {
+  en as widgetCoolifyResources,
+  ptBR as widgetCoolifyResourcesPt,
+} from './widgets/coolify-resources/messages.js';
+import {
   en as widgetUptimeKumaMonitors,
   ptBR as widgetUptimeKumaMonitorsPt,
 } from './widgets/uptime-kuma-monitors/messages.js';
@@ -57,6 +61,7 @@ export const widgetEnglish = {
   ...widgetCertificateExpiry,
   ...widgetMaintenanceSchedule,
   ...widgetUptimeKumaMonitors,
+  ...widgetCoolifyResources,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -78,4 +83,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetCertificateExpiryPt,
   ...widgetMaintenanceSchedulePt,
   ...widgetUptimeKumaMonitorsPt,
+  ...widgetCoolifyResourcesPt,
 };

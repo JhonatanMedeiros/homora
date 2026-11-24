@@ -20,3 +20,17 @@ export function developmentMockInventory(connection: { type: string; name: strin
   }
   return null;
 }
+
+/** Synthetic resource inventories are available only when development mocks are enabled. */
+export function developmentMockResources(connection: { type: string; name: string }) {
+  for (const plugin of developmentPlugins) {
+    if (
+      'developmentMockResources' in plugin &&
+      typeof plugin.developmentMockResources === 'function'
+    ) {
+      const inventory = plugin.developmentMockResources(connection);
+      if (inventory) return inventory;
+    }
+  }
+  return null;
+}
