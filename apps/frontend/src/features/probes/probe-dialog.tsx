@@ -39,7 +39,7 @@ export function ProbeDialog({
 }) {
   return (
     <Dialog open={draft !== null} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl max-sm:top-auto max-sm:bottom-0 max-sm:max-h-[92dvh] max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none">
         {/* Remounted per draft so each opening starts from its own values. */}
         {draft && (
           <ProbeForm
@@ -106,119 +106,124 @@ function ProbeForm({
 
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="px-6 pt-6 pb-4">
         <DialogTitle>
           {draft.id === undefined ? t('probes.dialog.addTitle') : t('probes.dialog.editTitle')}
         </DialogTitle>
         <DialogDescription>{t('probes.dialog.description')}</DialogDescription>
       </DialogHeader>
-      <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-5">
-        <FieldGroup className="gap-4">
-          <Field>
-            <FieldLabel htmlFor="probe-name">{t('probes.field.name')}</FieldLabel>
-            <Input
-              id="probe-name"
-              required
-              maxLength={PROBE_NAME_MAX}
-              autoComplete="off"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={t('probes.field.namePlaceholder')}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="probe-check">{t('form.checkType')}</FieldLabel>
-            <CheckTypePicker id="probe-check" value={checkType} onChange={setCheckType} />
-            <FieldDescription>{t(`check.hint.${checkType}`, { days: 14 })}</FieldDescription>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="probe-address">{t('probes.field.address')}</FieldLabel>
-            <Input
-              id="probe-address"
-              type="url"
-              required
-              maxLength={2048}
-              autoComplete="off"
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-              placeholder="http://1.1.1.1"
-            />
-            <FieldDescription>{t('probes.field.addressHint')}</FieldDescription>
-          </Field>
-          {bodyCheck && (
+      <form onSubmit={(event) => void submit(event)} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-4">
+          <FieldGroup className="gap-4">
             <Field>
-              <FieldLabel htmlFor="probe-match">
-                {t(checkType === 'json' ? 'check.match.json' : 'check.match.keyword')}
-              </FieldLabel>
+              <FieldLabel htmlFor="probe-name">{t('probes.field.name')}</FieldLabel>
               <Input
-                id="probe-match"
+                id="probe-name"
                 required
-                maxLength={CHECK_MATCH_MAX}
+                maxLength={PROBE_NAME_MAX}
                 autoComplete="off"
-                value={match}
-                onChange={(event) => setMatch(event.target.value)}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t('probes.field.namePlaceholder')}
               />
             </Field>
-          )}
-          <div className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="probe-interval">{t('form.interval')}</FieldLabel>
-              <Input
-                id="probe-interval"
-                type="number"
-                inputMode="numeric"
-                min={CHECK_INTERVAL_MIN}
-                max={CHECK_INTERVAL_MAX}
-                value={interval}
-                onChange={(event) => setInterval(event.target.value)}
-              />
-              <FieldDescription>
-                {t('form.intervalHint', { min: CHECK_INTERVAL_MIN, max: CHECK_INTERVAL_MAX })}
-              </FieldDescription>
+              <FieldLabel htmlFor="probe-check">{t('form.checkType')}</FieldLabel>
+              <CheckTypePicker id="probe-check" value={checkType} onChange={setCheckType} />
+              <FieldDescription>{t(`check.hint.${checkType}`, { days: 14 })}</FieldDescription>
             </Field>
-            {usesStatus && (
+            <Field>
+              <FieldLabel htmlFor="probe-address">{t('probes.field.address')}</FieldLabel>
+              <Input
+                id="probe-address"
+                type="url"
+                required
+                maxLength={2048}
+                autoComplete="off"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="http://1.1.1.1"
+              />
+              <FieldDescription>{t('probes.field.addressHint')}</FieldDescription>
+            </Field>
+            {bodyCheck && (
               <Field>
-                <FieldLabel htmlFor="probe-status">{t('form.expectedStatus')}</FieldLabel>
+                <FieldLabel htmlFor="probe-match">
+                  {t(checkType === 'json' ? 'check.match.json' : 'check.match.keyword')}
+                </FieldLabel>
                 <Input
-                  id="probe-status"
+                  id="probe-match"
+                  required
+                  maxLength={CHECK_MATCH_MAX}
                   autoComplete="off"
-                  maxLength={3}
-                  value={expectedStatus}
-                  onChange={(event) => setExpectedStatus(event.target.value)}
-                  placeholder="200"
+                  value={match}
+                  onChange={(event) => setMatch(event.target.value)}
                 />
               </Field>
             )}
-          </div>
-          <Field orientation="horizontal" className="items-start rounded-lg border p-3">
-            <Checkbox
-              id="probe-private"
-              checked={allowPrivate}
-              onCheckedChange={(checked) => setAllowPrivate(checked === true)}
-            />
-            <div className="flex flex-col gap-1">
-              <FieldLabel htmlFor="probe-private">{t('form.allowPrivate')}</FieldLabel>
-              <FieldDescription>{t('form.allowPrivateHint')}</FieldDescription>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="probe-interval">{t('form.interval')}</FieldLabel>
+                <Input
+                  id="probe-interval"
+                  type="number"
+                  inputMode="numeric"
+                  min={CHECK_INTERVAL_MIN}
+                  max={CHECK_INTERVAL_MAX}
+                  value={interval}
+                  onChange={(event) => setInterval(event.target.value)}
+                />
+                <FieldDescription>
+                  {t('form.intervalHint', {
+                    min: CHECK_INTERVAL_MIN,
+                    max: CHECK_INTERVAL_MAX,
+                  })}
+                </FieldDescription>
+              </Field>
+              {usesStatus && (
+                <Field>
+                  <FieldLabel htmlFor="probe-status">{t('form.expectedStatus')}</FieldLabel>
+                  <Input
+                    id="probe-status"
+                    autoComplete="off"
+                    maxLength={3}
+                    value={expectedStatus}
+                    onChange={(event) => setExpectedStatus(event.target.value)}
+                    placeholder="200"
+                  />
+                </Field>
+              )}
             </div>
-          </Field>
-          <Field orientation="horizontal" className="items-start rounded-lg border p-3">
-            <Checkbox
-              id="probe-public"
-              checked={isPublic}
-              onCheckedChange={(checked) => setIsPublic(checked === true)}
-            />
-            <div className="flex flex-col gap-1">
-              <FieldLabel htmlFor="probe-public">{t('probes.field.public')}</FieldLabel>
-              <FieldDescription>{t('probes.field.publicHint')}</FieldDescription>
-            </div>
-          </Field>
-        </FieldGroup>
-        <FormError>{error}</FormError>
-        <DialogFooter>
+            <Field orientation="horizontal" className="items-start rounded-lg border p-3">
+              <Checkbox
+                id="probe-private"
+                checked={allowPrivate}
+                onCheckedChange={(checked) => setAllowPrivate(checked === true)}
+              />
+              <div className="flex flex-col gap-1">
+                <FieldLabel htmlFor="probe-private">{t('form.allowPrivate')}</FieldLabel>
+                <FieldDescription>{t('form.allowPrivateHint')}</FieldDescription>
+              </div>
+            </Field>
+            <Field orientation="horizontal" className="items-start rounded-lg border p-3">
+              <Checkbox
+                id="probe-public"
+                checked={isPublic}
+                onCheckedChange={(checked) => setIsPublic(checked === true)}
+              />
+              <div className="flex flex-col gap-1">
+                <FieldLabel htmlFor="probe-public">{t('probes.field.public')}</FieldLabel>
+                <FieldDescription>{t('probes.field.publicHint')}</FieldDescription>
+              </div>
+            </Field>
+          </FieldGroup>
+          <FormError>{error}</FormError>
+        </div>
+        <DialogFooter className="shrink-0 flex-row justify-end gap-2 border-t px-6 py-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button type="button" variant="outline" onClick={onCancel}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving} className="max-sm:flex-1">
             {saving && <Spinner />}
             {saving ? t('probes.saving') : t('probes.save')}
           </Button>
