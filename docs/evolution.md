@@ -2142,6 +2142,19 @@ Validation: focused module, source, refresh, transfer and backup/restore tests, 
 
 The connection widget uses the existing authenticated resource inventory and its 30-second backend cache, polling through the page widget host every 60 seconds. The generic widget definition selects the existing resource inventory rather than the summary, and failed reads discard the previous inventory so addresses are hidden. It displays Coolify-reported state independently of Homora monitoring. Fixture and development-mock validation do not replace validation against a live service, which remains pending.
 
+### Test suite resilience (#321)
+
+The shared test setup allows 4 seconds for Testing Library async queries and 15 seconds per test,
+rejects unexpected browser `fetch` calls, and restores test clocks. Deadline tests use controlled
+clocks; the uptime query budget measures CPU time rather than scheduler delays. The configuration
+transfer export test now mocks its page-list request.
+
+Validation: eight consecutive root `npx vitest run` executions passed 2,117/2,117 without added
+load. With 48 CPU loops, three executions each failed one test: `interface-settings.test.tsx` twice
+and `page-widgets-integration.test.tsx` once, all on timeouts. The issue's earlier four loaded runs
+had 8–14 failures each. The load processes were stopped and none remained. The CPU-time budget does
+not measure end-to-end latency under contention. Engineering standards are an English-only reference.
+
 ## TP-Link Omada integration and client-credentials login (#317)
 
 - Added a built-in read-only TP-Link Omada integration and widget: clients (total, Wi-Fi, wired),

@@ -35,6 +35,10 @@ const file = (text: string, name = 'homora-config.yaml') => new File([text], nam
 const choose = (input: HTMLElement, f: File) => fireEvent.change(input, { target: { files: [f] } });
 
 it('offers export downloads in YAML and JSON', () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => [] })),
+  );
   render(<ConfigTransfer onImported={() => {}} />);
   expect(screen.getByRole('link', { name: /Baixar YAML/ }).getAttribute('href')).toBe(
     '/api/config/export?format=yaml',
