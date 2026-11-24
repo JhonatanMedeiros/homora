@@ -57,6 +57,8 @@ export const en = {
   'connections.advanced': 'Advanced',
   'connections.advancedHint': 'Custom CA certificate.',
   'connections.removeCa': 'Remove imported CA',
+  'connections.caSaved': 'Imported CA certificate',
+  'connections.caSavedHint': 'Saved with this connection',
   'connections.allowPrivate': 'Allow private network access for this service',
   'connections.allowPrivateHint':
     'Authorize the private network only for an address you trust. Credentials require HTTPS.',
@@ -217,6 +219,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'connections.advanced': 'Avançado',
   'connections.advancedHint': 'Certificado de CA próprio.',
   'connections.removeCa': 'Remover CA importada',
+  'connections.caSaved': 'Certificado da CA importado',
+  'connections.caSavedHint': 'Salvo com esta conexão',
   'connections.allowPrivate': 'Permitir acesso à rede privada para este serviço',
   'connections.allowPrivateHint':
     'Autorize a rede privada somente para um endereço de sua confiança. Credenciais exigem HTTPS.',

@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
-import { Input } from '@homora/ui/input';
+import { FileField } from '@/components/file-field';
 import { Skeleton } from '@homora/ui/skeleton';
 import { Spinner } from '@homora/ui/spinner';
 import { LoadingRegion } from '@/components/skeletons';
@@ -18,7 +18,6 @@ type Trust = {
 export function MonitoringTrustSettings() {
   const [trust, setTrust] = useState<Trust | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [fileVersion, setFileVersion] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState<'upload' | 'remove' | null>(null);
   useEffect(() => {
@@ -51,7 +50,6 @@ export function MonitoringTrustSettings() {
       if (!response.ok) throw new Error();
       setTrust((await response.json()) as Trust);
       setFile(null);
-      setFileVersion((version) => version + 1);
       toast.success(t('settings.trust.saved'));
     } catch {
       setError(t('settings.trust.saveError'));
@@ -90,12 +88,13 @@ export function MonitoringTrustSettings() {
           <>
             <Field>
               <FieldLabel htmlFor="monitoring-ca-file">{t('settings.trust.file')}</FieldLabel>
-              <Input
-                key={fileVersion}
+              <FileField
                 id="monitoring-ca-file"
-                type="file"
                 accept=".pem,.crt"
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                disabled={Boolean(busy)}
+                value={file ? { name: file.name, size: file.size } : null}
+                onSelect={setFile}
+                onClear={() => setFile(null)}
               />
               <FieldDescription>{t('settings.trust.fileHint')}</FieldDescription>
             </Field>
