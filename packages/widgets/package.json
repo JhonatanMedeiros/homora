@@ -53,7 +53,8 @@
     "./availability/ui": "./src/widgets/availability/ui/index.tsx",
     "./latency-history/ui": "./src/widgets/latency-history/ui/index.tsx",
     "./certificate-expiry/ui": "./src/widgets/certificate-expiry/ui/index.tsx",
-    "./maintenance-schedule/ui": "./src/widgets/maintenance-schedule/ui/index.tsx"
+    "./maintenance-schedule/ui": "./src/widgets/maintenance-schedule/ui/index.tsx",
+    "./uptime-kuma-monitors/ui": "./src/widgets/uptime-kuma-monitors/ui/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

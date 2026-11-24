@@ -8,7 +8,7 @@ import {
 
 export type CardWidgetState = { widget: IntegrationWidget } & (
   | Extract<WidgetState<never>, { status: 'loading' | 'error' | 'invalid' }>
-  | { status: 'ready'; stats: WidgetStat[]; checkedAt?: string; stale?: boolean }
+  | { status: 'ready'; stats: WidgetStat[]; data?: unknown; checkedAt?: string; stale?: boolean }
   /** The connection this widget read from no longer exists, so it has nothing to show. */
   | { status: 'unconfigured' }
 );

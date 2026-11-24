@@ -1,3 +1,4 @@
+import { widgetUI as widgetUptimeKumaMonitors } from '@homora/widgets/uptime-kuma-monitors/ui';
 import { widgetUI as widgetCertificateExpiry } from '@homora/widgets/certificate-expiry/ui';
 import { widgetUI as widgetMaintenanceSchedule } from '@homora/widgets/maintenance-schedule/ui';
 import { widgetUI as widgetQuickLinks } from '@homora/widgets/quick-links/ui';
@@ -39,6 +40,7 @@ const widgets = {
 
   'certificate-expiry': widgetCertificateExpiry,
   'maintenance-schedule': widgetMaintenanceSchedule,
+  'uptime-kuma-monitors': widgetUptimeKumaMonitors,
 } satisfies Record<LocalWidgetType, WidgetUI>;
 export function getWidgetUI(type: string): WidgetUI | undefined {
   return Object.hasOwn(widgets, type) ? widgets[type as LocalWidgetType] : undefined;

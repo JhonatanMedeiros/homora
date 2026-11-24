@@ -13,7 +13,8 @@ import type { Connection } from '@/features/connections/connection-model';
 import { useWidgetMonitoring } from '@/hooks/use-widget-monitoring';
 import type { PageRow } from '@/hooks/use-pages';
 import { t, tOr } from '@/i18n';
-import { resolveWidget } from '@homora/integrations';
+import { integrationWidgetDefinition, resolveWidget } from '@homora/integrations';
+import { supportsSource } from '@homora/widgets';
 import type { WidgetSize } from '@homora/widgets';
 import type { WidgetUI } from '@homora/widgets/ui';
 
@@ -60,6 +61,16 @@ function DialogContents({
   const pageName = pages.find((page) => page.id === draft?.pageId)?.name ?? '';
   const entry = draft ? getWidgetUI(draft.type) : undefined;
   const sizes = (draft && resolveWidget(draft.type)?.sizes) || ['normal'];
+  const definition = draft && resolveWidget(draft.type);
+  const connectedModule = Boolean(entry && definition?.source?.contract.startsWith('integration:'));
+  const compatibleConnections = connectedModule
+    ? connections.filter((connection) =>
+        supportsSource(
+          definition!.source,
+          integrationWidgetDefinition(connection.type)?.source ?? null,
+        ),
+      )
+    : [];
   const Editor = entry?.Editor;
   const Preview = entry?.Preview;
   const parsedConfig = !gallery && draft && entry ? entry.parse(draft.config) : null;
@@ -145,6 +156,30 @@ function DialogContents({
                   </FormSelect>
                 </Field>
               )}
+              {connectedModule && (
+                <Field>
+                  <FieldLabel htmlFor="pw-connection">
+                    {t('pageWidgets.groupConnections')}
+                  </FieldLabel>
+                  <FormSelect
+                    id="pw-connection"
+                    value={String(draft.connectionId ?? '')}
+                    onChange={(event) =>
+                      onChange({
+                        ...draft,
+                        connectionId: event.target.value ? Number(event.target.value) : null,
+                      })
+                    }
+                  >
+                    <FormSelectOption value="">—</FormSelectOption>
+                    {compatibleConnections.map((connection) => (
+                      <FormSelectOption key={connection.id} value={String(connection.id)}>
+                        {connection.name}
+                      </FormSelectOption>
+                    ))}
+                  </FormSelect>
+                </Field>
+              )}
               {Editor && (
                 <Editor
                   config={draft.config}
@@ -220,7 +255,14 @@ function DialogContents({
               </Button>
               <Button
                 type="submit"
-                disabled={busy || (entry?.canSubmit ? !entry.canSubmit(draft.config) : false)}
+                disabled={
+                  busy ||
+                  (connectedModule &&
+                    !compatibleConnections.some(
+                      (connection) => connection.id === draft.connectionId,
+                    )) ||
+                  (entry?.canSubmit ? !entry.canSubmit(draft.config) : false)
+                }
               >
                 {draft.id === null ? t('pageWidgets.add') : t('widgets.save')}
               </Button>

@@ -172,6 +172,9 @@ export type WidgetHost = {
   ) => Promise<T>;
   readFeed?: (query: FeedQuery, signal: AbortSignal) => Promise<FeedData>;
 
+  connectionReading?:
+    | { status: 'loading' | 'error' | 'unconfigured' | 'invalid' }
+    | { status: 'ready'; data: unknown; stale: boolean };
   locale: string;
   incidentReading?: MonitoringReading;
   openMonitor?: (id: number, hasService: boolean) => void;

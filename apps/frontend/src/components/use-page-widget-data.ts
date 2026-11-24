@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { widgetStats, type Connection } from '@/features/connections/connection-model';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { t } from '@/i18n';
+import { getWidgetUI } from '@/components/widget-ui-registry';
 
 export type PageWidget = {
   id: number;
@@ -91,12 +92,14 @@ export function usePageWidgetData(pageId: number) {
         } catch {
           /* Isolate a broken presentation. */
         }
-        const good = lastGood.current[item.id];
-        if (data && stats) {
+        const cached = lastGood.current[item.id];
+        const good = cached?.widget.integrationId === item.connectionId ? cached : undefined;
+        if (data && (stats || getWidgetUI(item.type))) {
           const fresh = {
             widget,
             status: 'ready' as const,
-            stats,
+            stats: stats ?? [],
+            data,
             checkedAt: new Date().toISOString(),
           };
           lastGood.current[item.id] = fresh;

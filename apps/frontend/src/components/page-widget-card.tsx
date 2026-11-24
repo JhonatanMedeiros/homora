@@ -95,12 +95,16 @@ export function PageWidgetCard({
     },
   };
   const missingConnection =
-    !ui && !loading && !connections.some((connection) => connection.id === item.connectionId);
+    item.connectionId !== null &&
+    !loading &&
+    !connections.some((connection) => connection.id === item.connectionId);
   const state: CardWidgetState =
     item.version === 1
       ? missingConnection
         ? { ...base, status: 'unconfigured' }
-        : (readings[item.id] ?? { ...base, status: 'loading' })
+        : readings[item.id]?.widget.integrationId === item.connectionId
+          ? readings[item.id]!
+          : { ...base, status: 'loading' }
       : { ...base, status: 'invalid' };
   const edit = () => {
     setChosen(true);
@@ -165,6 +169,11 @@ export function PageWidgetCard({
         {View ? (
           config !== null && config !== undefined ? (
             <WidgetHost
+              connectionReading={
+                state.status === 'ready'
+                  ? { status: 'ready', data: state.data, stale: !!state.stale }
+                  : { status: state.status }
+              }
               incidentReading={monitoring}
               wide={layout === 'strip' && item.size === 'wide'}
               groups={groups}
