@@ -1,28 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { integrationWidgetDefinition, resolveWidget } from '@homora/integrations';
-import {
-  isInternalSource,
-  isWeatherSource,
-  supportsSource,
-  type WidgetDefinition,
-} from '@homora/widgets';
+import { resolveWidget } from '@homora/integrations';
+import type { WidgetDefinition } from '@homora/widgets';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { parseId } from '../input-schemas.js';
+import { checkPageWidget } from '../page-widget-validation.js';
 
 const id = z.number().int().safe().positive();
-const bodySchema = z
-  .object({
-    pageId: id,
-    type: z.string().min(1).max(80),
-    name: z.string().trim().max(80),
-    config: z.unknown(),
-    connectionId: id.nullable(),
-    size: z.enum(['normal', 'wide']).default('normal'),
-  })
-  .strict();
 const orderSchema = z.object({ pageId: id, ids: z.array(id).max(200) }).strict();
 
 type Row = {
@@ -73,27 +59,8 @@ export function registerPageWidgetRoutes(
       return { ...row, config, size: row.size === 'wide' ? 'wide' : 'normal' };
     });
   const validate = (raw: unknown) => {
-    const parsed = bodySchema.safeParse(raw);
-    if (!parsed.success) return null;
-    const value = parsed.data;
-    if (!sqlite.prepare('SELECT id FROM pages WHERE id=?').get(value.pageId)) return null;
-    const definition = resolve(value.type);
-    if (!definition || !(definition.sizes ?? ['normal']).includes(value.size)) return null;
-    const config = definition.parseConfig(value.config);
-    if (config === null) return null;
-    if (
-      definition.source === null ||
-      isInternalSource(definition.source) ||
-      isWeatherSource(definition.source)
-    )
-      return value.connectionId === null ? { ...value, config } : null;
-    if (value.connectionId === null) return null;
-    const connection = sqlite
-      .prepare('SELECT type FROM integration_instances WHERE id=?')
-      .get(value.connectionId) as { type: string } | undefined;
-    const offered = connection && integrationWidgetDefinition(connection.type)?.source;
-    if (!offered || !supportsSource(definition.source, offered)) return null;
-    return value;
+    const checked = checkPageWidget(sqlite, raw, resolve);
+    return checked.ok ? checked.value : null;
   };
   app.get('/api/page-widgets', async () => list());
   app.post('/api/page-widgets', async (request, reply) => {

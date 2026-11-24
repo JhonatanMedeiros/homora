@@ -76,14 +76,22 @@ export function createManagedProposalCreator({
       const integrationId =
         'integrationId' in change.change ? change.change.integrationId : undefined;
       const widgetRows =
-        change.kind === 'widget' && change.change.op !== 'create' && change.change.op !== 'move'
+        change.kind === 'widget' &&
+        change.change.op !== 'create' &&
+        change.change.op !== 'move' &&
+        change.change.op !== 'page-create' &&
+        change.change.op !== 'page-delete'
           ? snapshot.widgets.filter((row) => row.id === targetId)
           : [];
       const widgetConnectionId = integrationId ?? widgetRows[0]?.integration_id;
-      const widgetServiceIds = [
+      const widgetServiceIds = new Set([
         widgetRows[0]?.service_id,
         'serviceId' in change.change ? change.change.serviceId : undefined,
-      ];
+      ]);
+      const placedConnectionId =
+        change.kind === 'widget' && change.change.op === 'page-create'
+          ? change.change.connectionId
+          : undefined;
       const relevantGroups =
         change.kind === 'group'
           ? change.change.op === 'create'
@@ -228,16 +236,25 @@ export function createManagedProposalCreator({
                                     position,
                                   })),
                               }
-                            : change.kind === 'widget' && change.change.op === 'move'
+                            : change.kind === 'widget' &&
+                                (change.change.op === 'move' ||
+                                  change.change.op === 'page-create' ||
+                                  change.change.op === 'page-delete')
                               ? {
                                   widgets: sqlite
                                     .prepare(
-                                      'SELECT id,name,page_id AS pageId,position FROM page_widgets ORDER BY page_id,position,id',
+                                      'SELECT id,name,type,connection_id AS connectionId,page_id AS pageId,position FROM page_widgets ORDER BY page_id,position,id',
                                     )
                                     .all(),
                                   pages: sqlite
                                     .prepare('SELECT id,name FROM pages ORDER BY position,id')
                                     .all(),
+                                  connections:
+                                    change.change.op === 'page-create'
+                                      ? snapshot.connections
+                                          .filter((row) => row.id === placedConnectionId)
+                                          .map(({ id, type, name }) => ({ id, type, name }))
+                                      : [],
                                 }
                               : change.kind === 'widget'
                                 ? {
@@ -254,7 +271,7 @@ export function createManagedProposalCreator({
                                       .filter((row) => row.id === widgetConnectionId)
                                       .map(({ id, type, name }) => ({ id, type, name })),
                                     services: snapshot.services
-                                      .filter((row) => widgetServiceIds.includes(row.id))
+                                      .filter((row) => widgetServiceIds.has(row.id))
                                       .map(({ id, name }) => ({ id, name })),
                                   }
                                 : null;

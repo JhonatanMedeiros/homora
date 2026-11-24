@@ -58,6 +58,8 @@ const operations: Record<string, MessageKey> = {
   cancel: 'managed.cancel',
   reorder: 'managed.reorder',
   move: 'managed.move',
+  'page-create': 'managed.pageCreate',
+  'page-delete': 'managed.pageDelete',
   link: 'managed.link',
   unlink: 'managed.unlink',
   pin: 'managed.pin',
@@ -69,7 +71,7 @@ const operations: Record<string, MessageKey> = {
 function Value({ value, field }: { value: unknown; field?: string }) {
   if (value == null) return <span>{t('proposal.empty')}</span>;
   if (Array.isArray(value))
-    return value.length ? (
+    return value.length > 0 ? (
       <ol className="flex list-decimal flex-col gap-2 pl-6">
         {value.map((item, index) => (
           <li key={index}>
