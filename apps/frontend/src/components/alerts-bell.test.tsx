@@ -99,8 +99,10 @@ it('shows deleted services without a link and marks all notifications as read', 
   const navigate = vi.fn();
   render(<AlertsBell onService={navigate} />);
   fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
-  expect(await screen.findByText('Removed · Service removed')).toBeTruthy();
-  expect(screen.getByText('Downtime: 1 h')).toBeTruthy();
+  expect(await screen.findByText('Removed')).toBeTruthy();
+  expect(screen.getByText(/Service removed/)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /^Removed/ })).toBeNull();
+  expect(screen.getByText(/Downtime: 1 h/)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Mark all as read' }));
   await waitFor(() => expect(screen.getByRole('button', { name: /none unread/ })).toBeTruthy());
   expect(navigate).not.toHaveBeenCalled();
@@ -157,8 +159,44 @@ it('tells the opener when an event comes from a probe', async () => {
   const onService = vi.fn();
   render(<AlertsBell onService={onService} />);
   fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Internet' }));
+  fireEvent.click(await screen.findByRole('button', { name: /^Unread: Internet/ }));
   expect(onService).toHaveBeenCalledWith(9, true);
+});
+
+it('opens the service and marks the notification as read from the row', async () => {
+  setLocale('en');
+  const fetcher = vi.fn(
+    async () =>
+      new Response(
+        JSON.stringify({
+          unread: 1,
+          nextBefore: null,
+          items: [
+            {
+              id: 7,
+              serviceId: 3,
+              serviceName: 'Tetto',
+              kind: 'up',
+              confirmedAt: 1700000000000,
+              startedAt: 1699999940000,
+              endedAt: 1700000000000,
+              reason: 'no-response',
+              httpStatus: null,
+              readAt: null,
+            },
+          ],
+        }),
+      ),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  const onService = vi.fn();
+  render(<AlertsBell onService={onService} />);
+  fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
+  fireEvent.click(await screen.findByRole('button', { name: /^Unread: Tetto/ }));
+  expect(onService).toHaveBeenCalledWith(3, false);
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith('/api/inbox/7/read', { method: 'POST' }),
+  );
 });
 
 it('names a probe event as a probe', async () => {
@@ -192,7 +230,8 @@ it('names a probe event as a probe', async () => {
   );
   render(<AlertsBell onService={() => {}} />);
   fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
-  expect(await screen.findByText('Probe recovered')).toBeTruthy();
+  expect(await screen.findByText('Recovered')).toBeTruthy();
+  expect(screen.getByText('probe')).toBeTruthy();
 });
 
 it('shows one measurement alert that says it is not a service outage', async () => {
@@ -225,7 +264,9 @@ it('shows one measurement alert that says it is not a service outage', async () 
   );
   render(<AlertsBell onService={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: /1 unread/ }));
-  expect(await screen.findByText('Monitoring cannot measure')).toBeTruthy();
+  expect(await screen.findByText('Monitoring')).toBeTruthy();
+  expect(screen.getByText('Cannot measure')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /^Unread: Monitoring/ })).toBeNull();
   expect(screen.getByText(/Not a service outage/)).toBeTruthy();
   expect(screen.queryByText(/removed/i)).toBeNull();
 });
