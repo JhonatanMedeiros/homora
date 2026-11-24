@@ -40,7 +40,7 @@ DNS blocker is doing. They are **optional** and **read-only**: Homora queries th
 
 ::: warning Experimental
 TP-Link Omada was built from API-only reports and has not been validated through Homora. Its Controller name must resolve
-from the Homora container and match the certificate; client counts need client history enabled in the Controller.
+from the Homora container and match the certificate (attach a private CA to the connection if needed); client counts need client history enabled in the Controller.
 
 The integrations were validated with mocks and documented sample responses. Coolify (v4.7.5) and Pi-hole were partly
 checked against real installations. Verify each connection in your own environment. The authoritative table, with

@@ -29,6 +29,19 @@ data lives in the `homora-data` volume.
 The bind address comes from `HOMORA_BIND_IP` (default `127.0.0.1`). Override it, for example with
 `HOMORA_BIND_IP=0.0.0.0`, only when a reverse proxy on the same private network terminates HTTPS.
 
+### Map a LAN-only name
+
+An appliance with a certificate name that only your LAN resolves (for example a TP-Link Omada Controller) may not
+resolve from the backend container. Map it with the optional override, using a synthetic value like this one:
+
+```bash
+HOMORA_EXTRA_HOST=controller.example.lan:192.0.2.10 \
+  docker compose -f compose.yml -f compose.extra-hosts.yml up -d --build
+```
+
+Certificate verification stays on: the name must appear in the certificate, and a private CA is attached to the
+connection.
+
 ### Run the release image
 
 Release images are published to GHCR for amd64 and arm64, so you can run Homora without cloning or building it:

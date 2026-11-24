@@ -12,7 +12,7 @@ export const omadaDefinition: CodeDefinition = {
   fields: [
     urlField({
       httpsOnly: true,
-      help: 'The HTTPS address of the Omada Controller web interface. Its DNS name must resolve from the Homora backend and match the certificate.',
+      help: 'The HTTPS address of the Omada Controller web interface. Its DNS name must resolve from the Homora backend and appear in the certificate. For a private or self-signed certificate, attach its CA below.',
       errorCode: 'https-url-required',
     }),
     {
