@@ -54,6 +54,8 @@ export const en = {
   'connections.ca': 'CA public certificate (optional, PEM)',
   'connections.caTooLarge': 'The certificate must be at most 64 KB.',
   'connections.caReadFailed': 'Could not read the certificate.',
+  'connections.advanced': 'Advanced',
+  'connections.advancedHint': 'Custom CA certificate.',
   'connections.removeCa': 'Remove imported CA',
   'connections.allowPrivate': 'Allow private network access for this service',
   'connections.allowPrivateHint':
@@ -212,6 +214,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'connections.ca': 'Certificado público da CA (opcional, PEM)',
   'connections.caTooLarge': 'O certificado deve ter no máximo 64 KB.',
   'connections.caReadFailed': 'Não foi possível ler o certificado.',
+  'connections.advanced': 'Avançado',
+  'connections.advancedHint': 'Certificado de CA próprio.',
   'connections.removeCa': 'Remover CA importada',
   'connections.allowPrivate': 'Permitir acesso à rede privada para este serviço',
   'connections.allowPrivateHint':

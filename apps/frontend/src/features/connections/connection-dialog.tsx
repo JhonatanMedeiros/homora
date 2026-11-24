@@ -26,9 +26,9 @@ export function ConnectionDialog({ state }: { state: State }) {
   if (discarding) title = t('connections.discardTitle');
   else if (form)
     title =
-      state.editing !== null
-        ? t('card.edit', { name: labels[form.type] })
-        : t('connections.newTitle', { type: labels[form.type] });
+      state.editing === null
+        ? t('connections.newTitle', { type: labels[form.type] })
+        : t('card.edit', { name: labels[form.type] });
   else if (picking) {
     title = t('connections.pickTitle');
     description = t('connections.pickHint');
@@ -45,7 +45,7 @@ export function ConnectionDialog({ state }: { state: State }) {
       onOpenChange={(next) => !next && state.closeDialog()}
       title={title}
       description={description}
-      wide={picking && !form}
+      size={form ? 'form' : picking ? 'wide' : 'default'}
     >
       {discarding ? (
         <div className="flex flex-col gap-4">
