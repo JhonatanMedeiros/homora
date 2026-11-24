@@ -17,7 +17,7 @@
     "@homora/ui": "workspace:*",
     "@homora/utils": "workspace:*",
     "@homora/widgets": "workspace:*",
-    "@simplewebauthn/browser": "13.3.0",
+    "@simplewebauthn/browser": "14.0.0",
     "@tailwindcss/vite": "4.3.5",
     "class-variance-authority": "0.7.1",
     "date-fns": "^4.4.0",
