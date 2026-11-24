@@ -4,8 +4,7 @@ description: 'Structured JSON runtime logs, log levels and the health check endp
 
 # Logs and health checks
 
-Homora's backend writes **one JSON object per line to standard output**. There are no log files to
-rotate: your container runtime keeps and rotates them.
+Homora's backend writes **one JSON object per line to standard output**; your container runtime keeps and rotates them.
 
 ## Reading the logs
 
@@ -46,25 +45,20 @@ An invalid level stops the backend at startup with a clear message. Restart afte
 
 ## What you will see
 
-- **At startup (`info`)**: build version and commit, database path, how many migrations were applied
-  (or that the schema is up to date), bind address and ports, and which features are on (Docker
-  discovery, trusted proxy, development mocks, number of allowed origins). If the database was
-  written by a **newer** Homora build, the backend logs a `fatal` line with the migration counts and
-  refuses to start.
-- **Requests (`info`)**: one line when a request arrives and one when it completes. `/api/health` is
-  not logged. Use `warn` to hide request lines.
-- **Errors (`error`)**: every unexpected 5xx logs the original error with its stack, route, method
-  and request id. The browser still only sees `internal-error`.
-- **Monitoring**: a line each time a service changes state (`warn` when it becomes unavailable,
-  `info` when it recovers), with the raw failure (`errorCode`, `errorMessage`) that the interface
-  does not show. A service that keeps failing is not logged again on every check. A `warn` reading
-  `systemic monitoring failure: N of M services fail with <reason>` means most services fail for the
-  same reason, which usually points at Homora's own network, DNS or policy rather than at the
-  services. Incidents opening and closing are logged. `debug` adds one summary line per cycle.
-- **Notifications and integrations**: failed deliveries and failed integration queries, with the
-  channel or connection id and the type, never the address or credentials.
-- **Crashes**: an uncaught exception or unhandled rejection logs a `fatal` line and the process shuts
-  down cleanly with a non-zero exit code, so the restart policy brings it back.
+- **Startup (`info`)**: version and commit, database path, migrations applied, bind address and ports, and enabled
+  features. A database written by a **newer** build logs a `fatal` line and the backend refuses to start.
+- **Requests (`info`)**: one line on arrival and one on completion (`/api/health` is not logged). Use `warn` to hide
+  them.
+- **Errors (`error`)**: every unexpected 5xx logs the error with stack, route, method and request id; the browser only
+  sees `internal-error`.
+- **Monitoring**: a line when a service changes state (`warn` when unavailable, `info` on recovery) with the raw failure
+  (`errorCode`, `errorMessage`), not repeated on every check. A `warn` reading `systemic monitoring failure: N of M
+  services fail with <reason>` means most services fail for the same reason, which usually points at Homora's own
+  network, DNS or policy. Incidents opening and closing are logged; `debug` adds a summary per cycle.
+- **Notifications and integrations**: failed deliveries and queries, with the channel or connection id and type, never the
+  address or credentials.
+- **Crashes**: an uncaught exception logs a `fatal` line and the process exits cleanly with a non-zero code, so the
+  restart policy brings it back.
 
 ## What is never logged
 
@@ -88,11 +82,9 @@ without pasting the value.
 }
 ```
 
-It answers `503` with `"status": "unhealthy"` when the database cannot be read or the monitor has
-not finished a cycle for two minutes (`"monitor": {"status": "stalled"}`), which is how a running but
-stuck monitor is told apart from a healthy one. Right after startup the monitor reads `starting`. The
-backend image's Docker `HEALTHCHECK` uses this endpoint, so `docker ps` shows the container as
-unhealthy in that case.
+It answers `503` with `"status": "unhealthy"` when the database cannot be read or the monitor has not finished a cycle for
+two minutes (`"monitor": {"status": "stalled"}`); right after startup it reads `starting`. The backend image's Docker
+`HEALTHCHECK` uses this endpoint, so `docker ps` shows the container as unhealthy.
 
 The design and the redaction rules are recorded in
 [ADR 0022](../decisions/0022-structured-runtime-logs.md).

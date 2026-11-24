@@ -4,8 +4,6 @@ description: 'Export and import configuration, and back up and restore the datab
 
 # Import, export and backup
 
-Three tools protect and move your data:
-
 | Tool       | What it does                                                                |
 | ---------- | --------------------------------------------------------------------------- |
 | **Export** | Produces a portable file of your cards and layout.                          |
@@ -20,8 +18,8 @@ In **Settings**, download your groups, cards and their order as YAML or JSON (`G
 
 - The file never contains passwords, tokens, connections or IDs. It can contain page widget names and connection names,
   so review it before sharing.
-- Extra addresses (Links) are exported with their type name and color (format version 4; older files still import).
-- Pinned favorites are recorded as `pinned: true`; files from older versions import with none pinned.
+- Extra addresses (Links) are exported with their type name and color, and pinned favorites as `pinned: true`. Older
+  files still import.
 
 ## Import
 
@@ -32,8 +30,7 @@ was ignored, and writes nothing until you confirm.
 - Imported cards cannot monitor your private network unless you tick that option for a Homora file you trust.
 - Clock widgets are imported. Connected widgets appear as skipped in the preview and must be recreated with a
   connection you choose.
-- Icons from other dashboards are kept only when Homora has an equivalent (an image URL, an emoji, a brand logo or a
-  built-in icon); the others are left empty with a warning.
+- Icons from other dashboards are kept only when Homora has an equivalent; the others are left empty with a warning.
 - Widgets, monitoring settings and Docker links from Homepage and Dashy are not imported.
 
 The formats were checked against those projects' documentation; real files may vary.
@@ -49,7 +46,7 @@ pnpm backup data/homora.sqlite backups/homora.sqlite
 ### What to keep
 
 The database holds your cards, the administrator account (with its sessions) and encrypted connection credentials.
-Next to it are files you must copy separately into a protected backup and restore under the same derived names:
+Copy these files next to it into a protected backup, and restore them under the same names:
 
 | File                        | Purpose                                                                                                      |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -80,5 +77,3 @@ docker compose cp backend:/app/data/homora.sqlite.proxmox backups/backup-2026-11
 ```
 
 Skip a copy if the file does not exist. Copy `homora.sqlite.background` the same way if you use a background image.
-
-Page widget exports preserve wide size when supported. Older exports import at normal size; older Homora versions ignore the size field and display the widget at normal width.

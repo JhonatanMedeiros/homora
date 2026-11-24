@@ -11,7 +11,7 @@ Este guia reúne orientações em português para instalar, usar e administrar o
 
 - [Dashboard](dashboard.md), [serviços e monitoramento](services-and-monitoring.md).
 - [Alertas e página de status](notifications-and-status-page.md).
-- [Integrações e widgets](integrations-and-widgets.md), [descoberta Docker](docker-discovery.md).
+- [Integrações e widgets](integrations-and-widgets.md), [galeria de widgets](widget-gallery.md), [descoberta Docker](docker-discovery.md).
 - [Agentes de IA e MCP](agents-and-mcp.md), [aparência](appearance.md).
 
 ## Administração

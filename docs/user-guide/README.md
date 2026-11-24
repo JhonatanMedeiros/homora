@@ -26,6 +26,7 @@ showcase; this guide is the manual.
 | [Services and monitoring](services-and-monitoring.md)                        | Service form, seven check types, thresholds, incidents, uptime, maintenance, hosts and dependencies |
 | [Notifications and the public status page](notifications-and-status-page.md) | Telegram, ntfy, Discord, webhooks, and the optional read-only status page                           |
 | [Integrations and widgets](integrations-and-widgets.md)                      | Connections, supported integrations, card widgets, page widgets, top bar                            |
+| [Widget gallery](widget-gallery.md)                                          | Every integration and widget with a preview, and a five-minute guide to adding the first            |
 | [Docker discovery](docker-discovery.md)                                      | Container labels, remote agents, restricted Docker proxy, troubleshooting                           |
 | [AI agents and MCP](agents-and-mcp.md)                                       | Agent tokens, scopes, proposals, review, stdio and HTTP setup                                       |
 | [Appearance and personalization](appearance.md)                              | Theme, language, accent, backgrounds, custom CSS, safe mode, pages                                  |

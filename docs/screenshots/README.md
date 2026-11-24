@@ -26,35 +26,39 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 
 ## Files
 
-| File                           | Screen                                        |
-| ------------------------------ | --------------------------------------------- |
-| `dashboard-dark.png`           | Dashboard, dark theme (hero image)            |
-| `dashboard-light.png`          | Dashboard, light theme                        |
-| `dashboard-cards.png`          | Dashboard with the Cards layout               |
-| `dashboard-drawer.png`         | Details drawer of a failing service           |
-| `command-palette.png`          | Command palette filtering with `status:down`  |
-| `service-detail.png`           | A service's uptime, latency and incidents     |
-| `service-form.png`             | Service form, Appearance tab                  |
-| `service-form-monitoring.png`  | Service form, Monitoring tab                  |
-| `service-form-connections.png` | Service form, Connections tab                 |
-| `organize-mode.png`            | Organize mode                                 |
-| `host-view.png`                | Host view with a service that may be affected |
-| `host-map.png`                 | Service map of nodes, guests and services     |
-| `integrations.png`             | Integrations page                             |
-| `agents.png`                   | Agents page with a pending proposal           |
-| `proposal-review.png`          | A proposal's diff with Approve and Reject     |
-| `proposal-review-mobile.png`   | The same review on a phone                    |
-| `activity.png`                 | Activity log                                  |
-| `account.png`                  | Account page                                  |
-| `login.png`                    | Sign-in page                                  |
-| `public-status.png`            | Public status page (anonymous view)           |
-| `settings-appearance.png`      | Settings → Appearance                         |
-| `settings-home.png`            | Settings → Home and pages                     |
-| `settings-topbar.png`          | Settings → Top bar and shortcuts              |
-| `settings-alerts.png`          | Settings → Alerts                             |
-| `settings-public.png`          | Settings → Public status                      |
-| `settings-backup.png`          | Settings → Export and import                  |
-| `mobile-dashboard.png`         | Dashboard on a phone                          |
+| File                               | Screen                                                 |
+| ---------------------------------- | ------------------------------------------------------ |
+| `dashboard-dark.png`               | Dashboard, dark theme (hero image)                     |
+| `dashboard-light.png`              | Dashboard, light theme                                 |
+| `dashboard-cards.png`              | Dashboard with the Cards layout                        |
+| `dashboard-drawer.png`             | Details drawer of a failing service                    |
+| `command-palette.png`              | Command palette filtering with `status:down`           |
+| `service-detail.png`               | A service's uptime, latency and incidents              |
+| `service-form.png`                 | Service form, Appearance tab                           |
+| `service-form-monitoring.png`      | Service form, Monitoring tab                           |
+| `service-form-connections.png`     | Service form, Connections tab                          |
+| `organize-mode.png`                | Organize mode                                          |
+| `host-view.png`                    | Host view with a service that may be affected          |
+| `host-map.png`                     | Service map of nodes, guests and services              |
+| `integrations.png`                 | Integrations page                                      |
+| `agents.png`                       | Agents page with a pending proposal                    |
+| `proposal-review.png`              | A proposal's diff with Approve and Reject              |
+| `proposal-review-mobile.png`       | The same review on a phone                             |
+| `activity.png`                     | Activity log                                           |
+| `account.png`                      | Account page                                           |
+| `login.png`                        | Sign-in page                                           |
+| `public-status.png`                | Public status page (anonymous view)                    |
+| `settings-appearance.png`          | Settings → Appearance                                  |
+| `settings-home.png`                | Settings → Home and pages                              |
+| `settings-topbar.png`              | Settings → Top bar and shortcuts                       |
+| `settings-alerts.png`              | Settings → Alerts                                      |
+| `settings-public.png`              | Settings → Public status                               |
+| `settings-backup.png`              | Settings → Export and import                           |
+| `mobile-dashboard.png`             | Dashboard on a phone                                   |
+| `widgets-gallery-integrations.png` | Gallery of integration widgets                         |
+| `widgets-gallery-local.png`        | Gallery of page widgets that need no connection        |
+| `widgets-gallery-monitoring.png`   | Gallery of monitoring widgets                          |
+| `widgets/<name>.png`               | One image per widget (32), for the widget gallery page |
 
 ## How to refresh them
 
@@ -72,3 +76,20 @@ When the interface changes, retake the affected screens so the documentation doe
 5. Look at every image before committing it, and make sure it shows no real address, name or secret.
 
 Keep the images small: each should stay well under 250 KB.
+
+## The widget images
+
+The widget gallery uses extra images made from a second demo setup, on top of the one above:
+
+- One connection per integration, added with a fictional `*.home.example` address and no credentials. The capture
+  replaced each connection's data response with a hand-written example (for instance 18,423 DNS queries for Pi-hole),
+  so no real service is contacted. Proxmox, Uptime Kuma and Coolify use the demo data built into the development
+  server.
+- The news feed and public IP responses were replaced the same way. The address is `203.0.113.42`, reserved for
+  documentation. The weather and domain-expiry widgets showed live data for a chosen place and for `example.com`
+  and `example.org`; retake them if you prefer fully offline captures.
+- The latency and availability history of the sample services is synthetic, like the history above.
+- Widgets were placed on four demo pages (integrations, services, local widgets and monitoring), at most 12 per page.
+  Each page was captured in dark theme at 1440 × 2600 and 2× density with the widget panel open, then every widget
+  was cropped from that image. The galleries tile the crops on a dark background. Take one capture per page rather
+  than one per widget: capturing a single element made the page reload its widgets into the loading state.

@@ -4,9 +4,6 @@ description: 'Theme, language, accent color, backgrounds, custom CSS and safe mo
 
 # Appearance and personalization
 
-Homora is meant to look like _your_ dashboard. This guide covers the theme and language, the look shared by all your
-devices, custom CSS and the safe mode that gets you out of a bad stylesheet.
-
 ![Appearance settings](../screenshots/settings-appearance.png)
 
 ## Two kinds of settings
@@ -21,10 +18,9 @@ all devices** is shared.
 
 ## Theme and language
 
-- **Theme:** dark is the default and light is a complete theme, not an afterthought. You can also switch from the
-  contrast button in the header.
-- **Language:** English or Portuguese (Brazil). By default it follows your browser, and the language button in the
-  header switches it. Notifications use the language chosen for each channel.
+- **Theme:** dark (default) or light; the header's contrast button also switches it.
+- **Language:** English or Portuguese (Brazil), following your browser by default; the header button switches it.
+  Notifications use the language chosen for each channel.
 
 ![The dashboard in the light theme](../screenshots/dashboard-light.png)
 
@@ -34,59 +30,49 @@ Under **Look for all devices**:
 
 - **Accent color:** choose Ember, Moss, Sky, Rose, Violet or Slate, or a **Custom** color. It drives buttons, focus rings
   and active items.
-- **Page background:** one of six looks: Flat, Dusk, Ember glow, Forest, Ocean or Sand light. Colors only;
-  nothing is loaded from other sites.
+- **Page background:** Flat, Dusk, Ember glow, Forest, Ocean or Sand light. Colors only; nothing is loaded from other
+  sites.
 - **Advanced:** card **translucency** and blur, and an optional **background image**.
-- **Preview:** the panel beside the controls shows how a card will look before you save.
-- **Reset to default** returns to the original look.
+- A preview shows a card before you save, and **Reset to default** restores the original look.
 
-**Readability is enforced.** Homora refuses to save a combination that would make text or controls hard to read: in
-both themes, for every gradient stop, text must reach a 4.5:1 contrast ratio on the card and on the page, and the
-accent must reach 3:1 on the card. When it cannot save, it says so instead of letting you lock yourself into an
-unreadable page.
+**Readability is enforced.** Homora refuses to save a combination that would be hard to read: in both themes, text must
+reach 4.5:1 contrast on the card and the page (every gradient stop) and the accent 3:1 on the card.
 
 ### Background image
 
 - JPEG, PNG or WebP up to 2 MB. Animated images are rejected.
-- The server processes the picture: it removes metadata, applies the EXIF rotation, resizes it to at most 1920 px and
-  stores it as WebP next to the database as `<database>.background`.
-- Homora computes the minimum dimming that keeps text readable on top of the picture.
-- The image is part of a database backup made with `pnpm backup`. See [Import, export and backup](import-export-backup.md).
-- Phones do not offer upload or editing, only a notice.
+- The server removes metadata, applies the EXIF rotation, resizes to at most 1920 px and stores a WebP next to the
+  database (`<database>.background`), and computes the minimum dimming that keeps text readable.
+- `pnpm backup` includes it; see [Import, export and backup](import-export-backup.md). Phones cannot upload or edit it.
 
 ## Custom CSS
 
-For anything else, **Custom CSS** lets you add your own stylesheet (up to 20 KB). It is validated in the browser and
-again on the server, and it is served from Homora itself.
-
-To keep the interface safe and private, the following are rejected: `@import`, any address with a scheme or starting
-with `//` (in `url()`, `image-set()` or strings), script-like features (`expression`, `behavior`, `-moz-binding`,
-`javascript:`), `<`, control characters and unbalanced braces.
+**Custom CSS** adds your own stylesheet (up to 20 KB), validated in the browser and on the server and served from Homora.
+To keep the interface safe and private these are rejected: `@import`, any address with a scheme or starting with `//`,
+script-like features (`expression`, `behavior`, `-moz-binding`, `javascript:`), `<`, control characters and unbalanced
+braces.
 
 ### Safe mode
 
-If a stylesheet makes the interface unusable, you can turn it off **without losing the text**:
+If a stylesheet makes the interface unusable, turn it off **without losing the text**:
 
 - Open any page with `?safe=1`, for example `http://localhost:8080/?safe=1`, **or**
 - run `pnpm css:reset` on the server. With Docker Compose: `docker compose exec backend node scripts/css-reset.mjs`.
 
 ## Pages and the home layout
 
-Pages are the tabs on your dashboard. Create, rename, reorder and delete them in **Settings → Home and pages** (up to
-12, with unique names). Each group belongs to one page, and keys `1` to `9` switch between them. The same screen holds
-the list or cards layout, whether descriptions show, and the uptime period (24 h, 7 d or 30 d); these are saved in the
-browser.
+Create, rename, reorder and delete pages in **Settings → Home and pages** (up to 12, unique names); keys `1` to `9`
+switch between them. The same screen holds the layout, descriptions and uptime period, saved in the browser.
 
 ![Home and pages settings](../screenshots/settings-home.png)
 
 ## Top bar and shortcuts
 
-**Settings → Top bar and shortcuts** has three groups of options:
+**Settings → Top bar and shortcuts**:
 
-- **Keyboard shortcuts:** turn the single-key shortcuts on or off. `Ctrl/⌘ K` and `Ctrl/⌘ B` always work.
-- **Command palette:** optionally add "Search the web". It is off by default, and only the text you type is sent
-  when you choose it.
-- **Top bar:** show the date, the time and CPU, memory and disk usage from a Proxmox connection above the dashboard.
+- **Keyboard shortcuts:** turn single-key shortcuts on or off (`Ctrl/⌘ K` and `Ctrl/⌘ B` always work).
+- **Command palette:** optionally add "Search the web" (off by default; only the text you type is sent).
+- **Top bar:** the date, the time and CPU, memory and disk usage from a Proxmox connection.
 
 ## Search for any setting
 
