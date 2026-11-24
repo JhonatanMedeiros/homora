@@ -98,3 +98,44 @@ it('shows an incomplete hint in the preview until required options are valid', (
     within(preview).queryByText('Preencha as opções obrigatórias para ver a prévia.'),
   ).toBeNull();
 });
+
+it('shows validation instead of a save error and retains real save errors for valid input', () => {
+  const draft: WidgetDraft = {
+    id: null,
+    pageId: 1,
+    type: 'quick-links',
+    name: '',
+    config: { title: '', links: [{ label: 'Example', url: 'javascript:alert(1)' }] },
+    connectionId: null,
+    size: 'normal',
+  };
+  const props = {
+    chosen: true,
+    connections: [],
+    pages: [{ id: 1, name: 'Home', position: 0, groups: 0 }],
+    busy: false,
+    error: 'Could not save widgets. Try again.',
+    onChange: vi.fn(),
+    onChoose: vi.fn(),
+    onSubmit: vi.fn(),
+    onClose: vi.fn(),
+  };
+  const { rerender } = render(<PageWidgetDialog {...props} draft={draft} />);
+  expect(
+    screen.getByText('Informe um nome e uma URL HTTP ou HTTPS sem credenciais para cada link.'),
+  ).toBeTruthy();
+  expect(screen.queryByText(props.error)).toBeNull();
+  expect(
+    (screen.getByRole('button', { name: 'Adicionar widget' }) as HTMLButtonElement).disabled,
+  ).toBe(true);
+  rerender(
+    <PageWidgetDialog
+      {...props}
+      draft={{
+        ...draft,
+        config: { title: '', links: [{ label: 'Example', url: 'https://example.test' }] },
+      }}
+    />,
+  );
+  expect(screen.getByText(props.error)).toBeTruthy();
+});

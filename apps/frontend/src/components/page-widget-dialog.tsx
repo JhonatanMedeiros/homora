@@ -74,6 +74,7 @@ function DialogContents({
   const Editor = entry?.Editor;
   const Preview = entry?.Preview;
   const parsedConfig = !gallery && draft && entry ? entry.parse(draft.config) : null;
+  const canSubmitConfig = !draft || !entry?.canSubmit || entry.canSubmit(draft.config);
   const monitoring = useWidgetMonitoring(
     !Preview && parsedConfig != null && entry?.monitoringQuery
       ? entry.monitoringQuery(parsedConfig)
@@ -120,10 +121,10 @@ function DialogContents({
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
           onSubmit={(event) => {
             event.preventDefault();
-            onSubmit();
+            if (canSubmitConfig) onSubmit();
           }}
         >
-          {error && (
+          {error && canSubmitConfig && (
             <p role="alert" className="text-sm text-destructive">
               {error}
             </p>
@@ -261,7 +262,7 @@ function DialogContents({
                     !compatibleConnections.some(
                       (connection) => connection.id === draft.connectionId,
                     )) ||
-                  (entry?.canSubmit ? !entry.canSubmit(draft.config) : false)
+                  !canSubmitConfig
                 }
               >
                 {draft.id === null ? t('pageWidgets.add') : t('widgets.save')}

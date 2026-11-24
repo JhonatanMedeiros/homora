@@ -3,7 +3,7 @@ import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { WidgetHostProvider } from '../../../ui/host.js';
-import { Editor, View } from './index.js';
+import { Editor, View, widgetUI } from './index.js';
 import type { QuickLinksConfig } from '../definition.js';
 
 afterEach(cleanup);
@@ -60,4 +60,13 @@ it('adds, edits, reorders and removes links', () => {
   fireEvent.click(screen.getByRole('button', { name: 'pageWidgets.quickLinksRemove1' }));
   fireEvent.click(screen.getByRole('button', { name: 'pageWidgets.quickLinksAdd' }));
   expect(screen.getByText('pageWidgets.quickLinksInvalid')).toBeTruthy();
+});
+
+it.each([
+  ['javascript:alert(1)', false],
+  ['example.test', false],
+  ['https://user:pass@example.test', false],
+  ['https://example.test', true],
+])('validates %s before submission', (url, valid) => {
+  expect(widgetUI.canSubmit?.({ title: '', links: [{ label: 'Example', url }] })).toBe(valid);
 });
