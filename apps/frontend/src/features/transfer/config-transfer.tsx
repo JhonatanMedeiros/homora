@@ -1,12 +1,12 @@
 import { toast } from 'sonner';
-import { useState, type ChangeEvent } from 'react';
+import { useState } from 'react';
 import { Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@homora/ui/card';
 import { Checkbox } from '@homora/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@homora/ui/field';
-import { Input } from '@homora/ui/input';
+import { FileField } from '@homora/ui/file-field';
 import { SectionTitle } from '@/components/section-title';
 import { apiError, t } from '@/i18n';
 import { useConfigTransferApi } from '@/hooks/use-config-transfer-api';
@@ -23,7 +23,7 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
   const [keepPrivate, setKeepPrivate] = useState(false);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const [fileKey, setFileKey] = useState(0);
+  const [file, setFile] = useState<File | null>(null);
   const [source, setSource] = useState<Source>('homora');
   const [target, setTarget] = useState(FROM_FILE);
   const { pages, preview: requestPreview, apply: requestApply } = useConfigTransferApi();
@@ -32,20 +32,25 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
     setContent('');
     setPreview(null);
     setKeepPrivate(false);
-    setFileKey((key) => key + 1);
+    setFile(null);
   }
 
-  async function choose(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  function clearFile() {
+    setFile(null);
+    setContent('');
     setPreview(null);
     setMessage('');
-    if (!file) return;
+  }
+
+  async function choose(file: File) {
+    setPreview(null);
+    setMessage('');
     if (file.size > MAX_FILE_BYTES) {
       setMessage(t('transfer.tooLarge'));
       toast.warning(t('transfer.tooLarge'));
-      event.target.value = '';
       return;
     }
+    setFile(file);
     let text: string;
     try {
       text = await file.text();
@@ -180,13 +185,15 @@ export function ConfigTransfer({ onImported }: { onImported: () => void | Promis
             </Field>
             <Field>
               <FieldLabel htmlFor="import-file">{t('transfer.file')}</FieldLabel>
-              <Input
-                key={fileKey}
+              <FileField
+                chooseLabel={t('common.chooseFile')}
+                removeLabel={(name) => t('common.removeFile', { name })}
                 id="import-file"
-                type="file"
                 accept=".yaml,.yml,.json"
                 disabled={busy}
-                onChange={(event) => void choose(event)}
+                value={file ? { name: file.name, size: file.size } : null}
+                onSelect={(selected) => void choose(selected)}
+                onClear={clearFile}
               />
             </Field>
             {preview && <ImportPreview plan={preview.plan} />}

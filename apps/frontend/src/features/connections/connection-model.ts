@@ -42,6 +42,8 @@ export type ConnectionFormState = {
   allowPrivate: boolean;
   secret: string;
   ca: string;
+  /** Name of the file `ca` was read from, for display only. */
+  caName: string;
   removeCa: boolean;
   /** Public text fields and the token id, by key, as declared by the definition. */
   values: Record<string, string>;
@@ -60,6 +62,7 @@ export const emptyForm: ConnectionFormState = {
   allowPrivate: false,
   secret: '',
   ca: '',
+  caName: '',
   removeCa: false,
   values: {},
 };

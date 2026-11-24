@@ -3,6 +3,7 @@ import { PasswordInput } from '@/components/password-input';
 import type { FormEvent } from 'react';
 import { Button } from '@homora/ui/button';
 import { Checkbox } from '@homora/ui/checkbox';
+import { FileField } from '@homora/ui/file-field';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
 import { Input } from '@homora/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/collapsible';
@@ -166,38 +167,44 @@ export function ConnectionForm({
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="connection-ca">{t('connections.ca')}</FieldLabel>
-                  <Input
+                  <FileField
+                    chooseLabel={t('common.chooseFile')}
+                    removeLabel={(name) => t('common.removeFile', { name })}
                     id="connection-ca"
-                    type="file"
                     accept=".pem,.crt,.cer"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      set({ ca: '' });
-                      if (!file) return;
+                    disabled={busy}
+                    value={
+                      form.ca
+                        ? { name: form.caName }
+                        : editing && hasCa && !form.removeCa
+                          ? {
+                              name: t('connections.caSaved'),
+                              description: t('connections.caSavedHint'),
+                            }
+                          : null
+                    }
+                    onClear={() =>
+                      set({ ca: '', caName: '', removeCa: editing && hasCa && !form.ca })
+                    }
+                    onSelect={(file) => {
                       if (file.size > 65536) {
                         onCaError(t('connections.caTooLarge'));
-                        event.target.value = '';
                         return;
                       }
                       void file
                         .text()
-                        .then((ca) => onUpdate((current) => ({ ...current, ca, removeCa: false })))
+                        .then((ca) =>
+                          onUpdate((current) => ({
+                            ...current,
+                            ca,
+                            caName: file.name,
+                            removeCa: false,
+                          })),
+                        )
                         .catch(() => onCaError(t('connections.caReadFailed')));
                     }}
                   />
                 </Field>
-                {editing && hasCa && (
-                  <Field orientation="horizontal">
-                    <Checkbox
-                      id="connection-remove-ca"
-                      checked={form.removeCa}
-                      onCheckedChange={(checked) => set({ removeCa: checked === true })}
-                    />
-                    <FieldLabel htmlFor="connection-remove-ca">
-                      {t('connections.removeCa')}
-                    </FieldLabel>
-                  </Field>
-                )}
               </FieldGroup>
             </CollapsibleContent>
           </Collapsible>
