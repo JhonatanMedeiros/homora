@@ -8,6 +8,7 @@ export const omadaDefinition: CodeDefinition = {
   type: 'omada',
   label: 'TP-Link Omada',
   mark: 'OM',
+  brandIcon: 'omada',
   capabilities: ['network-summary'],
   fields: [
     urlField({
