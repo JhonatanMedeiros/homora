@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { WidgetGallery } from '@/components/widget-gallery';
+import { listWidgetUI } from '@/components/widget-ui-registry';
 import { WidgetHost } from '@/components/widget-host';
 import { setLocale } from '@/i18n';
 import type { Connection } from '@/features/connections/connection-model';
@@ -110,4 +111,32 @@ it('records recent picks and displays the Recent category', () => {
   const recentSection = recentHeading.closest('section');
   expect(recentSection).toBeTruthy();
   expect(within(recentSection!).getByRole('button', { name: /Proxmox Lab/ })).toBeTruthy();
+});
+
+it('renders every widget gallery icon as an SVG, never text or a live widget', () => {
+  for (const [type, entry] of listWidgetUI()) {
+    const Gallery = entry.Gallery;
+    const { container, unmount } = render(
+      <WidgetHost>
+        <Gallery />
+      </WidgetHost>,
+    );
+    expect(container.querySelector('svg'), `${type} gallery icon`).toBeTruthy();
+    expect(container.textContent?.trim(), `${type} gallery text`).toBe('');
+    unmount();
+  }
+});
+
+it('describes a connection by its service and highlights the search term', () => {
+  renderGallery();
+
+  expect(screen.getByRole('button', { name: /Proxmox VE · dados ao vivo/ })).toBeTruthy();
+
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'relóg' } });
+  // The highlight splits the title across nodes, so find the card by its text.
+  const clock = screen
+    .getAllByRole('button')
+    .find((button) => button.textContent?.includes('Relógio'))!;
+  expect(clock.querySelector('mark')?.textContent?.toLowerCase()).toBe('relóg');
+  expect(within(clock).getByText('Tempo e agenda')).toBeTruthy();
 });

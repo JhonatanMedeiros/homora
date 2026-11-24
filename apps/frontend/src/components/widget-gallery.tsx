@@ -1,5 +1,17 @@
-import { useMemo, useState } from 'react';
-import { Clock, Search, X } from 'lucide-react';
+import { createElement, useMemo, useState } from 'react';
+import {
+  Activity,
+  CalendarClock,
+  Clock,
+  LayoutGrid,
+  Plug,
+  Rss,
+  Search,
+  Shapes,
+  Wrench,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { Badge } from '@homora/ui/badge';
 import { Button } from '@homora/ui/button';
 import { Input } from '@homora/ui/input';
@@ -33,6 +45,17 @@ const CATEGORY_LABEL_KEYS = {
   utilities: 'pageWidgets.categoryUtilities',
   other: 'pageWidgets.categoryOther',
 } as const satisfies Record<CategoryKey, Parameters<typeof t>[0]>;
+
+const CATEGORY_ICONS: Record<FilterTab, LucideIcon> = {
+  all: LayoutGrid,
+  recent: Clock,
+  connections: Plug,
+  time: CalendarClock,
+  monitoring: Activity,
+  feeds: Rss,
+  utilities: Wrench,
+  other: Shapes,
+};
 
 function readRecentWidgets(): RecentEntry[] {
   try {
@@ -79,6 +102,20 @@ function connectionMatchesQuery(connection: Connection, needle: string): boolean
   if (!needle) return true;
   return (
     connection.name.toLowerCase().includes(needle) || connection.type.toLowerCase().includes(needle)
+  );
+}
+
+function Highlight({ text, needle }: { text: string; needle: string }) {
+  const index = needle ? text.toLowerCase().indexOf(needle) : -1;
+  if (index < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="rounded-sm bg-primary/25 text-inherit">
+        {text.slice(index, index + needle.length)}
+      </mark>
+      {text.slice(index + needle.length)}
+    </>
   );
 }
 
@@ -216,6 +253,8 @@ export function WidgetGallery({ connections, onPick }: Props) {
         key={type}
         title={tOr(option.name, option.name)}
         description={tOr(option.description, option.description)}
+        needle={needle}
+        meta={isSearching ? t(CATEGORY_LABEL_KEYS[option.category ?? 'other']) : undefined}
         badge={supportsWide ? t('pageWidgets.wideBadge') : undefined}
         onPick={() => handlePickLocal(type)}
       >
@@ -224,16 +263,25 @@ export function WidgetGallery({ connections, onPick }: Props) {
     );
   };
 
-  const renderConnectionOption = (connection: Connection) => (
-    <GalleryOption
-      key={`conn-${connection.id}`}
-      title={connection.name}
-      description={t('pageWidgets.connectionDesc')}
-      onPick={() => handlePickConnection(connection)}
-    >
-      <ConnectionLogo type={connection.type} />
-    </GalleryOption>
-  );
+  const renderConnectionOption = (connection: Connection) => {
+    const service = integrationDefinition(connection.type)?.label;
+    return (
+      <GalleryOption
+        key={`conn-${connection.id}`}
+        title={connection.name}
+        description={
+          service
+            ? t('pageWidgets.connectionDescService', { service })
+            : t('pageWidgets.connectionDesc')
+        }
+        needle={needle}
+        meta={isSearching ? t('pageWidgets.groupConnections') : undefined}
+        onPick={() => handlePickConnection(connection)}
+      >
+        <ConnectionLogo type={connection.type} />
+      </GalleryOption>
+    );
+  };
 
   const hasResults = showRecentOnly
     ? recentItems.length > 0
@@ -290,7 +338,13 @@ export function WidgetGallery({ connections, onPick }: Props) {
                 }}
                 className="h-7 shrink-0 gap-1.5 rounded-full border px-3 text-xs font-normal sm:h-8 sm:w-full sm:justify-between sm:rounded-md sm:border-transparent sm:px-2.5 sm:text-sm"
               >
-                <span className={cn('truncate', active && 'font-medium')}>{category.label}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  {createElement(CATEGORY_ICONS[category.key], {
+                    'aria-hidden': true,
+                    className: 'size-3.5 shrink-0 text-muted-foreground max-sm:hidden',
+                  })}
+                  <span className={cn('truncate', active && 'font-medium')}>{category.label}</span>
+                </span>
                 <span className="text-xs text-muted-foreground tabular-nums">{category.count}</span>
               </Button>
             );
@@ -382,12 +436,17 @@ function GalleryOption({
   title,
   description,
   badge,
+  meta,
+  needle,
   onPick,
   children,
 }: {
   title: string;
   description: string;
   badge?: string;
+  /** Extra context shown while searching, such as the category. */
+  meta?: string;
+  needle: string;
   onPick: () => void;
   children: React.ReactNode;
 }) {
@@ -404,15 +463,22 @@ function GalleryOption({
         >
           {children}
         </span>
-        {badge && (
-          <Badge variant="outline" className="shrink-0 text-[10px]">
-            {badge}
-          </Badge>
-        )}
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+          {meta && <span className="truncate text-[10px] text-muted-foreground">{meta}</span>}
+          {badge && (
+            <Badge variant="outline" className="shrink-0 text-[10px]">
+              {badge}
+            </Badge>
+          )}
+        </div>
       </div>
       <div className="w-full min-w-0">
-        <div className="truncate text-sm font-medium">{title}</div>
-        <p className="line-clamp-2 text-xs text-muted-foreground">{description}</p>
+        <div className="truncate text-sm font-medium">
+          <Highlight text={title} needle={needle} />
+        </div>
+        <p className="line-clamp-2 text-xs text-muted-foreground">
+          <Highlight text={description} needle={needle} />
+        </p>
       </div>
     </button>
   );
