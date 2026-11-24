@@ -2,6 +2,7 @@ import { IntegrationRowsLimitError } from '@homora/integrations/backend/manifest
 import {
   developmentMockData,
   developmentMockInventory,
+  developmentMockResources,
 } from '@homora/integrations/backend/development';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '@homora/db';
@@ -170,6 +171,11 @@ export function registerConnectionRoutes(
       const query = refreshQuerySchema.safeParse(request.query);
       if (!query.success) return reply.code(400).send(errorBody('invalid-query'));
       try {
+        if (developmentMocks) {
+          const connection = (await connections.listConnections()).find((item) => item.id === id);
+          const mock = connection && developmentMockResources(connection);
+          if (mock) return mock;
+        }
         const result = await connections.resourcesData(id, query.data.refresh === 'true');
         if (result === null) return reply.code(404).send(errorBody('integration-not-found'));
         if (result === 'unsupported-inventory')

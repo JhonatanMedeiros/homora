@@ -1,3 +1,4 @@
+import { getWidget } from '@homora/widgets/registry';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { widgetStats, type Connection } from '@/features/connections/connection-model';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
@@ -58,17 +59,25 @@ export function usePageWidgetData(pageId: number) {
       const connected = widgets.filter(
         (widget) => widget.connectionId !== null && widget.version === 1,
       );
-      const results = new Map<number, unknown>();
+      const results = new Map<string, unknown>();
       await Promise.all(
-        [...new Set(connected.map((widget) => widget.connectionId!))].map(async (id) => {
+        [
+          ...new Set(
+            connected.map(
+              (widget) =>
+                `${widget.connectionId}:${getWidget(widget.type)?.connectionData ?? 'data'}`,
+            ),
+          ),
+        ].map(async (key) => {
+          const [id, endpoint] = key.split(':');
           try {
-            const response = await fetch(`/api/connections/${id}/data`, {
+            const response = await fetch(`/api/connections/${id}/${endpoint}`, {
               signal: controller.signal,
             });
             if (!response.ok) throw new Error();
-            results.set(id, ((await response.json()) as { data: unknown }).data);
+            results.set(key, ((await response.json()) as { data: unknown }).data);
           } catch {
-            results.set(id, null);
+            results.set(key, null);
           }
         }),
       );
@@ -85,7 +94,9 @@ export function usePageWidgetData(pageId: number) {
             item.type,
           serviceId: null,
         };
-        const data = results.get(item.connectionId!);
+        const data = results.get(
+          `${item.connectionId}:${getWidget(item.type)?.connectionData ?? 'data'}`,
+        );
         let stats: ReturnType<typeof widgetStats> = null;
         try {
           if (data) stats = widgetStats(item.type, data);
@@ -104,7 +115,7 @@ export function usePageWidgetData(pageId: number) {
           };
           lastGood.current[item.id] = fresh;
           next[item.id] = fresh;
-        } else if (!data && good) {
+        } else if (!data && good && !getWidget(item.type)?.connectionData) {
           next[item.id] = { ...good, widget, stale: true };
         } else {
           next[item.id] = data ? { widget, status: 'invalid' } : { widget, status: 'error' };
