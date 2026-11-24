@@ -346,7 +346,17 @@ describe('managed proposals', () => {
           change: { ...change, url: 'https://user:pass@media.example/' },
         }),
       ).toThrow();
-      const p = api.proposeManaged(agent.id, { kind: 'connection-setup', change });
+      const p = api.proposeManaged(agent.id, {
+        kind: 'connection-setup',
+        change: { ...change, allowPrivate: true },
+      });
+      expect(JSON.stringify(p)).toContain('allowPrivate');
+      expect(() =>
+        api.proposeManaged(agent.id, {
+          kind: 'connection-setup',
+          change: { ...change, allowPrivate: 'yes' },
+        }),
+      ).toThrow();
       api.decide(p.id, true, 'local-admin');
       expect(db.prepare('SELECT id FROM integration_instances').all()).toHaveLength(1);
     } finally {

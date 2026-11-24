@@ -128,6 +128,8 @@ export const en = {
   'connections.reason.unavailable':
     'Homora is waiting before trying this service again. Test again in a minute.',
   'connections.reason.invalid-response': 'The service answered with data Homora could not read.',
+  'connections.reason.private-network':
+    'This address is on a private network and Homora is not allowed to reach it. Edit the connection and tick "Allow private network access for this service".',
   'connections.reason.failed':
     'Could not reach the service. Check the address and that it is running.',
   'connections.testedAt': 'tested {time}',
@@ -291,6 +293,8 @@ export const ptBR: Record<keyof typeof en, string> = {
     'O Homora está esperando antes de tentar este serviço de novo. Teste outra vez em um minuto.',
   'connections.reason.invalid-response':
     'O serviço respondeu com dados que o Homora não conseguiu ler.',
+  'connections.reason.private-network':
+    'Este endereço está em uma rede privada e o Homora não tem autorização para acessá-lo. Edite a conexão e marque "Permitir acesso à rede privada para este serviço".',
   'connections.reason.failed':
     'Não foi possível acessar o serviço. Verifique o endereço e se ele está no ar.',
   'connections.testedAt': 'testada {time}',

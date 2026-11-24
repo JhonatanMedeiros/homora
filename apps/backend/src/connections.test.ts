@@ -224,5 +224,35 @@ it('classifies test failures without keeping the service message', async () => {
   expect(testFailureReason(new Error('Integration temporarily unavailable.'))).toBe('unavailable');
   expect(testFailureReason(new Error('Invalid JSON response.'))).toBe('invalid-response');
   expect(testFailureReason(new Error('connect ECONNREFUSED 10.0.0.5:8123'))).toBe('failed');
+  expect(
+    testFailureReason(
+      Object.assign(new Error('Destination points to disallowed address.'), {
+        code: 'destination-disallowed',
+        privateNetwork: true,
+      }),
+    ),
+  ).toBe('private-network');
+  expect(
+    testFailureReason(
+      Object.assign(new Error('Destination points to disallowed address.'), {
+        code: 'destination-disallowed',
+        privateNetwork: false,
+      }),
+    ),
+  ).toBe('failed');
   expect(testFailureReason('x')).toBe('failed');
+});
+
+it('keeps the stored allowPrivate when an update does not submit it', async () => {
+  const { prepareConnection } = await import('./integrations/integration-connection-config.js');
+  const row = {
+    type: 'jellyfin',
+    name: 'Media',
+    publicConfig: JSON.stringify({ url: 'https://media.example', allowPrivate: true }),
+  } as never;
+  const result = prepareConnection({ name: 'Media 2' } as never, row, {}, () => ({}));
+  expect(result.data.allowPrivate).toBe(true);
+  expect(
+    prepareConnection({ allowPrivate: false } as never, row, {}, () => ({})).data.allowPrivate,
+  ).toBe(false);
 });
