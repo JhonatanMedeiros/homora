@@ -85,6 +85,26 @@ export function createProposalReviewService({
         );
       return;
     }
+    if (
+      change.kind === 'widget' &&
+      (change.change.op === 'page-create' || change.change.op === 'page-delete')
+    ) {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(
+          human,
+          change.change.op === 'page-create' ? 'page-widget-create' : 'page-widget-delete',
+          proposalId,
+          'ok',
+          now,
+          change.change.op === 'page-create'
+            ? `widget:${affectedId} page:${change.change.pageId} type:${change.change.type}`
+            : `widget:${affectedId}`,
+        );
+      return;
+    }
     if (change.kind === 'pin') {
       sqlite
         .prepare(
@@ -335,10 +355,10 @@ export function createProposalReviewService({
           state: string;
         }[];
         const now = Date.now();
-        if (!rows.length || rows.some((p) => p.author_id === human))
+        if (rows.length === 0 || rows.some((p) => p.author_id === human))
           throw new Error('Proposal is unavailable');
         const pending = rows.filter((p) => p.state === 'pending' && p.expires_at > now);
-        if (!pending.length || (accept && pending.length !== rows.length))
+        if (pending.length === 0 || (accept && pending.length !== rows.length))
           throw new Error('Proposal is unavailable');
         const version = configuration.version();
         if (accept) {
@@ -420,7 +440,7 @@ export function createProposalReviewService({
           `SELECT id FROM service_proposals WHERE ${batch ? 'batch_id' : 'id'}=? AND state='rejected' AND reviewer=? AND reviewed_at>=? AND expires_at>?`,
         )
         .all(idOrBatch, human, now - UNDO_WINDOW_MS, now) as { id: string }[];
-      if (!rows.length) throw new Error('Proposal is unavailable');
+      if (rows.length === 0) throw new Error('Proposal is unavailable');
       for (const { id } of rows) {
         sqlite
           .prepare(

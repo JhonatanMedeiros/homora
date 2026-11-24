@@ -61,7 +61,7 @@ export function registerMcpIntegrationTools(
     {
       title: 'Propor alteração de widget',
       description:
-        'Propõe criar, vincular, desvincular ou remover um widget. Requer aprovação humana.',
+        'Propõe criar, vincular, desvincular ou remover um widget de integração, mover um widget de página ou criar (page-create) e remover (page-delete) um widget de página. Requer aprovação humana.',
       inputSchema: widgetChangeDiscoverySchema,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
