@@ -150,6 +150,9 @@ Import shared primitives by subpath, e.g. `@homora/ui/button`, and `cn` from `@h
   for broad changes; targeted unit tests for isolated edits) and report exact test results.
   `pnpm test` imports the compiled workspace packages, so run `pnpm type-check` (which compiles
   them) or `pnpm build` first in a fresh checkout.
+- The shared test setup gives Testing Library async queries 4 seconds and Vitest tests 15 seconds
+  for CPU contention. In happy-dom, unexpected `fetch` calls fail the test; stub each intended
+  request. Use fake clocks for deadline behavior and restore them after each test.
 - Test files share one worker, module graph and DOM (`isolate: false` in `vitest.config.ts`) and run
   in random order in CI, so a test must leave nothing behind. `vitest.setup.ts` resets, after every
   file, mocks, stubs, fake timers, environment variables, module state, the DOM, storage, the

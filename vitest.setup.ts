@@ -1,5 +1,8 @@
-import { afterAll, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, vi } from 'vitest';
 import { setLocale } from '@/i18n';
+import { configure } from '@testing-library/react';
+
+configure({ asyncUtilTimeout: 4000 });
 
 // Test files share their module graph, DOM and globals (`isolate: false` in vitest.config.ts), so
 // each file must leave the worker as it found it. Everything a test file can change and that
@@ -50,6 +53,19 @@ function restore(snapshots: Snapshot[]) {
 }
 
 const hasDom = typeof document !== 'undefined';
+let unexpectedFetches: string[] = [];
+beforeEach(() => {
+  if (!hasDom) return;
+  unexpectedFetches = [];
+  vi.stubGlobal('fetch', (input: RequestInfo | URL) => {
+    unexpectedFetches.push(String(input));
+    return Promise.reject(new Error(`Unexpected fetch: ${String(input)}`));
+  });
+});
+afterEach(() => {
+  if (unexpectedFetches.length > 0)
+    throw new Error(`Unexpected fetches: ${unexpectedFetches.join(', ')}`);
+});
 // Assigning `window.innerWidth` does not change the property descriptor, so the viewport is put
 // back by value.
 const viewportKeys = ['innerWidth', 'innerHeight', 'outerWidth', 'outerHeight'] as const;

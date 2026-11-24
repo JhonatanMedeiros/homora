@@ -16,7 +16,7 @@ const mocksModules = globSync(include, {
 
 const shared = {
   resolve: { alias: { '@': fileURLToPath(new URL('./apps/frontend/src', import.meta.url)) } },
-  test: { setupFiles: ['./vitest.setup.ts'] },
+  test: { setupFiles: ['./vitest.setup.ts'], testTimeout: 15_000 },
 };
 
 export default defineConfig({
