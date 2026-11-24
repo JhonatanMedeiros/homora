@@ -215,8 +215,8 @@ it('explains the local password recovery with copyable commands', async () => {
   );
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Esqueceu a senha?' }));
-  expect(await screen.findByText('pnpm auth:reset')).toBeTruthy();
-  expect(screen.getByText('docker compose exec backend node scripts/auth-reset.mjs')).toBeTruthy();
+  expect(await screen.findByText('bun run auth:reset')).toBeTruthy();
+  expect(screen.getByText('docker compose exec backend bun scripts/auth-reset.mjs')).toBeTruthy();
   expect(screen.getAllByRole('button', { name: 'Copiar' })).toHaveLength(2);
 });
 
@@ -257,7 +257,7 @@ it('warns when Caps Lock is on while typing the password', async () => {
 });
 
 it('does not flash the sign-in page while an existing session is being checked', async () => {
-  let answer: (value: unknown) => void = () => undefined;
+  let answer: (value: unknown) => void = () => {};
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {

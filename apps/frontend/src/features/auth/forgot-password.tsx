@@ -6,8 +6,8 @@ import { t } from '@/i18n';
 // Local recovery only (see `scripts/auth-reset.mjs`): there is no remote bypass. Without --yes
 // the script just shows the account it would remove, so the copied commands are safe to run.
 const commands = [
-  ['auth.forgotCompose', 'docker compose exec backend node scripts/auth-reset.mjs'],
-  ['auth.forgotSource', 'pnpm auth:reset'],
+  ['auth.forgotCompose', 'docker compose exec backend bun scripts/auth-reset.mjs'],
+  ['auth.forgotSource', 'bun run auth:reset'],
 ] as const;
 
 /** Explains how to recover a lost password, which can only be done on the server. */

@@ -224,7 +224,7 @@ pending. The roadmap lives in [docs/strategy.md](docs/strategy.md) and [docs/evo
 ## Documentation
 
 Read it online at **[homora-dash.vercel.app](https://homora-dash.vercel.app)** (English, with Portuguese guides in the
-language menu), or run it locally with `pnpm docs:dev` ([details](docs/maintainers/documentation.md)).
+language menu), or run it locally with `bun run docs:dev` ([details](docs/maintainers/documentation.md)).
 
 **User guide**
 
@@ -253,21 +253,19 @@ language menu), or run it locally with `pnpm docs:dev` ([details](docs/maintaine
 
 ## Development
 
-Requirements: Node.js 24 (see `.nvmrc`) and pnpm 12.4.2.
+Requirements: Bun 1.4.5 (see `packageManager` in `package.json`).
 
 ```bash
-nvm use
-corepack enable
-pnpm install --frozen-lockfile
-pnpm dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
-Open <http://localhost:5173>. Vite forwards `/api` to the Fastify backend on port 3000. `pnpm dev` uses the isolated
+Open <http://localhost:5173>. Vite forwards `/api` to the Fastify backend on port 3000. `bun run dev` uses the isolated
 `data/homora-dev.sqlite` database and seeds example services on first creation; you still create an administrator
 account on the first run.
 
-The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Node.js, TypeScript and
-Fastify on the backend; Drizzle ORM with SQLite. Run `pnpm check` and `pnpm build` before sending changes; commits follow
+The monorepo uses Bun workspaces and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Bun, TypeScript and
+Fastify on the backend; Drizzle ORM with SQLite. Run `bun run check` and `bun run build` before sending changes; commits follow
 Conventional Commits. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/standards.md](docs/standards.md).
 
 Routes: `/` is the dashboard, `/login` sign-in, `/manage/{probes,integrations,agents,activity,settings}` the management

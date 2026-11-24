@@ -64,8 +64,8 @@ infrastructure or approves anything.
 Use a throwaway database and ports, never your real instance:
 
 ```sh
-HOMORA_DATABASE_PATH=/tmp/homora-demo.sqlite HOMORA_API_PORT=3100 HOMORA_WEB_PORT=5273 pnpm --filter @homora/backend exec tsx src/server.ts
-HOMORA_API_PORT=3100 HOMORA_WEB_PORT=5273 pnpm --filter @homora/frontend exec vite
+HOMORA_DATABASE_PATH=/tmp/homora-demo.sqlite HOMORA_API_PORT=3100 HOMORA_WEB_PORT=5273 bun run --filter @homora/backend exec tsx src/server.ts
+HOMORA_API_PORT=3100 HOMORA_WEB_PORT=5273 bun run --filter @homora/frontend exec vite
 ```
 
 Open `http://localhost:5273`, create the account, create an agent, then point any MCP client at

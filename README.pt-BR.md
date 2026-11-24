@@ -229,7 +229,7 @@ está em [docs/strategy.md](docs/strategy.md) e [docs/evolution.md](docs/evoluti
 
 ## Documentação
 
-Leia online em **[homora-dash.vercel.app](https://homora-dash.vercel.app)** ou execute o site localmente com `pnpm docs:dev`; consulte a [configuração e hospedagem](docs/maintainers/documentation.md).
+Leia online em **[homora-dash.vercel.app](https://homora-dash.vercel.app)** ou execute o site localmente com `bun run docs:dev`; consulte a [configuração e hospedagem](docs/maintainers/documentation.md).
 
 O site inclui guias em português e referências detalhadas em inglês.
 
@@ -259,22 +259,20 @@ O site inclui guias em português e referências detalhadas em inglês.
 
 ## Desenvolvimento
 
-Requisitos: Node.js 24 (veja `.nvmrc`) e pnpm 12.4.2.
+Requisitos: Bun 1.4.5 (veja `packageManager` em `package.json`).
 
 ```bash
-nvm use
-corepack enable
-pnpm install --frozen-lockfile
-pnpm dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
-Abra <http://localhost:5173>. O Vite encaminha `/api` ao backend Fastify na porta 3000. O `pnpm dev` usa o banco isolado
+Abra <http://localhost:5173>. O Vite encaminha `/api` ao backend Fastify na porta 3000. O `bun run dev` usa o banco isolado
 `data/homora-dev.sqlite` e cria serviços de exemplo na primeira execução; a primeira execução ainda exige criar uma conta
 de administrador. Os endereços de exemplo são ilustrativos e o monitoramento de rede privada não está ativado para eles.
 
-O monorepo usa pnpm e Turborepo: React, Vite, Tailwind CSS e shadcn/ui no frontend; Node.js, TypeScript e Fastify no
-backend; contratos compartilhados; Drizzle ORM com SQLite. Rode `pnpm check` (lint, formatação, tipos e testes) e
-`pnpm build` antes de enviar mudanças. Os commits seguem Conventional Commits (`feat: ...`), validados por Husky e
+O monorepo usa workspaces do Bun e Turborepo: React, Vite, Tailwind CSS e shadcn/ui no frontend; Bun, TypeScript e Fastify no
+backend; contratos compartilhados; Drizzle ORM com SQLite. Rode `bun run check` (lint, formatação, tipos e testes) e
+`bun run build` antes de enviar mudanças. Os commits seguem Conventional Commits (`feat: ...`), validados por Husky e
 Commitlint. Veja [CONTRIBUTING.md](CONTRIBUTING.md) e [docs/standards.md](docs/standards.md).
 
 Rotas: o painel é `/`, o acesso é `/login`, as seções de gestão são `/manage/probes`, `/manage/integrations`,

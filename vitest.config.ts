@@ -19,10 +19,15 @@ const shared = {
   test: { setupFiles: ['./vitest.setup.ts'], testTimeout: 15_000 },
 };
 
+// Vitest's default `forks` pool needs `child.channel.unref()`, which Bun does not implement yet, and
+// more than a few worker threads starve each other on Bun, so Bun runs a small `threads` pool.
+const onBun = !!process.versions.bun;
+
 export default defineConfig({
   ...shared,
   test: {
     ...shared.test,
+    ...(onBun ? { pool: 'threads' as const, maxWorkers: 4 } : {}),
     projects: [
       {
         ...shared,

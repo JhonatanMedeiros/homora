@@ -4,17 +4,17 @@ Pull requests to `main` (and the merge queue, if one is enabled) run the workflo
 
 ## Jobs
 
-| Job        | Runs                                                                                                                                                                     | Budget per step   |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| `static`   | `pnpm lint` (oxlint), `pnpm format:check` (oxfmt), `pnpm type-check` (TypeScript 7) and `node --test scripts/test/*.test.mjs`, in one job so that the setup is paid once | 10 s, 10 s, 20 s  |
-| `test`     | Three parallel shards: compile the workspace packages (`scripts/ci/build-packages.mjs`), then `scripts/ci/run-tests.mjs N/3`                                             | 20 s, 120 s, 30 s |
-| `build`    | `pnpm build` and `pnpm docs:build`                                                                                                                                       | 60 s, 40 s        |
-| `docker`   | Builds the `homora` and `discovery-agent` image targets, in parallel                                                                                                     | job limit: 8 min  |
-| `validate` | Passes only when `static`, every `test` shard, `build` and every `docker` job pass                                                                                       | -                 |
+| Job        | Runs                                                                                                                                                                | Budget per step   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `static`   | `bun run lint` (oxlint), `bun run format:check` (oxfmt), `bun run type-check` (TypeScript 7) and `bun test scripts/test`, in one job so that the setup is paid once | 10 s, 10 s, 20 s  |
+| `test`     | Three parallel shards: compile the workspace packages (`scripts/ci/build-packages.mjs`), then `scripts/ci/run-tests.mjs N/3`                                        | 20 s, 120 s, 30 s |
+| `build`    | `bun run build` and `bun run docs:build`                                                                                                                            | 60 s, 40 s        |
+| `docker`   | Builds the `homora` and `discovery-agent` image targets, in parallel                                                                                                | job limit: 8 min  |
+| `validate` | Passes only when `static`, every `test` shard, `build` and every `docker` job pass                                                                                  | -                 |
 
-The `main` ruleset requires a pull request and **only `validate`**. It aggregates everything else, so adding, splitting or renaming a job does not change the rule. `pnpm check` still runs lint, formatting and types in parallel, then the tests, locally and in the release workflow.
+The `main` ruleset requires a pull request and **only `validate`**. It aggregates everything else, so adding, splitting or renaming a job does not change the rule. `bun run check` still runs lint, formatting and types in parallel, then the tests, locally and in the release workflow.
 
-The shared setup (Node, pnpm, dependencies and the Turborepo cache) lives in `.github/actions/setup`. The release workflow checks out a tag and does not use it, so that re-running the release of an older tag keeps working.
+The shared setup (Bun, dependencies and the Turborepo cache) lives in `.github/actions/setup`. The release workflow checks out a tag and does not use it, so that re-running the release of an older tag keeps working.
 
 ## Time budgets
 
@@ -28,7 +28,7 @@ Locally, the pre-push hook (`.husky/pre-push`, `scripts/pre-push.mjs`) runs form
 - **Pull requests: only what the diff can reach**, to narrow feedback. `scripts/ci/select-tests.mjs` combines three layers: files that tests do not import but that can change any result (lockfile, manifests, tsconfig, Vitest config and setup, migrations, CI files) run everything; Vitest's own import graph (`--changed`); and the workspace graph, because the tests import the compiled `dist` of sibling packages, so a change in `packages/widgets` also selects the tests of every package and app that depends on it. A documentation-only change selects no test.
 - Selection was checked by hiding real changes on purpose: breaking `packages/shared` or `packages/widgets` is invisible to the import graph alone (3 and 1 files selected) and turns the selected run red with the workspace layer (190 and 212 files). `scripts/test/select-tests.test.mjs` keeps these rules from regressing. A change that no test covers still passes in both modes; that is a coverage gap, not a selection one.
 
-Test files run in random order, and each run prints its seed (`Sequence seed: N`). To reproduce a failure, run `pnpm exec vitest run --sequence.shuffle.files --sequence.seed=N` after `pnpm type-check` (which compiles the packages the tests import).
+Test files run in random order, and each run prints its seed (`Sequence seed: N`). To reproduce a failure, run `bun --bun vitest run --sequence.shuffle.files --sequence.seed=N` after `bun run type-check` (which compiles the packages the tests import).
 
 ## Why the tests share a worker
 
@@ -37,8 +37,8 @@ Test files run in random order, and each run prints its seed (`Sequence seed: N`
 ## Lint, formatting and types
 
 - **Lint: oxlint.** `oxlint.config.ts` (found automatically; JavaScript configs are still experimental in oxlint) turns on the `correctness`, `suspicious`, `perf` and `pedantic` categories. Rules that the code does not satisfy yet are listed in `ratchet` as warnings, so they stay visible without blocking CI; delete an entry once the code is clean and the rule starts failing builds. The `no-restricted-imports` overrides enforce the package and capability boundaries described in the [architecture](../architecture.md). oxlint's regular expressions have no lookahead, which is why the "import through `index.ts`" rules use negated glob groups; `scripts/test/oxlint-integration-boundaries.test.mjs` proves each boundary still fails on a violating probe.
-- **Format: oxfmt**, configured in `.oxfmtrc.json` with the former Prettier options. The integration catalog generator formats its output with the same formatter, so `pnpm build` and `pnpm format:check` agree.
-- **Types: TypeScript 7** (`tsc` is the native compiler). `pnpm type-check` (`scripts/ci/typecheck.mjs`) compiles the workspace packages, then checks every app and `tsconfig.tests.json` project in parallel. TypeScript 7 has no JavaScript API, so the two scripts that parse TypeScript import `typescript6`, an alias of `typescript@6`, which TypeScript documents as the way to run both side by side. Remove the alias when those scripts stop needing the API.
+- **Format: oxfmt**, configured in `.oxfmtrc.json` with the former Prettier options. The integration catalog generator formats its output with the same formatter, so `bun run build` and `bun run format:check` agree.
+- **Types: TypeScript 7** (`tsc` is the native compiler). `bun run type-check` (`scripts/ci/typecheck.mjs`) compiles the workspace packages, then checks every app and `tsconfig.tests.json` project in parallel. TypeScript 7 has no JavaScript API, so the two scripts that parse TypeScript import `typescript6`, an alias of `typescript@6`, which TypeScript documents as the way to run both side by side. Remove the alias when those scripts stop needing the API.
 
 ## Turborepo cache
 

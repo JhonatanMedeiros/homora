@@ -10,7 +10,7 @@ A chave `.key` protege credenciais de conexões. O segredo de sessão, em `.sess
 
 ## Recuperação e rotação
 
-A recuperação é local, no servidor. `pnpm auth:reset` inicia o fluxo de redefinição; há opções específicas para remover apenas a segunda etapa ou as passkeys. Antes de executar, leia os comandos completos e suas consequências no [guia em inglês](/user-guide/accounts-and-security).
+A recuperação é local, no servidor. `bun run auth:reset` inicia o fluxo de redefinição; há opções específicas para remover apenas a segunda etapa ou as passkeys. Antes de executar, leia os comandos completos e suas consequências no [guia em inglês](/user-guide/accounts-and-security).
 
 Para trocar uma credencial de integração, crie um novo token no serviço de origem, atualize a conexão no Homora e revogue o token antigo. A rotação da própria chave de criptografia não é suportada. Tokens de agentes podem ser substituídos ou revogados na página de agentes.
 

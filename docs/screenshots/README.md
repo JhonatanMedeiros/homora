@@ -64,7 +64,7 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 
 When the interface changes, retake the affected screens so the documentation does not drift:
 
-1. Start a development build with an empty database: `pnpm build`, then `pnpm dev` (the backend runs with
+1. Start a development build with an empty database: `bun run build`, then `bun run dev` (the backend runs with
    `HOMORA_DEV_MOCKS=true`, which provides the mock Proxmox connection).
 2. Create the administrator account and import a Homora configuration file whose services point at small local
    HTTP servers on a private address, with **allow private network** set (`allowPrivate: true`). Let those servers

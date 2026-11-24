@@ -86,13 +86,13 @@ the epic synchronized; do not check off implementation based only on a proposal 
 Work shared by several candidates, tracked under the same epic. Candidates depend on these
 as noted in each issue; execution order is in the epic.
 
-| Issue                                                         | Scope                                                                          | Status                                                 |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| [#265](https://github.com/JhonatanMedeiros/homora/issues/265) | Move the shadcn primitives to a shared `@homora/ui` package.                   | Delivered                                              |
-| [#266](https://github.com/JhonatanMedeiros/homora/issues/266) | Widget modules: contract, registry and UI isolated per widget.                 | Implemented                                            |
-| [#267](https://github.com/JhonatanMedeiros/homora/issues/267) | `pnpm widget:create` scaffold and automated boundary rules for widget modules. | Scoped                                                 |
-| [#255](https://github.com/JhonatanMedeiros/homora/issues/255) | Normal and wide sizes for page widgets.                                        | Implemented; validation in progress                    |
-| [#256](https://github.com/JhonatanMedeiros/homora/issues/256) | Contract for an internal monitoring source used by widgets.                    | Implemented; automated checks passed; live use pending |
+| Issue                                                         | Scope                                                                             | Status                                                 |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [#265](https://github.com/JhonatanMedeiros/homora/issues/265) | Move the shadcn primitives to a shared `@homora/ui` package.                      | Delivered                                              |
+| [#266](https://github.com/JhonatanMedeiros/homora/issues/266) | Widget modules: contract, registry and UI isolated per widget.                    | Implemented                                            |
+| [#267](https://github.com/JhonatanMedeiros/homora/issues/267) | `bun run widget:create` scaffold and automated boundary rules for widget modules. | Scoped                                                 |
+| [#255](https://github.com/JhonatanMedeiros/homora/issues/255) | Normal and wide sizes for page widgets.                                           | Implemented; validation in progress                    |
+| [#256](https://github.com/JhonatanMedeiros/homora/issues/256) | Contract for an internal monitoring source used by widgets.                       | Implemented; automated checks passed; live use pending |
 
 ## Requirements for each future issue
 
@@ -112,8 +112,8 @@ as noted in each issue; execution order is in the epic.
    Integration-specific code, fixtures, translations and tests belong with the integration. The
    host owns transport, credentials and authorization; integrations remain read-only.
 5. Specify meaningful contract, persistence and interface tests appropriate to the slice, run
-   required project checks and document results. For integrations, run contract tests, `pnpm check`
-   and `pnpm build`; fixtures are not live validation. Record real-service version and scenarios only
+   required project checks and document results. For integrations, run contract tests, `bun run check`
+   and `bun run build`; fixtures are not live validation. Record real-service version and scenarios only
    when tested with an authorized instance, otherwise record the gap.
 6. Update the row and epic with the issue link, final scope, evidence, status and remaining work.
    Local calculations alone do not make the application available offline; offline support needs a
@@ -125,4 +125,4 @@ integration reference and code are authoritative for current implementation and 
 
 ## Local widget contributions
 
-Use `pnpm widget:create <type>` and follow the [widget creation guide](create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.
+Use `bun run widget:create <type>` and follow the [widget creation guide](create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.

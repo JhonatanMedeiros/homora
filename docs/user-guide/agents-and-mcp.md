@@ -68,10 +68,10 @@ Point a compatible client at `http://localhost:8080/mcp` (in development, `http:
 
 ### stdio
 
-After `pnpm build`, configure a trusted MCP client to run `node /absolute/path/to/homora/apps/backend/dist/mcp-server.js`
+After `bun run build`, configure a trusted MCP client to run `bun /absolute/path/to/homora/apps/backend/dist/mcp-server.js`
 over stdio, and pass the one-time token as `HOMORA_AGENT_TOKEN`.
 
-- Set `HOMORA_DATABASE_PATH` to the **same absolute path** Homora uses (`data/homora-dev.sqlite` in `pnpm dev`, otherwise
+- Set `HOMORA_DATABASE_PATH` to the **same absolute path** Homora uses (`data/homora-dev.sqlite` in `bun run dev`, otherwise
   `data/homora.sqlite`). A different database is a different instance; with Docker, use the same volume.
 - The process needs the matching `.key` file.
 - Start the backend at least once before relying on stdio for Proxmox data, so a legacy configuration is migrated.

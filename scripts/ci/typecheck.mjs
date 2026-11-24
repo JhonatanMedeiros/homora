@@ -17,7 +17,7 @@ const found = (root, file) =>
     .map((dir) => `${root}/${dir}/${file}`)
     .filter((path) => existsSync(path));
 
-await run('node', ['scripts/ci/build-packages.mjs']);
+await run(process.execPath, ['scripts/ci/build-packages.mjs']);
 await Promise.all([
   ...found('apps', 'tsconfig.json').map((project) => run(tsc, ['-p', project, '--noEmit'])),
   ...found('packages', 'tsconfig.tests.json').map((project) => run(tsc, ['-p', project])),

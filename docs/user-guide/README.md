@@ -53,4 +53,4 @@ who wants the details.
 
 - **Bold** is a label you can click, such as **Settings → Alerts**. `Code` is something you type or a file name.
 - Shortcuts use `Ctrl`; on macOS use `⌘`.
-- Commands starting with `pnpm` run in a repository checkout. With Docker Compose, use `docker compose exec backend …`.
+- Commands starting with `bun` run in a repository checkout. With Docker Compose, use `docker compose exec backend …`.

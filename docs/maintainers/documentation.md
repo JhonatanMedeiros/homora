@@ -4,18 +4,18 @@ The site is built from the Markdown files in `docs/` with VitePress. The user gu
 
 ## Work locally
 
-Use the Node and pnpm versions specified by the repository, then install dependencies and run:
+Use the Bun version specified by the repository (`packageManager`; VitePress itself runs on Node, so Node must be installed too), then install dependencies and run:
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm docs:dev
+bun install --frozen-lockfile
+bun run docs:dev
 ```
 
 The development server prints its local address. To validate a production build and preview it:
 
 ```bash
-pnpm docs:build
-pnpm docs:preview
+bun run docs:build
+bun run docs:preview
 ```
 
 The static output is written to `docs/.vitepress/dist`. The configuration and navigation are in `docs/.vitepress/config.mts`; the theme is in `docs/.vitepress/theme/`. Add new pages to the appropriate sidebar section and use relative Markdown links where practical, so documents also work on GitHub. Check links, screenshots, and any claims about product behavior against the implementation.
@@ -28,14 +28,14 @@ On the home page, the browser requests the latest public stable release from the
 
 ## Deploy to Vercel or Netlify
 
-Create a project connected to this repository only when ready to publish. Use the repository root as the project root, Node 24 and pnpm 12.4.2 (the version pinned in `package.json`). The settings are the same for both services:
+Create a project connected to this repository only when ready to publish. Use the repository root as the project root, Bun for the install (the version pinned in `package.json`) and a Node runtime for the VitePress build. The settings are the same for both services:
 
-| Setting                    | Value                            |
-| -------------------------- | -------------------------------- |
-| Install command            | `pnpm install --frozen-lockfile` |
-| Build command              | `pnpm docs:build`                |
-| Output / publish directory | `docs/.vitepress/dist`           |
+| Setting                    | Value                           |
+| -------------------------- | ------------------------------- |
+| Install command            | `bun install --frozen-lockfile` |
+| Build command              | `bun run docs:build`            |
+| Output / publish directory | `docs/.vitepress/dist`          |
 
 The public address `https://homora-dash.vercel.app` is set once as `siteUrl` in `docs/.vitepress/config.mts` (canonical links, the sitemap and the social preview image) and in `docs/public/robots.txt`; update both if the domain changes. The preview image is `docs/public/og.png` (1200×630). Pages can set a `description` in their frontmatter for search results and link previews.
 
-Use a domain root, such as `docs.example.com`; a subdirectory requires a matching VitePress `base` configuration. On Vercel, `vercel.json` at the repository root already sets the install and build commands, the output directory and `ENABLE_EXPERIMENTAL_COREPACK=1` (so the pinned pnpm version is used); without it Vercel detects the Turborepo setup, builds the whole application and fails with `STATIC_BUILD_NO_OUT_DIR`. Leave the project's own overrides empty so the file applies. Netlify reads the pinned version from `package.json`; set `PNPM_FLAGS=--frozen-lockfile` for its automatic dependency installation. The site is static and needs no Homora server, database or secrets. Review the hosting provider's build and publication settings before enabling automatic deployments. The first hosted build and deployment still need validation on the chosen provider.
+Use a domain root, such as `docs.example.com`; a subdirectory requires a matching VitePress `base` configuration. On Vercel, `vercel.json` at the repository root already sets the install and build commands, and the output directory; without it Vercel detects the Turborepo setup, builds the whole application and fails with `STATIC_BUILD_NO_OUT_DIR`. Leave the project's own overrides empty so the file applies. Netlify reads the pinned version from `package.json`; set `PNPM_FLAGS=--frozen-lockfile` for its automatic dependency installation. The site is static and needs no Homora server, database or secrets. Review the hosting provider's build and publication settings before enabling automatic deployments. The first hosted build and deployment still need validation on the chosen provider.

@@ -97,7 +97,7 @@ Details are in [Notifications and the public status page](notifications-and-stat
 **A card says "Not monitored".** Local addresses are monitored only after you allow **private network** on that service;
 loopback addresses such as `127.0.0.1` are always blocked.
 
-**I forgot my password.** Run `pnpm auth:reset` on the server; see [Accounts and security](accounts-and-security.md).
+**I forgot my password.** Run `bun run auth:reset` on the server; see [Accounts and security](accounts-and-security.md).
 
 **How do I update?** Back up, pull the new version and run `docker compose up -d --build`. See
 [Deployment and upgrades](deployment.md#upgrade).

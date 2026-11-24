@@ -40,7 +40,7 @@ The formats were checked against those projects' documentation; real files may v
 Create a consistent copy of the database (existing files are never overwritten):
 
 ```bash
-pnpm backup data/homora.sqlite backups/homora.sqlite
+bun run backup data/homora.sqlite backups/homora.sqlite
 ```
 
 ### What to keep
@@ -53,14 +53,14 @@ Copy these files next to it into a protected backup, and restore them under the 
 | `<database>.key`            | The encryption key. Without it you must configure credentials again.                                         |
 | `<database>.session-secret` | Needed to restore two-step verification. Absent if you set `HOMORA_SESSION_SECRET`; keep that value instead. |
 | `<database>.proxmox`        | Used by the original Proxmox integration. May not exist.                                                     |
-| `<database>.background`     | The background image. May not exist. `pnpm backup` already copies it next to the database copy.              |
+| `<database>.background`     | The background image. May not exist. `bun run backup` already copies it next to the database copy.           |
 
 A `.auth` file from earlier versions is no longer read and can be deleted. Keep the key as protected as the database.
 
 ### Restore
 
 Stop Homora, keep the current database and use the backup as the source of a new file, for example
-`pnpm backup backups/homora.sqlite data/restored.sqlite`. Point `HOMORA_DATABASE_PATH` at it and restart. Do a test
+`bun run backup backups/homora.sqlite data/restored.sqlite`. Point `HOMORA_DATABASE_PATH` at it and restart. Do a test
 restore before relying on a backup.
 
 ### With Docker Compose
@@ -69,7 +69,7 @@ Use a new protected directory on the host (the commands do not overwrite backups
 
 ```bash
 mkdir -p backups/backup-2026-11-10
-docker compose exec backend node scripts/backup.mjs /app/data/homora.sqlite /app/data/backup.sqlite
+docker compose exec backend bun scripts/backup.mjs /app/data/homora.sqlite /app/data/backup.sqlite
 docker compose cp backend:/app/data/backup.sqlite backups/backup-2026-11-10/homora.sqlite
 docker compose cp backend:/app/data/homora.sqlite.key backups/backup-2026-11-10/homora.sqlite.key
 docker compose cp backend:/app/data/homora.sqlite.session-secret backups/backup-2026-11-10/homora.sqlite.session-secret

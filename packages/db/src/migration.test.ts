@@ -8,6 +8,7 @@ import { expect, it } from 'vitest';
 import {
   createDatabase,
   getSqliteHandle,
+  loadMigrations,
   serviceGroups,
   integrationInstances,
   integrationWidgets,
@@ -1302,4 +1303,12 @@ it('adds the page widget size without changing existing rows', () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+it('embeds exactly the migrations on disk, with the hashes Drizzle records', () => {
+  const onDisk = readMigrationFiles({
+    migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
+  });
+  // Stale? Run `bun run --filter @homora/db embed-migrations`.
+  expect(loadMigrations()).toEqual(onDisk);
 });

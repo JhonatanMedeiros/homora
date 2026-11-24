@@ -1,6 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
 
 /** Create only a new integration directory. Registration remains a deliberate review step. */
 export async function createIntegration(root, id, kind) {
@@ -15,7 +14,7 @@ export async function createIntegration(root, id, kind) {
   await mkdir(target);
   await mkdir(join(target, 'fixtures'));
   const name = JSON.stringify(id);
-  const symbol = `${id.replace(/-([a-z0-9])/g, (_, letter) => letter.toUpperCase())}${kind === 'manifest' ? 'Manifest' : 'Definition'}`;
+  const symbol = `${id.replaceAll(/-([a-z0-9])/g, (_, letter) => letter.toUpperCase())}${kind === 'manifest' ? 'Manifest' : 'Definition'}`;
   const identity = `  type: ${name},\n  label: ${name},\n  mark: 'NEW',\n  capabilities: ['summary'],\n  fields: [urlField({ httpsOnly: true })],`;
   const content =
     kind === 'manifest'
@@ -52,7 +51,7 @@ export async function createIntegration(root, id, kind) {
     definition: symbol,
     ...(kind === 'code' ? { backend: 'createRegistration', frontend: 'createPresentation' } : {}),
   };
-  const readme = `# ${id}\n\nThis is an unregistered ${kind} skeleton, not a working integration.\n\n- Replace the example definition and fixture with the service's documented API and record the fixture source.\n- Rename contract.test.ts.example to contract.test.ts and adapt its cases, including credentials and all failure paths.\n${kind === 'code' ? '- Implement the backend, registration and frontend templates.\n' : ''}- Set a unique order in integration.json.example, rename it to integration.json, then run pnpm integration:catalog.\n- Document required read-only permissions and mark the integration unvalidated until checked against a real instance.\n- Run pnpm check and pnpm build.\n\nNever use a network client directly: use the host-provided restricted transport.\n`;
+  const readme = `# ${id}\n\nThis is an unregistered ${kind} skeleton, not a working integration.\n\n- Replace the example definition and fixture with the service's documented API and record the fixture source.\n- Rename contract.test.ts.example to contract.test.ts and adapt its cases, including credentials and all failure paths.\n${kind === 'code' ? '- Implement the backend, registration and frontend templates.\n' : ''}- Set a unique order in integration.json.example, rename it to integration.json, then run bun run integration:catalog.\n- Document required read-only permissions and mark the integration unvalidated until checked against a real instance.\n- Run bun run check and bun run build.\n\nNever use a network client directly: use the host-provided restricted transport.\n`;
   await Promise.all([
     writeFile(join(target, 'definition.ts'), content, { flag: 'wx' }),
     writeFile(join(target, 'fixtures/example.json'), `${JSON.stringify(fixture, null, 2)}\n`, {
@@ -80,12 +79,12 @@ export async function createIntegration(root, id, kind) {
   return target;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
   const [, , id, kind] = process.argv;
   try {
     if (!id || !kind || process.argv.length !== 4)
-      throw new Error('Usage: pnpm integration:create <id> <manifest|code>');
-    const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+      throw new Error('Usage: bun run integration:create <id> <manifest|code>');
+    const root = resolve(import.meta.dirname, '..');
     const target = await createIntegration(root, id, kind);
     console.log(`Created ${target}. Follow its README before registering the integration.`);
   } catch (error) {

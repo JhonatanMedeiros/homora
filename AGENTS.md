@@ -44,8 +44,8 @@ not necessarily the existing implementation.
 - The home page checks GitHub for the latest public stable release; do not substitute a
   hard-coded version, a source checkout version, or a Docker tag. Preserve the link to
   releases when a version cannot be determined.
-- Run `pnpm docs:build` after changing site content, navigation, theme, or configuration;
-  use `pnpm docs:dev` or `pnpm docs:preview` for local review. Validate links and both
+- Run `bun run docs:build` after changing site content, navigation, theme, or configuration;
+  use `bun run docs:dev` or `bun run docs:preview` for local review. Validate links and both
   languages where affected, and describe any unverified hosting or release behavior.
 
 ## Integration work for contributors and agents
@@ -56,15 +56,15 @@ not necessarily the existing implementation.
   descriptor, tests and fixtures. The guide applies equally to human contributors and AI agents.
 - Put service-specific behavior, widgets, translations and fixtures under
   `packages/integrations/src/integrations/<type>`; use `packages/icons` for bundled brand assets.
-  Use `pnpm integration:create` for a scaffold and `pnpm integration:catalog` after editing
+  Use `bun run integration:create` for a scaffold and `bun run integration:catalog` after editing
   descriptors. Do not add service-specific branches or imports to the applications. A new generic
   host capability, network method or permission requires a separate design and review.
 - Preserve data compatibility, least privilege and the restricted transport. Verify contract tests,
-  `pnpm check` and `pnpm build`; describe live-service validation as pending unless actually performed.
+  `bun run check` and `bun run build`; describe live-service validation as pending unless actually performed.
 
 ## Local widget modules
 
-Before creating or changing a widget, read [the widget creation guide](docs/create-widget.md), [the catalog](docs/widget-catalog.md), [ADR 0019](docs/decisions/0019-widget-sdk.md) and [ADR 0026](docs/decisions/0026-widget-modules.md). Use `pnpm widget:create <type>` for new modules and validate the generated registration and boundaries.
+Before creating or changing a widget, read [the widget creation guide](docs/create-widget.md), [the catalog](docs/widget-catalog.md), [ADR 0019](docs/decisions/0019-widget-sdk.md) and [ADR 0026](docs/decisions/0026-widget-modules.md). Use `bun run widget:create <type>` for new modules and validate the generated registration and boundaries.
 
 - Keep local widget definitions, logic, messages and UI under `packages/widgets/src/widgets/<type>`. Use the registry and host context; do not add widget-specific branches to host routes, transfer, page layout, gallery or dialog. Follow [ADR 0026](docs/decisions/0026-widget-modules.md).
 - For external-source widgets, implement `WidgetSourceReader` in `source.ts` (registered in `packages/widgets/src/source-registry.ts`) and read it from `ui/` via `useWidgetHost().readSource(contract, params, signal)` instead of adding widget-specific routes or `WidgetHost` methods. Keep widget-specific unit/UI/source tests inside `packages/widgets/src/widgets/<type>/`; keep backend tests focused on generic host behavior, `network-policy.ts` enforcement, and persistence/transfer.
@@ -78,12 +78,12 @@ Before creating or changing a widget, read [the widget creation guide](docs/crea
   contracts and validation; `packages/integrations`: integration SDK; `packages/icons`: brand assets. `scripts/` contains backup utilities and tests.
 - Consult [engineering standards](docs/standards.md) for module boundaries,
   validation, persistence, tests, and recording architectural decisions.
-- Use the Node version specified in `.nvmrc` and the pnpm version in `package.json`.
+- Use the Bun version in `package.json` (`packageManager`). Vitest and VitePress still run on Node's runtime where noted in [ADR 0028](docs/decisions/0028-bun-runtime-and-toolchain.md).
   See the README for local installation and execution.
-- Available checks: `pnpm check` (lint with oxlint, formatting with oxfmt and types with
-  TypeScript 7 in parallel, then the tests) and `pnpm build`. For smaller changes, run the
+- Available checks: `bun run check` (lint with oxlint, formatting with oxfmt and types with
+  TypeScript 7 in parallel, then the tests) and `bun run build`. For smaller changes, run the
   relevant specific tests as well. If dependencies or environment prevent execution, report it.
-  `pnpm test` needs the workspace packages compiled; `pnpm type-check` does that.
+  `bun run test` needs the workspace packages compiled; `bun run type-check` does that.
 - A pre-push hook (`.husky/pre-push`) checks what you are about to push in a few seconds. Do not
   skip it with `--no-verify`; fix what it reports. The CI workflow, its time budgets and how pull
   requests select tests are in [maintaining CI](docs/maintainers/ci.md): read it before changing

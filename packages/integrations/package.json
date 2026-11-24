@@ -98,7 +98,7 @@
     }
   },
   "scripts": {
-    "build": "node scripts/integration-catalog.mjs --check && tsc -p tsconfig.json"
+    "build": "bun scripts/integration-catalog.mjs --check && tsc -p tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "26.6.6",

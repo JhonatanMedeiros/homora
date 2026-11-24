@@ -33,12 +33,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      - run: node scripts/ci/budget.mjs 10 lint -- pnpm lint
-      - run: node scripts/ci/budget.mjs 10 format -- pnpm format:check
-      - run: node scripts/ci/budget.mjs 20 type-check -- pnpm type-check
+      - run: bun scripts/ci/budget.mjs 10 lint -- bun run lint
+      - run: bun scripts/ci/budget.mjs 10 format -- bun run format:check
+      - run: bun scripts/ci/budget.mjs 20 type-check -- bun run type-check
       # The script tests compile generated code against the workspace packages, which the type
       # check has just built.
-      - run: node scripts/ci/budget.mjs 30 script-tests -- node --test scripts/test/*.test.mjs
+      - run: bun scripts/ci/budget.mjs 30 script-tests -- bun test scripts/test
 
   test:
     if: github.event_name != 'push'
@@ -59,8 +59,8 @@ jobs:
           filter: blob:none
       - uses: ./.github/actions/setup
       # The tests import the compiled workspace packages, and only those.
-      - run: node scripts/ci/budget.mjs 20 build-packages -- node scripts/ci/build-packages.mjs
-      - run: node scripts/ci/budget.mjs 120 tests -- node scripts/ci/run-tests.mjs ${{ matrix.shard }}/3
+      - run: bun scripts/ci/budget.mjs 20 build-packages -- bun scripts/ci/build-packages.mjs
+      - run: bun scripts/ci/budget.mjs 120 tests -- bun scripts/ci/run-tests.mjs ${{ matrix.shard }}/3
 
   build:
     if: github.event_name != 'push'
@@ -69,8 +69,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      - run: node scripts/ci/budget.mjs 60 build -- pnpm build
-      - run: node scripts/ci/budget.mjs 40 docs-build -- pnpm docs:build
+      - run: bun scripts/ci/budget.mjs 60 build -- bun run build
+      - run: bun scripts/ci/budget.mjs 40 docs-build -- bun run docs:build
 
   # The two image targets build in parallel; each has its own layer cache.
   docker:

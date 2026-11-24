@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path';
 
 const [sourceArg, targetArg] = process.argv.slice(2);
 if (!sourceArg || !targetArg) {
-  console.error('Usage: node scripts/backup.mjs <source-db> <target-file>');
+  console.error('Usage: bun scripts/backup.mjs <source-db> <target-file>');
   process.exitCode = 1;
 } else {
   const source = resolve(sourceArg);

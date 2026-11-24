@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/dev-server.ts",
+    "dev": "bun --watch src/dev-server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
-    "bench": "tsx bench/run.ts",
-    "mcp": "node dist/mcp-server.js"
+    "start": "bun dist/server.js",
+    "bench": "bun bench/run.ts",
+    "mcp": "bun dist/mcp-server.js",
+    "compile": "bun build --compile --minify src/server.ts --outfile dist/homora",
+    "compile:mcp": "bun build --compile --minify src/mcp-server.ts --outfile dist/homora-mcp"
   },
   "dependencies": {
     "@better-auth/passkey": "1.7.25",
@@ -32,7 +34,6 @@
   "devDependencies": {
     "@simplewebauthn/server": "13.3.2",
     "@types/node": "26.6.6",
-    "tsx": "4.23.15",
     "typescript": "6.0.3"
   }
 }
