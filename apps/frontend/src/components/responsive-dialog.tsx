@@ -19,8 +19,11 @@ type Props = {
   locked?: boolean;
   /** A wider dialog, for content laid out in columns. */
   wide?: boolean;
-  /** Explicit dialog width/layout preset; `'gallery'` uses a fixed-height flex shell for scrollable grids. */
-  size?: 'default' | 'wide' | 'gallery';
+  /**
+   * Explicit dialog width/layout preset; `'gallery'` uses a fixed-height flex shell for scrollable grids,
+   * and `'form'` a medium flex shell whose content scrolls while the header and its own footer stay put.
+   */
+  size?: 'default' | 'wide' | 'gallery' | 'form';
   children: ReactNode;
 };
 
@@ -51,7 +54,9 @@ export function ResponsiveDialog({
           showCloseButton={!locked}
           className={cn(
             'max-h-[90svh] rounded-t-xl px-4 pb-6',
-            resolvedSize === 'gallery' ? 'flex flex-col overflow-hidden' : 'overflow-y-auto',
+            resolvedSize === 'gallery' || resolvedSize === 'form'
+              ? 'flex flex-col overflow-hidden'
+              : 'overflow-y-auto',
           )}
           {...guard}
         >
@@ -75,7 +80,9 @@ export function ResponsiveDialog({
           'max-h-[calc(100svh-2rem)]',
           resolvedSize === 'gallery'
             ? 'flex flex-col overflow-hidden sm:max-w-3xl lg:max-w-4xl'
-            : 'overflow-y-auto',
+            : resolvedSize === 'form'
+              ? 'flex flex-col overflow-hidden sm:max-w-2xl'
+              : 'overflow-y-auto',
           resolvedSize === 'wide' && 'sm:max-w-2xl',
         )}
         {...guard}
