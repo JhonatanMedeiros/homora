@@ -1,4 +1,8 @@
 import {
+  en as widgetUptimeKumaMonitors,
+  ptBR as widgetUptimeKumaMonitorsPt,
+} from './widgets/uptime-kuma-monitors/messages.js';
+import {
   en as widgetCertificateExpiry,
   ptBR as widgetCertificateExpiryPt,
 } from './widgets/certificate-expiry/messages.js';
@@ -52,6 +56,7 @@ export const widgetEnglish = {
 
   ...widgetCertificateExpiry,
   ...widgetMaintenanceSchedule,
+  ...widgetUptimeKumaMonitors,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -72,4 +77,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
 
   ...widgetCertificateExpiryPt,
   ...widgetMaintenanceSchedulePt,
+  ...widgetUptimeKumaMonitorsPt,
 };

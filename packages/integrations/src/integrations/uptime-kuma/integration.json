@@ -2,5 +2,6 @@
   "type": "uptime-kuma",
   "order": 30,
   "definition": "uptimeKumaManifest",
-  "translations": true
+  "translations": true,
+  "development": true
 }

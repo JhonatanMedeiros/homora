@@ -1,3 +1,4 @@
+import { widgetUptimeKumaMonitorsWidget } from './widgets/uptime-kuma-monitors/definition.js';
 import { widgetCertificateExpiryWidget } from './widgets/certificate-expiry/definition.js';
 import { widgetMaintenanceScheduleWidget } from './widgets/maintenance-schedule/definition.js';
 import { widgetQuickLinksWidget } from './widgets/quick-links/definition.js';
@@ -36,6 +37,7 @@ const widgets = {
 
   'certificate-expiry': widgetCertificateExpiryWidget,
   'maintenance-schedule': widgetMaintenanceScheduleWidget,
+  'uptime-kuma-monitors': widgetUptimeKumaMonitorsWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];
