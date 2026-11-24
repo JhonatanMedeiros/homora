@@ -13,6 +13,7 @@ import { coolifyDefinition } from '../integrations/coolify/definition.js';
 import { proxmoxDefinition } from '../integrations/proxmox/definition.js';
 import { piHoleDefinition } from '../integrations/pi-hole/definition.js';
 import { healthchecksManifest } from '../integrations/healthchecks/definition.js';
+import { omadaDefinition } from '../integrations/omada/definition.js';
 export { jellyfinManifest };
 export { homeAssistantManifest };
 export { uptimeKumaManifest };
@@ -26,6 +27,7 @@ export { coolifyDefinition };
 export { proxmoxDefinition };
 export { piHoleDefinition };
 export { healthchecksManifest };
+export { omadaDefinition };
 const entries: readonly { type: string; definition: IntegrationDefinition }[] = [
   { type: 'jellyfin', definition: jellyfinManifest },
   { type: 'home-assistant', definition: homeAssistantManifest },
@@ -40,6 +42,7 @@ const entries: readonly { type: string; definition: IntegrationDefinition }[] = 
   { type: 'proxmox', definition: proxmoxDefinition },
   { type: 'pi-hole', definition: piHoleDefinition },
   { type: 'healthchecks', definition: healthchecksManifest },
+  { type: 'omada', definition: omadaDefinition },
 ];
 for (const entry of entries) {
   if (entry.type !== entry.definition.type)

@@ -21,23 +21,27 @@ DNS blocker is doing. They are **optional** and **read-only**: Homora queries th
 
 ## Supported integrations
 
-| Integration           | What it reads                                                                           | What it needs                                |
-| --------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Proxmox VE**        | VMs and containers (running and total), CPU, memory and disk; optionally one node       | Read-only API token, HTTPS                   |
-| **Jellyfin**          | Server name and version                                                                 | The public info endpoint, no credentials     |
-| **Home Assistant**    | The state and last update of one entity, such as `sensor.temperature`                   | Long-lived access token and entity ID, HTTPS |
-| **Uptime Kuma**       | The latest heartbeat of each monitor on a published status page                         | A published status page                      |
-| **AdGuard Home**      | Whether it is running and protection is on, and its version                             | Basic-auth user, HTTPS                       |
-| **Pi-hole (v6)**      | DNS queries, blocked queries and percentage, domains on the blocklist, protection state | Application password, HTTPS                  |
-| **Speedtest Tracker** | The latest download, upload and ping                                                    | Token with _Read Results_, HTTPS             |
-| **Portainer**         | How many environments exist and how many are up or down                                 | Access token, HTTPS                          |
-| **NetBird**           | How many peers exist and how many are connected                                         | Personal access token, HTTPS                 |
-| **Tailscale**         | Devices, how many are connected and how many have an update available                   | API access token, HTTPS                      |
-| **Cloudflare**        | The number of zones and of active zones                                                 | Token with _Zone Read_, HTTPS                |
-| **Healthchecks**      | How many scheduled-job checks exist and how many are up, late, down, paused or new      | Read-only project API key, HTTPS             |
-| **Coolify**           | Applications and services; links them to cards and proposes cards for review            | Token with `read` only, HTTPS                |
+| Integration           | What it reads                                                                                            | What it needs                                 |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| **Proxmox VE**        | VMs and containers (running and total), CPU, memory and disk; optionally one node                        | Read-only API token, HTTPS                    |
+| **Jellyfin**          | Server name and version                                                                                  | The public info endpoint, no credentials      |
+| **Home Assistant**    | The state and last update of one entity, such as `sensor.temperature`                                    | Long-lived access token and entity ID, HTTPS  |
+| **Uptime Kuma**       | The latest heartbeat of each monitor on a published status page                                          | A published status page                       |
+| **AdGuard Home**      | Whether it is running and protection is on, and its version                                              | Basic-auth user, HTTPS                        |
+| **Pi-hole (v6)**      | DNS queries, blocked queries and percentage, domains on the blocklist, protection state                  | Application password, HTTPS                   |
+| **Speedtest Tracker** | The latest download, upload and ping                                                                     | Token with _Read Results_, HTTPS              |
+| **Portainer**         | How many environments exist and how many are up or down                                                  | Access token, HTTPS                           |
+| **NetBird**           | How many peers exist and how many are connected                                                          | Personal access token, HTTPS                  |
+| **Tailscale**         | Devices, how many are connected and how many have an update available                                    | API access token, HTTPS                       |
+| **Cloudflare**        | The number of zones and of active zones                                                                  | Token with _Zone Read_, HTTPS                 |
+| **Healthchecks**      | How many scheduled-job checks exist and how many are up, late, down, paused or new                       | Read-only project API key, HTTPS              |
+| **Coolify**           | Applications and services; links them to cards and proposes cards for review                             | Token with `read` only, HTTPS                 |
+| **TP-Link Omada**     | One site: clients (Wi-Fi and wired), access points, switches and gateways, unresolved alerts in 24 hours | Client credential with the Viewer role, HTTPS |
 
 ::: warning Experimental
+TP-Link Omada was built from API-only reports and has not been validated through Homora. Its Controller name must resolve
+from the Homora container and match the certificate; client counts need client history enabled in the Controller.
+
 The integrations were validated with mocks and documented sample responses. Coolify (v4.7.5) and Pi-hole were partly
 checked against real installations. Verify each connection in your own environment. The authoritative table, with
 exact limits and requirements, is the [integration reference](../integrations.md#integration-status).

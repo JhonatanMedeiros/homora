@@ -1,0 +1,50 @@
+{
+  "_source": {
+    "kind": "hand-written",
+    "docs": "https://use1-omada-northbound.tplinkcloud.com/doc.html",
+    "note": "GET /sites/{siteId}/logs/alerts with filters.resolved=false; totalRows is the filtered count, alertLogStat is ignored. Synthetic: field names follow the Omada Open API v1 schema (checked against the captured 6.2.10 specification); every identifier, MAC and value is invented. Not a recording. alertLogStat is deliberately unfiltered (4 unresolved, 6 resolved)."
+  },
+  "body": {
+    "errorCode": 0,
+    "msg": "Success.",
+    "result": {
+      "totalRows": 3,
+      "currentPage": 1,
+      "currentSize": 10,
+      "data": [
+        {
+          "id": "0",
+          "key": "SYNTHETIC",
+          "module": "Device",
+          "content": "synthetic alert text",
+          "time": 1790000000000,
+          "level": "Warning",
+          "resolved": false
+        },
+        {
+          "id": "1",
+          "key": "SYNTHETIC",
+          "module": "Device",
+          "content": "synthetic alert text",
+          "time": 1790000001000,
+          "level": "Warning",
+          "resolved": false
+        },
+        {
+          "id": "2",
+          "key": "SYNTHETIC",
+          "module": "Device",
+          "content": "synthetic alert text",
+          "time": 1790000002000,
+          "level": "Warning",
+          "resolved": false
+        }
+      ],
+      "alertLogStat": {
+        "totalLogNum": 10,
+        "unResolvedLogNum": 4,
+        "resolvedLogNum": 6
+      }
+    }
+  }
+}

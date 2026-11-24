@@ -1,6 +1,8 @@
 # 0018 — Session authentication for integrations
 
 **Status:** Implemented for the built-in Pi-hole v6 adapter; partially validated by user report.
+Extended by [ADR 0028](0028-session-auth-client-credentials.md) (fixed login query, success code,
+enumerated authorization format) for the Omada client-credentials login.
 
 ## Context
 

@@ -1,0 +1,17 @@
+{
+  "_source": {
+    "kind": "hand-written",
+    "docs": "https://use1-omada-northbound.tplinkcloud.com/doc.html",
+    "note": "Client-credentials token exchange. Synthetic: field names follow the Omada Open API v1 schema (checked against the captured 6.2.10 specification); every identifier, MAC and value is invented. Not a recording."
+  },
+  "body": {
+    "errorCode": 0,
+    "msg": "Success.",
+    "result": {
+      "accessToken": "AT-synthetic-access-token",
+      "tokenType": "bearer",
+      "expiresIn": 7200,
+      "refreshToken": "RT-synthetic-refresh-token"
+    }
+  }
+}

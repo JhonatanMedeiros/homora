@@ -69,8 +69,11 @@ workflows select the correct capability without checking an integration's identi
 A built-in code registration may declare a `sessionAuth` profile. Declare the fixed login path,
 flat JSON body fields sourced from `secret`, `tokenId` or named public config, fixed response
 paths for the token and optional validity flag/lifetime, token format, whether successful reads
-extend expiry, and Bearer or an allowed header. Provide a bounded fallback lifetime if the
-response has no lifetime. These are reviewed source definitions, not user-provided rules. Mark
+extend expiry, and Bearer, an allowed header or an enumerated authorization format
+(`AccessToken=<token>`). A login may also declare fixed query parameters (`loginQuery`, bounded,
+never credentials) and an exact success code in the response (`successCode`, for services that
+answer HTTP 200 with an error code); see [ADR 0028](decisions/0028-session-auth-client-credentials.md).
+Provide a bounded fallback lifetime if the response has no lifetime. These are reviewed source definitions, not user-provided rules. Mark
 identity fields in the definition so a change requires a new secret. Configure bounded retry
 backoff through `retryDelaySeconds`; do not echo credentials or remote errors. The host owns
 HTTPS, destination policy, session caching, renewal and concurrency. A different method,

@@ -5,8 +5,11 @@ import { proxmoxDefinition as definition1 } from '../integrations/proxmox/defini
 import { createProxmoxRegistration as factory1 } from '../integrations/proxmox/registration.js';
 import { piHoleDefinition as definition2 } from '../integrations/pi-hole/definition.js';
 import { createPiHoleRegistration as factory2 } from '../integrations/pi-hole/registration.js';
+import { omadaDefinition as definition3 } from '../integrations/omada/definition.js';
+import { createOmadaRegistration as factory3 } from '../integrations/omada/registration.js';
 export const backendFactories = [
   { type: 'coolify', definition: definition0, create: factory0 },
   { type: 'proxmox', definition: definition1, create: factory1 },
   { type: 'pi-hole', definition: definition2, create: factory2 },
+  { type: 'omada', definition: definition3, create: factory3 },
 ];

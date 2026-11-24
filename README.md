@@ -93,7 +93,7 @@ to your first alert.
 ### Connect
 
 - **Read-only integrations** for Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Pi-hole,
-  Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare, Healthchecks and Coolify, shown as **widgets inside cards
+  Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare, Healthchecks, Coolify and TP-Link Omada, shown as **widgets inside cards
   and on pages**. A failing connection never affects other cards.
 - **Service-to-host map:** link a card to the VM or container it runs on, record dependencies, and see what may be
   affected when a host goes down. Homora suggests links from evidence and never writes to Proxmox.
@@ -216,7 +216,7 @@ More scenarios, with the steps to set each one up, are in [Use cases](docs/user-
 ## Supported integrations
 
 Proxmox VE · Jellyfin · Home Assistant · Uptime Kuma · AdGuard Home · Pi-hole · Speedtest Tracker · Portainer ·
-NetBird · Tailscale · Cloudflare · Healthchecks · Coolify
+NetBird · Tailscale · Cloudflare · Healthchecks · Coolify · TP-Link Omada
 
 All twelve are **read-only and experimental**: they were validated with mocks and documented sample responses,
 not against live multi-version installations. The status of each one is in the

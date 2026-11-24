@@ -7,6 +7,7 @@ import { en as en4, ptBR as pt4 } from '../integrations/tailscale/messages.js';
 import { en as en5, ptBR as pt5 } from '../integrations/proxmox/messages.js';
 import { en as en6, ptBR as pt6 } from '../integrations/pi-hole/messages.js';
 import { en as en7, ptBR as pt7 } from '../integrations/healthchecks/messages.js';
+import { en as en8, ptBR as pt8 } from '../integrations/omada/messages.js';
 export const integrationEnglish = {
   ...en0,
   ...en1,
@@ -16,6 +17,7 @@ export const integrationEnglish = {
   ...en5,
   ...en6,
   ...en7,
+  ...en8,
 } as const;
 export const integrationPortuguese: Record<keyof typeof integrationEnglish, string> = {
   ...pt0,
@@ -26,4 +28,5 @@ export const integrationPortuguese: Record<keyof typeof integrationEnglish, stri
   ...pt5,
   ...pt6,
   ...pt7,
+  ...pt8,
 };
