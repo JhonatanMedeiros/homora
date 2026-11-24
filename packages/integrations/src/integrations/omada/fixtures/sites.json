@@ -1,0 +1,28 @@
+{
+  "_source": {
+    "kind": "hand-written",
+    "docs": "https://use1-omada-northbound.tplinkcloud.com/doc.html",
+    "note": "GET /sites?page=1&pageSize=50. Synthetic: field names follow the Omada Open API v1 schema (checked against the captured 6.2.10 specification); every identifier, MAC and value is invented. Not a recording."
+  },
+  "body": {
+    "errorCode": 0,
+    "msg": "Success.",
+    "result": {
+      "totalRows": 2,
+      "currentPage": 1,
+      "currentSize": 50,
+      "data": [
+        {
+          "siteId": "aaaaaaaaaaaaaaaaaaaaaaaa",
+          "name": "Site A",
+          "region": "ZZ"
+        },
+        {
+          "siteId": "bbbbbbbbbbbbbbbbbbbbbbbb",
+          "name": "Site B",
+          "region": "ZZ"
+        }
+      ]
+    }
+  }
+}

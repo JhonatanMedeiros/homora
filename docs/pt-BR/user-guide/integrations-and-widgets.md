@@ -19,6 +19,8 @@ Na aba de widgets, escolha o tipo, a conexão e o cartão. Widgets de página po
 
 As integrações incluem Proxmox, Jellyfin, Home Assistant e outras. A cobertura e a validação ao vivo variam; consulte a [referência de integrações em inglês](/integrations) antes de depender de uma integração específica.
 
+A integração **TP-Link Omada** mostra, para um site, os clientes (Wi-Fi e cabo), pontos de acesso, switches e gateways e os alertas não resolvidos das últimas 24 horas. Use uma credencial de Cliente com a função Viewer, o ID do Omada e o ID do site (informados manualmente). O endereço HTTPS do Controller deve ser um nome que resolva dentro do contêiner do Homora e conste no SAN do certificado; não há exceção para a verificação do nome. Se o histórico de clientes estiver desativado no Controller, os clientes aparecem como `—` em vez de zero. O histórico de métricas não está implementado. A integração está implementada, mas não foi validada com um Controller real; veja a [referência em inglês](/integrations#tp-link-omada-controller).
+
 Para criar uma integração, siga o [guia do SDK em inglês](/adapters). Para contêineres, veja [descoberta Docker](docker-discovery.md).
 
 [Leia o guia completo de integrações e widgets em inglês](/user-guide/integrations-and-widgets).

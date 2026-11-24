@@ -16,20 +16,21 @@ provides it. Integration presentations can be placed on a page or a service card
 screen also lists legacy instances. Page widgets read connections in batches, with failures isolated
 per instance. See [ADR 0019](decisions/0019-widget-sdk.md) for placement and transfer limitations.
 
-| Existing integration presentation | Current information                                                                                   |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Proxmox VE                        | Running and total VMs and containers; CPU, memory and disk where available; cluster or selected node. |
-| Pi-hole v6                        | DNS queries, blocked queries, percentage, gravity domains and protection state.                       |
-| AdGuard Home                      | Service, protection and version.                                                                      |
-| Uptime Kuma                       | Up, down, pending, maintenance and unknown counts from a status page.                                 |
-| Coolify                           | Total and running resources; degraded, stopped and unknown when nonzero.                              |
-| Home Assistant                    | State of a configured entity.                                                                         |
-| Jellyfin                          | Server name and version.                                                                              |
-| Speedtest Tracker                 | Download, upload and ping.                                                                            |
-| Portainer                         | Environment counts and availability.                                                                  |
-| NetBird                           | Peer and connected counts.                                                                            |
-| Tailscale                         | Device and online counts, available updates when nonzero.                                             |
-| Cloudflare                        | Zone and active counts.                                                                               |
+| Existing integration presentation | Current information                                                                                                               |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Proxmox VE                        | Running and total VMs and containers; CPU, memory and disk where available; cluster or selected node.                             |
+| Pi-hole v6                        | DNS queries, blocked queries, percentage, gravity domains and protection state.                                                   |
+| AdGuard Home                      | Service, protection and version.                                                                                                  |
+| Uptime Kuma                       | Up, down, pending, maintenance and unknown counts from a status page.                                                             |
+| Coolify                           | Total and running resources; degraded, stopped and unknown when nonzero.                                                          |
+| TP-Link Omada                     | One site: clients, Wi-Fi and wired split, access points, switches, gateways and 24-hour alerts; unavailable sections show a dash. |
+| Home Assistant                    | State of a configured entity.                                                                                                     |
+| Jellyfin                          | Server name and version.                                                                                                          |
+| Speedtest Tracker                 | Download, upload and ping.                                                                                                        |
+| Portainer                         | Environment counts and availability.                                                                                              |
+| NetBird                           | Peer and connected counts.                                                                                                        |
+| Tailscale                         | Device and online counts, available updates when nonzero.                                                                         |
+| Cloudflare                        | Zone and active counts.                                                                                                           |
 
 See [integration reference](integrations.md) for credentials, scope, versions and live-validation
 status. Most integrations remain unvalidated against real instances; Coolify and Pi-hole have

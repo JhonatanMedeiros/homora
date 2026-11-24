@@ -415,22 +415,23 @@ widening the transport, so they were not implemented (decision recorded in
 
 ## Integration status
 
-| Integration       | Kind     | Status                                                   | Needs                                |
-| ----------------- | -------- | -------------------------------------------------------- | ------------------------------------ |
-| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope    | Read-only API token, HTTPS           |
-| Jellyfin          | manifest | Implemented, unvalidated                                 | Public info endpoint, no credentials |
-| Home Assistant    | manifest | Implemented, unvalidated                                 | Long-lived token, HTTPS              |
-| Uptime Kuma       | manifest | Implemented, unvalidated                                 | A published status page              |
-| AdGuard Home      | manifest | Implemented, unvalidated                                 | Basic auth user, HTTPS               |
-| Speedtest Tracker | manifest | Implemented, unvalidated                                 | Token with Read Results, HTTPS       |
-| Portainer         | manifest | Implemented, unvalidated                                 | Access token, HTTPS                  |
-| NetBird           | manifest | Implemented, unvalidated                                 | Personal access token, HTTPS         |
-| Tailscale         | manifest | Implemented, unvalidated                                 | API access token, HTTPS              |
-| Cloudflare        | manifest | Implemented, unvalidated                                 | Token with Zone Read, HTTPS          |
-| Healthchecks      | manifest | Implemented, unvalidated                                 | Read-only project API key, HTTPS     |
-| Coolify           | code     | Partly validated on v4.7.5 (inventory, links, discovery) | Token with `read` only, HTTPS        |
-| Pi-hole v6        | code     | Partially validated (user reports it works)              | Application password, HTTPS          |
-| Beszel, TrueNAS   | —        | Skipped (see above)                                      | —                                    |
+| Integration       | Kind     | Status                                                   | Needs                                 |
+| ----------------- | -------- | -------------------------------------------------------- | ------------------------------------- |
+| Proxmox VE        | code     | Implemented, unvalidated (mocks); optional node scope    | Read-only API token, HTTPS            |
+| Jellyfin          | manifest | Implemented, unvalidated                                 | Public info endpoint, no credentials  |
+| Home Assistant    | manifest | Implemented, unvalidated                                 | Long-lived token, HTTPS               |
+| Uptime Kuma       | manifest | Implemented, unvalidated                                 | A published status page               |
+| AdGuard Home      | manifest | Implemented, unvalidated                                 | Basic auth user, HTTPS                |
+| Speedtest Tracker | manifest | Implemented, unvalidated                                 | Token with Read Results, HTTPS        |
+| Portainer         | manifest | Implemented, unvalidated                                 | Access token, HTTPS                   |
+| NetBird           | manifest | Implemented, unvalidated                                 | Personal access token, HTTPS          |
+| Tailscale         | manifest | Implemented, unvalidated                                 | API access token, HTTPS               |
+| Cloudflare        | manifest | Implemented, unvalidated                                 | Token with Zone Read, HTTPS           |
+| Healthchecks      | manifest | Implemented, unvalidated                                 | Read-only project API key, HTTPS      |
+| Coolify           | code     | Partly validated on v4.7.5 (inventory, links, discovery) | Token with `read` only, HTTPS         |
+| Pi-hole v6        | code     | Partially validated (user reports it works)              | Application password, HTTPS           |
+| TP-Link Omada     | code     | Implemented, unvalidated (API-only user reports)         | Client credential, Viewer role, HTTPS |
+| Beszel, TrueNAS   | —        | Skipped (see above)                                      | —                                     |
 
 "Unvalidated" means no one has tried it against a live service yet. Adding one is documented in
 [adapters](adapters.md); the manifest vocabulary and its limits are in
@@ -475,6 +476,116 @@ Live validation still needs to cover the app password with `app_sudo` off, real 
 counts, expired credentials, session limits, private destination policy, certificate validation,
 and absence of secrets in logs and responses. The user report does not establish which of these
 checks were performed; a detailed validation record is still pending.
+
+### TP-Link Omada Controller
+
+**Implemented, unvalidated.** The integration is a read-only summary of one site: clients, devices and
+unresolved alerts from the last 24 hours. It is built from the vendor's Open API and from
+API-only tests a user reported on software Controllers **5.15.24.19** and **6.3.0.111** with a Viewer
+Client credential. Those tests did not go through Homora; no live validation of the integration has
+been performed. Fixtures are synthetic and hand-written from the captured 6.2.10 specification.
+
+**Compatibility, from evidence only**
+
+| Behavior                                | 5.15.24.19                       | 6.3.0.111                                       | Used by Homora |
+| --------------------------------------- | -------------------------------- | ----------------------------------------------- | -------------- |
+| Client-credentials token, `AccessToken` | Works (user report)              | Works (user report)                             | Yes            |
+| `GET /sites`, `/devices`, `/clients`    | Works with `page` and `pageSize` | Works with `page` and `pageSize`                | Yes            |
+| `clientStat` total, wired, wireless     | Present (nonzero not compared)   | Stable across page sizes 1 and 50               | Yes            |
+| `GET /logs/alerts` + `filters.resolved` | Works                            | Works; `totalRows` stable across page sizes     | Yes            |
+| `GET /dashboard/current-client-num`     | 404                              | Works                                           | No             |
+| `GET /controller/client/history-enable` | Not tested                       | Reported `clientStatEnable`/`clientsDataEnable` | Yes, optional  |
+| v2 clients and `.../stat/{mac}/hourly`  | 404                              | GET returns 405 (documented POST)               | No (blocked)   |
+| API key (`Bearer`)                      | Not assumed                      | Not available/tested                            | No             |
+
+Homora does not parse or compare Controller versions: `apiVer` does not prove endpoint support, and
+no pre-login version read exists. An unsupported Controller shows up as failed sections or, when
+every section fails, as a failed connection with a generic error. Other versions are untested.
+
+**What each value means**
+
+- **Clients** come from `clientStat` of `GET /clients?page=1&pageSize=1`. Total, wired and Wi-Fi are
+  site-wide in the tested environment; that is not a universal guarantee and was not compared with
+  the Controller interface. No individual client, name, MAC or address is read or kept.
+- **Client history.** On 6.3.0.111 the counts were zero until the Controller's client history and
+  statistics collection was enabled. Homora reads `GET /controller/client/history-enable`:
+  both switches on is _enabled_ (zero is a real zero), both off is _disabled_ (clients show `—` and
+  "off in Controller"), and anything else (an unreadable, forbidden or missing endpoint, or mixed
+  switches) is _unknown_. With an unknown state a zero is withheld (`—`, "status unknown") because
+  it cannot be interpreted, while a positive count is shown: a positive aggregate can only come
+  from data being collected. This last rule is a design judgment, not verified behavior. Active, known,
+  per-device and time-window client populations are never substituted.
+- **Devices** are read 50 per page, at most 20 pages (1,000 devices), at most four requests in
+  flight and 2 MB per response. They are grouped by the documented `type` values `ap`, `switch` and
+  `gateway`; only a gateway was seen live, so access-point and switch mappings follow the
+  documentation. Other types (for example an OLT) count as _other devices_. Documented status `1`
+  is connected; `0` disconnected, `2` pending, `3` heartbeat missed and `4` isolated are kept apart,
+  and any other value is _unknown_ and never counted as connected. `detailStatus` is not used. The
+  widget shows connected/total. A list over the ceiling, a duplicate, a changing total or a short page
+  makes the section `—` ("incomplete" for the ceiling); no partial total is shown.
+- **Alerts** use `filters.resolved=false` and an explicit rolling window of 24 hours, with
+  millisecond `timeStart`/`timeEnd` as in the API reference. The filtered `totalRows` is used;
+  `alertLogStat` is ignored because the observed aggregate held both resolved and unresolved counts.
+  If an alert comes back resolved or with a millisecond timestamp outside the window, the count is
+  shown as `—` instead. The window length is part of the label. No alert text is read or stored.
+
+**Setup**
+
+1. In the Controller, create an Open API application of type _Client_ with the **Viewer** role,
+   limited to the site you want (Settings, Platform Integration, Open API). Note the Omada ID, Client
+   ID and Client secret. The Viewer role is enough for the sites list and the reads above; API access
+   to the documentation pages was not available with this token.
+2. Find the Site ID (for example from the Open API documentation or a site list call). The
+   first version requires it manually: there is no site picker, and Homora does not auto-fill IDs.
+3. In Homora, add an _TP-Link Omada_ connection with the HTTPS address, Omada ID, Site ID, Client
+   ID and secret. LAN addresses need the private-network option. Both IDs are used in request paths
+   and accept only letters and digits (8 to 64).
+4. **Certificate and name.** TLS chain _and hostname_ verification stay on. A private CA can be
+   pasted in the connection. The address must be a **name that resolves inside the Homora backend
+   container and appears in the certificate's SAN**; an IP address fails when the certificate has
+   only DNS names. If the name does not resolve, add an authorized DNS or hosts entry, or issue a
+   certificate containing the actual name or IP. There is no bypass.
+5. Test the connection. The first read confirms the site is in the credential's accessible site
+   list (read completely, up to 20 pages of 50, never guessed).
+
+**Behavior and limits**
+
+- Authentication: `POST /openapi/authorize/token?grant_type=client_credentials`, fixed by the
+  registration ([ADR 0028](decisions/0028-session-auth-client-credentials.md)); the token lives in
+  memory per connection, is renewed on expiry or once after a 401, and the refresh token is
+  discarded. `errorCode` is checked on HTTP 200 as well: `-44106` and `-44112` are shown as rejected
+  credentials (automatic reads then pause 60 seconds), `429` honors `Retry-After`.
+- Partial results. After login and the site check succeed, clients, devices and alerts fail
+  independently and appear as `—`. Credential, certificate, rate-limit and site errors fail the
+  whole connection. If every section fails the observation fails and is not cached.
+- Freshness. An observation is cached for 30 seconds in the backend, including an intentional partial
+  one. Page widgets keep their previous data after a whole-request failure; cards show an error.
+  There are no per-section stale values and no timestamps for partial data.
+- Translations are in English and Brazilian Portuguese; the widget has six values (clients, Wi-Fi/wired,
+  access points, switches, gateways, alerts) plus short notes when something is unknown or unclassified.
+- Not implemented: **historical CPU, memory and traffic** (blocked on a separately designed and
+  reviewed read-only POST capability; the documented endpoints are POST per device, and the tested GET
+  and hourly paths returned 405 and 404), API-key mode, version and site-name display, `dashboard`
+  endpoints, and any write.
+
+**Live validation record (pending)**
+
+```text
+Integration: TP-Link Omada   Service version: <5.15.24.19 / 6.3.0.111 / other>   Date: <YYYY-MM-DD>
+Validated by: <who>          Homora commit: <sha>
+- [ ] Connection saved with a Viewer Client credential limited to one site
+- [ ] Widget values match the Controller interface (clients, devices by type and state, alerts in 24 h)
+- [ ] Client history disabled shows "off in Controller", enabled shows counts
+- [ ] Wrong credential gives a generic error and pauses reads; token renewal after expiry works
+- [ ] Wrong CA and a name missing from the SAN fail without a bypass
+- [ ] Access points and switches seen in a site that has them
+- [ ] No credential, ID, MAC, serial, SSID or client name in the UI, logs or API responses
+Notes / deviations:
+```
+
+Sources: [Omada Open API access guide](https://support.omadanetworks.com/sg/document/139218/),
+[Open API reference](https://use1-omada-northbound.tplinkcloud.com/doc.html) and the
+[captured 6.2.10 specification](https://github.com/dfla-me/omada-mcp/tree/main/docs/openapi).
 
 ## Home page widgets
 

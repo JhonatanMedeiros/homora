@@ -1,0 +1,29 @@
+{
+  "_source": {
+    "kind": "hand-written",
+    "docs": "https://use1-omada-northbound.tplinkcloud.com/doc.html",
+    "note": "GET /sites/{siteId}/clients?page=1&pageSize=1; only clientStat is read. Synthetic: field names follow the Omada Open API v1 schema (checked against the captured 6.2.10 specification); every identifier, MAC and value is invented. Not a recording."
+  },
+  "body": {
+    "errorCode": 0,
+    "msg": "Success.",
+    "result": {
+      "totalRows": 12,
+      "currentPage": 1,
+      "currentSize": 1,
+      "data": [
+        {
+          "mac": "AA-00-00-00-00-01",
+          "name": "client-1"
+        }
+      ],
+      "clientStat": {
+        "total": 12,
+        "wireless": 9,
+        "wired": 3,
+        "num2g": 2,
+        "num5g": 7
+      }
+    }
+  }
+}

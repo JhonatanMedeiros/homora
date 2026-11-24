@@ -1,0 +1,81 @@
+{
+  "_source": {
+    "kind": "hand-written",
+    "docs": "https://use1-omada-northbound.tplinkcloud.com/doc.html",
+    "note": "GET /sites/{siteId}/devices?page=1&pageSize=50. Only gateway/status 1 was seen live; ap, switch, olt and the other statuses are invented from the documented values. Synthetic: field names follow the Omada Open API v1 schema (checked against the captured 6.2.10 specification); every identifier, MAC and value is invented. Not a recording."
+  },
+  "body": {
+    "errorCode": 0,
+    "msg": "Success.",
+    "result": {
+      "totalRows": 9,
+      "currentPage": 1,
+      "currentSize": 50,
+      "data": [
+        {
+          "mac": "AA-00-00-00-10-01",
+          "name": "device-1",
+          "type": "gateway",
+          "status": 1,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-02",
+          "name": "device-2",
+          "type": "switch",
+          "status": 1,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-03",
+          "name": "device-3",
+          "type": "switch",
+          "status": 0,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-04",
+          "name": "device-4",
+          "type": "ap",
+          "status": 1,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-05",
+          "name": "device-5",
+          "type": "ap",
+          "status": 1,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-06",
+          "name": "device-6",
+          "type": "ap",
+          "status": 3,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-07",
+          "name": "device-7",
+          "type": "ap",
+          "status": 2,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-08",
+          "name": "device-8",
+          "type": "ap",
+          "status": 99,
+          "sn": "SYNTHETIC"
+        },
+        {
+          "mac": "AA-00-00-00-10-09",
+          "name": "device-9",
+          "type": "olt",
+          "status": 1,
+          "sn": "SYNTHETIC"
+        }
+      ]
+    }
+  }
+}

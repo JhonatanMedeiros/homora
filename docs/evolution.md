@@ -2141,3 +2141,25 @@ Validation: focused module, source, refresh, transfer and backup/restore tests, 
 ## Coolify resource widget (INT-04)
 
 The connection widget uses the existing authenticated resource inventory and its 30-second backend cache, polling through the page widget host every 60 seconds. The generic widget definition selects the existing resource inventory rather than the summary, and failed reads discard the previous inventory so addresses are hidden. It displays Coolify-reported state independently of Homora monitoring. Fixture and development-mock validation do not replace validation against a live service, which remains pending.
+
+## TP-Link Omada integration and client-credentials login (#317)
+
+- Added a built-in read-only TP-Link Omada integration and widget: clients (total, Wi-Fi, wired),
+  access points, switches and gateways (connected/total with distinct disconnected, pending,
+  heartbeat-missed, isolated and unknown states) and unresolved alerts in a rolling 24-hour window,
+  with `—` for sections that are disabled, unreadable or incomplete. Module:
+  `packages/integrations/src/integrations/omada`. See [the reference](integrations.md#tp-link-omada-controller).
+- Extended the host-owned `sessionAuth` profile in a closed way: fixed login query, an exact response
+  success code and an enumerated `AccessToken=<token>` authorization format
+  ([ADR 0028](decisions/0028-session-auth-client-credentials.md)). No generic POST, header or
+  scheme was added; the Pi-hole profile is unchanged.
+- Validation: transport, contract, adapter, presentation and connection tests with synthetic fixtures;
+  `pnpm check`, `pnpm build` and `pnpm docs:build`. **Not validated:** the integration against a real
+  Controller (the issue's 5.15.24.19 and 6.3.0.111 results are API-only user reports), token expiry and
+  renewal on a live Controller, access-point and switch device types and states, alert window
+  semantics, UI parity of client counts, the widget's narrow and wide layouts in a browser, and
+  certificate/SAN behavior with the real Controller.
+- **Blocked:** historical CPU, memory and traffic wait for a separately designed and reviewed
+  service-neutral read-only POST capability (the statistics endpoints are POST per device). Also
+  pending as separate designs: pre-login `GET /api/info`, version/site-name display, a site picker and
+  API-key (`Bearer`) mode for Controller 6.4+. No brand icon was added; the card uses the `OM` mark.

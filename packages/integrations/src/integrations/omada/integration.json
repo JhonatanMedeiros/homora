@@ -1,0 +1,8 @@
+{
+  "type": "omada",
+  "order": 140,
+  "definition": "omadaDefinition",
+  "backend": "createOmadaRegistration",
+  "frontend": "createOmadaPresentation",
+  "translations": true
+}
