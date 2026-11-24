@@ -32,12 +32,15 @@ The bind address comes from `HOMORA_BIND_IP` (default `127.0.0.1`). Override it,
 ### Map a LAN-only name
 
 An appliance with a certificate name that only your LAN resolves (for example a TP-Link Omada Controller) may not
-resolve from the backend container. Map it with the optional override, using a synthetic value like this one:
+resolve from the backend container. Map it with `HOMORA_EXTRA_HOST`, using the same `name:address` form as
+`extra_hosts`:
 
 ```bash
-HOMORA_EXTRA_HOST=controller.example.lan:192.0.2.10 \
-  docker compose -f compose.yml -f compose.extra-hosts.yml up -d --build
+HOMORA_EXTRA_HOST=controller.example.lan:192.0.2.10 docker compose up -d --build
 ```
+
+`compose.yml` reads the variable directly, so platforms that run a single compose file can set it in their environment
+and redeploy. `compose.extra-hosts.yml` remains available for deployments that prefer a separate override file.
 
 Certificate verification stays on: the name must appear in the certificate, and a private CA is attached to the
 connection.
