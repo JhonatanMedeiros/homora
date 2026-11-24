@@ -35,7 +35,7 @@ export type OmadaConfig = {
 const MAX_BODY = 2_000_000;
 const SMALL_BODY = 262_144;
 const CONCURRENCY = 4;
-const credential = /^[\x21-\x7E]{1,256}$/;
+const credential = /^[\u0021-\u007E]{1,256}$/;
 
 export type OmadaErrorKind =
   | 'auth'
@@ -48,7 +48,8 @@ export type OmadaErrorKind =
 const MESSAGES: Record<OmadaErrorKind, string> = {
   auth: 'Omada rejected the credentials or permissions.',
   'rate-limited': 'Omada is limiting requests; try again later.',
-  certificate: 'The Omada certificate could not be verified.',
+  certificate:
+    'The Omada certificate could not be verified. Add the CA that signed it to the connection and use a name listed in the certificate.',
   site: 'The Omada site was not found or is not accessible.',
   incomplete: 'The Omada list is longer than Homora reads.',
   unavailable: 'Could not query Omada.',

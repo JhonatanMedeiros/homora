@@ -1,0 +1,11 @@
+# Optional: map a name that only your LAN resolves, such as an appliance's certificate name, to
+# its address inside the backend container. Use it on top of compose.yml:
+#   HOMORA_EXTRA_HOST=controller.example.lan:192.0.2.10 \
+#     docker compose -f compose.yml -f compose.extra-hosts.yml up -d --build
+# The value is "name:address" (the same form as `extra_hosts`). Nothing is set by default, and
+# TLS verification is unaffected: the name must still appear in the certificate, and a private
+# CA is attached to the connection.
+services:
+  backend:
+    extra_hosts:
+      - '${HOMORA_EXTRA_HOST:?Set HOMORA_EXTRA_HOST=name:address}'

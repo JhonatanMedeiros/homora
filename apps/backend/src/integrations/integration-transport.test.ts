@@ -49,6 +49,27 @@ describe('integration session transport', () => {
     ]);
     expect(JSON.stringify(await transport(request))).not.toContain('session123');
   });
+  it('applies the connection CA to the login and to every read, never disabling verification', async () => {
+    const ca = '-----BEGIN CERTIFICATE-----\nsynthetic\n-----END CERTIFICATE-----';
+    const send = vi
+      .spyOn(network, 'getAuthorizedResponse')
+      .mockResolvedValueOnce(login())
+      .mockResolvedValue(summary);
+    const transport = createIntegrationTransport(
+      data,
+      { ...credentials, ca },
+      'error',
+      undefined,
+      profile,
+    );
+    await transport(request);
+    await transport(request);
+    expect(send).toHaveBeenCalledTimes(3);
+    for (const call of send.mock.calls) {
+      expect(call[2]).toMatchObject({ ca });
+      expect(JSON.stringify(call)).not.toMatch(/rejectUnauthorized|insecure/i);
+    }
+  });
   it('deduplicates simultaneous login requests', async () => {
     let resolve!: (value: ReturnType<typeof login>) => void;
     const waiting = new Promise<ReturnType<typeof login>>((done) => {

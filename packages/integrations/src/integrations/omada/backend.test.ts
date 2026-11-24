@@ -435,7 +435,9 @@ describe('failures', () => {
         .adapter.collect(config)
         .catch((e: unknown) => e);
       expect((error as OmadaError).kind).toBe('certificate');
-      expect((error as Error).message).toBe('The Omada certificate could not be verified.');
+      expect((error as Error).message).toBe(
+        'The Omada certificate could not be verified. Add the CA that signed it to the connection and use a name listed in the certificate.',
+      );
     }
     const dns = Object.assign(
       new Error(`getaddrinfo ENOTFOUND omada.example.test ${config.secret}`),

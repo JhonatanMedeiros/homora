@@ -543,8 +543,12 @@ every section fails, as a failed connection with a generic error. Other versions
 4. **Certificate and name.** TLS chain _and hostname_ verification stay on. A private CA can be
    pasted in the connection. The address must be a **name that resolves inside the Homora backend
    container and appears in the certificate's SAN**; an IP address fails when the certificate has
-   only DNS names. If the name does not resolve, add an authorized DNS or hosts entry, or issue a
-   certificate containing the actual name or IP. There is no bypass.
+   only DNS names. For a self-signed or private-CA certificate, attach the CA certificate (PEM) to the
+   connection: it is used for the token request and for every read. Without it, or with the wrong
+   one, the connection fails with a certificate error that asks for the CA. If the name only
+   resolves on your LAN, map it inside the backend container with `compose.extra-hosts.yml`
+   (`HOMORA_EXTRA_HOST=name:address docker compose -f compose.yml -f compose.extra-hosts.yml up -d`),
+   or add an authorized DNS entry. There is no bypass.
 5. Test the connection. The first read confirms the site is in the credential's accessible site
    list (read completely, up to 20 pages of 50, never guessed).
 
