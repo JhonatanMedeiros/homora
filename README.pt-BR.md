@@ -20,7 +20,7 @@
 > **Nota sobre o idioma:** a interface oferece inglês e português do Brasil. O site de documentação inclui
 > guias em português; as referências técnicas detalhadas permanecem em inglês.
 
-Aliases curtos opcionais como `/go/plex` exigem login e acompanham a URL atual do serviço. Alterar ou remover o alias invalida favoritos; reutilizá-lo para outro serviço fará antigos favoritos abrirem o novo serviço.
+Aliases curtos opcionais como `/go/plex` exigem login; alterar ou reutilizar um alias afeta favoritos antigos.
 
 ## Por que o Homora
 
@@ -33,8 +33,6 @@ entrada única e responde à pergunta que você realmente tem quando algo parece
 - **Agentes propõem, você decide.** Conecte um agente de IA por MCP com tokens restritos e revogáveis. Ele pode sugerir
   cards, grupos e widgets, mas nada muda até você aprovar a proposta exata, e cada passo fica registrado.
 - **Local e privado.** SQLite no seu disco, logos servidos localmente, sem telemetria e credenciais criptografadas em repouso.
-- **Novidades no sistema.** O menu do perfil mostra as notas e destaca versões estáveis mais recentes.
-  Enquanto você estiver conectado, o Homora consulta o GitHub, que recebe o IP público do servidor.
 - **Traga sua configuração.** Importe configurações compatíveis com pré-visualização e exporte para YAML ou JSON quando quiser.
 
 ## Início rápido
@@ -73,65 +71,53 @@ card ao primeiro alerta.
 - **Grupos, páginas e cards** com ordenação por arrastar e soltar, de 1 a 6 colunas por grupo, abas para páginas
   (teclas `1` a `9`) e tags para filtrar.
 - **Dois layouts:** lista densa ou cards detalhados, com descrição e barras de disponibilidade. Visões Grupo, Host e Mapa.
-- **Ícones do seu jeito:** emoji, ícone embutido (`lucide:server`), um dos **164 logos de apps de homelab** incluídos
-  (`brand:plex`, servidos localmente, sem requisições externas) ou uma URL de imagem. O formulário sugere o logo que
-  corresponde ao nome do serviço.
+- **Ícones do seu jeito:** emoji, ícone embutido, um dos **164 logos** incluídos (`brand:plex`, servidos localmente) ou
+  uma URL de imagem, com o logo sugerido a partir do nome.
 - **Paleta de comandos** (`Ctrl K` ou `/`) para ir a qualquer card, filtrar com `status:down` ou `group:Media` e chegar a
-  qualquer página de configurações. Atalhos de uma tecla (`?` lista todos) podem ser desativados.
-- **Visual pessoal:** cor de destaque, gradientes, translucidez dos cards, imagem de fundo e CSS personalizado (com modo
-  seguro, caso você se tranque para fora). Temas claro e escuro, em inglês e português do Brasil.
+  qualquer configuração.
+- **Visual pessoal:** cor de destaque, fundos, translucidez e CSS personalizado (com modo seguro). Temas claro e escuro,
+  em inglês e português do Brasil.
 
 ### Monitorar
 
 - **Sete tipos de verificação:** HTTP(S), ping, TCP, DNS, validade do certificado TLS, palavra-chave na página e um valor
   em uma resposta JSON.
-- **Status honesto.** No ar, Fora do ar, Degradado, Manutenção ou Aguardando, com latência e o motivo da falha (não
-  encontrado, erro do servidor, sem resposta, certificado expirado).
-- **Histórico que responde perguntas:** disponibilidade em 24 horas, 7, 30 e 90 dias, gráficos de latência (p50 e p95),
-  mapa de calor de 90 dias, registro de incidentes, tempo médio de recuperação e meta de 99,9% com seu orçamento de erro.
-- **Alertas sem ruído:** limites antes de abrir um incidente e notificações por Telegram, ntfy, Discord ou webhook, no
-  idioma de cada canal.
-- **Janelas de manutenção** que pausam as verificações e mantêm o trabalho planejado fora das suas estatísticas.
-- **Página pública de status** (desativada por padrão): um `/status` mínimo, somente leitura, para família ou equipe.
-  Nunca expõe URLs nem detalhes internos.
+- **Status honesto.** No ar, Fora do ar, Degradado, Manutenção ou Aguardando, com latência e o motivo da falha.
+- **Histórico que responde perguntas:** disponibilidade de 24 horas a 90 dias, gráficos de latência (p50 e p95), mapa de
+  calor, registro de incidentes, tempo médio de recuperação e meta de 99,9%.
+- **Alertas sem ruído:** limites antes de abrir um incidente e notificações por Telegram, ntfy, Discord ou webhook.
+- **Janelas de manutenção** que pausam as verificações e mantêm o trabalho planejado fora das estatísticas.
+- **Página pública de status** (desativada por padrão): um `/status` mínimo, somente leitura, que nunca expõe URLs nem
+  detalhes internos.
 
 ### Conectar
 
-- **Integrações somente leitura** com Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Pi-hole, Speedtest
-  Tracker, Portainer, NetBird, Tailscale, Cloudflare, Healthchecks, Coolify e TP-Link Omada, exibidas como **widgets dentro dos cards e nas páginas**.
-  Uma conexão com falha nunca afeta os outros cards.
+- **Integrações somente leitura** ([14 no total](#integrações-compatíveis)) exibidas como **widgets dentro dos cards e nas
+  páginas**. Uma conexão com falha nunca afeta os outros cards.
+- **Widgets sem conexão:** relógio, calendário, contagem regressiva, notas, clima, RSS e resumos de monitoramento. Veja a
+  [galeria de widgets](docs/pt-BR/user-guide/widget-gallery.md).
 - **Mapa serviço-host:** vincule um card à VM ou ao contêiner em que ele roda, registre dependências e veja o que pode ser
-  afetado quando um host cai. O Homora sugere vínculos a partir de evidências e nunca escreve no Proxmox.
-- **Descoberta Docker:** sugere cards a partir de labels de contêineres (`homora.url` ou o `homepage.href` do Homepage),
-  neste host ou em hosts remotos por meio de um pequeno agente. Nada é adicionado sem a sua revisão.
-- **Barra superior e widgets de página:** um relógio, além de CPU, memória e disco de uma conexão Proxmox.
+  afetado quando um host cai. O Homora nunca escreve no Proxmox.
+- **Descoberta Docker:** sugere cards a partir de labels de contêineres, localmente ou em hosts remotos. Nada é
+  adicionado sem a sua revisão.
 
 ### Delegar a agentes de IA, com segurança
 
-- **Servidor MCP** por stdio local ou Streamable HTTP sem estado, compatível com Claude Code, Codex, Claude Desktop,
-  Cursor e VS Code.
-- **Tokens restritos e revogáveis.** Conceda só o necessário (por exemplo `services:read` e `proposals:create`).
-- **Propostas, não ações.** O agente sugere uma mudança; você vê o diff exato, aprova ou rejeita, e ela expira se for
-  ignorada. Agentes nunca veem credenciais e não escrevem em infraestrutura externa.
-- **Trilha de auditoria completa** de acessos, propostas, aprovações e mudanças de configuração na página Atividade.
+- **Servidor MCP** por stdio local ou Streamable HTTP sem estado, para Claude Code, Codex, Claude Desktop, Cursor e VS
+  Code.
+- **Tokens restritos e revogáveis.** Conceda só o necessário; tokens existentes nunca ganham escopos novos sozinhos.
+- **Propostas, não ações.** Você vê o diff exato, aprova ou rejeita, e ela expira se for ignorada. Agentes nunca veem
+  credenciais e não escrevem em infraestrutura externa.
+- **Trilha de auditoria completa** na página Atividade.
 
-Os novos escopos MCP são concedidos explicitamente; tokens existentes não os recebem automaticamente:
-
-| Escopo                                | Capacidade                                             |
-| ------------------------------------- | ------------------------------------------------------ |
-| `probes:read`, `probes:propose`       | Ler e propor monitores independentes                   |
-| `incidents:read`, `incidents:propose` | Ler incidentes e propor reconhecimento ou silêncio     |
-| `organization:propose`                | Propor páginas, tags, favoritos e vínculos de recursos |
-| `notifications:read`                  | Ler metadados de canais sem credenciais                |
-
-Veja o [inventário completo de capacidades](docs/agent-capabilities.md) para todos os escopos e ferramentas.
+Todos os escopos e ferramentas estão no [inventário de capacidades](docs/agent-capabilities.md).
 
 ### Seus dados são seus
 
 - **Importe** do Homora, do Homepage (`services.yaml`, `bookmarks.yaml`) e do Dashy (`conf.yml`) com uma pré-visualização
   que não grava nada até você confirmar. **Exporte** para YAML ou JSON.
-- **Scripts de backup e restauração**, migrações SQLite executadas dentro de uma transação e imagens multiarquitetura
-  (`linux/amd64`, `linux/arm64`) construídas a partir de imagens base fixadas por digest.
+- **Scripts de backup e restauração**, migrações SQLite transacionais e imagens multiarquitetura (`linux/amd64`,
+  `linux/arm64`).
 - **Opções de acesso:** senha, verificação em duas etapas opcional (TOTP com códigos de recuperação) e passkeys.
 
 ## Um olhar mais de perto
@@ -199,6 +185,11 @@ Veja o [inventário completo de capacidades](docs/agent-capabilities.md) para to
   </tr>
 </table>
 
+**Integrações e widgets.** Leituras ao vivo das ferramentas que você já usa, além de relógios, notas, clima e resumos de
+monitoramento. [Veja a galeria de widgets](docs/pt-BR/user-guide/widget-gallery.md).
+
+<a href="docs/pt-BR/user-guide/widget-gallery.md"><img src="docs/screenshots/widgets-gallery-integrations.png" alt="Widgets de Pi-hole, Proxmox, Tailscale, Healthchecks e outras integrações"></a>
+
 O Homora é responsivo e também funciona no celular:
 
 <p align="center">
@@ -207,36 +198,26 @@ O Homora é responsivo e também funciona no celular:
 
 ## Casos de uso
 
-| Você quer...                                  | O Homora oferece...                                                                                                |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Parar de lembrar portas e favoritos           | Uma página com grupos, páginas, busca e atalhos, além de importação de configurações.                              |
-| Saber quando algo quebra antes da sua família | Verificações em cada card, alertas no celular e uma página pública de status opcional.                             |
-| Entender uma queda                            | Registro de incidentes, motivos de falha, histórico de latência e um mapa do que depende de cada host.             |
-| Adicionar serviços que você já roda no Docker | Descoberta por labels com etapa de revisão, localmente ou a partir de hosts remotos.                               |
-| Deixar um assistente de IA arrumar o painel   | Um agente MCP propõe grupos e cards; você aprova cada mudança e pode revogar o token a qualquer momento.           |
-| Manter um cluster Proxmox à vista             | Widgets somente leitura de VMs, contêineres, CPU, memória e disco, e cards vinculados aos convidados em que rodam. |
-
-Mais cenários, com o passo a passo de cada um, em [Use cases](docs/user-guide/use-cases.md).
+Substituir um mural de favoritos, saber quando algo quebra antes da sua família, manter um cluster Proxmox à vista,
+adicionar o que você já roda no Docker ou deixar um assistente de IA arrumar o painel. O passo a passo de cada um está em
+[Use cases](docs/user-guide/use-cases.md) (em inglês).
 
 ## Integrações compatíveis
 
 Proxmox VE · Jellyfin · Home Assistant · Uptime Kuma · AdGuard Home · Pi-hole · Speedtest Tracker · Portainer ·
 NetBird · Tailscale · Cloudflare · Healthchecks · Coolify · TP-Link Omada
 
-As doze são **somente leitura e experimentais**: foram validadas com mocks e respostas de exemplo documentadas, não com
-instalações reais de várias versões. O estado de cada uma está na
-[referência de integrações](docs/integrations.md#integration-status). Quer outro serviço? As integrações são
-declarativas e testáveis; veja [como escrever uma](docs/adapters.md).
+Todas são **somente leitura e experimentais**: validadas com mocks e respostas de exemplo, não com instalações reais. Veja
+a [referência de integrações](docs/integrations.md#integration-status) e [como escrever uma](docs/adapters.md).
 
 ## Seguro por projeto
 
-- As credenciais são **criptografadas em repouso** e nunca voltam ao navegador, a clientes MCP ou aos logs.
-- As verificações de rede seguem uma **política de destino**: loopback e faixas especiais são sempre bloqueados, e
-  endereços da LAN privada só são monitorados quando você permite, serviço a serviço.
-- As sessões usam cookies `HttpOnly` e `SameSite=Strict`, requisições que alteram estado têm a origem verificada e as
-  tentativas de acesso têm limite por cliente.
-- Agentes **não têm nenhuma ação sobre a infraestrutura**, apenas propostas revisáveis.
-- A página de status opcional vem fechada por padrão e expõe apenas nome do serviço, grupo, estado e disponibilidade.
+- Credenciais **criptografadas em repouso**, nunca devolvidas ao navegador, a clientes MCP ou aos logs.
+- **Política de destino:** loopback e faixas especiais são sempre bloqueados, e endereços da LAN só são monitorados quando
+  você permite, serviço a serviço.
+- Cookies `HttpOnly` e `SameSite=Strict`, origem verificada nas escritas e limite de tentativas de acesso.
+- Agentes **não têm ações sobre a infraestrutura**, apenas propostas revisáveis.
+- A página de status vem fechada por padrão e expõe só nome, grupo, estado e disponibilidade.
 
 Leia a [política de segurança](SECURITY.md) e o [modelo de arquitetura e segurança](docs/architecture.md).
 

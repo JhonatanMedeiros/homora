@@ -9,6 +9,8 @@ DNS blocker is doing. They are **optional** and **read-only**: Homora queries th
 
 ![The Integrations page](../screenshots/integrations.png)
 
+Want to see every integration and widget first? Browse the [widget gallery](widget-gallery.md).
+
 ## The vocabulary
 
 | Term            | Meaning                                                                                                                |
@@ -40,11 +42,12 @@ DNS blocker is doing. They are **optional** and **read-only**: Homora queries th
 
 ::: warning Experimental
 TP-Link Omada was built from API-only reports and has not been validated through Homora. Its Controller name must resolve
-from the Homora container and match the certificate (attach a private CA to the connection if needed); client counts need client history enabled in the Controller.
+from the Homora container and match the certificate (attach a private CA to the connection if needed), and client
+counts need client history enabled in the Controller.
 
-The integrations were validated with mocks and documented sample responses. Coolify (v4.7.5) and Pi-hole were partly
-checked against real installations. Verify each connection in your own environment. The authoritative table, with
-exact limits and requirements, is the [integration reference](../integrations.md#integration-status).
+Integrations were validated with mocks and sample responses; only Coolify (v4.7.5) and Pi-hole were partly checked
+against real installations. Verify each connection in your environment. Exact limits and status are in the
+[integration reference](../integrations.md#integration-status).
 :::
 
 ## Add a connection
@@ -56,9 +59,8 @@ exact limits and requirements, is the [integration reference](../integrations.md
 4. If it uses a private certificate authority, paste the CA's **public** certificate (PEM). Never paste a private key.
 5. Choose **Save and test**, or open the connection's card later and choose **Test connection**.
 
-Each connection card shows whether the last test worked and, if not, a short reason (credentials rejected, service
-error, timeout). The page summary counts connections that need attention. Homora tests only when you ask and keeps
-the last result until you edit the connection.
+Each connection card shows whether the last test worked or a short reason it did not (credentials rejected, service
+error, timeout). Homora tests only when you ask and keeps the result until you edit the connection.
 
 ### Good to know
 
@@ -69,7 +71,6 @@ the last result until you edit the connection.
 - Redirects are not followed, and special IP ranges are blocked by the same destination policy as service checks.
 - Results are cached in memory for 30 seconds per connection. Refreshing from the interface forces an update, and a
   failure is never cached as a success.
-- Use separate named connections for independent clusters or servers.
 - Rotating the encryption key is not supported. To rotate a credential, create a new token at the source, enter it on
   the connection, and revoke the old one.
 
@@ -99,64 +100,112 @@ widgets appear as skipped in the import preview and must be recreated with a con
 
 ## The top bar
 
-Turn the optional top bar on in **Settings → Top bar and shortcuts**. It shows the date, the time, and CPU, memory and
-disk usage from a selected Proxmox connection. The clock can show seconds, use a 12 or 24-hour format and follow another
-time zone. The choice is saved in the browser only.
+Turn it on in **Settings → Top bar and shortcuts**. It shows the date, the time, and CPU, memory and disk usage from a
+selected Proxmox connection. The clock can show seconds, use a 12 or 24-hour format and follow another time zone. The
+choice is saved in the browser only.
 
 ## Docker discovery
 
-Docker discovery also lives on the Integrations page. It suggests cards from container labels, on this host or on
-remote hosts. See [Docker discovery](docker-discovery.md).
+Docker discovery also lives on the Integrations page. It suggests cards from container labels; see
+[Docker discovery](docker-discovery.md).
 
 ## Writing your own
 
-If your tool is missing, read [Writing an integration adapter](../adapters.md). The guide applies equally to people and
-AI agents.
+If your tool is missing, read [Writing an integration adapter](../adapters.md). It applies equally to people and AI
+agents.
+
+## Page widget reference
+
+Widgets below need no connection unless noted. Their settings are included in exports and imports. Page and group
+filters use **names**, so after renaming or removing one, edit the widget; an empty filter means all. For previews, see
+the [widget gallery](widget-gallery.md).
 
 ### Countdown
 
-Add a **Countdown** page widget for one named event. Enter its local date and time and choose an IANA time zone, or leave the browser zone selected. The countdown updates each minute while the tab is visible. After the event, it stays visible in muted text by default; choose **Hide automatically** to hide it. Hidden widgets remain saved; use **Manage hidden countdowns** to edit or remove them. Each event needs its own widget.
+Counts down to one named event. Enter its local date and time and an IANA time zone (or keep the browser's). It updates
+each minute while the tab is visible. After the event it stays visible in muted text, or choose **Hide automatically**;
+hidden countdowns stay saved under **Manage hidden countdowns**. Each event needs its own widget.
 
-When a clock change makes the entered time ambiguous, the first occurrence is used. If the time does not exist, it moves forward by the size of the clock change. The full resolved date and time remains visible; the timer does not announce every minute. Countdowns are included in exports and imports without a connection.
+If a clock change makes the time ambiguous, the first occurrence is used; if the time does not exist, it moves forward by
+the size of the change.
 
 ### Monthly calendar
 
-Add a **Calendar** page widget to see the current month without a connection. Choose the first day of the week or **Automatic**, which follows the interface locale, and choose an IANA time zone or the browser time zone. Navigate between months and use **Today** to return. The displayed month is temporary; reloading returns to the current month. The date updates at midnight while visible and when returning to a hidden tab. Week numbers and events are not shown. The calendar supports normal and wide sizes; its configuration is included in exports and imports.
+Shows the current month. Choose the first weekday (or **Automatic**, which follows the interface language) and a time
+zone. Use the arrows to change month and **Today** to return; the displayed month is not saved. Week numbers and events
+are not shown. Normal and wide sizes.
 
-Add **Homelab summary** to see current counts for online, degraded, offline, maintenance and not measured monitors. It uses Homora's internal monitoring and does not need a connection. Choose groups and pages to restrict the summary; leaving a selection empty includes all. Standalone probes are included when no groups or pages are selected. You can hide the not measured row; its count still contributes to the total and the bar. Select a state to filter Home. Outside Home the counts are informational. A stale or failed reading is identified in the widget. Group and page selections use names, so a name absent after import matches nothing.
+### Homelab summary
+
+Counts of online, degraded, offline, maintenance and not-measured monitors, from Homora's own monitoring. Restrict it by
+groups and pages (standalone probes count only when no filter is set), and optionally hide the not-measured row; it still
+counts toward the total and the bar. Select a state to filter the Home. A stale or failed reading is marked.
 
 ### Recent incidents
 
-Add **Recent incidents** to see monitoring outages, newest first, with ongoing incidents first. Choose 24 hours, 7 days or 30 days, up to 10 entries (5 by default), an optional minimum duration and optional page and group filters. Selecting both filters requires a match in both; select none to include all, including standalone probes. Clicking a service opens its drawer; a standalone probe opens the probes page. The wide size includes the monitor's short failure reason; the rail and small screens use the normal presentation. Each incident is a separate row, even when several belong to one service. Dates use the browser's time zone.
-
-The period includes incidents that overlap it, including an older ongoing incident. Incident rows currently have no automatic age pruning, but monitoring may not have existed for the entire selected period. Data refreshes every minute; a failed refresh retains the last result marked as outdated. Filters use names so they survive export and import; after renaming or removing a page or group, edit the widget's filters. This widget and its configuration are portable and do not need a connection.
+Outages from monitoring, ongoing first, then newest. Choose 24 hours, 7 days or 30 days, up to 10 entries (5 by default), an
+optional minimum duration and page and group filters (a card must match both). The period includes incidents that overlap
+it. Each incident is its own row; the wide size adds the short failure reason. Dates use the browser's time zone. A failed
+refresh keeps the last result, marked as outdated.
 
 ### Current problems
 
-Add **Current problems** to keep offline and latency-degraded monitors visible. It shows the oldest offline problems first, then degraded monitors, with the monitor's short reason and the time since an incident began when known. Latency degradation shows when it was first observed during the current server run; after a restart its earlier duration is unknown. Choose 1–10 items (five by default), optionally exclude latency degradation, and select pages and groups. An empty selection means all; when both are selected, a card must match both. Standalone probes have no group or page, so they appear only when both selections are empty. Open a card's row for its details; a probe opens probe management.
-
-Maintenance and unmeasured or policy-blocked monitors are not problems; a quiet line counts the latter two. The widget shows how many results are displayed when more exist, reports stale readings and keeps a previous reading if refresh fails. It refreshes once a minute without running a new check. Each widget has its own error state. It needs no connection and is included in configuration exports. Scope selections use page and group names so they can move between installations; after renaming one, update the widget selection.
+Keeps offline and slow (latency-degraded) monitors visible: oldest offline first, then degraded, each with its short reason
+and how long it has lasted when known. Show 1–10 items (5 by default), optionally exclude latency degradation, and filter
+by page and group. Maintenance, unmeasured and policy-blocked monitors are not problems; a quiet line counts the last two.
+Standalone probes appear only when both filters are empty. Refreshes every minute without running a new check.
 
 ### RSS / Atom feed
 
-Add **RSS / Atom feed** to follow recent entries from an RSS 2.0 or Atom 1.0 feed directly on a dashboard page. Configure the feed URL, an optional display title, and how many entries to show (1–10, five by default). It supports normal and wide sizes and is included in configuration exports and imports without a connection.
+Recent entries from an RSS 2.0 or Atom 1.0 feed: set the URL, an optional title and 1–10 entries (5 by default). Normal and
+wide sizes.
 
-Feeds are fetched exclusively through the backend with an 8-second timeout, a 512 KB response limit, no redirects, and in-memory caching. By default, only HTTPS and public network addresses are allowed, and URLs with embedded credentials (`user:pass@`) are rejected. Enable **Allow HTTP and private/LAN network addresses** only for trusted feeds on your local network. Markup in feed titles is stripped to plain text, entry links are restricted to `http:` and `https:`, and failed refreshes retain the last cached entries marked as stale.
+The backend fetches the feed (8-second timeout, 512 KB limit, no redirects, cached in memory). By default only HTTPS and
+public addresses are allowed, and URLs with embedded credentials are rejected. Enable **Allow HTTP and private/LAN network
+addresses** only for trusted feeds on your network. Markup in titles is stripped, links are limited to `http:` and
+`https:`, and a failed refresh keeps the cached entries marked as stale.
 
 ### Weather
 
-Add **Weather** to display current conditions (temperature, condition, and today's high/low) and a short forecast on a dashboard page. It supports `normal` (3-day forecast) and `wide` (up to 5-day forecast plus feels-like temperature, humidity, wind speed, and precipitation probability) sizes, as well as `°C (Metric)` and `°F (Imperial)` units.
+Current conditions and today's high and low, with a 3-day forecast (normal) or up to 5 days plus feels-like, humidity,
+wind and rain probability (wide). Units: °C or °F.
 
-Select between the keyless **Open-Meteo** provider (default) or **OpenWeatherMap** (requires an API key, which is stored encrypted on the server and never included in page configuration or exports). Configure the location via backend city search, manual coordinates and optional display label, or the on-demand browser geolocation button (available only in secure contexts such as `https:` or `localhost` and never triggered automatically on load). Weather requests run through the backend with a 10-minute in-memory cache, and failed refreshes retain the last cached forecast marked as stale.
+Pick the keyless **Open-Meteo** provider (default) or **OpenWeatherMap**, which needs an API key stored encrypted on the
+server and never included in exports. Set the location by city search, coordinates with an optional label, or the browser
+geolocation button (secure contexts only, never automatic). Requests go through the backend with a 10-minute cache; a
+failed refresh keeps the last forecast marked as stale.
 
-### Service latency history
+### Latency history
 
-Add **Latency history** and select a service card. Choose 24 hours, 7 days or 30 days and a normal or wide size. The chart shows the median of successful checks in each interval; gaps mean no valid reading was recorded. A short outage can be hidden inside an interval that also contains successful checks. Only raw checks retained for up to 30 days and matching the current monitor configuration are shown.
+Choose a service card, a period (24 hours, 7 days or 30 days) and a size. The chart shows the median of successful checks
+per interval; gaps mean no valid reading, and a short outage can hide inside an interval that also had successes. Only
+checks kept up to 30 days and matching the current monitor settings appear. If a reading is stale (older than twice the
+check interval) or the service cannot be measured, the widget labels the last valid reading with its time.
 
-When a reading is stale or the service cannot be measured, the widget labels the last valid reading and its time rather than calling it current. A check is stale after more than twice its configured interval. If the card is deleted, select another card explicitly. Configuration export preserves the period and size but clears the local service selection; select it again after import. Database backups preserve the selection.
+If the card is deleted, pick another. Exports keep the period and size but clear the service selection; select it again
+after importing. Database backups keep it.
 
 ### Certificate expiry
 
-The **Certificate expiry** page widget lists service cards configured with a TLS check, earliest expiry first. It shows up to five and reports additional matches. The 7, 14, 30 or 60 day warning is a display setting; it does not change monitoring or alerts. An unexpired certificate can still be invalid. A failed check may show an earlier observation, labeled with its time; unknown expiry is never treated as expired. Observations are retained for up to 30 days and only matched to the current check configuration. The widget does not perform additional checks.
+Lists service cards that have a TLS check, earliest expiry first (up to five, with a count of the rest). The 7, 14, 30 or
+60-day warning only affects the display, not monitoring or alerts. An unexpired certificate can still be invalid; a failed
+check may show an earlier observation with its time, and an unknown expiry is never treated as expired. It performs no
+extra checks.
 
-Page and group filters are optional and use names for portability. If a selected name is removed or renamed, edit the widget: it will not expand the selection automatically. A failed refresh keeps the last result marked as outdated. Select a row to open service details.
+### Maintenance schedule
+
+Ongoing and upcoming maintenance windows in your browser's time zone. Choose a horizon of 24 hours, 7 days or 30 days, up to
+10 rows, and page and group filters. Ongoing windows are included whenever they started. A failed refresh is shown
+separately from an empty schedule, and a kept reading is marked outdated. Unfiltered results may include standalone probes.
+
+### Public IP
+
+Shows your public IPv4 or IPv6 address. It asks an outside service (**ipify** or **icanhazip**), so you must tick **Allow
+external lookup requests** first; the request comes from the Homora backend, and the provider sees the server's address.
+The address is masked by default (use the eye button to reveal it, or turn off masking) and can be copied.
+
+### Domain expiration
+
+Shows when up to 5 domains expire, as **registration** expiry (RDAP), which is separate from a TLS certificate. Set a
+warning period from 1 to 365 days. Lookups run from the backend, and a registry that does not answer is shown as
+unavailable.

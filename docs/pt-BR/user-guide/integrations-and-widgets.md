@@ -4,6 +4,8 @@ Integrações são opcionais e permitem exibir dados de serviços externos. As c
 
 ![Página de integrações](../../screenshots/integrations.png)
 
+Quer ver todas as integrações e widgets antes? Veja a [galeria de widgets](widget-gallery.md).
+
 ## Adicione uma conexão
 
 1. Abra **Gerenciar → Integrações** e escolha adicionar uma conexão.

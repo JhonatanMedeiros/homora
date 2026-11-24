@@ -29,9 +29,7 @@ answers the question you actually have when something feels off: **what is down,
   cards, groups and widgets, but nothing changes until you approve the exact proposal, and every step is audited.
 - **Local-first and private.** SQLite on your disk, brand icons served locally, no telemetry, and
   credentials encrypted at rest.
-- **Release notes in the app.** The profile menu shows what's new and highlights newer stable releases.
-  While signed in, Homora checks GitHub for release notes; GitHub sees the server's public IP address.
-- **Bring your setup with you.** Import supported configurations with a preview, and export to YAML or JSON whenever you like.
+- **Bring your setup with you.** Import supported configurations with a preview, and export to YAML or JSON.
 
 ## Quick start
 
@@ -43,9 +41,8 @@ cd homora
 docker compose up -d --build
 ```
 
-Open <http://localhost:8080>, create the administrator account (a name, an email used only as your sign-in
-name, and a password of at least 8 characters), then press **Add your first service**. Your data lives in the
-`homora-data` Docker volume, and the port is bound to `127.0.0.1` by default.
+Open <http://localhost:8080>, create the administrator account, then press **Add your first service**. Your data lives
+in the `homora-data` Docker volume, and the port is bound to `127.0.0.1` by default.
 
 Homora is also published as a single multi-architecture image (amd64 and arm64):
 
@@ -59,8 +56,7 @@ docker run -d --name homora --restart unless-stopped \
 > reach the port can create it, so do the first setup from the machine itself. Read
 > [Deployment and upgrades](docs/user-guide/deployment.md) before putting a reverse proxy in front of it.
 
-New here? Follow [Getting started](docs/user-guide/getting-started.md), a ten-minute tour from the first card
-to your first alert.
+New here? Follow [Getting started](docs/user-guide/getting-started.md), a ten-minute tour.
 
 ## Features
 
@@ -68,65 +64,53 @@ to your first alert.
 
 - **Groups, pages and cards** with drag-and-drop ordering, 1 to 6 columns per group, tabs for pages (keys `1` to `9`)
   and tags to filter.
-- **Short addresses:** optionally assign a unique alias such as `/go/plex` to a service. Sign-in is required; the address follows the current service URL. Changing or removing the alias invalidates bookmarks. Reusing it for another service sends old bookmarks to that service.
+- **Short addresses:** optionally give a service a unique alias such as `/go/plex` (sign-in required; changing or reusing
+  an alias affects old bookmarks).
 - **Three layouts:** compact tiles, a dense list, or detailed cards with descriptions and uptime bars. Group, Host and Map views.
-- **Icons your way:** an emoji, a built-in icon (`lucide:server`), one of **164 bundled homelab brand logos**
-  (`brand:plex`, served locally with no external requests) or an image URL. The form suggests the logo that
-  matches the service name and can use the service's `/favicon.ico` directly in the browser.
-- **Command palette** (`Ctrl K` or `/`) to jump to any card, filter with `status:down` or `group:Media`, and
-  reach every settings page. Single-key shortcuts (`?` lists them) can be turned off.
-- **Personal look:** accent color, gradients, card translucency, a background image and custom CSS (with a
-  safe mode in case you lock yourself out). Light and dark themes, English and Portuguese (Brazil).
+- **Icons your way:** an emoji, a built-in icon, one of **164 bundled brand logos** (`brand:plex`, served locally) or an
+  image URL, with the matching logo suggested from the name.
+- **Command palette** (`Ctrl K` or `/`) to jump to any card, filter with `status:down` or `group:Media`, and reach any
+  settings page.
+- **Personal look:** accent color, backgrounds, translucency and custom CSS (with a safe mode). Light and dark themes,
+  English and Portuguese (Brazil).
 
 ### Monitor
 
 - **Seven check types:** HTTP(S), ping, TCP, DNS, TLS certificate expiry, keyword in the page and a value in a JSON response.
-- **Honest status.** Online, Offline, Degraded, Maintenance or Waiting, with latency and the reason a check
-  failed (not found, server error, no response, certificate expired).
-- **History that answers questions:** uptime over 24 hours, 7, 30 and 90 days, latency charts (p50 and p95), a
-  90-day heatmap, incident log, mean time to recover and a 99.9% availability target with its error budget.
-- **Alerts without noise:** thresholds before an incident opens, and Telegram, ntfy, Discord or webhook
-  notifications, localized per channel.
+- **Honest status.** Online, Offline, Degraded, Maintenance or Waiting, with latency and the reason a check failed.
+- **History that answers questions:** uptime over 24 hours to 90 days, latency charts (p50 and p95), a heatmap, incident
+  log, mean time to recover and a 99.9% availability target.
+- **Alerts without noise:** thresholds before an incident opens, and Telegram, ntfy, Discord or webhook notifications.
 - **Maintenance windows** that pause checks and keep planned work out of your statistics.
-- **Public status page** (off by default): a minimal read-only `/status` for family or teammates. It never exposes URLs or internals.
+- **Public status page** (off by default): a minimal read-only `/status` that never exposes URLs or internals.
 
 ### Connect
 
-- **Read-only integrations** for Proxmox, Jellyfin, Home Assistant, Uptime Kuma, AdGuard Home, Pi-hole,
-  Speedtest Tracker, Portainer, NetBird, Tailscale, Cloudflare, Healthchecks, Coolify and TP-Link Omada, shown as **widgets inside cards
-  and on pages**. A failing connection never affects other cards.
+- **Read-only integrations** ([14 of them](#supported-integrations)) shown as **widgets inside cards and on pages**. A
+  failing connection never affects other cards.
+- **Widgets that need no connection:** clock, calendar, countdown, notes, weather, RSS and monitoring summaries. See the
+  [widget gallery](docs/user-guide/widget-gallery.md).
 - **Service-to-host map:** link a card to the VM or container it runs on, record dependencies, and see what may be
-  affected when a host goes down. Homora suggests links from evidence and never writes to Proxmox.
-- **Docker discovery:** suggests cards from container labels (`homora.url`, or Homepage's `homepage.href`), on this host or on remote hosts
-  through a small agent. Nothing is added without your review.
-- **Top bar and page widgets:** a clock, plus CPU, memory and disk from a Proxmox connection.
+  affected when a host goes down. Homora never writes to Proxmox.
+- **Docker discovery:** suggests cards from container labels, locally or from remote hosts. Nothing is added without
+  your review.
 
 ### Delegate to AI agents, safely
 
-- **MCP server** over local stdio or stateless Streamable HTTP, compatible with Claude Code, Codex, Claude
-  Desktop, Cursor and VS Code.
-- **Scoped, revocable tokens.** Grant only what an agent needs (for example `services:read` and `proposals:create`).
-- **Proposals, not actions.** Agents suggest a change; you see the exact diff, approve or reject it, and it
-  expires if ignored. Agents never see credentials and cannot write to external infrastructure.
-- **Complete audit trail** of sign-ins, proposals, approvals and settings changes in the Activity page.
+- **MCP server** over local stdio or stateless Streamable HTTP, for Claude Code, Codex, Claude Desktop, Cursor and VS
+  Code.
+- **Scoped, revocable tokens.** Grant only what an agent needs; existing tokens never gain new scopes automatically.
+- **Proposals, not actions.** You see the exact diff, approve or reject it, and it expires if ignored. Agents never see
+  credentials and cannot write to external infrastructure.
+- **Complete audit trail** in the Activity page.
 
-New MCP scopes are granted explicitly; existing tokens do not gain them automatically:
-
-| Scope                                 | Capability                                           |
-| ------------------------------------- | ---------------------------------------------------- |
-| `probes:read`, `probes:propose`       | Read and propose standalone monitors                 |
-| `incidents:read`, `incidents:propose` | Read incidents and propose acknowledgements or mutes |
-| `organization:propose`                | Propose pages, tags, favorites and resource links    |
-| `notifications:read`                  | Read channel metadata without credentials            |
-
-See the [complete agent capability inventory](docs/agent-capabilities.md) for all scopes and tools.
+All scopes and tools are in the [agent capability inventory](docs/agent-capabilities.md).
 
 ### Own your data
 
 - **Import** from Homora, Homepage (`services.yaml`, `bookmarks.yaml`) and Dashy (`conf.yml`) with a preview that
   writes nothing until you confirm. **Export** to YAML or JSON.
-- **Backup and restore** scripts, SQLite migrations that run inside a transaction, and multi-arch images
-  (`linux/amd64`, `linux/arm64`) built from digest-pinned base images.
+- **Backup and restore** scripts, transactional SQLite migrations, and multi-arch images (`linux/amd64`, `linux/arm64`).
 - **Sign-in options:** password, optional two-step verification (TOTP with recovery codes) and passkeys.
 
 ## A closer look
@@ -194,6 +178,11 @@ See the [complete agent capability inventory](docs/agent-capabilities.md) for al
   </tr>
 </table>
 
+**Integrations and widgets.** Live readouts from the tools you already run, plus clocks, notes, weather and monitoring
+summaries. [Browse the widget gallery](docs/user-guide/widget-gallery.md).
+
+<a href="docs/user-guide/widget-gallery.md"><img src="docs/screenshots/widgets-gallery-integrations.png" alt="Widgets for Pi-hole, Proxmox, Tailscale, Healthchecks and other integrations"></a>
+
 Homora is responsive and works on a phone too:
 
 <p align="center">
@@ -202,36 +191,27 @@ Homora is responsive and works on a phone too:
 
 ## Use cases
 
-| You want to...                                      | Homora gives you...                                                                                      |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Stop remembering ports and bookmarks                | One page with groups, pages, search and shortcuts, plus configuration import.                            |
-| Know when something breaks, before your family does | Checks on every card, alerts to your phone and an optional public status page.                           |
-| Understand an outage                                | Incident log, failure reasons, latency history and a map of what depends on which host.                  |
-| Add services you already run in Docker              | Label-based discovery with a review step, locally or from remote hosts.                                  |
-| Let an AI assistant tidy your dashboard             | An MCP agent proposes groups and cards; you approve each change and can revoke the token at any time.    |
-| Keep a Proxmox cluster in view                      | Read-only widgets for VMs, containers, CPU, memory and disk, and cards linked to the guests they run on. |
-
-More scenarios, with the steps to set each one up, are in [Use cases](docs/user-guide/use-cases.md).
+Replace a wall of bookmarks, know when something breaks before your family does, keep a Proxmox cluster in view, add
+what you already run in Docker, or let an AI assistant tidy your dashboard. Each has step-by-step instructions in
+[Use cases](docs/user-guide/use-cases.md).
 
 ## Supported integrations
 
 Proxmox VE · Jellyfin · Home Assistant · Uptime Kuma · AdGuard Home · Pi-hole · Speedtest Tracker · Portainer ·
 NetBird · Tailscale · Cloudflare · Healthchecks · Coolify · TP-Link Omada
 
-All twelve are **read-only and experimental**: they were validated with mocks and documented sample responses,
-not against live multi-version installations. The status of each one is in the
-[integration reference](docs/integrations.md#integration-status). Want another service? Integrations are
-declarative and testable; see [how to write one](docs/adapters.md).
+All are **read-only and experimental**: validated with mocks and documented sample responses, not against live
+installations. See the [integration reference](docs/integrations.md#integration-status) for each one's status and
+[how to write one](docs/adapters.md) for another service.
 
 ## Safe by design
 
-- Credentials are **encrypted at rest** and never returned to the browser, to MCP clients or to logs.
-- Network checks follow a **destination policy**: loopback and special address ranges are always blocked, and
-  private LAN addresses are monitored only when you allow them per service.
-- Sessions use `HttpOnly`, `SameSite=Strict` cookies, state-changing requests are origin-checked, and sign-in
-  attempts are rate limited per client.
-- Agents have **no infrastructure actions at all**, only reviewable proposals.
-- The optional status page is closed by default and exposes only service name, group, state and uptime.
+- Credentials are **encrypted at rest** and never returned to the browser, MCP clients or logs.
+- Network checks follow a **destination policy**: loopback and special ranges are always blocked, and private LAN
+  addresses are monitored only when you allow them per service.
+- `HttpOnly`, `SameSite=Strict` session cookies, origin-checked writes and rate-limited sign-in.
+- Agents have **no infrastructure actions**, only reviewable proposals.
+- The status page is closed by default and exposes only name, group, state and uptime.
 
 Read the [security policy](SECURITY.md) and the [architecture and security model](docs/architecture.md).
 
@@ -243,7 +223,8 @@ pending. The roadmap lives in [docs/strategy.md](docs/strategy.md) and [docs/evo
 
 ## Documentation
 
-Read it online at **[homora-dash.vercel.app](https://homora-dash.vercel.app)**, or build the site locally with `pnpm docs:dev`; see [site setup and hosting](docs/maintainers/documentation.md). English is the default, with Portuguese guides available in the language menu.
+Read it online at **[homora-dash.vercel.app](https://homora-dash.vercel.app)** (English, with Portuguese guides in the
+language menu), or run it locally with `pnpm docs:dev` ([details](docs/maintainers/documentation.md)).
 
 **User guide**
 
@@ -281,20 +262,17 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open <http://localhost:5173>. Vite forwards `/api` to the Fastify backend on port 3000. `pnpm dev` uses the
-isolated `data/homora-dev.sqlite` database and seeds example services on first creation; the first run still
-requires creating an administrator account. Example addresses are illustrative, and private-network monitoring is
-not enabled for them.
+Open <http://localhost:5173>. Vite forwards `/api` to the Fastify backend on port 3000. `pnpm dev` uses the isolated
+`data/homora-dev.sqlite` database and seeds example services on first creation; you still create an administrator
+account on the first run.
 
-The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Node.js,
-TypeScript and Fastify on the backend; shared contracts; Drizzle ORM with SQLite. Run `pnpm check` (lint, format,
-types and tests) and `pnpm build` before sending changes. Commits follow Conventional Commits (`feat: ...`),
-enforced by Husky and Commitlint. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/standards.md](docs/standards.md).
+The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on the frontend; Node.js, TypeScript and
+Fastify on the backend; Drizzle ORM with SQLite. Run `pnpm check` and `pnpm build` before sending changes; commits follow
+Conventional Commits. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/standards.md](docs/standards.md).
 
-Routes: the dashboard is `/`, sign-in is `/login`, management sections are `/manage/probes`,
-`/manage/integrations`, `/manage/agents`, `/manage/activity` and `/manage/settings`, service forms are
-`/manage/services/new` and `/manage/services/:id/edit`, and a service's detail page is `/services/:id`. When
-hosting the frontend separately, configure the server to return `index.html` for these routes.
+Routes: `/` is the dashboard, `/login` sign-in, `/manage/{probes,integrations,agents,activity,settings}` the management
+sections, `/manage/services/new` and `/manage/services/:id/edit` the service forms, and `/services/:id` a service's detail
+page. When hosting the frontend separately, return `index.html` for these routes.
 
 ## Contributing
 

@@ -4,14 +4,13 @@ description: 'Install Homora with Docker, create your account, add a first servi
 
 # Getting started
 
-A ten-minute tour: install Homora, create your account, add a first card, see it monitored, and get your first
-alert. Every step works without Proxmox and without an AI agent.
+A ten-minute tour: install, create your account, add a first card and get your first alert. Nothing here needs Proxmox
+or an AI agent.
 
 ## Before you begin
 
 - **Docker with Compose** on a machine you control (a laptop, a mini PC, a NAS or a VM).
-- A modern browser. Homora is responsive, so the same interface works on a phone.
-- To monitor addresses on your local network (such as `192.168.1.20`), you will opt in per service later in this guide.
+- A modern browser; the same interface works on a phone.
 
 ## 1. Install
 
@@ -21,40 +20,37 @@ cd homora
 docker compose up -d --build
 ```
 
-Open <http://localhost:8080>. The port is bound to `127.0.0.1`, so only the machine itself can reach it. Your data
-lives in the `homora-data` Docker volume.
+Open <http://localhost:8080>. The port is bound to `127.0.0.1`, so only this machine can reach it, and your data lives in
+the `homora-data` Docker volume.
 
-> **Do the first setup from the machine itself.** Until the first administrator account exists, anyone who can
-> reach the port can create it. To reach Homora from other devices, put an HTTPS reverse proxy in front of it as
-> described in [Deployment and upgrades](deployment.md); plain HTTP from other machines is refused by design.
+> **Do the first setup from the machine itself.** Until the first administrator exists, anyone who can reach the port
+> can create it. To reach Homora from other devices, use an HTTPS reverse proxy as described in
+> [Deployment and upgrades](deployment.md); plain HTTP from other machines is refused by design.
 
 ## 2. Create the administrator account
 
-On the first visit Homora asks for a name, an email and a password of at least 8 characters. The email is only
-your sign-in name: Homora never sends email. Afterwards you sign in at `/login`; tick **Keep me signed in** to stay
-signed in for up to 30 days instead of 8 hours.
+On the first visit Homora asks for a name, an email and a password of at least 8 characters. The email is only your
+sign-in name; Homora never sends email. Tick **Keep me signed in** to stay signed in for up to 30 days instead of 8 hours.
 
 ![Homora sign-in page](../screenshots/login.png)
 
 ## 3. Add your first service
 
 1. Press **Add your first service** (or press `n` on the dashboard).
-2. Fill in the essentials: a **name**, the **URL** you open the service at, and a **category**, which is the
-   group the card lives in. Typing a new category creates the group.
-3. Pick an **icon**. Type a service name and Homora suggests the matching brand logo, for example
-   `brand:jellyfin`. You can also use an emoji, a built-in icon such as `lucide:server`, or an image URL.
-4. If the service lives on your local network, open the **Access** tab and allow **private network**
-   monitoring. Without it Homora will not probe private addresses, and the card reads **Not monitored** ("Destination not authorized for monitoring").
+2. Fill in a **name**, the **URL** you open it at, and a **category** (the group; a new name creates it).
+3. Pick an **icon**: Homora suggests the brand logo matching the name (such as `brand:jellyfin`), or use an emoji, a
+   built-in icon like `lucide:server`, or an image URL.
+4. If the service lives on your local network, open the **Access** tab and allow **private network** monitoring.
+   Without it the card reads **Not monitored**.
 5. Press **Save service**.
 
 ![The service form, Monitoring tab](../screenshots/service-form-monitoring.png)
 
-Within a minute the card shows **Online**, **Offline** or **Waiting**, with the latency of the last check. A
-redirect or a login prompt counts as Online; a failing card explains why (not found, server error, no response)
-and opens a **Details** panel with the recent checks.
+Within a minute the card shows **Online**, **Offline** or **Waiting** with the latency of the last check. A redirect or
+a login prompt counts as Online; a failing card says why and opens a **Details** panel.
 
-> **Tip:** if you have a supported configuration file, skip the typing. Import it from
-> **Settings → Export and import**. See [Import, export and backup](import-export-backup.md).
+> **Tip:** with a supported configuration file you can skip the typing: **Settings → Export and import** (see
+> [Import, export and backup](import-export-backup.md)).
 
 ## 4. Know your way around
 
@@ -71,7 +67,8 @@ and opens a **Details** panel with the recent checks.
 | **Manage → Settings**     | Appearance, pages, top bar, alerts, the public status page, and export or import.            |
 | **Account** (avatar menu) | Password, two-step verification and passkeys.                                                |
 
-The avatar menu links to the repository and to **What's new**, where you can read release notes and see whether a newer stable version is available. Source builds without a release tag do not claim to be up to date. The server checks GitHub when you sign in and every six hours; GitHub sees only the server's public IP address, and Homora keeps working if the check fails.
+The avatar menu also opens **What's new**, with release notes and whether a newer stable version exists. The server checks
+GitHub when you sign in and every six hours (GitHub sees only its public IP address), and Homora works if the check fails.
 
 Press `?` anywhere to see every keyboard shortcut.
 
@@ -97,9 +94,8 @@ Details are in [Notifications and the public status page](notifications-and-stat
 
 **Can I use Homora without Proxmox?** Yes. Proxmox, the other integrations and AI agents are all optional.
 
-**A card says "Not monitored".** Local network addresses are monitored only after you allow
-**private network** on that service. Loopback addresses such as `127.0.0.1` are always blocked. Also check that the
-path and expected status on the Monitoring tab match what the service really returns.
+**A card says "Not monitored".** Local addresses are monitored only after you allow **private network** on that service;
+loopback addresses such as `127.0.0.1` are always blocked.
 
 **I forgot my password.** Run `pnpm auth:reset` on the server; see [Accounts and security](accounts-and-security.md).
 

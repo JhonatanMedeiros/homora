@@ -4,9 +4,8 @@ description: 'Sessions, password reset, two-step verification, passkeys and secr
 
 # Accounts, sessions and security
 
-Homora has one local administrator account protected by a password, with optional two-step verification and passkeys.
-This guide covers sign-in, sessions, recovery when you are locked out, and how secrets are stored. The full security
-model is in [Architecture and security](../architecture.md) and the [security policy](../../SECURITY.md).
+Homora has one local administrator account protected by a password, with optional two-step verification and passkeys. The
+full security model is in [Architecture and security](../architecture.md) and the [security policy](../../SECURITY.md).
 
 ![The account page](../screenshots/account.png)
 
@@ -15,14 +14,12 @@ Manage your password, two-step verification and passkeys on the **Account** page
 ## Sessions
 
 - Sessions are stored in the database and survive a backend restart.
-- A normal sign-in lasts up to eight hours with a browser-session cookie. **Keep me signed in** uses a persistent
-  cookie for up to 30 days. Neither renews automatically, so sign in again after expiry. Browser session restoration
-  may keep session cookies after you close the browser.
-- The cookie (`homora.session_token`) is `HttpOnly`, `SameSite=Strict` and, when you sign in from an HTTPS origin,
-  `Secure`.
-- State-changing requests are accepted only from an allowed origin.
-- Ten sign-in attempts from one client address in 15 minutes block that address until the window ends. The counter is
-  in memory and resets on restart.
+- A normal sign-in lasts up to eight hours; **Keep me signed in** lasts up to 30 days. Neither renews, so sign in again
+  after expiry.
+- The cookie (`homora.session_token`) is `HttpOnly`, `SameSite=Strict` and, from an HTTPS origin, `Secure`. State-changing
+  requests are accepted only from an allowed origin.
+- Ten sign-in attempts from one client address in 15 minutes block that address until the window ends (the counter is in
+  memory and resets on restart).
 
 ### The session secret
 
@@ -35,8 +32,8 @@ verification, makes its stored secret and recovery codes unreadable. Back it up 
 Run `pnpm auth:reset` to see the account, then `pnpm auth:reset --yes` to remove the account and every session. With
 Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`.
 
-Open Homora to create a new account; cards and encrypted connections are kept. Until the first account exists, anyone
-who can reach the interface from an allowed origin can claim it, so do this on a private network.
+Open Homora to create a new account; cards and encrypted connections are kept. Until it exists, anyone who can reach the
+interface can claim it, so do this on a private network.
 
 ## Two-step verification
 
@@ -47,11 +44,9 @@ Optional and off by default.
 3. Save the ten one-time recovery codes, shown once.
 
 Sign-in then asks for a code after the password. Five wrong codes end the attempt, and ten in a row block it for 15
-minutes. Turning it on or off signs out your other devices, and turning it off or generating new recovery codes asks for
-the password again. Trusted devices, email and SMS are not supported.
-
-The authenticator secret and recovery codes are encrypted with the session secret, so keep it in the same backup set as
-the database: a restore without it cannot pass the second step.
+minutes. Turning it on or off signs out your other devices; turning it off or generating new recovery codes asks for the
+password. Trusted devices, email and SMS are not supported. The secret and recovery codes are encrypted with the session
+secret, so keep it in the same backup set as the database.
 
 **Lost the app and the recovery codes, or the secret?** On the server run `pnpm auth:reset --two-factor-only`, then add
 `--yes` (with Compose: `docker compose exec backend node scripts/auth-reset.mjs --two-factor-only --yes`). The account
@@ -64,10 +59,8 @@ Optional and off until you add one.
 
 - In **Account**, add a passkey with your password and your device's fingerprint, face or PIN. You can add several,
   and rename or remove them.
-- The sign-in page then offers **Sign in with a passkey**, with no password typed. **Keep me signed in** applies as
-  usual, and the password keeps working.
-- A passkey sign-in does not ask for the authenticator code, because the passkey already proves the device and your
-  fingerprint or PIN.
+- The sign-in page then offers **Sign in with a passkey**; the password keeps working. A passkey sign-in skips the
+  authenticator code, because the passkey already proves the device and your fingerprint or PIN.
 - Removing a passkey asks for the password and signs out your other devices.
 
 Passkeys need a browser that offers WebAuthn (HTTPS or `localhost`) and work only on the address they were created for.
