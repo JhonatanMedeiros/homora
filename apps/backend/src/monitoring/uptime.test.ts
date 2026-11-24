@@ -1,11 +1,17 @@
 import { DatabaseSync } from 'node:sqlite';
-import { expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createObservationStore } from './observations.js';
 import { CARD_SCHEMA } from '../test-card-schema.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const now = Date.parse('2026-11-12T12:00:00.000Z');
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(now);
+});
+afterEach(() => vi.useRealTimers());
 
 function setup() {
   const db = new DatabaseSync(':memory:');
@@ -202,8 +208,8 @@ it('gives the same numbers for one service and for the batch', () => {
 
 it('answers 25 services with 30 days of history at the default 60 s interval within the budget', () => {
   const { db, store } = setup();
-  const SERVICES = 25,
-    PER_SERVICE = 43_200; // one check per minute for 30 days
+  const PER_SERVICE = 43_200; // one check per minute for 30 days
+  const SERVICES = 25;
   try {
     db.exec('BEGIN');
     const sig = (
@@ -235,17 +241,21 @@ it('answers 25 services with 30 days of history at the default 60 s interval wit
     db.exec('COMMIT');
     const timings: Record<string, number> = {};
     for (const range of ['24h', '7d', '30d'] as const) {
-      const started = performance.now();
+      const started = process.cpuUsage();
       const all = store.uptime(range, now);
-      timings[range] = Math.round(performance.now() - started);
+      const used = process.cpuUsage(started);
+      timings[range] = Math.round((used.user + used.system) / 1000);
       expect(Object.keys(all)).toHaveLength(SERVICES);
       expect(all[1]?.checks).toBe({ '24h': 1441, '7d': 10_081, '30d': 43_200 }[range]);
     }
-    console.info(`uptime for ${SERVICES} services x 30d at 60 s (ms): ${JSON.stringify(timings)}`);
-    // The default period meets the 300 ms goal with margin; the longer ones scan more rows.
+    console.info(
+      `uptime for ${SERVICES} services x 30d at 60 s (CPU ms): ${JSON.stringify(timings)}`,
+    );
+    // CPU time excludes scheduler delays. The default period meets the 300 ms goal with margin;
+    // the longer ones scan more rows.
     expect(timings['24h']).toBeLessThan(300);
     // Budgets include the per-period latency and failure reason behind the history bars (about
-    // 25% over the bare counts) and leave room for the load of the whole suite running in parallel.
+    // 25% over the bare counts) and allow headroom for normal variations in query cost.
     expect(timings['7d']).toBeLessThan(450);
     expect(timings['30d']).toBeLessThan(1500);
   } finally {

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { toast } from 'sonner';
 import { App } from './App';
 
@@ -10,6 +10,7 @@ afterEach(() => {
   toast.dismiss();
   window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 it('creates, displays, and removes an empty group via UI', async () => {
@@ -386,7 +387,14 @@ it('undoes a move to another group, restoring group and order', async () => {
     key: 'ArrowRight',
   });
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Infra' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }));
+  const undo = await screen.findByRole('button', { name: 'Desfazer' });
+  vi.useFakeTimers();
+  fireEvent.click(undo);
+  // Sonner schedules removal after its exit animation; finish it before unmounting.
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(200);
+  });
+  vi.useRealTimers();
   await waitFor(() => {
     const order = calls.find((call) => call.url === '/api/services/order');
     expect(JSON.parse(order?.body ?? '{}')).toEqual({ category: 'Casa', ids: [1, 3] });

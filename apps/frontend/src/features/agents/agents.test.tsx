@@ -2,7 +2,7 @@ import { Toaster, toast } from 'sonner';
 // @vitest-environment happy-dom
 import { useState } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { Agents } from './agents';
 
@@ -14,6 +14,7 @@ afterEach(() => {
   toast.dismiss();
   cleanup();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
   localStorage.clear();
 });
 
@@ -284,6 +285,7 @@ it('reviews a batch together and explains conflicting changes', async () => {
 });
 
 it('moves a pending proposal to expired at its deadline without reloading', async () => {
+  vi.useFakeTimers();
   const now = Date.now();
   vi.stubGlobal(
     'fetch',
@@ -300,9 +302,14 @@ it('moves a pending proposal to expired at its deadline without reloading', asyn
     }),
   );
   render(<Harness />);
-  // The deadline shows in the queue and in the proposal itself.
-  expect((await screen.findAllByText(/Expira em \d s/)).length).toBeGreaterThan(0);
-  const toggle = await screen.findByRole('button', { name: 'Expiradas (1)' }, { timeout: 3000 });
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(screen.getAllByText(/Expira em \d s/).length).toBeGreaterThan(0);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2000);
+  });
+  const toggle = screen.getByRole('button', { name: 'Expiradas (1)' });
   // Expired proposals stay collapsed so a long backlog does not push the page down.
   expect(screen.queryByRole('button', { name: 'Recriar' })).toBeNull();
   fireEvent.click(toggle);

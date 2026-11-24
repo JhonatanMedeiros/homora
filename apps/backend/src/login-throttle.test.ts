@@ -1,10 +1,16 @@
-import { expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createDatabase } from '@homora/db';
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createTestAuth, TEST_EMAIL, TEST_PASSWORD } from './test-auth.js';
 
 const ATTEMPTS = 10;
+
+// Keep the rate-limit window stable even when password hashing is delayed by CPU contention.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+});
+afterEach(() => vi.useRealTimers());
 
 async function setup(trustProxy: boolean) {
   const db = createDatabase(':memory:');
