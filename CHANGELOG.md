@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.5.0](https://github.com/JhonatanMedeiros/homora/compare/v0.4.0...v0.5.0) (2026-11-24)
+
+
+### 🚀 New features
+
+* add certificate expiry widget ([#304](https://github.com/JhonatanMedeiros/homora/issues/304)) ([63e610e](https://github.com/JhonatanMedeiros/homora/commit/63e610ebc0344769eb4e2a2717e91c143cc26387))
+* add maintenance schedule widget ([#303](https://github.com/JhonatanMedeiros/homora/issues/303)) ([47a324d](https://github.com/JhonatanMedeiros/homora/commit/47a324d450c72a17ce712d446c707bbe6c5d415b))
+* add service latency history widget ([#305](https://github.com/JhonatanMedeiros/homora/issues/305)) ([e132322](https://github.com/JhonatanMedeiros/homora/commit/e132322b11f602ea3e8a4e572a1e498556828413))
+* **connections:** keep the connection dialog compact and scrollable ([#327](https://github.com/JhonatanMedeiros/homora/issues/327)) ([c67fd72](https://github.com/JhonatanMedeiros/homora/commit/c67fd72be8ec8366a9637edff466471aca1c20f8))
+* **integrations:** add TP-Link Omada Controller integration and network widget ([#324](https://github.com/JhonatanMedeiros/homora/issues/324)) ([0edd23d](https://github.com/JhonatanMedeiros/homora/commit/0edd23d5168c6129a6c2d91d930cf73ccb9e366e))
+* **integrations:** add weather source contract and multi-provider support ([#289](https://github.com/JhonatanMedeiros/homora/issues/289)) ([6b2bc78](https://github.com/JhonatanMedeiros/homora/commit/6b2bc78ea528fbec62bee03049475846ce39a07b))
+* **integrations:** document CA and internal host mapping for self-signed controllers ([#328](https://github.com/JhonatanMedeiros/homora/issues/328)) ([de24847](https://github.com/JhonatanMedeiros/homora/commit/de248473fed9118a8d8af304308c37b8148817cf)), closes [#326](https://github.com/JhonatanMedeiros/homora/issues/326)
+* **notifications:** redesign the bell popup ([#322](https://github.com/JhonatanMedeiros/homora/issues/322)) ([13ae0f8](https://github.com/JhonatanMedeiros/homora/commit/13ae0f8a3d3ddcf59e287e148df019b47169a4ef))
+* **ui:** use the attachment component for file fields ([#331](https://github.com/JhonatanMedeiros/homora/issues/331)) ([52ac6bb](https://github.com/JhonatanMedeiros/homora/commit/52ac6bb764deddefb0c26da30d2dff2086bbfac0))
+* **widgets:** add a Coolify resources widget (INT-04) ([#320](https://github.com/JhonatanMedeiros/homora/issues/320)) ([8aee2a3](https://github.com/JhonatanMedeiros/homora/commit/8aee2a32b08d7b44408d064f482f9839a8fcd59b))
+* **widgets:** add an Uptime Kuma monitor states widget (INT-03) ([#318](https://github.com/JhonatanMedeiros/homora/issues/318)) ([bd259a6](https://github.com/JhonatanMedeiros/homora/commit/bd259a652bc7e25ca8b45a836eb2203f4c5f3cc1))
+* **widgets:** add availability widget (MON-04) ([#296](https://github.com/JhonatanMedeiros/homora/issues/296)) ([#299](https://github.com/JhonatanMedeiros/homora/issues/299)) ([086bfc2](https://github.com/JhonatanMedeiros/homora/commit/086bfc27f6bc744d221a5fc54568f673b0076759))
+* **widgets:** add current weather and short forecast widget ([#290](https://github.com/JhonatanMedeiros/homora/issues/290)) ([ad03ced](https://github.com/JhonatanMedeiros/homora/commit/ad03cedc6bcef1c64f87e83905eed80301a3d271))
+* **widgets:** add domain-expiry widget (EXT-05) ([#294](https://github.com/JhonatanMedeiros/homora/issues/294)) ([72fd5a6](https://github.com/JhonatanMedeiros/homora/commit/72fd5a6025897ec88873494f0c2c04f803ae1974))
+* **widgets:** add public IP address widget ([#295](https://github.com/JhonatanMedeiros/homora/issues/295)) ([8d072a8](https://github.com/JhonatanMedeiros/homora/commit/8d072a8cfd9c1979b6379273e882d372813c6cdb))
+* **widgets:** add quick links widget ([#298](https://github.com/JhonatanMedeiros/homora/issues/298)) ([52754f3](https://github.com/JhonatanMedeiros/homora/commit/52754f31214245c816849f95003e7b48312ad06b))
+* **widgets:** add RSS/Atom feed widget ([#286](https://github.com/JhonatanMedeiros/homora/issues/286)) ([168aca7](https://github.com/JhonatanMedeiros/homora/commit/168aca7f2ed64e9846da5c2602f9d7bb2fc43a9f))
+* **widgets:** improve widget gallery and add live preview in dialog ([#291](https://github.com/JhonatanMedeiros/homora/issues/291)) ([ad0a990](https://github.com/JhonatanMedeiros/homora/commit/ad0a99006ccc9af35dc452f41c9412cef42cf6e4))
+
+
+### 🩹 Bug fixes
+
+* **compose:** honor HOMORA_EXTRA_HOST in the main compose file ([#329](https://github.com/JhonatanMedeiros/homora/issues/329)) ([f1d605d](https://github.com/JhonatanMedeiros/homora/commit/f1d605d2c016e4362c15c939474660d3386dab1f))
+* **connections:** authorize private networks explicitly and report a clear reason ([#334](https://github.com/JhonatanMedeiros/homora/issues/334)) ([18d63a6](https://github.com/JhonatanMedeiros/homora/commit/18d63a60b7391f371dc7657f40c1f0a5a37b7492))
+* harden monitoring TLS, error handling, SQLite concurrency, and clean up dead code and docs ([#284](https://github.com/JhonatanMedeiros/homora/issues/284)) ([caab2f4](https://github.com/JhonatanMedeiros/homora/commit/caab2f45c75fc7b6890b6a751c838d1847e7f878))
+* make probe dialog scrollable with fixed header and footer ([#311](https://github.com/JhonatanMedeiros/homora/issues/311)) ([d244b6d](https://github.com/JhonatanMedeiros/homora/commit/d244b6ded5f9ad7bca91e2a57e3d09956e4a8363))
+* match widget skeleton to card layout ([#316](https://github.com/JhonatanMedeiros/homora/issues/316)) ([ab77432](https://github.com/JhonatanMedeiros/homora/commit/ab7743235b81e1ac8197ccb107d0e9f8ea04654e))
+* **ui:** center the Pi-hole icon and add the Omada brand icon ([#333](https://github.com/JhonatanMedeiros/homora/issues/333)) ([6fedd7b](https://github.com/JhonatanMedeiros/homora/commit/6fedd7b17fb1ff7416a5e227f37f7e5a32646ef5))
+* **ui:** restore pointer cursor on interactive controls ([#325](https://github.com/JhonatanMedeiros/homora/issues/325)) ([d7fa389](https://github.com/JhonatanMedeiros/homora/commit/d7fa38934dfa9f10c29cc661f76e3e9ace84443e))
+* **widgets:** validate quick link URLs before submit ([#319](https://github.com/JhonatanMedeiros/homora/issues/319)) ([5eac190](https://github.com/JhonatanMedeiros/homora/commit/5eac1902242aead45d2ad399f4cbd5f8145055da))
+
+
+### 🧩 Dependencies
+
+* bump nginx from 1.27-alpine to 1.29-alpine ([#306](https://github.com/JhonatanMedeiros/homora/issues/306)) ([67e1547](https://github.com/JhonatanMedeiros/homora/commit/67e1547a9d1fa9c84bcd334965d7cc2db09afb39))
+* bump the minor-and-patch group with 12 updates ([#308](https://github.com/JhonatanMedeiros/homora/issues/308)) ([ea75b5d](https://github.com/JhonatanMedeiros/homora/commit/ea75b5d9db9109ba97f2433ae89532fd2c881fd8))
+
+
+### 📝 Documentation
+
+* add a widget gallery and tighten the user guide ([#330](https://github.com/JhonatanMedeiros/homora/issues/330)) ([204c9c5](https://github.com/JhonatanMedeiros/homora/commit/204c9c5d453bf6826239e505383b59f19af11ed6))
+
 ## [0.4.0](https://github.com/JhonatanMedeiros/homora/compare/v0.3.0...v0.4.0) (2026-11-17)
 
 
