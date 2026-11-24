@@ -2055,6 +2055,13 @@ the HTTP and stdio transports were not manually verified.
 - Validated with the unit and component tests (summary, pill, rail items, Home page) and `pnpm check`, and by hand in the development server on desktop. Not verified: a phone-width pass on a real device, a connection to a real Proxmox, and the pill in the light theme.
 - Pending: the screenshots in `docs/screenshots` still show the previous Home (banner in the page body) because they come from the demo installation, which is not in the repository; the topology latency idea has no data source; agent proposals are not part of the development scenario.
 
+### Pages bar and page list
+
+- The pages left the header row and sit in their own bar under it (`data-homora="pages-bar"`), so the header keeps only the brand, search, status and account. Tabs are 36px tall (44px on touch), with a count pill and the down badge, and the active tab has an underline. The scroll arrows and the small overflow menu were removed.
+- A list button at the end of the bar opens **All pages** (`PageListDialog`): a dialog on desktop and a bottom sheet on phones, with a search field above six pages, a `⋯` menu per page (rename, move, delete) and an **Add page** button. `PageCreateButton` moved to its own file so the bar and the list share it.
+- Validated with the component tests (bar, list, tab menu, Home), `pnpm check` and `pnpm docs:build`. Not verified: the bar and the sheet in a browser or on a real phone, and the light theme.
+- Pending, because they need a schema change or more design: an icon per page, "copy from another page" when creating one, drag-and-drop reordering in the list (moving earlier or later in the menu still works), and a keyboard-shortcut hint in the bar.
+
 ### Page note widget (LOCAL-03)
 
 - Added a local page widget for a short Markdown note, with an optional name, safe rendering and a 4,000-character limit. Notes are portable through configuration export and import; database backups retain them as page widgets.

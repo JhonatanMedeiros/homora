@@ -1,30 +1,21 @@
-import { toast } from 'sonner';
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
-  type FormEvent,
   type KeyboardEvent,
   type ReactNode,
   type WheelEvent,
 } from 'react';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { MAX_PAGES, PAGE_NAME_MAX } from '@homora/shared';
+import { List } from 'lucide-react';
+import { MAX_PAGES } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import { ButtonGroup, ButtonGroupSeparator } from '@homora/ui/button-group';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@homora/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@homora/ui/dropdown-menu';
-import { Input } from '@homora/ui/input';
 import { cn } from '@homora/ui/lib/utils';
-import { FormError } from '@/components/form-error';
+import { PageCreateButton } from '@/components/page-create-button';
+import { PageListDialog } from '@/components/page-list-dialog';
 import { PageTabMenu } from '@/components/page-tab-menu';
-import { addPage, type PageRow } from '@/hooks/use-pages';
+import type { PageRow } from '@/hooks/use-pages';
 import { t } from '@/i18n';
 
 type Props = {
@@ -33,95 +24,20 @@ type Props = {
   onSelect: (id: number) => void;
   /** Services on a page, and how many of them are down. */
   counts: (pageId: number) => { total: number; down: number };
-  /** Called after a page is created, renamed, moved, or deleted from the header. */
+  /** Called after a page is created, renamed, moved, or deleted from the bar. */
   onChanged?: () => unknown | Promise<unknown>;
   /** Optional custom menu for the selected page when `onChanged` is not used. */
   menu?: ReactNode;
 };
 
-function PageCreateButton({
-  pages,
-  onChanged,
-  onCreated,
-}: {
-  pages: PageRow[];
-  onChanged: () => unknown | Promise<unknown>;
-  onCreated: (id: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [error, setError] = useState('');
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    const previousIds = new Set(pages.map((page) => page.id));
-    let createdId: number | undefined;
-    const failure = await addPage(draft, (next) => {
-      const created = next.find((page) => !previousIds.has(page.id));
-      if (created) createdId = created.id;
-    });
-    if (failure) {
-      setError(failure);
-      toast.error(failure);
-      return;
-    }
-    setError('');
-    setOpen(false);
-    setDraft('');
-    toast.success(t('pages.saved'));
-    await onChanged();
-    if (createdId !== undefined) onCreated(createdId);
-  }
-
-  return (
-    <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        aria-label={t('pages.add')}
-        title={t('pages.add')}
-        className="size-8 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground pointer-coarse:size-11"
-        onClick={() => {
-          setDraft('');
-          setError('');
-          setOpen(true);
-        }}
-      >
-        <Plus aria-hidden="true" />
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <form className="flex flex-col gap-4" onSubmit={submit}>
-            <DialogHeader>
-              <DialogTitle>{t('pages.add')}</DialogTitle>
-            </DialogHeader>
-            <Input
-              aria-label={t('pages.name')}
-              maxLength={PAGE_NAME_MAX}
-              value={draft}
-              autoFocus
-              onChange={(event) => setDraft(event.target.value)}
-            />
-            <FormError>{error}</FormError>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                {t('pages.cancel')}
-              </Button>
-              <Button type="submit" disabled={!draft.trim()}>
-                {t('pages.save')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-/** The pages of the Home as header pills using ButtonGroup: swipeable on phones, with counters and actions. */
+/**
+ * The pages of the Home as a bar of tabs under the header: 36px tall (44px on touch), swipeable,
+ * each with its counter. The list button opens every page at once, with search and the page
+ * actions, so the bar never needs scroll arrows.
+ */
 export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
+  const [listOpen, setListOpen] = useState(false);
   const [edge, setEdge] = useState<{ left: boolean; right: boolean }>({
     left: false,
     right: false,
@@ -173,10 +89,6 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
     }
   }
 
-  function scrollTabs(direction: -1 | 1) {
-    listRef.current?.scrollBy?.({ left: direction * 160, behavior: 'smooth' });
-  }
-
   const scrollToPage = useCallback((id: number) => {
     const target = listRef.current?.querySelector<HTMLElement>(`[data-page-id="${id}"]`);
     target?.scrollIntoView?.({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
@@ -186,30 +98,17 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
     scrollToPage(activeId);
   }, [activeId, scrollToPage]);
 
-  const hasOverflow = edge.left || edge.right;
   const overflowMask =
     edge.left && edge.right
-      ? 'mask-[linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]'
+      ? 'mask-[linear-gradient(to_right,transparent,black_20px,black_calc(100%-20px),transparent)]'
       : edge.left
-        ? 'mask-[linear-gradient(to_right,transparent,black_16px)]'
+        ? 'mask-[linear-gradient(to_right,transparent,black_20px)]'
         : edge.right
-          ? 'mask-[linear-gradient(to_right,black_calc(100%-16px),transparent)]'
+          ? 'mask-[linear-gradient(to_right,black_calc(100%-20px),transparent)]'
           : undefined;
 
   return (
-    <div className="flex min-w-0 items-center gap-1">
-      {edge.left && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t('pages.moveEarlier')}
-          className="hidden size-7 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:inline-flex"
-          onClick={() => scrollTabs(-1)}
-        >
-          <ChevronLeft aria-hidden="true" className="size-4" />
-        </Button>
-      )}
+    <div className="flex min-w-0 flex-1 items-center gap-1">
       <div
         ref={listRef}
         role="tablist"
@@ -219,7 +118,7 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
         onWheel={onTabListWheel}
         onKeyDown={onTabListKeyDown}
         className={cn(
-          'flex min-w-0 max-w-full items-center gap-1 overflow-x-auto overscroll-x-contain p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          'flex min-w-0 items-center gap-1 overflow-x-auto overscroll-x-contain p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           overflowMask,
         )}
       >
@@ -229,7 +128,16 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
           const label = (
             <>
               {page.name}
-              <small className="font-mono text-xs opacity-75">{total}</small>
+              <small
+                className={cn(
+                  'rounded-full px-1.5 font-mono text-xs',
+                  active
+                    ? 'bg-sidebar-primary/25 text-sidebar-primary'
+                    : 'bg-sidebar-accent text-sidebar-foreground/80',
+                )}
+              >
+                {total}
+              </small>
               {down > 0 && (
                 <small className="rounded-full bg-destructive px-1.5 font-mono text-xs text-white">
                   {t('pages.down', { count: down })}
@@ -244,14 +152,13 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
               type="button"
               role="tab"
               variant="ghost"
-              size="sm"
               aria-selected={active}
               tabIndex={active ? 0 : -1}
               title={index < 9 ? `${page.name} (${index + 1})` : page.name}
               className={
                 active
-                  ? 'h-8 shrink-0 cursor-pointer gap-1.5 bg-sidebar-primary/15 px-3 text-sidebar-primary hover:bg-sidebar-primary/25 hover:text-sidebar-primary pointer-coarse:h-11'
-                  : 'h-8 shrink-0 cursor-pointer gap-1.5 px-3 text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground pointer-coarse:h-11'
+                  ? 'h-9 shrink-0 cursor-pointer gap-2 rounded-lg bg-sidebar-primary/15 px-3.5 text-sm text-sidebar-primary shadow-[inset_0_-2px_0_var(--sidebar-primary)] hover:bg-sidebar-primary/25 hover:text-sidebar-primary pointer-coarse:h-11'
+                  : 'h-9 shrink-0 cursor-pointer gap-2 rounded-lg px-3.5 text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground pointer-coarse:h-11'
               }
               onClick={(event) => {
                 onSelect(page.id);
@@ -271,7 +178,7 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
                   page={page}
                   pages={pages}
                   onChanged={onChanged}
-                  triggerClassName="h-8 w-7 cursor-pointer bg-sidebar-primary/15 px-0 text-sidebar-primary hover:bg-sidebar-primary/25 hover:text-sidebar-primary pointer-coarse:h-11 pointer-coarse:w-9"
+                  triggerClassName="h-9 w-8 cursor-pointer rounded-lg bg-sidebar-primary/15 px-0 text-sidebar-primary shadow-[inset_0_-2px_0_var(--sidebar-primary)] hover:bg-sidebar-primary/25 hover:text-sidebar-primary pointer-coarse:h-11 pointer-coarse:w-11"
                 />
               </ButtonGroup>
             );
@@ -280,64 +187,36 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
           return tabButton;
         })}
       </div>
-      {edge.right && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t('pages.moveLater')}
-          className="hidden size-7 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:inline-flex"
-          onClick={() => scrollTabs(1)}
-        >
-          <ChevronRight aria-hidden="true" className="size-4" />
-        </Button>
-      )}
-      {hasOverflow && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={t('pages.tabs')}
-              title={t('pages.tabs')}
-              className="size-8 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground pointer-coarse:size-11"
-            >
-              <ChevronDown aria-hidden="true" className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-48">
-            {pages.map((page) => {
-              const { total, down } = counts(page.id);
-              const active = page.id === activeId;
-              return (
-                <DropdownMenuItem
-                  key={page.id}
-                  onSelect={() => {
-                    onSelect(page.id);
-                    scrollToPage(page.id);
-                  }}
-                  className="gap-2"
-                >
-                  <Check
-                    aria-hidden="true"
-                    className={cn('size-4', active ? 'opacity-100' : 'opacity-0')}
-                  />
-                  <span className="flex-1 truncate">{page.name}</span>
-                  <small className="font-mono text-xs text-muted-foreground">{total}</small>
-                  {down > 0 && (
-                    <small className="rounded-full bg-destructive px-1.5 font-mono text-xs text-white">
-                      {t('pages.down', { count: down })}
-                    </small>
-                  )}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
       {onChanged && pages.length < MAX_PAGES && (
         <PageCreateButton pages={pages} onChanged={onChanged} onCreated={onSelect} />
+      )}
+      {pages.length > 1 && (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t('pages.all')}
+            title={t('pages.all')}
+            aria-haspopup="dialog"
+            className="ml-auto size-9 shrink-0 cursor-pointer text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground pointer-coarse:size-11"
+            onClick={() => setListOpen(true)}
+          >
+            <List aria-hidden="true" />
+          </Button>
+          <PageListDialog
+            open={listOpen}
+            onOpenChange={setListOpen}
+            pages={pages}
+            activeId={activeId}
+            counts={counts}
+            onSelect={(id) => {
+              onSelect(id);
+              scrollToPage(id);
+            }}
+            onChanged={onChanged}
+          />
+        </>
       )}
       {menu}
     </div>

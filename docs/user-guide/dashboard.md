@@ -52,9 +52,11 @@ history and mark items as read; reading is independent of acknowledging or mutin
 
 ## Pages, groups and cards
 
-- **Pages** sit in the header, for example _Home_, _Media_ and _Lab_, each with its count of down services. The `⋯` button
-  on the selected page renames, moves or deletes it (a page with groups or widgets asks where they go first), and `+`
-  creates one. Press `1` to `9` to switch. You can have up to 12 pages with unique names, also managed in **Settings →
+- **Pages** sit in their own bar under the header, for example _Home_, _Media_ and _Lab_, each with its service count and
+  how many are down. The bar scrolls sideways when there are many pages. The list button at its end opens **All pages**
+  (a bottom sheet on phones), with a search field when you have more than six, a `⋯` menu per page, and an **Add page**
+  button. The `⋯` on the selected tab renames, moves or deletes it (a page with groups or widgets asks where they go
+  first), and `+` creates one. Press `1` to `9` to switch. You can have up to 12 pages with unique names, also managed in **Settings →
   Home and pages**.
 - **Groups** organize cards inside a page. Choose one in the **Groups** list to filter to it. Each group has 1 to 6
   columns, so a short group can use two wide columns while a long one uses six.
