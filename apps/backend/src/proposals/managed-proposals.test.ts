@@ -115,7 +115,7 @@ describe('managed proposals', () => {
       db.close();
     }
   });
-  it('rolls back a batch when maintenance windows overlap at approval', () => {
+  it('rejects a batch with overlapping maintenance windows before storing any proposal', () => {
     const { db, api, agent } = fixture();
     try {
       const now = Date.now();
@@ -126,11 +126,13 @@ describe('managed proposals', () => {
         endsAt: now + 3600000,
         note: 'Planned work',
       };
-      const batch = api.proposeBatch(agent.id, [
-        { kind: 'maintenance', change },
-        { kind: 'maintenance', change },
-      ]);
-      expect(() => api.decideBatch(batch.batchId, true, 'user:admin')).toThrow('overlap');
+      expect(() =>
+        api.proposeBatch(agent.id, [
+          { kind: 'maintenance', change },
+          { kind: 'maintenance', change },
+        ]),
+      ).toThrow('batch-item-invalid: items[1] (maintenance): overlap');
+      expect(db.prepare('SELECT * FROM service_proposals').all()).toHaveLength(0);
       expect(db.prepare('SELECT * FROM service_maintenance').all()).toHaveLength(0);
       expect(
         db.prepare("SELECT * FROM audit_events WHERE action='service-maintenance-create'").all(),

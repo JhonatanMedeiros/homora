@@ -122,7 +122,11 @@ changed.
 - **Connection setup:** approving a suggestion **does not create a connection**. Open its form from the approved proposal
   and enter credentials, private-network permission and any CA yourself.
 - **Batches:** `propose_batch` creates 1–20 proposals atomically under a shared batch ID, approved or rejected as one
-  decision. Approval can make other proposals stale, requiring a new one.
+  decision. Approval can make other proposals stale, requiring a new one. A batch is all-or-nothing: every item
+  is validated in order against the state left by the items before it, so mixed batches work, for example moving groups
+  to a page together with the widgets that belong there (`page` `assign-group` and `widget` `move`). If an item is
+  invalid, the whole batch is rejected, nothing is stored or changed, and the error names the item
+  (`batch-item-invalid: items[1] (widget): invalid-widget-position`). Every change kind may be combined in one batch.
 - **Limit:** each identity can have 100 unexpired pending proposals.
 - **Agent identities:** with `agents:propose`, an agent may suggest creating an identity or changing another agent's
   scopes, revocation or rotation; proposed scopes must be a subset of the proposer's. A new token is shown once in the
