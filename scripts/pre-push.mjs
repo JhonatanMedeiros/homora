@@ -50,7 +50,7 @@ if (formattable.length > 0)
     run('format', bin('oxfmt'), ['--check', '--no-error-on-unmatched-pattern', ...formattable]),
   );
 if (source.length > 0) checks.push(run('lint', bin('oxlint'), ['--quiet', ...source]));
-if (typed) checks.push(run('types', 'node', ['scripts/ci/typecheck.mjs']));
+if (typed) checks.push(run('types', process.execPath, ['scripts/ci/typecheck.mjs']));
 
 const results = await Promise.all(checks);
 const seconds = (performance.now() - started) / 1000;

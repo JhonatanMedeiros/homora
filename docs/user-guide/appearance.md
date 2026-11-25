@@ -43,7 +43,7 @@ reach 4.5:1 contrast on the card and the page (every gradient stop) and the acce
 - JPEG, PNG or WebP up to 2 MB. Animated images are rejected.
 - The server removes metadata, applies the EXIF rotation, resizes to at most 1920 px and stores a WebP next to the
   database (`<database>.background`), and computes the minimum dimming that keeps text readable.
-- `pnpm backup` includes it; see [Import, export and backup](import-export-backup.md). Phones cannot upload or edit it.
+- `bun run backup` includes it; see [Import, export and backup](import-export-backup.md). Phones cannot upload or edit it.
 
 ## Custom CSS
 
@@ -57,7 +57,7 @@ braces.
 If a stylesheet makes the interface unusable, turn it off **without losing the text**:
 
 - Open any page with `?safe=1`, for example `http://localhost:8080/?safe=1`, **or**
-- run `pnpm css:reset` on the server. With Docker Compose: `docker compose exec backend node scripts/css-reset.mjs`.
+- run `bun run css:reset` on the server. With Docker Compose: `docker compose exec backend bun scripts/css-reset.mjs`.
 
 ## Pages and the home layout
 

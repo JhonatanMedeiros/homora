@@ -1,6 +1,6 @@
 // Builds the workspace libraries with the native TypeScript compiler (tsc), in dependency waves.
 // The tests import the compiled `dist` of these packages, so this is all a test job needs.
-// The apps (backend, frontend) are not built here; `pnpm build` still covers them in the build job.
+// The apps (backend, frontend) are not built here; `bun run build` still covers them in the build job.
 import { spawn } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 
@@ -29,7 +29,8 @@ const build = (name) => {
   if (started.has(name)) return started.get(name);
   const { dir, deps, hasCatalog } = meta.get(name);
   const job = Promise.all(deps.filter((d) => meta.has(d)).map(build)).then(async () => {
-    if (hasCatalog) await run('node', ['scripts/integration-catalog.mjs', '--check'], dir);
+    if (hasCatalog)
+      await run(process.execPath, ['scripts/integration-catalog.mjs', '--check'], dir);
     if (name === '@homora/ui') {
       await run(
         new URL('../../node_modules/.bin/tsc', import.meta.url).pathname,

@@ -241,9 +241,10 @@ it('answers 25 services with 30 days of history at the default 60 s interval wit
     db.exec('COMMIT');
     const timings: Record<string, number> = {};
     for (const range of ['24h', '7d', '30d'] as const) {
-      const started = process.cpuUsage();
+      // This thread's CPU time: `process.cpuUsage()` also counts the other workers of a thread pool.
+      const started = process.threadCpuUsage();
       const all = store.uptime(range, now);
-      const used = process.cpuUsage(started);
+      const used = process.threadCpuUsage(started);
       timings[range] = Math.round((used.user + used.system) / 1000);
       expect(Object.keys(all)).toHaveLength(SERVICES);
       expect(all[1]?.checks).toBe({ '24h': 1441, '7d': 10_081, '30d': 43_200 }[range]);

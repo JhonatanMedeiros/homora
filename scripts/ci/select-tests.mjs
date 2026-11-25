@@ -1,5 +1,5 @@
 // Selects the test files a diff can reach. Prints one file per line, or the word ALL when the
-// whole suite must run. Usage: node scripts/ci/select-tests.mjs [--base <ref>] [--files a,b,c]
+// whole suite must run. Usage: bun scripts/ci/select-tests.mjs [--base <ref>] [--files a,b,c]
 //
 // Layers:
 //  1. Full-run triggers: files that are not imported by tests but can change any result
@@ -38,12 +38,10 @@ const changed = opt('--files')
 
 const FULL_TRIGGERS = [
   /(^|\/)package\.json$/,
-  /^pnpm-lock\.yaml$/,
-  /^pnpm-workspace\.yaml$/,
+  /^bun\.lock$/,
   /(^|\/)tsconfig[^/]*\.json$/,
   /(^|\/)vite(st)?\.config\./,
   /^turbo\.json$/,
-  /^\.nvmrc$/,
   /^vitest\.setup\./,
   /^packages\/db\/migrations\//,
   /^scripts\/ci\//,
@@ -77,14 +75,14 @@ const dependentsOf = (name, seen = new Set()) => {
   return seen;
 };
 
-const allTests = listed(sh('pnpm', ['exec', 'vitest', 'list', '--filesOnly'])).filter((f) =>
+const allTests = listed(sh('bun', ['--bun', 'vitest', 'list', '--filesOnly'])).filter((f) =>
   /\.test\.tsx?$/.test(f),
 );
 const selected = new Set();
 
 // 2. Import graph. `--files` simulates a diff without reading git, so this layer is skipped there.
 if (!opt('--files'))
-  for (const f of listed(sh('pnpm', ['exec', 'vitest', 'list', '--changed', base, '--filesOnly'])))
+  for (const f of listed(sh('bun', ['--bun', 'vitest', 'list', '--changed', base, '--filesOnly'])))
     if (/\.test\.tsx?$/.test(f)) selected.add(f);
 
 // A changed test file always runs.

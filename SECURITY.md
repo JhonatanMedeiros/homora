@@ -27,15 +27,15 @@ data or real credentials. There is no established response SLA or bug bounty pol
   credentials will need to be re-entered.
 - If two-step verification is on, its secret and recovery codes are encrypted with the session
   secret (`.session-secret` or `HOMORA_SESSION_SECRET`): back it up with the database and protect it
-  like the `.key`. Recovery without it is local only (`pnpm auth:reset --two-factor-only`).
+  like the `.key`. Recovery without it is local only (`bun run auth:reset --two-factor-only`).
 - Passkeys are optional. Only their public keys are stored, so they do not depend on the session
   secret; they are bound to the RP ID (`localhost`, or `HOMORA_PASSKEY_RP_ID`) and to explicit
   origins, never to request headers. Adding or removing one asks for the password. Recovery is local
-  (`pnpm auth:reset --passkeys-only`). See ADR 0017.
+  (`bun run auth:reset --passkeys-only`). See ADR 0017.
 - Appearance and custom CSS are administrator-controlled. Custom CSS is validated and served from
   the same origin, but Homora does not send a Content-Security-Policy header today, so treat the
   stylesheet as trusted administrator content. If it breaks the interface, open the page with
-  `?safe=1` or run `pnpm css:reset`. The background image is re-encoded (metadata removed) and is
+  `?safe=1` or run `bun run css:reset`. The background image is re-encoded (metadata removed) and is
   only served to signed-in sessions; it is included in backups.
 - MCP is a local read process that accesses the database and key file directly.
   Web sessions do not protect it; use only with trusted system users and MCP clients.

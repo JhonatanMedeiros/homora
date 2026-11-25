@@ -146,10 +146,10 @@ Import shared primitives by subpath, e.g. `@homora/ui/button`, and `cn` from `@h
   Do not depend on live networks or external infrastructure in standard test suites.
 - When modifying authorization, contracts, persistence, integrations, or security,
   include negative and failure test cases alongside happy paths.
-- Execute checks commensurate with the scope of changes (`pnpm check` and `pnpm build`
+- Execute checks commensurate with the scope of changes (`bun run check` and `bun run build`
   for broad changes; targeted unit tests for isolated edits) and report exact test results.
-  `pnpm test` imports the compiled workspace packages, so run `pnpm type-check` (which compiles
-  them) or `pnpm build` first in a fresh checkout.
+  `bun run test` imports the compiled workspace packages, so run `bun run type-check` (which compiles
+  them) or `bun run build` first in a fresh checkout.
 - The shared test setup gives Testing Library async queries 4 seconds and Vitest tests 15 seconds
   for CPU contention. In happy-dom, unexpected `fetch` calls fail the test; stub each intended
   request. Use fake clocks for deadline behavior and restore them after each test.
@@ -166,7 +166,7 @@ Import shared primitives by subpath, e.g. `@homora/ui/button`, and `cn` from `@h
     databases.
   - A file that uses `vi.mock` runs in an isolated project automatically, so it needs no list entry.
   - To reproduce an order-dependent failure, use the seed printed by CI:
-    `pnpm exec vitest run --sequence.shuffle.files --sequence.seed=<seed>`.
+    `bun --bun vitest run --sequence.shuffle.files --sequence.seed=<seed>`.
 - Never make a test pass by retrying it, widening a timeout or skipping it. A check that needs a
   retry has a bug (a race, state that leaks, a hidden dependency); find it. When a wait is
   genuinely slow, make the cause faster or the wait explicit, and say what you measured.
@@ -190,4 +190,4 @@ Keep each local widget's definition, configuration logic, translations and UI in
 
 ## Local widget contributions
 
-Use `pnpm widget:create <type>` and follow the [widget creation guide](create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.
+Use `bun run widget:create <type>` and follow the [widget creation guide](create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.

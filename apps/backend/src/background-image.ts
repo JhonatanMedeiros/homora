@@ -1,7 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import sharp from 'sharp';
 import { IMAGE_MAX_BYTES, IMAGE_MAX_SIDE, rgbToHex } from '@homora/shared';
 
 /** Refused uploads. `code` is stable and maps to an API error. */
@@ -57,6 +56,13 @@ function isAnimated(kind: 'png' | 'webp', buffer: Buffer): boolean {
   return false;
 }
 
+let sharpModule: Promise<typeof import('sharp')> | undefined;
+/**
+ * `sharp` is a native addon, loaded on first use so the API still starts where it cannot be
+ * loaded (for example a `bun build --compile` binary, which cannot embed it).
+ */
+const loadSharp = async () => (await (sharpModule ??= import('sharp'))).default;
+
 /**
  * Validates and re-encodes an uploaded picture: JPG, PNG or WebP only, 2 MB at most, never
  * animated, rotated by its EXIF orientation and then stripped of all metadata (location
@@ -68,6 +74,7 @@ export async function processBackgroundImage(input: Buffer): Promise<ProcessedIm
   const kind = sniff(input);
   if (!kind) throw new ImageRejected('image-unsupported');
   if (kind !== 'jpeg' && isAnimated(kind, input)) throw new ImageRejected('image-animated');
+  const sharp = await loadSharp();
   try {
     // A small file can still decode to a huge bitmap: refuse beyond 36 megapixels.
     const source = sharp(input, { limitInputPixels: 36_000_000, failOn: 'error' });

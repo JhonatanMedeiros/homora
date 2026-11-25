@@ -17,7 +17,7 @@ O banco contém cartões, conta, sessões e credenciais criptografadas. Guarde t
 O utilitário cria uma cópia consistente sem sobrescrever um arquivo existente:
 
 ```bash
-pnpm backup data/homora.sqlite backups/homora.sqlite
+bun run backup data/homora.sqlite backups/homora.sqlite
 ```
 
 Para restaurar, pare o Homora, preserve o banco atual e restaure para um novo arquivo; aponte `HOMORA_DATABASE_PATH` para ele. Teste a restauração antes de depender do backup. O [guia completo em inglês](/user-guide/import-export-backup) contém os comandos para copiar o banco e as chaves de uma instalação Docker Compose.

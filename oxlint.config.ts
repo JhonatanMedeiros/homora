@@ -149,6 +149,7 @@ export default defineConfig({
     '.turbo/**',
     '.idea/**',
     'packages/db/migrations/**',
+    'packages/db/src/migrations.generated.ts',
     'coverage/**',
     'data/**',
   ],

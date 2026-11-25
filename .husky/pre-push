@@ -1,1 +1,1 @@
-node scripts/pre-push.mjs
+bun scripts/pre-push.mjs

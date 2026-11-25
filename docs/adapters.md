@@ -39,12 +39,12 @@ from the manifest. You do not edit `input-schemas.ts`, `proposals/managed-propos
 
 ### Generate a starting point
 
-From the repository root, run `pnpm integration:create my-service manifest` for a declarative
-integration, or `pnpm integration:create my-service code` for one requiring code. The command
+From the repository root, run `bun run integration:create my-service manifest` for a declarative
+integration, or `bun run integration:create my-service code` for one requiring code. The command
 creates a new directory with an illustrative definition, fixture, checklist and templates; it never
 overwrites an existing directory or registers the integration. Replace all placeholders, cite the
 fixture source and implement the contract tests. Rename `integration.json.example` to
-`integration.json`, select a unique order and run `pnpm integration:catalog`. The command generates
+`integration.json`, select a unique order and run `bun run integration:catalog`. The command generates
 static imports for the definition, declared factories, optional translations, development examples and MCP tools. For a code
 adapter, implement the backend and frontend templates first. The example is not evidence of
 compatibility with a real service. Builds check that the catalogs are current; integration code is
@@ -101,16 +101,16 @@ Follow this workflow when adding or changing an integration or its widgets:
    personal addresses; preserve public IDs, stored fields and existing behavior unless a migration
    is explicitly designed and tested.
 2. Prefer a manifest when the reviewed vocabulary supports the API. Otherwise implement the code
-   adapter and presentation inside the integration directory. Use `pnpm integration:create` for an
+   adapter and presentation inside the integration directory. Use `bun run integration:create` for an
    unregistered starting point and complete the fixture and contract tests before opting in.
 3. Define widget output and translations with the integration, and use the existing icon catalog in
    `@homora/icons`. Add optional hooks only when their documented contracts fit. A new capability or
    a change to supported transport methods, headers, destination policy or scopes needs a separate
    design and security review; a descriptor alone does not grant network permissions.
-4. Register through `integration.json`, run `pnpm integration:catalog`, and inspect the generated
+4. Register through `integration.json`, run `bun run integration:catalog`, and inspect the generated
    catalog diff. Never hand-edit generated files, load remote plugins, or add per-service branches to
    app code. Built-in integration code is reviewed and included at build time.
-5. Run the integration contract tests and `pnpm check && pnpm build`. For changed assets verify the
+5. Run the integration contract tests and `bun run check && bun run build`. For changed assets verify the
    icon catalog and production build. Update the integration reference, permissions and live
    validation status. Mocked fixtures demonstrate contract behavior, not real service compatibility.
 
@@ -121,7 +121,7 @@ and data. This demonstrates reuse but does not replace design review; expand tra
 permissions or network capabilities only through the separate review described above.
 
 oxlint reports forbidden static imports in integration and widget runtime and test code and in application
-runtime code; application test files retain an exception for test helpers. `pnpm check` also
+runtime code; application test files retain an exception for test helpers. `bun run check` also
 inspects integration and widget source and test support for forbidden direct imports, and application runtime
 for direct and literal dynamic imports, reexports and common type dispatch. A workspace graph checks
 runtime dependencies, optional and peer dependencies and literal source imports for transitive paths
@@ -183,8 +183,8 @@ runAdapterContract({
 });
 ```
 
-Run `pnpm exec vitest run packages/integrations/src/integrations/<type>/contract.test.ts`, then
-`pnpm check` and `pnpm build`. The shared adapter contract and fixture helpers live in `packages/integrations/test-support` and do not depend on the applications. Integration-specific cases and fixtures live with each integration. The backend owns the restricted transport and its observation cache; their tests remain in the backend.
+Run `bun --bun vitest run packages/integrations/src/integrations/<type>/contract.test.ts`, then
+`bun run check` and `bun run build`. The shared adapter contract and fixture helpers live in `packages/integrations/test-support` and do not depend on the applications. Integration-specific cases and fixtures live with each integration. The backend owns the restricted transport and its observation cache; their tests remain in the backend.
 The harness checks, with a fake transport: input validation, request shape (only `origin`, `path`
 and `authorization`; a safe path built from validated config; hostile values such as `../`, `?`, `#`,
 `%2f`, whitespace and control characters rejected), secrets absent from data and errors, every response class (valid, wrong shape, oversized, 401/403, 404, 429, 5xx, network error,
@@ -217,7 +217,7 @@ Notes / deviations:
       no unreviewed header, method or code loading
 - [ ] Required permissions documented (read-only token where supported)
 - [ ] Marked "implemented, unvalidated" in the docs
-- [ ] `pnpm check` and `pnpm build` pass
+- [ ] `bun run check` and `bun run build` pass
 
 ## Internal widget contract
 

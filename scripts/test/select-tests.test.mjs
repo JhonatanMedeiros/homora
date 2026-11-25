@@ -12,7 +12,7 @@ const select = (...files) =>
 
 test('files that tests do not import but that can change any result run the whole suite', () => {
   for (const file of [
-    'pnpm-lock.yaml',
+    'bun.lock',
     'package.json',
     'packages/shared/package.json',
     'tsconfig.json',

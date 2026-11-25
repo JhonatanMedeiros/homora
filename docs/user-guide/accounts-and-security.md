@@ -29,8 +29,8 @@ verification, makes its stored secret and recovery codes unreadable. Back it up 
 
 ## Forgot the password
 
-Run `pnpm auth:reset` to see the account, then `pnpm auth:reset --yes` to remove the account and every session. With
-Compose: `docker compose exec backend node scripts/auth-reset.mjs --yes`.
+Run `bun run auth:reset` to see the account, then `bun run auth:reset --yes` to remove the account and every session. With
+Compose: `docker compose exec backend bun scripts/auth-reset.mjs --yes`.
 
 Open Homora to create a new account; cards and encrypted connections are kept. Until it exists, anyone who can reach the
 interface can claim it, so do this on a private network.
@@ -48,8 +48,8 @@ minutes. Turning it on or off signs out your other devices; turning it off or ge
 password. Trusted devices, email and SMS are not supported. The secret and recovery codes are encrypted with the session
 secret, so keep it in the same backup set as the database.
 
-**Lost the app and the recovery codes, or the secret?** On the server run `pnpm auth:reset --two-factor-only`, then add
-`--yes` (with Compose: `docker compose exec backend node scripts/auth-reset.mjs --two-factor-only --yes`). The account
+**Lost the app and the recovery codes, or the secret?** On the server run `bun run auth:reset --two-factor-only`, then add
+`--yes` (with Compose: `docker compose exec backend bun scripts/auth-reset.mjs --two-factor-only --yes`). The account
 and password stay, the second step is removed and every session ends. There is no remote bypass. Details:
 [ADR 0016](../decisions/0016-two-factor-authentication.md).
 
@@ -72,8 +72,8 @@ remove them and add new ones. Passkeys are stored as public keys, so they surviv
 secret.
 
 **Lost a device?** Remove its passkey in Account from another device or after signing in with the password. If you
-cannot sign in, run `pnpm auth:reset --passkeys-only`, then add `--yes`, on the server (with Compose:
-`docker compose exec backend node scripts/auth-reset.mjs --passkeys-only --yes`). Details:
+cannot sign in, run `bun run auth:reset --passkeys-only`, then add `--yes`, on the server (with Compose:
+`docker compose exec backend bun scripts/auth-reset.mjs --passkeys-only --yes`). Details:
 [ADR 0017](../decisions/0017-passkey-sign-in.md).
 
 ## Rotating secrets

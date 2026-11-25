@@ -8,7 +8,7 @@ const [address, prefix, ...extra] = proxy.split('/');
 const family = isIP(address);
 if (
   !family ||
-  extra.length ||
+  extra.length > 0 ||
   (prefix !== undefined && (!/^\d+$/.test(prefix) || Number(prefix) > (family === 4 ? 32 : 128)))
 ) {
   console.error('HOMORA_TRUSTED_PROXY must be an IP address or CIDR.');
@@ -62,7 +62,7 @@ const env = {
   HOMORA_TRUST_PROXY: 'true',
 };
 const children = [
-  spawn('node', ['apps/backend/dist/server.js'], { env, stdio: 'inherit' }),
+  spawn(process.execPath, ['apps/backend/dist/server.js'], { env, stdio: 'inherit' }),
   spawn('nginx', ['-c', '/tmp/homora-nginx.conf', '-g', 'daemon off;'], { env, stdio: 'inherit' }),
 ];
 let stopping = false;

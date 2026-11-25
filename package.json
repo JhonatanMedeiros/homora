@@ -2,34 +2,34 @@
   "name": "homora",
   "private": true,
   "license": "MIT",
-  "packageManager": "pnpm@12.4.2",
+  "packageManager": "bun@1.4.5",
   "engines": {
     "node": "^24.0.0",
-    "pnpm": ">=12.4.2 <13"
+    "bun": ">=1.4.4 <2"
   },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "type-check": "node scripts/ci/typecheck.mjs",
-    "test": "vitest run && node --test scripts/test/*.test.mjs",
-    "db:generate": "pnpm --filter @homora/db db:generate",
+    "type-check": "bun scripts/ci/typecheck.mjs",
+    "test": "bun --bun vitest run && bun test scripts/test",
+    "db:generate": "bun run --filter @homora/db db:generate",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint --quiet --report-unused-disable-directives-severity error .",
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "check": "node scripts/check.mjs",
+    "check": "bun scripts/check.mjs",
     "prepare": "husky",
-    "backup": "node scripts/backup.mjs",
-    "auth:reset": "node scripts/auth-reset.mjs",
-    "css:reset": "node scripts/css-reset.mjs",
-    "integration:create": "node scripts/create-integration.mjs",
-    "integration:catalog": "node packages/integrations/scripts/integration-catalog.mjs --write",
+    "backup": "bun scripts/backup.mjs",
+    "auth:reset": "bun scripts/auth-reset.mjs",
+    "css:reset": "bun scripts/css-reset.mjs",
+    "integration:create": "bun scripts/create-integration.mjs",
+    "integration:catalog": "bun packages/integrations/scripts/integration-catalog.mjs --write",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "widget:create": "node scripts/create-widget.mjs"
+    "widget:create": "bun scripts/create-widget.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
@@ -58,5 +58,20 @@
     ],
     "*.{json,md,html,css,yml,yaml}": "oxfmt --no-error-on-unmatched-pattern"
   },
-  "type": "module"
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "trustedDependencies": [
+    "esbuild"
+  ],
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.25.12"
+    },
+    "vitepress": {
+      "vite": "6.4.6"
+    }
+  }
 }

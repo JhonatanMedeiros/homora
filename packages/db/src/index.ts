@@ -1,7 +1,7 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
-import { fileURLToPath } from 'node:url';
-import { readMigrationFiles } from 'drizzle-orm/migrator';
+import { createHash } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
+import { embeddedMigrations } from './migrations.generated.js';
 export {
   monitors,
   services,
@@ -54,6 +54,16 @@ export class MigrationHistoryError extends Error {
 const foreignKeyViolations = (sqlite: DatabaseSync) =>
   sqlite.prepare('PRAGMA foreign_key_check').all().length;
 
+/** Same shape and hash as Drizzle's readMigrationFiles, read from the embedded copy. */
+export function loadMigrations() {
+  return embeddedMigrations.map((migration) => ({
+    sql: migration.sql.split('--> statement-breakpoint'),
+    bps: migration.breakpoints,
+    folderMillis: migration.when,
+    hash: createHash('sha256').update(migration.sql).digest('hex'),
+  }));
+}
+
 /**
  * Apply generated Drizzle migrations atomically, adopting only the known legacy schema.
  *
@@ -63,9 +73,7 @@ const foreignKeyViolations = (sqlite: DatabaseSync) =>
  * those the database already had, roll everything back.
  */
 function migrate(sqlite: DatabaseSync): MigrationReport {
-  const migrations = readMigrationFiles({
-    migrationsFolder: fileURLToPath(new URL('../migrations', import.meta.url)),
-  });
+  const migrations = loadMigrations();
   sqlite.exec('PRAGMA foreign_keys = OFF');
   try {
     return migrateWithoutForeignKeys(sqlite, migrations);
@@ -76,7 +84,7 @@ function migrate(sqlite: DatabaseSync): MigrationReport {
 
 function migrateWithoutForeignKeys(
   sqlite: DatabaseSync,
-  migrations: ReturnType<typeof readMigrationFiles>,
+  migrations: ReturnType<typeof loadMigrations>,
 ): MigrationReport {
   sqlite.exec('BEGIN IMMEDIATE');
   try {

@@ -101,7 +101,7 @@ Before implementation, a future contributor or agent must:
 4. Define fixtures with provenance, contract and failure tests, translations, descriptor/catalog,
    compatibility, documentation and update behavior. Keep service-specific implementation within
    its package directory, using bundled brand icons. Follow scaffold and catalog generation guidance.
-5. Run relevant contract tests, `pnpm check` and `pnpm build`. Record exact service version,
+5. Run relevant contract tests, `bun run check` and `bun run build`. Record exact service version,
    permissions and outcomes for authorized live checks; otherwise explicitly mark them pending.
    Update this catalog, the integration reference, relevant widget rows and the tracking issue with
    links and evidence. Never mark implementation or live validation complete based on planning.

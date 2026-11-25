@@ -75,7 +75,7 @@ export const en = {
   'account.twoFactorDisabled': 'Two-step verification is off.',
   'account.twoFactorFailed': 'Could not complete this step.',
   'account.twoFactorLost':
-    'Lost the app and the recovery codes? On the server, run pnpm auth:reset --two-factor-only. Keep the session secret with your backups: without it the stored secret cannot be read.',
+    'Lost the app and the recovery codes? On the server, run bun run auth:reset --two-factor-only. Keep the session secret with your backups: without it the stored secret cannot be read.',
   'account.recoveryTitle': 'Recovery codes',
   'account.recoveryWarning':
     'Save these codes now in a safe place. Each works once and they are not shown again.',
@@ -180,7 +180,7 @@ export const en = {
   'account.passkeyWrongOrigin':
     'Passkeys only work on the address configured for them ({origins}). You are on {current}. Open Homora there, or set HOMORA_PASSKEY_RP_ID for a custom domain.',
   'account.passkeyLost':
-    'Lost a device? Remove its passkey here from another one, or sign in with your password. If you cannot sign in at all, run pnpm auth:reset --passkeys-only on the server.',
+    'Lost a device? Remove its passkey here from another one, or sign in with your password. If you cannot sign in at all, run bun run auth:reset --passkeys-only on the server.',
   'activity.event.passkey-add.success': 'Passkey added',
   'activity.event.passkey-add.failure': 'Adding a passkey failed',
   'activity.event.passkey-rename.success': 'Passkey renamed',
@@ -288,7 +288,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'account.twoFactorDisabled': 'A verificação em duas etapas está desativada.',
   'account.twoFactorFailed': 'Não foi possível concluir esta etapa.',
   'account.twoFactorLost':
-    'Perdeu o aplicativo e os códigos de recuperação? No servidor, execute pnpm auth:reset --two-factor-only. Guarde o segredo de sessão junto com os backups: sem ele o segredo armazenado não pode ser lido.',
+    'Perdeu o aplicativo e os códigos de recuperação? No servidor, execute bun run auth:reset --two-factor-only. Guarde o segredo de sessão junto com os backups: sem ele o segredo armazenado não pode ser lido.',
   'account.recoveryTitle': 'Códigos de recuperação',
   'account.recoveryWarning':
     'Guarde estes códigos agora em um lugar seguro. Cada um vale uma vez e eles não são exibidos de novo.',
@@ -395,7 +395,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'account.passkeyWrongOrigin':
     'Passkeys só funcionam no endereço configurado para elas ({origins}). Você está em {current}. Abra o Homora ali ou defina HOMORA_PASSKEY_RP_ID para um domínio próprio.',
   'account.passkeyLost':
-    'Perdeu um dispositivo? Remova a passkey dele aqui, por outro dispositivo, ou entre com a senha. Se não conseguir entrar de jeito nenhum, rode pnpm auth:reset --passkeys-only no servidor.',
+    'Perdeu um dispositivo? Remova a passkey dele aqui, por outro dispositivo, ou entre com a senha. Se não conseguir entrar de jeito nenhum, rode bun run auth:reset --passkeys-only no servidor.',
   'activity.event.passkey-add.success': 'Passkey adicionada',
   'activity.event.passkey-add.failure': 'Falha ao adicionar passkey',
   'activity.event.passkey-rename.success': 'Passkey renomeada',

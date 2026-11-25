@@ -59,7 +59,7 @@ export async function createWidget(root, id) {
     'messages.ts': `export const en = {\n  'pageWidgets.${symbol}': '${id}',\n  'pageWidgets.${symbol}Desc': 'Example widget',\n} as const;\nexport const ptBR: Record<keyof typeof en, string> = {\n  'pageWidgets.${symbol}': '${id}',\n  'pageWidgets.${symbol}Desc': 'Widget de exemplo',\n};\n`,
     'definition.test.ts': `import { describe, expect, it } from 'vitest';\nimport { ${symbol}Widget } from './definition.js';\n\ndescribe('${id} widget', () => {\n  it('accepts the default configuration and rejects invalid input', () => {\n    expect(${symbol}Widget.parseConfig(${symbol}Widget.defaultConfig)).toEqual({});\n    expect(${symbol}Widget.parseConfig(null)).toBeNull();\n    expect(${symbol}Widget.parseConfig({ extra: true })).toBeNull();\n  });\n});\n`,
     'ui/index.tsx': `import { ${symbol}Widget } from '../definition.js';\nimport { useWidgetHost } from '../../../ui/host.js';\nimport type { WidgetUI } from '../../../ui/types.js';\n\nexport const widgetUI: WidgetUI = {\n  name: 'pageWidgets.${symbol}',\n  description: 'pageWidgets.${symbol}Desc',\n  defaultConfig: ${symbol}Widget.defaultConfig,\n  parse: ${symbol}Widget.parseConfig,\n  View: () => {\n    const { t } = useWidgetHost();\n    return <p>{t('pageWidgets.${symbol}')}</p>;\n  },\n  Editor: () => null,\n  Gallery: () => <span aria-hidden="true">◇</span>,\n};\n`,
-    'README.md': `# ${id}\n\nReplace the example definition, UI and messages with the widget's behavior. Add tests for configuration, presentation and accessibility. Keep new sources, permissions and sizes in separate approved scope. Run pnpm check and pnpm build. See docs/create-widget.md.\n`,
+    'README.md': `# ${id}\n\nReplace the example definition, UI and messages with the widget's behavior. Add tests for configuration, presentation and accessibility. Keep new sources, permissions and sizes in separate approved scope. Run bun run check and bun run build. See docs/create-widget.md.\n`,
   };
   const target = join(root, modulePath);
   await mkdir(target); // fail rather than overwrite
@@ -83,7 +83,7 @@ export async function createWidget(root, id) {
 }
 if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
   try {
-    if (process.argv.length !== 3) throw new Error('Usage: pnpm widget:create <type>');
+    if (process.argv.length !== 3) throw new Error('Usage: bun run widget:create <type>');
     const target = await createWidget(resolve(import.meta.dirname, '..'), process.argv[2]);
     execFileSync(
       resolve(import.meta.dirname, '../node_modules/.bin/oxfmt'),

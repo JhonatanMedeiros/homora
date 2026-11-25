@@ -298,6 +298,13 @@ function stubSession(authenticated = true) {
         return { ok: true, json: async () => ({ configured: true, authenticated }) };
       if (url === '/api/services') return { ok: true, json: async () => [] };
       if (url === '/api/status') return { ok: false, status: 500, json: async () => ({}) };
+      // A valid payload: the page renders it after the test ends, and an invalid date throws.
+      if (url === '/api/public/status')
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ title: 'Homora', updatedAt: '2026-01-01T00:00:00Z', services: [] }),
+        };
       return { ok: true, json: async () => [] };
     }),
   );
