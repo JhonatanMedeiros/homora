@@ -27,6 +27,7 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'monitoring-measurement',
     'service-host-link',
     'service-host-unlink',
+    'service-host-external',
     'service-pin',
     'service-pin-order',
     'service-tags-update',

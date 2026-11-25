@@ -47,26 +47,96 @@ export function developmentMockData(connection: { type: string; name: string }) 
   };
 }
 
+const GB = 1024 ** 3;
+const load = (cpu: number, usedGb: number, totalGb: number) => ({
+  cpu,
+  memory: { used: Math.round(usedGb * GB), total: totalGb * GB },
+});
+
 /** Nodes and guests of the demo cluster, so the Home rail and Map have hosts to show in dev. */
 export function developmentMockInventory(connection: { type: string; name: string }) {
   if (connection.type !== 'proxmox' || connection.name !== 'Demo Proxmox (mock)') return null;
   return {
     data: {
       nodes: [
-        { name: 'pve1', status: 'online' },
-        { name: 'pve2', status: 'online' },
+        {
+          name: 'pve1',
+          status: 'online',
+          metrics: { ...load(0.12, 26, 64), disk: { used: 280 * GB, total: 1000 * GB } },
+        },
+        {
+          name: 'pve2',
+          status: 'online',
+          metrics: { ...load(0.31, 18, 32), disk: { used: 410 * GB, total: 500 * GB } },
+        },
         { name: 'pve3', status: 'offline' },
       ],
       guests: [
-        { vmid: 101, name: 'nextcloud', type: 'lxc', node: 'pve1', status: 'running' },
-        { vmid: 102, name: 'vaultwarden', type: 'lxc', node: 'pve1', status: 'running' },
-        { vmid: 103, name: 'adguard', type: 'lxc', node: 'pve1', status: 'running' },
-        { vmid: 110, name: 'media-vm', type: 'qemu', node: 'pve1', status: 'running' },
-        { vmid: 120, name: 'monitoring', type: 'lxc', node: 'pve1', status: 'running' },
-        { vmid: 201, name: 'radarr', type: 'lxc', node: 'pve2', status: 'running' },
-        { vmid: 202, name: 'sonarr', type: 'lxc', node: 'pve2', status: 'running' },
+        {
+          vmid: 101,
+          name: 'nextcloud',
+          type: 'lxc',
+          node: 'pve1',
+          status: 'running',
+          metrics: load(0.04, 1.2, 4),
+        },
+        {
+          vmid: 102,
+          name: 'vaultwarden',
+          type: 'lxc',
+          node: 'pve1',
+          status: 'running',
+          metrics: load(0.01, 0.2, 1),
+        },
+        {
+          vmid: 103,
+          name: 'adguard',
+          type: 'lxc',
+          node: 'pve1',
+          status: 'running',
+          metrics: load(0.02, 0.3, 1),
+        },
+        {
+          vmid: 110,
+          name: 'media-vm',
+          type: 'qemu',
+          node: 'pve1',
+          status: 'running',
+          metrics: load(0.22, 5.8, 8),
+        },
+        {
+          vmid: 120,
+          name: 'monitoring',
+          type: 'lxc',
+          node: 'pve1',
+          status: 'running',
+          metrics: load(0.07, 1.1, 2),
+        },
+        {
+          vmid: 201,
+          name: 'radarr',
+          type: 'lxc',
+          node: 'pve2',
+          status: 'running',
+          metrics: load(0.03, 0.4, 2),
+        },
+        {
+          vmid: 202,
+          name: 'sonarr',
+          type: 'lxc',
+          node: 'pve2',
+          status: 'running',
+          metrics: load(0.03, 0.5, 2),
+        },
         { vmid: 203, name: 'prowlarr', type: 'lxc', node: 'pve2', status: 'stopped' },
-        { vmid: 210, name: 'docker-host', type: 'qemu', node: 'pve2', status: 'running' },
+        {
+          vmid: 210,
+          name: 'docker-host',
+          type: 'qemu',
+          node: 'pve2',
+          status: 'running',
+          metrics: load(0.18, 7.4, 12),
+        },
         { vmid: 301, name: 'plex', type: 'qemu', node: 'pve3', status: 'stopped' },
         { vmid: 302, name: 'immich', type: 'lxc', node: 'pve3', status: 'stopped' },
         { vmid: 303, name: 'paperless', type: 'lxc', node: 'pve3', status: 'stopped' },

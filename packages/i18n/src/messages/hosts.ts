@@ -160,6 +160,7 @@ export const en = {
   'apiError.invalid-host': 'Choose an existing host inventory connection for the host.',
   'activity.event.service-host-link': 'Service linked to a host',
   'activity.event.service-host-unlink': 'Service unlinked from a host',
+  'activity.event.service-host-external': 'Service marked as not running on a guest',
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
@@ -328,4 +329,5 @@ export const ptBR: Record<keyof typeof en, string> = {
   'apiError.invalid-host': 'Escolha uma conexão de inventário de hosts existente para o host.',
   'activity.event.service-host-link': 'Serviço vinculado a um host',
   'activity.event.service-host-unlink': 'Serviço desvinculado de um host',
+  'activity.event.service-host-external': 'Serviço marcado como fora de um guest',
 };

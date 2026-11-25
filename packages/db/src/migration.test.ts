@@ -1045,6 +1045,7 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
         host_node: 'pve1',
         host_vmid: 100,
         host_type: 'lxc',
+        host_external: 0,
       },
       {
         id: 9,
@@ -1059,6 +1060,7 @@ it('splits cards from monitors keeping every row, id and relation, and lets a pr
         host_node: null,
         host_vmid: null,
         host_type: null,
+        host_external: 0,
       },
     ]);
     // The views rebuild the shape the application reads.
@@ -1298,6 +1300,42 @@ it('adds the page widget size without changing existing rows', () => {
       position: 3,
       size: 'normal',
     });
+    check.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('adds the external host flag keeping every service and its host link, off by default', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-host-external-'));
+  const path = join(dir, 'data.sqlite');
+  try {
+    const old = new DatabaseSync(path);
+    old.exec(
+      'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC NOT NULL)',
+    );
+    for (const migration of MIGRATIONS.slice(0, -1)) {
+      for (const statement of migration.sql) old.exec(statement);
+      old
+        .prepare('INSERT INTO __drizzle_migrations(hash,created_at) VALUES(?,?)')
+        .run(migration.hash, migration.folderMillis);
+    }
+    old.exec(
+      "INSERT INTO monitors(id,name) VALUES(7,'Linked'),(8,'Loose'); INSERT INTO services(id,url,category,description,host_node,host_vmid,host_type) VALUES(7,'https://a.test','Home','','pve1',101,'lxc'),(8,'https://b.test','Home','',NULL,NULL,NULL)",
+    );
+    old.close();
+    createDatabase(path).close();
+    const check = new DatabaseSync(path);
+    expect(
+      check
+        .prepare(
+          'SELECT id,host_node AS node,host_vmid AS vmid,host_external AS external FROM services ORDER BY id',
+        )
+        .all(),
+    ).toEqual([
+      { id: 7, node: 'pve1', vmid: 101, external: 0 },
+      { id: 8, node: null, vmid: null, external: 0 },
+    ]);
     check.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });

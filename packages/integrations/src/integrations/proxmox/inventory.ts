@@ -1,6 +1,8 @@
 import { isIP } from 'node:net';
 import { isNodeName, isVmid, type GuestType } from './contracts.js';
 import type {
+  HostMetrics,
+  HostUsage,
   HostNodeState,
   HostNode,
   HostGuest,
@@ -15,6 +17,30 @@ export type ProxmoxInventory = HostInventoryData;
 
 const text = (value: unknown, max: number) =>
   typeof value === 'string' && value.length > 0 && value.length <= max ? value : null;
+
+const share = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.min(1, value)
+    : undefined;
+
+function usage(used: unknown, total: unknown): HostUsage | undefined {
+  if (typeof used !== 'number' || typeof total !== 'number') return undefined;
+  if (!Number.isFinite(used) || !Number.isFinite(total) || used < 0 || total <= 0) return undefined;
+  return { used: Math.min(used, total), total };
+}
+
+/** Live load of one resource, only for a node that is online or a guest that is running. */
+function metricsOf(resource: Record<string, unknown>, live: boolean, disk: boolean) {
+  if (!live) return;
+  const metrics: HostMetrics = {};
+  const cpu = share(resource.cpu);
+  if (cpu !== undefined) metrics.cpu = cpu;
+  const memory = usage(resource.mem, resource.maxmem);
+  if (memory) metrics.memory = memory;
+  const storage = disk ? usage(resource.disk, resource.maxdisk) : undefined;
+  if (storage) metrics.disk = storage;
+  return Object.keys(metrics).length > 0 ? metrics : undefined;
+}
 
 /**
  * Lists nodes and guests from the cluster resources payload. Unlike `summarizeProxmox`, this
@@ -32,15 +58,14 @@ export function inventoryProxmox(resources: unknown): ProxmoxInventory {
       const name = text(resource.node, 63);
       if (!name || !isNodeName(name) || seen.has(`n:${name}`)) continue;
       seen.add(`n:${name}`);
-      inventory.nodes.push({
-        name,
-        status:
-          resource.status === 'online'
-            ? 'online'
-            : resource.status === 'offline'
-              ? 'offline'
-              : 'unknown',
-      });
+      const status: HostNodeState =
+        resource.status === 'online'
+          ? 'online'
+          : resource.status === 'offline'
+            ? 'offline'
+            : 'unknown';
+      const metrics = metricsOf(resource, status === 'online', true);
+      inventory.nodes.push({ name, status, ...(metrics && { metrics }) });
     } else if (resource.type === 'qemu' || resource.type === 'lxc') {
       if (resource.template === 1) continue;
       const node = text(resource.node, 63);
@@ -49,12 +74,15 @@ export function inventoryProxmox(resources: unknown): ProxmoxInventory {
       const key = `g:${resource.type}:${node}:${resource.vmid}`;
       if (seen.has(key)) continue;
       seen.add(key);
+      const status = text(resource.status, 32) ?? 'unknown';
+      const metrics = metricsOf(resource, status === 'running', false);
       inventory.guests.push({
         vmid: resource.vmid,
         name,
         type: resource.type,
         node,
-        status: text(resource.status, 32) ?? 'unknown',
+        status,
+        ...(metrics && { metrics }),
       });
     }
   }

@@ -84,6 +84,8 @@ export type Service = ServiceInput & {
   id: number;
   isPublic?: boolean;
   host?: HostLink | null;
+  /** The service does not run on a guest (cloud, VPN...). Never true together with `host`. */
+  hostExternal?: boolean;
   /** Favorite: shown in the Pinned row of the Home. Not part of the card's configuration version. */
   pinned?: boolean;
   pinnedPosition?: number | null;

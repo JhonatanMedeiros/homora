@@ -40,6 +40,7 @@ export function createServiceCardConfiguration({
   selectService,
   selectHosts,
   writeHost,
+  writeExternal,
   nextServicePosition,
   ensureGroup,
   pageForNewService,
@@ -52,6 +53,7 @@ export function createServiceCardConfiguration({
   selectService: (id: number) => ServiceRow | undefined;
   selectHosts: () => Map<number, HostLink>;
   writeHost: (id: number, host: HostLink | null) => void;
+  writeExternal: (id: number, external: boolean) => void;
   nextServicePosition: (category: string) => number;
   ensureGroup: (name: string, columns?: number | null, pageId?: number) => void;
   pageForNewService: (category: string, page?: string) => number | undefined;
@@ -216,10 +218,15 @@ export function createServiceCardConfiguration({
     });
   }
 
-  function setServiceHost(id: number, host: HostLink | null) {
+  /**
+   * Links, unlinks or marks the card as not running on a guest. A link always clears "external";
+   * `external` only applies when there is no link, and leaving it out keeps the current mark.
+   */
+  function setServiceHost(id: number, host: HostLink | null, external?: boolean) {
     return transaction(() => {
       if (!selectService(id)) return false;
       writeHost(id, host);
+      if (!host && external !== undefined) writeExternal(id, external);
       bumpVersion();
       return true;
     });
@@ -246,7 +253,7 @@ export function createServiceCardConfiguration({
         return false;
       const update = sqlite.prepare('UPDATE services SET position=? WHERE id=?');
       ids.forEach((id, position) => update.run(position, id));
-      if (ids.length) bumpVersion();
+      if (ids.length > 0) bumpVersion();
       return true;
     });
   }

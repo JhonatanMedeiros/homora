@@ -68,7 +68,14 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     }
     return hosts;
   };
-  /** Stores ids only, after checking the connection. Pass null to unlink. */
+  /** Ids of the cards marked as not running on a guest. */
+  const selectExternal = () =>
+    new Set(
+      (
+        sqlite.prepare('SELECT id FROM services WHERE host_external=1').all() as { id: number }[]
+      ).map((row) => row.id),
+    );
+  /** Stores ids only, after checking the connection. Pass null to unlink. A link clears "external". */
   const writeHost = (id: number, host: HostLink | null) => {
     if (host) {
       const connection = sqlite
@@ -87,6 +94,10 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
         host?.type ?? null,
         id,
       );
+    if (host) sqlite.prepare('UPDATE services SET host_external=0 WHERE id=?').run(id);
+  };
+  const writeExternal = (id: number, external: boolean) => {
+    sqlite.prepare('UPDATE services SET host_external=? WHERE id=?').run(external ? 1 : 0, id);
   };
   const nextServicePosition = (category: string) => {
     const row = sqlite
@@ -127,6 +138,7 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     selectService,
     selectHosts,
     writeHost,
+    writeExternal,
     nextServicePosition,
     ensureGroup,
     pageForNewService,
@@ -156,12 +168,14 @@ export function createServiceConfiguration(sqlite: DatabaseSync) {
     },
     listServices() {
       const hosts = selectHosts();
+      const external = selectExternal();
       const links = selectLinks();
       return selectServices().map((row) => ({
         ...row,
         allowPrivate: Boolean(row.allowPrivate),
         checkInsecure: Boolean(row.checkInsecure),
         host: hosts.get(row.id) ?? null,
+        hostExternal: external.has(row.id) && !hosts.has(row.id),
         links: links.get(row.id) ?? [],
       }));
     },

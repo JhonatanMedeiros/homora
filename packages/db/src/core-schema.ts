@@ -85,6 +85,9 @@ export const services = sqliteTable('services', {
   hostNode: text('host_node'),
   hostVmid: integer('host_vmid'),
   hostType: text('host_type'),
+  // The service does not run on a guest at all (a cloud service, a VPN, a speed test). It is
+  // never set together with a host link, and only the web UI writes it.
+  hostExternal: integer('host_external', { mode: 'boolean' }).notNull().default(false),
 });
 
 /** Stable local identities for service references that must survive renames but not deletion. */
