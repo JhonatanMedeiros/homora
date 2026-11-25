@@ -2228,3 +2228,7 @@ not measure end-to-end latency under contention. Engineering standards are an En
   the panel and the minimap; checked by hand in the embedded browser and with `agent-browser` against the demo
   seed (light and dark, 1440 and 1024 px wide). **Not validated:** a real Proxmox cluster (metrics, node and guest
   states and suggestions come from the demo's fixed data), touch input and screen readers on the map.
+
+## Command palette external destinations
+
+- Web search names the selected engine. An independently enabled, browser-local AI shortcut offers ChatGPT, Claude, v0 and Scira, with the preferred destination first. The free text is sent in a URL only after selecting an action; no Homora context is added. Live provider login, prefill and submission behavior remains to be verified per service.

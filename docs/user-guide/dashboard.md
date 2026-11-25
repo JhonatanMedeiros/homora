@@ -179,7 +179,13 @@ Nothing is sent until you choose it, and then only the text after the prefix goe
 | `!b`    | Brave      | `!yt`  | YouTube   |
 | `!bing` | Bing       |        |           |
 
-For example, `!w jellyfin`.
+For example, `!w jellyfin`. The selected engine is named in the action. Select the action to open a new tab; typing alone sends nothing.
+
+### Ask an AI (optional)
+
+In **Settings → Top bar and shortcuts**, enable **Ask an AI** and choose a preferred service. When you type in the palette, the preferred service appears first, followed by the other available destinations: ChatGPT, Claude, v0 and Scira. Selecting one opens its website in a new tab with the free text in the URL; service and group filters are removed. No Homora data is added automatically. The preference is saved only in this browser.
+
+The external service receives the text, and URLs may appear in browser history or other logs. Avoid entering secrets. Depending on the service and login state, you may need to sign in or submit the prefilled question yourself. This shortcut does not connect the AI to Homora or its MCP server.
 
 ## Keyboard shortcuts
 

@@ -13,6 +13,7 @@ import {
 import { Kbd } from '@homora/ui/kbd';
 import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { StatusLight } from '@/components/status-light';
+import { AI_DESTINATIONS, useAiSearchPreferences } from '@/hooks/use-ai-search-preferences';
 import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
 import { buildSearchUrl, parseBang } from '@/lib/web-search';
 import { t } from '@/i18n';
@@ -95,6 +96,7 @@ export function CommandPalette({
   const [highlighted, setHighlighted] = useState('');
   const { recent, remember } = useRecentServices();
   const webSearch = useWebSearchPreferences();
+  const ai = useAiSearchPreferences();
 
   const parsed = useMemo(() => parseQuery(search), [search]);
   const visible = useMemo(
@@ -301,7 +303,26 @@ export function CommandPalette({
             showDescriptions,
             searchUrl,
             searchText: bang ? bang.text : parsed.text,
-            searchEngine: bang?.label,
+            searchEngine:
+              bang?.label ??
+              (webSearch.engine === 'custom'
+                ? t('settings.ui.webSearchCustom')
+                : webSearch.engine === 'duckduckgo'
+                  ? 'DuckDuckGo'
+                  : webSearch.engine === 'google'
+                    ? 'Google'
+                    : webSearch.engine === 'brave'
+                      ? 'Brave'
+                      : 'Bing'),
+            aiDestinations:
+              ai.enabled && parsed.text
+                ? [...AI_DESTINATIONS]
+                    .sort(
+                      (a, b) => Number(b.id === ai.destination) - Number(a.id === ai.destination),
+                    )
+                    .map((item) => ({ ...item, url: buildSearchUrl(item.template, parsed.text) }))
+                : [],
+            aiText: parsed.text,
           }}
           actions={{
             run,

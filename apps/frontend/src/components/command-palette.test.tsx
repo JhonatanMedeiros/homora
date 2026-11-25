@@ -153,7 +153,7 @@ it('offers web search only when enabled and free text is typed', () => {
   type('status:down group:Infra');
   expect(screen.queryByText(/Buscar na web/)).toBeNull();
   type('quantum cats');
-  expect(screen.getByText('Buscar na web por “quantum cats”')).toBeTruthy();
+  expect(screen.getByText('Buscar no DuckDuckGo por “quantum cats”')).toBeTruthy();
 });
 
 it('opens the engine in a new tab with noopener,noreferrer and sends only the typed text', () => {
@@ -161,7 +161,7 @@ it('opens the engine in a new tab with noopener,noreferrer and sends only the ty
   const open = vi.spyOn(window, 'open').mockReturnValue(null);
   const props = setup();
   type('status:down Proxmox lxc');
-  fireEvent.click(screen.getByText('Buscar na web por “Proxmox lxc”'));
+  fireEvent.click(screen.getByText('Buscar no DuckDuckGo por “Proxmox lxc”'));
   expect(open).toHaveBeenCalledExactlyOnceWith(
     'https://duckduckgo.com/?q=Proxmox%20lxc',
     '_blank',
@@ -198,7 +198,7 @@ it('uses a valid custom URL and refuses an invalid one at use time', () => {
   const open = vi.spyOn(window, 'open').mockReturnValue(null);
   setup();
   type('hello');
-  fireEvent.click(screen.getByText(/Buscar na web/));
+  fireEvent.click(screen.getByText('Buscar no URL personalizada por “hello”'));
   expect(open.mock.calls[0][0]).toBe('https://search.example/?q=hello');
 });
 
@@ -290,7 +290,37 @@ it('keeps the normal web search for an unknown bang or a bang without text', () 
   webSearchOn();
   setup();
   type('!zz hello');
-  expect(screen.getByText('Buscar na web por “!zz hello”')).toBeTruthy();
+  expect(screen.getByText('Buscar no DuckDuckGo por “!zz hello”')).toBeTruthy();
   type('!g');
   expect(screen.queryByText(/Buscar no Google/)).toBeNull();
+});
+
+it('offers AI destinations only when enabled and opens only the selected question', () => {
+  setup();
+  type('status:down backup & restore');
+  expect(screen.queryByText(/Perguntar ao ChatGPT/)).toBeNull();
+  cleanup();
+  localStorage.setItem('homora-ai-search', 'on');
+  localStorage.setItem('homora-ai-search-destination', 'claude');
+  const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  setup();
+  type('status:down backup & restore');
+  expect(open).not.toHaveBeenCalled();
+  const rows = screen.getAllByRole('option').map((item) => item.textContent ?? '');
+  expect(rows.findIndex((row) => row.includes('Perguntar ao Claude'))).toBeLessThan(
+    rows.findIndex((row) => row.includes('Perguntar ao ChatGPT')),
+  );
+  fireEvent.click(screen.getByText('Perguntar ao Claude: “backup & restore”'));
+  expect(open).toHaveBeenCalledExactlyOnceWith(
+    'https://claude.ai/new?q=backup%20%26%20restore',
+    '_blank',
+    'noopener,noreferrer',
+  );
+});
+
+it('does not offer AI for a filter without free text', () => {
+  localStorage.setItem('homora-ai-search', 'on');
+  setup();
+  type('status:down');
+  expect(screen.queryByText(/Perguntar ao ChatGPT/)).toBeNull();
 });

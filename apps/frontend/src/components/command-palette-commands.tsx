@@ -7,6 +7,8 @@ import {
   Plus,
   Rows3,
   Search,
+  Sparkles,
+  ExternalLink,
   Settings2,
 } from 'lucide-react';
 import { CommandGroup, CommandItem, CommandSeparator, CommandShortcut } from '@homora/ui/command';
@@ -27,6 +29,8 @@ type Props = {
     searchText: string;
     /** Set when a bang picked the engine (`!g text`). */
     searchEngine?: string;
+    aiDestinations: { id: string; label: string; url: string | null }[];
+    aiText: string;
   };
   actions: {
     run: (action: () => void) => void;
@@ -61,6 +65,8 @@ export function CommandPaletteCommands({ state, actions }: Props) {
     searchUrl,
     searchText,
     searchEngine,
+    aiDestinations,
+    aiText,
   } = state;
   const {
     run,
@@ -144,7 +150,7 @@ export function CommandPaletteCommands({ state, actions }: Props) {
         </>
       )}
       {searchUrl && (
-        <CommandGroup>
+        <CommandGroup forceMount heading={t('settings.ui.webSearch')}>
           {/* Always listed: it is an action to take with the query, not a result match. */}
           <CommandItem
             forceMount
@@ -157,7 +163,31 @@ export function CommandPaletteCommands({ state, actions }: Props) {
                 ? t('palette.webSearchWith', { engine: searchEngine, text: searchText })
                 : t('palette.webSearch', { text: searchText })}
             </span>
+            <ExternalLink aria-hidden="true" />
           </CommandItem>
+        </CommandGroup>
+      )}
+      {aiDestinations.length > 0 && (
+        <CommandGroup forceMount heading={t('palette.askAi')}>
+          {aiDestinations.map(
+            (item) =>
+              item.url && (
+                <CommandItem
+                  key={item.id}
+                  forceMount
+                  value={`ai-${item.id}`}
+                  onSelect={() =>
+                    run(() => window.open(item.url!, '_blank', 'noopener,noreferrer'))
+                  }
+                >
+                  <Sparkles />
+                  <span className="min-w-0 flex-1 truncate">
+                    {t('palette.askAiWith', { engine: item.label, text: aiText })}
+                  </span>
+                  <ExternalLink aria-hidden="true" />
+                </CommandItem>
+              ),
+          )}
         </CommandGroup>
       )}
     </>
