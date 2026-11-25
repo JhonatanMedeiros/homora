@@ -552,12 +552,19 @@ export function ServicesPage({
             onChangeHost={(service) => navigate(`/manage/services/${service.id}/edit`)}
             dependencies={deps.dependencies}
             notes={dependencyNotes}
+            downSince={(service) => overview?.open[service.id]?.startedAt}
             edit={{
               // The same endpoint the form and the suggestions use, so a link made on the map is
               // identical to one made anywhere else.
               onLinkHost: async (service, next) => {
                 const linked = await data.linkHost(service.id, next);
                 if (!linked) return false;
+                await refresh();
+                return true;
+              },
+              onMarkExternal: async (service, external) => {
+                const marked = await data.linkHost(service.id, null, external);
+                if (!marked) return false;
                 await refresh();
                 return true;
               },
@@ -580,6 +587,7 @@ export function ServicesPage({
             onEdit={(service) => navigate(`/manage/services/${service.id}/edit`)}
             notes={dependencyNotes}
             pageName={pageName}
+            problemsFirst={problemsFirst}
             nodeFilter={nodeFilter}
             onClearFilter={() => setNodeFilter(null)}
           />

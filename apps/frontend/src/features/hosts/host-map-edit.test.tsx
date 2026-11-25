@@ -67,6 +67,7 @@ const inventories: HostInventories = {
 function setup(over: { readOnly?: boolean; fail?: string | null } = {}) {
   const edit = {
     onLinkHost: vi.fn(async () => true),
+    onMarkExternal: vi.fn(async () => true),
     onAddDependency: vi.fn(async () => over.fail ?? null),
     onRemoveDependency: vi.fn(async () => null),
     connectionsLoaded: true,
@@ -171,7 +172,9 @@ it('shows Depends on and Used by, labelled manual, and removes a dependency', as
   fireEvent.click(tile('jellyfin'));
   const panel = screen.getByRole('complementary', { name: 'Details' });
   expect(within(panel).getByText('Depends on (manual dependency)')).toBeTruthy();
-  expect(within(panel).getByRole('button', { name: 'pihole' })).toBeTruthy();
+  // Once under "Reached through" (pihole, then jellyfin) and once under "Depends on".
+  expect(within(panel).getByText('Reached through')).toBeTruthy();
+  expect(within(panel).getAllByRole('button', { name: 'pihole' })).toHaveLength(2);
   fireEvent.click(within(panel).getByRole('button', { name: 'Remove dependency on pihole' }));
   await waitFor(() => expect(edit.onRemoveDependency).toHaveBeenCalledWith(2, 1));
   cleanup();
@@ -179,6 +182,7 @@ it('shows Depends on and Used by, labelled manual, and removes a dependency', as
   fireEvent.click(tile('pihole'));
   const used = screen.getByRole('complementary', { name: 'Details' });
   expect(within(used).getByRole('button', { name: 'jellyfin' })).toBeTruthy();
+  expect(within(used).queryByText('Reached through')).toBeNull();
 });
 
 it('is read-only on a phone and without edit access, keeping the form-based alternative', () => {
