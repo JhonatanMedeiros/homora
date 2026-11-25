@@ -2203,3 +2203,28 @@ not measure end-to-end latency under contention. Engineering standards are an En
   `pnpm build`, `pnpm docs:build`, and `pnpm integration:catalog`. Tests use synthetic responses
   only. **Not validated:** a real Home Assistant instance or a browser walkthrough; live-service
   validation remains pending, and no real infrastructure was contacted.
+
+## Service map redesign (#343)
+
+- The map answers, in order, whether everything is fine, where the problem is, what depends on it and how to place
+  services without a host. Toolbar with search (`/`), **All | Problems | Not linked**, **Host | Group**, **Connections**
+  (remembered in the browser) and **Collapse healthy** (the Home preference); host and guest headers with state in words,
+  a health summary and CPU, RAM and disk meters; guests laid out in columns by height and collapsible; tiles with the
+  brand icon, status light and latency (the healthy word is kept for screen readers); a minimap, auto-fit on open and a
+  docked details panel (a sheet on narrow windows) with **Needs attention**, **Reached through** and read-only actions.
+- Data: the Proxmox inventory gets optional `metrics` from the existing `/cluster/resources` call (no new request),
+  validated and omitted for an offline node or a stopped guest; migration `0051` adds `services.host_external` and
+  `PUT /api/services/:id/host` accepts `external`. **Find matches** stays on request; **Link N suggested** links only
+  strong, unambiguous matches and offers undo.
+- Differences from the mockup, by decision: no restart or logs actions (Homora is read-only), no Tidy (the layout is
+  always automatic), no edge types or match percentages (no data behind them), no node as a link target and no guest IP
+  in the header (it needs each guest's configuration on every open). Healthy guests are muted with `muted` tokens, not
+  opacity, to keep text contrast. **Problems first** follows the Home preference (and is forced while the Problems filter
+  is on), and the Host view applies the same order so focus order keeps matching.
+- The external mark is not exported or imported, like the host link. The development server answers the suggestions of
+  its demo cluster with fixed examples, because the demo has no guest configuration to read.
+- Validation: unit tests for health, layout, filters, search, the dependency chain, the inventory metrics and migration
+  `0051`; Testing Library tests for the toolbar, filters, search, connections, bulk link with undo, external,
+  the panel and the minimap; checked by hand in the embedded browser and with `agent-browser` against the demo
+  seed (light and dark, 1440 and 1024 px wide). **Not validated:** a real Proxmox cluster (metrics, node and guest
+  states and suggestions come from the demo's fixed data), touch input and screen readers on the map.

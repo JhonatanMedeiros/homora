@@ -54,6 +54,13 @@ dependencies). The map manages only Homora's own data and never writes to Proxmo
 - **Impact:** a service that depends, directly or through others, on one that is impaired (host offline, guest stopped or service down) shows "May be affected: depends on X (manual dependency)", and the offline banner adds "N more may be affected through dependencies you recorded". It is always worded as manual and as "may", never as a measured fact, and it never produces "offline".
 - **MCP:** read access through `list_service_dependencies` under the existing `services:read` scope (ids and card names only, no inventory data). There is no agent write: dependencies are a human decision in this release.
 - **Not carried by export/import,** like the host link.
+- **External services (issue #343).** Migration `0051` adds `services.host_external` (`NOT NULL DEFAULT 0`) for a card
+  that runs on no guest (a cloud service, a VPN). `PUT /api/services/:id/host` accepts `external` next to `host`:
+  `external: true` requires `host: null`, and linking a host clears it. A card marked external is left out of the host
+  suggestions and listed under **External** in the Host view and the map. It is not carried by export/import, like the
+  host link, and no agent or MCP tool reads or writes it. The inventory also carries optional `metrics` (CPU, memory and
+  disk) read from the same `/cluster/resources` call, validated, and left out for an offline node or a stopped guest;
+  they reach only the signed-in map, never MCP or the public status page.
 
 ### Open decisions (defaults taken)
 
