@@ -6,6 +6,11 @@ import { Input } from '@homora/ui/input';
 import { Switch } from '@homora/ui/switch';
 import { useClockPreferences } from '@/hooks/use-clock-preferences';
 import { useShortcutsPreference } from '@/hooks/use-shortcuts-preference';
+import {
+  AI_DESTINATIONS,
+  isAiDestination,
+  useAiSearchPreferences,
+} from '@/hooks/use-ai-search-preferences';
 import { useWebSearchPreferences } from '@/hooks/use-web-search-preferences';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { useTelemetryConnections } from '@/hooks/use-telemetry-connections';
@@ -32,6 +37,7 @@ export function TopBarSettings() {
   const clock = useClockPreferences();
   const [shortcuts, setShortcuts] = useShortcutsPreference();
   const search = useWebSearchPreferences();
+  const ai = useAiSearchPreferences();
   const [customDraft, setCustomDraft] = useState(search.customUrl);
   const [customProblem, setCustomProblem] = useState<TemplateProblem | null>(null);
   const connections = useTelemetryConnections();
@@ -126,6 +132,32 @@ export function TopBarSettings() {
               </SettingRow>
             )}
           </>
+        )}
+        <SettingRow
+          htmlFor="ui-ai-search"
+          label={t('settings.ui.aiSearch')}
+          description={t('settings.ui.aiSearchHint')}
+        >
+          <Switch id="ui-ai-search" checked={ai.enabled} onCheckedChange={ai.setEnabled} />
+        </SettingRow>
+        {ai.enabled && (
+          <SettingRow htmlFor="ui-ai-destination" label={t('settings.ui.aiDestination')}>
+            <FormSelect
+              id="ui-ai-destination"
+              aria-label={t('settings.ui.aiDestination')}
+              className="sm:w-56"
+              value={ai.destination}
+              onChange={(event) => {
+                if (isAiDestination(event.target.value)) ai.setDestination(event.target.value);
+              }}
+            >
+              {AI_DESTINATIONS.map((item) => (
+                <FormSelectOption key={item.id} value={item.id}>
+                  {item.label}
+                </FormSelectOption>
+              ))}
+            </FormSelect>
+          </SettingRow>
         )}
       </SettingsGroup>
 

@@ -2203,3 +2203,7 @@ not measure end-to-end latency under contention. Engineering standards are an En
   `pnpm build`, `pnpm docs:build`, and `pnpm integration:catalog`. Tests use synthetic responses
   only. **Not validated:** a real Home Assistant instance or a browser walkthrough; live-service
   validation remains pending, and no real infrastructure was contacted.
+
+## Command palette external destinations
+
+- Web search names the selected engine. An independently enabled, browser-local AI shortcut offers ChatGPT, Claude, v0 and Scira, with the preferred destination first. The free text is sent in a URL only after selecting an action; no Homora context is added. Live provider login, prefill and submission behavior remains to be verified per service.

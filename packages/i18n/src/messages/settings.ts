@@ -128,6 +128,12 @@ export const en = {
   'settings.ui.shortcutsHint':
     'Single-key shortcuts such as / to search, g then a letter to go to a section, n for a new service and ? for the full list. Ctrl/Cmd+K and Ctrl/Cmd+B always work.',
   'settings.ui.searchSection': 'Command palette',
+  'settings.ui.aiSearch': 'Ask an AI',
+  'settings.ui.aiSearchHint':
+    'Open your question in an external AI service. Your text is sent in the URL only when you select a service; no Homora data is added.',
+  'settings.ui.aiDestination': 'Preferred AI service',
+  'palette.askAi': 'Ask an AI',
+  'palette.askAiWith': 'Ask {engine}: “{text}”',
   'settings.ui.webSearch': 'Web search',
   'settings.ui.webSearchHint':
     'Adds “Search the web” to the palette. Nothing is sent until you choose it, and then only the text you typed goes to the search engine, a third party. Homora’s address is not sent.',
@@ -293,6 +299,12 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.ui.shortcutsHint':
     'Atalhos de uma tecla, como / para buscar, g e depois uma letra para ir a uma seção, n para novo serviço e ? para a lista completa. Ctrl/Cmd+K e Ctrl/Cmd+B sempre funcionam.',
   'settings.ui.searchSection': 'Paleta de comandos',
+  'settings.ui.aiSearch': 'Perguntar a uma IA',
+  'settings.ui.aiSearchHint':
+    'Abre sua pergunta em um serviço de IA externo. O texto é enviado na URL somente quando você escolhe um serviço; nenhum dado do Homora é acrescentado.',
+  'settings.ui.aiDestination': 'Serviço de IA preferido',
+  'palette.askAi': 'Perguntar a uma IA',
+  'palette.askAiWith': 'Perguntar ao {engine}: “{text}”',
   'settings.ui.webSearch': 'Busca na web',
   'settings.ui.webSearchHint':
     'Adiciona “Buscar na web” à paleta. Nada é enviado até você escolher a opção, e então só o texto digitado vai para o buscador, um terceiro. O endereço do Homora não é enviado.',

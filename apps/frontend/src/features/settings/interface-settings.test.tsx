@@ -90,3 +90,13 @@ it('validates the custom search URL before saving it', () => {
   expect(localStorage.getItem('homora-web-search-url')).toBe('https://example.com/?q=%s');
   expect(screen.queryByText('Only https: URLs are allowed.')).toBeNull();
 });
+
+it('enables AI shortcuts separately and stores the preferred service', async () => {
+  render(<TopBarSettings />);
+  const toggle = screen.getByRole('switch', { name: 'Ask an AI' });
+  expect(toggle.getAttribute('aria-checked')).toBe('false');
+  fireEvent.click(toggle);
+  expect(localStorage.getItem('homora-ai-search')).toBe('on');
+  await chooseSelectOption('Preferred AI service', 'Claude');
+  expect(localStorage.getItem('homora-ai-search-destination')).toBe('claude');
+});
