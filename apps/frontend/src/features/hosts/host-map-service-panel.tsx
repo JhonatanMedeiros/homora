@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, TriangleAlert, X } from 'lucide-react';
+import { Link, useInRouterContext } from 'react-router';
 import type { Service } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import { ServiceIcon } from '@/components/service-icon';
@@ -20,6 +21,19 @@ export type HostMapServicePanelProps = {
   runsOn: string;
   page?: string;
   impact: string;
+  /** When the open incident began; the alert block says how long the service has been down. */
+  downSince?: number | null;
+  /** Dependencies from the outermost one down to this service; empty when none are recorded. */
+  chain: { id: number; name: string }[];
+  /** Best guess for a service with no host, with the evidence behind it. */
+  suggestion?: {
+    guest: string;
+    strong: boolean;
+    ambiguous: boolean;
+    evidence: string[];
+  };
+  /** True when the service is marked as not running on a guest. */
+  external: boolean;
   dependsOnList: { id: number; name: string }[];
   usedByList: { id: number; name: string }[];
   canEdit: boolean;
@@ -28,6 +42,9 @@ export type HostMapServicePanelProps = {
   onRemoveDependency: (id: number) => void;
   onOpenCard: () => void;
   onChangeHost: () => void;
+  onLinkSuggestion: () => void;
+  onDismissSuggestion: () => void;
+  onMarkExternal: (external: boolean) => void;
   hostEditor: React.ReactNode;
 } & Pick<
   ServiceCardProps,
@@ -41,6 +58,10 @@ export function HostMapServicePanel({
   runsOn,
   page,
   impact,
+  downSince,
+  chain,
+  suggestion,
+  external,
   dependsOnList,
   usedByList,
   canEdit,
@@ -49,6 +70,9 @@ export function HostMapServicePanel({
   onRemoveDependency,
   onOpenCard,
   onChangeHost,
+  onLinkSuggestion,
+  onDismissSuggestion,
+  onMarkExternal,
   hostEditor,
   widgets,
   uptime,
@@ -56,28 +80,15 @@ export function HostMapServicePanel({
   tags,
   uptimeRange,
   onUptimeRangeChange,
-}: {
-  service: Service;
-  status?: ServiceStatus;
-  blocked: boolean;
-  runsOn: string;
-  page?: string;
-  impact: string;
-  dependsOnList: { id: number; name: string }[];
-  usedByList: { id: number; name: string }[];
-  canEdit: boolean;
-  onSelect: (id: number) => void;
-  onAddDependency: () => void;
-  onRemoveDependency: (id: number) => void;
-  onOpenCard: () => void;
-  onChangeHost: () => void;
-  hostEditor: React.ReactNode;
-} & Pick<
-  ServiceCardProps,
-  'widgets' | 'uptime' | 'monitor' | 'tags' | 'uptimeRange' | 'onUptimeRangeChange'
->) {
-  const view = describeStatus(status, blocked, { monitor, checkType: service.checkType });
+}: HostMapServicePanelProps) {
+  const view = describeStatus(status, blocked, {
+    monitor,
+    checkType: service.checkType,
+    downSince,
+  });
+  const troubled = view.state === 'unavailable' || view.state === 'degraded';
   const [editingHost, setEditingHost] = useState(false);
+  const inRouter = useInRouterContext();
   const label = 'text-xs font-medium text-muted-foreground';
   return (
     <div className="flex flex-col gap-4">
@@ -112,7 +123,20 @@ export function HostMapServicePanel({
       {service.description && (
         <p className="text-sm text-muted-foreground">{service.description}</p>
       )}
-      {(view.note || view.meta || view.tag) && (
+      {troubled && !view.blocked && (
+        <div
+          role="alert"
+          className="flex flex-col gap-1 rounded-lg border border-destructive/60 bg-destructive/10 p-3 text-sm"
+        >
+          <span className="flex items-center gap-1.5 font-semibold text-destructive">
+            <TriangleAlert aria-hidden="true" className="size-4" />
+            {t('map.panel.alert')}
+          </span>
+          {view.note && <p>{view.note}</p>}
+          {impact && <p className="text-muted-foreground">{impact}</p>}
+        </div>
+      )}
+      {(view.note || view.meta || view.tag) && !troubled && (
         <div className="flex flex-col gap-1 text-sm">
           <StatusMeta tag={view.tag} meta={view.meta} title={view.title} />
           {view.note && <p className="text-muted-foreground">{view.note}</p>}
@@ -139,6 +163,65 @@ export function HostMapServicePanel({
         <div className="flex flex-col gap-1">
           <span className={label}>{t('pages.title')}</span>
           <p className="text-sm break-words">{page}</p>
+        </div>
+      )}
+      {suggestion && (
+        <div className="flex flex-col gap-2 rounded-lg border border-primary/50 bg-accent/40 p-3 text-sm">
+          <span className="font-semibold">
+            {t(suggestion.strong ? 'map.suggest.strong' : 'map.suggest.medium')}: {suggestion.guest}
+          </span>
+          {suggestion.ambiguous && (
+            <p className="text-muted-foreground">{t('hosts.suggest.ambiguous')}</p>
+          )}
+          {suggestion.evidence.length > 0 && (
+            <ul aria-label={t('map.suggest.evidence')} className="text-xs text-muted-foreground">
+              {suggestion.evidence.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
+          {canEdit && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="pointer-coarse:h-11"
+                onClick={onLinkSuggestion}
+              >
+                {t('map.suggest.link', { guest: suggestion.guest })}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="pointer-coarse:h-11"
+                onClick={onDismissSuggestion}
+              >
+                {t('map.suggest.dismiss')}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+      {chain.length > 1 && (
+        <div className="flex flex-col gap-1">
+          <span className={label}>{t('map.panel.reachedThrough')}</span>
+          <ol className="flex flex-wrap items-center gap-x-1.5 text-sm">
+            {chain.map((item, index) => (
+              <li key={item.id} className="flex items-center gap-1.5">
+                {index > 0 && <span aria-hidden="true">→</span>}
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 pointer-coarse:min-h-11"
+                  aria-current={item.id === service.id ? 'true' : undefined}
+                  onClick={() => onSelect(item.id)}
+                >
+                  {item.name}
+                </Button>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
       <div className="flex flex-col gap-1">
@@ -229,12 +312,54 @@ export function HostMapServicePanel({
           </ul>
         </div>
       )}
-      <Button type="button" variant="outline" size="sm" onClick={onChangeHost}>
-        {t('common.edit')}
-      </Button>
-      <Button type="button" variant="outline" size="sm" onClick={onOpenCard}>
-        {t('map.panel.openCard')}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild variant="outline" size="sm" className="pointer-coarse:h-11">
+          <a
+            href={service.url}
+            target={service.openTarget === 'same-tab' ? undefined : '_blank'}
+            rel="noopener noreferrer"
+          >
+            {t('map.panel.openService')}
+          </a>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="pointer-coarse:h-11"
+          onClick={onOpenCard}
+        >
+          {t('map.panel.openCard')}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="pointer-coarse:h-11"
+          onClick={onChangeHost}
+        >
+          {t('common.edit')}
+        </Button>
+        {canEdit && !service.host && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="pointer-coarse:h-11"
+            onClick={() => onMarkExternal(!external)}
+          >
+            {t(external ? 'map.external.unmark' : 'map.external.mark')}
+          </Button>
+        )}
+      </div>
+      {inRouter && (
+        <Link
+          to={`/services/${service.id}`}
+          className="w-fit rounded-sm text-sm underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {t('map.panel.uptimeLink')}
+        </Link>
+      )}
     </div>
   );
 }

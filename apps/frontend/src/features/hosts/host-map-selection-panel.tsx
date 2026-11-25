@@ -1,60 +1,79 @@
 import type { ReactNode } from 'react';
-import type { Service } from '@homora/shared';
 import { X } from 'lucide-react';
 import {
   HostMapServicePanel,
   type HostMapServicePanelProps,
 } from '@/features/hosts/host-map-service-panel';
 import { Button } from '@homora/ui/button';
+import { StatusLight } from '@/components/status-light';
+import { describeStatus } from '@/lib/status-text';
 import type { ServiceStatus } from '@/lib/services';
+import { LoadMeters } from '@/features/hosts/host-map-parts';
+import { guestSummary, type HealthOf } from '@/features/hosts/host-health';
+import type { MapGuest } from '@/features/hosts/map-layout';
 import { t } from '@/i18n';
-import type { layoutMap } from '@/features/hosts/map-layout';
 
-type Guest = ReturnType<typeof layoutMap>['containers'][number]['guests'][number];
-type RelatedService = { id: number; name: string };
+/** Width of the docked panel; the map uses it to bring a selected tile out from under it. */
+export const PANEL_WIDTH = 384;
 
-type SelectedService = {
-  service: Service;
-  status?: ServiceStatus;
-  blocked: boolean;
-  runsOn: string;
-  page?: string;
-  impact: string;
-  dependsOnList: RelatedService[];
-  usedByList: RelatedService[];
-};
+type ServiceProps = Omit<
+  HostMapServicePanelProps,
+  | 'widgets'
+  | 'uptime'
+  | 'monitor'
+  | 'tags'
+  | 'uptimeRange'
+  | 'onUptimeRangeChange'
+  | 'hostEditor'
+  | 'canEdit'
+>;
 
-/** Side panel for details and actions on a selected map service or guest. */
+const guestState = (status: string) =>
+  status === 'running'
+    ? t('hosts.state.running')
+    : status === 'stopped'
+      ? t('hosts.state.stopped')
+      : t('hosts.state.other');
+
+/**
+ * Details and actions for the selected service or guest. Docked on the right from 1280 px (the
+ * map keeps its size and the selected tile is moved into the free area) and a bottom sheet on
+ * narrower windows.
+ */
 export function HostMapSelectionPanel({
   service,
   cardDetails,
+  canEdit,
   guest,
+  nodeName,
+  statuses,
+  blockedIds,
+  healthOf,
   hostEditor,
   onClose,
   onSelectService,
-  onAddDependency,
-  onRemoveDependency,
-  onOpenCard,
-  onChangeHost,
 }: {
-  service?: SelectedService;
+  service?: ServiceProps;
   cardDetails?: Pick<
     HostMapServicePanelProps,
     'widgets' | 'uptime' | 'monitor' | 'tags' | 'uptimeRange' | 'onUptimeRangeChange'
   >;
-  guest?: Guest;
+  canEdit: boolean;
+  guest?: MapGuest;
+  nodeName?: string;
+  statuses: Record<number, ServiceStatus>;
+  blockedIds: Set<number>;
+  healthOf: HealthOf;
   hostEditor?: ReactNode;
   onClose: () => void;
   onSelectService: (id: number) => void;
-  onAddDependency: () => void;
-  onRemoveDependency: (id: number) => void;
-  onOpenCard: () => void;
-  onChangeHost: () => void;
 }) {
+  const summary = guest ? guestSummary(guest.group, healthOf) : null;
   return (
     <aside
       aria-label={t('map.panel.title')}
-      className="absolute inset-x-3 bottom-20 z-10 flex max-h-[45%] flex-col gap-3 overflow-auto rounded-xl border bg-card p-4 text-sm shadow-lg lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-6.5rem)] lg:w-96"
+      style={{ ['--panel-width' as string]: `${PANEL_WIDTH}px` }}
+      className="absolute inset-x-3 bottom-20 z-20 flex max-h-[55%] flex-col gap-3 overflow-auto rounded-xl border bg-card p-4 text-sm shadow-lg xl:inset-x-auto xl:top-0 xl:right-0 xl:bottom-0 xl:max-h-none xl:w-(--panel-width) xl:rounded-none xl:border-y-0 xl:border-r-0 xl:shadow-none"
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -73,65 +92,70 @@ export function HostMapSelectionPanel({
       </div>
       {service && (
         <HostMapServicePanel
+          {...service}
           {...cardDetails}
-          service={service.service}
-          status={service.status}
-          blocked={service.blocked}
-          runsOn={service.runsOn}
-          page={service.page}
-          impact={service.impact}
-          dependsOnList={service.dependsOnList}
-          usedByList={service.usedByList}
-          canEdit={Boolean(hostEditor)}
-          onSelect={onSelectService}
-          onAddDependency={onAddDependency}
-          onRemoveDependency={onRemoveDependency}
-          onOpenCard={onOpenCard}
-          onChangeHost={onChangeHost}
+          canEdit={canEdit}
           hostEditor={hostEditor ?? null}
         />
       )}
-      {guest && (
-        <dl className="flex flex-col gap-2">
-          <Row label={t('map.panel.guest')}>{guest.group.guest.name || guest.group.guest.vmid}</Row>
-          <Row label={t('map.panel.node')}>{guest.group.guest.node}</Row>
-          <Row label={t('map.panel.status')}>
-            {t(`hosts.type.${guest.group.guest.type}`)} · {guestState(guest.group.guest.status)}
-          </Row>
-          <Row label={t('map.panel.services')}>
+      {guest && summary && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-col">
+              <h4 className="text-base font-semibold break-words">
+                {guest.group.guest.name || guest.group.guest.vmid}
+              </h4>
+              <p className="font-mono text-xs text-muted-foreground">
+                {guest.group.guest.vmid} · {t(`hosts.type.${guest.group.guest.type}`)} ·{' '}
+                {guestState(guest.group.guest.status)}
+              </p>
+            </div>
+            {nodeName && (
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {t('hosts.on', { node: nodeName })}
+              </span>
+            )}
+          </div>
+          {guest.group.guest.metrics && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-muted-foreground">
+                {t('map.panel.load')}
+              </span>
+              <LoadMeters metrics={guest.group.guest.metrics} />
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('map.panel.guestServices', {
+                count: guest.group.services.length,
+              })}
+            </span>
             <ul className="flex flex-col gap-1">
-              {guest.group.services.map((item) => (
-                <li key={item.id}>
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="h-auto p-0 pointer-coarse:min-h-11"
-                    onClick={() => onSelectService(item.id)}
-                  >
-                    {item.name}
-                  </Button>
-                </li>
-              ))}
+              {guest.group.services.map((item) => {
+                const view = describeStatus(statuses[item.id], blockedIds.has(item.id));
+                return (
+                  <li key={item.id} className="flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto p-0 pointer-coarse:min-h-11"
+                      onClick={() => onSelectService(item.id)}
+                    >
+                      {item.name}
+                    </Button>
+                    <StatusLight
+                      state={view.state}
+                      blocked={view.blocked}
+                      label={view.label}
+                      className="text-xs"
+                    />
+                  </li>
+                );
+              })}
             </ul>
-          </Row>
-        </dl>
+          </div>
+        </div>
       )}
     </aside>
-  );
-}
-
-const guestState = (status: string) =>
-  status === 'running'
-    ? t('hosts.state.running')
-    : status === 'stopped'
-      ? t('hosts.state.stopped')
-      : t('hosts.state.other');
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-xs font-semibold text-muted-foreground">{label}</dt>
-      <dd className="break-words">{children}</dd>
-    </div>
   );
 }

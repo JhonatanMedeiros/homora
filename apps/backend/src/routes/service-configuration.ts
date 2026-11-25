@@ -336,7 +336,7 @@ export function registerServiceConfigurationRoutes(
     const parsed = hostBodySchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
     try {
-      if (!configuration.setServiceHost(id, parsed.data.host))
+      if (!configuration.setServiceHost(id, parsed.data.host, parsed.data.external))
         return reply.code(404).send(errorBody('service-not-found'));
     } catch (error) {
       if (error instanceof HostLinkError) return reply.code(400).send(errorBody(error.code));
@@ -345,12 +345,16 @@ export function registerServiceConfigurationRoutes(
     const session = await auth.session(request.headers);
     audit.record({
       actor: session ? `user:${session.userId}` : 'user:unknown',
-      action: parsed.data.host ? 'service-host-link' : 'service-host-unlink',
+      action: parsed.data.host
+        ? 'service-host-link'
+        : parsed.data.external
+          ? 'service-host-external'
+          : 'service-host-unlink',
       result: 'ok',
       detail: `service:${id}`,
       ipAddress: request.ip,
     });
-    return { host: parsed.data.host };
+    return { host: parsed.data.host, hostExternal: Boolean(parsed.data.external) };
   });
 
   app.delete<{ Params: { id: string } }>('/api/services/:id', async (request, reply) => {

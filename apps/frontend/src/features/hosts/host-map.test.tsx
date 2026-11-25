@@ -88,7 +88,10 @@ it('renders nodes, guests and services, with the offline node written out and an
   expect(within(canvas).getByRole('region', { name: 'pve1' })).toBeTruthy();
   expect(within(canvas).getByRole('region', { name: 'pve2' })).toBeTruthy();
   expect(within(canvas).getByRole('region', { name: 'Not linked' })).toBeTruthy();
-  expect(within(canvas).getByText(/Offline · 1 service · 1 affected/)).toBeTruthy();
+  const offline = within(canvas).getByRole('region', { name: 'pve2' });
+  expect(within(offline).getByText('Offline')).toBeTruthy();
+  expect(within(offline).getByText(/1 guest · 1 service/)).toBeTruthy();
+  expect(within(offline).getByText(/1 affected/)).toBeTruthy();
   expect(within(canvas).getByRole('group', { name: 'dns' })).toBeTruthy();
 });
 
@@ -151,7 +154,7 @@ it('shows the configured icon on the map and service details in the panel', () =
 
 it('selects a guest and lists its services', () => {
   setup();
-  fireEvent.click(screen.getByRole('button', { name: /dns/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^dns/ }));
   const panel = screen.getByRole('complementary', { name: 'Details' });
   expect(within(panel).getByRole('button', { name: 'pihole' })).toBeTruthy();
   expect(within(panel).getByRole('button', { name: 'adguard' })).toBeTruthy();

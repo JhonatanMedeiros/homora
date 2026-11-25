@@ -54,12 +54,13 @@ export function useServices() {
     }
   }
 
-  async function linkHost(id: number, host: HostLink | null): Promise<boolean> {
+  /** Links a card to a guest, unlinks it, or (with `external`) marks it as not running on a guest. */
+  async function linkHost(id: number, host: HostLink | null, external?: boolean): Promise<boolean> {
     try {
       const response = await fetch(`/api/services/${id}/host`, {
         method: 'PUT',
         headers: json,
-        body: JSON.stringify({ host }),
+        body: JSON.stringify(external === undefined ? { host } : { host, external }),
       });
       return response.ok;
     } catch {

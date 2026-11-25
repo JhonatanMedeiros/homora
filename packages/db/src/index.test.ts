@@ -52,6 +52,7 @@ it('upgrades the monitoring view without changing cards, probes or history', asy
       DROP VIEW monitor_targets;
       CREATE VIEW monitor_targets AS SELECT m.id,m.name,COALESCE(s.url,m.check_url) AS url,m.allow_private,m.check_insecure,m.check_type,m.check_interval,m.expected_status,m.check_path,m.check_url,m.check_match,m.is_public FROM monitors m LEFT JOIN services s ON s.id=m.id;
       ALTER TABLE page_widgets DROP COLUMN size;
+      ALTER TABLE services DROP COLUMN host_external;
       DROP TRIGGER service_identity_insert;
       DROP TABLE service_identities;
       DELETE FROM __drizzle_migrations WHERE created_at >= 1794900000000;

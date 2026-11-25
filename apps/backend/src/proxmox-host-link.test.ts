@@ -28,7 +28,7 @@ const resources = (guestName = 'pihole') => [
 it('lists nodes and guests sorted, ignoring templates and malformed items', () => {
   expect(inventoryProxmox(resources())).toEqual({
     nodes: [
-      { name: 'pve1', status: 'online' },
+      { name: 'pve1', status: 'online', metrics: { cpu: 0.1 } },
       { name: 'pve2', status: 'offline' },
     ],
     guests: [
@@ -122,9 +122,13 @@ it('links, resolves, unlinks and validates the card-to-guest link', async () => 
     expect(
       (await send('PUT', `/api/services/${id}`, { ...base, host: null })).json().host,
     ).toBeNull();
-    expect((await send('PUT', `/api/services/${id}/host`, { host })).json()).toEqual({ host });
+    expect((await send('PUT', `/api/services/${id}/host`, { host })).json()).toEqual({
+      host,
+      hostExternal: false,
+    });
     expect((await send('PUT', `/api/services/${id}/host`, { host: null })).json()).toEqual({
       host: null,
+      hostExternal: false,
     });
     expect((await send('GET', '/api/services')).json()[0].host).toBeNull();
 
@@ -184,5 +188,91 @@ it('accepts a safe separate monitoring target in service proposals', () => {
     expect(
       serviceProposalSchema.safeParse({ op: 'create', service: { ...service, checkUrl } }).success,
     ).toBe(false);
+  }
+});
+
+it('marks a card as not running on a guest, and a link or a bad body never leaves both set', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-host-external-'));
+  const path = join(dir, 'db.sqlite');
+  const db = createDatabase(path);
+  const { auth, cookie } = await createTestSession();
+  const headers = { origin: 'http://localhost:5173', cookie };
+  const app = createApp(db.db, 5173, auth, createVault(path));
+  const send = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: object) =>
+    app.inject({ method, url, headers, payload });
+  vi.mocked(getAuthorizedResponse).mockResolvedValue({
+    status: 200,
+    body: JSON.stringify({ data: resources() }),
+  });
+  try {
+    const proxmox = (
+      await send('POST', '/api/connections', {
+        type: 'proxmox',
+        name: 'Lab',
+        url: 'https://pve.example:8006',
+        tokenId: 'user@pve!homora',
+        secret: 'secret',
+        allowPrivate: true,
+      })
+    ).json();
+    const host = { connectionId: proxmox.id, node: 'pve1', vmid: 101, type: 'lxc' };
+    const base = { name: 'Cloudflare', url: 'https://cf.test', category: 'Network' };
+    const id = (await send('POST', '/api/services', base)).json().id;
+    const flag = async () => (await send('GET', '/api/services')).json()[0].hostExternal;
+    const externalBody = { host: null, external: true };
+
+    // New cards are not external.
+    expect(await flag()).toBe(false);
+
+    // Marking needs a session, no link in the same body, and a card that exists.
+    const anonymous = await app.inject({
+      method: 'PUT',
+      url: `/api/services/${id}/host`,
+      headers: { origin: 'http://localhost:5173' },
+      payload: externalBody,
+    });
+    expect(anonymous.statusCode).toBe(401);
+    expect(
+      (await send('PUT', `/api/services/${id}/host`, { host, external: true })).statusCode,
+    ).toBe(400);
+    expect(
+      (await send('PUT', `/api/services/${id}/host`, { host: null, external: 'yes' })).statusCode,
+    ).toBe(400);
+    expect((await send('PUT', '/api/services/999/host', externalBody)).statusCode).toBe(404);
+    expect(await flag()).toBe(false);
+
+    const marked = await send('PUT', `/api/services/${id}/host`, externalBody);
+    expect(marked.json()).toEqual({ host: null, hostExternal: true });
+    expect(await flag()).toBe(true);
+
+    // Editing the card without a host, or with `host: null`, keeps the mark.
+    await send('PUT', `/api/services/${id}`, { ...base, name: 'Cloudflare 2' });
+    await send('PUT', `/api/services/${id}`, { ...base, host: null });
+    expect(await flag()).toBe(true);
+
+    // Unlinking without `external` keeps it; `external: false` clears it.
+    await send('PUT', `/api/services/${id}/host`, { host: null });
+    expect(await flag()).toBe(true);
+    await send('PUT', `/api/services/${id}/host`, { host: null, external: false });
+    expect(await flag()).toBe(false);
+
+    // A link clears the mark, whether it comes from the map or from the card form.
+    await send('PUT', `/api/services/${id}/host`, externalBody);
+    await send('PUT', `/api/services/${id}/host`, { host });
+    const [linked] = (await send('GET', '/api/services')).json();
+    expect(linked.host).toEqual(host);
+    expect(linked.hostExternal).toBe(false);
+    await send('PUT', `/api/services/${id}/host`, externalBody);
+    expect((await send('PUT', `/api/services/${id}`, { ...base, host })).json().host).toEqual(host);
+    expect(await flag()).toBe(false);
+
+    // The change is audited as its own event.
+    await send('PUT', `/api/services/${id}/host`, externalBody);
+    const audit = await send('GET', '/api/activity');
+    if (audit.statusCode === 200) expect(audit.body).toContain('service-host-external');
+  } finally {
+    await app.close();
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
   }
 });

@@ -35,6 +35,8 @@ export type HostViewModel = {
   notFound: Service[];
   /** Linked, but the inventory could not be read (or is still loading). */
   unavailable: Service[];
+  /** Marked as not running on a guest (cloud services, VPNs...). Never linked to a host. */
+  external: Service[];
   unlinked: Service[];
 };
 
@@ -43,20 +45,28 @@ const byName = (a: Service, b: Service) => a.name.localeCompare(b.name);
 /**
  * Groups cards by connection, node and guest. Only ids are stored on cards, so guest names come
  * from the live inventory. A guest that vanished degrades to "not found"; an unreadable
- * inventory degrades to "unavailable" (never to "offline").
+ * inventory degrades to "unavailable" (never to "offline"). Services keep name order unless
+ * `compare` says otherwise (the map and the Host view pass the same one, so they agree).
  */
 export function buildHostView(
   services: Service[],
   connections: HostConnection[],
   inventories: HostInventories,
+  compare: (a: Service, b: Service) => number = byName,
 ): HostViewModel {
-  const model: HostViewModel = { nodes: [], notFound: [], unavailable: [], unlinked: [] };
+  const model: HostViewModel = {
+    nodes: [],
+    notFound: [],
+    unavailable: [],
+    external: [],
+    unlinked: [],
+  };
   const nodes = new Map<string, HostNodeGroup>();
   const guests = new Map<string, HostGuestGroup>();
-  for (const service of [...services].sort(byName)) {
+  for (const service of [...services].sort((a, b) => compare(a, b) || byName(a, b))) {
     const link = service.host;
     if (!link) {
-      model.unlinked.push(service);
+      (service.hostExternal ? model.external : model.unlinked).push(service);
       continue;
     }
     const connection = connections.find((item) => item.id === link.connectionId);

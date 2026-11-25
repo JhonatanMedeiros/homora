@@ -83,7 +83,55 @@ Open **Display** to choose how cards look. The choice is saved in your browser; 
 
 ![Host view](../screenshots/host-view.png)
 
+### Service map
+
+The map answers four questions in order: is everything fine, where is the problem, what depends on it, and how do I
+place the services that have no host. It is read-only: nothing here restarts a guest or a service, opens logs, or
+changes Proxmox. The only things it saves are Homora's own host links and the **External** mark.
+
 ![Service map](../screenshots/host-map.png)
+
+- **Toolbar.** Search a service, address or guest (`/` focuses it, `Esc` clears it; accents are ignored). **All**,
+  **Problems** and **Not linked** show how many each holds. **Host** or **Group** arranges the same tiles by the machine
+  they run on or by your dashboard groups. **Connections** shows or hides the arrows for the dependencies you recorded
+  (the choice is remembered in this browser). **Collapse healthy** uses the same setting as Home.
+- **Hosts and guests.** Each node shows its state in words (**Online**, **Degraded**, **Offline**), a summary such as
+  _5 online · 1 offline_, and CPU, RAM and disk meters. A guest shows its type, id, state and CPU and RAM. A meter is
+  left out when Proxmox did not report it (a stopped guest, an older Proxmox): it is never drawn as 0 %. A guest with
+  a failing service or a stopped guest gets an _x/y online_ chip, and the chevron collapses it to its header.
+- **Services.** Each tile has the service icon, its name, a status light and, when healthy, the latency. The word for
+  the state is always there for a screen reader, and visible on anything that is not healthy.
+- **Connections.** Arrows point from a service to what it depends on. Selecting a service highlights its chain, and an
+  arrow turns red when what it points to is down.
+- **Minimap and zoom.** The small map in the corner shows the part you are looking at; press or drag on it to move.
+  **Fit** and **Reset** sit beside the zoom buttons, and the map fits itself when it opens if it would not fit at 100 %.
+
+#### Finding a problem
+
+**Problems** collapses and mutes every guest that is fine and keeps the ones with a failing or slow service, a stopped
+guest or an offline host in focus. Nothing is removed: a collapsed guest still lists its services in the **Host** view
+and in the details panel. When nothing is wrong, the map says so.
+
+![The map filtered to problems, with the details of a failing service](../screenshots/host-map-problem.png)
+
+Select a tile to open the details on the right (a sheet at the bottom on narrow windows). For a failing service the
+panel opens with **Needs attention**: the reason of the last check, how long it has been down and why (host offline,
+guest stopped, service not responding). It also shows uptime, where it runs, **Reached through** (the chain of
+dependencies in front of it) and read-only actions: **Open service**, **Open card on Home**, **Change host** and
+**See uptime and incidents**. Selecting a guest shows its load and its services.
+
+#### Services without a host
+
+**Not linked** lists the services that run on no guest yet.
+
+- Drag a service onto a guest, or select it and use **Change host**; both save exactly the same link.
+- **Find matches** reads guest configurations once, on request, and shows the suggestion on each tile with how strong
+  it is and the evidence behind it (the same rules as [suggested hosts](services-and-monitoring.md#where-a-service-runs-and-what-it-needs)).
+  **Link N suggested** links only the strong, unambiguous ones, and a toast offers **Undo**. A weaker match can be
+  accepted or dismissed from the details panel.
+- **Mark as external** is for services that run nowhere in your infrastructure (a cloud service, a VPN). They move to
+  **External**, leave the suggestions, and appear in the **Host** view too. **Move to Not linked** undoes it, and so
+  does dropping a service on **External**.
 
 **Display** also sets descriptions and the uptime period (24 h, 7 d or 30 d), also in **Settings → Home and pages**.
 

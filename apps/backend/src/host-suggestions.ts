@@ -69,7 +69,7 @@ export function rankSuggestions(
       const agent = card.addresses.find((address) => guest.agent.includes(address));
       if (agent) evidence.push({ kind: 'guest-agent', address: agent });
       if (guest.dockerServiceIds?.includes(card.id)) evidence.push({ kind: 'docker-source' });
-      if (!evidence.length) continue;
+      if (evidence.length === 0) continue;
       candidates.push({
         host,
         name: guest.name,
@@ -123,7 +123,7 @@ export async function cardAddresses(
     // An unparseable card URL has no address to match; it simply gets no suggestion.
     return [];
   }
-  const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const host = url.hostname.replaceAll(/^\[|\]$/g, '').toLowerCase();
   if (isIP(host)) return [host];
   try {
     const { address } = await authorizeDestination(
@@ -142,7 +142,7 @@ export async function cardAddresses(
 export function createHostSuggestions(options: {
   sqlite: DatabaseSync;
   connections: Connections;
-  listServices: () => Pick<Service, 'id' | 'url' | 'allowPrivate' | 'name'>[];
+  listServices: () => Pick<Service, 'id' | 'url' | 'allowPrivate' | 'name' | 'hostExternal'>[];
   listHosts: () => Map<number, HostLink>;
   resolver?: Resolver;
   log?: Log;
@@ -159,7 +159,10 @@ export function createHostSuggestions(options: {
   return {
     async list() {
       const linked = options.listHosts();
-      const unlinked = options.listServices().filter((service) => !linked.has(service.id));
+      // A card marked as not running on a guest has nothing to suggest.
+      const unlinked = options
+        .listServices()
+        .filter((service) => !linked.has(service.id) && !service.hostExternal);
       const hostConnections = (await connections.listConnections()).filter((item) =>
         hasInventoryDomain(item.type, 'hosts'),
       );

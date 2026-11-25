@@ -18,6 +18,6 @@ Configure limites de falhas e recuperação para reduzir alertas por oscilaçõe
 
 ![Detalhes de disponibilidade de um serviço](../../screenshots/service-detail.png)
 
-Também é possível registrar onde um serviço roda e suas dependências, para visualizá-las nas telas de host e mapa. Veja [dashboard](dashboard.md) e [alertas](notifications-and-status-page.md).
+Também é possível registrar onde um serviço roda e suas dependências, para visualizá-las nas telas de host e mapa. Um serviço que não roda em nenhum guest (nuvem, VPN) pode ser marcado como **externo** no mapa; ele sai das sugestões e aparece em **Externos**. Vínculos de host, a marca de externo e dependências não vão na exportação e importação. Veja [dashboard](dashboard.md) e [alertas](notifications-and-status-page.md).
 
 [Leia a referência completa de serviços e monitoramento em inglês](/user-guide/services-and-monitoring).

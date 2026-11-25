@@ -1,0 +1,1 @@
+ALTER TABLE `services` ADD `host_external` integer DEFAULT false NOT NULL;
