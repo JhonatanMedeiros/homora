@@ -2232,3 +2232,14 @@ not measure end-to-end latency under contention. Engineering standards are an En
 ## Command palette external destinations
 
 - Web search names the selected engine. An independently enabled, browser-local AI shortcut offers ChatGPT, Claude, v0 and Scira, with the preferred destination first. The free text is sent in a URL only after selecting an action; no Homora context is added. Live provider login, prefill and submission behavior remains to be verified per service.
+
+## Proposed evidence and assistance decisions (issue #354)
+
+Design only: [ADR 0029](decisions/0029-evidence-contract.md) proposes an evidence contract;
+[ADR 0030](decisions/0030-ai-assistance-boundary.md) proposes the optional integrated-assistance
+boundary; and [ADR 0031](decisions/0031-evidence-evaluation.md) defines synthetic evaluation
+scenarios. These records are proposed pending review; they do not implement an evidence API,
+provider, egress permission, evaluation harness, or model-backed feature. Source registrations,
+provider network and budget controls, executable fixtures, real-model validation and Portuguese
+translation of these English-only technical decisions remain future work. The deterministic product
+and existing MCP boundaries remain in effect.
