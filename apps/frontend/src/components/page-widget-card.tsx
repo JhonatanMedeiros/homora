@@ -169,6 +169,7 @@ export function PageWidgetCard({
         {View ? (
           config !== null && config !== undefined ? (
             <WidgetHost
+              connectionId={item.connectionId}
               connectionReading={
                 state.status === 'ready'
                   ? { status: 'ready', data: state.data, stale: !!state.stale }

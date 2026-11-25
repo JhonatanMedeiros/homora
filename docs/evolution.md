@@ -2183,3 +2183,23 @@ not measure end-to-end latency under contention. Engineering standards are an En
   service-neutral read-only POST capability (the statistics endpoints are POST per device). Also
   pending as separate designs: pre-login `GET /api/info`, version/site-name display, a site picker and
   API-key (`Bearer`) mode for Controller 6.4+. No brand icon was added; the card uses the `OM` mark.
+
+## Home Assistant multiple-entity widget (#315)
+
+- Added the page widget `home-assistant-entities`: choose an existing Home Assistant connection and
+  list 1–8 unique entity IDs. It refreshes every 30 seconds; each source result is cached for
+  15 seconds and the integration makes at most two requests concurrently. A 404 or other failure is
+  isolated to its entity. The registered integration operation performs only fixed
+  `GET /api/states/<entity_id>` requests and returns the entity ID, state and last-updated time;
+  attributes are never projected to the widget. The legacy single-entity connection and card widget
+  remain unchanged.
+- The saved token retains its Home Assistant account permissions; choosing IDs bounds this widget's
+  requests but is not an authorization boundary.
+- Integration connection updates and deletions invalidate cache entries tagged to that connection;
+  invalidated in-flight reads cannot repopulate the cache or serve stale fallback data. Portable
+  exports retain the selected entity IDs without exporting a local connection reference.
+- Validation: 22 focused widget, source, cache invalidation, integration and transfer tests passed
+  across 6 files. `pnpm check` passed (296 Vitest files, 2,281 tests; 48 Node tests), as did
+  `pnpm build`, `pnpm docs:build`, and `pnpm integration:catalog`. Tests use synthetic responses
+  only. **Not validated:** a real Home Assistant instance or a browser walkthrough; live-service
+  validation remains pending, and no real infrastructure was contacted.

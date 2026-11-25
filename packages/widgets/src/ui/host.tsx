@@ -175,6 +175,7 @@ export type WidgetHost = {
   connectionReading?:
     | { status: 'loading' | 'error' | 'unconfigured' | 'invalid' }
     | { status: 'ready'; data: unknown; stale: boolean };
+  connectionId?: number | null;
   locale: string;
   incidentReading?: MonitoringReading;
   openMonitor?: (id: number, hasService: boolean) => void;

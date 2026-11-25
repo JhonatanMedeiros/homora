@@ -44,7 +44,7 @@ Integrations are optional and read-only. Homora asks, and never changes anything
 | **Pi-hole**           | <img src="../screenshots/widgets/pi-hole.png" width="260" alt="">                 | DNS queries, blocked queries and percentage, blocklist size, protection state |
 | **AdGuard Home**      | <img src="../screenshots/widgets/adguard-home.png" width="260" alt="">            | Whether the service runs, whether protection is on, and the version           |
 | **Jellyfin**          | <img src="../screenshots/widgets/jellyfin.png" width="260" alt="">                | Server name and version                                                       |
-| **Home Assistant**    | <img src="../screenshots/widgets/living-room-temperature.png" width="260" alt=""> | The state of one entity, such as a temperature sensor                         |
+| **Home Assistant**    | <img src="../screenshots/widgets/living-room-temperature.png" width="260" alt=""> | One entity on a card, or up to 8 selected entity states in a page widget      |
 | **Speedtest Tracker** | <img src="../screenshots/widgets/speedtest-tracker.png" width="260" alt="">       | Latest download, upload and ping                                              |
 | **Portainer**         | <img src="../screenshots/widgets/portainer.png" width="260" alt="">               | Environments, and how many are up or down                                     |
 | **NetBird**           | <img src="../screenshots/widgets/netbird.png" width="260" alt="">                 | Peers, and how many are connected                                             |
@@ -61,6 +61,10 @@ Two integrations also offer a list widget that names each item: **Uptime Kuma mo
 <img src="../screenshots/widgets/uptime-kuma-monitors.png" width="300" alt="Uptime Kuma monitors widget listing each monitor with its state">
 <img src="../screenshots/widgets/coolify-resources.png" width="300" alt="Coolify resources widget listing each application and service with its reported state">
 </p>
+
+The **Home Assistant entities** page widget lets you enter up to 8 entity IDs and shows each state
+and last-updated time. It uses a saved Home Assistant connection; attributes are not returned to the
+browser. Its real-service validation is pending.
 
 ::: warning Check each one in your environment
 The integrations were validated with mocks and documented sample responses, and TP-Link Omada is experimental. The

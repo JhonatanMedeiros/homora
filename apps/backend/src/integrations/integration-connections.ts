@@ -6,7 +6,7 @@ import {
   markLegacyConnectionDeleted,
   isHiddenLegacyConnection,
 } from './legacy-integrations.js';
-import { createObservationCache } from './index.js';
+import { createObservationCache, IntegrationInvalidatedError } from './index.js';
 import { integrationRegistry } from './integration-registry.js';
 import { createIntegrationWidgets } from './integration-widgets.js';
 import { createIntegrationTransport } from './integration-transport.js';
@@ -31,6 +31,7 @@ export function createIntegrationConnections(
   db: Db,
   vault?: Vault,
   clock: () => number = Date.now,
+  onConnectionChanged: (id: number) => void = () => {},
 ) {
   /**
    * An integration may request a pause after an error. Automatic reads then stop for at least
@@ -99,6 +100,26 @@ export function createIntegrationConnections(
       ? integrationRegistry.prepareInventory(type, context)
       : integrationRegistry.prepare(type, context);
   }
+  function prepareWidgetQuery(
+    type: string,
+    data: ConnectionData,
+    keys: Credentials,
+    id: number,
+    revision: string,
+  ) {
+    const auth = integrationRegistry.get(type)?.sessionAuth;
+    const cached = auth ? sessionTransports.get(id) : undefined;
+    let transport = cached?.revision === revision ? cached?.transport : undefined;
+    if (!transport) {
+      transport = createIntegrationTransport(data, keys, 'error', undefined, auth);
+      if (auth) sessionTransports.set(id, { revision, transport });
+    }
+    return integrationRegistry.prepareWidgetQuery(type, {
+      publicConfig: data,
+      credentials: keys,
+      transport,
+    });
+  }
   const parseData = parseConnectionData;
   const publicRow = publicConnection;
   const credentials = (row: Row) => readConnectionCredentials(row, vault);
@@ -143,6 +164,7 @@ export function createIntegrationConnections(
       backoffs.delete(current.id);
       sessionTransports.delete(current.id);
     }
+    onConnectionChanged(result.id);
     return publicRow(result);
   }
   async function collect(id: number, bypass = false) {
@@ -209,6 +231,7 @@ export function createIntegrationConnections(
         sessionTransports.delete(id);
         inventoryCaches.delete(id);
         addressCaches.delete(id);
+        onConnectionChanged(id);
         return 'deleted' as const;
       } catch (error) {
         sqlite.exec('ROLLBACK');
@@ -224,6 +247,33 @@ export function createIntegrationConnections(
         if (data === null) throw new Error('Integration not found.');
         return data;
       }, refresh);
+    },
+    async widgetQuery(id: number, operation: string, params: unknown) {
+      migrateLegacy();
+      const row = await find(id);
+      if (!row) return null;
+      const data = parseData(row);
+      const keys = credentials(row);
+      const revision = JSON.stringify([
+        row.type,
+        row.publicConfig,
+        row.secretRef,
+        row.certificateRef,
+      ]);
+      const query = prepareWidgetQuery(row.type, data, keys, row.id, revision);
+      const result = await guarded(row, () => query(operation, params));
+      const latest = await find(id);
+      if (
+        !latest ||
+        JSON.stringify([
+          latest.type,
+          latest.publicConfig,
+          latest.secretRef,
+          latest.certificateRef,
+        ]) !== revision
+      )
+        throw new IntegrationInvalidatedError();
+      return result;
     },
     /**
      * Names and ids of nodes and guests, cached for 30 s like the summary. Returns null when the

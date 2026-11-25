@@ -19,6 +19,7 @@ const DEFAULT_CACHE_MAX_ENTRIES = 64;
 type CacheEntry = {
   value: unknown;
   fetchedAt: number;
+  tags: readonly string[];
 };
 
 export type SourceFetcher = (
@@ -26,6 +27,11 @@ export type SourceFetcher = (
   policy: DestinationPolicy,
   options?: RequestOptions,
 ) => Promise<{ status: number; body: string }>;
+export type IntegrationWidgetQuery = (
+  connectionId: number,
+  operation: string,
+  params: unknown,
+) => Promise<unknown>;
 
 /**
  * Generic widget source host: handles authentication (via app hook), caching,
@@ -38,9 +44,13 @@ export function registerWidgetSourceRoutes(
   resolveSource: (
     contract: string,
   ) => WidgetSourceReader<unknown, unknown> | undefined = getWidgetSource,
+  readIntegration?: IntegrationWidgetQuery,
 ) {
   const cache = new Map<string, CacheEntry>();
   const inFlight = new Map<string, Promise<unknown>>();
+  const tagGenerations = new Map<string, number>();
+  const generationFor = (tags: readonly string[]) =>
+    JSON.stringify(tags.map((tag) => [tag, tagGenerations.get(tag) ?? 0]));
 
   const setCache = (key: string, value: CacheEntry, maxEntries: number) => {
     if (cache.has(key)) cache.delete(key);
@@ -89,7 +99,11 @@ export function registerWidgetSourceRoutes(
     }
   };
 
-  const context: WidgetSourceContext = { fetch: restrictedFetch, now };
+  const context: WidgetSourceContext = {
+    fetch: restrictedFetch,
+    now,
+    ...(readIntegration ? { readIntegration } : {}),
+  };
 
   app.get<{ Params: { contract: string }; Querystring: Record<string, string> }>(
     '/api/widget-sources/:contract',
@@ -102,7 +116,9 @@ export function registerWidgetSourceRoutes(
 
       const ttlMs = reader.cacheTtlMs ?? 0;
       const maxEntries = reader.maxCacheEntries ?? DEFAULT_CACHE_MAX_ENTRIES;
-      const fullKey = `${reader.contract}\0${parsed.cacheKey}`;
+      const tags = parsed.cacheTags ?? [];
+      const generation = generationFor(tags);
+      const fullKey = `${reader.contract}\0${generation}\0${parsed.cacheKey}`;
       const existing = ttlMs > 0 ? cache.get(fullKey) : undefined;
       const project = (value: unknown) =>
         reader.project ? reader.project(value, parsed.params) : value;
@@ -116,8 +132,9 @@ export function registerWidgetSourceRoutes(
         pending = (async () => {
           try {
             const value = await reader.read(parsed.params, context);
+            if (generationFor(tags) !== generation) throw new Error('Widget source invalidated.');
             if (ttlMs > 0) {
-              setCache(fullKey, { value, fetchedAt: now() }, maxEntries);
+              setCache(fullKey, { value, fetchedAt: now(), tags }, maxEntries);
             }
             return value;
           } finally {
@@ -141,7 +158,7 @@ export function registerWidgetSourceRoutes(
         if (error instanceof SourceInvalidQueryError) {
           return reply.code(400).send(errorBody('invalid-query'));
         }
-        if (existing) {
+        if (existing && cache.get(fullKey) === existing && generationFor(tags) === generation) {
           const projected = project(existing.value);
           return typeof projected === 'object' && projected !== null
             ? { ...projected, stale: true }
@@ -154,4 +171,13 @@ export function registerWidgetSourceRoutes(
       }
     },
   );
+  return {
+    invalidateIntegration(connectionId: number) {
+      const tag = `integration:${connectionId}`;
+      tagGenerations.set(tag, (tagGenerations.get(tag) ?? 0) + 1);
+      for (const [key, entry] of cache) {
+        if (entry.tags.includes(tag)) cache.delete(key);
+      }
+    },
+  };
 }

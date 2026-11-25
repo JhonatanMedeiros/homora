@@ -13,6 +13,7 @@ export type RestrictedFetch = (
 export type WidgetSourceContext = {
   fetch: RestrictedFetch;
   now: () => number;
+  readIntegration?: (connectionId: number, operation: string, params: unknown) => Promise<unknown>;
 };
 
 export class SourcePolicyBlockedError extends Error {
@@ -41,6 +42,8 @@ export class SourceParseError extends Error {
 export type ParsedSourceQuery<Params = unknown> = {
   /** Canonical key identifying the upstream fetch (excluding view-only params like limit). */
   cacheKey: string;
+  /** Tags for invalidating cached data when a dependency changes. */
+  cacheTags?: readonly string[];
   params: Params;
 };
 

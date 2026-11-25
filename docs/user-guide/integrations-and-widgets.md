@@ -209,3 +209,16 @@ The address is masked by default (use the eye button to reveal it, or turn off m
 Shows when up to 5 domains expire, as **registration** expiry (RDAP), which is separate from a TLS certificate. Set a
 warning period from 1 to 365 days. Lookups run from the backend, and a registry that does not answer is shown as
 unavailable.
+
+### Home Assistant entities
+
+Add **Home Assistant entities** as a page widget, choose a saved Home Assistant connection, and enter
+1–8 entity IDs (one per line). The widget refreshes every 30 seconds; the backend caches each
+connection-and-selection query for 15 seconds and issues one fixed `GET /api/states/<entity_id>` per
+ID, with at most two requests in flight. Only the entity ID, state and last-updated timestamp are
+returned; entity attributes, including location or camera data, are not sent to the browser. A 404
+or other failure appears only on that entity's row. The existing connection field for the legacy
+single-entity widget is unchanged. The token can still read whatever its Home Assistant account
+allows, so selecting IDs limits requests but does not reduce token permissions. Real-service
+validation is pending. The selected IDs are retained when exporting and importing widget
+configuration; the connection is local to each installation and must be selected again after import.

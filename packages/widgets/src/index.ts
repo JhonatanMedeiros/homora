@@ -114,6 +114,11 @@ export {
   type ParsedFeedEntry,
 } from './widgets/rss-feed/parser.js';
 export {
+  homeAssistantEntitiesSource,
+  type HomeAssistantEntity,
+  type HomeAssistantEntitiesResult,
+} from './widgets/home-assistant-entities/source.js';
+export {
   DEFAULT_FEED_LIMIT,
   MAX_FEED_LIMIT,
   MAX_FEED_TITLE_LENGTH,

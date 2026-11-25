@@ -20,10 +20,13 @@ const codeRegistrations = createCodeRegistrations((code) => new InputError(code)
 export const integrationRegistry = createIntegrationRegistry(
   integrationDefinitions.map((definition) => {
     assertValidDefinition(definition, manifestHost);
-    if (definition.kind === 'manifest') return createManifestRegistration(definition, manifestHost);
     const registration = codeRegistrations.get(definition.type);
-    if (!registration || registration.definition !== definition)
-      throw new Error(`Missing or mismatched integration registration: ${definition.type}`);
-    return registration;
+    if (registration) {
+      if (registration.definition !== definition)
+        throw new Error(`Missing or mismatched integration registration: ${definition.type}`);
+      return registration;
+    }
+    if (definition.kind === 'manifest') return createManifestRegistration(definition, manifestHost);
+    throw new Error(`Missing integration registration: ${definition.type}`);
   }),
 );

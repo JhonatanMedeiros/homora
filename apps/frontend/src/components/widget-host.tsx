@@ -240,7 +240,16 @@ export function WidgetHost({
   children,
   ...options
 }: { children: ReactNode } & Partial<
-  Pick<Host, 'openMonitor' | 'groups' | 'pages' | 'wide' | 'incidentReading' | 'connectionReading'>
+  Pick<
+    Host,
+    | 'openMonitor'
+    | 'groups'
+    | 'pages'
+    | 'wide'
+    | 'incidentReading'
+    | 'connectionReading'
+    | 'connectionId'
+  >
 >) {
   const { locale } = useI18n();
   const filterStatus = useContext(WidgetStatusFilterContext);

@@ -86,6 +86,52 @@ it('round trips the homelab summary without a connection', () => {
   b.close();
 });
 
+it('round trips selected Home Assistant entities without exporting a local connection', () => {
+  const first = createDatabase(':memory:');
+  const second = createDatabase(':memory:');
+  const a = getSqliteHandle(first.db);
+  const b = getSqliteHandle(second.db);
+  try {
+    const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
+    const config = { entities: ['sensor.temperature', 'light.living_room'] };
+    a.prepare(
+      'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,NULL,?,0)',
+    ).run(page, 'home-assistant-entities', 'House states', JSON.stringify(config), 'normal');
+
+    const data = createServiceConfiguration(a).exportData();
+    expect(data.widgets).toEqual([
+      {
+        page: 'Home',
+        type: 'home-assistant-entities',
+        name: 'House states',
+        config,
+      },
+    ]);
+    const text = serializeConfiguration(data.groups, data.services, 'json', {
+      pages: data.pages,
+      widgets: data.widgets,
+    });
+    expect(text).not.toContain('connectionId');
+
+    const parsed = parseTransfer(text);
+    expect(parsed.document.widgets).toHaveLength(1);
+    const target = createServiceConfiguration(b);
+    expect(target.previewImport(parsed).plan.widgets[0].status).toBe('new');
+    expect(target.applyImport(parsed, { keepPrivate: false })).toMatchObject({
+      status: 'applied',
+      widgetsCreated: 1,
+    });
+    const row = b
+      .prepare('SELECT config,connection_id AS connectionId FROM page_widgets')
+      .get() as { config: string; connectionId: number | null };
+    expect(JSON.parse(row.config)).toEqual(config);
+    expect(row.connectionId).toBeNull();
+  } finally {
+    a.close();
+    b.close();
+  }
+});
+
 it('round trips a recent incidents widget with portable filters and no connection', () => {
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
