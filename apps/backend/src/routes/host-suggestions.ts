@@ -5,6 +5,7 @@ import type { createIntegrationConnections } from '../integrations/integration-c
 import type { createServiceConfiguration } from '../service-configuration.js';
 import { dismissalBodySchema, parseId } from '../input-schemas.js';
 import { errorBody } from '../api-error.js';
+import { developmentHostSuggestions } from '@homora/integrations/backend/development';
 
 /**
  * Suggested hosts for cards without one. Authenticated sessions only (the `/api/` hook): guest
@@ -16,6 +17,7 @@ export function registerHostSuggestionRoutes(
   sqlite: DatabaseSync,
   connections: ReturnType<typeof createIntegrationConnections>,
   configuration: ReturnType<typeof createServiceConfiguration>,
+  developmentMocks = false,
 ) {
   const suggestions = createHostSuggestions({
     sqlite,
@@ -26,6 +28,14 @@ export function registerHostSuggestionRoutes(
   });
   app.get('/api/host-suggestions', async (request, reply) => {
     try {
+      if (developmentMocks) {
+        const open = configuration.listServices().filter((service) => !service.hostExternal);
+        const linked = new Set(configuration.listHosts().keys());
+        for (const connection of await connections.listConnections()) {
+          const mock = developmentHostSuggestions(connection, open, linked);
+          if (mock) return mock;
+        }
+      }
       return await suggestions.list();
     } catch (error) {
       request.log.warn({ err: error }, 'could not list host suggestions');

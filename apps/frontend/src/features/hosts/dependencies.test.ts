@@ -1,5 +1,12 @@
 import { expect, it } from 'vitest';
-import { dependentsOf, dependsOn, impairedUpstream, usedBy, type Dependency } from './dependencies';
+import {
+  dependentsOf,
+  dependsOn,
+  impairedUpstream,
+  usedBy,
+  type Dependency,
+  upstreamChain,
+} from './dependencies';
 import type { Impact } from './hosts';
 
 const services = [1, 2, 3, 4, 5].map((id) => ({ id }));
@@ -50,4 +57,21 @@ it('finds everything that may break when some services stop', () => {
   expect(dependentsOf([1], deps).sort()).toEqual([2, 3, 4]);
   expect(dependentsOf([5], deps)).toEqual([]);
   expect(dependentsOf([1, 2], deps).sort()).toEqual([3, 4]);
+});
+
+it('lists the path of dependencies that leads to a service, outermost first', () => {
+  const deps = [
+    { serviceId: 3, dependsOnId: 2 },
+    { serviceId: 2, dependsOnId: 1 },
+  ];
+  expect(upstreamChain(3, deps)).toEqual([1, 2, 3]);
+  expect(upstreamChain(1, deps)).toEqual([1]);
+});
+
+it('stops at a repeat so a cycle never loops', () => {
+  const cycle = [
+    { serviceId: 1, dependsOnId: 2 },
+    { serviceId: 2, dependsOnId: 1 },
+  ];
+  expect(upstreamChain(1, cycle)).toEqual([2, 1]);
 });

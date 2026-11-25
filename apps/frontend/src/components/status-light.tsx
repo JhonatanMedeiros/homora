@@ -3,7 +3,14 @@ import type { LightState } from '@/lib/services';
 import { t } from '@/i18n';
 import { useEffect, useRef, useState } from 'react';
 
-type Props = { state: LightState; blocked?: boolean; label?: string; className?: string };
+type Props = {
+  state: LightState;
+  blocked?: boolean;
+  label?: string;
+  className?: string;
+  /** Keeps the text for assistive technology only, for dense views that show a value beside the light. */
+  compact?: boolean;
+};
 
 const view = {
   available: {
@@ -42,7 +49,13 @@ const view = {
  * Homora signature: the window light. Lit green when the service is up, amber when it is
  * up but slow, red when down, an empty ring when unknown or blocked. Always paired with text.
  */
-export function StatusLight({ state, blocked = false, label: custom, className }: Props) {
+export function StatusLight({
+  state,
+  blocked = false,
+  label: custom,
+  className,
+  compact = false,
+}: Props) {
   const key = blocked ? 'blocked' : state;
   const { label, text, dot } = view[key];
   const previousState = useRef(key);
@@ -71,7 +84,7 @@ export function StatusLight({ state, blocked = false, label: custom, className }
         aria-hidden="true"
         className={cn('status-light-dot size-2 shrink-0 rounded-full', dot)}
       />
-      <span>{custom ?? t(label)}</span>
+      <span className={cn(compact && 'sr-only')}>{custom ?? t(label)}</span>
     </span>
   );
 }

@@ -53,3 +53,22 @@ export function dependentsOf(roots: readonly number[], dependencies: readonly De
   }
   return found;
 }
+
+/**
+ * The path of manual dependencies that leads to a service, from the outermost one down to the
+ * service itself (for example a tunnel, then a proxy, then the app). Follows the first recorded
+ * dependency at each step and stops at a repeat, so a cycle can never loop; one entry means there
+ * is nothing upstream.
+ */
+export function upstreamChain(id: number, dependencies: readonly Dependency[]): number[] {
+  const chain = [id];
+  const seen = new Set(chain);
+  let current = id;
+  for (;;) {
+    const next = dependsOn(current, dependencies).find((item) => !seen.has(item));
+    if (next === undefined) return chain.reverse();
+    chain.push(next);
+    seen.add(next);
+    current = next;
+  }
+}

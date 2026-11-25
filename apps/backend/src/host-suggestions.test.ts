@@ -248,6 +248,23 @@ it('suggests, dismisses, undoes and accepts through the API with a session only'
       ).statusCode,
     ).toBe(400);
 
+    // A card marked as not running on a guest has nothing to suggest, and leaves the list.
+    expect(
+      (await send('PUT', `/api/services/${nas}/host`, { host: null, external: true })).statusCode,
+    ).toBe(200);
+    const external = (await send('GET', '/api/host-suggestions')).json();
+    expect(external.suggestions.some((item: { serviceId: number }) => item.serviceId === nas)).toBe(
+      false,
+    );
+    expect(
+      (await send('PUT', `/api/services/${nas}/host`, { host: null, external: false })).statusCode,
+    ).toBe(200);
+    expect(
+      (await send('GET', '/api/host-suggestions'))
+        .json()
+        .suggestions.some((item: { serviceId: number }) => item.serviceId === nas),
+    ).toBe(true);
+
     // Accepting writes only Homora's link; a linked card is no longer suggested.
     expect((await send('PUT', `/api/services/${dns}/host`, { host })).statusCode).toBe(200);
     expect(

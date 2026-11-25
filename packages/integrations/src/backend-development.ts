@@ -34,3 +34,21 @@ export function developmentMockResources(connection: { type: string; name: strin
   }
   return null;
 }
+
+/** Fixed host suggestions for a demo connection; only the development server uses them. */
+export function developmentHostSuggestions(
+  connection: { id: number; type: string; name: string },
+  services: { id: number; name: string }[],
+  linked: ReadonlySet<number>,
+) {
+  for (const plugin of developmentPlugins) {
+    if (
+      'developmentHostSuggestions' in plugin &&
+      typeof plugin.developmentHostSuggestions === 'function'
+    ) {
+      const suggestions = plugin.developmentHostSuggestions(connection, services, linked);
+      if (suggestions) return suggestions;
+    }
+  }
+  return null;
+}

@@ -145,3 +145,66 @@ export function developmentMockInventory(connection: { type: string; name: strin
     checkedAt: new Date().toISOString(),
   };
 }
+
+type DemoGuest = { node: string; vmid: number; type: 'qemu' | 'lxc'; name: string; status: string };
+const DEMO_GUESTS: Record<string, DemoGuest> = {
+  'docker-host': { node: 'pve2', vmid: 210, type: 'qemu', name: 'docker-host', status: 'running' },
+  'media-vm': { node: 'pve1', vmid: 110, type: 'qemu', name: 'media-vm', status: 'running' },
+};
+type DemoEvidence = { kind: 'config-address' | 'guest-agent' | 'docker-source'; address?: string };
+/** Fixed demo answers by card name: two strong matches, one possible, the rest without evidence. */
+const DEMO_MATCHES: Record<string, { guest: string; evidence: DemoEvidence[] }> = {
+  Caddy: {
+    guest: 'docker-host',
+    evidence: [
+      { kind: 'config-address', address: '10.255.255.40' },
+      { kind: 'guest-agent', address: '10.255.255.40' },
+    ],
+  },
+  qBittorrent: {
+    guest: 'media-vm',
+    evidence: [
+      { kind: 'config-address', address: '10.255.255.41' },
+      { kind: 'guest-agent', address: '10.255.255.41' },
+    ],
+  },
+  'Home Assistant': { guest: 'docker-host', evidence: [{ kind: 'docker-source' }] },
+};
+
+/**
+ * Suggested hosts for the demo cluster's cards. The demo has no guest configuration to read, so the
+ * answers are fixed. Used only by the development server (`HOMORA_DEV_MOCKS`).
+ */
+export function developmentHostSuggestions(
+  connection: { id: number; type: string; name: string },
+  services: { id: number; name: string }[],
+  linked: ReadonlySet<number>,
+) {
+  if (connection.type !== 'proxmox' || connection.name !== 'Demo Proxmox (mock)') return null;
+  const suggestions = services
+    .filter((service) => !linked.has(service.id))
+    .map((service) => {
+      const match = DEMO_MATCHES[service.name];
+      const guest = match && DEMO_GUESTS[match.guest];
+      if (!match || !guest) return { serviceId: service.id, candidates: [] };
+      return {
+        serviceId: service.id,
+        candidates: [
+          {
+            host: {
+              connectionId: connection.id,
+              node: guest.node,
+              vmid: guest.vmid,
+              type: guest.type,
+            },
+            name: guest.name,
+            status: guest.status,
+            strength: match.evidence.length >= 2 ? 'strong' : 'medium',
+            evidence: match.evidence,
+            ambiguous: false,
+          },
+        ],
+      };
+    });
+  return { suggestions, unavailableConnections: [] as number[] };
+}

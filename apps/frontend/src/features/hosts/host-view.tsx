@@ -16,6 +16,7 @@ import {
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { describeStatus } from '@/lib/status-text';
+import { healthCompare, serviceHealth } from '@/features/hosts/host-health';
 import { t } from '@/i18n';
 
 type Props = {
@@ -32,6 +33,8 @@ type Props = {
   onClearFilter?: () => void;
   /** Name of the page a service is on; undefined with a single page. */
   pageName?: (service: Service) => string | undefined;
+  /** Failing and slow services first inside each guest, the same order the map uses. */
+  problemsFirst?: boolean;
 };
 
 const IMPACT_TEXT = {
@@ -122,9 +125,17 @@ export function HostView({
   nodeFilter = null,
   onClearFilter,
   pageName,
+  problemsFirst = false,
 }: Props) {
   const mobile = useIsMobile();
-  const full = buildHostView(services, connections, inventories);
+  const full = buildHostView(
+    services,
+    connections,
+    inventories,
+    problemsFirst
+      ? healthCompare((service) => serviceHealth(statuses[service.id], blockedIds.has(service.id)))
+      : undefined,
+  );
   const model = nodeFilter
     ? {
         ...full,
@@ -134,6 +145,7 @@ export function HostView({
         ),
         notFound: [],
         unavailable: [],
+        external: [],
         unlinked: [],
       }
     : full;
@@ -172,6 +184,12 @@ export function HostView({
       title: t('hosts.view.unavailable'),
       items: model.unavailable,
       hint: t('hosts.view.unavailableHint'),
+    },
+    {
+      key: 'external',
+      title: t('hosts.view.external'),
+      items: model.external,
+      hint: t('hosts.view.externalHint'),
     },
     { key: 'unlinked', title: t('hosts.view.unlinked'), items: model.unlinked, hint: '' },
   ].filter((section) => section.items.length > 0);
