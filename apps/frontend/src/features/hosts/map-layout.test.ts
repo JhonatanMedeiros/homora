@@ -7,6 +7,7 @@ import {
   clampZoom,
   fitZoom,
   focusOrder,
+  layoutGroups,
   layoutMap,
   looseColumns,
   type MapRect,
@@ -131,4 +132,75 @@ it('spreads many unlinked services over a grid instead of one tall column', () =
   container.services.forEach((a, i) =>
     container.services.slice(i + 1).forEach((b) => expect(overlaps(a, b)).toBe(false)),
   );
+});
+
+const tall = (): HostInventories => ({
+  1: {
+    status: 'ready',
+    nodes: [{ name: 'pve1', status: 'online' }],
+    guests: [100, 101, 102].map((vmid) => ({
+      vmid,
+      name: `g${vmid}`,
+      type: 'lxc' as const,
+      node: 'pve1',
+      status: 'running',
+    })),
+  },
+});
+
+it('places each guest in the shortest column, so a tall guest does not stretch its neighbour', () => {
+  const crowded = [
+    card(1, 'a', 100),
+    card(2, 'b', 100),
+    card(3, 'c', 100),
+    card(4, 'd', 101),
+    card(5, 'e', 102),
+  ];
+  const [node] = layoutMap(buildHostView(crowded, connections, tall())).containers;
+  const [first, second, third] = node!.guests;
+  expect(first!.h).toBeGreaterThan(second!.h);
+  // g100 is tall and sits in the left column, g101 beside it, g102 under the shorter g101.
+  expect(second!.x).toBeGreaterThan(first!.x);
+  expect(third!.x).toBe(second!.x);
+  expect(third!.y).toBe(second!.y + second!.h + MAP.guestGap);
+  // The Host view order is kept whatever the position.
+  expect(node!.guests.map((guest) => guest.group.guest.vmid)).toEqual([100, 101, 102]);
+});
+
+it('draws a collapsed guest as its header only and keeps its services in the model', () => {
+  const crowded = [card(1, 'a', 100), card(2, 'b', 100), card(3, 'c', 101)];
+  const view = buildHostView(crowded, connections, tall());
+  const open = layoutMap(view).containers[0]!.guests[0]!;
+  const closed = layoutMap(view, { collapsed: new Set([open.group.key]) }).containers[0]!
+    .guests[0]!;
+  expect(closed.collapsed).toBe(true);
+  expect(closed.services).toEqual([]);
+  expect(closed.h).toBe(MAP.guestHeader + MAP.guestPad);
+  expect(closed.group.services).toHaveLength(2);
+  expect(open.h).toBeGreaterThan(closed.h);
+});
+
+it('puts services marked external in their own container, before Not linked', () => {
+  const all = [card(1, 'a', 100), { ...card(2, 'vpn'), hostExternal: true }, card(3, 'free')];
+  const containers = layoutMap(buildHostView(all, connections, tall())).containers;
+  expect(containers.map((container) => container.kind)).toEqual(['node', 'external', 'unlinked']);
+  expect(containers[1]!.services.map((item) => item.service.name)).toEqual(['vpn']);
+});
+
+it('lays services out by dashboard group, in the order given', () => {
+  const grouped = [
+    { ...card(1, 'a'), category: 'Media' },
+    { ...card(2, 'b'), category: 'Essentials' },
+    { ...card(3, 'c'), category: 'Media' },
+  ];
+  const layout = layoutGroups(grouped, ['Essentials', 'Media']);
+  expect(layout.containers.map((container) => container.title)).toEqual(['Essentials', 'Media']);
+  expect(layout.containers[1]!.services.map((item) => item.service.name)).toEqual(['a', 'c']);
+  expect(layout.containers.every((container) => container.kind === 'group')).toBe(true);
+  expect(layoutGroups(grouped, ['Essentials', 'Media'])).toEqual(layout);
+  // Groups that are not in the order come after, by name.
+  expect(layoutGroups(grouped, []).containers.map((container) => container.title)).toEqual([
+    'Essentials',
+    'Media',
+  ]);
 });

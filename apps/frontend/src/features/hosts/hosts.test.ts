@@ -138,3 +138,18 @@ it('lists nodes with linked cards for the rail, with how many are down', () => {
   expect(hostRailItems([card(9, 'z')], connections, ready, () => false)).toEqual([]);
   expect(hostRailItems(cards, connections, { 1: { status: 'error' } }, () => false)).toEqual([]);
 });
+
+it('keeps services marked external apart from the ones that still need a host', () => {
+  const all = [{ ...card(1, 'vpn'), hostExternal: true }, card(2, 'free'), card(3, 'a', link(101))];
+  const model = buildHostView(all, connections, ready);
+  expect(model.external.map((service) => service.name)).toEqual(['vpn']);
+  expect(model.unlinked.map((service) => service.name)).toEqual(['free']);
+});
+
+it('orders services with a custom comparison and breaks ties by name', () => {
+  const all = [card(1, 'b', link(101)), card(2, 'a', link(101)), card(3, 'c', link(101))];
+  const failing = (service: Service) => (service.name === 'c' ? 0 : 1);
+  const model = buildHostView(all, connections, ready, (a, b) => failing(a) - failing(b));
+  const group = model.nodes[0]!.guests.find((item) => item.guest.vmid === 101)!;
+  expect(group.services.map((service) => service.name)).toEqual(['c', 'a', 'b']);
+});

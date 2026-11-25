@@ -377,7 +377,13 @@ export function createApp(
   );
   registerProbeRoutes(app, createProbeStore(sqlite), serviceMonitor, auth, audit);
   registerServiceLinkTypeRoutes(app, configuration);
-  registerHostSuggestionRoutes(app, sqlite, connections, configuration);
+  registerHostSuggestionRoutes(
+    app,
+    sqlite,
+    connections,
+    configuration,
+    options.developmentMocks === true,
+  );
   registerServiceDependencyRoutes(app, sqlite, auth, audit);
   registerResourceLinkRoutes(app, sqlite, auth, audit);
   registerConfigTransferRoutes(app, configuration, serviceMonitor, {

@@ -109,7 +109,11 @@ export const acknowledgeBodySchema = z
   })
   .strict();
 
-export const hostBodySchema = z.object({ host: hostLinkSchema.nullable() }).strict();
+/** `external` marks a card that does not run on a guest; it needs `host: null` (a link clears it). */
+export const hostBodySchema = z
+  .object({ host: hostLinkSchema.nullable(), external: z.boolean().optional() })
+  .strict()
+  .refine((body) => !(body.external && body.host));
 
 const serviceIdSchema = z.number().int().safe().positive();
 const proposedServiceSchema = serviceInputSchema.extend({

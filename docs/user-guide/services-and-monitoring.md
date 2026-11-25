@@ -178,13 +178,16 @@ The **Connections** tab models your infrastructure without touching it.
 - **Suggested hosts:** the dashboard proposes links when it finds independent evidence: the card's address in the guest's
   configuration, or reported by the QEMU guest agent or a Docker source tied to that guest. A name match alone never
   counts. You accept or dismiss each one.
+- **Not running on a guest:** a card for something that runs nowhere in your infrastructure (a cloud service, a VPN) can
+  be marked **external** on the [map](dashboard.md#service-map). It then stays out of the suggestions and shows under
+  **External**.
 - **Depends on:** the services this one needs. These links are manual, and Homora refuses one that would create a cycle.
 - **Impact:** a service whose host or dependency is impaired is flagged _may be affected_, never as a measured fact.
 
 The **Host** view and **Map** arrange services by host; see the [dashboard guide](dashboard.md#layouts-and-views).
 
-This is Homora's own data; nothing is written to Proxmox or any other system. Links and dependencies are not carried by
-export and import.
+This is Homora's own data; nothing is written to Proxmox or any other system. Links, the external mark and dependencies
+are not carried by export and import.
 
 ## Tips
 

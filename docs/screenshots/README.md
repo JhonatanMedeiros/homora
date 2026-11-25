@@ -26,39 +26,40 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 
 ## Files
 
-| File                               | Screen                                                 |
-| ---------------------------------- | ------------------------------------------------------ |
-| `dashboard-dark.png`               | Dashboard, dark theme (hero image)                     |
-| `dashboard-light.png`              | Dashboard, light theme                                 |
-| `dashboard-cards.png`              | Dashboard with the Cards layout                        |
-| `dashboard-drawer.png`             | Details drawer of a failing service                    |
-| `command-palette.png`              | Command palette filtering with `status:down`           |
-| `service-detail.png`               | A service's uptime, latency and incidents              |
-| `service-form.png`                 | Service form, Appearance tab                           |
-| `service-form-monitoring.png`      | Service form, Monitoring tab                           |
-| `service-form-connections.png`     | Service form, Connections tab                          |
-| `organize-mode.png`                | Organize mode                                          |
-| `host-view.png`                    | Host view with a service that may be affected          |
-| `host-map.png`                     | Service map of nodes, guests and services              |
-| `integrations.png`                 | Integrations page                                      |
-| `agents.png`                       | Agents page with a pending proposal                    |
-| `proposal-review.png`              | A proposal's diff with Approve and Reject              |
-| `proposal-review-mobile.png`       | The same review on a phone                             |
-| `activity.png`                     | Activity log                                           |
-| `account.png`                      | Account page                                           |
-| `login.png`                        | Sign-in page                                           |
-| `public-status.png`                | Public status page (anonymous view)                    |
-| `settings-appearance.png`          | Settings → Appearance                                  |
-| `settings-home.png`                | Settings → Home and pages                              |
-| `settings-topbar.png`              | Settings → Top bar and shortcuts                       |
-| `settings-alerts.png`              | Settings → Alerts                                      |
-| `settings-public.png`              | Settings → Public status                               |
-| `settings-backup.png`              | Settings → Export and import                           |
-| `mobile-dashboard.png`             | Dashboard on a phone                                   |
-| `widgets-gallery-integrations.png` | Gallery of integration widgets                         |
-| `widgets-gallery-local.png`        | Gallery of page widgets that need no connection        |
-| `widgets-gallery-monitoring.png`   | Gallery of monitoring widgets                          |
-| `widgets/<name>.png`               | One image per widget (32), for the widget gallery page |
+| File                               | Screen                                                         |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `dashboard-dark.png`               | Dashboard, dark theme (hero image)                             |
+| `dashboard-light.png`              | Dashboard, light theme                                         |
+| `dashboard-cards.png`              | Dashboard with the Cards layout                                |
+| `dashboard-drawer.png`             | Details drawer of a failing service                            |
+| `command-palette.png`              | Command palette filtering with `status:down`                   |
+| `service-detail.png`               | A service's uptime, latency and incidents                      |
+| `service-form.png`                 | Service form, Appearance tab                                   |
+| `service-form-monitoring.png`      | Service form, Monitoring tab                                   |
+| `service-form-connections.png`     | Service form, Connections tab                                  |
+| `organize-mode.png`                | Organize mode                                                  |
+| `host-view.png`                    | Host view with a service that may be affected                  |
+| `host-map.png`                     | Service map of nodes, guests and services                      |
+| `host-map-problem.png`             | The map filtered to problems, with a failing service's details |
+| `integrations.png`                 | Integrations page                                              |
+| `agents.png`                       | Agents page with a pending proposal                            |
+| `proposal-review.png`              | A proposal's diff with Approve and Reject                      |
+| `proposal-review-mobile.png`       | The same review on a phone                                     |
+| `activity.png`                     | Activity log                                                   |
+| `account.png`                      | Account page                                                   |
+| `login.png`                        | Sign-in page                                                   |
+| `public-status.png`                | Public status page (anonymous view)                            |
+| `settings-appearance.png`          | Settings → Appearance                                          |
+| `settings-home.png`                | Settings → Home and pages                                      |
+| `settings-topbar.png`              | Settings → Top bar and shortcuts                               |
+| `settings-alerts.png`              | Settings → Alerts                                              |
+| `settings-public.png`              | Settings → Public status                                       |
+| `settings-backup.png`              | Settings → Export and import                                   |
+| `mobile-dashboard.png`             | Dashboard on a phone                                           |
+| `widgets-gallery-integrations.png` | Gallery of integration widgets                                 |
+| `widgets-gallery-local.png`        | Gallery of page widgets that need no connection                |
+| `widgets-gallery-monitoring.png`   | Gallery of monitoring widgets                                  |
+| `widgets/<name>.png`               | One image per widget (32), for the widget gallery page         |
 
 ## How to refresh them
 
