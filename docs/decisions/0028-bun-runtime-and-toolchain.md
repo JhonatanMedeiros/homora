@@ -16,7 +16,7 @@ Homora is early, so changing the runtime is cheap now and expensive later. The g
 6. **Test pool.** Vitest 5's `forks` pool calls `child.channel.unref()`, which Bun does not implement, and many worker threads starve each other on Bun. `vitest.config.ts` therefore selects `threads` with 4 workers when it runs on Bun; Node behaviour is unchanged.
 7. **CPU budget test.** `uptime.test.ts` measures `process.threadCpuUsage()` instead of `process.cpuUsage()`, because the latter also counts the other workers of a thread pool and made the budget flaky on Bun.
 8. **Vite config.** `import.meta.resolve` became `createRequire(...).resolve`: Vite rewrites the former into a module only Node's loader resolves.
-9. **Stays on Node.** VitePress (`docs:*`) uses its Node shebang: under `bun --bun` it fails to resolve `vue`'s peers with the isolated linker. It builds documentation only and is not part of the application runtime.
+9. **Stays on Node.** `engines` also declares `node` (`^24.0.0`): Vercel reads `engines` to pick the Node version of the docs build and took `bun: 1.4.x` for it. VitePress (`docs:*`) uses its Node shebang: under `bun --bun` it fails to resolve `vue`'s peers with the isolated linker. It builds documentation only and is not part of the application runtime.
 
 ## Validated locally
 
