@@ -1,3 +1,4 @@
+import { widgetHomeAssistantEntitiesWidget } from './widgets/home-assistant-entities/definition.js';
 import { widgetCoolifyResourcesWidget } from './widgets/coolify-resources/definition.js';
 import { widgetUptimeKumaMonitorsWidget } from './widgets/uptime-kuma-monitors/definition.js';
 import { widgetCertificateExpiryWidget } from './widgets/certificate-expiry/definition.js';
@@ -40,6 +41,7 @@ const widgets = {
   'maintenance-schedule': widgetMaintenanceScheduleWidget,
   'uptime-kuma-monitors': widgetUptimeKumaMonitorsWidget,
   'coolify-resources': widgetCoolifyResourcesWidget,
+  'home-assistant-entities': widgetHomeAssistantEntitiesWidget,
 } as const;
 export type LocalWidgetType = keyof typeof widgets;
 export const localWidgetTypes = Object.keys(widgets) as LocalWidgetType[];

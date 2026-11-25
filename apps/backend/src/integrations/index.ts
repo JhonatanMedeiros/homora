@@ -57,6 +57,11 @@ export function createIntegrationRegistry<T extends IntegrationRegistration>(
       if (!entry?.prepareInventory) throw new InputError('integration-type-unavailable');
       return entry.prepareInventory(context);
     },
+    prepareWidgetQuery: (type: string, context: IntegrationContext) => {
+      const entry = entries.get(type);
+      if (!entry?.prepareWidgetQuery) throw new InputError('integration-type-unavailable');
+      return entry.prepareWidgetQuery(context);
+    },
   };
 }
 

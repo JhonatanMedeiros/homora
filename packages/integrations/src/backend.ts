@@ -48,6 +48,7 @@ export type IntegrationContext = {
   credentials: { secret?: string; ca?: string; tokenId?: string };
   transport?: IntegrationTransport;
 };
+export type IntegrationWidgetQuery = (operation: string, params: unknown) => Promise<unknown>;
 export type InputErrorFactory = (
   code: 'invalid-data' | 'https-url-required' | 'invalid-token' | 'invalid-config',
 ) => Error;
@@ -67,6 +68,8 @@ export type IntegrationRegistration = IntegrationMetadata & {
   prepareAddresses?: (
     context: IntegrationContext,
   ) => (guests: readonly unknown[]) => Promise<unknown>;
+  /** Narrow, explicitly registered reads for connected page widgets. */
+  prepareWidgetQuery?: (context: IntegrationContext) => IntegrationWidgetQuery;
   /** Return retry delay in seconds for an error, or null when it should not trigger a pause. */
   retryDelaySeconds?: (error: unknown) => number | null;
 };
@@ -76,7 +79,12 @@ export function defineBackendIntegration(
   definition: IntegrationDefinition,
   hooks: Pick<
     IntegrationRegistration,
-    'prepare' | 'prepareInventory' | 'prepareAddresses' | 'retryDelaySeconds' | 'sessionAuth'
+    | 'prepare'
+    | 'prepareInventory'
+    | 'prepareAddresses'
+    | 'prepareWidgetQuery'
+    | 'retryDelaySeconds'
+    | 'sessionAuth'
   >,
 ): IntegrationRegistration {
   if (definition.inventoryDomain && !hooks.prepareInventory)

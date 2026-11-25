@@ -1,4 +1,8 @@
 import {
+  en as widgetHomeAssistantEntities,
+  ptBR as widgetHomeAssistantEntitiesPt,
+} from './widgets/home-assistant-entities/messages.js';
+import {
   en as widgetCoolifyResources,
   ptBR as widgetCoolifyResourcesPt,
 } from './widgets/coolify-resources/messages.js';
@@ -62,6 +66,7 @@ export const widgetEnglish = {
   ...widgetMaintenanceSchedule,
   ...widgetUptimeKumaMonitors,
   ...widgetCoolifyResources,
+  ...widgetHomeAssistantEntities,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -84,4 +89,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetMaintenanceSchedulePt,
   ...widgetUptimeKumaMonitorsPt,
   ...widgetCoolifyResourcesPt,
+  ...widgetHomeAssistantEntitiesPt,
 };

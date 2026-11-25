@@ -232,6 +232,7 @@ function DialogContents({
                   type={draft.type}
                   entry={entry}
                   parsedConfig={parsedConfig}
+                  connectionId={draft.connectionId}
                   name={draft.name}
                   wide={draft.size === 'wide'}
                   groups={groups}
@@ -277,7 +278,7 @@ function DialogContents({
 
 export function PageWidgetDialog(props: Props) {
   return (
-    <WidgetHost groups={props.groups} pages={props.pages}>
+    <WidgetHost groups={props.groups} pages={props.pages} connectionId={props.draft?.connectionId}>
       <DialogContents {...props} />
     </WidgetHost>
   );
@@ -287,6 +288,7 @@ function GenericPreview({
   type,
   entry,
   parsedConfig,
+  connectionId,
   name,
   wide,
   groups,
@@ -296,6 +298,7 @@ function GenericPreview({
   type: string;
   entry: WidgetUI;
   parsedConfig: unknown | null;
+  connectionId: number | null;
   name: string;
   wide: boolean;
   groups?: { name: string; pageId: number | null }[];
@@ -317,7 +320,13 @@ function GenericPreview({
           <p className="text-xs text-muted-foreground">{t('pageWidgets.previewIncomplete')}</p>
         ) : (
           <WidgetErrorBoundary key={type}>
-            <WidgetHost incidentReading={monitoring} wide={wide} groups={groups} pages={pages}>
+            <WidgetHost
+              connectionId={connectionId}
+              incidentReading={monitoring}
+              wide={wide}
+              groups={groups}
+              pages={pages}
+            >
               <View config={parsedConfig} />
             </WidgetHost>
           </WidgetErrorBoundary>

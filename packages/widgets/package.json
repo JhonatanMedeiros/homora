@@ -55,7 +55,8 @@
     "./certificate-expiry/ui": "./src/widgets/certificate-expiry/ui/index.tsx",
     "./maintenance-schedule/ui": "./src/widgets/maintenance-schedule/ui/index.tsx",
     "./uptime-kuma-monitors/ui": "./src/widgets/uptime-kuma-monitors/ui/index.tsx",
-    "./coolify-resources/ui": "./src/widgets/coolify-resources/ui/index.tsx"
+    "./coolify-resources/ui": "./src/widgets/coolify-resources/ui/index.tsx",
+    "./home-assistant-entities/ui": "./src/widgets/home-assistant-entities/ui/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

@@ -13,6 +13,7 @@ export type RestrictedFetch = (
 export type WidgetSourceContext = {
   fetch: RestrictedFetch;
   now: () => number;
+  readIntegration?: (connectionId: number, operation: string, params: unknown) => Promise<unknown>;
 };
 
 export class SourcePolicyBlockedError extends Error {

@@ -32,9 +32,15 @@ Internal monitoring sources are portable without a connection; see [ADR 0027](00
 
 ## Generic widget source host (#282)
 
-To keep the backend and frontend hosts agnostic as external-source widgets are added, `@homora/widgets` defines a `WidgetSourceReader` contract (`packages/widgets/src/source.ts`) registered in `packages/widgets/src/source-registry.ts`. A module with an external or computed source implements `parseQuery`, `read(params, context)`, and optional `project` inside its own directory (e.g. `source.ts`), receiving only host-injected capabilities (`context.fetch` backed by `network-policy.ts`, clamped to at most 8 s and 512 KB, with DNS pinning and no redirects).
+To keep the backend and frontend hosts agnostic as external-source widgets are added, `@homora/widgets` defines a `WidgetSourceReader` contract (`packages/widgets/src/source.ts`) registered in `packages/widgets/src/source-registry.ts`. A module with an external or computed source implements `parseQuery`, `read(params, context)`, and optional `project` inside its own directory (e.g. `source.ts`), receiving only host-injected capabilities (`context.fetch` backed by `network-policy.ts`, clamped to at most 8 s and 512 KB, with DNS pinning and no redirects). An explicitly approved connection-bound source may also call `context.readIntegration(connectionId, operation, params)`: the host resolves a saved connection and invokes only a named query registered by that integration over its existing restricted transport. The integration validates parameters, and the source projects bounded output; neither receives arbitrary paths or sends credentials to the browser.
 
 The backend mounts one generic route (`GET /api/widget-sources/:contract` in `apps/backend/src/routes/widget-sources.ts`) that owns authentication, TTL caching, concurrent request deduplication, stale-cache fallback, and policy error mapping. The frontend `WidgetHost` exposes a single generic `readSource(contract, params, signal)` helper so new widget modules do not require new host routes or `WidgetHost` methods. Internal monitoring contracts (`ADR 0027`) remain on `widget-monitoring.ts` for their direct SQLite/monitor snapshot readers.
+
+Home Assistant's multiple-entity widget (#315) is the first connection-bound reader. Its source
+passes a saved connection ID and up to 8 explicitly selected entity IDs to the registered
+`entity-states` operation; the backend performs fixed GET requests, limits concurrency to 2, and
+returns only state and last-updated fields. The existing connection observation and its
+single-entity widget are unchanged. This bounded hook does not expose a generic API query facility.
 
 ## Connected local widget modules (INT-03)
 

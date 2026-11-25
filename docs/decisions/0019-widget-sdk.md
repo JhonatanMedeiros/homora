@@ -72,3 +72,19 @@ packages; the synthetic host does not replace real host, browser or live-service
 ## Internal monitoring source
 
 [ADR 0027](0027-widget-internal-monitoring.md) defines the versioned host-owned monitoring contracts, their authenticated bounded readers and connection-free portability. No MON widget presentation is included in that foundation.
+
+## Bounded connected widget queries (#315)
+
+An integration registration may expose a named `prepareWidgetQuery` hook for an approved,
+connection-bound page widget. The host resolves the saved connection, injects its existing
+restricted GET transport and credentials server-side, and calls only the registered operation;
+the browser and widget source never receive credentials or arbitrary destinations. The generic
+widget-source route owns authentication, cache, deduplication and stale fallback.
+
+Home Assistant's `entity-states` operation accepts at most 8 unique, validated entity IDs,
+requests only their fixed `/api/states/<entity_id>` paths with at most 2 concurrent requests,
+and projects only the ID, state and last-updated timestamp. Per-entity 404 and other failures are
+isolated. Its 15-second cache is keyed by connection and ordered IDs. This does not change the
+existing required single-entity connection setting or its legacy widget, and the token retains
+the permissions of its Home Assistant account; the selected list is not an authorization boundary.
+No general-purpose query, path, method, or transport capability is introduced.

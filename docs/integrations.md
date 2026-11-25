@@ -166,6 +166,14 @@ grant trust to other endpoints.
   permissions. Do not share the token or use real secrets in documentation examples.
 - Uses `GET /api/states/<entity_id>` per the [Home Assistant REST API](https://developers.home-assistant.io/docs/api/rest/).
   Version compatibility must be confirmed on real instances.
+- The **Home Assistant entities** page widget can show up to 8 manually entered entity IDs from
+  the selected connection. It makes one bounded GET per ID (at most 2 concurrent requests), caches
+  for 15 seconds, and returns only `entity_id`, `state` and `last_updated`; attributes never leave
+  the backend. A missing or failed entity is isolated in its row. The token still has whatever
+  access its Home Assistant account grants: selecting IDs limits this widget's requests, not the
+  token's authorization. The connection's existing single-entity field and widget remain unchanged.
+- This widget is implemented with synthetic responses only. Validation against a real Home
+  Assistant instance is pending.
 
 ### Uptime Kuma
 

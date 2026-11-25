@@ -46,7 +46,7 @@ As integrações são opcionais e somente de leitura. O Homora consulta e nunca 
 | **Pi-hole**           | <img src="../../screenshots/widgets/pi-hole.png" width="260" alt="">                 | Consultas DNS, consultas bloqueadas e percentual, tamanho da lista, proteção   |
 | **AdGuard Home**      | <img src="../../screenshots/widgets/adguard-home.png" width="260" alt="">            | Se o serviço está rodando, se a proteção está ativa e a versão                 |
 | **Jellyfin**          | <img src="../../screenshots/widgets/jellyfin.png" width="260" alt="">                | Nome e versão do servidor                                                      |
-| **Home Assistant**    | <img src="../../screenshots/widgets/living-room-temperature.png" width="260" alt=""> | O estado de uma entidade, como um sensor de temperatura                        |
+| **Home Assistant**    | <img src="../../screenshots/widgets/living-room-temperature.png" width="260" alt=""> | Uma entidade no cartão ou até 8 estados escolhidos em um widget de página      |
 | **Speedtest Tracker** | <img src="../../screenshots/widgets/speedtest-tracker.png" width="260" alt="">       | Último download, upload e ping                                                 |
 | **Portainer**         | <img src="../../screenshots/widgets/portainer.png" width="260" alt="">               | Ambientes e quantos estão no ar ou fora                                        |
 | **NetBird**           | <img src="../../screenshots/widgets/netbird.png" width="260" alt="">                 | Peers e quantos estão conectados                                               |
@@ -64,6 +64,10 @@ Coolify**.
 <img src="../../screenshots/widgets/uptime-kuma-monitors.png" width="300" alt="Widget de monitores do Uptime Kuma listando cada monitor com seu estado">
 <img src="../../screenshots/widgets/coolify-resources.png" width="300" alt="Widget de recursos do Coolify listando cada aplicação e serviço com o estado informado">
 </p>
+
+O widget de página **Entidades do Home Assistant** aceita até 8 IDs de entidade e mostra o estado
+e o horário da última atualização. Ele usa uma conexão salva; atributos não são enviados ao
+navegador. A validação com um serviço real está pendente.
 
 ::: warning Confira cada uma no seu ambiente
 As integrações foram validadas com mocks e respostas de exemplo documentadas, e a TP-Link Omada é experimental. Os

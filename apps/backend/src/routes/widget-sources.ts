@@ -26,6 +26,11 @@ export type SourceFetcher = (
   policy: DestinationPolicy,
   options?: RequestOptions,
 ) => Promise<{ status: number; body: string }>;
+export type IntegrationWidgetQuery = (
+  connectionId: number,
+  operation: string,
+  params: unknown,
+) => Promise<unknown>;
 
 /**
  * Generic widget source host: handles authentication (via app hook), caching,
@@ -38,6 +43,7 @@ export function registerWidgetSourceRoutes(
   resolveSource: (
     contract: string,
   ) => WidgetSourceReader<unknown, unknown> | undefined = getWidgetSource,
+  readIntegration?: IntegrationWidgetQuery,
 ) {
   const cache = new Map<string, CacheEntry>();
   const inFlight = new Map<string, Promise<unknown>>();
@@ -89,7 +95,11 @@ export function registerWidgetSourceRoutes(
     }
   };
 
-  const context: WidgetSourceContext = { fetch: restrictedFetch, now };
+  const context: WidgetSourceContext = {
+    fetch: restrictedFetch,
+    now,
+    ...(readIntegration ? { readIntegration } : {}),
+  };
 
   app.get<{ Params: { contract: string }; Querystring: Record<string, string> }>(
     '/api/widget-sources/:contract',
