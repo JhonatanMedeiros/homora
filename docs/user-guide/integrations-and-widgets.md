@@ -220,4 +220,5 @@ returned; entity attributes, including location or camera data, are not sent to 
 or other failure appears only on that entity's row. The existing connection field for the legacy
 single-entity widget is unchanged. The token can still read whatever its Home Assistant account
 allows, so selecting IDs limits requests but does not reduce token permissions. Real-service
-validation is pending.
+validation is pending. The selected IDs are retained when exporting and importing widget
+configuration; the connection is local to each installation and must be selected again after import.

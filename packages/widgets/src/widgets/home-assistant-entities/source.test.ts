@@ -4,11 +4,13 @@ import { homeAssistantEntitiesSource } from './source.js';
 describe('Home Assistant entities source', () => {
   it('validates connection-scoped queries and bounds the entity list', () => {
     const parse = (query: Record<string, string>) => homeAssistantEntitiesSource.parseQuery(query);
-    expect(
-      parse({ connectionId: '4', entities: 'sensor.temperature,light.living_room' })?.params,
-    ).toEqual({
-      connectionId: 4,
-      entityIds: ['sensor.temperature', 'light.living_room'],
+    expect(parse({ connectionId: '4', entities: 'sensor.temperature,light.living_room' })).toEqual({
+      cacheKey: '4\0sensor.temperature\0light.living_room',
+      cacheTags: ['integration:4'],
+      params: {
+        connectionId: 4,
+        entityIds: ['sensor.temperature', 'light.living_room'],
+      },
     });
     expect(parse({ connectionId: '0', entities: 'sensor.a' })).toBeNull();
     expect(parse({ connectionId: '1', entities: 'sensor.a,sensor.a' })).toBeNull();

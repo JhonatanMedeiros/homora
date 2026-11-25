@@ -31,6 +31,7 @@ export function createIntegrationConnections(
   db: Db,
   vault?: Vault,
   clock: () => number = Date.now,
+  onConnectionChanged: (id: number) => void = () => {},
 ) {
   /**
    * An integration may request a pause after an error. Automatic reads then stop for at least
@@ -163,6 +164,7 @@ export function createIntegrationConnections(
       backoffs.delete(current.id);
       sessionTransports.delete(current.id);
     }
+    onConnectionChanged(result.id);
     return publicRow(result);
   }
   async function collect(id: number, bypass = false) {
@@ -229,6 +231,7 @@ export function createIntegrationConnections(
         sessionTransports.delete(id);
         inventoryCaches.delete(id);
         addressCaches.delete(id);
+        onConnectionChanged(id);
         return 'deleted' as const;
       } catch (error) {
         sqlite.exec('ROLLBACK');

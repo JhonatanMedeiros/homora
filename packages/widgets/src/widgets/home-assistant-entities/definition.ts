@@ -16,6 +16,7 @@ export const widgetHomeAssistantEntitiesWidget = defineWidget<Config>({
   version: 1,
   locations: ['page'],
   source: { contract: 'integration:home-assistant', version: 1 },
+  portable: true,
   defaultConfig,
   parseConfig(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;

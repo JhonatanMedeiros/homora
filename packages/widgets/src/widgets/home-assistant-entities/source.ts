@@ -83,6 +83,7 @@ export const homeAssistantEntitiesSource: WidgetSourceReader<Params, HomeAssista
         return null;
       return {
         cacheKey: `${connectionId}\0${entityIds.join('\0')}`,
+        cacheTags: [`integration:${connectionId}`],
         params: { connectionId, entityIds },
       };
     },

@@ -86,3 +86,39 @@ it('uses the saved connection and restricted GET transport for selected entity s
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('notifies widget source cache invalidation when a connection is created, changed, or deleted', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'homora-ha-widget-invalidation-'));
+  const path = join(dir, 'data.sqlite');
+  const database = createDatabase(path);
+  const changed: number[] = [];
+  try {
+    const connections = createIntegrationConnections(
+      database.db,
+      createVault(path),
+      Date.now,
+      (id) => changed.push(id),
+    );
+    const connection = await connections.createConnection({
+      type: 'home-assistant',
+      name: 'Home Assistant',
+      url: 'https://ha.example.test',
+      entityId: 'sensor.temperature',
+      secret: 'synthetic-token',
+      allowPrivate: true,
+    });
+    await connections.updateConnection(connection.id, {
+      type: 'home-assistant',
+      name: 'Home Assistant',
+      url: 'https://ha.example.test',
+      entityId: 'sensor.temperature',
+      secret: 'synthetic-token',
+      allowPrivate: true,
+    });
+    expect(await connections.deleteConnection(connection.id)).toBe('deleted');
+    expect(changed).toEqual([connection.id, connection.id, connection.id]);
+  } finally {
+    database.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

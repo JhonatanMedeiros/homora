@@ -135,6 +135,94 @@ it('caches, deduplicates concurrent requests, clamps limits, and falls back to s
   await app.close();
 });
 
+it('invalidates integration-tagged cache and blocks stale fallback after invalidation', async () => {
+  let fail = false;
+  let calls = 0;
+  const reader: WidgetSourceReader<{ connectionId: number }, SampleResult> = {
+    contract: 'integration-cache-test',
+    cacheTtlMs: 60_000,
+    parseQuery: (query) => {
+      const connectionId = Number(query.connectionId);
+      if (!Number.isSafeInteger(connectionId) || connectionId < 1) return null;
+      return {
+        cacheKey: String(connectionId),
+        cacheTags: [`integration:${connectionId}`],
+        params: { connectionId },
+      };
+    },
+    read: async (_params, context) => {
+      calls++;
+      if (fail) throw new Error('connection changed');
+      return { items: ['current'], fetchedAt: context.now(), stale: false };
+    },
+  };
+  const app = Fastify();
+  const cache = registerWidgetSourceRoutes(
+    app,
+    undefined,
+    () => 1_000,
+    (contract) => (contract === reader.contract ? reader : undefined),
+  );
+  const path = '/api/widget-sources/integration-cache-test?connectionId=12';
+
+  expect((await app.inject(path)).json()).toMatchObject({ items: ['current'], stale: false });
+  cache.invalidateIntegration(12);
+  fail = true;
+  const failed = await app.inject(path);
+  expect(failed.statusCode).toBe(502);
+  expect(failed.json()).toMatchObject({ code: 'feed-fetch-failed' });
+  expect(calls).toBe(2);
+
+  await app.close();
+});
+
+it('does not cache or return an in-flight integration read after invalidation', async () => {
+  let releaseFirstRead: (() => void) | undefined;
+  let calls = 0;
+  const reader: WidgetSourceReader<{ connectionId: number }, SampleResult> = {
+    contract: 'integration-inflight-test',
+    cacheTtlMs: 60_000,
+    parseQuery: (query) => {
+      const connectionId = Number(query.connectionId);
+      if (!Number.isSafeInteger(connectionId) || connectionId < 1) return null;
+      return {
+        cacheKey: String(connectionId),
+        cacheTags: [`integration:${connectionId}`],
+        params: { connectionId },
+      };
+    },
+    read: async (_params, context) => {
+      calls++;
+      if (calls === 1)
+        await new Promise<void>((resolve) => {
+          releaseFirstRead = resolve;
+        });
+      return { items: [`reading-${calls}`], fetchedAt: context.now(), stale: false };
+    },
+  };
+  const app = Fastify();
+  const cache = registerWidgetSourceRoutes(
+    app,
+    undefined,
+    () => 1_000,
+    (contract) => (contract === reader.contract ? reader : undefined),
+  );
+  const path = '/api/widget-sources/integration-inflight-test?connectionId=19';
+
+  const first = app.inject(path);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  cache.invalidateIntegration(19);
+  releaseFirstRead?.();
+  const invalidated = await first;
+  expect(invalidated.statusCode).toBe(502);
+
+  const current = await app.inject(path);
+  expect(current.statusCode).toBe(200);
+  expect(current.json()).toMatchObject({ items: ['reading-2'], stale: false });
+  expect(calls).toBe(2);
+  await app.close();
+});
+
 it('maps policy-blocked errors to 403 without serving stale cache and enforces real network-policy', async () => {
   const server = createServer((_req, res) => {
     res.writeHead(302, { Location: 'https://example.com/other' });

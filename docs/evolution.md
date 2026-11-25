@@ -2195,7 +2195,11 @@ not measure end-to-end latency under contention. Engineering standards are an En
   remain unchanged.
 - The saved token retains its Home Assistant account permissions; choosing IDs bounds this widget's
   requests but is not an authorization boundary.
-- Validation: 12 focused widget, source, integration and backend tests passed; `pnpm type-check`,
-  `pnpm check`, `pnpm build`, `pnpm docs:build`, and `pnpm integration:catalog` passed. Tests use
-  synthetic responses only. **Not validated:** a real Home Assistant instance or a browser walkthrough;
-  live-service validation remains pending, and no real infrastructure was contacted.
+- Integration connection updates and deletions invalidate cache entries tagged to that connection;
+  invalidated in-flight reads cannot repopulate the cache or serve stale fallback data. Portable
+  exports retain the selected entity IDs without exporting a local connection reference.
+- Validation: 22 focused widget, source, cache invalidation, integration and transfer tests passed
+  across 6 files. `pnpm check` passed (296 Vitest files, 2,281 tests; 48 Node tests), as did
+  `pnpm build`, `pnpm docs:build`, and `pnpm integration:catalog`. Tests use synthetic responses
+  only. **Not validated:** a real Home Assistant instance or a browser walkthrough; live-service
+  validation remains pending, and no real infrastructure was contacted.

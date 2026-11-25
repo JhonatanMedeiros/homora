@@ -321,7 +321,14 @@ export function createApp(
   registerAuthRoutes(app, auth, webPort, audit);
   registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.describe());
-  const connections = registerConnectionRoutes(app, db, vault, options.developmentMocks === true);
+  let invalidateIntegrationWidgetCache = (_id: number) => {};
+  const connections = registerConnectionRoutes(
+    app,
+    db,
+    vault,
+    options.developmentMocks === true,
+    (id) => invalidateIntegrationWidgetCache(id),
+  );
   registerNotificationRoutes(app, notifications);
   registerInboxRoutes(app, inbox);
   registerPageRoutes(app, createPages(sqlite), auth, audit);
@@ -348,9 +355,14 @@ export function createApp(
     () => monitoringTrust.read().trust?.hash,
     observations,
   );
-  registerWidgetSourceRoutes(app, undefined, Date.now, undefined, (id, operation, params) =>
-    connections.widgetQuery(id, operation, params),
+  const widgetSourceCache = registerWidgetSourceRoutes(
+    app,
+    undefined,
+    Date.now,
+    undefined,
+    (id, operation, params) => connections.widgetQuery(id, operation, params),
   );
+  invalidateIntegrationWidgetCache = widgetSourceCache.invalidateIntegration;
   registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
   registerServiceTagRoutes(app, tagStore);
   registerServiceConfigurationRoutes(

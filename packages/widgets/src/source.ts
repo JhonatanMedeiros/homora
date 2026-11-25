@@ -42,6 +42,8 @@ export class SourceParseError extends Error {
 export type ParsedSourceQuery<Params = unknown> = {
   /** Canonical key identifying the upstream fetch (excluding view-only params like limit). */
   cacheKey: string;
+  /** Tags for invalidating cached data when a dependency changes. */
+  cacheTags?: readonly string[];
   params: Params;
 };
 

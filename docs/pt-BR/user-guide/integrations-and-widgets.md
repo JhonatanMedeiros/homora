@@ -80,3 +80,5 @@ Os filtros opcionais de páginas e grupos usam nomes para portabilidade. Se um n
 ## Entidades do Home Assistant
 
 Adicione **Entidades do Home Assistant** como widget de página, escolha uma conexão salva do Home Assistant e informe de 1 a 8 IDs de entidade (um por linha). O widget atualiza a cada 30 segundos; o backend mantém por 15 segundos o resultado de cada combinação de conexão e seleção e faz um `GET /api/states/<entity_id>` fixo por ID, com no máximo duas requisições simultâneas. Somente o ID, o estado e o horário da última atualização são retornados; atributos, inclusive localização ou dados de câmera, não são enviados ao navegador. Uma resposta 404 ou outra falha aparece apenas na linha daquela entidade. O campo existente da conexão para o widget legado de uma entidade permanece igual. O token ainda pode ler tudo o que a conta do Home Assistant permite; escolher IDs limita as requisições, mas não reduz as permissões do token. A validação com serviço real está pendente.
+
+Os IDs selecionados são mantidos ao exportar e importar a configuração do widget; a conexão é local a cada instalação e precisa ser selecionada novamente após a importação.

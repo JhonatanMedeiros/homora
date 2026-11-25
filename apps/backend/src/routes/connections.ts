@@ -31,8 +31,9 @@ export function registerConnectionRoutes(
   db: Db,
   vault?: Vault,
   developmentMocks = false,
+  onConnectionChanged?: (id: number) => void,
 ): ReturnType<typeof createIntegrationConnections> {
-  const connections = createIntegrationConnections(db, vault);
+  const connections = createIntegrationConnections(db, vault, Date.now, onConnectionChanged);
 
   app.get('/api/connections', async () => connections.listConnections());
   app.get('/api/widgets', async () => connections.listWidgets());
