@@ -129,7 +129,7 @@ export function PageWidgetCard({
     });
   if (!showHidden && item.version === 1 && ui?.isHidden?.(item.config, visibilityNow)) return null;
   return (
-    <article
+    <div
       role="listitem"
       draggable={current.length > 1}
       onDragStart={(event) => {
@@ -243,7 +243,7 @@ export function PageWidgetCard({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </article>
+    </div>
   );
 }
 

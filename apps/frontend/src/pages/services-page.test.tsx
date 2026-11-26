@@ -126,7 +126,7 @@ it('counts a probe that is down in the health banner and in the Offline view', a
     </MemoryRouter>,
   );
   fireEvent.click(await screen.findByRole('button', { name: /Health: 1 problem/ }));
-  expect(await screen.findByText('1 service has a problem')).toBeTruthy();
+  expect(await screen.findByText('1 problem', { selector: '[role="status"]' })).toBeTruthy();
   expect(screen.getByRole('group', { name: 'Filter by status' }).textContent).toMatch(
     /Offline\s*1/,
   );

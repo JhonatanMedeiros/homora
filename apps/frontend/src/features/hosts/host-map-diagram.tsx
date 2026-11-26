@@ -1,3 +1,4 @@
+import { HostAddress } from '@/components/host-address';
 import type { ReactNode } from 'react';
 import type { Service } from '@homora/shared';
 import { ChevronDown, ChevronRight, Container, Server } from 'lucide-react';
@@ -198,21 +199,21 @@ export function HostMapDiagram({
             <span className="truncate font-medium" title={service.name}>
               {service.name}
             </span>
-            {note && (
-              <span
-                className={cn(
-                  'truncate text-[0.6875rem] font-normal',
-                  note.tone === 'suggestion' ? 'text-primary' : 'font-mono text-muted-foreground',
-                )}
-                title={note.text}
-              >
-                {note.text}
-              </span>
-            )}
+            {note &&
+              (note.tone === 'suggestion' ? (
+                <span
+                  className="truncate text-[0.6875rem] font-normal text-accent-text"
+                  title={note.text}
+                >
+                  {note.text}
+                </span>
+              ) : (
+                <HostAddress url={service.url} className="text-[0.6875rem] font-normal" />
+              ))}
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-2">
-          {healthy && typeof latency === 'number' && (
+          {healthy && !loose && typeof latency === 'number' && (
             <span className="font-mono text-[0.6875rem] font-normal text-muted-foreground tabular-nums">
               {Math.round(latency)} ms
             </span>
@@ -221,7 +222,6 @@ export function HostMapDiagram({
             state={status.state}
             blocked={status.blocked}
             label={status.label}
-            compact={healthy}
             className="shrink-0 text-[0.6875rem]"
           />
         </span>
@@ -454,7 +454,7 @@ export function HostMapDiagram({
             aria-hidden="true"
             width={layout.width}
             height={layout.height}
-            className="pointer-events-none absolute top-0 left-0 z-10 overflow-visible text-primary"
+            className="pointer-events-none absolute top-0 left-0 z-10 overflow-visible text-accent-text"
           >
             <defs>
               <marker

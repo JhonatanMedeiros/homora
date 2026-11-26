@@ -483,7 +483,7 @@ export function HostMap({
                   : t('map.noMatches', { query: query.trim() })}
               </p>
             )}
-            <div ref={content} className="w-fit">
+            <div ref={content} className="mx-auto w-fit">
               <HostMapDiagram
                 layout={layout}
                 zoom={zoom}

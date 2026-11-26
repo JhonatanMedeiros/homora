@@ -24,6 +24,15 @@ type Props = {
 export function HostMapMinimap({ layout, visible, problemIds, onPan, className }: Props) {
   const box = useRef<HTMLDivElement>(null);
   if (layout.width === 0 || layout.height === 0) return null;
+  // A map that is entirely on screen needs no overview, which would only cover part of it.
+  const whole =
+    visible !== null &&
+    visible.w > 0 &&
+    visible.x <= 1 &&
+    visible.y <= 1 &&
+    visible.x + visible.w >= layout.width - 1 &&
+    visible.y + visible.h >= layout.height - 1;
+  if (whole) return null;
   const scale = Math.min((WIDTH - PAD * 2) / layout.width, (HEIGHT - PAD * 2) / layout.height);
   const offsetX = (WIDTH - layout.width * scale) / 2;
   const offsetY = (HEIGHT - layout.height * scale) / 2;

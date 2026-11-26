@@ -171,7 +171,7 @@ export function PasskeysForm({
         {passkeys && passkeys.length > 0 && (
           <ItemGroup className="gap-3">
             {passkeys.map((passkey, index) => (
-              <Item key={passkey.id} variant="outline" className="bg-card">
+              <Item role="listitem" key={passkey.id} variant="outline" className="bg-card">
                 <ItemMedia variant="icon">
                   <KeyRound />
                 </ItemMedia>

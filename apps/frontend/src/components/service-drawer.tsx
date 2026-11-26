@@ -114,6 +114,9 @@ export function ServiceDrawer({
                     <UptimePercent summary={uptime} />
                   </div>
                   <UptimeBars summary={uptime} monitor={monitor} />
+                  {uptime.uptimePct === null && (
+                    <p className="text-sm text-muted-foreground">{t('drawer.collecting')}</p>
+                  )}
                   <UptimeDetails
                     id={`drawer-${service.id}`}
                     service={service}
@@ -127,7 +130,7 @@ export function ServiceDrawer({
               )}
               <Link
                 to={`/services/${service.id}`}
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-accent-text hover:underline"
                 onClick={onClose}
               >
                 {t('drawer.fullPage')} →

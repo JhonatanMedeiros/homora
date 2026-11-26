@@ -31,15 +31,18 @@ export function SessionsList({ refreshKey }: { refreshKey: number }) {
   async function end(url: string, success: string) {
     setConfirming(null);
     const response = await revoke(url);
-    if (!response?.ok) {
-      toast.error(apiError(await response?.json().catch(() => null), t('account.sessionFailed')));
-    } else {
+    if (response?.ok) {
       toast.success(success);
+    } else {
+      toast.error(apiError(await response?.json().catch(() => null), t('account.sessionFailed')));
     }
   }
   const confirmOrEnd = (key: string, url: string, success: string) => {
-    if (confirming !== key) setConfirming(key);
-    else void end(url, success);
+    if (confirming === key) {
+      void end(url, success);
+    } else {
+      setConfirming(key);
+    }
   };
   const others = sessions?.filter((session) => !session.current).length ?? 0;
   const confirmButton = (key: string) => confirming === key;
@@ -80,7 +83,7 @@ export function SessionsList({ refreshKey }: { refreshKey: number }) {
           {sessions.map((session) => {
             const Icon = session.os === 'iPhone' || session.os === 'Android' ? Smartphone : Laptop;
             return (
-              <Item key={session.id} variant="outline" className="bg-card">
+              <Item role="listitem" key={session.id} variant="outline" className="bg-card">
                 <ItemMedia variant="icon">
                   <Icon />
                 </ItemMedia>

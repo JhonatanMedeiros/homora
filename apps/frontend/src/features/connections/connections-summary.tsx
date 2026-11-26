@@ -13,14 +13,18 @@ export function ConnectionsSummary({
 }) {
   const working = items.filter((item) => healthOf(item) === 'ok').length;
   const attention = items.filter((item) => healthOf(item) === 'failed').length;
+  const untested = items.length - working - attention;
   const tiles = [
     { label: t('connections.summary.total'), value: items.length, alert: false },
     { label: t('connections.summary.working'), value: working, alert: false },
     { label: t('connections.summary.attention'), value: attention, alert: attention > 0 },
+    ...(untested > 0
+      ? [{ label: t('connections.summary.untested'), value: untested, alert: false }]
+      : []),
     { label: t('connections.summary.widgets'), value: widgets.length, alert: false },
   ];
   return (
-    <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-3">
       {tiles.map((tile) => (
         <Card
           key={tile.label}

@@ -2278,3 +2278,16 @@ the 300 ms endpoint target on this machine. It excludes authentication, network,
 concurrent load.
 Real-service testing and end-to-end latency under load remain unverified. No model or live service
 was used. #349 remains open pending PR review.
+
+## Interface audit fixes
+
+A sweep of the running interface with synthetic data led to one set of corrections: ember used as text
+meets contrast in the light theme; services come before probes and page widgets on small screens; the
+status total says how many offline services, offline probes and slow ones it holds; state is never
+shown by color alone on the map or the phone header; page tabs and lists use valid roles; a skip link
+reaches the services; truncated addresses keep the port; Organize keeps the rail and status pill;
+short histories say data is still being collected; and Portuguese status words are consistent.
+
+Validation: `pnpm check`, `pnpm build`, `pnpm docs:build` and axe through agent-browser on an isolated
+synthetic database, in light and dark themes. Real touch devices, screen readers, real integrations and
+performance under load were not verified.

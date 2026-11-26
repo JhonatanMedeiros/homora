@@ -37,6 +37,8 @@ type Props = {
   probes?: { items: RailProbe[]; onOpen: () => void };
   widgetRail: boolean;
   onToggleWidgetRail: () => void;
+  /** Organize mode keeps the frame; the rail then only jumps to a group. */
+  organizing?: boolean;
 };
 
 const DOT: Record<StatusFilter, string | null> = {
@@ -67,7 +69,31 @@ export function HomeRail({
   probes,
   widgetRail,
   onToggleWidgetRail,
+  organizing = false,
 }: Props) {
+  if (organizing)
+    return (
+      <nav aria-label={t('rail.label')} className="flex flex-col gap-0.5 text-sm">
+        <h2 className="px-2.5 pb-1 text-xs font-medium text-muted-foreground">
+          {t('rail.groups')}
+        </h2>
+        {groups.map((group) => (
+          <button
+            key={group.name}
+            type="button"
+            onClick={() =>
+              [...document.querySelectorAll<HTMLElement>('[data-group]')]
+                .find((section) => section.dataset.group === group.name)
+                ?.scrollIntoView?.({ block: 'start' })
+            }
+            className={cn(ITEM, 'text-muted-foreground')}
+          >
+            <span className="truncate">{group.name}</span>
+            <span className="font-mono text-xs tabular-nums">{group.total}</span>
+          </button>
+        ))}
+      </nav>
+    );
   return (
     <nav aria-label={t('rail.label')} className="flex flex-col gap-5 text-sm">
       <section aria-label={t('filter.byStatus')} className="flex flex-col gap-0.5">
@@ -83,12 +109,18 @@ export function HomeRail({
               className={cn(
                 ITEM,
                 on ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
-                counts[filter] === 0 && filter !== 'all' && !on && 'opacity-60',
               )}
             >
               <span className="flex items-center gap-2">
                 {DOT[filter] && (
-                  <span aria-hidden="true" className={cn('size-2 rounded-full', DOT[filter])} />
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-2 rounded-full',
+                      DOT[filter],
+                      counts[filter] === 0 && !on && 'opacity-40',
+                    )}
+                  />
                 )}
                 {t(`filter.status.${filter}`)}
               </span>
@@ -96,6 +128,13 @@ export function HomeRail({
             </button>
           );
         })}
+        {probes && probes.items.length > 0 && (
+          <p className="px-2.5 py-0.5 text-xs text-muted-foreground">
+            {t(probes.items.length === 1 ? 'rail.includes.one' : 'rail.includes.other', {
+              count: probes.items.length,
+            })}
+          </p>
+        )}
         {(favorites.count > 0 || favorites.active) && (
           <button
             type="button"

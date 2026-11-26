@@ -174,3 +174,32 @@ it('matches the widget counts for the same monitoring inputs', async () => {
     home.windows.filter((window) => window.state === 'maintenance').length,
   );
 });
+
+it('says what a total that mixes services, probes and slow ones is made of', () => {
+  setLocale('en');
+  const summary = summarizeStatus({
+    services: [
+      { id: 1, name: 'Radarr' },
+      { id: 2, name: 'DNS' },
+    ],
+    statuses: {
+      1: down,
+      2: down,
+    },
+    blockedIds: new Set(),
+    probeIds: new Set([2]),
+    now: 0,
+  });
+  expect(summary.title).toBe('2 problems');
+  expect(summary.breakdown).toBe('1 service offline · 1 probe offline');
+});
+
+it('counts certificate days the same way the card does', () => {
+  const summary = summarizeStatus({
+    services: [{ id: 1, name: 'Caddy' }],
+    statuses: { 1: { ...ok, certExpiresAt: 7.5 * 86_400_000 } },
+    blockedIds: new Set(),
+    now: 0,
+  });
+  expect(summary.certs).toEqual([{ name: 'Caddy', days: 8 }]);
+});

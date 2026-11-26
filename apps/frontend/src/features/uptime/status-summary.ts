@@ -16,6 +16,8 @@ export type StatusSummaryInput = {
   blockedIds: Set<number>;
   overview?: StatusOverview;
   now: number;
+  /** Ids in `services` that are probes (no card), counted apart in the breakdown. */
+  probeIds?: ReadonlySet<number>;
 };
 
 export type StatusSummary = {
@@ -32,6 +34,8 @@ export type StatusSummary = {
   measurement: NonNullable<StatusOverview['measurement']> | null;
   title: string;
   subtitle: string;
+  /** "5 services offline · 1 probe offline · 1 slow", when the total mixes kinds. */
+  breakdown: string | null;
   tone: StatusTone;
 };
 
@@ -45,7 +49,9 @@ export function summarizeStatus({
   blockedIds,
   overview,
   now,
+  probeIds,
 }: StatusSummaryInput): StatusSummary {
+  let probesDown = 0;
   const down: string[] = [];
   const slow: string[] = [];
   let unknown = 0;
@@ -57,7 +63,7 @@ export function summarizeStatus({
     if (typeof status?.certExpiresAt === 'number')
       certs.push({
         name: service.name,
-        days: Math.floor((status.certExpiresAt - now) / 86_400_000),
+        days: Math.ceil((status.certExpiresAt - now) / 86_400_000),
       });
     const state = monitoringState({
       status: status?.status,
@@ -77,6 +83,7 @@ export function summarizeStatus({
     const slowNow = state === 'degraded';
     if (isBlocked) blocked++;
     else if (status?.status === 'unavailable') {
+      if (probeIds?.has(service.id)) probesDown++;
       const since = overview?.open[service.id]?.startedAt;
       down.push(
         typeof since === 'number'
@@ -98,9 +105,13 @@ export function summarizeStatus({
   const title = measurement
     ? t('banner.measurement.title')
     : problems > 0
-      ? problems === 1
-        ? t('banner.problem.one')
-        : t('banner.problem.other', { count: problems })
+      ? probesDown > 0
+        ? problems === 1
+          ? t('banner.mixed.one')
+          : t('banner.mixed.other', { count: problems })
+        : problems === 1
+          ? t('banner.problem.one')
+          : t('banner.problem.other', { count: problems })
       : unknown > 0
         ? unknown === 1
           ? t('banner.unknown.one')
@@ -132,7 +143,19 @@ export function summarizeStatus({
         ? 'warn'
         : 'ok';
 
+  const counted = (key: 'services' | 'probes' | 'slow', count: number) =>
+    count === 0 ? [] : [t(`banner.breakdown.${key}.${count === 1 ? 'one' : 'other'}`, { count })];
+  const breakdown =
+    !measurement && (probesDown > 0 || (down.length > 0 && slow.length > 0))
+      ? [
+          ...counted('services', down.length - probesDown),
+          ...counted('probes', probesDown),
+          ...counted('slow', slow.length),
+        ].join(' · ')
+      : null;
+
   return {
+    breakdown,
     down,
     slow,
     unknown,
