@@ -49,6 +49,18 @@ export function registerServiceIncidentRoutes(
       return incidents.list(id, query.data.limit, query.data.before);
     },
   );
+  app.get<{ Params: { id: string; incidentId: string } }>(
+    '/api/services/:id/incidents/:incidentId',
+    async (request, reply) => {
+      const serviceId = parseId(request.params.id);
+      const incidentId = parseId(request.params.incidentId);
+      if (serviceId === null || incidentId === null)
+        return reply.code(404).send(errorBody('not-found'));
+      const incident = incidents.find(serviceId, incidentId);
+      if (!incident) return reply.code(404).send(errorBody('not-found'));
+      return incident;
+    },
+  );
   app.get<{ Params: { id: string }; Querystring: Record<string, string> }>(
     '/api/services/:id/latency',
     async (request, reply) => {

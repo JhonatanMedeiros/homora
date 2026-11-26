@@ -50,3 +50,12 @@ O indicador de atualização depende de uma imagem com versão identificada e de
 - **Esqueci a senha?** Veja [conta e segurança](accounts-and-security.md) para recuperação local.
 
 [Leia o guia completo em inglês](/user-guide/getting-started).
+
+### Mudanças no monitoramento
+
+Em **Gerenciar → Atividade**, selecione **Mostrar mudanças no monitoramento** para consultar
+inícios e recuperações de incidentes registrados nas últimas 24 horas ou nos últimos 7 dias. Os
+horários usam o fuso do navegador; os links abrem os detalhes do serviço. Selecione um incidente de probe para consultar seu início e término registrados. A lista mostra até os 100 eventos mais recentes e avisa quando há mais. A visão mostra quando foi atualizada,
+oferece um botão para atualizar e avisa quando o resultado tem mais de dois minutos (a verificação
+ocorre a cada 30 segundos). Os registros de incidentes não comprovam cobertura histórica completa: uma lista vazia não prova que nada aconteceu. A visão não
+infere causas e não inclui mudanças de configuração, histórico de certificados ou recorrência.
