@@ -5,6 +5,11 @@ import { formatDateTime } from '@/i18n';
 export type { Availability, ServiceStatus, StatusReason };
 export { hostOf, isPrivateHost };
 
+/** Addresses of the server itself, which monitoring never reaches even with permission. */
+export function isLoopback(url: string): boolean {
+  return /^(localhost|127(\.\d+){3}|\[::1\])$/.test(hostOf(url).replace(/:\d+$/, ''));
+}
+
 export const emptyService: ServiceInput = {
   name: '',
   url: '',

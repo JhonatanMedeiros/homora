@@ -26,6 +26,8 @@ type Props = {
     selected: StatusFilterValue;
     counts: ComponentProps<typeof StatusFilter>['counts'];
     onSelect: (filter: StatusFilterValue) => void;
+    /** Probes included in the counts, said in words as the desktop rail does. */
+    probes?: number;
   };
 };
 
@@ -66,11 +68,20 @@ export function ServiceOptionsSheet({ toolbar, status }: Props) {
           </SheetHeader>
           <div className="flex min-h-0 flex-col gap-5 overflow-y-auto px-4 pb-2">
             {status && (
-              <StatusFilter
-                selected={status.selected}
-                counts={status.counts}
-                onSelect={status.onSelect}
-              />
+              <div className="flex flex-col gap-1.5">
+                <StatusFilter
+                  selected={status.selected}
+                  counts={status.counts}
+                  onSelect={status.onSelect}
+                />
+                {!!status.probes && (
+                  <p className="text-xs text-muted-foreground">
+                    {status.probes === 1
+                      ? t('rail.includes.one')
+                      : t('rail.includes.other', { count: status.probes })}
+                  </p>
+                )}
+              </div>
             )}
             <div className="flex flex-col gap-2">
               <p className="font-mono text-xs text-muted-foreground">{t('hosts.arrange')}</p>

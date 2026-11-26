@@ -20,6 +20,7 @@ const summary = (extra: Partial<StatusSummary> = {}): StatusSummary => ({
   title: 'All systems operational',
   subtitle: '',
   breakdown: null,
+  stale: false,
   tone: 'ok',
   ...extra,
 });

@@ -1,3 +1,4 @@
+import { firstCharacter } from '@homora/utils';
 import { useState } from 'react';
 import { brandIconUrl, iconKind, iconRegistry } from '@/lib/icons';
 import { upper } from '@/i18n';
@@ -18,7 +19,7 @@ const DARK_BRANDS = new Set(
 export function ServiceIcon({ icon, name }: { icon?: string; name: string }) {
   const value = icon ?? '';
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const initial = upper(name.slice(0, 1));
+  const initial = upper(firstCharacter(name));
   const kind = iconKind(value);
   if (kind === 'lucide') {
     const Icon = iconRegistry[value.slice('lucide:'.length)];

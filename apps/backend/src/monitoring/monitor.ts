@@ -1,3 +1,4 @@
+import { isPrivateHost } from '@homora/utils';
 import type { MonitoringService } from './service-source.js';
 import { CHECK_INTERVAL_DEFAULT, type CheckType } from '@homora/shared';
 import { resolveCheckTarget } from './target.js';
@@ -42,6 +43,16 @@ const rawFailure = (error: unknown): RawFailure => ({
       : null,
   message: error instanceof Error ? error.message : String(error),
 });
+
+/**
+ * Whether the refusal is about how the monitor is set up: a separate check address, a private
+ * network without consent, or an address on the local machine or network that is never allowed.
+ */
+function isRefusedByPolicy(service: MonitoringService, error: unknown): boolean {
+  if (service.checkUrl) return true;
+  if ((error as { privateNetwork?: unknown }).privateNetwork === true) return true;
+  return isPrivateHost(resolveCheckTarget(service));
+}
 
 export function createServiceMonitor(
   getServices: () => Promise<MonitoringService[]>,
@@ -189,7 +200,7 @@ export function createServiceMonitor(
           from: previous?.status ?? 'unknown',
           to: next.status,
           reason: next.reason,
-          ...(next.httpStatus !== null ? { httpStatus: next.httpStatus } : {}),
+          ...(next.httpStatus === null ? {} : { httpStatus: next.httpStatus }),
           ...(failure ? { errorCode: failure.code, errorMessage: failure.message } : {}),
         };
         const message = `service ${fields.from} -> ${fields.to}: ${next.reason}`;
@@ -230,9 +241,10 @@ export function createServiceMonitor(
                 ...(service.checkInsecure ? { insecureTls: true } : {}),
                 ...(ca && !service.checkInsecure ? { ca: ca.bundle } : {}),
               };
-              const result = Object.keys(options).length
-                ? await check(...args, undefined, options)
-                : await check(...args);
+              const result =
+                Object.keys(options).length > 0
+                  ? await check(...args, undefined, options)
+                  : await check(...args);
               if (runGeneration === generation)
                 settle(service, {
                   ...(result.outcome ??
@@ -256,15 +268,17 @@ export function createServiceMonitor(
                 );
               } else if (runGeneration === generation) {
                 const failure = rawFailure(error);
+                // A destination the policy refuses was never measured: it is not an outage, so it
+                // opens no incident and sends no alert. A public name that starts resolving to a
+                // refused address still counts as a failure.
+                const blocked =
+                  failure.code === 'destination-disallowed' && isRefusedByPolicy(service, error);
                 settle(
                   service,
                   {
-                    status: 'unavailable',
+                    status: blocked ? 'unknown' : 'unavailable',
                     lastAttempt: attemptedAt,
-                    reason:
-                      service.checkUrl && failure.code === 'destination-disallowed'
-                        ? 'destination-blocked'
-                        : 'no-response',
+                    reason: blocked ? 'destination-blocked' : 'no-response',
                     httpStatus: null,
                     latencyMs: null,
                   },

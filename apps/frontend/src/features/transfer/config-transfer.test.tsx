@@ -158,3 +158,23 @@ it('sends selected source, regenerates preview on format switch, and hides priva
   const [, applyInit] = api(fetchMock)[2] as unknown as [string, { body: string }];
   expect(JSON.parse(applyInit.body)).toMatchObject({ source: 'homepage', keepPrivate: false });
 });
+
+it('says a broken file cannot be imported instead of previewing zero cards', async () => {
+  const broken: Preview = {
+    version: 1,
+    plan: {
+      groups: [],
+      services: [],
+      issues: [{ code: 'invalid-syntax', severity: 'error', path: '' }],
+      summary: { newGroups: 0, newServices: 0, duplicates: 0, errors: 1, warnings: 0 },
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, status: 200, json: async () => broken })),
+  );
+  render(<ConfigTransfer onImported={() => {}} />);
+  choose(screen.getByLabelText('Arquivo de configuração'), file('{'));
+  expect(await screen.findByText('Este arquivo não pode ser importado')).toBeTruthy();
+  expect(screen.getByRole('alert').textContent).toContain('YAML');
+});

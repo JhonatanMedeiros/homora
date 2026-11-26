@@ -184,7 +184,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'bell.readAll': 'Marcar todas como lidas',
   'bell.unread': 'Não lida',
   'bell.unreadCount': '{count} não lidas',
-  'bell.probe': 'probe',
+  'bell.probe': 'sonda',
   'bell.monitoring': 'Monitoramento',
   'bell.stateDown': 'Fora do ar',
   'bell.stateUp': 'Recuperado',

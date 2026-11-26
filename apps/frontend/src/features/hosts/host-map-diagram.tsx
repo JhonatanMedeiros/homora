@@ -180,7 +180,7 @@ export function HostMapDiagram({
           height: item.h,
         }}
         className={cn(
-          'absolute flex items-center justify-between gap-2 px-2 text-left text-xs',
+          'absolute z-20 flex items-center justify-between gap-2 px-2 text-left text-xs',
           selected && 'border-primary ring-2 ring-primary',
           found && !selected && 'border-primary',
           dimmed && 'border-dashed bg-transparent text-muted-foreground',
@@ -287,7 +287,7 @@ export function HostMapDiagram({
           aria-pressed={selected}
           onClick={() => onSelect({ kind: 'guest', key: group.key })}
           style={{ height: MAP.guestHeader - 6, width: guest.w - 40 }}
-          className="absolute top-1 left-1 flex h-auto flex-col items-start justify-center gap-1 rounded-sm px-2 py-0 text-left text-xs pointer-coarse:h-auto"
+          className="absolute top-1 left-1 z-20 flex h-auto flex-col items-start justify-center gap-1 rounded-sm px-2 py-0 text-left text-xs pointer-coarse:h-auto"
         >
           <span
             className={cn(
@@ -325,7 +325,7 @@ export function HostMapDiagram({
           size="icon-sm"
           aria-expanded={!guest.collapsed}
           aria-label={t(guest.collapsed ? 'map.guest.expand' : 'map.guest.collapse', { name })}
-          className="absolute top-1.5 right-1 size-7 pointer-coarse:size-11"
+          className="absolute top-1.5 right-1 z-20 size-7 pointer-coarse:size-11"
           onClick={() => onToggleGuest(group.key, !guest.collapsed)}
         >
           {guest.collapsed ? <ChevronRight /> : <ChevronDown />}

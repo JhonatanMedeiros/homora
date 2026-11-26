@@ -2320,3 +2320,17 @@ short histories say data is still being collected; and Portuguese status words a
 Validation: `pnpm check`, `pnpm build`, `pnpm docs:build` and axe through agent-browser on an isolated
 synthetic database, in light and dark themes. Real touch devices, screen readers, real integrations and
 performance under load were not verified.
+
+## Status honesty and form safeguards
+
+Scenario runs with synthetic data (failures, stale data, long names, many services) led to one set of fixes. A refused
+destination is recorded as unknown, so it opens no incident; incidents already open from before stay as they are. While
+a measurement failure is confirmed, the status API reports the affected monitors as not measured, so the whole interface
+agrees. Statuses that stop updating are marked as old. The service form completes bare addresses, points out duplicates,
+asks before discarding and keeps card fields in the tab across an expired session. Drawer, health panel, service page,
+phone Home, service map and import errors were adjusted accordingly.
+
+Not covered: the Home at hundreds of services is still a long page on phones, and links, monitoring settings, tags and
+dependencies typed in the form are not part of the kept draft. Validation: `pnpm check`, `pnpm build`,
+`pnpm docs:build` and agent-browser with axe on an isolated synthetic database. Real integrations, physical devices and
+screen readers were not verified.

@@ -2,13 +2,15 @@
 
 Um serviço representa um endereço que você deseja abrir e, opcionalmente, monitorar. O formulário permite configurar nome, URL, categoria, ícone, aparência, verificações, conexões e acesso à rede.
 
+A URL deve ser `http` ou `https`, sem usuário nem senha; `http://` é acrescentado quando você omite. Um endereço já usado por outro cartão é avisado, sem impedir o salvamento. Fechar o formulário com alterações pede confirmação. O que foi digitado nos campos do cartão permanece nesta aba do navegador se a sessão expirar ou a página recarregar, até salvar, descartar ou sair.
+
 ![Formulário de serviço](../../screenshots/service-form.png)
 
 ## Tipos de verificação
 
 O Homora oferece verificações HTTP(S), ping, TCP, DNS, validade de certificado TLS, palavra-chave e valor em resposta JSON. Configure o tipo, destino, intervalo e opções adequadas ao serviço. O endereço aberto no navegador e o destino de monitoramento podem ser diferentes.
 
-Endereços privados exigem autorização explícita no serviço; loopback, link-local e outras faixas proibidas continuam bloqueados. A validação de TLS permanece ativa. Consulte as regras e limites detalhados no [guia em inglês](/user-guide/services-and-monitoring).
+Endereços privados exigem autorização explícita no serviço; loopback, link-local e outras faixas proibidas continuam bloqueados. Um destino não autorizado aparece como **Sem monitoramento**, sem abrir incidente nem enviar notificação. A validação de TLS permanece ativa. Consulte as regras e limites detalhados no [guia em inglês](/user-guide/services-and-monitoring).
 
 ## Estados e incidentes
 

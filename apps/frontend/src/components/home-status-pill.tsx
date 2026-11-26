@@ -38,7 +38,7 @@ export function HomeStatusPill({ summary, children }: Props) {
             )}
           />
           <span aria-hidden="true" className="font-mono tabular-nums sm:hidden">
-            {summary.measurement || (!summary.problems && summary.tone !== 'ok')
+            {summary.stale || summary.measurement || (!summary.problems && summary.tone !== 'ok')
               ? '?'
               : summary.problems || <Check className="size-3.5" />}
           </span>
@@ -48,6 +48,7 @@ export function HomeStatusPill({ summary, children }: Props) {
       <PopoverContent
         align="end"
         collisionPadding={16}
+        aria-label={text}
         className="flex max-h-[calc(100svh-6rem)] w-[min(34rem,calc(100vw-2rem))] flex-col gap-4 overflow-y-auto p-4"
       >
         {children(() => setOpen(false))}

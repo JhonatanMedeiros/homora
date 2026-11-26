@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -12,6 +11,8 @@ import { useHostInventory } from '@/features/hosts/use-host-inventory';
 import { useDependencies } from '@/features/hosts/use-dependencies';
 import { useLinkTypes } from '@/hooks/use-link-types';
 import type { useServices } from '@/hooks/use-services';
+import { clearDraft, readDraft, writeDraft } from '@/lib/service-draft';
+import type { Section } from '@/components/service-form-summary';
 import { apiError, t } from '@/i18n';
 import { emptyService } from '@/lib/services';
 import { linkDrafts, linkInputs, sameLinks, type LinkDraft } from '@/lib/service-links';
@@ -93,6 +94,9 @@ export function useServiceEditor({
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const privateDefaultRef = useRef(false);
+  /** The card as the form opened, to tell whether closing it would lose typing. */
+  const [opened, setOpened] = useState<ServiceInput>(emptyService);
+  const [section, setSection] = useState<Section>('look');
   const initializedRoute = useRef<'new' | number | null>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const linkedConnections = useMemo(
@@ -112,19 +116,22 @@ export function useServiceEditor({
         const value = result?.allowPrivate === true;
         privateDefaultRef.current = value;
         // It can arrive after a "new service" form opened: seed it while the form is untouched.
-        if (value && initializedRoute.current === 'new')
-          setForm((current) =>
+        if (value && initializedRoute.current === 'new') {
+          const seed = (current: ServiceInput) =>
             current.name || current.url || current.allowPrivate
               ? current
-              : { ...current, allowPrivate: true },
-          );
+              : { ...current, allowPrivate: true };
+          setForm(seed);
+          setOpened(seed);
+        }
       })
       .catch(() => {});
     return () => controller.abort();
   }, []);
 
-  function openForm(service?: Service) {
+  function openForm(service?: Service, at: Section = 'look') {
     onOpenForm();
+    setSection(at);
     navigate(service ? `/manage/services/${service.id}/edit` : '/manage/services/new');
     setEditing(service?.id ?? null);
     setHost(service?.host ?? null);
@@ -135,12 +142,31 @@ export function useServiceEditor({
     setTagDraft(null);
     linkBase.current = linkDrafts(service?.links);
     setLinkDraft(linkBase.current);
-    setForm(serviceDraft(service, privateDefaultRef.current));
+    startDraft(service?.id ?? null, serviceDraft(service, privateDefaultRef.current));
     setFormError('');
     setFormOpen(true);
   }
 
+  /** Starts from what this tab had typed for the same card, such as before the session expired. */
+  function startDraft(id: number | null, base: ServiceInput) {
+    setOpened(base);
+    setForm(readDraft(id) ?? base);
+  }
+
+  const dirty =
+    formOpen &&
+    (JSON.stringify(form) !== JSON.stringify(opened) ||
+      !sameLinks(linkDraft, linkBase.current) ||
+      monitorDraft !== null ||
+      tagDraft !== null ||
+      depAdded.length > 0 ||
+      depRemoved.length > 0);
+  useEffect(() => {
+    if (formOpen && JSON.stringify(form) !== JSON.stringify(opened)) writeDraft(editing, form);
+  }, [formOpen, editing, form, opened]);
+
   function closeForm() {
+    clearDraft();
     try {
       sessionStorage.setItem('homora-focus-service', editing === null ? 'new' : String(editing));
     } catch {
@@ -154,7 +180,6 @@ export function useServiceEditor({
     if (formRoute === null) {
       initializedRoute.current = null;
       // Synchronize the controlled dialog with browser history.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormOpen(false);
       return;
     }
@@ -176,7 +201,7 @@ export function useServiceEditor({
     setTagDraft(null);
     linkBase.current = linkDrafts(service?.links);
     setLinkDraft(linkBase.current);
-    setForm(serviceDraft(service, privateDefaultRef.current));
+    startDraft(service?.id ?? null, serviceDraft(service, privateDefaultRef.current));
     setFormError('');
     setFormOpen(true);
   }, [formRoute, services]);
@@ -248,7 +273,6 @@ export function useServiceEditor({
     } catch (error) {
       const message = error instanceof Error && error.message ? error.message : t('error.save');
       setFormError(message);
-      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -276,6 +300,8 @@ export function useServiceEditor({
       types: linkTypes,
     },
     formOpen,
+    dirty,
+    section,
     host,
     setHost,
     depAdded,

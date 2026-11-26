@@ -1,3 +1,4 @@
+import type { createMeasurementGuard } from '../monitoring/index.js';
 import type { FastifyInstance } from 'fastify';
 import { HostLinkError, ServiceLinkError } from '../service-configuration.js';
 import {
@@ -49,6 +50,7 @@ export function registerServiceConfigurationRoutes(
   auth: ReturnType<typeof createAuth>,
   audit: AuditLog,
   attention: ReturnType<typeof createServiceAttention>,
+  measurement: Pick<ReturnType<typeof createMeasurementGuard>, 'present'>,
 ) {
   app.get<{ Params: { alias: string } }>('/api/go/:alias', async (request, reply) => {
     reply.header('Cache-Control', 'no-store');
@@ -154,7 +156,7 @@ export function registerServiceConfigurationRoutes(
     }
     return { allowPrivate: parsed.data.allowPrivate };
   });
-  app.get('/api/service-status', async () => monitor.snapshot());
+  app.get('/api/service-status', async () => measurement.present(monitor.snapshot()));
   app.get<{ Params: { id: string } }>('/api/services/:id/status-detail', async (request, reply) => {
     const id = parseId(request.params.id);
     if (id === null) return reply.code(404).send(errorBody('service-not-found'));

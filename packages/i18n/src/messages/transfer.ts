@@ -181,6 +181,7 @@ export const en = {
   'transfer.statusNew': 'New',
   'transfer.statusDuplicate': 'Already present',
   'transfer.issues': 'Ignored or adjusted items',
+  'transfer.unreadable': 'This file cannot be imported',
   'transfer.issuePath': 'At {path}',
   'transfer.keepPrivate': 'Keep private-network monitoring permissions from the file',
   'transfer.keepPrivateHint':
@@ -420,6 +421,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'transfer.statusNew': 'Novo',
   'transfer.statusDuplicate': 'Já existe',
   'transfer.issues': 'Itens ignorados ou ajustados',
+  'transfer.unreadable': 'Este arquivo não pode ser importado',
   'transfer.issuePath': 'Em {path}',
   'transfer.keepPrivate': 'Manter as permissões de monitoramento em rede privada do arquivo',
   'transfer.keepPrivateHint':

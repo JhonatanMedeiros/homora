@@ -93,7 +93,7 @@ export function createMeasurementGuard(
       states: Record<number, ServiceStatus>,
       at = Date.now(),
     ) {
-      if (!services.length) return;
+      if (services.length === 0) return;
       let newest = '';
       const byReason = new Map<string, { id: number; name: string }[]>();
       let measured = 0;
@@ -155,6 +155,23 @@ export function createMeasurementGuard(
         monitors,
       };
       onTransition?.({ kind: 'down', incident: open, at });
+    },
+
+    /**
+     * States as the interface should see them: while a measurement failure is confirmed, the
+     * monitors that share its reason are not known to be down.
+     */
+    present(states: Record<number, ServiceStatus>): Record<number, ServiceStatus> {
+      if (!open) return states;
+      const { reason } = open;
+      return Object.fromEntries(
+        Object.entries(states).map(([id, state]) => [
+          id,
+          state.status === 'unavailable' && state.reason === reason
+            ? { ...state, status: 'unknown' as const, unmeasured: true }
+            : state,
+        ]),
+      );
     },
 
     /**

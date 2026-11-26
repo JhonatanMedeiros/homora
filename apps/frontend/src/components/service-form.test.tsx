@@ -124,7 +124,7 @@ it('moves to the icon field from the icon tile', () => {
   openSection('Acesso');
   fireEvent.click(screen.getByRole('button', { name: 'Trocar ícone' }));
   expect(screen.getByRole('tab', { name: /Aparência/ }).getAttribute('aria-selected')).toBe('true');
-  expect(document.activeElement).toBe(document.getElementById('service-icon'));
+  expect(document.activeElement).toBe(document.querySelector('#service-icon'));
 });
 
 it('shows only the fields a check type uses and clears the ones it does not', () => {
@@ -171,4 +171,54 @@ it('chooses how the service opens, defaulting to a new tab', () => {
   expect(screen.getByRole('radio', { name: 'Nova aba' }).getAttribute('aria-checked')).toBe('true');
   fireEvent.click(screen.getByRole('radio', { name: 'Mesma aba' }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ openTarget: 'same-tab' }));
+});
+
+it('completes an address typed without a scheme before saving', () => {
+  const onChange = setup({ ...emptyService, name: 'NAS', url: 'nas.invalid:5000' });
+  fireEvent.blur(document.querySelector<HTMLElement>('#service-url')!);
+  expect(onChange).toHaveBeenCalledWith(
+    expect.objectContaining({ url: 'http://nas.invalid:5000' }),
+  );
+});
+
+it('explains an unusable address on the field and does not submit', () => {
+  const onSubmit = vi.fn();
+  const { container } = render(
+    <ServiceForm
+      editing={false}
+      value={{ ...emptyService, name: 'NAS', url: 'not an address' }}
+      categories={[]}
+      error=""
+      saving={false}
+      nameRef={null}
+      isPublic={false}
+      onPublicChange={() => {}}
+      onChange={() => {}}
+      onSubmit={onSubmit}
+      onCancel={() => {}}
+    />,
+  );
+  fireEvent.submit(container.querySelector('form')!);
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(screen.getByRole('alert').textContent).toContain('http://');
+});
+
+it('warns, without blocking, about an address already on the dashboard', () => {
+  render(
+    <ServiceForm
+      editing={false}
+      value={{ ...emptyService, url: 'nas.invalid' }}
+      others={[{ name: 'Storage', url: 'http://nas.invalid/' }]}
+      categories={[]}
+      error=""
+      saving={false}
+      nameRef={null}
+      isPublic={false}
+      onPublicChange={() => {}}
+      onChange={() => {}}
+      onSubmit={() => {}}
+      onCancel={() => {}}
+    />,
+  );
+  expect(screen.getByText(/Storage já usa este endereço/)).toBeTruthy();
 });

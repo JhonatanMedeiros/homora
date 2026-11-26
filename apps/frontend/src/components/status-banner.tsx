@@ -30,6 +30,9 @@ type Props = {
   range: UptimeRange;
   now?: number;
   probeIds?: ReadonlySet<number>;
+  stale?: boolean;
+  /** What needs doing now; it sits right under the headline, above the figures. */
+  attention?: ReactNode;
   /** Opens the details of a service; when set, the pulse shows one clickable window per service. */
   onOpenService?: (id: number) => void;
   /** Where to look when the monitor itself cannot measure. */
@@ -50,6 +53,9 @@ const WINDOW_LABEL = {
   maintenance: 'status.maintenance',
   unknown: 'status.unknown',
 } as const satisfies Record<WindowState, string>;
+const WINDOW_ORDER: WindowState[] = ['down', 'degraded', 'unknown', 'maintenance', 'ok'];
+/** Past this, a state shows how many more there are instead of one window each. */
+const MAX_WINDOWS = 40;
 const pct = (value: number) => formatNumber(value, { maximumFractionDigits: 2 });
 
 function Stat({ label, value, note }: { label: string; value: ReactNode; note: ReactNode }) {
@@ -112,20 +118,24 @@ export function StatusBanner({
   range,
   now: fixedNow,
   probeIds,
+  stale,
+  attention,
   onOpenService,
   onOpenConnections,
 }: Props) {
   const clock = useNow();
   const now = fixedNow ?? clock;
   if (services.length === 0) return null;
-  const { certs, windows, measurement, title, subtitle, breakdown, tone } = summarizeStatus({
-    services,
-    statuses,
-    blockedIds,
-    overview,
-    now,
-    probeIds,
-  });
+  const { certs, windows, measurement, title, subtitle, breakdown, tone, blocked } =
+    summarizeStatus({
+      services,
+      statuses,
+      blockedIds,
+      overview,
+      now,
+      probeIds,
+      stale,
+    });
 
   const values = services
     .map((service) => uptime[service.id]?.uptimePct)
@@ -195,6 +205,7 @@ export function StatusBanner({
             )}
           </div>
         </div>
+        {attention && <div className="w-full">{attention}</div>}
         <dl
           className={cn(
             'm-0 min-w-0 flex-[3_1_32rem] grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2',
@@ -205,9 +216,9 @@ export function StatusBanner({
             label={t('banner.stat.uptime', { range: t(`uptime.range.${range}`) })}
             value={average === null ? t('uptime.none') : `${pct(average)}%`}
             note={
-              services.length === 1
+              services.length - blocked === 1
                 ? t('banner.stat.uptimeSub.one')
-                : t('banner.stat.uptimeSub.other', { count: services.length })
+                : t('banner.stat.uptimeSub.other', { count: services.length - blocked })
             }
           />
           {overview && (
@@ -236,20 +247,37 @@ export function StatusBanner({
         </dl>
       </div>
       {onOpenService && windows.length > 1 && (
-        <ul aria-label={t('banner.windows')} className="m-0 flex list-none flex-wrap gap-1 p-0">
-          {windows.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => onOpenService(item.id)}
-                aria-label={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
-                title={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
-                className="grid size-4 place-items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-6"
-              >
-                <span className={cn('block size-3 rounded-sm', WINDOW_COLOR[item.state])} />
-              </button>
-            </li>
-          ))}
+        <ul aria-label={t('banner.windows')} className="m-0 flex list-none flex-col gap-2 p-0">
+          {WINDOW_ORDER.map((state) => {
+            const group = windows.filter((item) => item.state === state);
+            if (group.length === 0) return null;
+            return (
+              <li key={state} className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">
+                  {t(WINDOW_LABEL[state])} · {group.length}
+                </span>
+                <span className="flex flex-wrap gap-1">
+                  {group.slice(0, MAX_WINDOWS).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => onOpenService(item.id)}
+                      aria-label={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
+                      title={`${item.name}: ${t(WINDOW_LABEL[item.state])}`}
+                      className="grid size-6 place-items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className={cn('block size-3 rounded-sm', WINDOW_COLOR[item.state])} />
+                    </button>
+                  ))}
+                  {group.length > MAX_WINDOWS && (
+                    <span className="text-xs text-muted-foreground">
+                      {t('banner.more', { count: group.length - MAX_WINDOWS })}
+                    </span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
       {(upcoming || sla) && (

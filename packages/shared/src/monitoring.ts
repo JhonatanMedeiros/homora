@@ -27,4 +27,6 @@ export type ServiceStatus = {
   expectedStatus?: string | null;
   /** TLS checks: when the certificate expires (epoch milliseconds). */
   certExpiresAt?: number;
+  /** The failure belongs to the monitor itself, so the service's state is not known. */
+  unmeasured?: boolean;
 };

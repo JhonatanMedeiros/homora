@@ -26,6 +26,7 @@ In **Settings**, download your groups, cards and their order as YAML or JSON (`G
 Pick the format (Homora, Homepage or Dashy) and a file. Homora previews what will be added, what already exists and what
 was ignored, and writes nothing until you confirm.
 
+- A file that is not valid YAML or JSON, or not a configuration, shows an error instead of a preview.
 - Import only adds: nothing is overwritten or removed.
 - Imported cards cannot monitor your private network unless you tick that option for a Homora file you trust.
 - Clock widgets are imported. Connected widgets appear as skipped in the preview and must be recreated with a

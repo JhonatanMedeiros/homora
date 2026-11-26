@@ -28,6 +28,9 @@ export function useServices() {
   const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [statusError, setStatusError] = useState(false);
+  /** When the statuses on screen were read, so a lost connection can say how old they are. */
+  const [statusAt, setStatusAt] = useState<number | null>(null);
+  const [statusAttempt, setStatusAttempt] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
@@ -130,6 +133,7 @@ export function useServices() {
           if (active) {
             setStatuses(data);
             setStatusError(false);
+            setStatusAt(Date.now());
           }
         })
         .catch(() => {
@@ -142,7 +146,8 @@ export function useServices() {
       active = false;
       window.clearInterval(timer);
     };
-  }, []);
+  }, [statusAttempt]);
+  const retryStatuses = useCallback(() => setStatusAttempt((value) => value + 1), []);
 
   const groupPosition = useCallback(
     (name: string) => groupRows.find((group) => group.name === name)?.position ?? 9999,
@@ -210,6 +215,8 @@ export function useServices() {
     pageIdOf,
     statuses,
     statusError,
+    statusAt,
+    retryStatuses,
     loadError,
     setLoadError,
     categories,

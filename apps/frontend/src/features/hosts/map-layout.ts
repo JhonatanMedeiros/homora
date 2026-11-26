@@ -51,6 +51,8 @@ export type MapLayout = {
 export type LayoutOptions = {
   /** Keys of the guests drawn collapsed. */
   collapsed?: ReadonlySet<string>;
+  /** Where a row of containers wraps; `MAP.rowWidth` when not given. */
+  rowWidth?: number;
 };
 
 const guestWidth = MAP.serviceW + MAP.guestPad * 2;
@@ -149,13 +151,13 @@ function layoutLoose(
 }
 
 /** Places the containers left to right, wrapping in rows, and moves their children with them. */
-function flow(containers: MapContainer[]): MapLayout {
+function flow(containers: MapContainer[], rowWidth: number = MAP.rowWidth): MapLayout {
   let x = 0;
   let y = 0;
   let rowHeight = 0;
   let width = 0;
   for (const container of containers) {
-    if (x > 0 && x + container.w > MAP.rowWidth) {
+    if (x > 0 && x + container.w > rowWidth) {
       x = 0;
       y += rowHeight + MAP.nodeGap;
       rowHeight = 0;
@@ -197,7 +199,7 @@ export function layoutMap(model: HostViewModel, options: LayoutOptions = {}): Ma
   if (model.unavailable.length > 0) containers.push(layoutLoose('unavailable', model.unavailable));
   if (model.external.length > 0) containers.push(layoutLoose('external', model.external));
   if (model.unlinked.length > 0) containers.push(layoutLoose('unlinked', model.unlinked));
-  return flow(containers);
+  return flow(containers, options.rowWidth);
 }
 
 /**
@@ -224,6 +226,29 @@ export function fitZoom(layout: MapLayout, viewportWidth: number, viewportHeight
   if (!layout.width || !layout.height || viewportWidth <= 0 || viewportHeight <= 0)
     return ZOOM.default;
   return clampZoom(Math.min(viewportWidth / layout.width, viewportHeight / layout.height));
+}
+
+const ROW_WIDTHS = [MAP.rowWidth, 1100, 1350, 2100, 2500];
+
+/**
+ * The layout whose shape best matches the window: the one that can be drawn largest and, between
+ * equals, the one that covers more of the width. The default row width wins a tie.
+ */
+export function layoutForViewport(
+  model: HostViewModel,
+  options: LayoutOptions,
+  viewportWidth: number,
+  viewportHeight: number,
+): MapLayout {
+  let best: { layout: MapLayout; zoom: number; cover: number } | undefined;
+  for (const rowWidth of ROW_WIDTHS) {
+    const layout = layoutMap(model, { ...options, rowWidth });
+    const zoom = fitZoom(layout, viewportWidth, viewportHeight);
+    const cover = Math.min(1, (layout.width * zoom) / viewportWidth);
+    if (!best || zoom > best.zoom || (zoom === best.zoom && cover > best.cover + 0.01))
+      best = { layout, zoom, cover };
+  }
+  return best!.layout;
 }
 
 /** Services in reading order, i.e. the order keyboard focus visits them. */

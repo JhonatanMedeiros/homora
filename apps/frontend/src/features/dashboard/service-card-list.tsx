@@ -59,7 +59,7 @@ export function ServiceCardList({
             >
               {service.name}
               {service.openTarget !== 'same-tab' && (
-                <span className="sr-only">{t('card.opensNewTab')}</span>
+                <span className="sr-only top-0 left-0">{t('card.opensNewTab')}</span>
               )}
             </a>
           </ItemTitle>

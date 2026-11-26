@@ -57,6 +57,8 @@ type Props = {
 /** Fewer measured periods than this are listed in the summary line, not charted. */
 const MIN_CHART_POINTS = 3;
 
+const SPAN = { '24h': DAY, '7d': 7 * DAY, '30d': 30 * DAY } as const;
+
 export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, navigate }: Props) {
   const overview = useStatusOverview();
   const service = services.find((item) => item.id === id);
@@ -96,7 +98,10 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
         recovered.length
       : null;
   const heat = detail.insights?.heat ?? [];
-  const firstData = heat.find((row) => row.up + row.down + row.unknown > 0)?.hour ?? now - 30 * DAY;
+  const oldest = heat.find((row) => row.up + row.down + row.unknown > 0)?.hour;
+  const firstData = oldest ?? now - 30 * DAY;
+  /** How far back the checks actually go; a longer period only says what this stretch did. */
+  const measuredFor = oldest === undefined ? null : Math.max(0, now - oldest);
   const clean = incidents
     ? longestClean(incidents, Math.max(firstData, now - 90 * DAY), now)
     : null;
@@ -203,7 +208,18 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
         {kpis.map(({ range: key, context }) => {
           const summary = detail.uptime[key];
           const value = summary?.uptimePct ?? null;
-          const note = deltaNote(deltaPoints(value, summary?.previousUptimePct), context);
+          // A period with a comparison has older checks than itself, so it is not short.
+          const short =
+            value !== null &&
+            typeof summary?.previousUptimePct !== 'number' &&
+            measuredFor !== null &&
+            measuredFor < SPAN[key] * 0.9;
+          const note: ReturnType<typeof deltaNote> = short
+            ? {
+                text: t('detail.kpi.measured', { duration: formatDuration(measuredFor) }),
+                tone: undefined,
+              }
+            : deltaNote(deltaPoints(value, summary?.previousUptimePct), context);
           return (
             <Kpi
               key={key}
@@ -222,7 +238,11 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
             detail.insights ? (uptime90 === null ? t('uptime.none') : `${pct(uptime90)}%`) : '…'
           }
           note={
-            typeof target === 'number' ? t('detail.kpi.target', { pct: formatNumber(target) }) : ' '
+            uptime90 !== null && measuredFor !== null && measuredFor < 90 * DAY * 0.9
+              ? t('detail.kpi.measured', { duration: formatDuration(measuredFor) })
+              : typeof target === 'number'
+                ? t('detail.kpi.target', { pct: formatNumber(target) })
+                : ' '
           }
         />
         <Kpi

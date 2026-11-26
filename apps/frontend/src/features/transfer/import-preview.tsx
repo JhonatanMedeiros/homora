@@ -1,4 +1,5 @@
 import { CircleAlert, TriangleAlert } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@homora/ui/alert';
 import { Badge } from '@homora/ui/badge';
 import { t, type MessageKey } from '@/i18n';
 import type { Plan } from './transfer-model';
@@ -6,6 +7,21 @@ import type { Plan } from './transfer-model';
 /** Import report: what is added, what already exists, and what was skipped. */
 export function ImportPreview({ plan }: { plan: Plan }) {
   const { summary } = plan;
+  const unreadable = plan.issues.filter(
+    (issue) => issue.code === 'invalid-syntax' || issue.code === 'invalid-document',
+  );
+  if (unreadable.length > 0)
+    return (
+      <Alert variant="destructive">
+        <CircleAlert aria-hidden="true" />
+        <AlertTitle>{t('transfer.unreadable')}</AlertTitle>
+        <AlertDescription>
+          {unreadable.map((issue) => (
+            <span key={issue.code}>{t(`transfer.issue.${issue.code}` as MessageKey)}</span>
+          ))}
+        </AlertDescription>
+      </Alert>
+    );
   return (
     <div className="flex flex-col gap-4" aria-label={t('transfer.previewTitle')} role="group">
       <p className="text-sm font-medium">

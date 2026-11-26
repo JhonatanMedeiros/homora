@@ -18,7 +18,7 @@ import {
   type HostInventories,
   type Impact,
 } from '@/features/hosts/hosts';
-import { layoutGroups, layoutMap, type MapContainer } from '@/features/hosts/map-layout';
+import { layoutForViewport, layoutGroups, type MapContainer } from '@/features/hosts/map-layout';
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { HostMapSelectionPanel, PANEL_WIDTH } from '@/features/hosts/host-map-selection-panel';
 import { HostMapHeader } from '@/features/hosts/host-map-header';
@@ -165,7 +165,13 @@ export function HostMap({
       const ordered = compare ? [...services].sort(compare) : services;
       return layoutGroups(ordered, [...new Set(services.map((service) => service.category))]);
     }
-    return layoutMap(model, { collapsed: baseView.collapsed });
+    // The window minus the map's header, toolbar and zoom bar.
+    return layoutForViewport(
+      model,
+      { collapsed: baseView.collapsed },
+      window.innerWidth - 48,
+      window.innerHeight - 200,
+    );
     // The collapsed set is rebuilt each render; its contents are what matters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [byGroup, model, services, [...baseView.collapsed].join('|'), problemsFirst, statuses]);
