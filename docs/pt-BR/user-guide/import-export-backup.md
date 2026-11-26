@@ -8,7 +8,7 @@ Exportação e backup servem a finalidades diferentes. A exportação gera um ar
 
 Nas configurações, exporte grupos, cartões e ordem em YAML ou JSON. Senhas, tokens e conexões não são exportados, mas o arquivo pode conter nomes de conexões e widgets: revise-o antes de compartilhar.
 
-A importação aceita formatos do Homora, Homepage e Dashy. Selecione o formato e o arquivo, revise o que será adicionado ou ignorado e confirme. Não há substituição ou remoção de itens existentes. Widgets, opções de monitoramento e links Docker desses formatos externos não são importados. O monitoramento em rede privada exige autorização explícita.
+A importação aceita formatos do Homora, Homepage e Dashy. Selecione o formato e o arquivo, revise o que será adicionado ou ignorado e confirme. Um arquivo que não seja YAML/JSON válido, ou que não seja uma configuração, mostra um erro no lugar da prévia. Não há substituição ou remoção de itens existentes. Widgets, opções de monitoramento e links Docker desses formatos externos não são importados. O monitoramento em rede privada exige autorização explícita.
 
 ## Backup e restauração
 

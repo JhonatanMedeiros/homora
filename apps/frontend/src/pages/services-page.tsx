@@ -61,7 +61,7 @@ import { ServicesEmpty } from '@/components/services-empty';
 import { OrganizeToggle } from '@/features/dashboard/service-view-toolbar';
 import type { useServices } from '@/hooks/use-services';
 import { useServicePageActions } from '@/features/dashboard/use-service-page-actions';
-import { t } from '@/i18n';
+import { formatTime, t } from '@/i18n';
 import { useHomeAttentionActions } from '@/features/dashboard/use-home-attention-actions';
 
 const HostView = lazy(() =>
@@ -286,7 +286,24 @@ export function ServicesPage({
     overview,
     now: clock,
     probeIds,
+    stale: data.statusError,
   });
+  /** Why a card is down, when its host or guest explains it. */
+  const causeOf = (service: (typeof services)[number] | null | undefined) => {
+    const link = service?.host;
+    const kind = service ? impacts.get(service.id) : undefined;
+    if (!link || (kind !== 'host-offline' && kind !== 'guest-stopped')) return;
+    const sameHost = (item: (typeof services)[number]) =>
+      item.host?.connectionId === link.connectionId &&
+      item.host.node === link.node &&
+      (kind === 'host-offline' || item.host.vmid === link.vmid);
+    const label = hostLabel(service, hostData.connections, hostData.inventories);
+    return {
+      kind,
+      host: kind === 'guest-stopped' && label?.kind === 'found' ? label.guest.name : link.node,
+      affected: services.filter((item) => sameHost(item) && impacts.get(item.id) === kind).length,
+    };
+  };
   const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
   const actions = useServicePageActions({
     data,
@@ -398,6 +415,25 @@ export function ServicesPage({
                   uptime={uptime}
                   range={uptimeRange}
                   probeIds={probeIds}
+                  stale={data.statusError}
+                  attention={
+                    downNow.length > 0 && (
+                      <ProbableCauses
+                        alwaysOpen
+                        down={downNow.filter((service) => !quietNow(service.id))}
+                        quiet={downNow.filter((service) => quietNow(service.id))}
+                        incidents={overview?.open}
+                        impacts={impacts}
+                        onOpen={(service) => {
+                          close();
+                          if (probeIds.has(service.id)) navigate('/manage/probes');
+                          else setDetailsId(service.id);
+                        }}
+                        onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
+                        onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
+                      />
+                    )
+                  }
                   onOpenConnections={() => {
                     close();
                     navigate('/manage/integrations');
@@ -408,29 +444,24 @@ export function ServicesPage({
                     else setDetailsId(id);
                   }}
                 />
-                <ProbableCauses
-                  alwaysOpen
-                  down={downNow.filter((service) => !quietNow(service.id))}
-                  quiet={downNow.filter((service) => quietNow(service.id))}
-                  incidents={overview?.open}
-                  impacts={impacts}
-                  onOpen={(service) => {
-                    close();
-                    if (probeIds.has(service.id)) navigate('/manage/probes');
-                    else setDetailsId(service.id);
-                  }}
-                  onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
-                  onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
-                />
               </>
             )}
           </HomeStatusPill>
         </HeaderStatusPortal>
       )}
       {data.statusError && (
-        <p role="status" className="text-xs text-muted-foreground">
-          {t('status.stale')}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span role="status">
+              {data.statusAt === null
+                ? t('status.stale')
+                : t('status.staleSince', { time: formatTime(data.statusAt) })}
+            </span>
+            <Button type="button" variant="link" size="sm" onClick={data.retryStatuses}>
+              {t('status.retry')}
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
       <FormError>{groupError}</FormError>
       {typeof formRoute === 'number' &&
@@ -504,7 +535,12 @@ export function ServicesPage({
             status={
               hostView
                 ? undefined
-                : { selected: statusFilter, counts: countsWithProbes, onSelect: setStatusFilter }
+                : {
+                    selected: statusFilter,
+                    counts: countsWithProbes,
+                    onSelect: setStatusFilter,
+                    probes: probeStatusItems.length,
+                  }
             }
           />
         </div>
@@ -657,6 +693,15 @@ export function ServicesPage({
         monitor={detailsService ? overview?.settings[detailsService.id] : undefined}
         incident={detailsService ? overview?.open[detailsService.id] : undefined}
         maintenanceUntil={detailsService ? inMaintenance[detailsService.id]?.endsAt : undefined}
+        cause={causeOf(detailsService)}
+        onShowMap={() => {
+          setDetailsId(null);
+          setArrange('map');
+        }}
+        onAllowMonitoring={(item) => {
+          setDetailsId(null);
+          openForm(item, 'access');
+        }}
         range={uptimeRange}
         onRangeChange={setUptimeRange}
         onTogglePinned={(item) => void togglePinned(item)}

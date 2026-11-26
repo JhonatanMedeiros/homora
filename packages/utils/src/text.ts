@@ -32,3 +32,9 @@ export function textDiff(before: string, after: string): TextDiff | null {
     suffix: before.slice(before.length - end),
   };
 }
+
+/** The first character as people see it, so an emoji is never cut in half. */
+export function firstCharacter(value: string): string {
+  const [first] = new Intl.Segmenter().segment(value);
+  return first?.segment ?? '';
+}

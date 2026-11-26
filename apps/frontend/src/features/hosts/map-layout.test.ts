@@ -7,6 +7,7 @@ import {
   clampZoom,
   fitZoom,
   focusOrder,
+  layoutForViewport,
   layoutGroups,
   layoutMap,
   looseColumns,
@@ -203,4 +204,11 @@ it('lays services out by dashboard group, in the order given', () => {
     'Essentials',
     'Media',
   ]);
+});
+
+it('widens or narrows the rows to suit the window', () => {
+  const wide = layoutForViewport(model(), {}, 2400, 900);
+  const narrow = layoutForViewport(model(), {}, 900, 900);
+  expect(fitZoom(wide, 2400, 900)).toBeGreaterThanOrEqual(fitZoom(layoutMap(model()), 2400, 900));
+  expect(narrow.width).toBeLessThanOrEqual(wide.width);
 });

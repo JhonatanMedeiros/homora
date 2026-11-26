@@ -378,6 +378,7 @@ export function createApp(
     auth,
     audit,
     createServiceAttention(sqlite),
+    measurement,
   );
   registerProbeRoutes(app, createProbeStore(sqlite), serviceMonitor, auth, audit);
   registerServiceLinkTypeRoutes(app, configuration);

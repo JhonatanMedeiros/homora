@@ -67,7 +67,19 @@ export function describeStatus(
       failing: false,
     };
   }
-  if (blocked && state !== 'available') {
+  if (status?.unmeasured) {
+    return {
+      state: 'unknown',
+      blocked: false,
+      label: t('status.unmeasured'),
+      tag: null,
+      meta: null,
+      note: t('card.note.unmeasured'),
+      title: null,
+      failing: false,
+    };
+  }
+  if ((blocked || reason === 'destination-blocked') && state !== 'available') {
     return {
       state: 'unknown',
       blocked: true,

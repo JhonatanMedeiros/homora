@@ -26,8 +26,15 @@ and for how long, plus:
 
 Services not authorized for private-network monitoring appear as _not monitored_, not as failures.
 
-Each service has a small window colored by state; select one to open its details. When every check fails for the same
-reason, the pill says **Cannot measure** instead of listing every service as down.
+**Needs attention** comes first in the panel, above the figures. At the end, each service has a small window colored by
+state, grouped under the state's name and count; select one to open its details. When there are more than 40 in a
+state, the rest are counted.
+
+When most checks fail for the same reason, the pill says **Cannot measure**, and the affected cards, tabs and counts
+show **Not measured** instead of down.
+
+If the page stops getting statuses from Homora, a notice says how old they are and offers **Try again**, and the pill
+reads **Out of date**.
 
 ## Needs attention
 
@@ -108,7 +115,8 @@ changes Proxmox. The only things it saves are Homora's own host links and the **
   arrow turns red when what it points to is down.
 - **Minimap and zoom.** When part of the map is off screen, a small map in the corner shows the part you are looking at; press
   or drag on it to move.
-  **Fit** and **Reset** sit beside the zoom buttons, and the map fits itself when it opens if it would not fit at 100 %.
+  **Fit** and **Reset** sit beside the zoom buttons, and the map fits itself when it opens, shrinking when it
+  would not fit or growing up to 120 % on a wide screen.
 
 #### Finding a problem
 
@@ -143,7 +151,10 @@ dependencies in front of it) and read-only actions: **Open service**, **Open car
 
 The `i` button, **Details**, a health-pill window or a name in **Needs attention** opens a side panel (a bottom sheet on a
 phone) with the state, **Open** and **Copy address**, availability, latency, recent incidents and a link to the full
-page. `Esc` closes it.
+page. When an offline host or a stopped guest explains the failure, the panel names it, says how many services it
+affects and links to the map. For a card that is not monitored because it lacks permission, **Review the monitoring
+permission** opens the form on the **Access** tab; a loopback address is explained instead, since it cannot be allowed.
+A short history is stated as such. `Esc` closes it.
 
 ![The details drawer of a failing service](../screenshots/dashboard-drawer.png)
 
@@ -253,7 +264,8 @@ Click **Details** or **Incidents and charts** on a card (or choose a service in 
 
 ![A service's detail page](../screenshots/service-detail.png)
 
-It shows uptime for 24 hours and 7, 30 and 90 days with the change from the previous period, a latency chart with
+It shows uptime for 24 hours and 7, 30 and 90 days with the change from the previous period (or how long has actually
+been measured, when the history is shorter than the period), a latency chart with
 median and p95 lines and incident markers, a 90-day heatmap, and a breakdown of why checks failed. **Schedule
 maintenance** pauses checks for a planned window. See [Services and monitoring](services-and-monitoring.md) for how
 the numbers are calculated.

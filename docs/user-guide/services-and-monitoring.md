@@ -19,9 +19,13 @@ the rest is in four tabs.
 | Field        | Notes                                                                                                                                           |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Name**     | Shown on the card and searched by the palette.                                                                                                  |
-| **URL**      | An `http` or `https` address. Every check type uses it, so a card always has something to open.                                                 |
+| **URL**      | An `http` or `https` address, without a user or password; `http://` is added when you leave it out. Every check type uses it.                   |
 | **Category** | The group the card belongs to. A new name creates the group.                                                                                    |
 | **Icon**     | An emoji, a built-in icon (`lucide:server`), a bundled brand logo (`brand:plex`) or an image URL. The form suggests the logo matching the name. |
+
+An address another card already uses is pointed out, and you can still save. Closing the form after changing something
+asks before discarding. What you typed in the card fields also stays in this browser tab if the session expires or the
+page reloads, until you save, discard or sign out.
 
 ### Appearance tab
 
@@ -101,7 +105,8 @@ Every check resolves the address and pins it, so a name cannot be switched to a 
 - Private LAN addresses are monitored only when **Allow monitoring on a private network** is on for that service.
 - **Settings → Alerts → New services allow private network** only sets the starting value of that checkbox in the
   new-service form.
-- A card whose destination is not authorized reads **Not monitored** and does not count as a failure.
+- A card whose destination is not authorized reads **Not monitored** and does not count as a failure: it opens no
+  incident and sends no notification.
 
 ## States, alerts and incidents
 

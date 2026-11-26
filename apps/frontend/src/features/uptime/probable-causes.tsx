@@ -86,7 +86,7 @@ export function ProbableCauses({
       ),
     [down, incidents, impacts],
   );
-  if (!causes.length && !quiet.length) return null;
+  if (causes.length === 0 && quiet.length === 0) return null;
   const byId = new Map(down.map((service) => [service.id, service]));
   return (
     <section
@@ -132,8 +132,9 @@ export function ProbableCauses({
                       variant="outline"
                       aria-label={t('causes.open', { name: service.name })}
                       onClick={() => onOpen(service)}
+                      className="max-w-full"
                     >
-                      {service.name}
+                      <span className="truncate">{service.name}</span>
                     </Button>
                   ))}
                   {onAcknowledge && (

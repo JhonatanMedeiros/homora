@@ -203,3 +203,21 @@ it('counts certificate days the same way the card does', () => {
   });
   expect(summary.certs).toEqual([{ name: 'Caddy', days: 8 }]);
 });
+
+it('does not claim anything is up while nothing was measured', () => {
+  const summary = summarizeStatus({ services, statuses: {}, blockedIds: new Set(), now });
+  expect(JSON.stringify(summary)).not.toContain('All monitored services are up');
+});
+
+it('says the figures are old when statuses cannot be read', () => {
+  const summary = summarizeStatus({
+    services,
+    statuses: { 1: ok, 2: ok, 3: ok },
+    blockedIds: new Set(),
+    stale: true,
+    now,
+  });
+  expect(summary.stale).toBe(true);
+  expect(summary.tone).toBe('warn');
+  expect(pillText(summary)).not.toBe('All up');
+});

@@ -18,6 +18,8 @@ export type StatusSummaryInput = {
   now: number;
   /** Ids in `services` that are probes (no card), counted apart in the breakdown. */
   probeIds?: ReadonlySet<number>;
+  /** The statuses could not be refreshed, so they only say how things were. */
+  stale?: boolean;
 };
 
 export type StatusSummary = {
@@ -37,6 +39,7 @@ export type StatusSummary = {
   /** "5 services offline · 1 probe offline · 1 slow", when the total mixes kinds. */
   breakdown: string | null;
   tone: StatusTone;
+  stale: boolean;
 };
 
 /**
@@ -50,6 +53,7 @@ export function summarizeStatus({
   overview,
   now,
   probeIds,
+  stale = false,
 }: StatusSummaryInput): StatusSummary {
   let probesDown = 0;
   const down: string[] = [];
@@ -102,23 +106,27 @@ export function summarizeStatus({
   }
   const problems = down.length + slow.length;
   const measurement = overview?.measurement ?? null;
-  const title = measurement
-    ? t('banner.measurement.title')
-    : problems > 0
-      ? probesDown > 0
-        ? problems === 1
-          ? t('banner.mixed.one')
-          : t('banner.mixed.other', { count: problems })
-        : problems === 1
-          ? t('banner.problem.one')
-          : t('banner.problem.other', { count: problems })
-      : unknown > 0
-        ? unknown === 1
-          ? t('banner.unknown.one')
-          : t('banner.unknown.other', { count: unknown })
-        : blocked > 0
-          ? t('banner.allMonitoredUp')
-          : t('banner.allUp');
+  const title = stale
+    ? t('banner.stale.title')
+    : measurement
+      ? t('banner.measurement.title')
+      : problems > 0
+        ? probesDown > 0
+          ? problems === 1
+            ? t('banner.mixed.one')
+            : t('banner.mixed.other', { count: problems })
+          : problems === 1
+            ? t('banner.problem.one')
+            : t('banner.problem.other', { count: problems })
+        : unknown > 0
+          ? unknown === 1
+            ? t('banner.unknown.one')
+            : t('banner.unknown.other', { count: unknown })
+          : blocked > 0
+            ? windows.some((item) => item.state === 'ok')
+              ? t('banner.allMonitoredUp')
+              : t('banner.noneMonitored')
+            : t('banner.allUp');
   const named = [...down, ...slow];
   const subtitle = measurement
     ? t('banner.measurement.detail')
@@ -135,13 +143,14 @@ export function summarizeStatus({
             ]
           : []),
       ].join(' · ');
-  const tone = measurement
-    ? 'warn'
-    : down.length > 0
-      ? 'down'
-      : problems > 0 || unknown > 0 || blocked > 0
-        ? 'warn'
-        : 'ok';
+  const tone =
+    stale || measurement
+      ? 'warn'
+      : down.length > 0
+        ? 'down'
+        : problems > 0 || unknown > 0 || blocked > 0
+          ? 'warn'
+          : 'ok';
 
   const counted = (key: 'services' | 'probes' | 'slow', count: number) =>
     count === 0 ? [] : [t(`banner.breakdown.${key}.${count === 1 ? 'one' : 'other'}`, { count })];
@@ -167,13 +176,16 @@ export function summarizeStatus({
     title,
     subtitle,
     tone,
+    stale,
   };
 }
 
 /** The short words on the header pill, from the same summary as the banner body. */
 export function pillText(
-  summary: Pick<StatusSummary, 'measurement' | 'problems' | 'unknown' | 'blocked'>,
+  summary: Pick<StatusSummary, 'measurement' | 'problems' | 'unknown' | 'blocked'> &
+    Partial<Pick<StatusSummary, 'stale'>>,
 ) {
+  if (summary.stale) return t('pill.stale');
   if (summary.measurement) return t('pill.measurement');
   if (summary.problems > 0)
     return summary.problems === 1

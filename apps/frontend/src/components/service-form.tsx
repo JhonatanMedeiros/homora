@@ -5,7 +5,9 @@ import { flushSync } from 'react-dom';
 import type { HostLink, ServiceInput } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import { DialogFooter } from '@homora/ui/dialog';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@homora/ui/field';
+import { sameUrl } from '@homora/utils';
+import { completeAddress, isServiceAddress } from '@/lib/service-address';
 import { Input } from '@homora/ui/input';
 import { CopyButton } from '@/components/copy-button';
 import { FormError } from '@/components/form-error';
@@ -44,6 +46,10 @@ type Props = {
   editing: boolean;
   value: ServiceInput;
   categories: string[];
+  /** The other cards, to warn about an address that is already on the dashboard. */
+  others?: { name: string; url: string }[];
+  /** The section open when the form appears, for shortcuts that lead to one setting. */
+  initialSection?: Section;
   error: string;
   saving: boolean;
   nameRef: React.Ref<HTMLInputElement>;
@@ -63,6 +69,8 @@ export function ServiceForm({
   editing,
   value,
   categories,
+  others = [],
+  initialSection = 'look',
   error,
   saving,
   nameRef,
@@ -74,7 +82,21 @@ export function ServiceForm({
 }: Props) {
   const [savedAlias] = useState(() => (editing ? value.alias : null));
   const set = (patch: Partial<ServiceInput>) => onChange({ ...value, ...patch });
-  const [open, setOpen] = useState<Section | ''>('look');
+  const [open, setOpen] = useState<Section | ''>(initialSection);
+  const [badAddress, setBadAddress] = useState(false);
+  const duplicate = others.find((other) => sameUrl(other.url, completeAddress(value.url)));
+  /** Completes the address first, so the request carries what the field then shows. */
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const url = completeAddress(value.url);
+    if (!isServiceAddress(url)) {
+      setBadAddress(true);
+      document.querySelector<HTMLElement>('#service-url')?.focus();
+      return;
+    }
+    if (url !== value.url) flushSync(() => set({ url }));
+    onSubmit(event);
+  };
   const suggestion = value.icon ? null : suggestBrandIcon(value.name);
   /** Opens the section holding a field the browser reports as invalid, so the message is seen. */
   const revealInvalid = (event: React.FormEvent) => {
@@ -86,12 +108,12 @@ export function ServiceForm({
   /** The tile opens the icon field, since choosing an icon lives with the appearance. */
   const changeIcon = () => {
     flushSync(() => setOpen('look'));
-    document.getElementById('service-icon')?.focus();
+    document.querySelector<HTMLElement>('#service-icon')?.focus();
   };
   return (
     <form
       aria-label={editing ? t('form.editTitle') : t('form.newTitle')}
-      onSubmit={onSubmit}
+      onSubmit={submit}
       onInvalidCapture={revealInvalid}
       className="flex min-h-0 flex-1 flex-col"
     >
@@ -119,18 +141,36 @@ export function ServiceForm({
                 placeholder="Jellyfin"
               />
             </Field>
-            <Field>
+            <Field data-invalid={badAddress || undefined}>
               <FieldLabel htmlFor="service-url">{t('form.url')}</FieldLabel>
               <Input
                 id="service-url"
-                type="url"
+                type="text"
                 inputMode="url"
                 required
                 autoComplete="off"
                 value={value.url}
-                onChange={(e) => set({ url: e.target.value })}
+                aria-invalid={badAddress || undefined}
+                aria-describedby={badAddress || duplicate ? 'service-url-note' : undefined}
+                onChange={(e) => {
+                  setBadAddress(false);
+                  set({ url: e.target.value });
+                }}
+                onBlur={() => {
+                  const url = completeAddress(value.url);
+                  if (url !== value.url) set({ url });
+                }}
                 placeholder="http://192.168.1.10:8096"
               />
+              {badAddress ? (
+                <FieldError id="service-url-note">{t('form.urlInvalid')}</FieldError>
+              ) : (
+                duplicate && (
+                  <FieldDescription id="service-url-note" className="text-warning">
+                    {t('form.urlDuplicate', { name: duplicate.name })}
+                  </FieldDescription>
+                )
+              )}
             </Field>
             <Field className="sm:col-span-2">
               <FieldLabel htmlFor="service-category">{t('form.category')}</FieldLabel>
@@ -197,8 +237,12 @@ export function ServiceForm({
           open={open}
           onOpenChange={setOpen}
         />
-        <FormError>{error}</FormError>
       </div>
+      {error && (
+        <div className="shrink-0 border-t px-6 pt-3">
+          <FormError>{error}</FormError>
+        </div>
+      )}
       <DialogFooter className="shrink-0 flex-row justify-end gap-2 border-t px-6 py-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
           {t('common.cancel')}

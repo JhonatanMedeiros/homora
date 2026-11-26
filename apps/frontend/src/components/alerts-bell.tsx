@@ -111,7 +111,7 @@ export function AlertsBell({
           className="relative px-2.5"
         >
           <Bell aria-hidden="true" />
-          {!error && total > 0 && (
+          {total > 0 && (
             <span
               aria-hidden="true"
               className="absolute top-1 right-0.5 min-w-4 rounded-full bg-destructive px-1 text-center font-mono text-[0.625rem] leading-4 text-white"

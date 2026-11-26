@@ -14,7 +14,7 @@ import { UptimeBars, UptimeDetails, UptimePercent } from '@/features/uptime/serv
 import { copyAddress } from '@/lib/copy-address';
 import { describeStatus } from '@/lib/status-text';
 import type { ServiceStatus } from '@/lib/services';
-import { hostOf } from '@/lib/services';
+import { hostOf, isLoopback } from '@/lib/services';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { t } from '@/i18n';
 
@@ -26,6 +26,11 @@ type Props = {
   monitor?: MonitorSettings;
   incident?: Incident;
   maintenanceUntil?: number | null;
+  /** The host or guest that likely explains the failure, with the other cards it affects. */
+  cause?: { kind: 'host-offline' | 'guest-stopped'; host: string; affected: number };
+  onShowMap?: () => void;
+  /** Opens the card's permission, when that is all monitoring is missing. */
+  onAllowMonitoring?: (service: Service) => void;
   range: UptimeRange;
   onRangeChange: (range: UptimeRange) => void;
   /** Favorite toggle; absent when it cannot be saved here. */
@@ -45,12 +50,16 @@ export function ServiceDrawer({
   monitor,
   incident,
   maintenanceUntil,
+  cause,
+  onShowMap,
+  onAllowMonitoring,
   range,
   onRangeChange,
   onTogglePinned,
   onClose,
 }: Props) {
   const mobile = useIsMobile();
+  const measured = uptime?.buckets.filter((bucket) => (bucket.checks ?? 0) > 0).length ?? 0;
   const view = service
     ? describeStatus(status, blocked, {
         monitor,
@@ -75,6 +84,19 @@ export function ServiceDrawer({
               <div className="flex flex-col gap-1">
                 <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
                 {view.note && <p className="text-sm text-muted-foreground">{view.note}</p>}
+                {view.blocked && isLoopback(service.url) && (
+                  <p className="text-sm text-muted-foreground">{t('drawer.loopback')}</p>
+                )}
+                {view.blocked && !isLoopback(service.url) && onAllowMonitoring && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto w-fit p-0"
+                    onClick={() => onAllowMonitoring(service)}
+                  >
+                    {t('drawer.allow')}
+                  </Button>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild>
@@ -107,6 +129,26 @@ export function ServiceDrawer({
                   {t('drawer.copy')}
                 </Button>
               </div>
+              {cause && (
+                <div className="flex flex-col gap-1 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm">
+                  <p>
+                    {t(`drawer.cause.${cause.kind}`, { host: cause.host })}
+                    {cause.affected > 1 && (
+                      <> {t('drawer.cause.affected', { count: cause.affected })}</>
+                    )}
+                  </p>
+                  {onShowMap && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto w-fit p-0"
+                      onClick={onShowMap}
+                    >
+                      {t('drawer.cause.map')}
+                    </Button>
+                  )}
+                </div>
+              )}
               {uptime ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-baseline justify-between gap-3 text-sm">
@@ -114,8 +156,14 @@ export function ServiceDrawer({
                     <UptimePercent summary={uptime} />
                   </div>
                   <UptimeBars summary={uptime} monitor={monitor} />
-                  {uptime.uptimePct === null && (
+                  {uptime.uptimePct === null ? (
                     <p className="text-sm text-muted-foreground">{t('drawer.collecting')}</p>
+                  ) : (
+                    measured * 2 < uptime.buckets.length && (
+                      <p className="text-sm text-muted-foreground">
+                        {t('drawer.shortHistory', { measured, total: uptime.buckets.length })}
+                      </p>
+                    )
                   )}
                   <UptimeDetails
                     id={`drawer-${service.id}`}

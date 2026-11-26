@@ -25,7 +25,7 @@ export type VisibleRect = MapRect;
 /**
  * Owns the map canvas camera: zoom, fit/reset, mouse panning, the visible rectangle for the
  * minimap, and scrolling a tile out from under the details panel. The first time the map has
- * something to draw it fits itself to the window when it would not fit at 100%.
+ * something to draw it fits itself to the window.
  */
 export function useHostMapViewport(layout: MapLayout) {
   const viewport = useRef<HTMLDivElement>(null);
@@ -74,13 +74,14 @@ export function useHostMapViewport(layout: MapLayout) {
     });
   }, [zoom]);
 
-  // The first time there is something to draw, fit it if it is larger than the window.
+  // The first time there is something to draw, fit it: smaller when it overflows the window,
+  // larger (up to `ZOOM.max`) when a wide window would leave it small.
   useLayoutEffect(() => {
     const box = viewport.current;
     if (fitted.current || !box || layout.width === 0 || box.clientWidth === 0) return;
     fitted.current = true;
     const wanted = fitValue();
-    if (wanted < ZOOM.default) setZoom(wanted);
+    if (wanted !== ZOOM.default) setZoom(wanted);
   }, [layout, fitValue]);
 
   useEffect(() => {

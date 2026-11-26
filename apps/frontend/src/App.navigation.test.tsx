@@ -281,7 +281,7 @@ it('reaches Activity and Settings from "More" in the phone bottom bar', async ()
     within(bar)
       .getAllByRole('button')
       .map((button) => button.textContent),
-  ).toEqual(['Probes', 'Integrações', 'Agentes', 'Mais']);
+  ).toEqual(['Sondas', 'Integrações', 'Agentes', 'Mais']);
   fireEvent.click(within(bar).getByRole('button', { name: 'Mais' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
   await waitFor(() => expect(window.location.pathname).toBe('/manage/settings'));

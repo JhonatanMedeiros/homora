@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 import { failed, signInWithPasskey } from '@/hooks/use-passkeys';
 import { watchSession } from '@/lib/session-guard';
+import { clearDraft } from '@/lib/service-draft';
 
 /** "Try again in 40 s" for a rate-limited response, or null when the wait is unknown. */
 function throttleMessage(response: Response): string | null {
@@ -55,7 +56,7 @@ export function useAuth() {
         .then((value) => {
           if (value && !value.authenticated) expire();
         })
-        .catch(() => undefined);
+        .catch(() => {});
     };
     document.addEventListener('visibilitychange', recheck);
     return () => {
@@ -177,6 +178,8 @@ export function useAuth() {
   }
 
   async function logout() {
+    // A deliberate sign-out leaves nothing typed behind; an expired session keeps it.
+    clearDraft();
     try {
       const response = await fetch('/api/auth/sign-out', { method: 'POST' });
       if (!response.ok) throw new Error();

@@ -144,3 +144,24 @@ describe('measurement guard', () => {
     expect(reloaded.current()).toBeNull();
   });
 });
+
+describe('states shown to people', () => {
+  it('passes states through until a measurement failure is confirmed', () => {
+    const { guard } = setup();
+    const states = cycle(Array(8).fill('destination-blocked'), 0);
+    guard.observe(services(8), states, t0);
+    expect(guard.present(states)).toBe(states);
+  });
+
+  it('shows the monitors that share the reason as unmeasured, and no others', () => {
+    const { guard } = setup();
+    const outcomes = [...Array(8).fill('destination-blocked'), 'no-response', 'ok'] as const;
+    feed(guard, [...outcomes], 0);
+    feed(guard, [...outcomes], 1);
+    const shown = guard.present(cycle([...outcomes], 2));
+    expect(shown[1]).toMatchObject({ status: 'unknown', unmeasured: true });
+    expect(shown[9]).toMatchObject({ status: 'unavailable' });
+    expect(shown[9]?.unmeasured).toBeUndefined();
+    expect(shown[10]).toMatchObject({ status: 'available' });
+  });
+});

@@ -53,3 +53,44 @@ it('closes on Escape', () => {
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   expect(onClose).toHaveBeenCalled();
 });
+
+it('names the likely cause and offers the map and the permission', () => {
+  const onShowMap = vi.fn();
+  const onAllow = vi.fn();
+  render(
+    <MemoryRouter>
+      <ServiceDrawer
+        service={service}
+        blocked
+        range="24h"
+        onRangeChange={() => {}}
+        cause={{ kind: 'host-offline', host: 'pve2', affected: 3 }}
+        onShowMap={onShowMap}
+        onAllowMonitoring={onAllow}
+        onClose={() => {}}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(/pve2 está fora do ar/).textContent).toContain('3 serviços');
+  fireEvent.click(screen.getByRole('button', { name: 'Ver no mapa' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Revisar a permissão de monitoramento' }));
+  expect(onShowMap).toHaveBeenCalled();
+  expect(onAllow).toHaveBeenCalledWith(service);
+});
+
+it('says a loopback address cannot be authorized', () => {
+  render(
+    <MemoryRouter>
+      <ServiceDrawer
+        service={{ ...service, url: 'http://localhost:8080' }}
+        blocked
+        range="24h"
+        onRangeChange={() => {}}
+        onAllowMonitoring={() => {}}
+        onClose={() => {}}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(/próprio servidor do Homora/)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /permissão/ })).toBeNull();
+});

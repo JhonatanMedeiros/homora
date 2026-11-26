@@ -458,9 +458,44 @@ it('reports a blocked separate destination distinctly', async () => {
   );
   await monitor.run();
   expect(monitor.snapshot()[1]).toMatchObject({
-    status: 'unavailable',
+    status: 'unknown',
     reason: 'destination-blocked',
   });
+});
+
+it.each([
+  ['a private address without consent', 'http://192.168.1.10', true],
+  ['a name that resolves to a private address without consent', 'http://nas.example', true],
+  ['the local machine, which is never allowed', 'http://127.0.0.1:9', false],
+])('does not count %s as an outage', async (_label, url, privateNetwork) => {
+  const monitor = createServiceMonitor(
+    async () => [service(1, url)],
+    async () => {
+      throw Object.assign(new Error('blocked'), {
+        code: 'destination-disallowed',
+        privateNetwork,
+      });
+    },
+  );
+  await monitor.run();
+  expect(monitor.snapshot()[1]).toMatchObject({
+    status: 'unknown',
+    reason: 'destination-blocked',
+  });
+});
+
+it('keeps counting a public name that resolves to a forbidden address as a failure', async () => {
+  const monitor = createServiceMonitor(
+    async () => [service(1, 'https://public.example')],
+    async () => {
+      throw Object.assign(new Error('blocked'), {
+        code: 'destination-disallowed',
+        privateNetwork: false,
+      });
+    },
+  );
+  await monitor.run();
+  expect(monitor.snapshot()[1]).toMatchObject({ status: 'unavailable', reason: 'no-response' });
 });
 
 describe('monitor logging', () => {

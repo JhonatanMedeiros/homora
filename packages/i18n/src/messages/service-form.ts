@@ -6,6 +6,13 @@ export const en = {
   'form.insecureTlsBadge': 'TLS not verified',
   'form.dialogDescription':
     'Enter the details to organize and access this service on your dashboard.',
+  'form.urlInvalid':
+    'Enter an address that starts with http:// or https://, without a user or password.',
+  'form.urlDuplicate': '{name} already uses this address. You can still save.',
+  'form.discard.title': 'Discard changes?',
+  'form.discard.detail': 'What you typed in this form will be lost.',
+  'form.discard.keep': 'Keep editing',
+  'form.discard.confirm': 'Discard',
   'icon.browse': 'Choose icon',
   'icon.search': 'Search icons by name',
   'icon.empty': 'No icons found.',
@@ -95,6 +102,13 @@ export const ptBR: Record<keyof typeof en, string> = {
     'Somente destinos privados. Um invasor na rede pode se passar pelo serviço; certificados vencidos podem parecer válidos.',
   'form.insecureTlsBadge': 'TLS não verificado',
   'form.dialogDescription': 'Preencha os dados para organizar e acessar o serviço no painel.',
+  'form.urlInvalid':
+    'Informe um endereço que comece com http:// ou https://, sem usuário nem senha.',
+  'form.urlDuplicate': '{name} já usa este endereço. Você ainda pode salvar.',
+  'form.discard.title': 'Descartar alterações?',
+  'form.discard.detail': 'O que você digitou neste formulário será perdido.',
+  'form.discard.keep': 'Continuar editando',
+  'form.discard.confirm': 'Descartar',
   'icon.browse': 'Escolher ícone',
   'icon.search': 'Buscar ícones pelo nome',
   'icon.empty': 'Nenhum ícone encontrado.',

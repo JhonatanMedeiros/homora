@@ -412,7 +412,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'map.health.down': '{count} fora',
   'map.health.unknown': '{count} desconhecido',
   'map.toolbar': 'Filtros do mapa',
-  'map.search': 'Buscar serviço ou convidado',
+  'map.search': 'Buscar serviço',
   'map.filter.label': 'Mostrar',
   'map.filter.all': 'Todos',
   'map.filter.problems': 'Problemas',

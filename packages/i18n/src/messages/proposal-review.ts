@@ -293,7 +293,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'managed.columns': 'Colunas',
   'managed.pageId': 'ID da página',
   'managed.moveTo': 'Mover conteúdo para a página',
-  'managed.probe': 'Probe',
+  'managed.probe': 'Sonda',
   'managed.address': 'Endereço',
   'managed.tags': 'Tags',
   'managed.incidentId': 'ID do incidente',

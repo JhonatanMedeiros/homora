@@ -32,6 +32,8 @@ export type ServiceStatus = {
   expectedStatus?: string | null;
   /** TLS checks: when the certificate the server presents expires (epoch milliseconds). */
   certExpiresAt?: number;
+  /** Set only for display, while a measurement failure keeps this monitor from being read. */
+  unmeasured?: boolean;
 };
 
 export { CERT_WARNING_DAYS };
