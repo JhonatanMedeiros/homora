@@ -41,6 +41,7 @@ import { registerMcpHttp } from './mcp/http.js';
 import { createPublicStatus } from './public-status.js';
 import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-status.js';
 import { registerServiceIncidentRoutes } from './routes/service-incidents.js';
+import { registerIncidentInvestigationRoutes } from './routes/incident-investigation.js';
 import { registerOperationalSummaryRoutes } from './routes/operational-summary.js';
 import { createNotifications } from './notifications/index.js';
 import { createInbox } from './inbox.js';
@@ -345,6 +346,7 @@ export function createApp(
   registerAgentProposalRoutes(app, proposals, serviceMonitor, auth, audit);
   registerPublicStatusRoutes(app, publicStatus, auth, audit);
   registerServiceIncidentRoutes(app, incidents, observations, measurement, auth, audit);
+  registerIncidentInvestigationRoutes(app, sqlite);
   registerOperationalSummaryRoutes(app, sqlite);
   registerWidgetMonitoringRoutes(
     app,

@@ -2260,7 +2260,7 @@ provider network and budget controls, executable fixtures, real-model validation
 translation of these English-only technical decisions remain future work. The deterministic product
 and existing MCP boundaries remain in effect.
 
-### Evidence and operational summary (#349, in progress)
+### Evidence and operational summary (#349, merged)
 
 The shared package defines v1 evidence types, periodic freshness and reference checks. A bounded,
 authenticated operational-summary reader validates its registered incident-event and coverage-gap
@@ -2277,4 +2277,33 @@ incident rows and 30 calls per range; HTTP injection p95 was 3.52 ms for 24 hour
 the 300 ms endpoint target on this machine. It excludes authentication, network, browser, disk and
 concurrent load.
 Real-service testing and end-to-end latency under load remain unverified. No model or live service
-was used. #349 remains open pending PR review.
+was used. #349 was delivered by PR #359.
+
+### Incident investigation (#346)
+
+An authenticated incident investigation reads recorded incident events, at most 100 retained checks
+and 20 overlapping incidents, reporting truncation, invalid rows and historical coverage gaps.
+Temporal overlap is a qualified hypothesis, with evidence IDs; it never establishes cause. The
+view is available from the operational summary and service incident list. `investigate_incident`
+exposes the same bounded, name-free evidence through MCP with both `incidents:read` and
+`services:read`. It reads no raw error or address and initiates no checks or external writes.
+History has a 30-day retention; source data and historical dependencies can be incomplete.
+An integrated model provider, semantic grading harness and real-service validation remain outside
+this implementation. The reproducible `pnpm --filter @homora/backend exec tsx
+bench/incident-investigation.ts` benchmark uses 50,000 synthetic incidents and 49,999 checks; 30
+HTTP injections measured p95 1.97 ms against a 300 ms endpoint target on this machine. It excludes
+authentication, network, disk, browser and concurrent load. English desktop and Portuguese mobile
+were exercised with an isolated synthetic database. Real-service and independent user validation
+remain pending.
+
+#### Synthetic agent review for #346
+
+Codex (GPT-6) used the MCP SDK's in-memory transport with a synthetic database and a token
+granted only `incidents:read` and `services:read`. In one scenario, monitor 1 had a recorded
+failed check and a later recovery while monitor 2 had an overlapping incident. The returned
+facts supported the failed check (`check:1`) and incident times (`incident:1:opened`,
+`incident:1:recovered`); temporal overlap (`incident:2:overlap`) supported only a qualified
+possibility of a relationship, not a root cause. `gap:incident:1` explicitly recorded missing
+cause and coverage. A hostile string in an unused check field was not returned. This was one
+manual agent review via in-memory MCP, not a complete semantic evaluation suite, a test of
+stdio/HTTP transport, an independent user study or validation with real infrastructure.

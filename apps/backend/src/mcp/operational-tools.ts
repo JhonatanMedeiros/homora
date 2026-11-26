@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { isDegraded } from '@homora/shared';
-import { createObservationStore } from '../monitoring/index.js';
+import { createObservationStore, investigateIncident } from '../monitoring/index.js';
 import { createProbeStore } from '../probes.js';
 import { createTagStore } from '../service-tags.js';
 import { createServiceAttention } from '../service-attention.js';
@@ -171,6 +171,24 @@ export function registerMcpOperationalTools(
           )
           .get(Date.now(), id);
         return row ? result(row) : failed();
+      } catch (error) {
+        return failed(error);
+      }
+    },
+  );
+  server.registerTool(
+    'investigate_incident',
+    {
+      description:
+        'Returns bounded historical evidence and coverage gaps for an incident. Overlap is not causation; no root cause is established.',
+      inputSchema: { id },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    },
+    async ({ id }) => {
+      if (!authorize('incidents:read') || !authorize('services:read')) return unauthorized();
+      try {
+        const investigation = investigateIncident(db, id);
+        return investigation ? result(investigation) : failed();
       } catch (error) {
         return failed(error);
       }

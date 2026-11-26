@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { IncidentInvestigationDialog } from '@/features/investigation/incident-investigation-dialog';
 import {
   CERT_WARNING_DAYS,
   isDegraded,
@@ -58,6 +59,7 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
   const service = services.find((item) => item.id === id);
   const [range, setRange] = useState<UptimeRange>('24h');
   const [allIncidents, setAllIncidents] = useState(false);
+  const [investigationId, setInvestigationId] = useState<number | null>(null);
   const now = useNow();
   const [maintenanceVersion, setMaintenanceVersion] = useState(0);
   const [scheduling, setScheduling] = useState(false);
@@ -85,10 +87,11 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
   const incidents = detail.incidents;
   const recentIncidents = incidents?.filter((item) => item.startedAt >= now - 30 * DAY) ?? [];
   const recovered = recentIncidents.filter((item) => item.endedAt !== null);
-  const mttr = recovered.length
-    ? recovered.reduce((sum, item) => sum + ((item.endedAt ?? 0) - item.startedAt), 0) /
-      recovered.length
-    : null;
+  const mttr =
+    recovered.length > 0
+      ? recovered.reduce((sum, item) => sum + ((item.endedAt ?? 0) - item.startedAt), 0) /
+        recovered.length
+      : null;
   const heat = detail.insights?.heat ?? [];
   const firstData = heat.find((row) => row.up + row.down + row.unknown > 0)?.hour ?? now - 30 * DAY;
   const clean = incidents
@@ -421,6 +424,9 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
                   <TableHead>{t('detail.incidents.duration')}</TableHead>
                   <TableHead>{t('detail.incidents.reason')}</TableHead>
                   <TableHead>{t('detail.incidents.state')}</TableHead>
+                  <TableHead>
+                    <span className="sr-only">{t('investigation.open')}</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -450,6 +456,15 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
                           ? t('detail.incidents.open')
                           : t('detail.incidents.recovered')}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInvestigationId(item.id)}
+                      >
+                        {t('investigation.open')}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -544,6 +559,10 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
           </Table>
         )}
       </Panel>
+      <IncidentInvestigationDialog
+        incidentId={investigationId}
+        onClose={() => setInvestigationId(null)}
+      />
     </div>
   );
 }

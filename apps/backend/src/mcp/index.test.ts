@@ -70,6 +70,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'get_status_overview',
       'list_incidents',
       'get_incident',
+      'investigate_incident',
       'list_tags',
       'list_link_types',
       'list_notification_channels',
