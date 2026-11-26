@@ -54,7 +54,7 @@ describe('API authentication', () => {
   });
 
   it('creates the account once, authenticates, and terminates the session', async () => {
-    const { localApp, signIn, setup, done } = fresh();
+    const { localApp, sqlite, signIn, setup, done } = fresh();
     try {
       expect((await localApp.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
       expect(
@@ -82,6 +82,23 @@ describe('API authentication', () => {
       expect(setCookie.split(',')[0]).not.toContain('Max-Age=');
       expect(setCookie).not.toContain('Secure');
       const cookie = cookieOf(login);
+      sqlite.prepare('INSERT INTO monitors(id,name) VALUES(?,?)').run(701, 'Synthetic');
+      sqlite.prepare('INSERT INTO monitors(id,name) VALUES(?,?)').run(702, 'Synthetic other');
+      sqlite
+        .prepare('INSERT INTO service_incidents(id,service_id,started_at,reason) VALUES(?,?,?,?)')
+        .run(99, 701, Date.now(), 'no-response');
+      expect((await localApp.inject('/api/services/701/incidents/99')).statusCode).toBe(401);
+      const incident = await localApp.inject({
+        url: '/api/services/701/incidents/99',
+        headers: { cookie },
+      });
+      expect(incident.statusCode).toBe(200);
+      expect(incident.json()).toMatchObject({ id: 99, serviceId: 701 });
+      expect(
+        (await localApp.inject({ url: '/api/services/702/incidents/99', headers: { cookie } }))
+          .statusCode,
+      ).toBe(404);
+
       expect(
         (
           await localApp.inject({

@@ -12,6 +12,8 @@ import { formatDateTime, t } from '@/i18n';
 
 type Target = { monitorId: string; incidentId: string };
 type Detail = { startedAt: number; endedAt: number | null };
+const validTime = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && !Number.isNaN(new Date(value).getTime());
 
 export function IncidentEvidenceDialog({
   target,
@@ -42,11 +44,10 @@ export function IncidentEvidenceDialog({
           !('endedAt' in value) ||
           String(value.id) !== target.incidentId ||
           String(value.serviceId) !== target.monitorId ||
-          typeof value.startedAt !== 'number' ||
-          !Number.isFinite(value.startedAt) ||
+          !validTime(value.startedAt) ||
           !(
             value.endedAt === null ||
-            (typeof value.endedAt === 'number' && Number.isFinite(value.endedAt))
+            (validTime(value.endedAt) && value.endedAt >= value.startedAt)
           )
         )
           throw new Error('invalid incident');

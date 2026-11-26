@@ -104,3 +104,49 @@ it('opens the exact probe incident and reports when it has disappeared', async (
   expect(await screen.findByText(/não está mais disponível|no longer available/i)).toBeTruthy();
   expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/services/7/incidents/42');
 });
+
+it('shows the selected probe incident without displaying unrelated records', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url.startsWith('/api/operational-summary'))
+        return new Response(
+          JSON.stringify({
+            from: '2026-01-01T00:00:00Z',
+            to: '2026-01-02T00:00:00Z',
+            truncated: false,
+            evidence: {
+              version: 1,
+              evaluatedAt: '2026-01-02T00:00:00Z',
+              items: [
+                {
+                  id: 'incident:42:opened',
+                  kind: 'fact',
+                  subject: { type: 'monitor', id: '7' },
+                  observedAt: '2026-01-01T12:00:00Z',
+                  link: null,
+                  attributes: { event: 'opened' },
+                },
+              ],
+            },
+          }),
+          { status: 200 },
+        );
+      return new Response(
+        JSON.stringify({ id: 42, serviceId: 7, startedAt: 1767268800000, endedAt: null }),
+        { status: 200 },
+      );
+    }),
+  );
+  render(<OperationalSummary />);
+  fireEvent.click(
+    screen.getByRole('button', { name: /mostrar mudanças|show monitoring changes/i }),
+  );
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /ver incidente do monitor 7|view incident for monitor 7/i,
+    }),
+  );
+  const dialog = await screen.findByRole('dialog');
+  await waitFor(() => expect(dialog.textContent).toMatch(/em andamento|in progress/i));
+});
