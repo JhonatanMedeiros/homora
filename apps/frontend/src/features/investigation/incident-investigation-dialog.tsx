@@ -60,13 +60,13 @@ export function IncidentInvestigationDialog({
   onClose: () => void;
 }) {
   const [value, setValue] = useState<Investigation | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failedId, setFailedId] = useState<number | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (incidentId === null) return;
     const controller = new AbortController();
     setValue(null);
-    setFailed(false);
+    setFailedId(null);
     void fetch(`/api/incidents/${incidentId}/investigation`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error('unavailable');
@@ -78,15 +78,17 @@ export function IncidentInvestigationDialog({
         if (!controller.signal.aborted) setValue(result);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setFailed(true);
+        if (!controller.signal.aborted) setFailedId(incidentId);
       });
     return () => controller.abort();
   }, [incidentId, attempt]);
+  const current = value?.incidentId === incidentId ? value : null;
   const facts =
-    value?.evidence.items.filter((item): item is EvidenceFact => item.kind === 'fact') ?? [];
-  const hypotheses = value?.evidence.items.filter((item) => item.kind === 'hypothesis') ?? [];
+    current?.evidence.items.filter((item): item is EvidenceFact => item.kind === 'fact') ?? [];
+  const hypotheses = current?.evidence.items.filter((item) => item.kind === 'hypothesis') ?? [];
   const gaps =
-    value?.evidence.items.filter((item): item is EvidenceUnknown => item.kind === 'unknown') ?? [];
+    current?.evidence.items.filter((item): item is EvidenceUnknown => item.kind === 'unknown') ??
+    [];
   return (
     <Dialog
       open={incidentId !== null}
@@ -106,23 +108,23 @@ export function IncidentInvestigationDialog({
           </div>
           <DialogDescription>{t('investigation.description')}</DialogDescription>
         </DialogHeader>
-        {failed ? (
+        {failedId === incidentId && incidentId !== null ? (
           <div role="alert" className="flex flex-col items-start gap-2">
             <p>{t('investigation.error')}</p>
             <Button variant="outline" onClick={() => setAttempt((n) => n + 1)}>
               {t('investigation.retry')}
             </Button>
           </div>
-        ) : value ? (
+        ) : current ? (
           <div className="flex flex-col gap-5">
             <p className="text-sm text-muted-foreground">
-              {t('investigation.generated', { time: formatDateTime(value.evidence.evaluatedAt) })}
+              {t('investigation.generated', { time: formatDateTime(current.evidence.evaluatedAt) })}
             </p>
-            {value.from && value.to && (
+            {current.from && current.to && (
               <p className="text-sm text-muted-foreground">
                 {t('investigation.range', {
-                  from: formatDateTime(value.from),
-                  to: formatDateTime(value.to),
+                  from: formatDateTime(current.from),
+                  to: formatDateTime(current.to),
                 })}
               </p>
             )}

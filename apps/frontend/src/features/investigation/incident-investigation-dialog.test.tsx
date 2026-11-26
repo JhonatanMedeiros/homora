@@ -140,3 +140,52 @@ it('rejects a malformed response instead of rendering untrusted evidence', async
   expect(await screen.findByRole('alert')).toBeTruthy();
   expect(screen.queryByRole('link', { name: /abrir detalhes|open service details/i })).toBeNull();
 });
+
+it('does not show the previous incident while a different one loads', async () => {
+  const at = '2026-01-01T12:00:00Z';
+  const first = {
+    incidentId: 1,
+    monitorId: 1,
+    from: at,
+    to: at,
+    truncated: false,
+    evidence: {
+      version: 1,
+      evaluatedAt: at,
+      items: [
+        {
+          id: 'incident:1:opened',
+          version: 1,
+          kind: 'fact',
+          source: 'monitor-incident',
+          subject: { type: 'monitor', id: '1' },
+          observedAt: at,
+          evaluatedAt: at,
+          freshness: 'historical',
+          confidence: 'confirmed',
+          summary: 'Synthetic',
+          link: null,
+          attributes: { event: 'opened' },
+        },
+      ],
+    },
+  };
+  let finish: ((response: Response) => void) | undefined;
+  const delayed = new Promise<Response>((resolve) => {
+    finish = resolve;
+  });
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(first), { status: 200 }))
+      .mockReturnValueOnce(delayed),
+  );
+  const { rerender } = render(<IncidentInvestigationDialog incidentId={1} onClose={() => {}} />);
+  expect(await screen.findByText(/incidente iniciado|incident started/i)).toBeTruthy();
+  rerender(<IncidentInvestigationDialog incidentId={2} onClose={() => {}} />);
+  expect(screen.queryByText(/incidente iniciado|incident started/i)).toBeNull();
+  expect(screen.getByRole('status')).toBeTruthy();
+  finish?.(new Response('', { status: 404 }));
+  expect(await screen.findByRole('alert')).toBeTruthy();
+});
