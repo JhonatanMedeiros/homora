@@ -2260,6 +2260,10 @@ provider network and budget controls, executable fixtures, real-model validation
 translation of these English-only technical decisions remain future work. The deterministic product
 and existing MCP boundaries remain in effect.
 
+### MCP investigation not-found response (#366)
+
+An authorized investigation of an unknown incident returns a structured not-found code and requested ID. Invalid arguments remain validation errors and unexpected failures remain generic; the HTTP route continues to return 404.
+
 ### Bounded overlap hypotheses (#364)
 
 Incident investigations group overlapping incidents only when their monitor and recorded start and end

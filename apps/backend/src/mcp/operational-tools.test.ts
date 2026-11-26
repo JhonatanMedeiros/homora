@@ -704,10 +704,28 @@ it('requires both read scopes for an investigation and excludes raw check fields
     expect(JSON.parse(responseText(response)).evidence.items).toEqual(
       expect.arrayContaining([expect.objectContaining({ source: 'monitor-check' })]),
     );
-    expect(
-      (await clients[2]!.callTool({ name: 'investigate_incident', arguments: { id: 999 } }))
-        .isError,
-    ).toBe(true);
+    const missing = await clients[2]!.callTool({
+      name: 'investigate_incident',
+      arguments: { id: 999 },
+    });
+    expect(missing.isError).toBe(true);
+    expect(missing.structuredContent).toEqual({ code: 'not-found', id: 999 });
+    expect(JSON.parse(responseText(missing))).toEqual({ code: 'not-found', id: 999 });
+    const invalid = await clients[2]!.callTool({
+      name: 'investigate_incident',
+      arguments: { id: -1 },
+    });
+    expect(invalid.isError).toBe(true);
+    db.prepare(
+      "INSERT INTO service_incidents(id,service_id,started_at,reason) VALUES(2,1,?,'secret-canary')",
+    ).run(now + 86_400_000);
+    const failure = await clients[2]!.callTool({
+      name: 'investigate_incident',
+      arguments: { id: 2 },
+    });
+    expect(failure.isError).toBe(true);
+    expect(responseText(failure)).toBe('The request could not be completed.');
+    expect(JSON.stringify(failure)).not.toContain('secret-canary');
   } finally {
     await Promise.all(clients.map((client) => client.close()));
     storage.close();
