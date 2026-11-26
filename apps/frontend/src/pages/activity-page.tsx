@@ -8,6 +8,7 @@ import { FormError } from '@/components/form-error';
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { PageHeader } from '@/components/page-header';
 import { OperationalSummary } from '@/features/activity/operational-summary';
+import { MonitoringCoverage } from '@/features/activity/monitoring-coverage';
 import { ActivityFeed } from '@/features/activity/activity-feed';
 import type { ActivityKind, ActivityOutcome } from '@/features/activity/activity-model';
 import { useActivityFeed } from '@/hooks/use-activity-feed';
@@ -25,6 +26,7 @@ export function ActivityPage() {
     <section aria-label={t('activity.title')} className="flex flex-col gap-6">
       <PageHeader title={t('activity.title')} description={t('activity.description')} />
       <OperationalSummary />
+      <MonitoringCoverage />
       <div className="flex flex-wrap items-end gap-3">
         <ToggleGroup
           type="single"

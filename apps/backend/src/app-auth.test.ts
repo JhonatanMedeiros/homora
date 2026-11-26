@@ -58,6 +58,9 @@ describe('API authentication', () => {
     try {
       expect((await localApp.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
       expect(
+        (await localApp.inject({ method: 'GET', url: '/api/monitoring/coverage' })).statusCode,
+      ).toBe(401);
+      expect(
         (await localApp.inject({ method: 'GET', url: '/api/operational-summary' })).statusCode,
       ).toBe(401);
       expect((await localApp.inject({ method: 'GET', url: '/api/auth/status' })).json()).toEqual({
@@ -82,6 +85,10 @@ describe('API authentication', () => {
       expect(setCookie.split(',')[0]).not.toContain('Max-Age=');
       expect(setCookie).not.toContain('Secure');
       const cookie = cookieOf(login);
+      expect(
+        (await localApp.inject({ url: '/api/monitoring/coverage', headers: { cookie } }))
+          .statusCode,
+      ).toBe(200);
       sqlite.prepare('INSERT INTO monitors(id,name) VALUES(?,?)').run(701, 'Synthetic');
       sqlite.prepare('INSERT INTO monitors(id,name) VALUES(?,?)').run(702, 'Synthetic other');
       sqlite

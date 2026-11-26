@@ -4,6 +4,20 @@ description: 'Service form, seven check types, thresholds, incidents, uptime, ma
 
 # Services and monitoring
 
+## Review monitoring coverage
+
+On **Activity**, select **Review monitoring coverage** to assess the current configuration and
+latest usable observations. The assessment lists missing check targets, destination-policy blocks,
+maintenance pauses, stale observations (more than twice the check interval), and observations that
+are unavailable. Follow the configuration link to review the affected service or probe. A missing
+observation does not mean monitoring was disabled, and a maintenance pause is not an outage.
+
+Each service card already has a monitor; an interval left unset uses the default. The assessment
+does not infer notification intent, evaluate alert channels, or prove complete coverage. It does not
+change settings or network permissions. Results can be ignored and are recalculated on refresh;
+there is no saved dismissal. The list is limited to the first 100 results. Refresh an old assessment
+before acting. This deterministic feature does not require AI.
+
 A **service** is a card on your dashboard. It has an address to open and, optionally, a scheduled check that tells you
 whether it is healthy.
 
