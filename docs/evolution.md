@@ -2361,3 +2361,7 @@ screen readers were not verified.
 ### Service names in evidence views (#365)
 
 The authenticated operational summary and incident investigation resolve current card names locally, with monitor IDs as a fallback for probes, deleted cards or failed reads. Evidence bundles and MCP responses remain name-free.
+
+### Operational summary aggregation (#367)
+
+The summary counts opened and recovered events and distinct incidents by monitor in the selected window. Counts cover all retained matching events independently of the separately bounded event details; monitor groups and event details each expose truncation. Correlation and root cause are not inferred. A local HTTP injection benchmark with 50,000 synthetic incident rows measured p95 9.73 ms for 24 hours and 16.52 ms for 7 days.

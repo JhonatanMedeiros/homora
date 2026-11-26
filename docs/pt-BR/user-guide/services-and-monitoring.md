@@ -3,6 +3,13 @@
 O resumo e a investigação autenticados resolvem nomes de serviços localmente. Sondas, serviços removidos
 e nomes indisponíveis usam o ID do monitor; os bundles de evidências e as respostas MCP não recebem nomes.
 
+Em **Gerenciar → Atividade**, o resumo de mudanças agrupa eventos por monitor nas últimas 24 horas ou
+em 7 dias. As contagens de início e recuperação contam eventos; o total conta incidentes distintos com
+ao menos um evento no período. As contagens usam todo o período retido mesmo quando os detalhes são
+limitados. São exibidos até 100 monitores e 100 eventos individuais, com avisos separados de truncamento.
+Um resultado vazio não comprova histórico completo nem identifica uma causa.
+A duração não é agregada: incidentes podem estar abertos ou se estender além do período selecionado.
+
 ## Revisar a cobertura de monitoramento
 
 Em **Atividade**, selecione **Revisar cobertura de monitoramento** para avaliar a configuração atual
