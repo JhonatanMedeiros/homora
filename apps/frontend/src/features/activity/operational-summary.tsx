@@ -6,6 +6,7 @@ import { LoadingRegion } from '@/components/skeletons';
 import { useNow } from '@/hooks/use-now';
 import { IncidentEvidenceDialog } from './incident-evidence-dialog';
 import { IncidentInvestigationDialog } from '@/features/investigation/incident-investigation-dialog';
+import { useMonitorNames } from '@/features/investigation/use-monitor-names';
 import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { formatDateTime, t } from '@/i18n';
 
@@ -16,6 +17,7 @@ export function OperationalSummary() {
   const now = useNow();
   const [range, setRange] = useState<'24h' | '7d'>('24h');
   const [data, setData] = useState<Summary | null>(null);
+  const monitorName = useMonitorNames(data !== null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -113,7 +115,10 @@ export function OperationalSummary() {
                       <Button
                         variant="link"
                         className="h-auto p-0"
-                        aria-label={t('investigation.openFor', { id: item.id })}
+                        aria-label={t('investigation.openForNamed', {
+                          id: item.id,
+                          name: monitorName(item.subject.id),
+                        })}
                         onClick={() => {
                           const match = /^incident:(\d+):(opened|recovered)$/.exec(item.id);
                           const id = match ? Number(match[1]) : NaN;
@@ -124,7 +129,7 @@ export function OperationalSummary() {
                       </Button>
                       {item.link ? (
                         <a className="underline" href={item.link}>
-                          {t('operationalSummary.monitor', { id: item.subject.id })}
+                          {monitorName(item.subject.id)}
                         </a>
                       ) : (
                         <Button

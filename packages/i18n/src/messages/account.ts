@@ -149,6 +149,7 @@ export const en = {
   'operationalSummary.loading': 'Loading monitoring changes',
   'investigation.open': 'Investigate incident',
   'investigation.openFor': 'Investigate incident {id}',
+  'investigation.openForNamed': 'Investigate incident {id} for {name}',
   'investigation.title': 'Investigate incident',
   'investigation.close': 'Close investigation',
   'investigation.description': 'Recorded evidence; overlapping events do not prove a cause.',
@@ -168,6 +169,7 @@ export const en = {
   'investigation.sourceCheck': 'Source: check history',
   'investigation.sourceIncident': 'Source: incident record',
   'investigation.openService': 'Open service details',
+  'investigation.openServiceNamed': 'Open details for {name}',
   'investigation.hypotheses': 'Hypotheses',
   'investigation.noHypothesis': 'No supported hypothesis is available.',
   'investigation.temporalHypothesis':
@@ -457,6 +459,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'operationalSummary.loading': 'Carregando mudanças no monitoramento',
   'investigation.open': 'Investigar incidente',
   'investigation.openFor': 'Investigar incidente {id}',
+  'investigation.openForNamed': 'Investigar incidente {id} de {name}',
   'investigation.title': 'Investigar incidente',
   'investigation.close': 'Fechar investigação',
   'investigation.description':
@@ -478,6 +481,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'investigation.sourceCheck': 'Fonte: histórico de checagens',
   'investigation.sourceIncident': 'Fonte: registro de incidente',
   'investigation.openService': 'Abrir detalhes do serviço',
+  'investigation.openServiceNamed': 'Abrir detalhes de {name}',
   'investigation.hypotheses': 'Hipóteses',
   'investigation.noHypothesis': 'Não há hipótese sustentada pelos dados disponíveis.',
   'investigation.temporalHypothesis':

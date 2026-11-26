@@ -2357,3 +2357,7 @@ Not covered: the Home at hundreds of services is still a long page on phones, an
 dependencies typed in the form are not part of the kept draft. Validation: `pnpm check`, `pnpm build`,
 `pnpm docs:build` and agent-browser with axe on an isolated synthetic database. Real integrations, physical devices and
 screen readers were not verified.
+
+### Service names in evidence views (#365)
+
+The authenticated operational summary and incident investigation resolve current card names locally, with monitor IDs as a fallback for probes, deleted cards or failed reads. Evidence bundles and MCP responses remain name-free.
