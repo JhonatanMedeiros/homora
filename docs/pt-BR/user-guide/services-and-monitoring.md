@@ -1,5 +1,19 @@
 # Serviços e monitoramento
 
+## Revisar a cobertura de monitoramento
+
+Em **Atividade**, selecione **Revisar cobertura de monitoramento** para avaliar a configuração atual
+e as últimas observações utilizáveis. A avaliação apresenta alvos ausentes, bloqueios pela política
+de destino, pausas de manutenção e observações desatualizadas (mais de duas vezes o intervalo de
+verificação) ou indisponíveis. Acesse a configuração para revisar o serviço ou a sonda. Uma
+observação ausente não significa que o monitor esteja desativado; manutenção não é indisponibilidade.
+
+Cada cartão de serviço já possui um monitor; o intervalo não configurado usa o padrão. A avaliação
+não infere a intenção de receber alertas, não verifica canais e não comprova cobertura completa.
+Ela não altera configurações nem permissões de rede. Os resultados podem ser ignorados e são
+recalculados ao atualizar; não há dispensa persistente. A lista mostra os primeiros 100 resultados.
+Atualize avaliações antigas antes de agir. O recurso é determinístico e não exige IA.
+
 Um serviço representa um endereço que você deseja abrir e, opcionalmente, monitorar. O formulário permite configurar nome, URL, categoria, ícone, aparência, verificações, conexões e acesso à rede.
 
 A URL deve ser `http` ou `https`, sem usuário nem senha; `http://` é acrescentado quando você omite. Um endereço já usado por outro cartão é avisado, sem impedir o salvamento. Fechar o formulário com alterações pede confirmação. O que foi digitado nos campos do cartão permanece nesta aba do navegador se a sessão expirar ou a página recarregar, até salvar, descartar ou sair.

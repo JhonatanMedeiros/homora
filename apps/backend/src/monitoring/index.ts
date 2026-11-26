@@ -28,5 +28,6 @@ export { UPTIME_MIN_CHECKS, uptimeSummarizerOf } from './uptime.js';
 export { certificateReading } from './certificate-reading.js';
 
 export { operationalSummary } from './operational-summary.js';
+export { monitoringCoverage } from './coverage.js';
 
 export { investigateIncident } from './incident-investigation.js';

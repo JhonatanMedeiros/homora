@@ -43,6 +43,7 @@ import { PUBLIC_STATUS_PATH, registerPublicStatusRoutes } from './routes/public-
 import { registerServiceIncidentRoutes } from './routes/service-incidents.js';
 import { registerIncidentInvestigationRoutes } from './routes/incident-investigation.js';
 import { registerOperationalSummaryRoutes } from './routes/operational-summary.js';
+import { registerMonitoringCoverageRoutes } from './routes/monitoring-coverage.js';
 import { createNotifications } from './notifications/index.js';
 import { createInbox } from './inbox.js';
 import { registerInboxRoutes } from './routes/inbox.js';
@@ -348,6 +349,7 @@ export function createApp(
   registerServiceIncidentRoutes(app, incidents, observations, measurement, auth, audit);
   registerIncidentInvestigationRoutes(app, sqlite);
   registerOperationalSummaryRoutes(app, sqlite);
+  registerMonitoringCoverageRoutes(app, sqlite);
   registerWidgetMonitoringRoutes(
     app,
     sqlite,

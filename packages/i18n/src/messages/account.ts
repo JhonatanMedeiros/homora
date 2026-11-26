@@ -97,6 +97,32 @@ export const en = {
   'account.sessionsNote':
     'The browser and address are the ones seen at sign-in. Sessions expire 8 hours after they start.',
   'operationalSummary.title': 'Monitoring changes',
+  'coverage.title': 'Monitoring coverage',
+  'coverage.description':
+    'Review configuration gaps and observations that cannot establish current coverage.',
+  'coverage.show': 'Review monitoring coverage',
+  'coverage.error': 'Could not load monitoring coverage.',
+  'coverage.evaluated': 'Evaluated at {time}',
+  'coverage.outdated': 'This assessment may be out of date. Refresh it before acting.',
+  'coverage.noMonitors': 'There are no monitors to assess.',
+  'coverage.noGaps': 'No gaps detected by these checks. This does not establish complete coverage.',
+  'coverage.service': 'Service monitor {id}',
+  'coverage.probe': 'Probe {id}',
+  'coverage.reason.missing-target': 'No check target is configured. Review the monitor address.',
+  'coverage.reason.blocked':
+    'The last check was blocked by destination policy. Review the target and policy without weakening protection automatically.',
+  'coverage.reason.maintenance':
+    'Checks are paused for a maintenance window; this is not an outage.',
+  'coverage.reason.stale':
+    'The last observation is older than twice the check interval; current coverage is unknown.',
+  'coverage.reason.unknown':
+    'No usable current observation is available; the monitor is not necessarily disabled.',
+  'coverage.observed': 'Last observation: {time}',
+  'coverage.review': 'Review configuration for monitor {id}',
+  'coverage.truncated': 'Only the first 100 results are shown.',
+  'coverage.limits':
+    'This assessment does not check alert channels or prove complete coverage. You can ignore a result; it may appear again on refresh.',
+  'coverage.refresh': 'Refresh coverage',
   'operationalSummary.show': 'Show monitoring changes',
   'operationalSummary.range': 'Period',
   'operationalSummary.24h': '24 hours',
@@ -373,6 +399,34 @@ export const ptBR: Record<keyof typeof en, string> = {
   'account.sessionsNote':
     'O navegador e o endereço são os vistos no momento do login. As sessões expiram 8 horas depois de iniciadas.',
   'operationalSummary.title': 'Mudanças no monitoramento',
+  'coverage.title': 'Cobertura de monitoramento',
+  'coverage.description':
+    'Revise lacunas de configuração e observações que não permitem determinar a cobertura atual.',
+  'coverage.show': 'Revisar cobertura de monitoramento',
+  'coverage.error': 'Não foi possível carregar a cobertura de monitoramento.',
+  'coverage.evaluated': 'Avaliado em {time}',
+  'coverage.outdated': 'Esta avaliação pode estar desatualizada. Atualize antes de agir.',
+  'coverage.noMonitors': 'Não há monitores para avaliar.',
+  'coverage.noGaps':
+    'Nenhuma lacuna detectada por estas verificações. Isso não comprova cobertura completa.',
+  'coverage.service': 'Monitor do serviço {id}',
+  'coverage.probe': 'Sonda {id}',
+  'coverage.reason.missing-target':
+    'Nenhum alvo de verificação configurado. Revise o endereço do monitor.',
+  'coverage.reason.blocked':
+    'A última verificação foi bloqueada pela política de destino. Revise o alvo e a política sem enfraquecer a proteção automaticamente.',
+  'coverage.reason.maintenance':
+    'As verificações estão pausadas por uma janela de manutenção; isso não é uma indisponibilidade.',
+  'coverage.reason.stale':
+    'A última observação tem mais de duas vezes o intervalo de verificação; a cobertura atual é desconhecida.',
+  'coverage.reason.unknown':
+    'Não há observação atual utilizável; isso não significa que o monitor esteja desativado.',
+  'coverage.observed': 'Última observação: {time}',
+  'coverage.review': 'Revisar configuração do monitor {id}',
+  'coverage.truncated': 'Apenas os primeiros 100 resultados são exibidos.',
+  'coverage.limits':
+    'Esta avaliação não verifica canais de alerta nem comprova cobertura completa. Você pode ignorar um resultado; ele pode reaparecer ao atualizar.',
+  'coverage.refresh': 'Atualizar cobertura',
   'operationalSummary.show': 'Mostrar mudanças no monitoramento',
   'operationalSummary.range': 'Período',
   'operationalSummary.24h': '24 horas',

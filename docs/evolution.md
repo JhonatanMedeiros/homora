@@ -2260,6 +2260,20 @@ provider network and budget controls, executable fixtures, real-model validation
 translation of these English-only technical decisions remain future work. The deterministic product
 and existing MCP boundaries remain in effect.
 
+### Monitoring coverage assessment (#347)
+
+The Activity page offers an on-demand, read-only assessment of monitor targets and the existing
+observation store. It distinguishes missing targets, destination-policy blocks, maintenance,
+stale observations (more than twice the interval) and unavailable observations; none implies a
+disabled monitor. Every service card already owns a monitor, and a null interval uses the default.
+The assessment does not infer alert intent or check notification channels, and cannot prove complete
+coverage. Dismissals are not persisted; ignored results may reappear. Results are limited to 100 and
+configuration links do not apply changes. The evaluation does not use AI or change network policy.
+
+Focused tests cover false positives, stale and unavailable data, empty and bounded results and API
+authentication. `pnpm check`, `pnpm build`, and `pnpm docs:build` passed. Live infrastructure and
+screen readers were not tested.
+
 ### Evidence and operational summary (#349, merged)
 
 The shared package defines v1 evidence types, periodic freshness and reference checks. A bounded,
