@@ -112,21 +112,21 @@ export function ArrangeToggle({
     >
       <ToggleGroupItem
         value="group"
-        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-accent-text pointer-coarse:h-11"
       >
         <LayoutGrid aria-hidden="true" />
         {t('hosts.arrange.group')}
       </ToggleGroupItem>
       <ToggleGroupItem
         value="host"
-        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-accent-text pointer-coarse:h-11"
       >
         <Server aria-hidden="true" />
         {t('hosts.arrange.host')}
       </ToggleGroupItem>
       <ToggleGroupItem
         value="map"
-        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11"
+        className="h-9 gap-1.5 px-3 font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-accent-text pointer-coarse:h-11"
       >
         <MapIcon aria-hidden="true" />
         {t('hosts.arrange.map')}

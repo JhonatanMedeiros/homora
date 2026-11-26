@@ -54,6 +54,9 @@ type Props = {
 };
 
 /** One service in depth: the numbers, latency over time, 90 days of availability, why it failed and its incidents. */
+/** Fewer measured periods than this are listed in the summary line, not charted. */
+const MIN_CHART_POINTS = 3;
+
 export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, navigate }: Props) {
   const overview = useStatusOverview();
   const service = services.find((item) => item.id === id);
@@ -108,7 +111,9 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
   const shares = detail.insights ? reasonShares(detail.insights.reasons) : [];
   const state = view.state;
   const latencySeries = detail.latency;
-  const hasLatency = latencySeries?.points.some((point) => point.checks > 0) ?? false;
+  // One or two buckets draw as stray dots, which reads as a broken chart.
+  const measured = latencySeries?.points.filter((point) => point.checks > 0).length ?? 0;
+  const hasLatency = measured > 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -122,7 +127,7 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
             event.preventDefault();
             navigate('/');
           }}
-          className="inline-flex items-center gap-1 text-primary hover:underline"
+          className="inline-flex items-center gap-1 text-accent-text hover:underline"
         >
           <ArrowLeft aria-hidden="true" className="size-3.5" />
           {t('detail.back')}
@@ -134,7 +139,7 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
       </nav>
 
       <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        <span className="grid size-13 shrink-0 place-items-center rounded-xl bg-muted text-xl font-semibold text-primary [&_img]:size-7 [&_svg]:size-6">
+        <span className="grid size-13 shrink-0 place-items-center rounded-xl bg-muted text-xl font-semibold text-accent-text [&_img]:size-7 [&_svg]:size-6">
           <ServiceIcon icon={service.icon} name={service.name} />
         </span>
         <div className="min-w-0">
@@ -183,6 +188,12 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
             {t('detail.live.checks', { count: incident.failedChecks })}
           </span>
         </section>
+      )}
+
+      {kpis.every(({ range: key }) => detail.uptime[key]?.uptimePct === null) && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t('detail.collecting')}
+        </p>
       )}
 
       <dl
@@ -288,13 +299,17 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
         )}
         {latencySeries && hasLatency && (
           <>
-            <LatencyChart
-              series={latencySeries}
-              incidents={incidents ?? []}
-              limit={monitor?.degradedLatencyMs ?? null}
-              now={now}
-              range={range}
-            />
+            {measured < MIN_CHART_POINTS ? (
+              <p className="text-muted-foreground">{t('detail.latency.collecting')}</p>
+            ) : (
+              <LatencyChart
+                series={latencySeries}
+                incidents={incidents ?? []}
+                limit={monitor?.degradedLatencyMs ?? null}
+                now={now}
+                range={range}
+              />
+            )}
             <p className="font-mono text-xs text-muted-foreground">
               {t('detail.latency.summary', {
                 p50: ms(latencySeries.p50),

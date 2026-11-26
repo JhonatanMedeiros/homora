@@ -38,10 +38,19 @@ type Props = {
   layout?: 'strip' | 'rail';
   groups?: { name: string; pageId: number | null }[];
   openMonitor?: (id: number, hasService: boolean) => void;
+  /** The "Add widget" tile; phones show it only while organizing. */
+  showAdd?: boolean;
 };
 
 /** Widgets of a page. Plain information by default; the controls appear in the card menu and organize mode. */
-export function PageWidgets({ pageId, pages, layout = 'strip', groups = [], openMonitor }: Props) {
+export function PageWidgets({
+  pageId,
+  pages,
+  layout = 'strip',
+  groups = [],
+  openMonitor,
+  showAdd = true,
+}: Props) {
   const [showHidden, setShowHidden] = useState(false);
   const [visibilityNow, setVisibilityNow] = useState(() => new Date());
   const { widgets, connections, readings, error, busy, loading, change, reorder } =
@@ -117,7 +126,6 @@ export function PageWidgets({ pageId, pages, layout = 'strip', groups = [], open
       )}
       {!loading && (
         <div
-          role="list"
           className={
             layout === 'rail' ? 'flex flex-col gap-3' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'
           }
@@ -125,42 +133,44 @@ export function PageWidgets({ pageId, pages, layout = 'strip', groups = [], open
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropAt(null);
           }}
         >
-          {current.map((item, index) => (
-            <PageWidgetCard
-              key={item.id}
-              {...{
-                item,
-                index,
-                current,
-                connections,
-                readings,
-                loading,
-                pages,
-                fullPages,
-                layout,
-                groups,
-                openMonitor,
-                showHidden,
-                visibilityNow,
-                dragId,
-                setDragId,
-                setDropAt,
-                endDrag,
-                dropHere,
-                markable,
-                reorder,
-                setChosen,
-                setDraft,
-                setRemoving,
-                change,
-              }}
-            />
-          ))}
+          <div role={current.length > 0 ? 'list' : undefined} className="contents">
+            {current.map((item, index) => (
+              <PageWidgetCard
+                key={item.id}
+                {...{
+                  item,
+                  index,
+                  current,
+                  connections,
+                  readings,
+                  loading,
+                  pages,
+                  fullPages,
+                  layout,
+                  groups,
+                  openMonitor,
+                  showHidden,
+                  visibilityNow,
+                  dragId,
+                  setDragId,
+                  setDropAt,
+                  endDrag,
+                  dropHere,
+                  markable,
+                  reorder,
+                  setChosen,
+                  setDraft,
+                  setRemoving,
+                  change,
+                }}
+              />
+            ))}
+          </div>
           {full ? (
             <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">
               {t('pageWidgets.limit', { max: MAX_WIDGETS_PER_PAGE })}
             </p>
-          ) : (
+          ) : showAdd ? (
             <Button
               type="button"
               variant="outline"
@@ -179,7 +189,7 @@ export function PageWidgets({ pageId, pages, layout = 'strip', groups = [], open
               <Plus />
               {t('pageWidgets.addTile')}
             </Button>
-          )}
+          ) : null}
         </div>
       )}
       {hiddenCount > 0 && (

@@ -201,7 +201,7 @@ export function WeatherContent({
           <ConditionIcon
             condition={data.current.condition}
             isDay={data.current.isDay}
-            className="size-8 shrink-0 text-primary"
+            className="size-8 shrink-0 text-accent-text"
           />
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">

@@ -32,7 +32,7 @@ export function View({ config }: { config: QuickLinksConfig }) {
             .map((link, index) => (
               <li key={index} className="min-w-0">
                 <a
-                  className="block break-words text-sm text-primary underline"
+                  className="block break-words text-sm text-accent-text underline"
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"

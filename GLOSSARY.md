@@ -15,3 +15,5 @@
   its current state, its query uses data from the associated connection.
 - **Proposal**: a service configuration change created by an agent and
   awaiting human review before being applied.
+- **Status words**: a monitor is **Online** or **Offline** in English and **No ar** or **Fora do ar** in
+  pt-BR. The pt-BR interface does not use "online" or "offline" for monitor or node state.

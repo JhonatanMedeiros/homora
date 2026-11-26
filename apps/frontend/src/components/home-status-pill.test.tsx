@@ -19,6 +19,7 @@ const summary = (extra: Partial<StatusSummary> = {}): StatusSummary => ({
   measurement: null,
   title: 'All systems operational',
   subtitle: '',
+  breakdown: null,
   tone: 'ok',
   ...extra,
 });

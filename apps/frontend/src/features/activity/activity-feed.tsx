@@ -83,7 +83,7 @@ export function ActivityFeed({ events }: { events: ActivityEvent[] }) {
                   {event.proposalId && (
                     <Link
                       to="/manage/agents"
-                      className="text-xs text-primary underline-offset-4 hover:underline"
+                      className="text-xs text-accent-text underline-offset-4 hover:underline"
                     >
                       {t('activity.viewProposal')}
                     </Link>
@@ -96,7 +96,7 @@ export function ActivityFeed({ events }: { events: ActivityEvent[] }) {
                   <span className="md:hidden">{t('activity.by', { actor: actorName(event) })}</span>
                   <span className="hidden md:inline">{actorName(event)}</span>
                 </p>
-                <span className="hidden w-12 shrink-0 text-right font-mono text-sm text-muted-foreground md:block">
+                <span className="hidden w-20 shrink-0 text-right font-mono text-sm whitespace-nowrap text-muted-foreground md:block">
                   {time(event.createdAt)}
                 </span>
               </li>

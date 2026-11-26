@@ -5,6 +5,7 @@ import { OrganizePanel } from '@/features/dashboard/organize-panel';
 import { TopBar } from '@/components/top-bar';
 import { OrganizeToggle, ServiceViewToolbar } from '@/features/dashboard/service-view-toolbar';
 import type { ComponentProps } from 'react';
+import { t } from '@/i18n';
 
 type ToolbarProps = ComponentProps<typeof ServiceViewToolbar> & {
   showHostSuggestions: boolean;
@@ -23,6 +24,8 @@ type Props = {
   showImpact: boolean;
   impact: ComponentProps<typeof HostImpactBanner>;
   groupEditor: ComponentProps<typeof OrganizePanel>;
+  /** Organizing while "Problems first" reorders the view: say that the order shown differs. */
+  savedOrderNote?: boolean;
 };
 
 /** Dashboard summary and its view/organize controls. */
@@ -36,6 +39,7 @@ export function ServiceDashboardHeader({
   showImpact,
   impact,
   groupEditor,
+  savedOrderNote = false,
 }: Props) {
   return (
     <>
@@ -62,6 +66,9 @@ export function ServiceDashboardHeader({
       )}
       {showImpact && <HostImpactBanner {...impact} />}
       {organizing && <OrganizePanel {...groupEditor} />}
+      {savedOrderNote && (
+        <p className="text-sm text-muted-foreground">{t('organize.savedOrder')}</p>
+      )}
     </>
   );
 }

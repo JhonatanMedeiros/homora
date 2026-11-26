@@ -25,10 +25,10 @@ it('shows the pages as tabs with counters and the number that are down', () => {
       counts={(id) => (id === 1 ? { total: 3, down: 0 } : { total: 5, down: 2 })}
     />,
   );
-  expect(screen.getByRole('tablist', { name: 'Pages' })).toBeTruthy();
-  const home = screen.getByRole('tab', { name: /Home/ });
-  expect(home.getAttribute('aria-selected')).toBe('true');
-  expect(screen.getByRole('tab', { name: /Media/ }).textContent).toContain('2 down');
+  expect(screen.getByRole('navigation', { name: 'Pages' })).toBeTruthy();
+  const home = screen.getByRole('button', { name: /^Home/ });
+  expect(home.getAttribute('aria-current')).toBe('page');
+  expect(screen.getByRole('button', { name: /Media/ }).textContent).toContain('2 down');
   expect(home.textContent).not.toContain('down');
 });
 
@@ -42,7 +42,7 @@ it('selects a page when its tab is activated', () => {
       counts={() => ({ total: 0, down: 0 })}
     />,
   );
-  const media = screen.getByRole('tab', { name: /Media/ });
+  const media = screen.getByRole('button', { name: /Media/ });
   fireEvent.mouseDown(media);
   fireEvent.focus(media);
   fireEvent.keyDown(media, { key: 'Enter' });
@@ -74,7 +74,7 @@ it('shows the active page menu and add button even with a single page, and creat
     />,
   );
 
-  expect(screen.getByRole('tab', { name: /Home/ })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /^Home/ })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Page menu: Home' })).toBeTruthy();
 
   fireEvent.click(screen.getByRole('button', { name: 'Add page' }));

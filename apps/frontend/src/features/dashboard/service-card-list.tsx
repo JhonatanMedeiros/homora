@@ -1,3 +1,4 @@
+import { HostAddress } from '@/components/host-address';
 import { Item, ItemContent, ItemMedia, ItemTitle } from '@homora/ui/item';
 import { t } from '@/i18n';
 import { ServiceIcon } from '@/components/service-icon';
@@ -6,7 +7,6 @@ import { CardWidgets } from '@/components/card-widgets';
 import { ResourceLine } from '@/components/resource-line';
 import { UptimePercent } from '@/features/uptime/service-uptime';
 import { cn } from '@homora/ui/lib/utils';
-import { hostOf } from '@/lib/services';
 import { HostLine, StatusMeta } from '@/features/dashboard/service-card-common';
 import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { SERVICE_CARD_LI } from '@/features/dashboard/service-card-utils';
@@ -63,9 +63,7 @@ export function ServiceCardList({
               )}
             </a>
           </ItemTitle>
-          <span className="truncate font-mono text-xs text-muted-foreground">
-            {hostOf(service.url)}
-          </span>
+          <HostAddress url={service.url} />
           {host && <HostLine host={host} impact={impact} />}
           {dependencyNote && (
             <span className="truncate text-xs text-muted-foreground">{dependencyNote}</span>

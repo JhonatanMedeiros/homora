@@ -1,6 +1,5 @@
 import { Plus, RotateCw } from 'lucide-react';
 import { Button } from '@homora/ui/button';
-import { Card } from '@homora/ui/card';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@homora/ui/empty';
 import { CardGridSkeleton } from '@/components/skeletons';
 import {
@@ -83,22 +82,6 @@ export function Connections({ initialDraft }: { initialDraft?: ConnectionFormSta
                   <ConnectionCard item={item} onOpen={state.select} />
                 </li>
               ))}
-              <li className="flex min-w-0">
-                <Card className="relative w-full items-center justify-center gap-1 border-dashed bg-transparent p-4 text-center transition-colors hover:border-ring">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={state.startAdding}
-                    className="h-auto p-0 text-base font-semibold text-foreground after:absolute after:inset-0 after:content-[''] hover:no-underline"
-                  >
-                    <Plus data-icon="inline-start" />
-                    {t('connections.add')}
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    {t('connections.addCardHint')}
-                  </span>
-                </Card>
-              </li>
             </ul>
           )}
         </TabsContent>

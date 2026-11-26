@@ -243,7 +243,7 @@ export function ServicesPage({
     offline,
   } = pageModel;
   // Wide Home: views and groups on the left, page widgets on the right.
-  const railed = wide && !mobile && !organizing && !hostView && services.length > 0;
+  const railed = wide && !mobile && !hostView && services.length > 0;
   const widgetsInRail = railed && widgetRail && wider;
   // 'Problems first' only reorders what is shown; it never changes the saved order of groups.
   const ordered =
@@ -285,6 +285,7 @@ export function ServicesPage({
     blockedIds,
     overview,
     now: clock,
+    probeIds,
   });
   const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
   const actions = useServicePageActions({
@@ -372,6 +373,7 @@ export function ServicesPage({
             setArrange('host');
           },
         }}
+        savedOrderNote={organizing && problemsFirst}
         groupEditor={{
           renaming: editingGroup !== null,
           draft: groupDraft,
@@ -382,7 +384,7 @@ export function ServicesPage({
           addButton,
         }}
       />
-      {!organizing && services.length + probeStatusItems.length > 0 && (
+      {services.length + probeStatusItems.length > 0 && (
         <HeaderStatusPortal>
           <HomeStatusPill summary={statusSummary}>
             {(close) => (
@@ -395,6 +397,7 @@ export function ServicesPage({
                   maintenance={maintenance.windows}
                   uptime={uptime}
                   range={uptimeRange}
+                  probeIds={probeIds}
                   onOpenConnections={() => {
                     close();
                     navigate('/manage/integrations');
@@ -428,9 +431,6 @@ export function ServicesPage({
         <p role="status" className="text-xs text-muted-foreground">
           {t('status.stale')}
         </p>
-      )}
-      {!railed && !organizing && !hostView && (
-        <HomeProbes probes={probeViews} onOpen={() => navigate('/manage/probes')} />
       )}
       <FormError>{groupError}</FormError>
       {typeof formRoute === 'number' &&
@@ -469,18 +469,6 @@ export function ServicesPage({
       <p role="status" className="sr-only">
         {srNote}
       </p>
-      {!hostView && !widgetsInRail && (
-        <WidgetStatusFilterContext.Provider value={setStatusFilter}>
-          <PageWidgets
-            pageId={activePageId}
-            pages={pages}
-            groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
-            openMonitor={(id, hasService) =>
-              hasService ? setDetailsId(id) : navigate('/manage/probes')
-            }
-          />
-        </WidgetStatusFilterContext.Provider>
-      )}
       {!organizing && !hostView && allTags.length > 0 && (
         <div
           role="group"
@@ -734,13 +722,30 @@ export function ServicesPage({
             }
           />
         )}
+      {!railed && !organizing && !hostView && (
+        <HomeProbes probes={probeViews} onOpen={() => navigate('/manage/probes')} />
+      )}
+      {!hostView && !widgetsInRail && (
+        <WidgetStatusFilterContext.Provider value={setStatusFilter}>
+          <PageWidgets
+            pageId={activePageId}
+            showAdd={!mobile || organizing}
+            pages={pages}
+            groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
+            openMonitor={(id, hasService) =>
+              hasService ? setDetailsId(id) : navigate('/manage/probes')
+            }
+          />
+        </WidgetStatusFilterContext.Provider>
+      )}
     </section>
   );
   if (!railed) return body;
   return (
     <div className="grid grid-cols-[13rem_minmax(0,1fr)] gap-6 min-[1440px]:grid-cols-[13rem_minmax(0,1fr)_19rem]">
-      <aside className="sticky top-4 self-start">
+      <aside aria-label={t('rail.label')} className="sticky top-4 self-start">
         <HomeRail
+          organizing={organizing}
           statusFilter={statusFilter}
           counts={countsWithProbes}
           onStatusFilter={setStatusFilter}
@@ -771,12 +776,13 @@ export function ServicesPage({
       </aside>
       {body}
       {widgetsInRail && (
-        <aside className="min-w-0">
+        <aside aria-label={t('pageWidgets.title')} className="min-w-0">
           <WidgetStatusFilterContext.Provider value={setStatusFilter}>
             <PageWidgets
               pageId={activePageId}
               pages={pages}
               layout="rail"
+              showAdd
               groups={groupRows.map((group) => ({
                 name: group.name,
                 pageId: group.pageId ?? null,

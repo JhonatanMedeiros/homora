@@ -22,7 +22,7 @@
       "ember-text-light": {
         "role": "primary",
         "displayName": "Ember Text (light)",
-        "canonical": "oklch(0.55 0.15 50)",
+        "canonical": "oklch(0.5 0.14 48)",
         "tonalRamp": [
           "oklch(0.2 0.078 50)",
           "oklch(0.3 0.087 50)",

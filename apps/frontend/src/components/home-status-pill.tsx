@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { Check } from 'lucide-react';
 import { Button } from '@homora/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@homora/ui/popover';
 import { t } from '@/i18n';
@@ -36,6 +37,11 @@ export function HomeStatusPill({ summary, children }: Props) {
               summary.tone === 'ok' && 'bg-success',
             )}
           />
+          <span aria-hidden="true" className="font-mono tabular-nums sm:hidden">
+            {summary.measurement || (!summary.problems && summary.tone !== 'ok')
+              ? '?'
+              : summary.problems || <Check className="size-3.5" />}
+          </span>
           <span className="max-sm:sr-only">{text}</span>
         </Button>
       </PopoverTrigger>
