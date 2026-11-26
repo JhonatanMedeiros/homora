@@ -138,6 +138,7 @@ changed.
 - The web monitor shares its last observations with MCP through SQLite. Changed service settings invalidate old results,
   reported as unknown with `stale: true`.
 - `investigate_incident` requires both `incidents:read` and `services:read`. It returns bounded, historical evidence and missing-data flags without raw errors or service names; overlap is a hypothesis, not a diagnosis.
+- At most five overlap hypotheses are returned, newest windows first. Incidents on the same monitor with identical recorded windows share a hypothesis and count; each retained overlap remains a separate fact. Missing-data flags identify omitted hypotheses or overlap facts. Structured related IDs and counts do not include names.
 - `list_status_history` queries a service's persisted observations in a Unix-millisecond window; records are kept for 30
   days, and deleting a service removes its history.
 - URL queries and fragments are omitted from service and discovery results and proposals. Connection URLs and

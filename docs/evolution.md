@@ -2260,6 +2260,15 @@ provider network and budget controls, executable fixtures, real-model validation
 translation of these English-only technical decisions remain future work. The deterministic product
 and existing MCP boundaries remain in effect.
 
+### Bounded overlap hypotheses (#364)
+
+Incident investigations group overlapping incidents only when their monitor and recorded start and end
+times match. Each group retains its individual facts and links them from one hypothesis. At most five
+groups produce hypotheses, in most-recent-window order; a missing-data flag identifies omitted
+hypotheses, independently of the existing 20-incident fact limit. Structured attributes expose the
+representative incident ID, related monitor ID and count, with all retained incident IDs available in
+the evidence references. The v1 contract remains additive and does not expose monitor names.
+
 ### Monitoring coverage assessment (#347)
 
 The Activity page offers an on-demand, read-only assessment of monitor targets and the existing

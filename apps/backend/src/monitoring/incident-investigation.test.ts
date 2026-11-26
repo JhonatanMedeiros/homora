@@ -120,4 +120,32 @@ describe('incident investigation', () => {
       missing: expect.arrayContaining(['checks-truncated']),
     });
   });
+  it('groups identical monitor windows, keeps their facts and declares omitted hypotheses', () => {
+    const d = setup();
+    d.prepare('INSERT INTO service_incidents VALUES(?,?,?,?)').run(1, 1, now - 20 * minute, null);
+    const monitors = d.prepare('INSERT INTO monitors VALUES(?,?)');
+    const incidents = d.prepare('INSERT INTO service_incidents VALUES(?,?,?,?)');
+    incidents.run(2, 2, now - 10 * minute, now - 5 * minute);
+    incidents.run(3, 2, now - 10 * minute, now - 5 * minute);
+    for (let id = 3; id <= 8; id++) {
+      monitors.run(id, `monitor-${id}`);
+      incidents.run(id + 1, id, now - (id + 8) * minute, null);
+    }
+    const result = investigateIncident(d, 1, now)!;
+    const facts = result.evidence.items.filter(
+      (item) => item.kind === 'fact' && item.attributes.event === 'overlap',
+    );
+    const hypotheses = result.evidence.items.filter((item) => item.kind === 'hypothesis');
+    expect(facts).toHaveLength(8);
+    expect(hypotheses).toHaveLength(5);
+    expect(hypotheses.find((item) => item.attributes.relatedMonitorId === 2)).toMatchObject({
+      attributes: { relatedIncidentId: 2, relatedMonitorId: 2, overlapCount: 2 },
+      evidenceIds: ['incident:1:opened', 'incident:2:overlap', 'incident:3:overlap'],
+    });
+    expect(result.evidence.items.at(-1)).toMatchObject({
+      missing: expect.arrayContaining(['hypotheses-truncated']),
+    });
+    expect(evidenceReferencesValid(result.evidence)).toBe(true);
+    expect(JSON.stringify(result)).not.toContain('monitor-3');
+  });
 });

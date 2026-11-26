@@ -21,4 +21,6 @@ Sugestões de configuração de conexão não criam uma conexão automaticamente
 
 `investigate_incident` exige `incidents:read` e `services:read` e retorna evidências históricas limitadas e lacunas, sem erros brutos ou nomes dos serviços. Incidentes simultâneos são uma hipótese de relação, não um diagnóstico.
 
+São retornadas até cinco hipóteses de sobreposição, com as janelas mais recentes primeiro. Incidentes do mesmo monitor com janelas registradas idênticas compartilham uma hipótese e uma contagem; cada sobreposição preservada continua sendo um fato separado. Indicadores de dados ausentes informam quando hipóteses ou fatos de sobreposição foram omitidos. IDs relacionados e contagens não incluem nomes.
+
 [Leia o guia completo de MCP em inglês](/user-guide/agents-and-mcp) e o [inventário de capacidades em inglês](/agent-capabilities).
