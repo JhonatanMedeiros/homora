@@ -99,3 +99,44 @@ it('reports an unavailable incident instead of claiming no events', async () => 
   render(<IncidentInvestigationDialog incidentId={1} onClose={() => {}} />);
   expect(await screen.findByRole('alert')).toBeTruthy();
 });
+
+it('rejects a malformed response instead of rendering untrusted evidence', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          incidentId: 1,
+          monitorId: 1,
+          from: null,
+          to: null,
+          truncated: false,
+          evidence: {
+            version: 1,
+            evaluatedAt: '2026-01-01T12:00:00Z',
+            items: [
+              {
+                id: 'incident:1:opened',
+                version: 1,
+                kind: 'fact',
+                source: 'monitor-incident',
+                subject: { type: 'monitor', id: '1' },
+                observedAt: '2026-01-01T12:00:00Z',
+                evaluatedAt: '2026-01-01T12:00:00Z',
+                freshness: 'historical',
+                confidence: 'confirmed',
+                summary: 'Synthetic',
+                link: 'javascript:alert(1)',
+                attributes: { event: 'opened' },
+              },
+            ],
+          },
+        }),
+        { status: 200 },
+      ),
+    ),
+  );
+  render(<IncidentInvestigationDialog incidentId={1} onClose={() => {}} />);
+  expect(await screen.findByRole('alert')).toBeTruthy();
+  expect(screen.queryByRole('link', { name: /abrir detalhes|open service details/i })).toBeNull();
+});

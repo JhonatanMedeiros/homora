@@ -476,6 +476,7 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
                       <Button
                         variant="outline"
                         size="sm"
+                        aria-label={t('investigation.openFor', { id: item.id })}
                         onClick={() => setInvestigationId(item.id)}
                       >
                         {t('investigation.open')}

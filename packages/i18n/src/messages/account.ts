@@ -122,7 +122,9 @@ export const en = {
   'operationalSummary.error': 'Could not load monitoring changes. Try again.',
   'operationalSummary.loading': 'Loading monitoring changes',
   'investigation.open': 'Investigate incident',
+  'investigation.openFor': 'Investigate incident {id}',
   'investigation.title': 'Investigate incident',
+  'investigation.close': 'Close investigation',
   'investigation.description': 'Recorded evidence; overlapping events do not prove a cause.',
   'investigation.error': 'Could not load the investigation. The incident may have been removed.',
   'investigation.retry': 'Try again',
@@ -397,7 +399,9 @@ export const ptBR: Record<keyof typeof en, string> = {
   'operationalSummary.error': 'Não foi possível carregar as mudanças. Tente novamente.',
   'operationalSummary.loading': 'Carregando mudanças no monitoramento',
   'investigation.open': 'Investigar incidente',
+  'investigation.openFor': 'Investigar incidente {id}',
   'investigation.title': 'Investigar incidente',
+  'investigation.close': 'Fechar investigação',
   'investigation.description':
     'Evidências registradas; eventos simultâneos não comprovam uma causa.',
   'investigation.error':

@@ -113,6 +113,7 @@ export function OperationalSummary() {
                       <Button
                         variant="link"
                         className="h-auto p-0"
+                        aria-label={t('investigation.openFor', { id: item.id })}
                         onClick={() => {
                           const match = /^incident:(\d+):(opened|recovered)$/.exec(item.id);
                           const id = match ? Number(match[1]) : NaN;

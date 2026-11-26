@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { EvidenceBundle, EvidenceFact, EvidenceUnknown } from '@homora/shared';
+import { X } from 'lucide-react';
+import type { EvidenceFact, EvidenceUnknown } from '@homora/shared';
+import { parseInvestigation, type Investigation } from './incident-investigation-model';
 import {
   Dialog,
   DialogContent,
+  DialogClose,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -11,15 +14,6 @@ import { Button } from '@homora/ui/button';
 import { Skeleton } from '@homora/ui/skeleton';
 import { LoadingRegion } from '@/components/skeletons';
 import { formatDateTime, t } from '@/i18n';
-
-type Investigation = {
-  incidentId: number;
-  monitorId: number;
-  from: string | null;
-  to: string | null;
-  truncated: boolean;
-  evidence: EvidenceBundle;
-};
 
 function factText(item: EvidenceFact): string {
   if (item.source === 'monitor-check') {
@@ -76,7 +70,9 @@ export function IncidentInvestigationDialog({
     void fetch(`/api/incidents/${incidentId}/investigation`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error('unavailable');
-        return (await response.json()) as Investigation;
+        const result = parseInvestigation((await response.json()) as unknown, incidentId);
+        if (!result) throw new Error('invalid investigation');
+        return result;
       })
       .then((result) => {
         if (!controller.signal.aborted) setValue(result);
@@ -98,9 +94,16 @@ export function IncidentInvestigationDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent showCloseButton={false} className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t('investigation.title')}</DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle>{t('investigation.title')}</DialogTitle>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" aria-label={t('investigation.close')}>
+                <X />
+              </Button>
+            </DialogClose>
+          </div>
           <DialogDescription>{t('investigation.description')}</DialogDescription>
         </DialogHeader>
         {failed ? (
