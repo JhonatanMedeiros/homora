@@ -29,6 +29,7 @@ type Props = {
   uptime: Record<number, UptimeSummary>;
   range: UptimeRange;
   now?: number;
+  probeIds?: ReadonlySet<number>;
   /** Opens the details of a service; when set, the pulse shows one clickable window per service. */
   onOpenService?: (id: number) => void;
   /** Where to look when the monitor itself cannot measure. */
@@ -110,18 +111,20 @@ export function StatusBanner({
   uptime,
   range,
   now: fixedNow,
+  probeIds,
   onOpenService,
   onOpenConnections,
 }: Props) {
   const clock = useNow();
   const now = fixedNow ?? clock;
   if (services.length === 0) return null;
-  const { certs, windows, measurement, title, subtitle, tone } = summarizeStatus({
+  const { certs, windows, measurement, title, subtitle, breakdown, tone } = summarizeStatus({
     services,
     statuses,
     blockedIds,
     overview,
     now,
+    probeIds,
   });
 
   const values = services
@@ -177,6 +180,7 @@ export function StatusBanner({
             >
               {title}
             </p>
+            {breakdown && <p className="mt-0.5 text-sm font-medium">{breakdown}</p>}
             {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
             {measurement && onOpenConnections && (
               <Button

@@ -112,7 +112,7 @@ export function GroupSection({
         : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
   const { collapsed, toggleCollapsed } = useGroupCollapse(category, revealSignal, autoCollapse);
   return (
-    <section aria-labelledby={titleId} className="flex flex-col gap-3">
+    <section aria-labelledby={titleId} data-group={category} className="flex flex-col gap-3">
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <h2
           id={titleId}
@@ -184,7 +184,7 @@ export function GroupSection({
                     if (keepFocus.current) {
                       event.preventDefault();
                       keepFocus.current = false;
-                      document.getElementById('rename-group')?.focus();
+                      document.querySelector<HTMLElement>('#rename-group')?.focus();
                     }
                   }}
                 >

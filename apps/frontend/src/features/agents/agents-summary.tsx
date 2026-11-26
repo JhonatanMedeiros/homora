@@ -53,10 +53,18 @@ export function AgentsSummary({
       <Stat label={t('agents.summary.approved')} value={count(approved)} />
       <div className="flex items-center gap-2 sm:ml-auto">
         <dt className="text-sm text-muted-foreground">{t('agents.summary.period')}</dt>
-        <dd className="font-mono text-sm tabular-nums">{t('agents.minutes', { count: ttl })}</dd>
-        <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={onChangeTtl}>
-          {t('agents.change')}
-        </Button>
+        <dd className="flex items-center gap-2 font-mono text-sm tabular-nums">
+          {t('agents.minutes', { count: ttl })}
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto p-0 font-sans"
+            onClick={onChangeTtl}
+          >
+            {t('agents.change')}
+          </Button>
+        </dd>
       </div>
     </dl>
   );

@@ -100,15 +100,15 @@ Estes widgets usam as verificações que o Homora já executa, então não preci
 
 ![Galeria de widgets de monitoramento: incidentes recentes, problemas, latência, resumo do homelab, certificados, disponibilidade e manutenção](../../screenshots/widgets-gallery-monitoring.png)
 
-| Widget                        | O que mostra                                                                      |
-| ----------------------------- | --------------------------------------------------------------------------------- |
-| **Resumo do homelab**         | Quantos monitores estão online, degradados, offline, em manutenção ou sem medição |
-| **Problemas atuais**          | Os serviços offline ou lentos agora, os mais antigos primeiro                     |
-| **Incidentes recentes**       | Interrupções do último dia, semana ou mês, com as em andamento primeiro           |
-| **Disponibilidade**           | Uptime de um serviço em um período, com uma barra dos dias recentes               |
-| **Histórico de latência**     | Gráfico do tempo de resposta de um serviço                                        |
-| **Validade dos certificados** | Certificados perto de expirar                                                     |
-| **Agenda de manutenção**      | Janelas de manutenção em andamento ou próximas                                    |
+| Widget                        | O que mostra                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
+| **Resumo do homelab**         | Quantos monitores estão no ar, degradados, fora do ar, em manutenção ou sem medição |
+| **Problemas atuais**          | Os serviços fora do ar ou lentos agora, os mais antigos primeiro                    |
+| **Incidentes recentes**       | Interrupções do último dia, semana ou mês, com as em andamento primeiro             |
+| **Disponibilidade**           | Uptime de um serviço em um período, com uma barra dos dias recentes                 |
+| **Histórico de latência**     | Gráfico do tempo de resposta de um serviço                                          |
+| **Validade dos certificados** | Certificados perto de expirar                                                       |
+| **Agenda de manutenção**      | Janelas de manutenção em andamento ou próximas                                      |
 
 A maioria dos widgets de monitoramento pode ser limitada a páginas ou grupos escolhidos.
 

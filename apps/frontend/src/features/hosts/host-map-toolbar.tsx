@@ -27,7 +27,7 @@ type Props = {
 };
 
 const item =
-  'h-8 gap-1.5 px-3 text-xs font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-primary pointer-coarse:h-11';
+  'h-8 gap-1.5 px-3 text-xs font-medium data-[state=on]:bg-primary/15 data-[state=on]:font-semibold data-[state=on]:text-accent-text pointer-coarse:h-11';
 
 /** Search, filters, grouping and the two display switches of the full-screen map. */
 export const HostMapToolbar = forwardRef<HTMLInputElement, Props>(function HostMapToolbar(

@@ -36,7 +36,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'problems.error': 'Não foi possível carregar os problemas.',
   'problems.showing': 'Mostrando {shown} de {total}',
   'problems.unmeasured': '{count} sem medição',
-  'problems.offline': 'Offline',
+  'problems.offline': 'Fora do ar',
   'problems.degraded': 'Degradado',
   'problems.observed': 'Observado {time}',
   'problems.latency': 'Latência de {latency} ms acima do limite',

@@ -1,3 +1,4 @@
+import { SkipLink } from '@/components/skip-link';
 import { HeaderStatusSlot } from '@/components/header-status-slot';
 import { useState, type ReactNode } from 'react';
 import {
@@ -72,6 +73,7 @@ export function AppShell({
   const updateAvailable = !feed.demo && hasUpdate(installedTag, feed.releases);
   return (
     <div className="min-h-svh">
+      <SkipLink home={tab === 'services' && !managing && !standalone} />
       <header data-homora="app-header" className="bg-sidebar text-sidebar-foreground">
         <div
           className={`mx-auto flex min-h-16 flex-wrap items-center gap-1.5 px-3 py-2 sm:gap-3 sm:px-4 md:px-8 ${managing ? 'max-w-none md:px-6' : tab === 'services' ? 'max-w-[90rem]' : 'max-w-6xl'}`}
@@ -211,6 +213,8 @@ export function AppShell({
         retry={feed.retry}
       />
       <main
+        id="content"
+        tabIndex={-1}
         className={
           managing
             ? 'flex w-full flex-col pb-28 md:pb-0'

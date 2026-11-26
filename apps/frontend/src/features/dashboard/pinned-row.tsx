@@ -20,7 +20,7 @@ type Props = {
 export function PinnedRow({ services, statuses, blockedIds, onDetails }: Props) {
   if (services.length === 0) return null;
   return (
-    <section aria-label={t('pinned.title')} className="flex flex-col gap-2">
+    <section aria-label={t('pinned.title')} data-homora="pinned" className="flex flex-col gap-2">
       <h2 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Star aria-hidden="true" className="size-3.5" />
         {t('pinned.title')}

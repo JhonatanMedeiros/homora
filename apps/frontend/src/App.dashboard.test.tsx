@@ -120,7 +120,9 @@ it('shows unknown status and timestamp of last attempt without depending on stat
     }),
   );
   render(<App />);
-  expect(await screen.findByText('Fora do ar')).toBeTruthy();
+  expect(
+    await screen.findByText('Fora do ar', { selector: '[data-slot="status-light"] *' }),
+  ).toBeTruthy();
   expect(screen.getByText(/última tentativa/)).toBeTruthy();
 });
 

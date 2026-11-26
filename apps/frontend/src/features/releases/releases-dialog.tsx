@@ -31,10 +31,10 @@ type Props = {
 function inline(text: string): ReactNode[] {
   const result: ReactNode[] = [];
   const pattern = /\[([^\]\n]{1,200})\]\(([^)\s]{1,500})\)/g;
-  let start = 0,
-    match: RegExpExecArray | null;
+  let match: RegExpExecArray | null,
+    start = 0;
   while ((match = pattern.exec(text))) {
-    result.push(text.slice(start, match.index).replace(/[`*]/g, ''));
+    result.push(text.slice(start, match.index).replaceAll(/[`*]/g, ''));
     let safe = false;
     try {
       const url = new URL(match[2]);
@@ -54,7 +54,7 @@ function inline(text: string): ReactNode[] {
           href={match[2]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary underline underline-offset-4"
+          className="text-accent-text underline underline-offset-4"
         >
           {match[1]}
         </a>
@@ -64,7 +64,7 @@ function inline(text: string): ReactNode[] {
     );
     start = pattern.lastIndex;
   }
-  result.push(text.slice(start).replace(/[`*]/g, ''));
+  result.push(text.slice(start).replaceAll(/[`*]/g, ''));
   return result;
 }
 function Notes({ text }: { text: string }) {

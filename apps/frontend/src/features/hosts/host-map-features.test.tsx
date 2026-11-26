@@ -155,8 +155,8 @@ it('writes the state on a failing tile and shows latency for a healthy one', () 
   setup();
   expect(within(tile('pihole')).getByText('Offline')).toBeTruthy();
   expect(within(tile('adguard')).getByText('12 ms')).toBeTruthy();
-  // The healthy word is kept for screen readers only.
-  expect(within(tile('adguard')).getByText('Online').className).toContain('sr-only');
+  // The healthy state is written out too: never colour alone.
+  expect(within(tile('adguard')).getByText('Online').className).not.toContain('sr-only');
 });
 
 it('collapses and mutes what is healthy in Problems, and says so when nothing is wrong', () => {

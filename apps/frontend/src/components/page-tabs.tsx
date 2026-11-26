@@ -36,7 +36,7 @@ type Props = {
  * actions, so the bar never needs scroll arrows.
  */
 export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }: Props) {
-  const listRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLElement>(null);
   const [listOpen, setListOpen] = useState(false);
   const [edge, setEdge] = useState<{ left: boolean; right: boolean }>({
     left: false,
@@ -60,10 +60,10 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
     return () => observer.disconnect();
   }, [pages.length, syncOverflow]);
 
-  function onTabListKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+  function onTabListKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     const tabs = Array.from(
-      event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+      event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-page-tab]'),
     );
     const current = tabs.indexOf(document.activeElement as HTMLButtonElement);
     if (current < 0 || tabs.length < 2) return;
@@ -80,7 +80,7 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
     }
   }
 
-  function onTabListWheel(event: WheelEvent<HTMLDivElement>) {
+  function onTabListWheel(event: WheelEvent<HTMLElement>) {
     const node = listRef.current;
     if (!node || node.scrollWidth <= node.clientWidth) return;
     if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
@@ -109,9 +109,8 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1">
-      <div
+      <nav
         ref={listRef}
-        role="tablist"
         aria-label={t('pages.tabs')}
         data-homora="page-tabs"
         onScroll={syncOverflow}
@@ -132,14 +131,14 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
                 className={cn(
                   'rounded-full px-1.5 font-mono text-xs',
                   active
-                    ? 'bg-sidebar-primary/25 text-sidebar-primary'
+                    ? 'bg-sidebar-primary/10 text-accent-text'
                     : 'bg-sidebar-accent text-sidebar-foreground/80',
                 )}
               >
                 {total}
               </small>
               {down > 0 && (
-                <small className="rounded-full bg-destructive px-1.5 font-mono text-xs text-white">
+                <small className="rounded-full bg-destructive px-1.5 font-mono text-xs text-white dark:text-background">
                   {t('pages.down', { count: down })}
                 </small>
               )}
@@ -150,14 +149,13 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
               key={page.id}
               data-page-id={active && onChanged ? undefined : page.id}
               type="button"
-              role="tab"
+              data-page-tab=""
               variant="ghost"
-              aria-selected={active}
-              tabIndex={active ? 0 : -1}
+              aria-current={active ? 'page' : undefined}
               title={index < 9 ? `${page.name} (${index + 1})` : page.name}
               className={
                 active
-                  ? 'h-9 shrink-0 cursor-pointer gap-2 rounded-lg bg-sidebar-primary/15 px-3.5 text-sm text-sidebar-primary shadow-[inset_0_-2px_0_var(--sidebar-primary)] hover:bg-sidebar-primary/25 hover:text-sidebar-primary pointer-coarse:h-11'
+                  ? 'h-9 shrink-0 cursor-pointer gap-2 rounded-lg bg-sidebar-primary/15 px-3.5 text-sm text-accent-text shadow-[inset_0_-2px_0_var(--sidebar-primary)] hover:bg-sidebar-primary/25 hover:text-accent-text pointer-coarse:h-11'
                   : 'h-9 shrink-0 cursor-pointer gap-2 rounded-lg px-3.5 text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground pointer-coarse:h-11'
               }
               onClick={(event) => {
@@ -178,7 +176,7 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
                   page={page}
                   pages={pages}
                   onChanged={onChanged}
-                  triggerClassName="h-9 w-8 cursor-pointer rounded-lg bg-sidebar-primary/15 px-0 text-sidebar-primary shadow-[inset_0_-2px_0_var(--sidebar-primary)] hover:bg-sidebar-primary/25 hover:text-sidebar-primary pointer-coarse:h-11 pointer-coarse:w-11"
+                  triggerClassName="h-9 w-8 cursor-pointer rounded-lg bg-sidebar-primary/15 px-0 text-accent-text shadow-[inset_0_-2px_0_var(--sidebar-primary)] hover:bg-sidebar-primary/25 hover:text-accent-text pointer-coarse:h-11 pointer-coarse:w-11"
                 />
               </ButtonGroup>
             );
@@ -186,7 +184,7 @@ export function PageTabs({ pages, activeId, onSelect, counts, onChanged, menu }:
 
           return tabButton;
         })}
-      </div>
+      </nav>
       {onChanged && pages.length < MAX_PAGES && (
         <PageCreateButton pages={pages} onChanged={onChanged} onCreated={onSelect} />
       )}

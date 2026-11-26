@@ -24,7 +24,7 @@ const DOT: Record<Filter, string | null> = {
 /**
  * Todos / Offline / Degradados / Em manutenção as one segmented control with the count of each.
  * It is deliberately unlike the category and tag chips below it: a single bordered track, state
- * dots, and a raised selected segment. A state with nothing in it is dimmed, not hidden.
+ * dots, and a raised selected segment. A state with nothing in it has a faded dot, not hidden.
  */
 export function StatusFilter({ selected, counts, onSelect }: Props) {
   return (
@@ -47,11 +47,13 @@ export function StatusFilter({ selected, counts, onSelect }: Props) {
               on
                 ? 'bg-background text-foreground shadow-sm ring-1 ring-border'
                 : 'text-muted-foreground hover:text-foreground',
-              empty && !on && 'opacity-60',
             )}
           >
             {DOT[filter] && (
-              <span aria-hidden="true" className={cn('size-2 rounded-full', DOT[filter])} />
+              <span
+                aria-hidden="true"
+                className={cn('size-2 rounded-full', DOT[filter], empty && !on && 'opacity-40')}
+              />
             )}
             {t(`filter.status.${filter}`)}
             <small

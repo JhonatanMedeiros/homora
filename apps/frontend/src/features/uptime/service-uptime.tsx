@@ -109,14 +109,14 @@ function Sparkline({ summary }: { summary: UptimeSummary }) {
     100,
     24,
   );
-  if (!paths.length) return <span className="min-w-0 flex-1" aria-hidden="true" />;
+  if (paths.length === 0) return <span className="min-w-0 flex-1" aria-hidden="true" />;
   return (
     <svg
       role="img"
       aria-label={t('uptime.sparkline', { range: rangeLabel(summary.range) })}
       viewBox="0 0 100 24"
       preserveAspectRatio="none"
-      className="h-6 min-w-0 flex-1 text-primary"
+      className="h-6 min-w-0 flex-1 text-accent-text"
     >
       {paths.map((points) => (
         <polyline
@@ -378,16 +378,16 @@ export function ServiceUptime({
             type="button"
             onClick={onDetails}
             aria-label={t('drawer.openFor', { name: service.name })}
-            className="text-primary hover:underline"
+            className="text-accent-text hover:underline"
           >
             {t('card.details')} →
           </button>
         ) : inRouter ? (
-          <Link to={detailPath} className="text-primary hover:underline">
+          <Link to={detailPath} className="text-accent-text hover:underline">
             {t('detail.link')} →
           </Link>
         ) : (
-          <a href={detailPath} className="text-primary hover:underline">
+          <a href={detailPath} className="text-accent-text hover:underline">
             {t('detail.link')} →
           </a>
         )}
@@ -421,7 +421,7 @@ function RecentIncidents({ serviceId, refreshKey }: { serviceId: number; refresh
         return response.json() as Promise<IncidentList>;
       })
       .then((data) => {
-        if (!Array.isArray(data?.incidents)) throw new Error();
+        if (!Array.isArray(data?.incidents)) throw new TypeError();
         if (active) setState({ key, incidents: data.incidents });
       })
       .catch(() => active && setState({ key, error: true }));

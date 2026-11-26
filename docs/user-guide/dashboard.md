@@ -12,7 +12,9 @@ page itself stays about your services.
 ## The health pill
 
 The header pill answers "is everything fine?": a colored dot and a few words (**All up**, **2 problems**, **Partly
-monitored**, **No data** or **Cannot measure**); on a phone only the dot shows. Select it to see which services are down
+monitored**, **No data** or **Cannot measure**); on a phone it shrinks to the dot and the number of problems (a check mark when all is
+well, a question mark when the state is unknown). When the total mixes offline services, offline probes and slow ones,
+the panel says how many of each. Select it to see which services are down
 and for how long, plus:
 
 | Figure                    | Meaning                                                                          |
@@ -41,7 +43,7 @@ recorded in the audit log.
 
 On wide screens, the left rail has **Views** (**All**, **Offline**, **Degraded**, **Maintenance**), **Groups** with each
 group's health, and, when a connected Proxmox runs some of your cards, **Hosts** with each node's state and card count.
-On smaller screens the views become chips under the header (or **Options** on a phone). Counts are live. **Degraded**
+The view counts also include probes, and the rail says how many. On smaller screens the views become chips under the header (or **Options** on a phone). Counts are live. **Degraded**
 means online but slower than the limit you set (see [Services and monitoring](services-and-monitoring.md#alerts-and-states)).
 
 ## Alerts bell
@@ -78,7 +80,8 @@ Open **Display** to choose how cards look. The choice is saved in your browser; 
 
 ![Cards layout with descriptions and uptime bars](../screenshots/dashboard-cards.png)
 
-**Host** lists services under the node and guest they run on and flags those that a failing dependency may affect.
+**Host** lists services under the node and guest they run on, with the latest latency and a pencil button to edit each
+one, and flags those that a failing dependency may affect.
 **Map** shows the same relationships as boxes, and you can drag an unlinked service onto a guest.
 
 ![Host view](../screenshots/host-view.png)
@@ -99,11 +102,12 @@ changes Proxmox. The only things it saves are Homora's own host links and the **
   _5 online · 1 offline_, and CPU, RAM and disk meters. A guest shows its type, id, state and CPU and RAM. A meter is
   left out when Proxmox did not report it (a stopped guest, an older Proxmox): it is never drawn as 0 %. A guest with
   a failing service or a stopped guest gets an _x/y online_ chip, and the chevron collapses it to its header.
-- **Services.** Each tile has the service icon, its name, a status light and, when healthy, the latency. The word for
-  the state is always there for a screen reader, and visible on anything that is not healthy.
+- **Services.** Each tile has the service icon, its name, a status light and, when healthy, the latency. The state is
+  always written in words too, never shown by color alone.
 - **Connections.** Arrows point from a service to what it depends on. Selecting a service highlights its chain, and an
   arrow turns red when what it points to is down.
-- **Minimap and zoom.** The small map in the corner shows the part you are looking at; press or drag on it to move.
+- **Minimap and zoom.** When part of the map is off screen, a small map in the corner shows the part you are looking at; press
+  or drag on it to move.
   **Fit** and **Reset** sit beside the zoom buttons, and the map fits itself when it opens if it would not fit at 100 %.
 
 #### Finding a problem
@@ -150,8 +154,8 @@ the left rail shows only pinned services. Pins are included in export and import
 
 ### Widget panel
 
-On screens wider than 1440 px, a page's widgets sit in a panel on the right; **Hide widget panel** moves them above your
-groups. A widget that cannot refresh keeps its last reading and says how old it is.
+On screens wider than 1440 px, a page's widgets sit in a panel on the right; **Hide widget panel** moves them below your
+groups, after the probes. A widget that cannot refresh keeps its last reading and says how old it is.
 
 ## Search: the command palette
 
@@ -224,9 +228,9 @@ Everything you can do by dragging also works with buttons and menus.
 
 ## Widgets on the dashboard
 
-**Page widgets** (a clock, monitoring summaries, live readings from an integration) sit above your groups. A page holds up
-to 12. The dashed **Add widget** tile opens a searchable gallery; each widget's **⋯** menu edits, moves or removes it, and
-you can drag to reorder. When a widget offers sizes, **wide** uses two columns above the groups when there is room; the
+**Page widgets** (a clock, monitoring summaries, live readings from an integration) sit in the right panel on wide screens and below your groups on smaller ones. A page holds up
+to 12. The dashed **Add widget** tile (on a phone, shown in **Organize**) opens a searchable gallery; each widget's **⋯** menu edits, moves or removes it, and
+you can drag to reorder. When a widget offers sizes, **wide** uses two columns below the groups when there is room; the
 right panel and small screens use normal width. Widgets can also be attached _inside_ a card. See
 [Integrations and widgets](integrations-and-widgets.md) and the [widget gallery](widget-gallery.md).
 

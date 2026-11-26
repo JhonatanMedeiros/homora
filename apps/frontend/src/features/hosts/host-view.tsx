@@ -1,5 +1,5 @@
 import type { Service } from '@homora/shared';
-import { Server } from 'lucide-react';
+import { Server, Pencil } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@homora/ui/accordion';
 import { Button } from '@homora/ui/button';
 import { EmptyNote } from '@/components/empty-note';
@@ -93,17 +93,22 @@ function ServiceRow({
           </span>
         )}
       </span>
+      {view.meta && (
+        <span className="font-mono text-xs text-muted-foreground tabular-nums">{view.meta}</span>
+      )}
       <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
       <ServiceLinksMenu service={service} variant="icon" />
       {onEdit && (
         <Button
           type="button"
           variant="ghost"
-          size="sm"
-          className="pointer-coarse:h-11"
+          size="icon-sm"
+          className="pointer-coarse:size-11"
+          aria-label={t('hosts.view.edit', { name: service.name })}
+          title={t('hosts.view.edit', { name: service.name })}
           onClick={() => onEdit(service)}
         >
-          {t('hosts.view.edit', { name: service.name })}
+          <Pencil />
         </Button>
       )}
     </li>

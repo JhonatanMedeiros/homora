@@ -1,3 +1,4 @@
+import { HostAddress } from '@/components/host-address';
 import { useId, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@homora/ui/button';
@@ -10,7 +11,6 @@ import { ResourceLine } from '@/components/resource-line';
 import { ServiceFailureDetails } from '@/features/uptime/service-failure-details';
 import { ServiceUptime } from '@/features/uptime/service-uptime';
 import { cn } from '@homora/ui/lib/utils';
-import { hostOf } from '@/lib/services';
 import { HostLine, StatusMeta } from '@/features/dashboard/service-card-common';
 import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { repeatsName, SERVICE_CARD_LI } from '@/features/dashboard/service-card-utils';
@@ -83,9 +83,7 @@ export function ServiceCardTile({
                 )}
               </a>
             </ItemTitle>
-            <span className="truncate font-mono text-[0.8125rem] text-muted-foreground">
-              {hostOf(service.url)}
-            </span>
+            <HostAddress url={service.url} />
             {host && <HostLine host={host} impact={impact} />}
             {dependencyNote && (
               <span className="truncate text-xs text-muted-foreground">{dependencyNote}</span>

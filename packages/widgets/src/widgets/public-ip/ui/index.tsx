@@ -82,7 +82,7 @@ function IpAddressRow({
           onClick={() => onCopy(value)}
         >
           {copied ? (
-            <Check aria-hidden="true" className="size-3.5 text-primary" />
+            <Check aria-hidden="true" className="size-3.5 text-accent-text" />
           ) : (
             <Copy aria-hidden="true" className="size-3.5" />
           )}

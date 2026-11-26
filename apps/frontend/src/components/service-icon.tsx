@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { brandIconUrl, iconKind, iconRegistry } from '@/lib/icons';
 import { upper } from '@/i18n';
+import { cn } from '@homora/ui/lib/utils';
+
+/** Brand marks drawn in near-black, which would vanish on the dark theme. */
+const DARK_BRANDS = new Set(
+  (
+    'authelia cockpit frigate github heimdall jackett matrix mattermost miniflux minio ' +
+    'mosquitto ollama paperless-ngx portainer stash tailscale vaultwarden wallabag'
+  ).split(' '),
+);
 
 /**
  * Service icon: built-in name (`lucide:server`), brand logo (`brand:plex`), image by URL, emoji, or short
@@ -22,7 +31,12 @@ export function ServiceIcon({ icon, name }: { icon?: string; name: string }) {
         alt=""
         loading="lazy"
         referrerPolicy="no-referrer"
-        className="size-6 object-contain"
+        className={cn(
+          'size-6 object-contain',
+          kind === 'brand' &&
+            DARK_BRANDS.has(value.slice('brand:'.length)) &&
+            'dark:rounded-sm dark:bg-white/90 dark:p-0.5',
+        )}
         onError={() => setFailedUrl(value)}
       />
     );

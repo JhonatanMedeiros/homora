@@ -112,7 +112,7 @@ function View({ config }: { config: LatencyHistoryConfig }) {
           aria-label={t('latencyWidget.chartLabel')}
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
-          className="h-20 w-full overflow-visible text-primary"
+          className="h-20 w-full overflow-visible text-accent-text"
         >
           {runs.map((run, i) =>
             run.length === 1 ? (

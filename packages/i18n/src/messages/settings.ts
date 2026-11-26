@@ -213,7 +213,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.ui.collapseHealthyHint':
     'Grupos sem nenhum problema começam recolhidos. Você ainda pode abri-los.',
   'settings.ui.problemsFirst': 'Problemas primeiro',
-  'settings.ui.problemsFirstHint': 'Grupos com serviços offline aparecem antes dos outros.',
+  'settings.ui.problemsFirstHint': 'Grupos com serviços fora do ar aparecem antes dos outros.',
   'settings.ui.descriptions': 'Descrições',
   'settings.ui.descriptionsHint': 'Mostra a descrição de cada serviço. Só no layout Cards.',
   'settings.ui.uptime': 'Período de disponibilidade',
