@@ -2,5 +2,6 @@
   "type": "healthchecks",
   "order": 130,
   "definition": "healthchecksManifest",
-  "translations": true
+  "translations": true,
+  "backend": "createHealthchecksRegistration"
 }

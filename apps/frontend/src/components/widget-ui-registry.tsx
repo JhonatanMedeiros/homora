@@ -1,3 +1,4 @@
+import { widgetUI as widgetHealthchecksJobs } from '@homora/widgets/healthchecks-jobs/ui';
 import { widgetUI as widgetHomeAssistantEntities } from '@homora/widgets/home-assistant-entities/ui';
 import { widgetUI as widgetCoolifyResources } from '@homora/widgets/coolify-resources/ui';
 import { widgetUI as widgetUptimeKumaMonitors } from '@homora/widgets/uptime-kuma-monitors/ui';
@@ -45,6 +46,7 @@ const widgets = {
   'uptime-kuma-monitors': widgetUptimeKumaMonitors,
   'coolify-resources': widgetCoolifyResources,
   'home-assistant-entities': widgetHomeAssistantEntities,
+  'healthchecks-jobs': widgetHealthchecksJobs,
 } satisfies Record<LocalWidgetType, WidgetUI>;
 export function getWidgetUI(type: string): WidgetUI | undefined {
   return Object.hasOwn(widgets, type) ? widgets[type as LocalWidgetType] : undefined;

@@ -7,12 +7,15 @@ import { proxmoxDefinition as definition2 } from '../integrations/proxmox/defini
 import { createProxmoxRegistration as factory2 } from '../integrations/proxmox/registration.js';
 import { piHoleDefinition as definition3 } from '../integrations/pi-hole/definition.js';
 import { createPiHoleRegistration as factory3 } from '../integrations/pi-hole/registration.js';
-import { omadaDefinition as definition4 } from '../integrations/omada/definition.js';
-import { createOmadaRegistration as factory4 } from '../integrations/omada/registration.js';
+import { healthchecksManifest as definition4 } from '../integrations/healthchecks/definition.js';
+import { createHealthchecksRegistration as factory4 } from '../integrations/healthchecks/registration.js';
+import { omadaDefinition as definition5 } from '../integrations/omada/definition.js';
+import { createOmadaRegistration as factory5 } from '../integrations/omada/registration.js';
 export const backendFactories = [
   { type: 'home-assistant', definition: definition0, create: factory0 },
   { type: 'coolify', definition: definition1, create: factory1 },
   { type: 'proxmox', definition: definition2, create: factory2 },
   { type: 'pi-hole', definition: definition3, create: factory3 },
-  { type: 'omada', definition: definition4, create: factory4 },
+  { type: 'healthchecks', definition: definition4, create: factory4 },
+  { type: 'omada', definition: definition5, create: factory5 },
 ];
