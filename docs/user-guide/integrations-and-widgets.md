@@ -222,3 +222,7 @@ single-entity widget is unchanged. The token can still read whatever its Home As
 allows, so selecting IDs limits requests but does not reduce token permissions. Real-service
 validation is pending. The selected IDs are retained when exporting and importing widget
 configuration; the connection is local to each installation and must be selected again after import.
+
+### Healthchecks jobs
+
+Add **Healthchecks jobs** as a page widget and select an existing Healthchecks connection. It lists up to 50 checks, with down and late checks first, followed by new, paused and up checks; an unrecognized state is shown as unknown. The row limit is configurable. Names and the last ping time are visible to the signed-in administrator. The reading time and stale or failed state are shown separately. A successful check does not verify that a backup can be restored. The connection requires a project read-only key. Live-service validation is pending.

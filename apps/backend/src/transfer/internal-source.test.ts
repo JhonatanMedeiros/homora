@@ -228,3 +228,36 @@ it('strips local references from exports and even manually edited imports', () =
     a.close();
   }
 });
+
+it('round trips the Healthchecks jobs widget without a local connection', () => {
+  const first = createDatabase(':memory:');
+  const second = createDatabase(':memory:');
+  const a = getSqliteHandle(first.db);
+  const b = getSqliteHandle(second.db);
+  try {
+    const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
+    a.prepare(
+      "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,'healthchecks-jobs','Jobs',?,1,NULL,'wide',0)",
+    ).run(page, JSON.stringify({ limit: 5 }));
+    const data = createServiceConfiguration(a).exportData();
+    const text = serializeConfiguration(data.groups, data.services, 'json', {
+      pages: data.pages,
+      widgets: data.widgets,
+    });
+    expect(text).not.toContain('connectionId');
+    const target = createServiceConfiguration(b);
+    expect(target.applyImport(parseTransfer(text), { keepPrivate: false })).toMatchObject({
+      status: 'applied',
+      widgetsCreated: 1,
+    });
+    const row = b
+      .prepare('SELECT config, connection_id AS connectionId, size FROM page_widgets')
+      .get() as { config: string; connectionId: number | null; size: string };
+    expect(JSON.parse(row.config)).toEqual({ limit: 5 });
+    expect(row.connectionId).toBeNull();
+    expect(row.size).toBe('wide');
+  } finally {
+    a.close();
+    b.close();
+  }
+});
