@@ -2233,6 +2233,22 @@ not measure end-to-end latency under contention. Engineering standards are an En
 
 - Web search names the selected engine. An independently enabled, browser-local AI shortcut offers ChatGPT, Claude, v0 and Scira, with the preferred destination first. The free text is sent in a URL only after selecting an action; no Homora context is added. Live provider login, prefill and submission behavior remains to be verified per service.
 
+### Healthchecks jobs widget (#355)
+
+The page widget uses a saved Healthchecks connection and a fixed, restricted read of the existing
+checks endpoint. The service-specific query projects only names, reported states and last ping,
+sorts problems first and bounds the output to 50 rows. It distinguishes stale, unavailable and
+empty data; a successful ping is not evidence that a backup can be restored. Names are visible to
+the signed-in administrator. Portable configuration retains the limit and size, not the connection.
+Connection-scoped cache tags and the existing integration invalidation protect cached readings.
+
+Focused contract, source, UI and transfer tests cover synthetic data. Browser review used a
+temporary isolated presentation harness: Portuguese in dark theme at 390 px and English in light
+theme at 1280 px, with no horizontal overflow at 390 px. A full dashboard walkthrough, physical
+devices, screen readers, live Healthchecks and deployed documentation remain unverified. A
+read-only project key and an authorized service are needed for live validation; no real
+infrastructure was contacted.
+
 ## Proposed evidence and assistance decisions (issue #354)
 
 Design only: [ADR 0029](decisions/0029-evidence-contract.md) proposes an evidence contract;

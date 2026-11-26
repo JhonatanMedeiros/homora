@@ -280,6 +280,7 @@ credentials sent only over HTTPS (a plain-HTTP address cannot be used with a tok
 - **Network:** the hosted service (`https://healthchecks.io`) or your own instance; HTTPS is required for
   the key. The API asks clients to stay under 100 requests per minute; results are cached. The
   response is limited to 1 MB and the count stops at 10,000 checks (reported as an invalid response).
+- **Jobs page widget:** a separate bounded read projects check name, status and last ping, sorted with problems first. It exposes names to the signed-in administrator; no ping URLs, tags or identifiers are projected. A successful check does not establish that a backup is restorable. Live validation remains pending.
 - **Live validation checklist:** the read-only key is accepted; `status` values for a check that has
   never pinged and for a paused one; a project with many checks stays under 1 MB.
 

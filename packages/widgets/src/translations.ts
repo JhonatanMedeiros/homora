@@ -1,4 +1,8 @@
 import {
+  en as widgetHealthchecksJobs,
+  ptBR as widgetHealthchecksJobsPt,
+} from './widgets/healthchecks-jobs/messages.js';
+import {
   en as widgetHomeAssistantEntities,
   ptBR as widgetHomeAssistantEntitiesPt,
 } from './widgets/home-assistant-entities/messages.js';
@@ -67,6 +71,7 @@ export const widgetEnglish = {
   ...widgetUptimeKumaMonitors,
   ...widgetCoolifyResources,
   ...widgetHomeAssistantEntities,
+  ...widgetHealthchecksJobs,
 } as const;
 export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...clockPt,
@@ -90,4 +95,5 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...widgetUptimeKumaMonitorsPt,
   ...widgetCoolifyResourcesPt,
   ...widgetHomeAssistantEntitiesPt,
+  ...widgetHealthchecksJobsPt,
 };

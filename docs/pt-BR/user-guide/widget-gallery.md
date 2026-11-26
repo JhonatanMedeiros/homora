@@ -57,7 +57,7 @@ As integrações são opcionais e somente de leitura. O Homora consulta e nunca 
 | **TP-Link Omada**     | <img src="../../screenshots/widgets/tp-link-omada.png" width="260" alt="">           | Clientes, pontos de acesso, switches, gateways e alertas não resolvidos        |
 | **Uptime Kuma**       | <img src="../../screenshots/widgets/uptime-kuma.png" width="260" alt="">             | Contagem de monitores no ar, fora, pendentes, em manutenção ou desconhecidos   |
 
-Duas integrações também oferecem um widget de lista que nomeia cada item: **Monitores do Uptime Kuma** e **Recursos do
+Algumas integrações também oferecem um widget de lista que nomeia cada item: **Monitores do Uptime Kuma** e **Recursos do
 Coolify**.
 
 <p>
@@ -116,3 +116,5 @@ A maioria dos widgets de monitoramento pode ser limitada a páginas ou grupos es
 
 Falta uma ferramenta? Qualquer pessoa pode adicionar uma integração ou um widget. Comece por
 [Criar um widget](../create-widget.md) ou pelo [guia do SDK de integrações em inglês](/adapters).
+
+O widget de página **Tarefas do Healthchecks** lista checks individuais e os estados informados por uma conexão existente. Um check bem-sucedido não comprova que um backup pode ser restaurado. A validação em serviço real permanece pendente.

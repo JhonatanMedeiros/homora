@@ -55,7 +55,7 @@ Integrations are optional and read-only. Homora asks, and never changes anything
 | **TP-Link Omada**     | <img src="../screenshots/widgets/tp-link-omada.png" width="260" alt="">           | Clients, access points, switches, gateways and unresolved alerts              |
 | **Uptime Kuma**       | <img src="../screenshots/widgets/uptime-kuma.png" width="260" alt="">             | Counts of monitors that are up, down, pending, in maintenance or unknown      |
 
-Two integrations also offer a list widget that names each item: **Uptime Kuma monitors** and **Coolify resources**.
+Several integrations also offer a list widget that names each item: **Uptime Kuma monitors** and **Coolify resources**.
 
 <p>
 <img src="../screenshots/widgets/uptime-kuma-monitors.png" width="300" alt="Uptime Kuma monitors widget listing each monitor with its state">
@@ -112,3 +112,5 @@ Most monitoring widgets can be limited to chosen pages or groups.
 
 Missing a tool? Anyone can add an integration or a widget. Start with
 [Writing an integration adapter](../adapters.md) or [Create a widget](../create-widget.md).
+
+The **Healthchecks jobs** page widget lists individual checks and their reported states using an existing connection. A successful check does not establish that a backup can be restored. Live-service validation remains pending.
