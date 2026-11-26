@@ -14,6 +14,7 @@ import { Button } from '@homora/ui/button';
 import { Skeleton } from '@homora/ui/skeleton';
 import { LoadingRegion } from '@/components/skeletons';
 import { formatDateTime, t } from '@/i18n';
+import { useMonitorNames } from './use-monitor-names';
 
 function factText(item: EvidenceFact): string {
   if (item.source === 'monitor-check') {
@@ -62,6 +63,7 @@ export function IncidentInvestigationDialog({
   onClose: () => void;
 }) {
   const [value, setValue] = useState<Investigation | null>(null);
+  const monitorName = useMonitorNames(incidentId !== null && value?.incidentId === incidentId);
   const [failedId, setFailedId] = useState<number | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -142,7 +144,7 @@ export function IncidentInvestigationDialog({
                     className="flex flex-col gap-1 border-b pb-2 text-sm"
                   >
                     <span>
-                      {factText(fact)} · {t('investigation.monitor', { id: fact.subject.id })}
+                      {factText(fact)} · {monitorName(fact.subject.id)}
                     </span>
                     <span className="text-muted-foreground">
                       <time dateTime={fact.observedAt}>{formatDateTime(fact.observedAt)}</time> ·{' '}
@@ -153,7 +155,9 @@ export function IncidentInvestigationDialog({
                     </span>
                     {fact.link && /^\/services\/\d+$/.test(fact.link) && (
                       <a className="underline" href={fact.link}>
-                        {t('investigation.openService')}
+                        {t('investigation.openServiceNamed', {
+                          name: monitorName(fact.subject.id),
+                        })}
                       </a>
                     )}
                   </li>
@@ -170,7 +174,7 @@ export function IncidentInvestigationDialog({
                 <ul className="flex flex-col gap-2 pt-2">
                   {hypotheses.map((item) => (
                     <li key={item.id} className="text-sm">
-                      {t('investigation.temporalHypothesis')}{' '}
+                      {t('investigation.temporalHypothesis')} · {monitorName(item.subject.id)}{' '}
                       {typeof item.attributes.overlapCount === 'number' &&
                         item.attributes.overlapCount > 1 && (
                           <span>
@@ -186,6 +190,9 @@ export function IncidentInvestigationDialog({
                             {index > 0 && ', '}
                             <a className="underline" href={`#evidence-${id}`}>
                               {id}
+                              {facts.find((fact) => fact.id === id)
+                                ? ` · ${monitorName(facts.find((fact) => fact.id === id)!.subject.id)}`
+                                : ''}
                             </a>
                           </span>
                         ))}

@@ -1,5 +1,8 @@
 # Serviços e monitoramento
 
+O resumo e a investigação autenticados resolvem nomes de serviços localmente. Sondas, serviços removidos
+e nomes indisponíveis usam o ID do monitor; os bundles de evidências e as respostas MCP não recebem nomes.
+
 ## Revisar a cobertura de monitoramento
 
 Em **Atividade**, selecione **Revisar cobertura de monitoramento** para avaliar a configuração atual

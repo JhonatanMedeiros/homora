@@ -218,6 +218,9 @@ are not carried by export and import.
 
 ## Investigate an incident
 
+The authenticated summary and investigation resolve service names locally. Probes, removed services
+and unavailable names fall back to the monitor ID; evidence bundles and MCP responses do not gain names.
+
 Choose **Investigate incident** beside an incident in service details or in **Manage → Activity**.
 The timeline shows the recorded incident, up to 100 retained checks and up to 20 overlapping
 incidents; it marks truncated or invalid records and unknown coverage. Overlap is a hypothesis,
