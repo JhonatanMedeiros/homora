@@ -45,6 +45,7 @@ it('restricts operational reads and returns only approved fields', async () => {
     'get_status_overview',
     'list_incidents',
     'get_incident',
+    'investigate_incident',
     'list_tags',
     'list_link_types',
     'list_notification_channels',
@@ -55,7 +56,7 @@ it('restricts operational reads and returns only approved fields', async () => {
       responseText(await reader.callTool({ name: 'get_homora_capabilities' })),
     );
     for (const name of names) {
-      const args = name === 'get_incident' ? { id: 1 } : {};
+      const args = name === 'get_incident' || name === 'investigate_incident' ? { id: 1 } : {};
       const value = await reader.callTool({ name, arguments: args });
       expect(value.isError, name).not.toBe(true);
       expect(JSON.stringify(value), name).not.toContain('hidden');
@@ -655,6 +656,60 @@ it('redacts URL query secrets from card proposal responses and proposal history'
     );
   } finally {
     await client.close();
+    storage.close();
+  }
+});
+
+it('requires both read scopes for an investigation and excludes raw check fields', async () => {
+  const storage = createDatabase(':memory:');
+  const db = getSqliteHandle(storage.db);
+  const now = Date.now();
+  db.prepare("INSERT INTO monitors(id,name) VALUES(1,'Hostile untrusted name')").run();
+  db.prepare(
+    "INSERT INTO service_incidents(id,service_id,started_at,reason) VALUES(1,1,?,'no-response')",
+  ).run(now - 60_000);
+  db.prepare(
+    'INSERT INTO service_observation_history(service_id,signature,observed_at,observation) VALUES(?,?,?,?)',
+  ).run(
+    1,
+    'fixture',
+    now - 30_000,
+    JSON.stringify({ status: 'unavailable', reason: 'secret-canary' }),
+  );
+  const identities = createProposalService(db);
+  const clients: Client[] = [];
+  try {
+    for (const scopes of [
+      ['incidents:read'],
+      ['services:read'],
+      ['incidents:read', 'services:read'],
+    ]) {
+      const server = createMcp(db, { token: identities.issue(scopes.join(','), scopes).token });
+      const client = new Client({ name: 'test', version: '1' });
+      const [a, b] = InMemoryTransport.createLinkedPair();
+      await Promise.all([client.connect(a), server.connect(b)]);
+      clients.push(client);
+    }
+    for (const client of clients.slice(0, 2))
+      expect(
+        (await client.callTool({ name: 'investigate_incident', arguments: { id: 1 } })).isError,
+      ).toBe(true);
+    const response = await clients[2]!.callTool({
+      name: 'investigate_incident',
+      arguments: { id: 1 },
+    });
+    expect(response.isError).not.toBe(true);
+    expect(JSON.stringify(response)).not.toContain('secret-canary');
+    expect(JSON.stringify(response)).not.toContain('Hostile untrusted name');
+    expect(JSON.parse(responseText(response)).evidence.items).toEqual(
+      expect.arrayContaining([expect.objectContaining({ source: 'monitor-check' })]),
+    );
+    expect(
+      (await clients[2]!.callTool({ name: 'investigate_incident', arguments: { id: 999 } }))
+        .isError,
+    ).toBe(true);
+  } finally {
+    await Promise.all(clients.map((client) => client.close()));
     storage.close();
   }
 });

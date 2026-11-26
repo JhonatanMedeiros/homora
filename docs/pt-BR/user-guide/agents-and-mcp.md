@@ -19,4 +19,6 @@ Um lote (`propose_batch`) é tudo ou nada: os itens são validados em ordem, ent
 
 Sugestões de configuração de conexão não criam uma conexão automaticamente: o usuário deve abrir o formulário e fornecer credenciais e permissões. Dados recebidos de serviços externos não são instruções confiáveis.
 
+`investigate_incident` exige `incidents:read` e `services:read` e retorna evidências históricas limitadas e lacunas, sem erros brutos ou nomes dos serviços. Incidentes simultâneos são uma hipótese de relação, não um diagnóstico.
+
 [Leia o guia completo de MCP em inglês](/user-guide/agents-and-mcp) e o [inventário de capacidades em inglês](/agent-capabilities).

@@ -196,3 +196,12 @@ are not carried by export and import.
 - Add a **TLS certificate** check to anything exposed over HTTPS to hear about expiry two weeks ahead.
 - Use **TCP** for LAN services that are not web interfaces.
 - Set **Failures before it counts as down** to 2 or 3 for flaky links.
+
+## Investigate an incident
+
+Choose **Investigate incident** beside an incident in service details or in **Manage → Activity**.
+The timeline shows the recorded incident, up to 100 retained checks and up to 20 overlapping
+incidents; it marks truncated or invalid records and unknown coverage. Overlap is a hypothesis,
+not proof of a shared cause. Check history is retained for 30 days; historical dependencies and
+the root cause may be unknown. Times use your browser's time zone. The view is deterministic,
+requires no model, starts no checks and makes no external changes.

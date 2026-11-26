@@ -5,6 +5,7 @@ import { Skeleton } from '@homora/ui/skeleton';
 import { LoadingRegion } from '@/components/skeletons';
 import { useNow } from '@/hooks/use-now';
 import { IncidentEvidenceDialog } from './incident-evidence-dialog';
+import { IncidentInvestigationDialog } from '@/features/investigation/incident-investigation-dialog';
 import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { formatDateTime, t } from '@/i18n';
 
@@ -18,6 +19,7 @@ export function OperationalSummary() {
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [investigationId, setInvestigationId] = useState<number | null>(null);
   const [target, setTarget] = useState<{ monitorId: string; incidentId: string } | null>(null);
   useEffect(() => {
     if (!enabled) return;
@@ -108,6 +110,18 @@ export function OperationalSummary() {
                           : t('operationalSummary.recovered')}
                       </span>
                       <time dateTime={item.observedAt}>{formatDateTime(item.observedAt)}</time>
+                      <Button
+                        variant="link"
+                        className="h-auto p-0"
+                        aria-label={t('investigation.openFor', { id: item.id })}
+                        onClick={() => {
+                          const match = /^incident:(\d+):(opened|recovered)$/.exec(item.id);
+                          const id = match ? Number(match[1]) : NaN;
+                          if (Number.isSafeInteger(id) && id > 0) setInvestigationId(id);
+                        }}
+                      >
+                        {t('investigation.open')}
+                      </Button>
                       {item.link ? (
                         <a className="underline" href={item.link}>
                           {t('operationalSummary.monitor', { id: item.subject.id })}
@@ -138,6 +152,10 @@ export function OperationalSummary() {
         </Button>
       )}
       <IncidentEvidenceDialog target={target} close={() => setTarget(null)} />
+      <IncidentInvestigationDialog
+        incidentId={investigationId}
+        onClose={() => setInvestigationId(null)}
+      />
     </section>
   );
 }

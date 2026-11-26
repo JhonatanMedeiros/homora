@@ -88,6 +88,15 @@ describe('API authentication', () => {
         .prepare('INSERT INTO service_incidents(id,service_id,started_at,reason) VALUES(?,?,?,?)')
         .run(99, 701, Date.now(), 'no-response');
       expect((await localApp.inject('/api/services/701/incidents/99')).statusCode).toBe(401);
+      expect((await localApp.inject('/api/incidents/99/investigation')).statusCode).toBe(401);
+      expect(
+        (await localApp.inject({ url: '/api/incidents/99/investigation', headers: { cookie } }))
+          .statusCode,
+      ).toBe(200);
+      expect(
+        (await localApp.inject({ url: '/api/incidents/999/investigation', headers: { cookie } }))
+          .statusCode,
+      ).toBe(404);
       const incident = await localApp.inject({
         url: '/api/services/701/incidents/99',
         headers: { cookie },

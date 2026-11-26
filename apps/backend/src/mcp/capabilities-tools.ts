@@ -34,7 +34,7 @@ export function registerMcpCapabilitiesTool(
     },
     async () => {
       const scopes = AGENT_SCOPES.filter((scope) => authorize(scope));
-      if (!scopes.length) return unauthorized();
+      if (scopes.length === 0) return unauthorized();
       const granted = new Set<string>(scopes);
       const remoteSources = dockerPush.countActive();
       const definitions: Array<{ name: string; scopes: string[]; enabled?: boolean }> = [
@@ -62,6 +62,7 @@ export function registerMcpCapabilitiesTool(
         { name: 'propose_probe', scopes: ['probes:propose'] },
         { name: 'propose_acknowledgement', scopes: ['incidents:propose'] },
         ...['list_incidents', 'get_incident'].map((name) => ({ name, scopes: ['incidents:read'] })),
+        { name: 'investigate_incident', scopes: ['incidents:read', 'services:read'] },
         { name: 'list_notification_channels', scopes: ['notifications:read'] },
         ...['list_agents', 'get_agent'].map((name) => ({ name, scopes: ['agents:read'] })),
         { name: 'list_audit_history', scopes: ['audit:read'] },
