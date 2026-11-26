@@ -57,6 +57,9 @@ describe('API authentication', () => {
     const { localApp, signIn, setup, done } = fresh();
     try {
       expect((await localApp.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
+      expect(
+        (await localApp.inject({ method: 'GET', url: '/api/operational-summary' })).statusCode,
+      ).toBe(401);
       expect((await localApp.inject({ method: 'GET', url: '/api/auth/status' })).json()).toEqual({
         configured: false,
         authenticated: false,
@@ -79,6 +82,15 @@ describe('API authentication', () => {
       expect(setCookie.split(',')[0]).not.toContain('Max-Age=');
       expect(setCookie).not.toContain('Secure');
       const cookie = cookieOf(login);
+      expect(
+        (
+          await localApp.inject({
+            method: 'GET',
+            url: '/api/operational-summary',
+            headers: { cookie },
+          })
+        ).statusCode,
+      ).toBe(200);
       expect(
         (await localApp.inject({ method: 'GET', url: '/api/services', headers: { cookie } }))
           .statusCode,

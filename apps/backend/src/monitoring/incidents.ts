@@ -288,6 +288,13 @@ export function createIncidentStore(
       return { incidents, nextBefore: rows.length > limit ? (incidents.at(-1)?.id ?? null) : null };
     },
 
+    find(serviceId: number, incidentId: number): Incident | null {
+      const row = db
+        .prepare(`SELECT ${COLUMNS} FROM service_incidents WHERE service_id=? AND id=?`)
+        .get(serviceId, incidentId) as Row | undefined;
+      return row ? toIncident(row) : null;
+    },
+
     open(): Record<number, Incident> {
       const result: Record<number, Incident> = {};
       for (const row of db

@@ -26,3 +26,5 @@ export { resolveCheckTarget } from './target.js';
 export { UPTIME_MIN_CHECKS, uptimeSummarizerOf } from './uptime.js';
 
 export { certificateReading } from './certificate-reading.js';
+
+export { operationalSummary } from './operational-summary.js';

@@ -3,6 +3,7 @@ export * from './appearance.js';
 export * from './audit.js';
 export * from './custom-css.js';
 export * from './dependencies.js';
+export * from './evidence.js';
 export * from './hosts.js';
 export * from './monitoring.js';
 export * from './pages.js';

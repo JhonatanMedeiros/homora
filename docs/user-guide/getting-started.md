@@ -101,3 +101,13 @@ loopback addresses such as `127.0.0.1` are always blocked.
 
 **How do I update?** Back up, pull the new version and run `docker compose up -d --build`. See
 [Deployment and upgrades](deployment.md#upgrade).
+
+### Monitoring changes
+
+In **Manage → Activity**, select **Show monitoring changes** to inspect recorded incident starts
+and recoveries over the last 24 hours or 7 days. Times use your browser's time zone. Service links
+open service details; select a probe incident to inspect its recorded start and end. The list shows at most 100 events
+and indicates when it is truncated. The view shows when it was updated, offers a refresh button and warns when its result is
+more than two minutes old (the warning is checked every 30 seconds). Incident records do not establish
+complete historical coverage, so an empty list is not proof that nothing happened. This view does not infer a cause or include configuration changes,
+certificate history, or recurrence.

@@ -53,6 +53,19 @@ function state(
 }
 
 describe('incidents', () => {
+  it('returns only the requested monitor incident', () => {
+    const { db, store } = setup();
+    try {
+      db.prepare(
+        'INSERT INTO service_incidents(id,service_id,started_at,reason) VALUES(?,?,?,?)',
+      ).run(9, 1, t0, 'no-response');
+      expect(store.find(1, 9)).toMatchObject({ id: 9, serviceId: 1, startedAt: t0 });
+      expect(store.find(2, 9)).toBeNull();
+      expect(store.find(1, 10)).toBeNull();
+    } finally {
+      db.close();
+    }
+  });
   it('opens at the first failed check once the failure threshold is reached', () => {
     const { db, store } = setup();
     store.setSettings(1, { failureThreshold: 3, recoveryThreshold: 1, degradedLatencyMs: null });

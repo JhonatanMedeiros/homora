@@ -2243,3 +2243,18 @@ provider, egress permission, evaluation harness, or model-backed feature. Source
 provider network and budget controls, executable fixtures, real-model validation and Portuguese
 translation of these English-only technical decisions remain future work. The deterministic product
 and existing MCP boundaries remain in effect.
+
+### Evidence and operational summary (#349, in progress)
+
+The shared package defines v1 evidence types, periodic freshness and reference checks. A bounded,
+authenticated operational-summary reader validates its registered incident-event and coverage-gap
+sources and shows 24-hour or 7-day recorded incident starts and recoveries in Activity. It exposes
+no raw reason, address or configuration. Incident rows do not prove complete coverage and do not
+retain check signatures, so the view states that limitation and does not claim recurrence. It also
+excludes audit changes and certificates. Sources, dates, truncation, English and Portuguese labels,
+service links, probe incident details, manual refresh and an age warning after two minutes are included. Validation: `pnpm check`, `pnpm build`, `pnpm docs:build`, targeted API/auth and interface tests,
+and a complete browser flow against an isolated synthetic database: English desktop and Portuguese
+mobile, 24-hour and 7-day periods, and navigation to a service. An in-memory SQLite run with 50,000 synthetic
+incident rows and 30 requests per range measured p95 3.11 ms for 24 hours and 3.27 ms for 7 days;
+this excludes network, browser, disk and concurrent load. Real-service testing and end-to-end latency under load remain unverified. No model or live service was used.
+#349 remains open pending review and remaining acceptance criteria.
