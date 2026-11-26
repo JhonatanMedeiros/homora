@@ -2248,3 +2248,14 @@ theme at 1280 px, with no horizontal overflow at 390 px. A full dashboard walkth
 devices, screen readers, live Healthchecks and deployed documentation remain unverified. A
 read-only project key and an authorized service are needed for live validation; no real
 infrastructure was contacted.
+
+## Proposed evidence and assistance decisions (issue #354)
+
+Design only: [ADR 0029](decisions/0029-evidence-contract.md) proposes an evidence contract;
+[ADR 0030](decisions/0030-ai-assistance-boundary.md) proposes the optional integrated-assistance
+boundary; and [ADR 0031](decisions/0031-evidence-evaluation.md) defines synthetic evaluation
+scenarios. These records are proposed pending review; they do not implement an evidence API,
+provider, egress permission, evaluation harness, or model-backed feature. Source registrations,
+provider network and budget controls, executable fixtures, real-model validation and Portuguese
+translation of these English-only technical decisions remain future work. The deterministic product
+and existing MCP boundaries remain in effect.
