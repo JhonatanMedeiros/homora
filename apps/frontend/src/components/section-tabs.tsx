@@ -5,7 +5,7 @@ import { t } from '@/i18n';
 type Props = {
   active: Tab;
   onNavigate: (id: NavId) => void;
-  /** Each tab takes an equal share of the row, as on phones. */
+  /** The tabs share the whole row, each in proportion to its name, as on phones. */
   fill?: boolean;
 };
 
@@ -18,7 +18,7 @@ export function SectionTabs({ active, onNavigate, fill }: Props) {
     <nav aria-label={t('nav.homeSections')} data-homora="section-tabs" className="min-w-0">
       <ul className="m-0 flex list-none gap-1 p-0">
         {homeSections.map((item) => (
-          <li key={item.id} className={cn('min-w-0', fill && 'flex-1')}>
+          <li key={item.id} className={cn('min-w-0', fill && 'flex-auto')}>
             <a
               href={navPath(item.id)}
               aria-current={active === item.id ? 'page' : undefined}
@@ -27,7 +27,7 @@ export function SectionTabs({ active, onNavigate, fill }: Props) {
                 event.preventDefault();
                 onNavigate(item.id);
               }}
-              className="flex min-h-9 items-center justify-center rounded-md px-3 text-sm font-medium text-sidebar-foreground/70 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:text-sidebar-accent-foreground pointer-coarse:min-h-11"
+              className="flex min-h-9 items-center justify-center rounded-md px-2 text-sm font-medium text-sidebar-foreground/70 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:text-sidebar-accent-foreground pointer-coarse:min-h-11"
             >
               <span className="truncate">
                 {item.id === 'home' ? t('nav.summary') : t(item.label)}
