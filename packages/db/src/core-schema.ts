@@ -230,3 +230,36 @@ export const weatherProviders = sqliteTable('weather_providers', {
   secretRef: text('secret_ref').notNull(),
   updatedAt: integer('updated_at').notNull(),
 });
+
+/**
+ * The customized Summary of a page. A page without items uses the default arrangement; the row stays
+ * after a reset so its revision keeps rejecting stale edits.
+ */
+export const summaryLayouts = sqliteTable('summary_layouts', {
+  pageId: integer('page_id')
+    .primaryKey()
+    .references(() => pages.id, { onDelete: 'cascade' }),
+  revision: integer('revision').notNull().default(1),
+});
+
+/** One block or page widget of a customized Summary, per kind of screen, in reading order. */
+export const summaryLayoutItems = sqliteTable(
+  'summary_layout_items',
+  {
+    id: integer('id').primaryKey(),
+    pageId: integer('page_id')
+      .notNull()
+      .references(() => summaryLayouts.pageId, { onDelete: 'cascade' }),
+    device: text('device').notNull(),
+    block: text('block'),
+    widgetId: integer('widget_id').references(() => pageWidgets.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    hidden: integer('hidden', { mode: 'boolean' }).notNull().default(false),
+  },
+  (table) => [
+    index('summary_layout_items_page_idx').on(table.pageId),
+    index('summary_layout_items_widget_idx').on(table.widgetId),
+  ],
+);

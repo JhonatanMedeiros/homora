@@ -39,7 +39,7 @@ export function registerConfigTransferRoutes(
 ) {
   app.get<{ Querystring: { format?: string } }>('/api/config/export', async (request, reply) => {
     const format = request.query.format === 'json' ? 'json' : 'yaml';
-    const { groups, services, pages, widgets } = configuration.exportData();
+    const { groups, services, pages, widgets, summaryLayouts } = configuration.exportData();
     return reply
       .header('Content-Type', format === 'json' ? 'application/json' : 'application/yaml')
       .header('Content-Disposition', `attachment; filename="homora-config.${format}"`)
@@ -47,6 +47,7 @@ export function registerConfigTransferRoutes(
         serializeConfiguration(groups, services, format, {
           pages,
           widgets,
+          summaryLayouts,
           ...(settings && {
             appearance: settings.appearance.get(),
             customCss: (({ enabled, css }) => ({ enabled, css }))(settings.customCss.get()),

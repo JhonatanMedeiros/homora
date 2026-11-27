@@ -25,6 +25,9 @@ export const en = {
     'Use 1–63 lowercase letters, digits and single hyphens, starting and ending with a letter or digit.',
   'apiError.alias-exists': 'This alias is already in use.',
   'apiError.widget-limit': 'This page already has the most widgets it can hold.',
+  'apiError.invalid-summary-layout': 'Check the arrangement of the Summary and try again.',
+  'apiError.summary-layout-conflict':
+    'The Summary was changed somewhere else. Reload and try again.',
   'apiError.policy-blocked': 'Blocked by network policy.',
   'apiError.feed-fetch-failed': 'Could not fetch this feed.',
   'apiError.feed-parse-failed': 'Could not parse this feed as RSS 2.0 or Atom 1.0.',
@@ -141,6 +144,9 @@ export const ptBR = {
     'Use de 1 a 63 letras minúsculas, números e hífens simples, começando e terminando com letra ou número.',
   'apiError.alias-exists': 'Este alias já está em uso.',
   'apiError.widget-limit': 'Esta página já tem o máximo de widgets que cabem nela.',
+  'apiError.invalid-summary-layout': 'Confira a organização do Resumo e tente novamente.',
+  'apiError.summary-layout-conflict':
+    'O Resumo foi alterado em outro lugar. Recarregue e tente novamente.',
   'apiError.policy-blocked': 'Bloqueado pela política de rede.',
   'apiError.feed-fetch-failed': 'Não foi possível buscar este feed.',
   'apiError.feed-parse-failed': 'Não foi possível interpretar este feed como RSS 2.0 ou Atom 1.0.',

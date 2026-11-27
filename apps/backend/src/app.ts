@@ -1,6 +1,7 @@
 import { registerWidgetMonitoringRoutes } from './routes/widget-monitoring.js';
 import { registerWidgetSourceRoutes } from './routes/widget-sources.js';
 import { registerPageWidgetRoutes } from './routes/page-widgets.js';
+import { registerSummaryLayoutRoutes } from './routes/summary-layouts.js';
 import Fastify, { LogController, type FastifyBaseLogger, type FastifyServerOptions } from 'fastify';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createAuth } from './auth.js';
@@ -374,6 +375,7 @@ export function createApp(
   registerInboxRoutes(app, inbox);
   registerPageRoutes(app, createPages(sqlite), auth, audit);
   registerPageWidgetRoutes(app, sqlite);
+  registerSummaryLayoutRoutes(app, sqlite);
   registerCustomCssRoutes(app, customCss, auth, audit);
   registerAppearanceRoutes(
     app,

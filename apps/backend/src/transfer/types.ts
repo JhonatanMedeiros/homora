@@ -7,6 +7,7 @@ import {
   type CheckType,
   type LinkColor,
   type OpenTarget,
+  type SummaryBlock,
 } from '@homora/shared';
 
 export { MAX_TRANSFER_CHARS, type ImportIssue, type ImportPlan, type IssueCode };
@@ -14,11 +15,12 @@ export { MAX_TRANSFER_CHARS, type ImportIssue, type ImportPlan, type IssueCode }
 /**
  * Homora export format version. Version 2 added pages (`pages` and a `page` on each group);
  * version 3 adds page widgets; version 4 adds the extra addresses of a service (`links`, each with
- * its type by name and color); version 5 adds service aliases. Versions 1 to 4 remain readable;
+ * its type by name and color); version 5 adds service aliases; version 7 adds the customized
+ * Summary of each page (`summaryLayouts`). Older versions remain readable;
  * version 1 groups go to the first page.
  */
-export const TRANSFER_VERSION = 6;
-export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4, 5, 6];
+export const TRANSFER_VERSION = 7;
+export const READABLE_TRANSFER_VERSIONS: readonly unknown[] = [1, 2, 3, 4, 5, 6, 7];
 export const MAX_GROUPS = 200;
 export const MAX_SERVICES = 1000;
 /**
@@ -65,10 +67,24 @@ export type PortableWidget = {
   config: unknown;
   source?: { type: string; name: string };
 };
+/** A Summary entry in a file: a built-in block, or a widget by its place in `widgets`. */
+export type PortableSummaryItem = ({ block: SummaryBlock } | { widget: number }) & {
+  hidden: boolean;
+  width?: number;
+  height?: number;
+};
+export type PortableSummaryLayout = {
+  page: string;
+  desktop?: PortableSummaryItem[];
+  phone?: PortableSummaryItem[];
+};
 export type ImportDocument = {
   groups: ImportedGroup[];
   pages?: string[];
   widgets?: PortableWidget[];
+  summaryLayouts?: PortableSummaryLayout[];
+  /** For each of `widgets`, its place in the file; kept when layouts need to find it. */
+  widgetRefs?: number[];
 };
 
 export type ParsedImport = { document: ImportDocument; issues: ImportIssue[] };

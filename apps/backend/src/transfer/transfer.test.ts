@@ -58,7 +58,7 @@ describe('parsing', () => {
     ['invalid syntax', 'groups: [unclosed', 'invalid-syntax'],
     ['document without groups', 'version: 1\n', 'invalid-document'],
     ['root that is not an object', '- a\n- b', 'invalid-document'],
-    ['unsupported version', 'version: 7\ngroups: []', 'unsupported-version'],
+    ['unsupported version', 'version: 8\ngroups: []', 'unsupported-version'],
   ])('rejects %s', (_name, content, code) => {
     const parsed = parseTransfer(content);
     expect(parsed.issues).toEqual([{ path: '', code, severity: 'error' }]);
@@ -339,7 +339,7 @@ it('round trips a separate check URL and ignores invalid imported targets', () =
 
 it('rejects invalid or oversized notes during import', () => {
   const content = JSON.stringify({
-    version: 6,
+    version: 7,
     groups: [],
     widgets: [
       { page: 'Home', type: 'note', name: '', config: { text: 'x'.repeat(4001) } },

@@ -22,6 +22,10 @@ import {
   normalizeIcon,
   normalizePageName,
   samePageName,
+  MAX_PAGES,
+  parseSummaryLayout,
+  type SummaryDesktopItem,
+  type SummaryPhoneItem,
 } from '@homora/shared';
 import {
   MAX_FLOW_OPENERS,
@@ -36,6 +40,8 @@ import {
   type ImportIssue,
   type IssueCode,
   type ParsedImport,
+  type PortableSummaryItem,
+  type PortableSummaryLayout,
 } from './types.js';
 
 /** True when `content` is small enough in structure to hand to the YAML parser. */
@@ -158,6 +164,45 @@ export function parseService(
   };
 }
 
+/** Reads the optional `summaryLayouts`; an invalid one is dropped with a warning. */
+function parseSummaryLayouts(raw: unknown, issues: ImportIssue[]): PortableSummaryLayout[] {
+  const warn = (path: string) =>
+    issues.push({ path, code: 'summary-layout-invalid', severity: 'warning' });
+  if (!Array.isArray(raw) || raw.length > MAX_PAGES) return (warn('summaryLayouts'), []);
+  // A file names a widget by its position; the shared rules expect a positive id.
+  const toId = (items: unknown) =>
+    items === undefined
+      ? null
+      : Array.isArray(items)
+        ? items.map((item: unknown) => {
+            if (!isRecord(item) || item.widgetId !== undefined) return item;
+            const { widget, ...rest } = item;
+            return typeof widget === 'number' ? { ...rest, widgetId: widget + 1 } : item;
+          })
+        : items;
+  const toIndex = (items: (SummaryDesktopItem | SummaryPhoneItem)[]) =>
+    items.map(({ widgetId, ...item }) =>
+      widgetId === undefined ? item : { ...item, widget: widgetId - 1 },
+    ) as PortableSummaryItem[];
+  const layouts: PortableSummaryLayout[] = [];
+  raw.forEach((entry: unknown, index: number) => {
+    const path = `summaryLayouts[${index}]`;
+    const page = isRecord(entry) ? normalizePageName(entry.page) : null;
+    const parsed =
+      isRecord(entry) && page
+        ? parseSummaryLayout({ desktop: toId(entry.desktop), phone: toId(entry.phone) })
+        : null;
+    if (!page || !parsed || layouts.some((known) => samePageName(known.page, page)))
+      return void warn(path);
+    layouts.push({
+      page,
+      ...(parsed.desktop ? { desktop: toIndex(parsed.desktop) } : {}),
+      ...(parsed.phone ? { phone: toIndex(parsed.phone) } : {}),
+    });
+  });
+  return layouts;
+}
+
 /** Reads a Homora export file (YAML or JSON) and validates item by item. */
 export function parseTransfer(content: string): ParsedImport {
   const issues: ImportIssue[] = [];
@@ -198,6 +243,8 @@ export function parseTransfer(content: string): ParsedImport {
       issues.push({ path: 'widgets', code: 'widget-invalid', severity: 'warning' });
     else {
       document.widgets = [];
+      // Where each accepted widget stood in the file, for the Summary layouts that point at it.
+      const refs: number[] = [];
       raw.widgets.forEach((item: unknown, index: number) => {
         const path = `widgets[${index}]`;
         if (
@@ -223,9 +270,10 @@ export function parseTransfer(content: string): ParsedImport {
         if (definition && isPortableWidget(definition)) {
           const parsed = definition.parseConfig(item.config);
           const config = parsed === null ? null : (definition.portableConfig?.(parsed) ?? parsed);
-          if (config !== null && item.source === undefined)
+          if (config !== null && item.source === undefined) {
             document.widgets!.push({ page, type: item.type, name: item.name, config, size });
-          else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
+            refs.push(index);
+          } else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
         } else if (
           definition?.source &&
           isRecord(item.source) &&
@@ -243,10 +291,16 @@ export function parseTransfer(content: string): ParsedImport {
             size,
             source: { type: item.type, name: item.source.name },
           });
+          refs.push(index);
           issues.push({ path, code: 'widget-source-unavailable', severity: 'warning' });
         } else issues.push({ path, code: 'widget-invalid', severity: 'warning' });
       });
+      if (raw.summaryLayouts !== undefined) document.widgetRefs = refs;
     }
+  }
+  if (raw.summaryLayouts !== undefined) {
+    const layouts = parseSummaryLayouts(raw.summaryLayouts, issues);
+    if (layouts.length > 0) document.summaryLayouts = layouts;
   }
   let total = 0;
   raw.groups.forEach((rawGroup: unknown, gi) => {

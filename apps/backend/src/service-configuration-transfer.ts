@@ -2,6 +2,7 @@ import { isPortableWidget } from '@homora/widgets';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { resolveWidget } from '@homora/integrations';
 import { createServiceAttention } from './service-attention.js';
+import { createSummaryLayouts } from './summary-layouts.js';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   MAX_PAGES,
@@ -9,11 +10,15 @@ import {
   type CheckType,
   type Service,
   type ServiceLink,
+  type SummaryDesktopItem,
+  type SummaryPhoneItem,
 } from '@homora/shared';
 import {
   planImport,
   type ImportPlan,
   type ParsedImport,
+  type PortableSummaryItem,
+  type PortableSummaryLayout,
   type PortableWidget,
 } from './transfer/index.js';
 
@@ -70,22 +75,24 @@ export function createConfigurationTransfer({
           }[]
         ).map((row) => [row.id, row.name]),
       );
-      return {
-        pages: [...pageNames.values()],
-        widgets: (
-          sqlite
-            .prepare(
-              `SELECT w.type,w.name,w.config,w.size,p.name AS page,c.name AS sourceName FROM page_widgets w JOIN pages p ON p.id=w.page_id LEFT JOIN integration_instances c ON c.id=w.connection_id WHERE w.version=1 ORDER BY p.position,w.position,w.id`,
-            )
-            .all() as {
-            type: string;
-            name: string;
-            config: string;
-            size: string;
-            page: string;
-            sourceName: string | null;
-          }[]
-        ).flatMap<PortableWidget>((row) => {
+      // Layouts name widgets by their position in the exported list.
+      const exported = new Map<number, number>();
+      const widgets = (
+        sqlite
+          .prepare(
+            `SELECT w.id,w.type,w.name,w.config,w.size,p.name AS page,c.name AS sourceName FROM page_widgets w JOIN pages p ON p.id=w.page_id LEFT JOIN integration_instances c ON c.id=w.connection_id WHERE w.version=1 ORDER BY p.position,w.position,w.id`,
+          )
+          .all() as {
+          id: number;
+          type: string;
+          name: string;
+          config: string;
+          size: string;
+          page: string;
+          sourceName: string | null;
+        }[]
+      )
+        .flatMap<PortableWidget & { id: number }>((row) => {
           let raw: unknown;
           try {
             raw = JSON.parse(row.config);
@@ -101,6 +108,7 @@ export function createConfigurationTransfer({
               ? []
               : [
                   {
+                    id: row.id,
                     page: row.page,
                     type: row.type,
                     name: row.name,
@@ -112,6 +120,7 @@ export function createConfigurationTransfer({
           if (!definition?.source || row.sourceName === null) return [];
           return [
             {
+              id: row.id,
               page: row.page,
               type: row.type,
               name: row.name,
@@ -120,7 +129,34 @@ export function createConfigurationTransfer({
               source: { type: row.type, name: row.sourceName },
             },
           ];
-        }),
+        })
+        .map(({ id, ...widget }, index) => {
+          exported.set(id, index);
+          return widget;
+        });
+      const portable = (items: (SummaryDesktopItem | SummaryPhoneItem)[]) =>
+        items.flatMap<PortableSummaryItem>(({ widgetId, ...item }) => {
+          if (widgetId === undefined) return [item as PortableSummaryItem];
+          const widget = exported.get(widgetId);
+          return widget === undefined ? [] : [{ ...item, widget } as PortableSummaryItem];
+        });
+      const summaryLayouts = createSummaryLayouts(sqlite)
+        .list()
+        .flatMap<PortableSummaryLayout>(({ pageId, desktop, phone }) => {
+          const page = pageNames.get(pageId);
+          if (!page || (!desktop && !phone)) return [];
+          return [
+            {
+              page,
+              ...(desktop ? { desktop: portable(desktop) } : {}),
+              ...(phone ? { phone: portable(phone) } : {}),
+            },
+          ];
+        });
+      return {
+        pages: [...pageNames.values()],
+        widgets,
+        summaryLayouts,
         groups: selectGroups().map((group) => ({
           ...group,
           page: group.pageId === null ? undefined : pageNames.get(group.pageId),
@@ -306,6 +342,18 @@ export function createConfigurationTransfer({
             );
           created += 1;
         });
+        // Only a page with nothing arranged yet takes the file's Summary: importing never
+        // rearranges what is already there.
+        const arranged = new Set(
+          (
+            sqlite
+              .prepare(
+                'SELECT page_id AS id FROM page_widgets UNION SELECT page_id FROM summary_layout_items',
+              )
+              .all() as { id: number }[]
+          ).map((row) => row.id),
+        );
+        const widgetIds = new Map<number, number>();
         let widgetsCreated = 0;
         for (const [index, widget] of (parsed.document.widgets ?? []).entries()) {
           if (plan.widgets[index]?.status !== 'new') continue;
@@ -320,7 +368,7 @@ export function createConfigurationTransfer({
           ).n;
           // A page holds a limited number of widgets; the rest of the file's widgets are skipped.
           if (onPage >= MAX_WIDGETS_PER_PAGE) continue;
-          sqlite
+          const inserted = sqlite
             .prepare(
               'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,NULL,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
             )
@@ -332,9 +380,35 @@ export function createConfigurationTransfer({
               widget.size ?? 'normal',
               pageId,
             );
+          const ref = parsed.document.widgetRefs?.[index];
+          if (ref !== undefined) widgetIds.set(ref, Number(inserted.lastInsertRowid));
           widgetsCreated += 1;
         }
-        if (created || widgetsCreated) bumpVersion();
+        let layoutsApplied = 0;
+        for (const layout of parsed.document.summaryLayouts ?? []) {
+          const pageId =
+            options.pageId === undefined ? pageIds.get(layout.page.toLocaleLowerCase()) : undefined;
+          if (!pageId || arranged.has(pageId)) continue;
+          const local = <T>(items: PortableSummaryItem[] | undefined) =>
+            items?.flatMap((item) => {
+              if (!('widget' in item)) return [item as T];
+              const { widget, ...rest } = item;
+              const widgetId = widgetIds.get(widget);
+              // The widget must have been created on this very page.
+              const here =
+                widgetId !== undefined &&
+                sqlite
+                  .prepare('SELECT 1 FROM page_widgets WHERE id=? AND page_id=?')
+                  .get(widgetId, pageId);
+              return here ? [{ ...rest, widgetId } as T] : [];
+            }) ?? null;
+          createSummaryLayouts(sqlite).write(pageId, {
+            desktop: local<SummaryDesktopItem>(layout.desktop),
+            phone: local<SummaryPhoneItem>(layout.phone),
+          });
+          layoutsApplied += 1;
+        }
+        if (created || widgetsCreated || layoutsApplied) bumpVersion();
         return { status: 'applied' as const, plan, created, widgetsCreated };
       });
     },
