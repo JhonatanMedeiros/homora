@@ -10,7 +10,7 @@ Practical recipes for common homelab goals. Each one lists the steps and links t
 
 **Goal:** one page that opens everything, with search.
 
-1. Add your services with **Organize → Add service** on the Home, or import an existing supported configuration file from
+1. Add your services with **New service**, or import an existing supported configuration file from
    **Settings → Export and import** ([guide](import-export-backup.md)).
 2. Split them into **pages** (for example _Home_, _Media_, _Lab_) in **Settings → Home and pages**, and into
    **groups** by purpose.
@@ -45,7 +45,7 @@ behind a private network or a separate hostname; public exposure of Homora itsel
 
 **Goal:** see VM counts and load, and know which services live on which guest.
 
-1. In **Manage → Integrations**, add a **Proxmox VE** connection with a read-only token and **Save and test**.
+1. In **Integrations**, add a **Proxmox VE** connection with a read-only token and **Save and test**.
 2. Add a **Proxmox widget** to the Proxmox card, or a page widget to a dashboard page. Optionally show the top bar.
 3. Link cards to their guests: use **Suggested hosts**, or the **Connections** tab of each card.
 4. Switch to the **Host** and **Map** views to see what is affected when a node goes down.
@@ -67,7 +67,7 @@ See [Docker discovery](docker-discovery.md).
 
 **Goal:** ask an agent to organize groups or add cards, with you in control.
 
-1. In **Manage → Agents**, create an agent with only the scopes it needs, for example `services:read` and
+1. In **Agents**, create an agent with only the scopes it needs, for example `services:read` and
    `proposals:create`. Copy the token once.
 2. Press **Connect** and copy the ready-made setup for Claude Code, Codex, Claude Desktop, Cursor or VS Code.
 3. Ask the agent for a change. It appears under **Agents → Proposals** with the exact diff and a countdown.

@@ -11,7 +11,7 @@ Se a proposta ficar desatualizada, crie outra para revisão.
 
 ## Configure e revise
 
-1. Em **Gerenciar → Agentes**, crie uma identidade com os menores escopos necessários.
+1. Em **Agentes**, crie uma identidade com os menores escopos necessários.
 2. Guarde o token, mostrado no momento da criação, como uma senha. Configure-o em um cliente MCP confiável.
 3. Revise as propostas na interface. Elas só são aplicadas depois da aprovação humana e podem expirar ou ficar desatualizadas.
 4. Revogue ou substitua o token quando necessário. A atividade registra decisões e ações relevantes.
@@ -22,8 +22,7 @@ O Homora não inclui chat ou modelo para esse fluxo. No cliente MCP escolhido, p
 externo que consulte os cartões e grupos existentes antes de propor mudanças. Por exemplo, solicite
 que mova os cartões de mídia identificados para um grupo existente, crie uma página ou fixe um
 favorito nomeado. Se o alvo ou destino for ambíguo, esclareça antes da proposta; não presuma que o
-agente possa inferir serviços ausentes do inventário. Revise os alvos e efeitos em **Gerenciar →
-Agentes** e aprove ou rejeite pessoalmente.
+agente possa inferir serviços ausentes do inventário. Revise os alvos e efeitos em **Agentes** e aprove ou rejeite pessoalmente.
 
 Use somente os escopos necessários: `services:read` para o inventário, `proposals:create` para mover
 cartões e `organization:propose` para páginas e favoritos. Criar grupos também exige `groups:propose`;

@@ -1,17 +1,54 @@
 ---
-description: 'The Homora dashboard: health pill, pages, groups, layouts, command palette, shortcuts and organize mode.'
+description: 'Navigation, the Home health summary, Services, Maintenance, pages, layouts, command palette, shortcuts and organize mode.'
 ---
 
 # The dashboard
 
-The dashboard (`/`) shows your cards grouped into pages, plus any widgets you added. Health lives in the header, so the
-page itself stays about your services.
+Homora has three views of your homelab:
+
+| View            | Address        | What it is for                                                              |
+| --------------- | -------------- | --------------------------------------------------------------------------- |
+| **Summary**     | `/`            | The Home: what needs attention, how healthy everything is, and your pins.   |
+| **Services**    | `/services`    | Your cards grouped into pages, with filters, layouts, the map and Organize. |
+| **Maintenance** | `/maintenance` | Every window that is open or scheduled, and the way to schedule a new one.  |
 
 ![The dashboard in the dark theme](../screenshots/dashboard-dark.png)
 
+## Getting around
+
+On a computer or tablet, an icon **rail** on the left opens **Home**, **Services**, **Map**, **Probes**,
+**Integrations**, **Agents**, **Activity** and **Settings**, with the theme button and your account menu at its end.
+Rest the pointer on an icon, or focus it, to read its name. The header shows **Summary**, **Services** and
+**Maintenance** on those views (a path back on the others), the command palette, the health pill, the notification bell
+and **New service**.
+
+The account menu holds **Account**, **Toggle theme**, **What's new**, **GitHub**, the version and **Sign out**.
+
+## The Summary
+
+The Summary reads from top to bottom:
+
+- **Pinned** services, one click away.
+- **Needs attention**: the likely causes of what is offline, then what is slow. When nothing is wrong it says so, and it
+  says **Nothing is reported offline** when some states are unknown or out of date.
+- **Health figures**: average uptime, incidents, mean time to recover and certificates close to expiry.
+- **Services by state**: select a state to open Services filtered by it.
+- **Availability target** and **Latency now** (slowest first, with each service's slow limit).
+- **Upcoming maintenance**, and the page's widgets.
+
+On wide screens (from 1280 px) a left column adds the views, groups, Proxmox hosts and probes, and a right column shows
+**All services at a glance**, one small window per service, with the details of the selected one and a link to agent
+proposals waiting for review. On narrower screens the details open in a drawer.
+
+## Maintenance
+
+Choose a service and press **Schedule maintenance**. Windows are listed under **Open now** and **Scheduled**, where you
+can end or cancel them. While a window is open, checks keep running but the service opens no incident and sends no
+alert.
+
 ## The health pill
 
-The header pill answers "is everything fine?": a colored dot and a few words (**All up**, **2 problems**, **Partly
+The health pill, in the header of every page, answers "is everything fine?": a colored dot and a few words (**All up**, **2 problems**, **Partly
 monitored**, **No data** or **Cannot measure**); on a phone it shrinks to the dot and the number of problems (a check mark when all is
 well, a question mark when the state is unknown). When the total mixes offline services, offline probes and slow ones,
 the panel says how many of each. Select it to see which services are down
@@ -48,10 +85,12 @@ recorded in the audit log.
 
 ## Status filters
 
-On wide screens, the left rail has **Views** (**All**, **Offline**, **Degraded**, **Maintenance**), **Groups** with each
-group's health, and, when a connected Proxmox runs some of your cards, **Hosts** with each node's state and card count.
-The view counts also include probes, and the rail says how many. On smaller screens the views become chips under the header (or **Options** on a phone). Counts are live. **Degraded**
-means online but slower than the limit you set (see [Services and monitoring](services-and-monitoring.md#alerts-and-states)).
+On wide screens, the left column of Summary, Services and Maintenance has **Views** (**All**, **Offline**,
+**Degraded**, **Maintenance**, **Online** and **Not measured**), **Groups** with each group's health, **Probes**, and,
+when a connected Proxmox runs some of your cards, **Hosts** with each node's state and card count. Choosing a view or a
+group opens Services with that filter. The view counts also include probes, and the column says how many. On smaller
+screens Services shows the views as chips (or inside **Options** on a phone). Counts are live. **Degraded** means online
+but slower than the limit you set (see [Services and monitoring](services-and-monitoring.md#alerts-and-states)).
 
 ## Alerts bell
 
@@ -61,7 +100,7 @@ history and mark items as read; reading is independent of acknowledging or mutin
 
 ## Pages, groups and cards
 
-- **Pages** sit in their own bar under the header, for example _Home_, _Media_ and _Lab_, each with its service count and
+- **Pages** sit in their own bar under the header on Summary and Services, for example _Home_, _Media_ and _Lab_, each with its service count and
   how many are down. The bar scrolls sideways when there are many pages. The list button at its end opens **All pages**
   (a bottom sheet on phones), with a search field when you have more than six, a `⋯` menu per page, and an **Add page**
   button. The `⋯` on the selected tab renames, moves or deletes it (a page with groups or widgets asks where they go
@@ -104,7 +143,7 @@ changes Proxmox. The only things it saves are Homora's own host links and the **
 - **Toolbar.** Search a service, address or guest (`/` focuses it, `Esc` clears it; accents are ignored). **All**,
   **Problems** and **Not linked** show how many each holds. **Host** or **Group** arranges the same tiles by the machine
   they run on or by your dashboard groups. **Connections** shows or hides the arrows for the dependencies you recorded
-  (the choice is remembered in this browser). **Collapse healthy** uses the same setting as Home.
+  (the choice is remembered in this browser). **Collapse healthy** uses the same setting as Services.
 - **Hosts and guests.** Each node shows its state in words (**Online**, **Degraded**, **Offline**), a summary such as
   _5 online · 1 offline_, and CPU, RAM and disk meters. A guest shows its type, id, state and CPU and RAM. A meter is
   left out when Proxmox did not report it (a stopped guest, an older Proxmox): it is never drawn as 0 %. A guest with
@@ -149,8 +188,8 @@ dependencies in front of it) and read-only actions: **Open service**, **Open car
 
 ### Details drawer
 
-The `i` button, **Details**, a health-pill window or a name in **Needs attention** opens a side panel (a bottom sheet on a
-phone) with the state, **Open** and **Copy address**, availability, latency, recent incidents and a link to the full
+The `i` button, **Details**, a health-pill window or a name in **Needs attention** shows the service in the right
+column on wide screens, and otherwise opens a side panel (a bottom sheet on a phone) with the state, **Open** and **Copy address**, availability, latency, recent incidents and a link to the full
 page. When an offline host or a stopped guest explains the failure, the panel names it, says how many services it
 affects and links to the map. For a card that is not monitored because it lacks permission, **Review the monitoring
 permission** opens the form on the **Access** tab; a loopback address is explained instead, since it cannot be allowed.
@@ -160,13 +199,14 @@ A short history is stated as such. `Esc` closes it.
 
 ### Favorites
 
-**Pin** a service from its drawer to show it in the **Pinned** row above the groups, on every page. **Favorites** in
-the left rail shows only pinned services. Pins are included in export and import.
+**Pin** a service from its details to show it in the **Pinned** row on the Summary and above the groups on Services, on
+every page. **Favorites** in the left column shows only pinned services. Pins are included in export and import.
 
 ### Widget panel
 
-On screens wider than 1440 px, a page's widgets sit in a panel on the right; **Hide widget panel** moves them below your
-groups, after the probes. A widget that cannot refresh keeps its last reading and says how old it is.
+On screens wider than 1440 px, a page's widgets sit in the right column of Services, under the selected service; **Hide
+widget panel** moves them below your groups, after the probes. A widget that cannot refresh keeps its last reading and
+says how old it is.
 
 ## Search: the command palette
 
@@ -205,27 +245,26 @@ The external service receives the text, and URLs may appear in browser history o
 ## Keyboard shortcuts
 
 Press `?` to see the list in the app. Single-key shortcuts can be turned off in **Settings → Top bar and shortcuts**;
-the two `Ctrl`/`⌘` shortcuts always work.
+`Ctrl`/`⌘ K` always works.
 
 | Keys         | Action                            |
 | ------------ | --------------------------------- |
 | `Ctrl/⌘ K`   | Open or close the command palette |
 | `/`          | Open the palette                  |
 | `?`          | Show all shortcuts                |
-| `g` then `h` | Go to the dashboard and services  |
+| `g` then `h` | Go to the Home                    |
 | `g` then `p` | Show what is offline              |
 | `g` then `i` | Go to Integrations                |
 | `g` then `a` | Go to Agents                      |
 | `g` then `t` | Go to Activity                    |
 | `g` then `s` | Go to Settings                    |
-| `n`          | Add a new service                 |
-| `1` to `9`   | Switch to that page               |
-| `Ctrl/⌘ B`   | Show or hide the sidebar          |
+| `n`          | Add a service (Home and Services) |
+| `1` to `9`   | Switch page (Home and Services)   |
 
 ## Organize cards and groups
 
-Press **Organize** on the Home toolbar. This is also where you add, edit and delete services and groups; there is no
-separate list under Manage.
+Press **Organize** on the Services toolbar (on a phone, inside **Options**). This is also where you edit and delete
+services and groups.
 
 ![Organize mode](../screenshots/organize-mode.png)
 
@@ -239,7 +278,7 @@ Everything you can do by dragging also works with buttons and menus.
 
 ## Widgets on the dashboard
 
-**Page widgets** (a clock, monitoring summaries, live readings from an integration) sit in the right panel on wide screens and below your groups on smaller ones. A page holds up
+**Page widgets** (a clock, monitoring summaries, live readings from an integration) appear on the Summary and on Services: in the right column of Services on wide screens, and below the content otherwise. A page holds up
 to 12. The dashed **Add widget** tile (on a phone, shown in **Organize**) opens a searchable gallery; each widget's **⋯** menu edits, moves or removes it, and
 you can drag to reorder. When a widget offers sizes, **wide** uses two columns below the groups when there is room; the
 right panel and small screens use normal width. Widgets can also be attached _inside_ a card. See
@@ -272,9 +311,11 @@ the numbers are calculated.
 
 ## On a phone
 
-The layout collapses to one column. The Home has no bottom bar: notifications are in the header, **Manage** is in the
-avatar menu, and theme and language live in **Manage → Settings**. In the management area, a floating bottom bar shows
-icons and **More**, which opens the rest and a way back to the dashboard. Background-image editing needs a larger
-screen, and the service map points to the host list.
+The layout collapses to one column. A floating bar at the bottom, on every page, opens **Home**, **Services** and
+**Agents**; **More** holds **Maintenance**, **Map**, **Probes**, **Integrations**, **Activity**, **Settings** and
+**New service**. The header keeps the search, the health pill, the bell and your account menu, and **Summary**,
+**Services** and **Maintenance** share a row under it. On Services, **Options** holds the state filter, the arrangement,
+the layout, **Organize** and the suggested hosts. Background-image editing needs a larger screen, and the service map
+points to the host list.
 
 <p align="center"><img src="../screenshots/mobile-dashboard.png" alt="The dashboard on a phone" width="260"></p>

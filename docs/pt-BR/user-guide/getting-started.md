@@ -37,7 +37,10 @@ Se preferir, [importe uma configuração compatível](import-export-backup.md) e
 
 ## Conheça a interface
 
-O dashboard reúne serviços e grupos. **Organizar** permite alterar sua disposição; `Ctrl K` abre a busca e `?` mostra os atalhos. Em **Gerenciar**, configure integrações, agentes, atividade e configurações. O menu da conta oferece segurança, link para o repositório e **Novidades**.
+O **Resumo** (`/`) mostra o que precisa de atenção e os serviços fixados; **Serviços** reúne cartões e grupos, e
+**Organizar** altera sua disposição; **Manutenção** lista as janelas. `Ctrl K` abre a busca e `?` mostra os atalhos.
+**Integrações**, **Agentes**, **Atividade** e **Configurações** ficam na barra à esquerda ou, no celular, na barra
+inferior e no menu **Mais**. O menu da conta oferece segurança, link para o repositório e **Novidades**.
 
 Para receber alertas, adicione um canal em configurações e use o envio de teste. Veja [alertas e página de status](notifications-and-status-page.md).
 
@@ -53,7 +56,7 @@ O indicador de atualização depende de uma imagem com versão identificada e de
 
 ### Mudanças no monitoramento
 
-Em **Gerenciar → Atividade**, selecione **Mostrar mudanças no monitoramento** para consultar
+Em **Atividade**, selecione **Mostrar mudanças no monitoramento** para consultar
 inícios e recuperações de incidentes registrados nas últimas 24 horas ou nos últimos 7 dias. Os
 horários usam o fuso do navegador; os links abrem os detalhes do serviço. Selecione um incidente de sonda para consultar seu início e término registrados. A lista mostra até os 100 eventos mais recentes e avisa quando há mais. A visão mostra quando foi atualizada,
 oferece um botão para atualizar e avisa quando o resultado tem mais de dois minutos (a verificação

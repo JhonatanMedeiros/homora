@@ -47,7 +47,7 @@ Agents with `services:read` can already retrieve the manually recorded edges wit
 external infrastructure. Guest host suggestions require their existing `hosts:read` scope and remain
 separate from confirmed dependencies.
 
-On **Manage → Activity**, the monitoring changes summary groups events by monitor for the selected
+On **Activity**, the monitoring changes summary groups events by monitor for the selected
 24-hour or 7-day period. Opened and recovered counts count events; the total counts distinct incidents
 with at least one event in the period. Counts use the complete retained period even if event details
 are truncated. At most 100 monitors and 100 individual events are shown, with separate truncation
@@ -225,7 +225,8 @@ Deleting a service deletes its history.
 
 ## Scheduled maintenance
 
-On a service's detail page, choose **Schedule maintenance**, pick a start and an end (1 minute to 30 days) and add an
+The **Maintenance** view (`/maintenance`) lists what is open and scheduled and starts a new window for any service.
+There, or on a service's detail page, choose **Schedule maintenance**, pick a start and an end (1 minute to 30 days) and add an
 optional note, such as "Disk swap". While a window is open Homora does not probe the service and records _unknown_
 with the reason `maintenance`, so uptime, incidents and alerts ignore the period.
 
@@ -271,7 +272,7 @@ are not carried by export and import.
 The authenticated summary and investigation resolve service names locally. Probes, removed services
 and unavailable names fall back to the monitor ID; evidence bundles and MCP responses do not gain names.
 
-Choose **Investigate incident** beside an incident in service details or in **Manage → Activity**.
+Choose **Investigate incident** beside an incident in service details or in **Activity**.
 The timeline shows the recorded incident, up to 100 retained checks and up to 20 overlapping
 incidents; it marks truncated or invalid records and unknown coverage. Overlap is a hypothesis,
 not proof of a shared cause. Check history is retained for 30 days; historical dependencies and

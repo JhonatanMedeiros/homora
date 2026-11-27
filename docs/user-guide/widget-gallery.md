@@ -22,12 +22,12 @@ pick a widget that needs no connection: **Clock**, **Calendar**, **Countdown**, 
 
 **With one of your tools** (for example Pi-hole):
 
-1. Open **Manage → Integrations** and press **Add connection**.
+1. Open **Integrations** and press **Add connection**.
 2. Choose the type, then enter a name, the address and a read-only credential. Use HTTPS, and enable **private
    network** if the tool lives on your local network.
 3. Press **Save and test**. The card reports whether the credentials worked, or a short reason when they did not.
 4. Back on the dashboard, press **Add widget**, choose the widget that your connection offers and save. To show it
-   on a service card instead, open **Manage → Integrations → Widgets** and attach it to the card.
+   on a service card instead, open **Integrations → Widgets** and attach it to the card.
 
 Each widget loads on its own, so a tool that is down never breaks the rest of the page. The details, limits and
 security rules are in [Integrations and widgets](integrations-and-widgets.md).

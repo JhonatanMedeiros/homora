@@ -34,7 +34,7 @@ Import shared primitives by subpath, e.g. `@homora/ui/button`, and `cn` from `@h
   the `shadcn` skill in `.agents/skills/shadcn` guides agents. Add primitives with
   `npx shadcn@latest add <component>` (inside `apps/frontend`) and review generated files:
   this project's CLI may generate `cn` imports as `"cn"`; correct them to `@homora/ui/lib/utils`.
-- Primitives live in `packages/ui/src/components` (shadcn, aligned with tokens); the shell navigation and header live in `src/components/app-shell.tsx`. Shared
+- Primitives live in `packages/ui/src/components` (shadcn, aligned with tokens); the shell lives in `src/components/app-shell.tsx`, with its navigation in `app-nav.ts`, `nav-rail.tsx` and `mobile-tabs.tsx`. Shared
   product components in `src/components`, route composers in `src/pages`, and
   capability modules in `src/features`. Colocate a hook, model, component and
   its tests in a feature when their consumers belong to that feature; keep hooks

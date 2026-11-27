@@ -52,7 +52,7 @@ against real installations. Verify each connection in your environment. Exact li
 
 ## Add a connection
 
-1. Open **Manage → Integrations** and press **Add connection**.
+1. Open **Integrations** and press **Add connection**.
 2. Pick the **type** and fill in the form: a name, the address and the credentials the integration needs.
    Use a read-only account or token wherever the service allows it.
 3. If the service lives on your local network, enable **private network** access for the connection.
@@ -78,7 +78,7 @@ error, timeout). Homora tests only when you ask and keeps the result until you e
 
 A card widget puts a connection's data directly on a service card.
 
-1. On **Manage → Integrations**, open the **Widgets** tab.
+1. On **Integrations**, open the **Widgets** tab.
 2. Choose the widget type, the connection and the card to attach it to.
 3. Save. The card now shows the readout under its name.
 
@@ -139,7 +139,7 @@ are not shown. Normal and wide sizes.
 
 Counts of online, degraded, offline, maintenance and not-measured monitors, from Homora's own monitoring. Restrict it by
 groups and pages (standalone probes count only when no filter is set), and optionally hide the not-measured row; it still
-counts toward the total and the bar. Select a state to filter the Home. A stale or failed reading is marked.
+counts toward the total and the bar. Select a state to filter Services. A stale or failed reading is marked.
 
 ### Recent incidents
 
