@@ -162,6 +162,25 @@ it('selects a guest and lists its services', () => {
   expect(screen.queryByRole('complementary', { name: 'Details' })).toBeNull();
 });
 
+it('assesses guest impact from all explicitly linked services', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify([{ serviceId: 4, dependsOnId: 2 }]))),
+  );
+  setup();
+  fireEvent.click(screen.getByRole('button', { name: /^dns/ }));
+  const panel = screen.getByRole('complementary', { name: 'Details' });
+  fireEvent.click(within(panel).getByRole('button', { name: 'Assess potential impact' }));
+  expect(await within(panel).findByText('Direct')).toBeTruthy();
+  expect(within(panel).getByRole('button', { name: 'notes' })).toBeTruthy();
+  fireEvent.click(within(panel).getByRole('button', { name: 'notes' }));
+  expect(
+    within(screen.getByRole('complementary', { name: 'Details' })).getByRole('heading', {
+      name: 'notes',
+    }),
+  ).toBeTruthy();
+});
+
 it('keeps zoom between 60% and 120%', () => {
   setup();
   const out = screen.getByRole('button', { name: 'Zoom out' }) as HTMLButtonElement;
