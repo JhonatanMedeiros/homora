@@ -46,6 +46,10 @@
 * define evidence and AI assistance boundaries ([255572c](https://github.com/JhonatanMedeiros/homora/commit/255572c96b1093728c839d50c77cb6634fe03bf1))
 * require a published signing key for the OIDC provider ([#378](https://github.com/JhonatanMedeiros/homora/issues/378)) ([c129267](https://github.com/JhonatanMedeiros/homora/commit/c129267d27977106ad9c7eb2496ae857d5c553b8))
 
+### Upgrade notes
+
+- Before upgrading to 0.6.0, take and verify a restorable backup of the database, and keep the `.key` file with it. OIDC sign-in is optional; configure an HTTPS issuer with a matching issuer URL, an email claim, and a published signing key. For a private CA, mount its certificate and set `NODE_EXTRA_CA_CERTS`.
+
 ## [0.5.0](https://github.com/JhonatanMedeiros/homora/compare/v0.4.0...v0.5.0) (2026-11-24)
 
 
