@@ -13,6 +13,7 @@ import { describeStatus } from '@/lib/status-text';
 import { hostOf, type ServiceStatus } from '@/lib/services';
 import { ServiceLinksMenu } from '@/components/service-links-menu';
 import { t } from '@/i18n';
+import { ImpactConsultation } from './impact-consultation';
 
 export type HostMapServicePanelProps = {
   service: Service;
@@ -36,6 +37,7 @@ export type HostMapServicePanelProps = {
   external: boolean;
   dependsOnList: { id: number; name: string }[];
   usedByList: { id: number; name: string }[];
+  impactServices: { id: number; name: string }[];
   canEdit: boolean;
   onSelect: (id: number) => void;
   onAddDependency: () => void;
@@ -64,6 +66,7 @@ export function HostMapServicePanel({
   external,
   dependsOnList,
   usedByList,
+  impactServices,
   canEdit,
   onSelect,
   onAddDependency,
@@ -312,6 +315,7 @@ export function HostMapServicePanel({
           </ul>
         </div>
       )}
+      <ImpactConsultation roots={[service]} services={impactServices} onSelect={onSelect} />
       <div className="flex flex-wrap gap-2">
         <Button asChild variant="outline" size="sm" className="pointer-coarse:h-11">
           <a

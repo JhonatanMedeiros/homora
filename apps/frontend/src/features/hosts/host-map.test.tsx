@@ -162,6 +162,25 @@ it('selects a guest and lists its services', () => {
   expect(screen.queryByRole('complementary', { name: 'Details' })).toBeNull();
 });
 
+it('assesses guest impact from all explicitly linked services', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify([{ serviceId: 4, dependsOnId: 2 }]))),
+  );
+  setup();
+  fireEvent.click(screen.getByRole('button', { name: /^dns/ }));
+  const panel = screen.getByRole('complementary', { name: 'Details' });
+  fireEvent.click(within(panel).getByRole('button', { name: 'Assess potential impact' }));
+  expect(await within(panel).findByText('Direct')).toBeTruthy();
+  expect(within(panel).getByRole('button', { name: 'notes' })).toBeTruthy();
+  fireEvent.click(within(panel).getByRole('button', { name: 'notes' }));
+  expect(
+    within(screen.getByRole('complementary', { name: 'Details' })).getByRole('heading', {
+      name: 'notes',
+    }),
+  ).toBeTruthy();
+});
+
 it('keeps zoom between 60% and 120%', () => {
   setup();
   const out = screen.getByRole('button', { name: 'Zoom out' }) as HTMLButtonElement;
@@ -211,7 +230,8 @@ it('shows the phone notice under 768 px, with the list as the primary choice', (
   expect(screen.getByRole('region', { name: 'Map of services by host' })).toBeTruthy();
 });
 
-it('says there is nothing to map when no service is linked', () => {
+it('shows unlinked services on the map without a host connection', () => {
   setup({ services: [card(4, 'notes')] });
-  expect(screen.getByText(/nothing to map/)).toBeTruthy();
+  expect(screen.getByRole('region', { name: 'Map of services by host' })).toBeTruthy();
+  expect(screen.getByText('notes')).toBeTruthy();
 });

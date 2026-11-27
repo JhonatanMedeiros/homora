@@ -4,7 +4,6 @@ import { HostPicker } from '@/features/hosts/host-picker';
 import { dependsOn, upstreamChain, usedBy, type Dependency } from '@/features/hosts/dependencies';
 import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
-import { EmptyNote } from '@/components/empty-note';
 import {
   HostMapDiagram,
   type HostMapSelection,
@@ -187,7 +186,7 @@ export function HostMap({
       inventories,
     );
 
-  const fullscreen = (!mobile || openAnyway) && services.some((service) => service.host);
+  const fullscreen = (!mobile || openAnyway) && services.length > 0;
   // The map takes the whole window, so the page behind it must not scroll.
   useEffect(() => {
     if (!fullscreen) return;
@@ -260,13 +259,6 @@ export function HostMap({
       </Alert>
     );
 
-  if (!services.some((service) => service.host))
-    return (
-      <section aria-label={t('map.title')} className="flex flex-col gap-3">
-        <EmptyNote>{t('map.empty')}</EmptyNote>
-      </section>
-    );
-
   const problemIds = new Set(
     layout.containers
       .filter((container) =>
@@ -326,6 +318,7 @@ export function HostMap({
 
   const panelService = selectedService && {
     service: selectedService,
+    impactServices: services,
     status: statuses[selectedService.id],
     blocked: blockedIds.has(selectedService.id),
     runsOn: editing.panelRunsOn(selectedService),
@@ -536,6 +529,7 @@ export function HostMap({
         {selection && (selectedService || selectedGuest) && (
           <HostMapSelectionPanel
             service={panelService}
+            impactServices={services}
             cardDetails={selectedService ? cardDetails?.(selectedService) : undefined}
             canEdit={canEdit}
             guest={selectedGuest}

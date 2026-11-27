@@ -4,6 +4,27 @@ description: 'Service form, seven check types, thresholds, incidents, uptime, ma
 
 # Services and monitoring
 
+## Assess potential dependency impact
+
+In the map, select a service or a guest host and choose **Assess potential impact** in its details.
+Services are available in the map even when none is linked to a host.
+The guest assessment starts with the cards explicitly linked to that guest. Arrows point from a
+dependency to the card that uses it; each result shows one shortest recorded path and whether it is
+direct or transitive. Select a visible card in a path to inspect its relationships or edit them.
+
+Only manually recorded service dependencies are traversed. Host suggestions are not confirmed links
+and are not included; the absence of a recorded path cannot prove that a service is unaffected.
+Potential impact is not observed downtime or a diagnosis. Results are bounded to eight edges and
+100 dependent monitors, with an explicit truncation notice; cycles cannot loop. Read failures are
+shown separately from an empty graph, and a reading older than two minutes should be refreshed.
+The evaluated snapshot uses the evidence vocabulary for recorded relationships and unknown graph
+completeness. It does not establish historical dependencies or a completeness guarantee.
+
+Agents with `services:read` can already retrieve the manually recorded edges with
+`list_service_dependencies` and compute paths; this does not require new permissions or access to
+external infrastructure. Guest host suggestions require their existing `hosts:read` scope and remain
+separate from confirmed dependencies.
+
 On **Manage → Activity**, the monitoring changes summary groups events by monitor for the selected
 24-hour or 7-day period. Opened and recovered counts count events; the total counts distinct incidents
 with at least one event in the period. Counts use the complete retained period even if event details
