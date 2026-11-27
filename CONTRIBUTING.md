@@ -27,6 +27,23 @@ For local development, copy `.env.example` to `.env` if you need to customize
 ports or database path, then run `pnpm dev`. Backup tests use temporary files;
 do not use personal data or production databases in tests.
 
+## AI agent skills
+
+The repository ships skills for coding agents in `.agents/skills/`, also linked from `.claude/skills/`
+and `.hermes/skills/`. They are optional: they order the steps of common tasks and point to the
+documentation, which remains the source of truth.
+
+| Skill                | Use it to                                                        |
+| -------------------- | ---------------------------------------------------------------- |
+| `homora-pr`          | Validate a change and open a pull request                        |
+| `homora-integration` | Create or change a service integration                           |
+| `homora-widget`      | Create or change a local widget                                  |
+| `homora-migration`   | Change the database schema without losing data                   |
+| `homora-release`     | Prepare and verify a release (maintainers; invoke it explicitly) |
+
+In Claude Code, type `/homora-pr`, for example. With other agents, ask for the skill by name or
+point the agent to its `SKILL.md`. When a documented process changes, update the matching skill.
+
 ## Submitting Changes
 
 - Open an issue or discussion for large changes before implementing them.
