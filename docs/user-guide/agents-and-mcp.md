@@ -115,6 +115,26 @@ Existing tokens do not gain new scopes automatically.
 
 ## Proposals in detail
 
+### Organizing the dashboard with an external agent
+
+Homora does not include a chat or model for this workflow. In your chosen MCP client, ask an
+external agent to inspect the existing cards and groups before proposing changes. For example, ask
+it to move the identified media cards to an existing Media group, create a page, or pin a named
+favorite. If the target or destination is ambiguous, clarify it before a proposal is made; do not
+assume the agent can infer services that are not in the inventory. Review the proposed targets and
+effects in **Manage → Agents** and approve or reject them yourself.
+
+Use only the scopes needed: `services:read` for inventory, `proposals:create` for card moves and
+`organization:propose` for pages and pins. Group creation additionally requires `groups:propose`.
+Batch items require each corresponding scope. Card names, descriptions and sanitized URLs may be
+visible to the MCP client and its model provider: choose a trusted client and review its data-handling
+settings. Homora does not send integration credentials or URL query strings through these reads.
+Do not include credentials or sensitive details in a request.
+
+The behavior of clarification and target selection depends on the external agent; Homora does not
+guarantee that it will interpret a natural-language request correctly. The proposal review shows the
+requested changes, and stale or expired proposals need a new review.
+
 Every proposal (cards, groups, order, widgets, host links, connection setup suggestions and agent identity changes)
 needs authenticated human approval, expires after the review period, and is rejected if the relevant configuration
 changed.

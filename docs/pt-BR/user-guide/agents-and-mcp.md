@@ -11,6 +11,26 @@ Agentes são opcionais. Uma identidade possui um token e escopos que determinam 
 3. Revise as propostas na interface. Elas só são aplicadas depois da aprovação humana e podem expirar ou ficar desatualizadas.
 4. Revogue ou substitua o token quando necessário. A atividade registra decisões e ações relevantes.
 
+## Organizar o dashboard com agente externo
+
+O Homora não inclui chat ou modelo para esse fluxo. No cliente MCP escolhido, peça ao agente
+externo que consulte os cartões e grupos existentes antes de propor mudanças. Por exemplo, solicite
+que mova os cartões de mídia identificados para um grupo existente, crie uma página ou fixe um
+favorito nomeado. Se o alvo ou destino for ambíguo, esclareça antes da proposta; não presuma que o
+agente possa inferir serviços ausentes do inventário. Revise os alvos e efeitos em **Gerenciar →
+Agentes** e aprove ou rejeite pessoalmente.
+
+Use somente os escopos necessários: `services:read` para o inventário, `proposals:create` para mover
+cartões e `organization:propose` para páginas e favoritos. Criar grupos também exige `groups:propose`;
+cada item de um lote exige seu respectivo escopo. Nomes, descrições e URLs sanitizadas dos cartões
+podem ser visíveis ao cliente MCP e ao provedor do modelo: escolha um cliente confiável e revise suas
+configurações de tratamento de dados. O Homora não envia credenciais de integração nem parâmetros de
+consulta de URLs nessas leituras. Não inclua credenciais ou detalhes sensíveis no pedido.
+
+Esclarecimento e escolha de alvos dependem do agente externo; o Homora não garante a interpretação
+correta de pedidos em linguagem natural. A revisão mostra as mudanças solicitadas; propostas
+desatualizadas ou expiradas precisam ser refeitas e revisadas novamente.
+
 ![Revisão de uma proposta](../../screenshots/proposal-review.png)
 
 O MCP oferece transporte local por `stdio` e HTTP sem estado. Ambos autenticam o token do agente e não dependem da sessão web. O processo `stdio` acessa diretamente o banco e o cofre; use-o somente com um cliente e usuário de sistema confiáveis. Para acesso por outro dispositivo, siga a configuração HTTPS de rede privada em [instalação e atualizações](deployment.md).
