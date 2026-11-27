@@ -20,6 +20,7 @@ export { agentChangeSchema, AGENT_SCOPES };
 export function createProposalService(
   sqlite: DatabaseSync,
   configuration = createServiceConfiguration(sqlite),
+  onConnectionDeleted: (id: number) => void = () => {},
 ) {
   const configHash = configuration.configHash;
   const batchContext = { insideBatch: false, currentBatchId: null as string | null };
@@ -304,7 +305,11 @@ export function createProposalService(
     proposeManaged,
     proposeAgent,
   });
-  const { decide, decideBatch, undoRejection } = createProposalReviewService({
+  const {
+    decide: review,
+    decideBatch,
+    undoRejection,
+  } = createProposalReviewService({
     sqlite,
     configuration,
     agentChangeSchema,
@@ -314,6 +319,25 @@ export function createProposalService(
     revoke,
     rotate,
   });
+  function decide(id: string, accept: boolean, human: string) {
+    const row = sqlite.prepare('SELECT diff FROM service_proposals WHERE id=?').get(id) as
+      | { diff: string }
+      | undefined;
+    const decision = review(id, accept, human);
+    if (decision === 'approved' && row) {
+      const decoded = JSON.parse(row.diff) as {
+        kind?: string;
+        change?: { kind?: string; change?: { id?: number } };
+      };
+      if (
+        decoded.kind === 'managed' &&
+        decoded.change?.kind === 'connection-delete' &&
+        decoded.change.change?.id
+      )
+        onConnectionDeleted(decoded.change.change.id);
+    }
+    return decision;
+  }
   const { refresh, refreshStale, reasonFor } = createProposalRefresh({
     sqlite,
     configuration,

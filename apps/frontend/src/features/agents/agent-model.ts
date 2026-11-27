@@ -19,7 +19,7 @@ export type Proposal = {
   batchId?: string | null;
   createdAt?: number;
   /** Why a stale proposal cannot be approved as it is. */
-  staleReason?: 'config-changed' | 'target-gone' | 'batch' | 'agent';
+  staleReason?: 'config-changed' | 'target-gone' | 'batch' | 'agent' | 'recreate';
   /** When the proposal was last re-based on the current configuration. */
   refreshedAt?: number | null;
 };
@@ -150,7 +150,9 @@ export function proposalSummary(diff: Diff | null, current?: Service): string {
                 ? 'proposal.managed.host-link'
                 : kind === 'public-visibility'
                   ? 'proposal.managed.public-visibility'
-                  : 'proposal.managed.connection-setup',
+                  : kind === 'connection-delete'
+                    ? 'proposal.managed.connection-delete'
+                    : 'proposal.managed.connection-setup',
     );
   }
   const name = diff.service?.name ?? current?.name;

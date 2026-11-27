@@ -24,6 +24,7 @@ import { normalizeTags } from '../service-tags.js';
 import { createServiceAttention } from '../service-attention.js';
 import { createResourceLinks } from '../resource-links.js';
 import { isNodeName, isVmid, RESOURCE_ID_PATTERN } from '@homora/integrations';
+import { deleteConnectionRow } from '../integrations/delete-connection.js';
 
 const id = z.number().int().safe().positive();
 const name = z.string().trim().min(1).max(40);
@@ -235,6 +236,12 @@ export const managedChangeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('card-order'), change: cardOrderSchema }).strict(),
   z.object({ kind: z.literal('widget'), change: widgetChangeSchema }).strict(),
   z.object({ kind: z.literal('connection-setup'), change: connectionSetupSchema }).strict(),
+  z
+    .object({
+      kind: z.literal('connection-delete'),
+      change: z.object({ op: z.literal('delete'), id }).strict(),
+    })
+    .strict(),
   z.object({ kind: z.literal('host-link'), change: hostLinkChangeSchema }).strict(),
   z.object({ kind: z.literal('maintenance'), change: maintenanceChangeSchema }).strict(),
   z.object({ kind: z.literal('public-visibility'), change: publicVisibilityChangeSchema }).strict(),
@@ -551,6 +558,18 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
       if (!db.prepare('DELETE FROM integration_widgets WHERE id=?').run(change.id).changes)
         throw new Error('Widget not found');
     }
+  } else if (kind === 'connection-delete') {
+    if (
+      db.prepare('SELECT id FROM services WHERE host_connection_id=? LIMIT 1').get(change.id) ||
+      db
+        .prepare('SELECT service_id FROM integration_resource_links WHERE integration_id=? LIMIT 1')
+        .get(change.id)
+    )
+      throw new Error('connection-has-links');
+    const outcome = deleteConnectionRow(db, change.id);
+    if (outcome === 'missing') throw new Error('connection-not-found');
+    if (outcome === 'has-widgets') throw new Error('connection-has-widgets');
+    affectedId = change.id;
   } else if (kind === 'host-link') {
     if (!db.prepare('SELECT id FROM services WHERE id=?').get(change.serviceId))
       throw new Error('Service not found');

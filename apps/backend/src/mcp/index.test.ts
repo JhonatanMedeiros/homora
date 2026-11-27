@@ -104,6 +104,7 @@ it('validates proposal inputs and lists services without secrets', async () => {
       'list_service_dependencies',
       'list_host_suggestions',
       'propose_host_link',
+      'propose_connection_delete',
       'propose_connection_setup',
       'list_discovery_suggestions',
       'propose_discovered_card',

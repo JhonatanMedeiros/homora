@@ -81,24 +81,29 @@ client and system user and grant minimum scopes. There are no infrastructure act
 
 ## Scopes and tools
 
-| Scope                                      | Tools                                                                                                                                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `services:read`                            | Services, pages, groups, favorites, status overview, trust metadata, tags, link types, public status, history and dependencies                                                     |
-| `probes:read`, `probes:propose`            | Read standalone probes; propose probe changes for review                                                                                                                           |
-| `incidents:read`, `incidents:propose`      | Read incidents; propose acknowledgements or mutes for review                                                                                                                       |
-| `organization:propose`                     | Propose pages, card tags, favorites and resource links                                                                                                                             |
-| `notifications:read`                       | Read notification channel metadata without credentials                                                                                                                             |
-| `agents:read`, `audit:read`                | Agent identities and paginated audit events, respectively                                                                                                                          |
-| `agents:propose`                           | Propose agent creation, scope changes, revocation or token rotation                                                                                                                |
-| `maintenance:propose`                      | List maintenance windows and propose scheduling or cancellation for human review                                                                                                   |
-| `public-status:propose`                    | Propose showing or hiding a card or probe on the public status page; publishing is high risk and held for confirmation                                                             |
-| `proxmox:read`                             | `list_proxmox_resources`                                                                                                                                                           |
-| `proposals:create`                         | `propose_service_card`, `propose_card_order`                                                                                                                                       |
-| `groups:propose`                           | `propose_group_change`                                                                                                                                                             |
-| `widgets:read`, `widgets:propose`          | `list_widgets`, `list_page_widgets`, `propose_widget_change` respectively                                                                                                          |
-| `integrations:read`, `connections:propose` | `list_integrations`, `get_integration_status`, `test_connection`; `propose_connection_setup` respectively                                                                          |
-| `discovery:read`                           | `list_discovery_suggestions`, `list_docker_push_sources`, `list_docker_push_suggestions`; `propose_discovered_card` and `propose_docker_push_card` also require `proposals:create` |
-| `hosts:read`, `hosts:propose`              | `list_host_suggestions`, `propose_host_link` respectively (guest names are sensitive)                                                                                              |
+| Scope                                      | Tools                                                                                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `services:read`                            | Services, pages, groups, favorites, status overview, trust metadata, tags, link types, public status, history and dependencies         |
+| `probes:read`, `probes:propose`            | Read standalone probes; propose probe changes for review                                                                               |
+| `incidents:read`, `incidents:propose`      | Read incidents; propose acknowledgements or mutes for review                                                                           |
+| `organization:propose`                     | Propose pages, card tags, favorites and resource links                                                                                 |
+| `notifications:read`                       | Read notification channel metadata without credentials                                                                                 |
+| `agents:read`, `audit:read`                | Agent identities and paginated audit events, respectively                                                                              |
+| `agents:propose`                           | Propose agent creation, scope changes, revocation or token rotation                                                                    |
+| `maintenance:propose`                      | List maintenance windows and propose scheduling or cancellation for human review                                                       |
+| `public-status:propose`                    | Propose showing or hiding a card or probe on the public status page; publishing is high risk and held for confirmation                 |
+| `proxmox:read`                             | `list_proxmox_resources`                                                                                                               |
+| `proposals:create`                         | `propose_service_card`, `propose_card_order`                                                                                           |
+| `groups:propose`                           | `propose_group_change`                                                                                                                 |
+| `widgets:read`, `widgets:propose`          | `list_widgets`, `list_page_widgets`, `propose_widget_change` respectively                                                              |
+| `integrations:read`, `connections:propose` | `list_integrations`, `get_integration_status`, `test_connection`; `propose_connection_setup`, `propose_connection_delete` respectively |
+
+| `discovery:read` | `list_discovery_suggestions`, `list_docker_push_sources`, `list_docker_push_suggestions`; `propose_discovered_card` and `propose_docker_push_card` also require `proposals:create` |
+| `hosts:read`, `hosts:propose` | `list_host_suggestions`, `propose_host_link` respectively (guest names are sensitive) |
+
+Connection deletion proposals require human approval and remove the stored credentials. Remove
+card or page widgets and service host or resource links first. The review shows the name, type and
+sanitized URL; create a new proposal if the original becomes stale.
 
 Existing tokens do not gain new scopes automatically.
 

@@ -2,6 +2,11 @@
 
 Agentes são opcionais. Uma identidade possui um token e escopos que determinam o que o agente pode consultar ou propor. O agente não recebe credenciais das integrações e não executa alterações na infraestrutura externa.
 
+Com `connections:propose`, o agente pode propor a remoção de uma conexão sem uso. A aprovação humana
+remove a conexão e suas credenciais armazenadas; widgets e vínculos de host ou recurso devem ser
+removidos antes. A revisão mostra nome, tipo e URL sem credenciais, parâmetros ou fragmento.
+Se a proposta ficar desatualizada, crie outra para revisão.
+
 ![Página de agentes](../../screenshots/agents.png)
 
 ## Configure e revise

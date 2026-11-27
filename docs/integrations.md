@@ -5,6 +5,12 @@ Proposed designs are identified as such; the implementation and tests are the gr
 
 ## Built-in integration SDK coverage
 
+An agent with `connections:propose` can request deletion of one unused connection through
+`propose_connection_delete`. The human reviews its name, type and sanitized URL before approval;
+approval deletes the connection and its encrypted credentials. Card and page widgets and service
+host or resource links must be removed first. The operation is audited and never changes the
+external service. If the proposal becomes stale, create a new one for review.
+
 The following existing integrations use the same static SDK catalog for definitions, forms and
 widgets. Declarative integrations use the shared manifest interpreter; the two code adapters
 provide registered backend and presentation factories. Each has a contract test with mocked

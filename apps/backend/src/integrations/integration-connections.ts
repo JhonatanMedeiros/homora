@@ -1,11 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { createDatabase, getSqliteHandle, integrationInstances } from '@homora/db';
 import { createVault, hasSealedValues } from '../vault.js';
-import {
-  migrateLegacyConnections,
-  markLegacyConnectionDeleted,
-  isHiddenLegacyConnection,
-} from './legacy-integrations.js';
+import { migrateLegacyConnections, isHiddenLegacyConnection } from './legacy-integrations.js';
+import { deleteConnectionRow } from './delete-connection.js';
 import { createObservationCache, IntegrationInvalidatedError } from './index.js';
 import { integrationRegistry } from './integration-registry.js';
 import { createIntegrationWidgets } from './integration-widgets.js';
@@ -185,7 +182,20 @@ export function createIntegrationConnections(
 
   const widgets = createIntegrationWidgets(db, find, migrateLegacy);
 
+  function invalidateConnection(id: number) {
+    caches.get(id)?.invalidate();
+    inventoryCaches.get(id)?.invalidate();
+    addressCaches.get(id)?.invalidate();
+    caches.delete(id);
+    backoffs.delete(id);
+    sessionTransports.delete(id);
+    inventoryCaches.delete(id);
+    addressCaches.delete(id);
+    onConnectionChanged(id);
+  }
+
   return {
+    invalidateConnection,
     migrateLegacy,
     ...widgets,
     async listConnections() {
@@ -208,29 +218,10 @@ export function createIntegrationConnections(
       const sqlite = getSqliteHandle(db);
       sqlite.exec('BEGIN IMMEDIATE');
       try {
-        if (!sqlite.prepare('SELECT id FROM integration_instances WHERE id=?').get(id)) {
-          sqlite.exec('COMMIT');
-          return 'missing' as const;
-        }
-        if (
-          sqlite
-            .prepare('SELECT id FROM integration_widgets WHERE integration_id=? LIMIT 1')
-            .get(id) ||
-          sqlite.prepare('SELECT id FROM page_widgets WHERE connection_id=? LIMIT 1').get(id)
-        ) {
-          sqlite.exec('COMMIT');
-          return 'has-widgets' as const;
-        }
-        markLegacyConnectionDeleted(sqlite, id);
-        sqlite.prepare('DELETE FROM integration_instances WHERE id=?').run(id);
+        const result = deleteConnectionRow(sqlite, id);
         sqlite.exec('COMMIT');
-        caches.delete(id);
-        backoffs.delete(id);
-        sessionTransports.delete(id);
-        inventoryCaches.delete(id);
-        addressCaches.delete(id);
-        onConnectionChanged(id);
-        return 'deleted' as const;
+        if (result === 'deleted') invalidateConnection(id);
+        return result;
       } catch (error) {
         sqlite.exec('ROLLBACK');
         throw error;

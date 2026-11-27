@@ -99,6 +99,7 @@ export function registerMcpCapabilitiesTool(
           enabled: Boolean(options.connections),
         })),
         { name: 'propose_connection_setup', scopes: ['connections:propose'] },
+        { name: 'propose_connection_delete', scopes: ['connections:propose'] },
         { name: 'list_host_suggestions', scopes: ['hosts:read'] },
         { name: 'propose_host_link', scopes: ['hosts:propose'] },
         ...['list_docker_push_sources', 'list_docker_push_suggestions'].map((name) => ({
