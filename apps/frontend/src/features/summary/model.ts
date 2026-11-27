@@ -39,7 +39,7 @@ const PHONE_ORDER: readonly Slot[] = [
  */
 function desktopOrder(widgets: LayoutWidget[]): SummaryRef[] {
   const waiting: SummaryRef[] = widgets.map((widget) => ({ widgetId: widget.id }));
-  const after: readonly SummaryBlock[] = new Set(['latency', 'maintenance']);
+  const after = new Set<SummaryBlock>(['latency', 'maintenance']);
   const order = SUMMARY_BLOCKS.flatMap((block): SummaryRef[] => [
     { block },
     ...(after.has(block) ? waiting.splice(0, 1) : []),
