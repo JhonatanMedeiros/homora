@@ -32,6 +32,8 @@ Escolha um serviço e **Agendar manutenção**. As janelas aparecem como abertas
 encerradas ou canceladas. Com uma janela aberta, as verificações continuam, mas o serviço não abre incidente nem envia
 alerta.
 
+![Visão Manutenção](../../screenshots/maintenance.png)
+
 ## A pílula de saúde
 
 A pílula, no cabeçalho de todas as páginas, responde "está tudo certo?" de relance: um ponto colorido e poucas palavras (**Tudo certo**, **2 problemas**, **Monitoramento parcial**, **Sem dados** ou **Sem medição**). No celular ela se reduz ao ponto e ao número de problemas (um sinal de confirmação quando está tudo bem, um ponto de interrogação quando o estado é desconhecido). Quando o total mistura serviços fora do ar, sondas fora do ar e serviços lentos, o painel diz quantos são de cada tipo. Ao selecioná-la, abre um painel com os serviços fora do ar e há quanto tempo, a disponibilidade média, os incidentes da semana, o tempo médio de recuperação e a meta de disponibilidade, além das **causas prováveis**: o que os serviços provavelmente têm em comum (um convidado parado ou host offline do Proxmox, o mesmo erro começando em até dez minutos ou um endereço que não responde). Cada causa pode ser **reconhecida** ou **silenciada por 1 h**; isso só silencia o Homora, sem alterar verificações, incidentes ou notificações. Quando a maioria das verificações falha pelo mesmo motivo, a pílula diz **Sem medição**, e os cartões, abas e contagens afetados mostram **Sem medição** em vez de fora do ar.

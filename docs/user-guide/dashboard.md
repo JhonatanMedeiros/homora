@@ -46,6 +46,8 @@ Choose a service and press **Schedule maintenance**. Windows are listed under **
 can end or cancel them. While a window is open, checks keep running but the service opens no incident and sends no
 alert.
 
+![The Maintenance view](../screenshots/maintenance.png)
+
 ## The health pill
 
 The health pill, in the header of every page, answers "is everything fine?": a colored dot and a few words (**All up**, **2 problems**, **Partly
@@ -168,7 +170,7 @@ and in the details panel. When nothing is wrong, the map says so.
 Select a tile to open the details on the right (a sheet at the bottom on narrow windows). For a failing service the
 panel opens with **Needs attention**: the reason of the last check, how long it has been down and why (host offline,
 guest stopped, service not responding). It also shows uptime, where it runs, **Reached through** (the chain of
-dependencies in front of it) and read-only actions: **Open service**, **Open card on Home**, **Change host** and
+dependencies in front of it) and read-only actions: **Open service**, **Open card in Services**, **Change host** and
 **See uptime and incidents**. Selecting a guest shows its load and its services.
 
 #### Services without a host
