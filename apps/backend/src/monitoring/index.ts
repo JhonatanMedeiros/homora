@@ -18,6 +18,7 @@ export type { IncidentTransition } from './incidents.js';
 export { createMeasurementGuard } from './measurement.js';
 export type { MeasurementIncident, MeasurementTransition } from './measurement.js';
 export { createMaintenanceStore, MaintenanceError } from './maintenance.js';
+export { maintenanceSummary } from './maintenance-summary.js';
 export { serviceSignature } from './signature.js';
 export { createMonitoringTrustStore } from './trust.js';
 export { createMonitoringSource, toMonitoringService } from './service-source.js';

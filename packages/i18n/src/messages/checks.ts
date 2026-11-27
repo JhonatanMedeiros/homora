@@ -43,6 +43,36 @@ export const en = {
   'card.note.certExpiring': 'Certificate expires in {days} d ({date})',
   'card.note.certExpired': 'Certificate expired on {date}',
   'maint.title': 'Scheduled maintenance',
+  'maintenanceReview.title': 'Prepare for maintenance',
+  'maintenanceReview.open': 'Review preparation',
+  'maintenanceReview.guidance':
+    'Review these suggestions and the proposed window before deciding. No action is performed by this checklist.',
+  'maintenanceReview.check.scope':
+    'Review the recorded dependencies and potentially affected services.',
+  'maintenanceReview.check.window':
+    'Review timing, overlapping windows and who should be notified.',
+  'maintenanceReview.check.after':
+    'After the window, review observations and any unresolved issues.',
+  'maintenanceReview.ephemeral': 'Checklist marks are temporary and are not saved or exported.',
+  'maintenanceReview.loadError': 'Could not load existing windows; overlap is unknown.',
+  'maintenanceReview.overlap':
+    'A recorded window overlaps this proposed period. Review it before proceeding.',
+  'maintenanceReview.noOverlap': 'No overlap found in the windows read for this monitor.',
+  'maintenanceReview.enterWindow': 'Enter a valid start and end to compare windows.',
+  'maintenanceReview.refreshWindows': 'Refresh windows',
+  'maintenanceReview.readAt': 'Windows read at {time}',
+  'maintenanceReview.recheck': 'The server checks the current windows again when scheduling.',
+  'maintenanceReview.summary': 'Review observations after maintenance',
+  'maintenanceReview.summaryPending': 'This window has not ended yet.',
+  'maintenanceReview.summaryInsufficient':
+    'No fresh usable observation after this window is available; the outcome is unknown.',
+  'maintenanceReview.summaryAvailable':
+    'The latest usable check after the window reported available at {time}.',
+  'maintenanceReview.summaryUnavailable':
+    'The latest usable check after the window reported unavailable at {time}.',
+  'maintenanceReview.summaryLimit':
+    'A single observation does not establish recovery, cause or the state of other services.',
+  'maintenanceReview.summaryError': 'Could not load the observation summary.',
   'maint.hint':
     'During a window the service shows as in maintenance, is not checked, does not count towards uptime and sends no alert.',
   'maint.schedule': 'Schedule maintenance',
@@ -128,6 +158,35 @@ export const ptBR: Record<keyof typeof en, string> = {
   'card.note.certExpiring': 'Certificado vence em {days} d ({date})',
   'card.note.certExpired': 'Certificado venceu em {date}',
   'maint.title': 'Manutenção programada',
+  'maintenanceReview.title': 'Preparar manutenção',
+  'maintenanceReview.open': 'Revisar preparação',
+  'maintenanceReview.guidance':
+    'Revise estas sugestões e a janela proposta antes de decidir. O checklist não executa ações.',
+  'maintenanceReview.check.scope':
+    'Revise as dependências registradas e os serviços potencialmente afetados.',
+  'maintenanceReview.check.window': 'Revise horários, janelas sobrepostas e quem deve ser avisado.',
+  'maintenanceReview.check.after': 'Após a janela, revise observações e problemas ainda abertos.',
+  'maintenanceReview.ephemeral': 'As marcações são temporárias e não são salvas nem exportadas.',
+  'maintenanceReview.loadError':
+    'Não foi possível carregar as janelas existentes; a sobreposição é desconhecida.',
+  'maintenanceReview.overlap':
+    'Uma janela registrada se sobrepõe ao período proposto. Revise antes de continuar.',
+  'maintenanceReview.noOverlap': 'Nenhuma sobreposição encontrada nas janelas lidas deste monitor.',
+  'maintenanceReview.enterWindow': 'Informe início e fim válidos para comparar as janelas.',
+  'maintenanceReview.refreshWindows': 'Atualizar janelas',
+  'maintenanceReview.readAt': 'Janelas lidas em {time}',
+  'maintenanceReview.recheck': 'O servidor verifica novamente as janelas atuais ao agendar.',
+  'maintenanceReview.summary': 'Revisar observações após a manutenção',
+  'maintenanceReview.summaryPending': 'Esta janela ainda não terminou.',
+  'maintenanceReview.summaryInsufficient':
+    'Não há observação recente e utilizável após esta janela; o resultado é desconhecido.',
+  'maintenanceReview.summaryAvailable':
+    'A última verificação utilizável após a janela informou disponível em {time}.',
+  'maintenanceReview.summaryUnavailable':
+    'A última verificação utilizável após a janela informou indisponível em {time}.',
+  'maintenanceReview.summaryLimit':
+    'Uma única observação não comprova recuperação, causa nem o estado de outros serviços.',
+  'maintenanceReview.summaryError': 'Não foi possível carregar o resumo de observações.',
   'maint.hint':
     'Durante a janela o serviço aparece em manutenção, não é verificado, não conta no uptime e não envia alerta.',
   'maint.schedule': 'Agendar manutenção',

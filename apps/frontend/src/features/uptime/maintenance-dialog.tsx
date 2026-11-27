@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { useState, type FormEvent } from 'react';
-import { MAINTENANCE_NOTE_MAX } from '@homora/shared';
+import { MAINTENANCE_NOTE_MAX, type Service } from '@homora/shared';
 import { FormError } from '@/components/form-error';
 import { Button } from '@homora/ui/button';
 import {
@@ -16,17 +16,20 @@ import { Input } from '@homora/ui/input';
 import { Spinner } from '@homora/ui/spinner';
 import { apiError, t } from '@/i18n';
 import { fromLocalInput, toLocalInput, validWindow } from '@/features/uptime/maintenance-view';
+import { MaintenanceReview } from './maintenance-review';
 
 export function MaintenanceDialog({
   open,
   serviceId,
   serviceName,
+  services,
   onOpenChange,
   onScheduled,
 }: {
   open: boolean;
   serviceId: number;
   serviceName: string;
+  services?: Pick<Service, 'id' | 'name'>[];
   onOpenChange: (open: boolean) => void;
   onScheduled: () => void;
 }) {
@@ -72,7 +75,7 @@ export function MaintenanceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('maint.dialog.title')}</DialogTitle>
           <DialogDescription>
@@ -113,6 +116,12 @@ export function MaintenanceDialog({
               />
             </Field>
           </FieldGroup>
+          <MaintenanceReview
+            serviceId={serviceId}
+            services={services}
+            startsAt={fromLocalInput(start)}
+            endsAt={fromLocalInput(end)}
+          />
           <FormError>{error}</FormError>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

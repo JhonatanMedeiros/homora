@@ -369,7 +369,7 @@ export function createApp(
     (id, operation, params) => connections.widgetQuery(id, operation, params),
   );
   invalidateIntegrationWidgetCache = widgetSourceCache.invalidateIntegration;
-  registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit);
+  registerServiceMaintenanceRoutes(app, maintenance, serviceMonitor, auth, audit, sqlite);
   registerServiceTagRoutes(app, tagStore);
   registerServiceConfigurationRoutes(
     app,

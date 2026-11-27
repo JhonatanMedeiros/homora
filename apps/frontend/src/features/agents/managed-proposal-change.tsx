@@ -1,5 +1,6 @@
 import { formatDateTime, t, type MessageKey } from '@/i18n';
 import type { Diff } from './agent-model';
+import { MaintenanceReview } from '@/features/uptime/maintenance-review';
 
 const labels: Record<string, MessageKey> = {
   op: 'managed.op',
@@ -122,6 +123,16 @@ function PublicVisibilityNote({ diff }: { diff: Diff }) {
 }
 export function ManagedProposalChange({ diff }: { diff: Diff }) {
   const kind = diff.change?.kind;
+  const maintenance =
+    kind === 'maintenance' && diff.change?.change && typeof diff.change.change === 'object'
+      ? (diff.change.change as {
+          serviceId?: unknown;
+          startsAt?: unknown;
+          endsAt?: unknown;
+          op?: unknown;
+          id?: unknown;
+        })
+      : null;
   const title =
     kind === 'pin'
       ? 'proposal.managed.pin'
@@ -154,6 +165,20 @@ export function ManagedProposalChange({ diff }: { diff: Diff }) {
       {kind === 'connection-setup' && <p>{t('proposal.managed.connectionNote')}</p>}
       {kind === 'host-link' && <p>{t('managed.hostNote')}</p>}
       {kind === 'maintenance' && <p>{t('managed.maintenanceNote')}</p>}
+      {maintenance &&
+        Number.isSafeInteger(maintenance.serviceId) &&
+        Number(maintenance.serviceId) > 0 && (
+          <MaintenanceReview
+            serviceId={Number(maintenance.serviceId)}
+            startsAt={typeof maintenance.startsAt === 'number' ? maintenance.startsAt : undefined}
+            endsAt={typeof maintenance.endsAt === 'number' ? maintenance.endsAt : undefined}
+            excludeId={
+              maintenance.op === 'cancel' && typeof maintenance.id === 'number'
+                ? maintenance.id
+                : undefined
+            }
+          />
+        )}
       {kind === 'public-visibility' && <PublicVisibilityNote diff={diff} />}
       {diff.before != null && (
         <section className="flex flex-col gap-2">

@@ -2373,3 +2373,7 @@ The summary counts opened and recovered events and distinct incidents by monitor
 ### Potential dependency impact (#348)
 
 The map assesses potential impact from a selected card or guest using confirmed manual service dependencies and, for a guest, explicitly linked cards. It shows one shortest path per dependent monitor, bounded to eight edges and 100 results, with cycles guarded and truncation explicit. The on-demand snapshot reports read failure, age and unknown graph completeness; it does not assert a failure, use host suggestions as confirmed relations, infer a root cause or access external infrastructure. The shared assessment emits recorded-edge facts and an unknown completeness item using the evidence contract. Existing scoped MCP dependency reads remain the agent interface; no new agent permission was added.
+
+### Maintenance preparation and review (#350)
+
+The existing scheduling form and human review of maintenance proposals offer an optional, non-persistent checklist, overlap comparison and recorded dependency impact. Overlap is revalidated by the existing server when scheduling; checklist marks never apply changes. Finished-window summaries show a single current-configuration observation only if it is after the window and fresh within twice the check interval; otherwise they report unknown. No recovery or cause is inferred. User-authored procedures, their storage, transfer and execution are outside this phase; existing maintenance notes and proposal permissions remain unchanged.
