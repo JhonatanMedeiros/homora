@@ -26,6 +26,8 @@ it.each(['en', 'pt-BR'] as const)(
                     from: '2026-01-01T00:00:00Z',
                     to: '2026-01-02T00:00:00Z',
                     truncated: false,
+                    monitors: [{ monitorId: 1, opened: 2, recovered: 1, total: 2 }],
+                    monitorsTruncated: true,
                     evidence: {
                       version: 1,
                       evaluatedAt: '2026-01-02T00:00:00Z',
@@ -58,6 +60,12 @@ it.each(['en', 'pt-BR'] as const)(
       screen.getByRole('button', { name: /mostrar mudanças|show monitoring changes/i }),
     );
     expect(await screen.findByRole('link', { name: 'Synthetic service' })).toBeTruthy();
+    expect(
+      screen.getByText(
+        /2 iniciados.*1 recuperados.*2 incidentes distintos|2 opened.*1 recovered.*2 distinct incidents/i,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText(/primeiros 100 monitores|first 100 monitors/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /synthetic service/i })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: /monitor 2/i }).length).toBeGreaterThan(0);
   },

@@ -4,6 +4,13 @@ description: 'Service form, seven check types, thresholds, incidents, uptime, ma
 
 # Services and monitoring
 
+On **Manage → Activity**, the monitoring changes summary groups events by monitor for the selected
+24-hour or 7-day period. Opened and recovered counts count events; the total counts distinct incidents
+with at least one event in the period. Counts use the complete retained period even if event details
+are truncated. At most 100 monitors and 100 individual events are shown, with separate truncation
+notices. An empty result does not establish complete incident history or a cause.
+Duration is not aggregated: incidents may be open or extend beyond the selected period.
+
 ## Review monitoring coverage
 
 On **Activity**, select **Review monitoring coverage** to assess the current configuration and

@@ -134,6 +134,11 @@ export const en = {
   'operationalSummary.opened': 'Incident opened',
   'operationalSummary.recovered': 'Incident recovered',
   'operationalSummary.monitor': 'Monitor {id}',
+  'operationalSummary.byMonitor': 'Changes by monitor',
+  'operationalSummary.counts':
+    '{opened} opened · {recovered} recovered · {total} distinct incidents',
+  'operationalSummary.monitorsTruncated': 'Only the first 100 monitors are shown.',
+  'operationalSummary.events': 'Event details',
   'operationalSummary.period': 'From {from} to {to}',
   'operationalSummary.source': 'Source: monitoring incidents',
   'operationalSummary.inspect': 'View incident for monitor {id}',
@@ -443,6 +448,11 @@ export const ptBR: Record<keyof typeof en, string> = {
   'operationalSummary.opened': 'Incidente iniciado',
   'operationalSummary.recovered': 'Incidente recuperado',
   'operationalSummary.monitor': 'Monitor {id}',
+  'operationalSummary.byMonitor': 'Mudanças por monitor',
+  'operationalSummary.counts':
+    '{opened} iniciados · {recovered} recuperados · {total} incidentes distintos',
+  'operationalSummary.monitorsTruncated': 'Apenas os primeiros 100 monitores são mostrados.',
+  'operationalSummary.events': 'Detalhes dos eventos',
   'operationalSummary.period': 'De {from} até {to}',
   'operationalSummary.source': 'Fonte: incidentes de monitoramento',
   'operationalSummary.inspect': 'Ver incidente do monitor {id}',
