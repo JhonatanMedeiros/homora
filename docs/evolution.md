@@ -2400,3 +2400,10 @@ This was one manual synthetic evaluation by the implementing agent; the reviewer
 The API session requirement is decided on the route the router matched instead of the received URL, which can be
 spelled differently. Validation: an API test that fails without the change, a one-off sweep of the registered `/api`
 routes without a session (only health and public status answer), and a request through the single-container image.
+
+### Recovery commands in the container image
+
+The guides run `scripts/auth-reset.mjs` and `scripts/css-reset.mjs` inside the container, but only the backup script was
+copied into the images. All three are now part of the backend stage, which the single-container image extends.
+Validation: a script test that fails when a documented command names a script the image does not copy, or one that needs
+more than Node; the documented commands run in a container built from the change.
