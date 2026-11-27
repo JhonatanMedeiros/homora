@@ -5,6 +5,7 @@ import { Button } from '@homora/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@homora/ui/empty';
 import { Field, FieldLabel } from '@homora/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@homora/ui/select';
+import { LoadErrorAlert } from '@/components/load-error-alert';
 import { RowListSkeleton } from '@/components/skeletons';
 import type { BrowseState } from '@/features/dashboard/use-browse-state';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
@@ -80,7 +81,9 @@ export function MaintenancePage({ data, browse, navigate }: Props) {
         </h1>
         <p className="max-w-prose text-sm text-muted-foreground">{t('maintview.description')}</p>
       </header>
-      {data.loaded && services.length === 0 ? (
+      {data.loadError ? (
+        <LoadErrorAlert message={data.loadError} onRetry={() => void data.refresh()} />
+      ) : data.loaded && services.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('maintview.noServices')}</p>
       ) : (
         <form

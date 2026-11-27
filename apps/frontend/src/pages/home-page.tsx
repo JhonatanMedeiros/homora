@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import type { Service } from '@homora/shared';
-import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
 import { PageWidgets } from '@/components/page-widgets';
 import { WidgetStatusFilterContext } from '@/components/widget-host';
@@ -24,6 +22,8 @@ import {
   SummaryCard,
   UpcomingMaintenance,
 } from '@/features/home/summary-cards';
+import { LoadErrorAlert } from '@/components/load-error-alert';
+import { useDetailsSelection } from '@/features/home/use-details-selection';
 import { useHomeArea } from '@/features/home/use-home-area';
 import { averageUptime, HealthFigures } from '@/features/uptime/health-figures';
 import { ProbableCauses } from '@/features/uptime/probable-causes';
@@ -53,14 +53,15 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
   );
   const mobile = useIsMobile();
   const wide = useMinWidth(1280) && !mobile && services.length > 0;
-  const [detailsId, setDetailsId] = useState<number | null>(null);
+  const selection = useDetailsSelection(wide);
   const { overview, clock } = sources;
-  const chosen = services.find((service) => service.id === detailsId) ?? null;
+  const selected = services.find((service) => service.id === selection.selectedId) ?? null;
+  const sheetService = services.find((service) => service.id === selection.sheetId) ?? null;
   const toServices = () => navigate('/services');
   const toProbes = () => navigate('/manage/probes');
   const openEntry = (id: number) => {
     if (health.probeIds.has(id)) toProbes();
-    else setDetailsId(id);
+    else selection.open(id);
   };
   const details = (service: Service) =>
     detailsFor(service, {
@@ -71,13 +72,13 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
       onRangeChange: setUptimeRange,
       onTogglePinned: (item) => void actions.togglePinned(item),
       onShowMap: () => {
-        setDetailsId(null);
+        selection.close();
         setArrange('map');
         toServices();
       },
       onAllowMonitoring: (item) => onEditService(item.id, 'access'),
     });
-  const panelService = chosen ?? defaultSelection(services, health.isDown);
+  const panelService = selected ?? defaultSelection(services, health.isDown, health.quietNow);
   const pinned = services
     .filter((service) => service.pinned)
     .sort((a, b) => (a.pinnedPosition ?? Infinity) - (b.pinnedPosition ?? Infinity));
@@ -93,21 +94,14 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
         health={health}
         impacts={model.impacts}
         range={uptimeRange}
-        onService={setDetailsId}
+        onService={selection.open}
         onProbes={toProbes}
         onConnections={() => navigate('/manage/integrations')}
         onAcknowledge={(members, minutes) => void actions.acknowledge(members, minutes)}
       />
       <StaleStatusAlert data={data} />
       {data.loadError && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {data.loadError}
-            <Button type="button" variant="link" onClick={() => void data.refresh()}>
-              {t('catalog.retry')}
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <LoadErrorAlert message={data.loadError} onRetry={() => void data.refresh()} />
       )}
       {!data.loaded && !data.loadError && <SectionSkeleton label={t('common.loading')} />}
       {empty && (
@@ -119,10 +113,10 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
             services={pinned}
             statuses={statuses}
             blockedIds={blockedIds}
-            onDetails={(service) => setDetailsId(service.id)}
+            onDetails={(service) => selection.open(service.id)}
           />
           {summary.measurement ? (
-            <SummaryCard title={t('summary.attention')}>
+            <SummaryCard title={t('homeview.attention')}>
               <div className="flex flex-col items-start gap-1 text-sm">
                 <p className="font-medium">{summary.title}</p>
                 <p className="text-muted-foreground">{summary.subtitle}</p>
@@ -152,26 +146,26 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
                 }
               />
               {summary.slow.length > 0 && (
-                <SummaryCard title={t('summary.attention.slow')}>
+                <SummaryCard title={t('homeview.attention.slow')}>
                   <SlowList lines={summary.slow} />
                 </SummaryCard>
               )}
             </>
           ) : (
-            <SummaryCard title={t('summary.attention')}>
+            <SummaryCard title={t('homeview.attention')}>
               {summary.slow.length === 0 ? (
                 <NothingToDo certain={!data.statusError && summary.unknown === 0} />
               ) : (
                 <>
                   <h3 className="text-xs font-medium text-muted-foreground">
-                    {t('summary.attention.slow')}
+                    {t('homeview.attention.slow')}
                   </h3>
                   <SlowList lines={summary.slow} />
                 </>
               )}
             </SummaryCard>
           )}
-          <section aria-label={t('summary.figures')}>
+          <section aria-label={t('homeview.figures')}>
             <HealthFigures
               average={averageUptime(entries, sources.uptime)}
               monitored={entries.length - summary.blocked}
@@ -219,16 +213,16 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
             showAdd={!mobile}
             pages={pages}
             groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
-            openMonitor={(id, hasService) => (hasService ? setDetailsId(id) : toProbes())}
+            openMonitor={(id, hasService) => (hasService ? selection.open(id) : toProbes())}
           />
         </WidgetStatusFilterContext.Provider>
       )}
       <ServiceDrawer
-        {...(chosen && !wide
-          ? details(chosen)
+        {...(sheetService
+          ? details(sheetService)
           : { blocked: false, range: uptimeRange, onRangeChange: setUptimeRange })}
-        service={wide ? null : chosen}
-        onClose={() => setDetailsId(null)}
+        service={sheetService}
+        onClose={selection.close}
       />
     </section>
   );

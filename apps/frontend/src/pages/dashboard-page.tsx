@@ -14,7 +14,8 @@ import { useCustomCss } from '@/hooks/use-custom-css';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
-import { navPath, type NavId, type Tab } from '@/components/app-nav';
+import { isHomeSection, navPath, type NavId, type Tab } from '@/components/app-nav';
+import { ShellHealth } from '@/features/home/shell-health';
 import { t } from '@/i18n';
 import { Button } from '@homora/ui/button';
 import { settingsPath } from '@/features/settings/sections';
@@ -172,6 +173,9 @@ export function DashboardPage({
           );
         }}
       />
+      {data.loaded && (!isHomeSection(tab) || detail !== null) && (
+        <ShellHealth data={data} navigate={navigate} />
+      )}
       <ShortcutsDialog
         open={helpOpen}
         onOpenChange={setHelpOpen}
@@ -206,7 +210,55 @@ export function DashboardPage({
         onShowDescriptionsChange={viewPrefs.setShowDescriptions}
       />
       {valid ? (
-        detail !== null ? (
+        detail === null ? (
+          tab === 'home' ? (
+            <HomePage
+              data={data}
+              browse={browse}
+              navigate={navigate}
+              onEditService={(id, formSection) =>
+                routerNavigate(`/manage/services/${id}/edit`, { state: { section: formSection } })
+              }
+            />
+          ) : tab === 'maintenance' ? (
+            <MaintenancePage data={data} browse={browse} navigate={navigate} />
+          ) : tab === 'services' ? (
+            <ServicesPage
+              data={data}
+              browse={browse}
+              focusRequest={focusRequest}
+              onFocusHandled={() => setFocusRequest(null)}
+              formRoute={form}
+              formSection={location.state?.section === 'access' ? 'access' : undefined}
+              navigate={navigate}
+              onAddService={addService}
+            />
+          ) : tab === 'integrations' ? (
+            section(<IntegrationsPage onImported={data.refresh} />)
+          ) : tab === 'probes' ? (
+            section(<ProbesPage />)
+          ) : tab === 'activity' ? (
+            section(<ActivityPage />)
+          ) : tab === 'account' ? (
+            section(
+              <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />,
+            )
+          ) : tab === 'settings' ? (
+            section(<SettingsPage onImported={data.refresh} />)
+          ) : (
+            section(
+              <Agents
+                services={data.services}
+                onApplied={data.refresh}
+                token={token}
+                setToken={setToken}
+                onSetupConnection={(draft) =>
+                  routerNavigate('/manage/integrations', { state: { connectionDraft: draft } })
+                }
+              />,
+            )
+          )
+        ) : (
           <ServiceDetailPage
             key={detail}
             id={detail}
@@ -216,52 +268,6 @@ export function DashboardPage({
             blockedIds={data.blockedIds}
             navigate={navigate}
           />
-        ) : tab === 'home' ? (
-          <HomePage
-            data={data}
-            browse={browse}
-            navigate={navigate}
-            onEditService={(id, formSection) =>
-              routerNavigate(`/manage/services/${id}/edit`, { state: { section: formSection } })
-            }
-          />
-        ) : tab === 'maintenance' ? (
-          <MaintenancePage data={data} browse={browse} navigate={navigate} />
-        ) : tab === 'services' ? (
-          <ServicesPage
-            data={data}
-            browse={browse}
-            focusRequest={focusRequest}
-            onFocusHandled={() => setFocusRequest(null)}
-            formRoute={form}
-            formSection={location.state?.section === 'access' ? 'access' : undefined}
-            navigate={navigate}
-            onAddService={addService}
-          />
-        ) : tab === 'integrations' ? (
-          section(<IntegrationsPage onImported={data.refresh} />)
-        ) : tab === 'probes' ? (
-          section(<ProbesPage />)
-        ) : tab === 'activity' ? (
-          section(<ActivityPage />)
-        ) : tab === 'account' ? (
-          section(
-            <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />,
-          )
-        ) : tab === 'settings' ? (
-          section(<SettingsPage onImported={data.refresh} />)
-        ) : (
-          section(
-            <Agents
-              services={data.services}
-              onApplied={data.refresh}
-              token={token}
-              setToken={setToken}
-              onSetupConnection={(draft) =>
-                routerNavigate('/manage/integrations', { state: { connectionDraft: draft } })
-              }
-            />,
-          )
         )
       ) : (
         <section>

@@ -45,7 +45,20 @@ export function detailsFor(
   };
 }
 
-/** What the panel shows before anything is chosen: a problem, else a favorite, else the first. */
-export function defaultSelection(services: Service[], isDown: (service: Service) => boolean) {
-  return services.find(isDown) ?? services.find((service) => service.pinned) ?? services[0] ?? null;
+/**
+ * What the panel shows before anything is chosen: a problem nobody acknowledged, else any problem,
+ * else a favorite, else the first.
+ */
+export function defaultSelection(
+  services: Service[],
+  isDown: (service: Service) => boolean,
+  isQuiet: (id: number) => boolean,
+) {
+  return (
+    services.find((service) => isDown(service) && !isQuiet(service.id)) ??
+    services.find(isDown) ??
+    services.find((service) => service.pinned) ??
+    services[0] ??
+    null
+  );
 }

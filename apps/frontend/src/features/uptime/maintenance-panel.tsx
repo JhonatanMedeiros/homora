@@ -5,6 +5,7 @@ import { CalendarClock } from 'lucide-react';
 import { Badge } from '@homora/ui/badge';
 import { Button } from '@homora/ui/button';
 import { Skeleton } from '@homora/ui/skeleton';
+import { cn } from '@homora/ui/lib/utils';
 import { apiError, formatDateTime, t } from '@/i18n';
 import { MaintenanceSummary } from './maintenance-summary';
 
@@ -59,13 +60,11 @@ export function MaintenanceList({
               {nameOf && <span className="min-w-0 font-medium">{nameOf(item.serviceId)}</span>}
               <Badge
                 variant="outline"
-                className={
-                  open
-                    ? 'border-info/50 bg-info/10 text-info'
-                    : finished
-                      ? 'text-muted-foreground'
-                      : undefined
-                }
+                className={cn(
+                  'shrink whitespace-normal',
+                  open && 'border-info/50 bg-info/10 text-info',
+                  finished && 'text-muted-foreground',
+                )}
               >
                 {open
                   ? t('maint.active', { time: formatDateTime(item.endsAt) })

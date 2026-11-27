@@ -1,7 +1,7 @@
 /** Service grouping, pages, and organization text. */
 export const en = {
   'options.label': 'Options',
-  'options.title': 'Home options',
+  'options.title': 'Service options',
   'options.description': 'Filter by status and choose how services are shown.',
   'options.active': '{count} filter active',
   'view.label': 'View',
@@ -144,7 +144,7 @@ export const en = {
 
 export const ptBR: Record<keyof typeof en, string> = {
   'options.label': 'Opções',
-  'options.title': 'Opções da Home',
+  'options.title': 'Opções dos serviços',
   'options.description': 'Filtre por estado e escolha como os serviços aparecem.',
   'options.active': '{count} filtro ativo',
   'view.label': 'Visualização',

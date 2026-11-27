@@ -38,7 +38,6 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: ['n'], label: 'shortcuts.newService', action: { type: 'newService' } },
   { keys: ['1–9'], label: 'shortcuts.pages' },
   { keys: ['Ctrl/⌘', 'K'], label: 'shortcuts.paletteToggle', modifier: true },
-  { keys: ['Ctrl/⌘', 'B'], label: 'shortcuts.sidebar', modifier: true },
 ];
 
 /** Chord shortcuts by their second key (all of them start with `g`). */

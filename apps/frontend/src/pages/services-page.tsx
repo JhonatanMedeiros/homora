@@ -16,6 +16,7 @@ import { HealthPill } from '@/features/home/health-pill';
 import { HomeSidebar } from '@/features/home/home-sidebar';
 import { ServicePanel } from '@/features/home/service-panel';
 import { defaultSelection, detailsFor } from '@/features/home/details-props';
+import { useDetailsSelection } from '@/features/home/use-details-selection';
 import { useBrowseState, type BrowseState } from '@/features/dashboard/use-browse-state';
 import { PinnedRow } from '@/features/dashboard/pinned-row';
 import { useMinWidth } from '@/hooks/use-min-width';
@@ -180,8 +181,6 @@ export function ServicesPage({
     deleteGroup,
   } = groupActions;
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const [detailsId, setDetailsId] = useState<number | null>(null);
-  const detailsService = services.find((item) => item.id === detailsId) ?? null;
   // Dense tiles are the Home default; management and organize mode always show rows.
   const compact = view === 'tiles' && !organizing;
   const pageModel = useServicePageModel({
@@ -216,6 +215,9 @@ export function ServicesPage({
   // The right column shows the selected service; Organize needs the width for its rows.
   const panelled = railed && !organizing;
   const widgetsInRail = panelled && widgetRail;
+  const details = useDetailsSelection(panelled);
+  const selectedService = services.find((item) => item.id === details.selectedId) ?? null;
+  const sheetService = services.find((item) => item.id === details.sheetId) ?? null;
   // 'Problems first' only reorders what is shown; it never changes the saved order of groups.
   const ordered =
     problemsFirst && !organizing
@@ -252,8 +254,9 @@ export function ServicesPage({
     browsing: !organizing && !hostView,
   });
   const { probeViews, countsWithProbes, probeIds, probeStatusItems } = health;
-  const panelService = detailsService ?? defaultSelection(services, isDown);
-  const details = (service: (typeof services)[number]) =>
+  const panelService =
+    selectedService ?? defaultSelection(services.filter(onPage), isDown, health.quietNow);
+  const detailsOf = (service: (typeof services)[number]) =>
     detailsFor(service, {
       data,
       sources,
@@ -262,11 +265,11 @@ export function ServicesPage({
       onRangeChange: setUptimeRange,
       onTogglePinned: (item) => void togglePinned(item),
       onShowMap: () => {
-        setDetailsId(null);
+        details.close();
         setArrange('map');
       },
       onAllowMonitoring: (item) => {
-        setDetailsId(null);
+        details.close();
         openForm(item, 'access');
       },
     });
@@ -372,7 +375,7 @@ export function ServicesPage({
         health={health}
         impacts={impacts}
         range={uptimeRange}
-        onService={setDetailsId}
+        onService={details.open}
         onProbes={() => navigate('/manage/probes')}
         onConnections={() => navigate('/manage/integrations')}
         onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
@@ -482,7 +485,10 @@ export function ServicesPage({
             blockedIds={blockedIds}
             onRefresh={() => hostData.connections.forEach((c) => void hostData.reload(c.id, true))}
             onListView={() => setArrange('host')}
-            onHome={() => setArrange('group')}
+            onHome={() => {
+              setArrange('group');
+              navigate('/');
+            }}
             onOpenCard={(service) => {
               setArrange('group');
               setLocalFocus({ id: service.id, nonce: Date.now() });
@@ -537,7 +543,7 @@ export function ServicesPage({
           services={pinnedServices}
           statuses={statuses}
           blockedIds={blockedIds}
-          onDetails={(service) => setDetailsId(service.id)}
+          onDetails={(service) => details.open(service.id)}
         />
       )}
       {!hostView && (
@@ -581,7 +587,7 @@ export function ServicesPage({
             onTag: setTagFilter,
             hostOf: (service) => hostLabel(service, hostData.connections, hostData.inventories),
             onEditService: openForm,
-            onDetails: (service) => setDetailsId(service.id),
+            onDetails: (service) => details.open(service.id),
             onRemoveService: (service) => void remove(service),
             onCancelRemoval: (id) => setConfirming((current) => (current === id ? null : current)),
             onResource: setResourceReview,
@@ -601,11 +607,11 @@ export function ServicesPage({
         />
       )}
       <ServiceDrawer
-        {...(detailsService && !panelled
-          ? details(detailsService)
+        {...(sheetService
+          ? detailsOf(sheetService)
           : { blocked: false, range: uptimeRange, onRangeChange: setUptimeRange })}
-        service={panelled ? null : detailsService}
-        onClose={() => setDetailsId(null)}
+        service={sheetService}
+        onClose={details.close}
       />
       <ServicePageOverlays
         services={services}
@@ -678,7 +684,7 @@ export function ServicesPage({
             pages={pages}
             groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
             openMonitor={(id, hasService) =>
-              hasService ? setDetailsId(id) : navigate('/manage/probes')
+              hasService ? details.open(id) : navigate('/manage/probes')
             }
           />
         </WidgetStatusFilterContext.Provider>
@@ -709,8 +715,8 @@ export function ServicesPage({
         <div className="flex min-w-0 flex-col gap-4">
           <ServicePanel
             windows={health.summary.windows}
-            details={panelService ? details(panelService) : null}
-            onSelect={(id) => (probeIds.has(id) ? navigate('/manage/probes') : setDetailsId(id))}
+            details={panelService ? detailsOf(panelService) : null}
+            onSelect={(id) => (probeIds.has(id) ? navigate('/manage/probes') : details.open(id))}
             onReviewProposals={() => navigate('/manage/agents')}
           />
           {widgetsInRail && (
@@ -726,7 +732,7 @@ export function ServicesPage({
                     pageId: group.pageId ?? null,
                   }))}
                   openMonitor={(id, hasService) =>
-                    hasService ? setDetailsId(id) : navigate('/manage/probes')
+                    hasService ? details.open(id) : navigate('/manage/probes')
                   }
                 />
               </WidgetStatusFilterContext.Provider>

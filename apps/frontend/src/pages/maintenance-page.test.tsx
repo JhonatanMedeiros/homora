@@ -127,3 +127,19 @@ it('asks for a service first when there is none', () => {
   expect(screen.getByText('Add a service before scheduling maintenance.')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Schedule maintenance' })).toBeNull();
 });
+
+it('says the services could not be read and offers to try again', async () => {
+  stubApi(() => new Response(JSON.stringify({ windows: [] })));
+  const refresh = vi.fn();
+  show({
+    ...data,
+    services: [],
+    loaded: false,
+    loadError: 'Could not load services.',
+    refresh,
+  } as unknown as Data);
+  expect(await screen.findByText('Could not load services.')).toBeTruthy();
+  expect(screen.queryByRole('combobox')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(refresh).toHaveBeenCalled();
+});

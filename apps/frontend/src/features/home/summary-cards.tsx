@@ -51,10 +51,10 @@ export function NothingToDo({ certain }: { certain: boolean }) {
       />
       <span className="flex flex-col">
         <span className="font-medium">
-          {t(certain ? 'summary.attention.none' : 'summary.attention.uncertain')}
+          {t(certain ? 'homeview.attention.none' : 'homeview.attention.uncertain')}
         </span>
         {certain && (
-          <span className="text-muted-foreground">{t('summary.attention.noneHint')}</span>
+          <span className="text-muted-foreground">{t('homeview.attention.noneHint')}</span>
         )}
       </span>
     </p>
@@ -123,7 +123,7 @@ export function StateStrip({
 }) {
   return (
     <ul
-      aria-label={t('summary.states')}
+      aria-label={t('homeview.states')}
       data-homora="state-strip"
       className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2 p-0"
     >
@@ -132,7 +132,7 @@ export function StateStrip({
           <button
             type="button"
             onClick={() => onSelect(filter)}
-            aria-label={t('summary.states.show', {
+            aria-label={t('homeview.states.show', {
               state: t(`filter.status.${filter}`),
               count: counts[filter],
             })}
@@ -151,7 +151,7 @@ export function StateStrip({
                   aria-hidden="true"
                   className={cn('size-1.5 shrink-0 rounded-full', FILTER_DOT[filter])}
                 />
-                <span className="truncate">{t(`filter.status.${filter}`)}</span>
+                <span className="leading-tight">{t(`filter.status.${filter}`)}</span>
               </span>
             </span>
           </button>
@@ -164,15 +164,17 @@ export function StateStrip({
 export function AvailabilityCard({ sla }: { sla?: StatusOverview['sla'] }) {
   return (
     <SummaryCard
-      title={t('summary.availability')}
-      description={sla ? t('summary.availability.hint', { target: pct(sla.targetPct) }) : undefined}
+      title={t('homeview.availability')}
+      description={
+        sla ? t('homeview.availability.hint', { target: pct(sla.targetPct) }) : undefined
+      }
     >
       {sla ? (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <ErrorBudget sla={sla} />
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{t('summary.availability.unavailable')}</p>
+        <p className="text-sm text-muted-foreground">{t('homeview.availability.unavailable')}</p>
       )}
     </SummaryCard>
   );
@@ -211,11 +213,11 @@ export function LatencyCard({
   const scale = Math.max(1, ...rows.map((row) => Math.max(row.latency, row.limit ?? 0)));
   return (
     <SummaryCard
-      title={t('summary.latency')}
-      description={rows.length > 0 ? t('summary.latency.hint') : undefined}
+      title={t('homeview.latency')}
+      description={rows.length > 0 ? t('homeview.latency.hint') : undefined}
     >
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('summary.latency.none')}</p>
+        <p className="text-sm text-muted-foreground">{t('homeview.latency.none')}</p>
       ) : (
         <ul className="m-0 flex list-none flex-col p-0">
           {rows.map((row) => {
@@ -227,8 +229,8 @@ export function LatencyCard({
                   onClick={() => onSelect(row.id)}
                   aria-label={
                     row.limit === null
-                      ? t('summary.latency.row', { name: row.name, latency: row.latency })
-                      : t('summary.latency.limit', {
+                      ? t('homeview.latency.row', { name: row.name, latency: row.latency })
+                      : t('homeview.latency.limit', {
                           name: row.name,
                           latency: row.latency,
                           limit: row.limit,
@@ -287,15 +289,21 @@ export function UpcomingMaintenance({
   const ahead = windows.filter((item) => item.endsAt > now).slice(0, WINDOWS_SHOWN);
   return (
     <SummaryCard
-      title={t('summary.maintenance')}
+      title={t('homeview.maintenance')}
       action={
-        <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={onAll}>
-          {t('summary.maintenance.all')}
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="h-auto p-0 pointer-coarse:min-h-11"
+          onClick={onAll}
+        >
+          {t('homeview.maintenance.all')}
         </Button>
       }
     >
       {ahead.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('summary.maintenance.none')}</p>
+        <p className="text-sm text-muted-foreground">{t('homeview.maintenance.none')}</p>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {ahead.map((item) => (
@@ -304,7 +312,10 @@ export function UpcomingMaintenance({
               <span className="font-medium">{nameOf(item.serviceId)}</span>
               <Badge
                 variant="outline"
-                className={cn(item.startsAt <= now && 'border-info/50 bg-info/10 text-info')}
+                className={cn(
+                  'shrink whitespace-normal',
+                  item.startsAt <= now && 'border-info/50 bg-info/10 text-info',
+                )}
               >
                 {item.startsAt <= now
                   ? t('maint.active', { time: formatDateTime(item.endsAt) })
