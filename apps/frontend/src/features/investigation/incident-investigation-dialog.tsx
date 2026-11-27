@@ -44,6 +44,8 @@ function gapText(key: string): string {
       return t('investigation.gapChecksTruncated');
     case 'related-incidents-truncated':
       return t('investigation.gapRelatedTruncated');
+    case 'hypotheses-truncated':
+      return t('investigation.gapHypothesesTruncated');
     case 'invalid-checks':
     case 'invalid-related-incidents':
       return t('investigation.gapInvalid');
@@ -169,6 +171,14 @@ export function IncidentInvestigationDialog({
                   {hypotheses.map((item) => (
                     <li key={item.id} className="text-sm">
                       {t('investigation.temporalHypothesis')}{' '}
+                      {typeof item.attributes.overlapCount === 'number' &&
+                        item.attributes.overlapCount > 1 && (
+                          <span>
+                            {t('investigation.overlapCount', {
+                              count: item.attributes.overlapCount,
+                            })}{' '}
+                          </span>
+                        )}
                       <span>
                         {t('investigation.evidence')}{' '}
                         {item.evidenceIds.map((id, index) => (

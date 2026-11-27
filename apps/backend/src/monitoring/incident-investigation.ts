@@ -11,6 +11,7 @@ const DAY = 86_400_000;
 const LOOKBACK = 30 * DAY;
 const CHECK_LIMIT = 100;
 const RELATED_LIMIT = 20;
+const HYPOTHESIS_LIMIT = 5;
 const id = z.number().int().positive().safe();
 const time = z.number().int().nonnegative().safe();
 const incidentRow = z
@@ -169,6 +170,17 @@ export function investigateIncident(db: DatabaseSync, incidentId: number, now = 
   if (invalidChecks) missing.push('invalid-checks');
   if (rawRelated.length > RELATED_LIMIT) missing.push('related-incidents-truncated');
   if (invalidRelated) missing.push('invalid-related-incidents');
+  // Only group incidents with exactly the same related monitor and recorded window.
+  const groups = new Map<string, EvidenceFact[]>();
+  for (const fact of facts.filter((item) => item.attributes.event === 'overlap')) {
+    const key = JSON.stringify([fact.subject.id, fact.observedAt, fact.attributes.endedAt]);
+    const group = groups.get(key) ?? [];
+    group.push(fact);
+    groups.set(key, group);
+  }
+  // Most recent windows first, with a stable id tie-break inherited from the sorted facts.
+  const overlapGroups = [...groups.values()].reverse();
+  if (overlapGroups.length > HYPOTHESIS_LIMIT) missing.push('hypotheses-truncated');
   const unknown: EvidenceUnknown = {
     id: `gap:incident:${incident.id}`,
     version: 1,
@@ -184,9 +196,9 @@ export function investigateIncident(db: DatabaseSync, incidentId: number, now = 
     missing,
     attributes: {},
   };
-  const hypotheses: EvidenceHypothesis[] = facts
-    .filter((fact) => fact.attributes.event === 'overlap')
-    .map((fact) => ({
+  const hypotheses: EvidenceHypothesis[] = overlapGroups.slice(0, HYPOTHESIS_LIMIT).map((group) => {
+    const fact = group[0]!;
+    return {
       id: `hypothesis:${incident.id}:${fact.id}`,
       version: 1,
       kind: 'hypothesis',
@@ -198,9 +210,14 @@ export function investigateIncident(db: DatabaseSync, incidentId: number, now = 
       confidence: 'inferred',
       summary: 'The incidents may be related; temporal overlap does not establish causation.',
       link: null,
-      evidenceIds: [`incident:${incident.id}:opened`, fact.id],
-      attributes: {},
-    }));
+      evidenceIds: [`incident:${incident.id}:opened`, ...group.map((item) => item.id)],
+      attributes: {
+        relatedIncidentId: Number(fact.id.split(':')[1]),
+        relatedMonitorId: Number(fact.subject.id),
+        overlapCount: group.length,
+      },
+    };
+  });
   const evidence: EvidenceBundle = {
     version: 1,
     evaluatedAt,
@@ -212,7 +229,10 @@ export function investigateIncident(db: DatabaseSync, incidentId: number, now = 
     hasService: Boolean(incident.hasService),
     from: from <= to ? new Date(from).toISOString() : null,
     to: from <= to ? new Date(to).toISOString() : null,
-    truncated: rawChecks.length > CHECK_LIMIT || rawRelated.length > RELATED_LIMIT,
+    truncated:
+      rawChecks.length > CHECK_LIMIT ||
+      rawRelated.length > RELATED_LIMIT ||
+      overlapGroups.length > HYPOTHESIS_LIMIT,
     evidence,
   };
 }

@@ -180,6 +180,9 @@ export const en = {
   'investigation.gapRetention': 'Some requested check history is outside retention.',
   'investigation.gapChecksTruncated': 'Only the 100 most recent checks are shown.',
   'investigation.gapRelatedTruncated': 'Only 20 overlapping incidents are shown.',
+  'investigation.gapHypothesesTruncated':
+    'Only five overlap hypotheses are shown; the available overlap facts remain listed above.',
+  'investigation.overlapCount': '{count} incidents share this monitor and window.',
   'investigation.gapInvalid': 'Some stored records could not be read.',
   'investigation.gapCoverage': 'Complete check history cannot be guaranteed.',
   'investigation.next': 'Suggested next steps',
@@ -488,6 +491,9 @@ export const ptBR: Record<keyof typeof en, string> = {
   'investigation.gapRetention': 'Parte do histórico solicitado está fora da retenção.',
   'investigation.gapChecksTruncated': 'Somente as 100 checagens mais recentes são mostradas.',
   'investigation.gapRelatedTruncated': 'Somente 20 incidentes simultâneos são mostrados.',
+  'investigation.gapHypothesesTruncated':
+    'Somente cinco hipóteses de sobreposição são mostradas; os fatos disponíveis permanecem listados acima.',
+  'investigation.overlapCount': '{count} incidentes compartilham este monitor e esta janela.',
   'investigation.gapInvalid': 'Alguns registros armazenados não puderam ser lidos.',
   'investigation.gapCoverage': 'A cobertura completa do histórico não pode ser garantida.',
   'investigation.next': 'Próximos passos sugeridos',

@@ -63,6 +63,7 @@ it('shows cited facts, a qualified hypothesis, missing data and proposed next st
                 confidence: 'inferred',
                 summary: 'hypothesis',
                 evidenceIds: ['incident:1:opened', 'incident:2:overlap'],
+                attributes: { relatedIncidentId: 2, relatedMonitorId: 2, overlapCount: 2 },
               },
               {
                 ...base,
@@ -73,7 +74,7 @@ it('shows cited facts, a qualified hypothesis, missing data and proposed next st
                 freshness: 'unknown',
                 confidence: 'unknown',
                 summary: 'gap',
-                missing: ['root-cause', 'complete-history'],
+                missing: ['root-cause', 'complete-history', 'hypotheses-truncated'],
               },
             ],
           },
@@ -85,6 +86,10 @@ it('shows cited facts, a qualified hypothesis, missing data and proposed next st
   render(<IncidentInvestigationDialog incidentId={1} onClose={() => {}} />);
   const dialog = await screen.findByRole('dialog');
   expect(await within(dialog).findByText(/coincidência de horários|timing alone/i)).toBeTruthy();
+  expect(within(dialog).getByText(/2 incidentes compartilham|2 incidents share/i)).toBeTruthy();
+  expect(
+    within(dialog).getByText(/somente cinco hipóteses|only five overlap hypotheses/i),
+  ).toBeTruthy();
   expect(within(dialog).getByRole('link', { name: 'incident:1:opened' }).getAttribute('href')).toBe(
     '#evidence-incident:1:opened',
   );
