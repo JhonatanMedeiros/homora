@@ -115,3 +115,24 @@ test('the OIDC reset also works on a minimal legacy database', async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('combined reset modes are refused instead of previewing one and doing another', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'homora-oidc-flags-'));
+  const path = join(dir, 'homora.sqlite');
+  try {
+    await linkedAccount(path);
+    for (const extra of [[], ['--yes']]) {
+      const result = run(path, '--two-factor-only', '--oidc-only', ...extra);
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /only one of/);
+    }
+    const check = new DatabaseSync(path, { readOnly: true });
+    try {
+      assert.equal(check.prepare('SELECT COUNT(*) AS n FROM account').get().n, 2);
+    } finally {
+      check.close();
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

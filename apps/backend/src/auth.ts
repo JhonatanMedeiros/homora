@@ -132,6 +132,9 @@ export function createAuth({
                 scopes: ['openid', 'email', 'profile'],
                 pkce: true,
                 requireIdTokenVerification: true,
+                // No userinfo requests: without them a token response lacking an ID token cannot
+                // sign in on unverified userinfo claims. The ID token must carry `sub` and `email`.
+                userInfoUrl: '',
                 // Only a linked identity opens the account; the provider can never create one.
                 disableSignUp: true,
                 disableImplicitSignUp: true,
@@ -256,7 +259,14 @@ export function createAuth({
       },
       account: {
         // Homora never needs the provider's tokens: they are dropped before they are stored.
-        create: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
+        create: {
+          before: async (account) => {
+            // One identity at a time: two link attempts started together must not both land.
+            // (The gateway runs callbacks one after another, so this check cannot be raced.)
+            if (account.providerId.startsWith('oidc-') && oidcLinks().length > 0) return false;
+            return { data: withoutProviderTokens(account) };
+          },
+        },
         update: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
       },
       user: {
@@ -269,6 +279,15 @@ export function createAuth({
       },
     },
   });
+
+  /** The linked OIDC identities; they outlive the configuration that created them. */
+  function oidcLinks() {
+    return sqlite
+      .prepare(
+        "SELECT id, providerId, userId, createdAt FROM account WHERE providerId LIKE 'oidc-%'",
+      )
+      .all() as { id: string; providerId: string; userId: string; createdAt: string }[];
+  }
 
   // Guesses of the current password by someone holding a session are throttled per account.
   const passwordLimiter = createRateLimitStorage();
@@ -442,21 +461,46 @@ export function createAuth({
                   disableRedirect: true,
                 },
               });
+        // ID tokens are verified against the issuer discovery reports: it must be the configured
+        // one, or the configuration points somewhere other than the operator wrote.
+        const { socialProviders } = await instance.$context;
+        const discovered = socialProviders.find(({ id }) => id === provider)?.issuer;
+        if (discovered !== oidc.issuer)
+          throw new Error(
+            `The discovery document reports the issuer "${discovered}", not HOMORA_OIDC_ISSUER.`,
+          );
         return { url: result.response.url, cookies: result.headers.getSetCookie() };
       },
-      /** The linked identities of the account: their provider ids and when they were linked. */
-      links() {
-        return sqlite
-          .prepare(
-            "SELECT id, providerId, userId, createdAt FROM account WHERE providerId LIKE 'oidc-%'",
-          )
-          .all() as { id: string; providerId: string; userId: string; createdAt: string }[];
+      /**
+       * The ID token algorithms the provider advertises, when none of them can be verified: Homora
+       * checks signatures against the provider's published keys, so HMAC (`HS*`, signed with the
+       * client secret) never passes. Null when sign-in can work or discovery has not succeeded.
+       * Read from what the plugin already discovered; no request of its own.
+       */
+      async unverifiableAlgorithms(): Promise<string[] | null> {
+        const { socialProviders } = await instance.$context;
+        const provider = socialProviders.find(({ id }) => id === oidcProviderId(oidc.issuer));
+        const idToken = provider?.idToken;
+        const algorithms = (idToken && 'algorithms' in idToken && idToken.algorithms) || [];
+        return algorithms.length > 0 && algorithms.every((name) => name.startsWith('HS'))
+          ? [...algorithms]
+          : null;
       },
-      async unlink(headers: IncomingHttpHeaders, accountId: string) {
-        await instance.api.unlinkAccount({
-          headers: fromNodeHeaders(headers),
-          body: { accountId },
-        });
+    },
+    /**
+     * The identity links, available even after OIDC was switched off, so that a link can always be
+     * removed (otherwise restoring the configuration would reactivate it).
+     */
+    oidcLinks: {
+      list: oidcLinks,
+      /** Removes every linked identity and forgets unfinished attempts, which could relink. */
+      async removeAll(headers: IncomingHttpHeaders) {
+        for (const { id } of oidcLinks())
+          await instance.api.unlinkAccount({
+            headers: fromNodeHeaders(headers),
+            body: { accountId: id },
+          });
+        sqlite.exec("DELETE FROM verification WHERE value LIKE '%codeVerifier%'");
       },
     },
     /** Server-side sign-in returning a `Cookie` header value (tests and restore checks). */

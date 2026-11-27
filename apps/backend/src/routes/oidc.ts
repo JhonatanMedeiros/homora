@@ -66,6 +66,22 @@ export function registerOidcRoutes(
       ipAddress: request.ip,
     });
 
+  // A provider that signs only with HMAC fails every callback with a generic message, so the
+  // log says why, once.
+  let signingWarned = false;
+  const checkSigning = async () => {
+    const algorithms = await oidc?.unverifiableAlgorithms();
+    if (!algorithms || signingWarned) return;
+    signingWarned = true;
+    app.log.warn(
+      { algorithms },
+      'OIDC sign-in will fail: the provider only signs ID tokens with the client secret. Configure a signing key at the provider (in Authentik, the “Signing Key” of the OAuth2/OpenID provider), then restart Homora.',
+    );
+  };
+  // Not awaited: startup never waits for the provider.
+  const warnAboutSigning = () => void checkSigning().catch(() => {});
+  app.addHook('onReady', async () => warnAboutSigning());
+
   const guardStart = (request: FastifyRequest, reply: FastifyReply) => {
     if (!oidc || !config) return reply.code(404).send(errorBody('oidc-not-configured'));
     // Cookies of the attempt are set for the host the provider returns to.
@@ -76,6 +92,8 @@ export function registerOidcRoutes(
   const start = async (request: FastifyRequest, reply: FastifyReply, mode: 'login' | 'link') => {
     try {
       const { url, cookies } = await oidc!.start(request.headers, mode);
+      // Discovery may only have succeeded now, after a provider that was down at startup.
+      warnAboutSigning();
       reply.header(
         'set-cookie',
         cookies.map((cookie) => `${cookie}${secure}`),
@@ -102,7 +120,7 @@ export function registerOidcRoutes(
     if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
     const session = await auth.session(request.headers);
     if (!session) return reply.code(401).send(errorBody('auth-required'));
-    if (oidc!.links().some((link) => link.userId === session.userId))
+    if (auth.oidcLinks.list().some((link) => link.userId === session.userId))
       return reply.code(409).send(errorBody('oidc-already-linked'));
     try {
       await auth.confirmPassword(request.headers, parsed.data.password);
@@ -125,6 +143,14 @@ export function registerOidcRoutes(
     return start(request, reply, 'link');
   });
 
+  // One callback at a time, so that two returning link attempts cannot both be accepted.
+  let callbacks: Promise<unknown> = Promise.resolve();
+  const inTurn = <T>(work: () => Promise<T>) => {
+    const run = callbacks.then(work);
+    callbacks = run.catch(() => {});
+    return run;
+  };
+
   if (oidc) {
     // The provider's redirect: a cross-site GET with the attempt's `state` cookie.
     app.get(oidcCallbackPath(oidc.providerId), async (request, reply) => {
@@ -134,8 +160,10 @@ export function registerOidcRoutes(
       headers.delete('content-length');
       headers.delete('transfer-encoding');
       headers.set(CLIENT_IP_HEADER, request.ip);
-      const response = await auth.handler(
-        new Request(new URL(request.url, config!.redirectOrigin), { method: 'GET', headers }),
+      const response = await inTurn(() =>
+        auth.handler(
+          new Request(new URL(request.url, config!.redirectOrigin), { method: 'GET', headers }),
+        ),
       );
       const setCookies = response.headers.getSetCookie();
       const sessionCookie = setCookies.find(
@@ -146,7 +174,11 @@ export function registerOidcRoutes(
       if (raw) {
         try {
           const target = new URL(raw, config!.redirectOrigin);
-          if (target.origin === config!.redirectOrigin) {
+          // Anything else is the library's own error page, which the gateway does not serve.
+          if (
+            target.origin === config!.redirectOrigin &&
+            ['/', '/login', '/account'].includes(target.pathname)
+          ) {
             // Only whether the provider refused, never its text, goes back to the page.
             const denied = target.searchParams.get('error') === 'access_denied';
             location = target.searchParams.has('error')
@@ -171,7 +203,7 @@ export function registerOidcRoutes(
             ipAddress: request.ip,
           });
       } else if (linking) {
-        const link = oidc.links().find((row) => row.providerId === oidc.providerId);
+        const link = auth.oidcLinks.list().find((row) => row.providerId === oidc.providerId);
         if (link || failed)
           audit.record({
             actor: link ? `user:${link.userId}` : ANONYMOUS_ACTOR,
@@ -191,7 +223,8 @@ export function registerOidcRoutes(
 
   app.get('/api/account/oidc', async (request) => {
     const session = await auth.session(request.headers);
-    const link = session ? oidc?.links().find((row) => row.userId === session.userId) : undefined;
+    const links = auth.oidcLinks.list().filter((row) => row.userId === session?.userId);
+    const link = links.find((row) => row.providerId === oidc?.providerId) ?? links[0];
     return {
       enabled: config !== undefined,
       name: config?.name ?? null,
@@ -209,7 +242,7 @@ export function registerOidcRoutes(
     const session = await auth.session(request.headers);
     if (!session) return reply.code(401).send(errorBody('auth-required'));
     const actor = `user:${session.userId}`;
-    const link = oidc?.links().find((row) => row.userId === session.userId);
+    const linked = auth.oidcLinks.list().some((row) => row.userId === session.userId);
     try {
       await auth.confirmPassword(request.headers, parsed.data.password);
     } catch (error) {
@@ -223,9 +256,9 @@ export function registerOidcRoutes(
         return reply.code(401).send(errorBody('auth-required'));
       throw error;
     }
-    if (!oidc || !link) return reply.code(404).send(errorBody('not-found'));
+    if (!linked) return reply.code(404).send(errorBody('not-found'));
     try {
-      await oidc.unlink(request.headers, link.id);
+      await auth.oidcLinks.removeAll(request.headers);
     } catch (error) {
       if ((error as { body?: { code?: string } }).body?.code === 'SESSION_NOT_FRESH')
         return reply.code(400).send(errorBody('session-not-fresh'));

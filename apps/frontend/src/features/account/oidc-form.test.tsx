@@ -16,7 +16,7 @@ afterEach(() => {
 const notLinked: OidcAccount = {
   enabled: true,
   name: 'Authentik',
-  redirectUri: 'https://homora.example.home/api/auth/oidc/callback',
+  redirectUri: 'https://homora.example.home/api/auth/callback/oidc-0123456789abcdef',
   identity: null,
 };
 const identity = { createdAt: '2026-11-13T12:00:00.000Z', current: true };

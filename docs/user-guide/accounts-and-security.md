@@ -82,8 +82,8 @@ Optional and off until you configure it. Homora supports **one** OpenID Connect 
 (Authentik, Keycloak, Authelia, Zitadel and similar). Your password keeps working, so a provider outage never locks
 you out.
 
-1. At the provider, create a confidential client with the **authorization code** flow and register the redirect URL
-   shown in **Account** (`<your Homora address>/api/auth/oidc/callback`). Homora asks only for the `openid` scope.
+1. At the provider, create a confidential client with the **authorization code** flow. Homora asks for the
+   `openid email profile` scopes. If the provider wants a redirect URL right away, enter any and correct it in step 3.
 2. Set the variables (in `.env`, or the environment of the container) and restart Homora:
 
    | Variable                                              | Meaning                                                                                                                                                |
@@ -92,12 +92,12 @@ you out.
    | `HOMORA_OIDC_CLIENT_ID` / `HOMORA_OIDC_CLIENT_SECRET` | The client you created. The secret stays in the environment: it is not stored in the database or backups and is never shown.                           |
    | `HOMORA_OIDC_NAME`                                    | Label of the sign-in button (default `OpenID Connect`).                                                                                                |
    | `HOMORA_OIDC_REDIRECT_ORIGIN`                         | The address you open Homora at (default: the first HTTPS origin in `HOMORA_ALLOWED_ORIGINS`, else `http://localhost:<port>`). Start from that address. |
-   | `HOMORA_OIDC_ALLOW_PRIVATE_NETWORK`                   | `true` when the provider is on a private network (192.168.x.x, 10.x.x.x…). Off by default.                                                             |
-   | `HOMORA_OIDC_CA_FILE`                                 | PEM file of the private certificate authority that signed the provider's certificate.                                                                  |
 
-3. In **Account → Sign-in provider**, confirm your password and choose **Continue**. Sign in at the provider; the
-   identity you used is linked. Only that exact identity (issuer and subject) can sign in: an e-mail address, a name
-   or a new account at the provider is never enough, and Homora never creates accounts.
+3. Open **Account → Sign-in provider**, copy the redirect URL shown there
+   (`<your Homora address>/api/auth/callback/oidc-<id>`) and register it at the provider. The id comes from the
+   issuer, so it changes if the issuer does. Then confirm your password and choose **Continue**. Sign in at the
+   provider; the identity you used is linked. Only that exact identity (issuer and subject) can sign in: an e-mail
+   address, a name or a new account at the provider is never enough, and Homora never creates accounts.
 4. The sign-in page now offers **Sign in with …**. A provider sign-in is a browser session of eight hours;
    **Keep me signed in** does not apply to it.
 
@@ -108,19 +108,30 @@ Things to know:
 - **Sign out is local.** Homora does not sign you out of the provider.
 - Removing the link asks for the password and signs out your other devices.
 - Homora talks to the provider through Better Auth's own HTTP client: its address is the issuer you configured, over
-  HTTPS. A provider on a private network works without extra settings; for a private certificate authority, start
-  Homora with `NODE_EXTRA_CA_CERTS=/path/to/ca.pem`. These requests do not use the restricted monitoring transport
+  HTTPS. A provider on a private network works without extra settings; for a private certificate authority, set
+  `NODE_EXTRA_CA_CERTS` to its PEM file (see below for Compose). These requests do not use the restricted monitoring transport
   (see [ADR 0032](../decisions/0032-oidc-sign-in.md)).
-- Your provider must release the `email` claim (Homora asks for `openid email profile`); the e-mail is never used to
-  decide who may sign in.
+- The **ID token** must include the `email` claim: Homora does not call the provider's userinfo endpoint. The e-mail
+  is never used to decide who may sign in. Providers that leave it out by default (some Authelia versions) need to be
+  told to include it.
 - The provider must sign ID tokens with a key it publishes (for example RS256); tokens signed with the client secret
   (HS256) are refused. In **Authentik**, choose a **Signing Key** in the OAuth2/OpenID provider: without one it uses
-  HS256 and linking fails.
+  HS256 and linking fails. Homora warns about this in its log.
 - If the provider is down or misconfigured, sign in with the password. Homora says the provider is unreachable when it
   could not read the provider's configuration since it started; if it had already read it, the button still leads to
   the provider and your browser shows that address's own error page (go back to Homora).
 - Changing `HOMORA_OIDC_ISSUER` makes the existing link stop working (Account says so); remove it and link again.
-  Removing the variables turns the feature off.
+  Removing the variables turns the feature off; the link stays, unused, and Account still lets you remove it.
+
+With Compose, mount the private certificate authority in a `compose.override.yml` and set
+`NODE_EXTRA_CA_CERTS=/certs/ca.pem` in `.env`:
+
+```yaml
+services:
+  backend:
+    volumes:
+      - ./ca.pem:/certs/ca.pem:ro
+```
 
 **Cannot reach the provider, or want to detach it?** Sign in with the password and remove the link in Account. If you
 cannot sign in, run `pnpm auth:reset --oidc-only`, then add `--yes`, on the server (with Compose:

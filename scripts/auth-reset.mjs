@@ -16,6 +16,11 @@ const confirmed = args.includes('--yes');
 const twoFactorOnly = args.includes('--two-factor-only');
 const passkeysOnly = args.includes('--passkeys-only');
 const oidcOnly = args.includes('--oidc-only');
+if ([twoFactorOnly, passkeysOnly, oidcOnly].filter(Boolean).length > 1) {
+  // The preview and the removal would otherwise describe different things.
+  console.error('Use only one of --two-factor-only, --passkeys-only and --oidc-only.');
+  process.exit(1);
+}
 const target = resolve(
   args.find((arg) => !arg.startsWith('--')) ??
     process.env.HOMORA_DATABASE_PATH ??

@@ -1,6 +1,6 @@
 import { PasswordInput } from '@/components/password-input';
 import { KeyRound, LogIn } from 'lucide-react';
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { AuthStatus, Credentials } from '@/hooks/use-auth';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -63,6 +63,17 @@ export function AuthPage({
   const passkey = status?.configured ? passkeyAvailability(status.passkey?.origins) : null;
   const oidc =
     status?.configured && status.oidc?.enabled && status.oidc.linked ? status.oidc : null;
+
+  // Going Back from the provider may restore this page as it was left, still busy.
+  useEffect(() => {
+    const restored = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      pending.current = false;
+      setBusy(false);
+    };
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
 
   async function startPasskey() {
     if (pending.current || !onPasskey) return;

@@ -72,6 +72,16 @@ code and options were read in the installed package. Homora only configures it a
   “unavailable” message and the library retries on the next attempt. Once discovery succeeded, the library keeps it:
   with the provider down, the browser is still sent there and shows that address's own error. Password and passkey
   sign-in are never affected.
+- **ID token only.** The plugin's userinfo request is disabled (`userInfoUrl` empty): the library would otherwise
+  accept a token response without an ID token and take the subject from userinfo, without verifying signature,
+  audience, expiry or nonce. So the ID token must carry `sub` and `email`.
+- **Issuer check.** An attempt starts only if the discovered `issuer` equals `HOMORA_OIDC_ISSUER`. The scheme of the
+  discovered token and key endpoints is **not** checked: the operator trusts the provider's discovery document.
+- **One identity, always removable.** A second identity is refused when the account row is created (callbacks run one
+  at a time), removal deletes every `oidc-*` row and unfinished attempts, and it works with OIDC switched off.
+- **Signing keys.** ID tokens are verified against the provider's published keys, so a provider that signs only with
+  the client secret (`HS*`, Authentik's default without a signing key) cannot work. When discovery advertises nothing
+  else, Homora logs a warning that says so; it does not refuse to start.
 - **Limits and audit.** Starting and the callback are limited per client address like the password sign-in (ten per
   15 minutes). The activity log records `login` (detail “OIDC · client”), failed logins like a failed password (address
   and count only), `oidc-link` and `oidc-unlink`; no token, claim, subject or secret is logged.
@@ -107,6 +117,7 @@ strict cookies and the eight-hour lifetime, a `Lax` state cookie only, every tok
 nonce, unpublished key), forged, replayed, cookie-less and tampered callbacks, an unknown subject and a matching
 verified e-mail refused with no account or link created, no stored tokens or secrets in responses and audit,
 unavailable provider and recovery, unlinking and session revocation, provider change, forwarded headers ignored,
-closed Better Auth routes, rate limits, `Secure` behind HTTPS, the reset script and configuration parsing. A browser
-pass is recorded in [evolution](../evolution.md). **Not verified:** a real provider (Authentik, Keycloak, …) and an
-HTTPS reverse proxy with a real certificate.
+closed Better Auth routes, rate limits, `Secure` behind HTTPS, the reset script and configuration parsing. Browser passes are recorded in [evolution](../evolution.md),
+including real Keycloak 26.4 and Authentik 2026.8.7 behind a local HTTPS proxy with a private certificate authority.
+**Not verified:** other providers (Authelia, Zitadel, …), a reverse proxy with a publicly trusted certificate on a
+real network, and other browsers.
