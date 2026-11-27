@@ -68,8 +68,10 @@ code and options were read in the installed package. Homora only configures it a
 - **Provider change or removal.** Changing the issuer leaves the old link dormant (another provider id): it no
   longer matches, the login button disappears and Account offers to remove it. Removing the `HOMORA_OIDC_*` variables
   turns the feature off; the row stays, harmless, until removed in Account or by `pnpm auth:reset --oidc-only --yes`.
-- **Unavailability.** A provider that is down or misconfigured gives a generic “unavailable” message (discovery that
-  failed at startup is retried by the library on the next attempt); password and passkey sign-in are never affected.
+- **Unavailability.** While discovery has not succeeded since startup, starting an attempt gives a generic
+  “unavailable” message and the library retries on the next attempt. Once discovery succeeded, the library keeps it:
+  with the provider down, the browser is still sent there and shows that address's own error. Password and passkey
+  sign-in are never affected.
 - **Limits and audit.** Starting and the callback are limited per client address like the password sign-in (ten per
   15 minutes). The activity log records `login` (detail “OIDC · client”), failed logins like a failed password (address
   and count only), `oidc-link` and `oidc-unlink`; no token, claim, subject or secret is logged.

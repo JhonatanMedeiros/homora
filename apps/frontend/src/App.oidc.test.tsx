@@ -26,9 +26,10 @@ afterEach(() => {
 type Options = {
   oidc?: object;
   login?: () => Response;
+  signedIn?: boolean;
 };
-function stub({ oidc, login }: Options = {}) {
-  const authenticated = false;
+function stub({ oidc, login, signedIn = false }: Options = {}) {
+  let authenticated = signedIn;
   const fetchMock = vi.fn(async (url: string) => {
     if (url === '/api/auth/status')
       return new Response(
@@ -43,6 +44,10 @@ function stub({ oidc, login }: Options = {}) {
       return (
         login?.() ?? new Response(JSON.stringify({ url: 'https://idp.example.test/authorize?x=1' }))
       );
+    if (url === '/api/auth/sign-out') {
+      authenticated = false;
+      return new Response('{}');
+    }
     return new Response('[]');
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -62,19 +67,21 @@ it('offers the provider only when it is configured and an identity is linked', a
   expect(screen.queryByRole('button', { name: /Sign in with Authentik/ })).toBeNull();
 });
 
-it('sends the browser to the provider with the “keep me signed in” choice', async () => {
-  const fetchMock = stub({ oidc: linked });
+it('sends the browser to the provider', async () => {
+  stub({ oidc: linked });
   render(<App />);
-  fireEvent.click(await screen.findByRole('checkbox', { name: 'Keep me signed in' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Sign in with Authentik' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Sign in with Authentik' }));
   await vi.waitFor(() =>
     expect(assign).toHaveBeenCalledWith('https://idp.example.test/authorize?x=1'),
   );
-  const call = fetchMock.mock.calls.find(([url]) => url === '/api/auth/oidc/login') as unknown as [
-    string,
-    { body: string },
-  ];
-  expect(JSON.parse(call[1].body)).toEqual({ rememberMe: true });
+});
+
+it('still offers the provider right after signing out, without a reload', async () => {
+  stub({ oidc: linked, signedIn: true });
+  render(<App />);
+  fireEvent.pointerDown(await screen.findByRole('button', { name: /Account menu/ }), { button: 0 });
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Sign out' }));
+  expect(await screen.findByRole('button', { name: 'Sign in with Authentik' })).toBeTruthy();
 });
 
 it('keeps the password form and shows the reason when the provider cannot be reached', async () => {

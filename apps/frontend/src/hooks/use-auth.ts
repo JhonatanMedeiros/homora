@@ -189,9 +189,9 @@ export function useAuth() {
   }
 
   /** Sends the browser to the OIDC provider; the sign-in completes when it redirects back. */
-  async function submitOidc(rememberMe: boolean) {
+  async function submitOidc() {
     setError('');
-    const result = await signInWithOidc(rememberMe);
+    const result = await signInWithOidc();
     if (oidcFailed(result)) {
       setError(result.error);
       return false;
@@ -210,7 +210,10 @@ export function useAuth() {
     try {
       const response = await fetch('/api/auth/sign-out', { method: 'POST' });
       if (!response.ok) throw new Error();
-      setStatus({ configured: true, authenticated: false });
+      // Keep what the sign-in page offers (passkeys, provider), then refresh it: the link may
+      // have changed while signed in.
+      setStatus((value) => ({ ...value, configured: true, authenticated: false }));
+      setAttempt((value) => value + 1);
     } catch {
       toast.error(t('auth.logoutFailed'));
     }

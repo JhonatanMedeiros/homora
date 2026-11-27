@@ -113,7 +113,9 @@ Things to know:
   (see [ADR 0032](../decisions/0032-oidc-sign-in.md)).
 - Your provider must release the `email` claim (Homora asks for `openid email profile`); the e-mail is never used to
   decide who may sign in.
-- If the provider is down or misconfigured, Homora says so and you sign in with the password.
+- If the provider is down or misconfigured, sign in with the password. Homora says the provider is unreachable when it
+  could not read the provider's configuration since it started; if it had already read it, the button still leads to
+  the provider and your browser shows that address's own error page (go back to Homora).
 - Changing `HOMORA_OIDC_ISSUER` makes the existing link stop working (Account says so); remove it and link again.
   Removing the variables turns the feature off.
 
