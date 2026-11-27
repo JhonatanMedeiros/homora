@@ -1,6 +1,5 @@
 import {
   FileDown,
-  House,
   LayoutGrid,
   LayoutList,
   Moon,
@@ -13,7 +12,7 @@ import {
 } from 'lucide-react';
 import { CommandGroup, CommandItem, CommandSeparator, CommandShortcut } from '@homora/ui/command';
 import { Kbd } from '@homora/ui/kbd';
-import { navItems, tabPath } from '@/components/app-nav';
+import { navItems, navPath } from '@/components/app-nav';
 import { chordFor } from '@/lib/shortcuts';
 import { settingsPath } from '@/features/settings/sections';
 import { t } from '@/i18n';
@@ -22,7 +21,6 @@ type Props = {
   state: {
     showCommands: boolean;
     shortcutsEnabled: boolean;
-    managing: boolean;
     view: 'tiles' | 'list' | 'cards';
     showDescriptions: boolean;
     searchUrl: string | null;
@@ -36,7 +34,7 @@ type Props = {
     run: (action: () => void) => void;
     onNavigate: (path: string) => void;
     onAddService: () => void;
-    onManageChange: (managing: boolean) => void;
+    onShowMap: () => void;
     onViewChange: (view: 'tiles' | 'list' | 'cards') => void;
     onShowDescriptionsChange: (show: boolean) => void;
     onToggleTheme: () => void;
@@ -59,7 +57,6 @@ export function CommandPaletteCommands({ state, actions }: Props) {
   const {
     showCommands,
     shortcutsEnabled,
-    managing,
     view,
     showDescriptions,
     searchUrl,
@@ -72,7 +69,7 @@ export function CommandPaletteCommands({ state, actions }: Props) {
     run,
     onNavigate,
     onAddService,
-    onManageChange,
+    onShowMap,
     onViewChange,
     onShowDescriptionsChange,
     onToggleTheme,
@@ -84,19 +81,19 @@ export function CommandPaletteCommands({ state, actions }: Props) {
         <>
           <CommandSeparator />
           <CommandGroup heading={t('palette.navigate')}>
-            {navItems
-              .filter((item) => item.id !== 'services')
-              .map((item) => (
-                <CommandItem
-                  key={item.id}
-                  value={t(item.label)}
-                  onSelect={() => run(() => onNavigate(tabPath(item.id)))}
-                >
-                  <item.icon />
-                  {t(item.label)}
-                  {shortcutsEnabled && <ShortcutHint keys={chordFor(item.id)} />}
-                </CommandItem>
-              ))}
+            {navItems.map((item) => (
+              <CommandItem
+                key={item.id}
+                value={t(item.label)}
+                onSelect={() =>
+                  run(() => (item.id === 'map' ? onShowMap() : onNavigate(navPath(item.id))))
+                }
+              >
+                <item.icon />
+                {t(item.label)}
+                {shortcutsEnabled && item.id !== 'map' && <ShortcutHint keys={chordFor(item.id)} />}
+              </CommandItem>
+            ))}
             <CommandItem
               value={t('palette.importExport')}
               onSelect={() => run(() => onNavigate(settingsPath('backup')))}
@@ -106,7 +103,7 @@ export function CommandPaletteCommands({ state, actions }: Props) {
             </CommandItem>
             <CommandItem
               value={t('nav.account')}
-              onSelect={() => run(() => onNavigate(tabPath('account')))}
+              onSelect={() => run(() => onNavigate(navPath('account')))}
             >
               <Settings2 />
               {t('nav.account')}
@@ -116,10 +113,6 @@ export function CommandPaletteCommands({ state, actions }: Props) {
             <CommandItem onSelect={() => run(onAddService)}>
               <Plus />
               {t('page.add')}
-            </CommandItem>
-            <CommandItem onSelect={() => run(() => onManageChange(!managing))}>
-              {managing ? <House /> : <Settings2 />}
-              {managing ? t('palette.home') : t('palette.manage')}
             </CommandItem>
             <CommandItem onSelect={() => run(() => onViewChange('tiles'))}>
               <Rows3 />

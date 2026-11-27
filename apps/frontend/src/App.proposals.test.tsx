@@ -44,10 +44,8 @@ it('shows pending proposals in clear language and approves with a single click',
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  fireEvent.keyDown(screen.getByRole('button', { name: /Menu da conta de/ }), { key: 'Enter' });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+    within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', {
       name: /^Agentes/,
     }),
   );
@@ -66,6 +64,7 @@ it('shows pending proposals in clear language and approves with a single click',
 });
 
 it('does not treat unauthorized private network as service down', async () => {
+  window.history.replaceState(null, '', '/services');
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -100,6 +99,7 @@ it('does not treat unauthorized private network as service down', async () => {
 });
 
 it('shows before and after of an update proposal', async () => {
+  window.history.replaceState(null, '', '/services');
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -147,10 +147,8 @@ it('shows before and after of an update proposal', async () => {
   );
   render(<App />);
   await screen.findByRole('link', { name: /Jellyfin/ });
-  fireEvent.keyDown(screen.getByRole('button', { name: /Menu da conta de/ }), { key: 'Enter' });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+    within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', {
       name: /^Agentes/,
     }),
   );

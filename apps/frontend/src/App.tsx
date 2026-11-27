@@ -22,7 +22,9 @@ import { DashboardPage } from '@/pages/dashboard-page';
 
 const validPaths = [
   '/',
+  '/services',
   '/services/:id',
+  '/maintenance',
   '/manage',
   '/manage/services/new',
   '/manage/services/:id/edit',
@@ -47,6 +49,19 @@ function validDestination(path: string) {
   );
 }
 
+/** The paths that are a section by themselves; settings subpages and service pages are matched apart. */
+const sections: [string, Tab][] = [
+  ['/', 'home'],
+  ['/services', 'services'],
+  ['/maintenance', 'maintenance'],
+  ['/manage/probes', 'probes'],
+  ['/manage/integrations', 'integrations'],
+  ['/manage/agents', 'agents'],
+  ['/manage/activity', 'activity'],
+  ['/account', 'account'],
+  ['/manage/settings', 'settings'],
+];
+
 function DashboardForRoute({
   onLogout,
   token,
@@ -57,9 +72,9 @@ function DashboardForRoute({
   setToken: (token: string) => void;
 }) {
   const { pathname } = useLocation();
-  // Services and groups are managed on the Home (Organize); the old list is gone.
+  // Services and groups are managed on the Services view (Organize); the old list is gone.
   if (matchPath('/manage', pathname)) return <Navigate replace to="/manage/integrations" />;
-  if (matchPath('/manage/services', pathname)) return <Navigate replace to="/" />;
+  if (matchPath('/manage/services', pathname)) return <Navigate replace to="/services" />;
   // The account used to be a management tab; keep old links working.
   if (matchPath('/manage/account', pathname)) return <Navigate replace to="/account" />;
   // Settings pages that moved: Docker discovery now lives under Integrations; alerts are one page.
@@ -69,44 +84,34 @@ function DashboardForRoute({
     matchPath('/manage/settings/:old', pathname)?.params.old?.match(/^(notifications|monitoring)$/)
   )
     return <Navigate replace to={settingsPath('alerts')} />;
-  const home = Boolean(matchPath('/', pathname));
   const isNew = Boolean(matchPath('/manage/services/new', pathname));
   const id = matchPath('/manage/services/:id/edit', pathname)?.params.id;
   const number = Number(id);
   const isEdit = Boolean(id && /^[1-9]\d*$/.test(id) && Number.isSafeInteger(number));
-  const tab: Tab = matchPath('/manage/integrations', pathname)
-    ? 'integrations'
-    : matchPath('/manage/probes', pathname)
-      ? 'probes'
-      : matchPath('/manage/agents', pathname)
-        ? 'agents'
-        : matchPath('/manage/activity', pathname)
-          ? 'activity'
-          : matchPath('/account', pathname)
-            ? 'account'
-            : matchPath({ path: '/manage/settings', end: false }, pathname)
-              ? 'settings'
-              : 'services';
-  const settingsSection = matchPath('/manage/settings/:section', pathname)?.params.section;
-  const unknownSettings =
-    Boolean(matchPath('/manage/settings/*', pathname)) &&
-    !matchPath('/manage/settings', pathname) &&
-    !isSettingsSection(settingsSection);
+  const section = sections.find(([path]) => matchPath(path, pathname))?.[1];
   const detailId = matchPath('/services/:id', pathname)?.params.id;
   const detail =
     detailId && /^[1-9]\d*$/.test(detailId) && Number.isSafeInteger(Number(detailId))
       ? Number(detailId)
       : null;
+  const settingsSection = matchPath('/manage/settings/:section', pathname)?.params.section;
+  const unknownSettings =
+    Boolean(matchPath('/manage/settings/*', pathname)) &&
+    !matchPath('/manage/settings', pathname) &&
+    !isSettingsSection(settingsSection);
+  const tab: Tab = section ?? (matchPath('/manage/settings/*', pathname) ? 'settings' : 'services');
   const valid =
-    home || detail !== null || isNew || isEdit || (tab !== 'services' && !unknownSettings);
-  const account = tab === 'account';
+    detail !== null ||
+    isNew ||
+    isEdit ||
+    (section !== undefined && !unknownSettings) ||
+    (tab === 'settings' && !unknownSettings);
   return (
     <DashboardPage
       token={token}
       setToken={setToken}
       onLogout={onLogout}
       tab={tab}
-      managing={valid && !home && !account && detail === null && tab !== 'services'}
       valid={valid}
       form={isNew ? 'new' : isEdit ? number : null}
       detail={detail}

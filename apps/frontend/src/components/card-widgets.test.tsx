@@ -1,8 +1,13 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from '../App';
 import { widgetStats } from '@/features/connections/connection-model';
+
+// The cards live in the Services view.
+beforeEach(() => {
+  window.history.replaceState(null, '', '/services');
+});
 
 afterEach(() => {
   cleanup();

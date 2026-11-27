@@ -1,7 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { AlertsBell } from '@/components/alerts-bell';
-import { requestProblemsView } from '@/features/dashboard/home-intent';
-import { useNavigate } from 'react-router';
+import { useBrowseState } from '@/features/dashboard/use-browse-state';
+import { useLocation, useNavigate } from 'react-router';
 import { AppShell } from '@/components/app-shell';
 import { PageTabs } from '@/components/page-tabs';
 import { CommandPalette } from '@/components/command-palette';
@@ -14,12 +14,14 @@ import { useCustomCss } from '@/hooks/use-custom-css';
 import { useProfile } from '@/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
-import { tabPath, type Tab } from '@/components/app-nav';
+import { navPath, type NavId, type Tab } from '@/components/app-nav';
 import { t } from '@/i18n';
 import { Button } from '@homora/ui/button';
 import { settingsPath } from '@/features/settings/sections';
 import { useServices } from '@/hooks/use-services';
 import { ServicesPage, type FocusRequest } from '@/pages/services-page';
+import { HomePage } from '@/pages/home-page';
+import { MaintenancePage } from '@/pages/maintenance-page';
 import { ServiceDetailPage } from '@/pages/service-detail-page';
 import { SectionSkeleton } from '@/components/skeletons';
 
@@ -42,18 +44,9 @@ const IntegrationsPage = lazy(() =>
   import('@/pages/integrations-page').then((module) => ({ default: module.IntegrationsPage })),
 );
 
-type DashboardRoute = {
-  tab: Tab;
-  managing: boolean;
-  form: 'new' | number | null;
-  valid: boolean;
-  detail: number | null;
-};
-
 export function DashboardPage({
   onLogout,
   tab,
-  managing,
   form = null,
   valid = true,
   detail = null,
@@ -64,15 +57,15 @@ export function DashboardPage({
   token: string;
   setToken: (token: string) => void;
   tab: Tab;
-  managing: boolean;
   form?: 'new' | number | null;
   valid?: boolean;
   detail?: number | null;
 }) {
   const routerNavigate = useNavigate();
+  const location = useLocation();
   const navigate = (path: string, replace = false) => routerNavigate(path, { replace });
-  const route: DashboardRoute = { tab, managing, form, valid, detail };
   const data = useServices();
+  const browse = useBrowseState(data.activePageId);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const { toggleTheme } = useTheme();
@@ -83,52 +76,74 @@ export function DashboardPage({
   // Adds the custom stylesheet unless this tab is in safe mode (?safe=1).
   useCustomCss();
 
+  const mapView = tab === 'services' && detail === null && viewPrefs.arrange === 'map';
+  const active: NavId = mapView ? 'map' : tab;
+  /** The pages apply to the Summary and to the Services view. */
+  const paged = valid && detail === null && (tab === 'home' || tab === 'services');
+
+  const go = (id: NavId) => {
+    // The map is an arrangement of Services: choosing it, or leaving it, changes that preference.
+    if (id === 'map') viewPrefs.setArrange('map');
+    else if (id === 'services' && viewPrefs.arrange === 'map') viewPrefs.setArrange('group');
+    navigate(navPath(id));
+  };
+  const addService = () => navigate('/manage/services/new');
+
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutsEnabled] = useShortcutsPreference();
   useShortcuts({
     enabled: shortcutsEnabled,
-    // The services pages (home and manage list); the form is a dialog and blocks the keys itself.
-    canCreateService: tab === 'services' && route.valid,
+    // Where services are shown; the form is a dialog and blocks the keys itself.
+    canCreateService: valid && (tab === 'home' || tab === 'services'),
     onTogglePalette: () => setPaletteOpen((open) => !open),
     onOpenPalette: () => setPaletteOpen(true),
     onOpenHelp: () => setHelpOpen(true),
-    onGo: (target) => navigate(target === 'services' ? '/' : tabPath(target)),
-    onNewService: () => navigate('/manage/services/new'),
+    onGo: go,
+    onNewService: addService,
     onShowProblems: () => {
-      requestProblemsView();
-      navigate('/');
+      browse.setStatusFilter('down');
+      if (viewPrefs.arrange !== 'group') viewPrefs.setArrange('group');
+      navigate('/services');
     },
-    // Pages are the tabs of the dashboard only: not in manage mode, not on other sections.
     onGoPage: (index) => {
       const page = data.pages[index];
-      if (tab !== 'services' || managing || !page) return false;
+      if (!paged || !page) return false;
       data.selectPage(page.id);
       return true;
     },
   });
 
+  const section = (page: ReactNode) => (
+    <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>{page}</Suspense>
+  );
+
   return (
     <AppShell
       tab={tab}
-      managing={managing}
-      onManageChange={(value) => {
-        navigate(value ? tabPath('integrations') : '/');
-      }}
-      onTabChange={(next) => {
-        navigate(next === 'services' ? '/' : tabPath(next));
-      }}
+      active={active}
+      detail={detail !== null}
+      title={
+        !valid || detail !== null
+          ? undefined
+          : tab === 'home'
+            ? t('home.title')
+            : tab === 'services'
+              ? t('nav.services')
+              : undefined
+      }
+      onNavigate={go}
+      onNewService={addService}
       onLogout={onLogout}
       onOpenPalette={() => setPaletteOpen(true)}
       profile={profile}
       pagesNav={
-        data.pages.length > 0 ? (
+        paged && data.pages.length > 0 ? (
           <PageTabs
             pages={data.pages}
             activeId={data.activePageId}
             onSelect={(id) => {
               data.selectPage(id);
               if (viewPrefs.arrange !== 'group') viewPrefs.setArrange('group');
-              if (tab !== 'services' || detail !== null || managing) navigate('/');
             }}
             counts={(pageId) => {
               const onThis = data.services.filter((s) => data.pageIdOf(s.category) === pageId);
@@ -144,7 +159,7 @@ export function DashboardPage({
       alerts={
         <AlertsBell
           onService={(id, probe) => routerNavigate(probe ? '/manage/probes' : `/services/${id}`)}
-          onProposals={() => navigate(tabPath('agents'))}
+          onProposals={() => go('agents')}
         />
       }
     >
@@ -169,13 +184,8 @@ export function DashboardPage({
         services={data.services}
         statuses={data.statuses}
         blockedIds={data.blockedIds}
-        managing={managing}
-        onManageChange={(value) => {
-          navigate(value ? tabPath('integrations') : '/');
-        }}
-        onAddService={() => {
-          navigate('/manage/services/new');
-        }}
+        onShowMap={() => go('map')}
+        onAddService={addService}
         onToggleTheme={toggleTheme}
         onNavigate={navigate}
         pageName={(service) =>
@@ -184,8 +194,9 @@ export function DashboardPage({
             : undefined
         }
         onGoToCard={(service) => {
-          // The card only exists on the dashboard.
-          if (managing || tab !== 'services') navigate('/');
+          // The card only exists in the Services view, arranged by group.
+          if (viewPrefs.arrange !== 'group') viewPrefs.setArrange('group');
+          if (tab !== 'services' || detail !== null) navigate('/services');
           data.selectPage(data.pageIdOf(service.category));
           setFocusRequest((previous) => ({ id: service.id, nonce: (previous?.nonce ?? 0) + 1 }));
         }}
@@ -194,9 +205,8 @@ export function DashboardPage({
         showDescriptions={viewPrefs.showDescriptions}
         onShowDescriptionsChange={viewPrefs.setShowDescriptions}
       />
-      {route.valid ? (
-        tab === 'services' &&
-        (detail !== null ? (
+      {valid ? (
+        detail !== null ? (
           <ServiceDetailPage
             key={detail}
             id={detail}
@@ -206,18 +216,53 @@ export function DashboardPage({
             blockedIds={data.blockedIds}
             navigate={navigate}
           />
-        ) : (
+        ) : tab === 'home' ? (
+          <HomePage
+            data={data}
+            browse={browse}
+            navigate={navigate}
+            onEditService={(id, formSection) =>
+              routerNavigate(`/manage/services/${id}/edit`, { state: { section: formSection } })
+            }
+          />
+        ) : tab === 'maintenance' ? (
+          <MaintenancePage data={data} browse={browse} navigate={navigate} />
+        ) : tab === 'services' ? (
           <ServicesPage
             data={data}
+            browse={browse}
             focusRequest={focusRequest}
             onFocusHandled={() => setFocusRequest(null)}
-            formRoute={route.form}
+            formRoute={form}
+            formSection={location.state?.section === 'access' ? 'access' : undefined}
             navigate={navigate}
-            onAddService={() => {
-              navigate('/manage/services/new');
-            }}
+            onAddService={addService}
           />
-        ))
+        ) : tab === 'integrations' ? (
+          section(<IntegrationsPage onImported={data.refresh} />)
+        ) : tab === 'probes' ? (
+          section(<ProbesPage />)
+        ) : tab === 'activity' ? (
+          section(<ActivityPage />)
+        ) : tab === 'account' ? (
+          section(
+            <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />,
+          )
+        ) : tab === 'settings' ? (
+          section(<SettingsPage onImported={data.refresh} />)
+        ) : (
+          section(
+            <Agents
+              services={data.services}
+              onApplied={data.refresh}
+              token={token}
+              setToken={setToken}
+              onSetupConnection={(draft) =>
+                routerNavigate('/manage/integrations', { state: { connectionDraft: draft } })
+              }
+            />,
+          )
+        )
       ) : (
         <section>
           <h1 className="text-3xl">{t('route.notFound')}</h1>
@@ -225,44 +270,6 @@ export function DashboardPage({
             {t('route.home')}
           </Button>
         </section>
-      )}
-      {managing && tab === 'integrations' && (
-        <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
-          <IntegrationsPage onImported={data.refresh} />
-        </Suspense>
-      )}
-      {managing && tab === 'probes' && (
-        <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
-          <ProbesPage />
-        </Suspense>
-      )}
-      {managing && tab === 'activity' && (
-        <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
-          <ActivityPage />
-        </Suspense>
-      )}
-      {tab === 'account' && (
-        <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
-          <AccountPage profile={profile} failed={profileFailed} onProfileChange={setProfile} />
-        </Suspense>
-      )}
-      {managing && tab === 'settings' && (
-        <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
-          <SettingsPage onImported={data.refresh} />
-        </Suspense>
-      )}
-      {managing && tab === 'agents' && (
-        <Suspense fallback={<SectionSkeleton label={t('common.loading')} />}>
-          <Agents
-            services={data.services}
-            onApplied={data.refresh}
-            token={token}
-            setToken={setToken}
-            onSetupConnection={(draft) =>
-              routerNavigate('/manage/integrations', { state: { connectionDraft: draft } })
-            }
-          />
-        </Suspense>
       )}
     </AppShell>
   );

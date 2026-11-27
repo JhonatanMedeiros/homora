@@ -1,8 +1,13 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { toast } from 'sonner';
 import { App } from './App';
+
+// The cards live in the Services view.
+beforeEach(() => {
+  window.history.replaceState(null, '', '/services');
+});
 
 afterEach(() => {
   cleanup();
@@ -404,9 +409,8 @@ it('undoes a move to another group, restoring group and order', async () => {
   window.history.replaceState(null, '', '/');
 });
 
-it('offers Organize on a Home with no services, to add the first service or group', async () => {
+it('offers Organize on an empty Services view, to add the first service or group', async () => {
   localStorage.clear();
-  window.history.replaceState(null, '', '/');
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -416,8 +420,7 @@ it('offers Organize on a Home with no services, to add the first service or grou
     }),
   );
   render(<App />);
-  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Organizar' }));
   expect(screen.getByRole('button', { name: 'Novo grupo' })).toBeTruthy();
   expect(screen.getAllByRole('button', { name: /Adicionar serviço/ }).length).toBeGreaterThan(0);
   expect(screen.getByRole('button', { name: 'Concluir' })).toBeTruthy();

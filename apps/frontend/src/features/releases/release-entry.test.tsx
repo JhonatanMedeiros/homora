@@ -24,6 +24,7 @@ vi.mock('./use-release-feed', () => ({
     retry: () => {},
   }),
 }));
+vi.mock('@/hooks/use-pending-proposals', () => ({ usePendingProposals: () => 0 }));
 afterEach(() => {
   cleanup();
   feedState.demo = false;
@@ -33,9 +34,9 @@ it('announces an available update and opens its notes from the profile menu', ()
   render(
     <AppShell
       tab="services"
-      managing={false}
-      onManageChange={() => {}}
-      onTabChange={() => {}}
+      active="services"
+      onNavigate={() => {}}
+      onNewService={() => {}}
       onLogout={() => {}}
       onOpenPalette={() => {}}
       profile={{ name: 'Alex', email: 'alex@example.test', twoFactorEnabled: false }}
@@ -57,9 +58,9 @@ it('never advertises example versions as available updates', () => {
   render(
     <AppShell
       tab="services"
-      managing={false}
-      onManageChange={() => {}}
-      onTabChange={() => {}}
+      active="services"
+      onNavigate={() => {}}
+      onNewService={() => {}}
       onLogout={() => {}}
       onOpenPalette={() => {}}
       profile={{ name: 'Alex', email: 'alex@example.test', twoFactorEnabled: false }}

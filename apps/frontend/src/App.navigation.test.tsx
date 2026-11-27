@@ -13,75 +13,91 @@ afterEach(() => {
 });
 
 function stubSignedIn() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      if (url === '/api/account')
-        return { ok: true, json: async () => ({ name: 'Maria', email: 'maria@example.com' }) };
-      if (url === '/api/account/sessions') return { ok: true, json: async () => [] };
-      return { ok: true, json: async () => [] };
-    }),
-  );
-}
-
-it('opens service management directly and returns to dashboard', async () => {
   const fetchMock = vi.fn(async (url: string) => {
     if (url === '/api/auth/status')
       return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
+    if (url === '/api/account')
+      return { ok: true, json: async () => ({ name: 'Maria', email: 'maria@example.com' }) };
+    if (url === '/api/account/sessions') return { ok: true, json: async () => [] };
     return { ok: true, json: async () => [] };
   });
   vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+function rail() {
+  return screen.getByRole('navigation', { name: 'Navegação principal' });
+}
+const current = () =>
+  within(rail())
+    .getAllByRole('button')
+    .filter((button) => button.getAttribute('aria-current') === 'page')
+    .map((button) => button.getAttribute('aria-label'));
+
+it('moves between sections from the rail without reloading the services', async () => {
+  const fetchMock = stubSignedIn();
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  const serviceRequests = fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
-  fireEvent.keyDown(screen.getByRole('button', { name: /Menu da conta de/ }), { key: 'Enter' });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
+  const requests = () => fetchMock.mock.calls.filter(([url]) => url === '/api/services').length;
+  const before = requests();
+  expect(current()).toEqual(['Início']);
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Integrações' }));
   expect(window.location.pathname).toBe('/manage/integrations');
-  const navigation = screen.getByRole('navigation', { name: 'Gerenciamento' });
-  // Services and groups are managed on the Home (Organize), so they are not a section here.
-  expect(within(navigation).queryByRole('button', { name: 'Serviços' })).toBeNull();
-  expect(
-    within(navigation).getByRole('button', { name: 'Integrações' }).getAttribute('aria-current'),
-  ).toBe('page');
-  expect(within(navigation).getByRole('button', { name: 'Agentes' })).toBeTruthy();
-  fireEvent.click(within(navigation).getByRole('button', { name: 'Agentes' }));
+  expect(current()).toEqual(['Integrações']);
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Agentes' }));
   expect(window.location.pathname).toBe('/manage/agents');
-  fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Serviços' }));
+  expect(window.location.pathname).toBe('/services');
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Início' }));
+  expect(window.location.pathname).toBe('/');
   expect(screen.getByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
-  expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
-  expect(fetchMock.mock.calls.filter(([url]) => url === '/api/services')).toHaveLength(
-    serviceRequests,
+  expect(requests()).toBe(before);
+});
+
+it('opens the map as an arrangement of Services, and leaves it from Services', async () => {
+  localStorage.clear();
+  stubSignedIn();
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Mapa' }));
+  expect(window.location.pathname).toBe('/services');
+  expect(current()).toEqual(['Mapa']);
+  expect(localStorage.getItem('homora-arrange')).toBe('map');
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Serviços' }));
+  expect(current()).toEqual(['Serviços']);
+  expect(localStorage.getItem('homora-arrange')).not.toBe('map');
+  localStorage.clear();
+});
+
+it('switches between Summary, Services and Maintenance from the Home tabs', async () => {
+  stubSignedIn();
+  render(<App />);
+  const tabs = await screen.findByRole('navigation', { name: 'Seções do início' });
+  fireEvent.click(within(tabs).getByRole('link', { name: 'Manutenção' }));
+  expect(window.location.pathname).toBe('/maintenance');
+  expect(await screen.findByRole('heading', { name: 'Manutenção' })).toBeTruthy();
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Seções do início' })).getByRole('link', {
+      name: 'Resumo',
+    }),
   );
+  expect(window.location.pathname).toBe('/');
 });
 
 it('opens a management route directly and responds to browser history', async () => {
   window.history.replaceState(null, '', '/manage/integrations');
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      if (url === '/api/auth/status')
-        return { ok: true, json: async () => ({ configured: true, authenticated: true }) };
-      return { ok: true, json: async () => [] };
-    }),
-  );
+  stubSignedIn();
   render(<App />);
   expect(await screen.findByRole('heading', { name: 'Integrações' })).toBeTruthy();
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Agentes',
-    }),
-  );
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Agentes' }));
   expect(window.location.pathname).toBe('/manage/agents');
   window.history.replaceState(null, '', '/');
   fireEvent.popState(window);
   expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
-  // The old services list sends people to the Home.
+  // The old services list sends people to the Services view.
   window.history.replaceState(null, '', '/manage/services');
   fireEvent.popState(window);
-  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
-  await waitFor(() => expect(window.location.pathname).toBe('/'));
+  await waitFor(() => expect(window.location.pathname).toBe('/services'));
 });
 
 it('displays error for unknown pages and missing service', async () => {
@@ -104,6 +120,7 @@ it('displays error for unknown pages and missing service', async () => {
 
 it('shows compact tiles by default and opens the command palette with Ctrl K', async () => {
   localStorage.clear();
+  window.history.replaceState(null, '', '/services');
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
@@ -143,7 +160,7 @@ it('shows compact tiles by default and opens the command palette with Ctrl K', a
 it('opens the palette from the header button and goes to a card inside a collapsed group', async () => {
   localStorage.clear();
   localStorage.setItem('homora-collapsed-groups', JSON.stringify(['Infra']));
-  window.history.replaceState(null, '', '/');
+  window.history.replaceState(null, '', '/services');
   Element.prototype.scrollIntoView = vi.fn();
   vi.stubGlobal(
     'fetch',
@@ -182,19 +199,7 @@ it('opens the palette from the header button and goes to a card inside a collaps
   localStorage.clear();
 });
 
-it('reaches Manage from the user menu, which is how phones open it', async () => {
-  stubSignedIn();
-  window.history.replaceState(null, '', '/');
-  render(<App />);
-  await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  fireEvent.keyDown(await screen.findByRole('button', { name: /Menu da conta de/ }), {
-    key: 'Enter',
-  });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
-  await waitFor(() => expect(window.location.pathname).toBe('/manage/integrations'));
-});
-
-it('opens the account from the user menu as its own page, outside the management area', async () => {
+it('opens the account from the account menu as its own page', async () => {
   stubSignedIn();
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
@@ -204,10 +209,10 @@ it('opens the account from the user menu as its own page, outside the management
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Conta' }));
   expect(await screen.findByRole('heading', { name: 'Conta' })).toBeTruthy();
   expect(window.location.pathname).toBe('/account');
-  // No management sidebar: only a way back.
-  expect(screen.queryByRole('navigation', { name: 'Gerenciamento' })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Voltar ao início' }));
-  expect(await screen.findByRole('heading', { name: 'Tudo em seu lugar.' })).toBeTruthy();
+  // The account is no section of its own in the rail, and the Home tabs give way.
+  expect(current()).toEqual([]);
+  expect(screen.queryByRole('navigation', { name: 'Seções do início' })).toBeNull();
+  fireEvent.click(within(rail()).getByRole('button', { name: 'Início' }));
   expect(window.location.pathname).toBe('/');
 });
 
@@ -219,14 +224,14 @@ it('keeps old /manage/account links working by redirecting to /account', async (
   await waitFor(() => expect(window.location.pathname).toBe('/account'));
 });
 
-it('does not list the account among the management sections', async () => {
+it('does not list the account among the sections', async () => {
   stubSignedIn();
   window.history.replaceState(null, '', '/manage/integrations');
   render(<App />);
-  const nav = await screen.findByRole('navigation', { name: 'Gerenciamento' });
-  expect(within(nav).queryByRole('button', { name: 'Conta' })).toBeNull();
+  await screen.findByRole('heading', { name: 'Integrações' });
+  expect(within(rail()).queryByRole('button', { name: 'Conta' })).toBeNull();
   for (const name of ['Integrações', 'Agentes', 'Atividade', 'Configurações'])
-    expect(within(nav).getByRole('button', { name })).toBeTruthy();
+    expect(within(rail()).getByRole('button', { name })).toBeTruthy();
 });
 
 it('lists the settings subpages and opens one from its own URL', async () => {
@@ -272,22 +277,24 @@ it('shows not found for an unknown settings subpage', async () => {
   expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeTruthy();
 });
 
-it('reaches Activity and Settings from "More" in the phone bottom bar', async () => {
+it('reaches the other sections from "More" in the phone bottom bar', async () => {
   stubSignedIn();
-  window.history.replaceState(null, '', '/manage/integrations');
   render(<App />);
   const bar = await screen.findByRole('navigation', { name: 'Seções' });
   expect(
     within(bar)
       .getAllByRole('button')
       .map((button) => button.textContent),
-  ).toEqual(['Sondas', 'Integrações', 'Agentes', 'Mais']);
+  ).toEqual(['Início', 'Serviços', 'Agentes', 'Mais']);
   fireEvent.click(within(bar).getByRole('button', { name: 'Mais' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
   await waitFor(() => expect(window.location.pathname).toBe('/manage/settings'));
   expect(within(bar).getByRole('button', { name: 'Mais' }).getAttribute('aria-current')).toBe(
     'page',
   );
+  fireEvent.click(within(bar).getByRole('button', { name: 'Mais' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Novo serviço' }));
+  await waitFor(() => expect(window.location.pathname).toBe('/manage/services/new'));
 });
 
 function stubSession(authenticated = true) {

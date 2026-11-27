@@ -5,7 +5,7 @@ export const en = {
   'error.unexpected': 'Something went wrong',
   'error.recovery': 'Reload the page to try again. Unsaved changes may be lost.',
   'error.reload': 'Reload page',
-  'route.home': 'Go to dashboard',
+  'route.home': 'Go to Home',
   'route.serviceNotFound': 'Service not found.',
   'route.services': 'Back to services',
   'common.showSecret': 'Show value',
@@ -101,7 +101,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'error.recovery':
     'Recarregue a página para tentar novamente. Alterações não salvas podem ser perdidas.',
   'error.reload': 'Recarregar página',
-  'route.home': 'Ir para o painel',
+  'route.home': 'Ir para o início',
   'route.serviceNotFound': 'Serviço não encontrado.',
   'route.services': 'Voltar para serviços',
   'common.showSecret': 'Mostrar valor',

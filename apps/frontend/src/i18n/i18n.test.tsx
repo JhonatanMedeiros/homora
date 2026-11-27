@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { App } from '../App';
 import { apiError, formatNumber, getLocale, setLocale, t, tOr } from './index';
 import { en } from './en';
@@ -117,12 +117,9 @@ it('keeps management and settings accessible in English', async () => {
     }),
   );
   render(<App />);
-  fireEvent.keyDown(await screen.findByRole('button', { name: /Account menu for/ }), {
-    key: 'Enter',
-  });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Manage' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+  const rail = await screen.findByRole('navigation', { name: 'Main navigation' });
+  fireEvent.click(within(rail).getByRole('button', { name: 'Settings' }));
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Back to dashboard' }));
+  fireEvent.click(within(rail).getByRole('button', { name: 'Home' }));
   expect(screen.getByRole('heading', { name: 'Everything in its place.' })).toBeTruthy();
 });

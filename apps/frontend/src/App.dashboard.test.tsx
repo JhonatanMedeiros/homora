@@ -1,8 +1,13 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { toast } from 'sonner';
 import { App } from './App';
+
+// The cards live in the Services view.
+beforeEach(() => {
+  window.history.replaceState(null, '', '/services');
+});
 
 afterEach(() => {
   cleanup();
@@ -259,7 +264,7 @@ it('keeps services dashboard usable when optional integrations fail', async () =
 
 it('notes when availability cannot be refreshed', async () => {
   localStorage.clear();
-  window.history.replaceState(null, '', '/');
+  window.history.replaceState(null, '', '/services');
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {

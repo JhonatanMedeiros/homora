@@ -17,8 +17,7 @@ const show = (extra: Partial<Parameters<typeof HomeRail>[0]> = {}) => {
     selectedGroup: null,
     onSelectGroup: vi.fn(),
     favorites: { count: 2, active: false, onToggle: vi.fn() },
-    widgetRail: true,
-    onToggleWidgetRail: vi.fn(),
+    widgets: { shown: true, onToggle: vi.fn() },
     ...extra,
   };
   render(<HomeRail {...props} />);
@@ -44,7 +43,12 @@ it('lists groups with their health in words and selects one', () => {
 it('toggles the widget panel', () => {
   const props = show();
   fireEvent.click(screen.getByRole('button', { name: /widgets/i }));
-  expect(props.onToggleWidgetRail).toHaveBeenCalled();
+  expect(props.widgets!.onToggle).toHaveBeenCalled();
+});
+
+it('has no widget toggle where there is no widget column', () => {
+  show({ widgets: undefined });
+  expect(screen.queryByRole('button', { name: /widgets/i })).toBeNull();
 });
 
 it('shows Favorites only when something is pinned, and toggles the view', () => {

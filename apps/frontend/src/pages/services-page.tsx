@@ -1,46 +1,29 @@
 import { WidgetStatusFilterContext } from '@/components/widget-host';
 import { PageWidgets } from '@/components/page-widgets';
-import { useAcknowledgements } from '@/hooks/use-acknowledgements';
-import { isQuiet } from '@/lib/acknowledgements';
-import { onProblemsRequest, takeProblemsRequest } from '@/features/dashboard/home-intent';
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { cn } from '@homora/ui/lib/utils';
 import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
 import { useDependencies } from '@/features/hosts/use-dependencies';
 import { dependentsOf } from '@/features/hosts/dependencies';
-import { hostLabel, hostRailItems } from '@/features/hosts/hosts';
+import { hostLabel } from '@/features/hosts/hosts';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
-import { useUptime } from '@/features/uptime/use-uptime';
 import { CategoryFilter } from '@/features/dashboard/category-filter';
 import { StatusFilter } from '@/features/dashboard/status-filter';
-import { StatusBanner } from '@/components/status-banner';
-import { HomeStatusPill } from '@/components/home-status-pill';
-import { HeaderStatusPortal } from '@/components/header-status-slot';
-import { summarizeStatus } from '@/features/uptime/status-summary';
+import { StaleStatusAlert } from '@/components/stale-status-alert';
+import { deriveHealth, useHealthSources } from '@/features/home/health';
+import { HealthPill } from '@/features/home/health-pill';
+import { HomeSidebar } from '@/features/home/home-sidebar';
+import { ServicePanel } from '@/features/home/service-panel';
+import { defaultSelection, detailsFor } from '@/features/home/details-props';
+import { useBrowseState, type BrowseState } from '@/features/dashboard/use-browse-state';
 import { PinnedRow } from '@/features/dashboard/pinned-row';
-import { HomeRail } from '@/features/dashboard/home-rail';
-import { useProbeList } from '@/hooks/use-probes';
-import { deriveHomeProbes } from '@/features/dashboard/home-probes-model';
 import { useMinWidth } from '@/hooks/use-min-width';
 import { ServiceDrawer } from '@/components/service-drawer';
-import { ProbableCauses } from '@/features/uptime/probable-causes';
 import { HomeProbes } from '@/features/dashboard/home-probes';
 import { ServiceOptionsSheet } from '@/components/service-options-sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTags } from '@/hooks/use-tags';
-import { useStatusOverview } from '@/hooks/use-status-overview';
-import { activeWindows, useMaintenance } from '@/features/uptime/use-maintenance';
-import { useNow } from '@/hooks/use-now';
-import { type StatusFilter as StatusFilterValue } from '@/features/dashboard/status-filter-model';
 import { FormError } from '@/components/form-error';
 import { useTopBar } from '@/hooks/use-top-bar';
 import { ServicesSkeleton } from '@/components/skeletons';
@@ -61,7 +44,7 @@ import { ServicesEmpty } from '@/components/services-empty';
 import { OrganizeToggle } from '@/features/dashboard/service-view-toolbar';
 import type { useServices } from '@/hooks/use-services';
 import { useServicePageActions } from '@/features/dashboard/use-service-page-actions';
-import { formatTime, t } from '@/i18n';
+import { t } from '@/i18n';
 import { useHomeAttentionActions } from '@/features/dashboard/use-home-attention-actions';
 
 const HostView = lazy(() =>
@@ -71,7 +54,7 @@ const HostMap = lazy(() =>
   import('@/features/hosts/host-map').then((module) => ({ default: module.HostMap })),
 );
 
-/** Main screen: service groups with status, search, edit, and Organize mode. */
+/** The Services view: service groups with status, filters, edit, and Organize mode. */
 type Props = {
   formRoute: 'new' | number | null;
   navigate: (path: string, replace?: boolean) => void;
@@ -81,6 +64,10 @@ type Props = {
   focusRequest?: FocusRequest | null;
   /** Called once the request was served, so remounting the page later does not scroll again. */
   onFocusHandled?: () => void;
+  /** The sidebar's filters, kept above the views; the page keeps its own when none are given. */
+  browse?: BrowseState;
+  /** The form section to open on, when the form route asked for one. */
+  formSection?: 'access';
 };
 
 export type { FocusRequest } from '@/features/dashboard/use-service-page-focus';
@@ -92,6 +79,8 @@ export function ServicesPage({
   navigate,
   focusRequest: requestedFocus,
   onFocusHandled: handledFocus,
+  browse: sharedBrowse,
+  formSection,
 }: Props) {
   const { services, groupRows, statuses, sortedIn, blockedIds, refresh, pages } = data;
   const { activePageId, pageIdOf } = data;
@@ -117,42 +106,23 @@ export function ServicesPage({
     setWidgetRail,
   } = useViewPreferences();
   const wide = useMinWidth(1280);
-  const wider = useMinWidth(1440);
-  const uptime = useUptime(uptimeRange);
-  const probeList = useProbeList();
-  const [overviewVersion, setOverviewVersion] = useState(0);
-  const overview = useStatusOverview(overviewVersion);
-  const maintenance = useMaintenance();
-  const clock = useNow();
-  const attention = useAcknowledgements();
-  const inMaintenance = activeWindows(maintenance.windows, clock);
+  const sources = useHealthSources(uptimeRange);
+  const { uptime, overview, inMaintenance } = sources;
   const { tags: tagMap, reload: reloadTags } = useTags();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>('all');
-  useEffect(() => {
-    const show = () => {
-      if (takeProblemsRequest()) setStatusFilter('down');
-    };
-    show();
-    return onProblemsRequest(show);
-  }, []);
+  const ownBrowse = useBrowseState(activePageId);
+  const browse = sharedBrowse ?? ownBrowse;
+  const {
+    statusFilter,
+    setStatusFilter,
+    selected,
+    setSelected,
+    favoritesOnly,
+    setFavoritesOnly,
+    nodeFilter,
+    setNodeFilter,
+  } = browse;
   const list = view === 'list';
-  const [selectedState, setSelectedState] = useState<{
-    pageId: number;
-    category: string | null;
-  }>({ pageId: activePageId, category: null });
-  const selected = selectedState.pageId === activePageId ? selectedState.category : null;
-  const setSelected: Dispatch<SetStateAction<string | null>> = useCallback(
-    (value) =>
-      setSelectedState((prev) => ({
-        pageId: activePageId,
-        category:
-          typeof value === 'function'
-            ? value(prev.pageId === activePageId ? prev.category : null)
-            : value,
-      })),
-    [activePageId],
-  );
   const deps = useDependencies();
   // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
   const [localFocus, setLocalFocus] = useState<FocusRequest | null>(null);
@@ -186,8 +156,9 @@ export function ServicesPage({
     onSaved: () => setSelected(null),
     monitorSettings: overview?.settings,
     tagMap,
-    onMonitoringSaved: () => setOverviewVersion((version) => version + 1),
+    onMonitoringSaved: sources.reloadOverview,
     onTagsSaved: reloadTags,
+    initialSection: formSection,
   });
   const { openForm, hostData } = editor;
   const groupActions = useServiceGroups({
@@ -209,9 +180,7 @@ export function ServicesPage({
     deleteGroup,
   } = groupActions;
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const [nodeFilter, setNodeFilter] = useState<{ connectionId: number; node: string } | null>(null);
   const [detailsId, setDetailsId] = useState<number | null>(null);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const detailsService = services.find((item) => item.id === detailsId) ?? null;
   // Dense tiles are the Home default; management and organize mode always show rows.
   const compact = view === 'tiles' && !organizing;
@@ -244,7 +213,9 @@ export function ServicesPage({
   } = pageModel;
   // Wide Home: views and groups on the left, page widgets on the right.
   const railed = wide && !mobile && !hostView && services.length > 0;
-  const widgetsInRail = railed && widgetRail && wider;
+  // The right column shows the selected service; Organize needs the width for its rows.
+  const panelled = railed && !organizing;
+  const widgetsInRail = panelled && widgetRail;
   // 'Problems first' only reorders what is shown; it never changes the saved order of groups.
   const ordered =
     problemsFirst && !organizing
@@ -267,44 +238,38 @@ export function ServicesPage({
           .map((group) => ({ ...group, items: group.items.filter((item) => item.pinned) }))
           .filter((group) => group.items.length > 0)
       : ordered;
-  const { togglePinned, acknowledge } = useHomeAttentionActions({ data, attention, overview });
-  const { allProbes, probeViews, countsWithProbes, downProbes, probeIds, probeStatusItems } =
-    deriveHomeProbes({
-      probes: probeList.probes,
-      statuses,
-      monitorSettings: overview?.settings,
-      measurementReason: overview?.measurement?.reason,
-      browsing: !organizing && !hostView,
-      statusFilter,
-      statusCounts,
-    });
-  const downNow = [...services.filter(isDown), ...downProbes];
-  const statusSummary = summarizeStatus({
-    services: [...services, ...probeStatusItems],
-    statuses,
-    blockedIds,
+  const { togglePinned, acknowledge } = useHomeAttentionActions({
+    data,
+    attention: sources.attention,
     overview,
-    now: clock,
-    probeIds,
-    stale: data.statusError,
   });
-  /** Why a card is down, when its host or guest explains it. */
-  const causeOf = (service: (typeof services)[number] | null | undefined) => {
-    const link = service?.host;
-    const kind = service ? impacts.get(service.id) : undefined;
-    if (!link || (kind !== 'host-offline' && kind !== 'guest-stopped')) return;
-    const sameHost = (item: (typeof services)[number]) =>
-      item.host?.connectionId === link.connectionId &&
-      item.host.node === link.node &&
-      (kind === 'host-offline' || item.host.vmid === link.vmid);
-    const label = hostLabel(service, hostData.connections, hostData.inventories);
-    return {
-      kind,
-      host: kind === 'guest-stopped' && label?.kind === 'found' ? label.guest.name : link.node,
-      affected: services.filter((item) => sameHost(item) && impacts.get(item.id) === kind).length,
-    };
-  };
-  const quietNow = (id: number) => isQuiet(attention.marks[id], overview?.open[id]?.id, clock);
+  const health = deriveHealth(sources, {
+    data,
+    hostData,
+    impacts,
+    statusCounts,
+    statusFilter,
+    browsing: !organizing && !hostView,
+  });
+  const { probeViews, countsWithProbes, probeIds, probeStatusItems } = health;
+  const panelService = detailsService ?? defaultSelection(services, isDown);
+  const details = (service: (typeof services)[number]) =>
+    detailsFor(service, {
+      data,
+      sources,
+      health,
+      range: uptimeRange,
+      onRangeChange: setUptimeRange,
+      onTogglePinned: (item) => void togglePinned(item),
+      onShowMap: () => {
+        setDetailsId(null);
+        setArrange('map');
+      },
+      onAllowMonitoring: (item) => {
+        setDetailsId(null);
+        openForm(item, 'access');
+      },
+    });
   const actions = useServicePageActions({
     data,
     sortedIn,
@@ -401,68 +366,18 @@ export function ServicesPage({
           addButton,
         }}
       />
-      {services.length + probeStatusItems.length > 0 && (
-        <HeaderStatusPortal>
-          <HomeStatusPill summary={statusSummary}>
-            {(close) => (
-              <>
-                <StatusBanner
-                  services={[...services, ...probeStatusItems]}
-                  statuses={statuses}
-                  blockedIds={blockedIds}
-                  overview={overview}
-                  maintenance={maintenance.windows}
-                  uptime={uptime}
-                  range={uptimeRange}
-                  probeIds={probeIds}
-                  stale={data.statusError}
-                  attention={
-                    downNow.length > 0 && (
-                      <ProbableCauses
-                        alwaysOpen
-                        down={downNow.filter((service) => !quietNow(service.id))}
-                        quiet={downNow.filter((service) => quietNow(service.id))}
-                        incidents={overview?.open}
-                        impacts={impacts}
-                        onOpen={(service) => {
-                          close();
-                          if (probeIds.has(service.id)) navigate('/manage/probes');
-                          else setDetailsId(service.id);
-                        }}
-                        onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
-                        onShowAgain={(members) => void attention.clear(members.map((m) => m.id))}
-                      />
-                    )
-                  }
-                  onOpenConnections={() => {
-                    close();
-                    navigate('/manage/integrations');
-                  }}
-                  onOpenService={(id) => {
-                    close();
-                    if (allProbes.some((probe) => probe.id === id)) navigate('/manage/probes');
-                    else setDetailsId(id);
-                  }}
-                />
-              </>
-            )}
-          </HomeStatusPill>
-        </HeaderStatusPortal>
-      )}
-      {data.statusError && (
-        <Alert variant="destructive">
-          <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span role="status">
-              {data.statusAt === null
-                ? t('status.stale')
-                : t('status.staleSince', { time: formatTime(data.statusAt) })}
-            </span>
-            <Button type="button" variant="link" size="sm" onClick={data.retryStatuses}>
-              {t('status.retry')}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+      <HealthPill
+        data={data}
+        sources={sources}
+        health={health}
+        impacts={impacts}
+        range={uptimeRange}
+        onService={setDetailsId}
+        onProbes={() => navigate('/manage/probes')}
+        onConnections={() => navigate('/manage/integrations')}
+        onAcknowledge={(members, minutes) => void acknowledge(members, minutes)}
+      />
+      <StaleStatusAlert data={data} />
       <FormError>{groupError}</FormError>
       {typeof formRoute === 'number' &&
         data.loaded &&
@@ -470,7 +385,7 @@ export function ServicesPage({
           <Alert>
             <AlertDescription>
               {t('route.serviceNotFound')}{' '}
-              <Button type="button" variant="link" onClick={() => navigate('/', true)}>
+              <Button type="button" variant="link" onClick={() => navigate('/services', true)}>
                 {t('route.services')}
               </Button>
             </AlertDescription>
@@ -686,25 +601,10 @@ export function ServicesPage({
         />
       )}
       <ServiceDrawer
-        service={detailsService}
-        status={detailsService ? statuses[detailsService.id] : undefined}
-        blocked={detailsService ? blockedIds.has(detailsService.id) : false}
-        uptime={detailsService ? uptime[detailsService.id] : undefined}
-        monitor={detailsService ? overview?.settings[detailsService.id] : undefined}
-        incident={detailsService ? overview?.open[detailsService.id] : undefined}
-        maintenanceUntil={detailsService ? inMaintenance[detailsService.id]?.endsAt : undefined}
-        cause={causeOf(detailsService)}
-        onShowMap={() => {
-          setDetailsId(null);
-          setArrange('map');
-        }}
-        onAllowMonitoring={(item) => {
-          setDetailsId(null);
-          openForm(item, 'access');
-        }}
-        range={uptimeRange}
-        onRangeChange={setUptimeRange}
-        onTogglePinned={(item) => void togglePinned(item)}
+        {...(detailsService && !panelled
+          ? details(detailsService)
+          : { blocked: false, range: uptimeRange, onRangeChange: setUptimeRange })}
+        service={panelled ? null : detailsService}
         onClose={() => setDetailsId(null)}
       />
       <ServicePageOverlays
@@ -725,7 +625,7 @@ export function ServicesPage({
         onDeleteGroup={deleteGroup}
       />
       {organizing && (
-        <div className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t bg-card px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t bg-card px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:hidden">
           <span className="font-mono text-xs text-muted-foreground">{t('organize.bar')}</span>
           <Button
             type="button"
@@ -787,57 +687,52 @@ export function ServicesPage({
   );
   if (!railed) return body;
   return (
-    <div className="grid grid-cols-[13rem_minmax(0,1fr)] gap-6 min-[1440px]:grid-cols-[13rem_minmax(0,1fr)_19rem]">
-      <aside aria-label={t('rail.label')} className="sticky top-4 self-start">
-        <HomeRail
-          organizing={organizing}
-          statusFilter={statusFilter}
-          counts={countsWithProbes}
-          onStatusFilter={setStatusFilter}
-          groups={categories
-            .filter((name): name is string => typeof name === 'string')
-            .map((name) => {
-              const members = services.filter((s) => s.category === name);
-              return { name, total: members.length, down: members.filter(isDown).length };
-            })}
-          selectedGroup={selected}
-          onSelectGroup={setSelected}
-          favorites={{
-            count: pinnedServices.length,
-            active: favoritesOnly,
-            onToggle: () => setFavoritesOnly(!favoritesOnly),
-          }}
-          hosts={{
-            items: hostRailItems(services, hostData.connections, hostData.inventories, isDown),
-            onSelect: (item) => {
-              setNodeFilter({ connectionId: item.connectionId, node: item.node });
-              setArrange('host');
-            },
-          }}
-          probes={{ items: allProbes, onOpen: () => navigate('/manage/probes') }}
-          widgetRail={widgetRail}
-          onToggleWidgetRail={() => setWidgetRail(!widgetRail)}
-        />
-      </aside>
+    <div
+      className={cn(
+        'grid grid-cols-[13rem_minmax(0,1fr)] gap-6',
+        panelled && 'grid-cols-[13rem_minmax(0,1fr)_19rem]',
+      )}
+    >
+      <HomeSidebar
+        data={data}
+        hostData={hostData}
+        health={health}
+        browse={browse}
+        categories={categories.filter((name): name is string => typeof name === 'string')}
+        onShowHosts={() => setArrange('host')}
+        onProbes={() => navigate('/manage/probes')}
+        organizing={organizing}
+        widgets={{ shown: widgetRail, onToggle: () => setWidgetRail(!widgetRail) }}
+      />
       {body}
-      {widgetsInRail && (
-        <aside aria-label={t('pageWidgets.title')} className="min-w-0">
-          <WidgetStatusFilterContext.Provider value={setStatusFilter}>
-            <PageWidgets
-              pageId={activePageId}
-              pages={pages}
-              layout="rail"
-              showAdd
-              groups={groupRows.map((group) => ({
-                name: group.name,
-                pageId: group.pageId ?? null,
-              }))}
-              openMonitor={(id, hasService) =>
-                hasService ? setDetailsId(id) : navigate('/manage/probes')
-              }
-            />
-          </WidgetStatusFilterContext.Provider>
-        </aside>
+      {panelled && (
+        <div className="flex min-w-0 flex-col gap-4">
+          <ServicePanel
+            windows={health.summary.windows}
+            details={panelService ? details(panelService) : null}
+            onSelect={(id) => (probeIds.has(id) ? navigate('/manage/probes') : setDetailsId(id))}
+            onReviewProposals={() => navigate('/manage/agents')}
+          />
+          {widgetsInRail && (
+            <aside aria-label={t('pageWidgets.title')} className="min-w-0">
+              <WidgetStatusFilterContext.Provider value={setStatusFilter}>
+                <PageWidgets
+                  pageId={activePageId}
+                  pages={pages}
+                  layout="rail"
+                  showAdd
+                  groups={groupRows.map((group) => ({
+                    name: group.name,
+                    pageId: group.pageId ?? null,
+                  }))}
+                  openMonitor={(id, hasService) =>
+                    hasService ? setDetailsId(id) : navigate('/manage/probes')
+                  }
+                />
+              </WidgetStatusFilterContext.Provider>
+            </aside>
+          )}
+        </div>
       )}
     </div>
   );

@@ -38,8 +38,8 @@ type Props = {
   services: Service[];
   statuses: Record<number, ServiceStatus>;
   blockedIds: Set<number>;
-  managing: boolean;
-  onManageChange: (managing: boolean) => void;
+  /** Opens the Services view arranged as the map. */
+  onShowMap: () => void;
   onAddService: () => void;
   onToggleTheme: () => void;
   /** Navigates inside the app (read-only destinations; the palette never writes). */
@@ -78,8 +78,7 @@ export function CommandPalette({
   services,
   statuses,
   blockedIds,
-  managing,
-  onManageChange,
+  onShowMap,
   onAddService,
   onToggleTheme,
   onNavigate,
@@ -298,7 +297,6 @@ export function CommandPalette({
           state={{
             showCommands,
             shortcutsEnabled,
-            managing,
             view,
             showDescriptions,
             searchUrl,
@@ -328,7 +326,7 @@ export function CommandPalette({
             run,
             onNavigate,
             onAddService,
-            onManageChange,
+            onShowMap,
             onViewChange,
             onShowDescriptionsChange,
             onToggleTheme,
