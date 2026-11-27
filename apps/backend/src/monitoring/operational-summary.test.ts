@@ -30,6 +30,10 @@ describe('operational summary', () => {
     ]);
     expect(facts[0]?.link).toBeNull();
     expect(facts[1]?.link).toBe('/services/1');
+    expect(result.monitors).toEqual([
+      { monitorId: 1, opened: 1, recovered: 1, total: 1 },
+      { monitorId: 2, opened: 0, recovered: 1, total: 1 },
+    ]);
     expect(result.evidence.items.at(-1)).toMatchObject({
       kind: 'unknown',
       missing: ['complete-incident-coverage'],
@@ -39,6 +43,7 @@ describe('operational summary', () => {
     const result = operationalSummary(setup(), '7d', now);
     expect(result.evidence.items).toHaveLength(1);
     expect(result.evidence.items[0]?.kind).toBe('unknown');
+    expect(result.monitors).toEqual([]);
     expect(result.from).toBe(new Date(now - 7 * day).toISOString());
   });
   it('bounds results and signals truncation', () => {
@@ -48,5 +53,19 @@ describe('operational summary', () => {
     const result = operationalSummary(database, '24h', now);
     expect(result.truncated).toBe(true);
     expect(result.evidence.items).toHaveLength(101);
+    expect(result.monitors).toEqual([{ monitorId: 1, opened: 101, recovered: 0, total: 101 }]);
+  });
+  it('limits monitor groups and calculates the requested period independently of event truncation', () => {
+    const database = setup();
+    const insert = database.prepare('INSERT INTO service_incidents VALUES(?,?,?,?)');
+    for (let id = 1; id <= 101; id++) insert.run(id, id, now - day, null);
+    insert.run(102, 1, now - 2 * day, now - day - 1);
+    expect(operationalSummary(database, '24h', now)).toMatchObject({
+      monitorsTruncated: true,
+      monitors: expect.any(Array),
+    });
+    const week = operationalSummary(database, '7d', now);
+    expect(week.monitors).toHaveLength(100);
+    expect(week.monitors[0]).toEqual({ monitorId: 1, opened: 2, recovered: 1, total: 2 });
   });
 });

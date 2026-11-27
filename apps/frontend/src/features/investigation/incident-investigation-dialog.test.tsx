@@ -19,80 +19,87 @@ it('shows cited facts, a qualified hypothesis, missing data and proposed next st
   };
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          incidentId: 1,
-          monitorId: 1,
-          from: at,
-          to: at,
-          truncated: false,
-          evidence: {
-            version: 1,
-            evaluatedAt: at,
-            items: [
-              {
-                ...base,
-                id: 'incident:1:opened',
-                kind: 'fact',
-                source: 'monitor-incident',
-                observedAt: at,
-                freshness: 'historical',
-                confidence: 'confirmed',
-                summary: 'event',
-                attributes: { event: 'opened' },
-              },
-              {
-                ...base,
-                id: 'incident:2:overlap',
-                kind: 'fact',
-                source: 'monitor-incident',
-                observedAt: at,
-                freshness: 'historical',
-                confidence: 'confirmed',
-                summary: 'event',
-                attributes: { event: 'overlap' },
-              },
-              {
-                ...base,
-                id: 'hypothesis:1',
-                kind: 'hypothesis',
-                source: 'temporal-correlation',
-                observedAt: null,
-                freshness: 'historical',
-                confidence: 'inferred',
-                summary: 'hypothesis',
-                evidenceIds: ['incident:1:opened', 'incident:2:overlap'],
-                attributes: { relatedIncidentId: 2, relatedMonitorId: 2, overlapCount: 2 },
-              },
-              {
-                ...base,
-                id: 'gap:1',
-                kind: 'unknown',
-                source: 'coverage-assessment',
-                observedAt: null,
-                freshness: 'unknown',
-                confidence: 'unknown',
-                summary: 'gap',
-                missing: ['root-cause', 'complete-history', 'hypotheses-truncated'],
-              },
-            ],
-          },
-        }),
-        { status: 200 },
+    vi.fn((url: string) =>
+      Promise.resolve(
+        url === '/api/services'
+          ? new Response(JSON.stringify([{ id: 1, name: 'Synthetic service' }]))
+          : new Response(
+              JSON.stringify({
+                incidentId: 1,
+                monitorId: 1,
+                from: at,
+                to: at,
+                truncated: false,
+                evidence: {
+                  version: 1,
+                  evaluatedAt: at,
+                  items: [
+                    {
+                      ...base,
+                      id: 'incident:1:opened',
+                      kind: 'fact',
+                      source: 'monitor-incident',
+                      observedAt: at,
+                      freshness: 'historical',
+                      confidence: 'confirmed',
+                      summary: 'event',
+                      attributes: { event: 'opened' },
+                    },
+                    {
+                      ...base,
+                      id: 'incident:2:overlap',
+                      kind: 'fact',
+                      source: 'monitor-incident',
+                      observedAt: at,
+                      freshness: 'historical',
+                      confidence: 'confirmed',
+                      summary: 'event',
+                      attributes: { event: 'overlap' },
+                    },
+                    {
+                      ...base,
+                      id: 'hypothesis:1',
+                      kind: 'hypothesis',
+                      source: 'temporal-correlation',
+                      observedAt: null,
+                      freshness: 'historical',
+                      confidence: 'inferred',
+                      summary: 'hypothesis',
+                      evidenceIds: ['incident:1:opened', 'incident:2:overlap'],
+                      attributes: { relatedIncidentId: 2, relatedMonitorId: 2, overlapCount: 2 },
+                    },
+                    {
+                      ...base,
+                      id: 'gap:1',
+                      kind: 'unknown',
+                      source: 'coverage-assessment',
+                      observedAt: null,
+                      freshness: 'unknown',
+                      confidence: 'unknown',
+                      summary: 'gap',
+                      missing: ['root-cause', 'complete-history', 'hypotheses-truncated'],
+                    },
+                  ],
+                },
+              }),
+              { status: 200 },
+            ),
       ),
     ),
   );
   render(<IncidentInvestigationDialog incidentId={1} onClose={() => {}} />);
   const dialog = await screen.findByRole('dialog');
+  expect((await within(dialog).findAllByText(/Synthetic service/)).length).toBeGreaterThan(0);
   expect(await within(dialog).findByText(/coincidência de horários|timing alone/i)).toBeTruthy();
   expect(within(dialog).getByText(/2 incidentes compartilham|2 incidents share/i)).toBeTruthy();
   expect(
     within(dialog).getByText(/somente cinco hipóteses|only five overlap hypotheses/i),
   ).toBeTruthy();
-  expect(within(dialog).getByRole('link', { name: 'incident:1:opened' }).getAttribute('href')).toBe(
-    '#evidence-incident:1:opened',
-  );
+  expect(
+    within(dialog)
+      .getByRole('link', { name: /incident:1:opened/ })
+      .getAttribute('href'),
+  ).toBe('#evidence-incident:1:opened');
   expect(within(dialog).getByText(/causa raiz é desconhecida|root cause is unknown/i)).toBeTruthy();
   expect(
     within(dialog).getByText(/verifique as dependências|verify relevant dependencies/i),
@@ -181,10 +188,13 @@ it('does not show the previous incident while a different one loads', async () =
   });
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify(first), { status: 200 }))
-      .mockReturnValueOnce(delayed),
+    vi.fn((url: string) =>
+      url === '/api/services'
+        ? Promise.resolve(new Response('[]', { status: 200 }))
+        : url.includes('/1/investigation')
+          ? Promise.resolve(new Response(JSON.stringify(first), { status: 200 }))
+          : delayed,
+    ),
   );
   const { rerender } = render(<IncidentInvestigationDialog incidentId={1} onClose={() => {}} />);
   expect(await screen.findByText(/incidente iniciado|incident started/i)).toBeTruthy();

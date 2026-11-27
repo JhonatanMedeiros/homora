@@ -4,6 +4,13 @@ description: 'Service form, seven check types, thresholds, incidents, uptime, ma
 
 # Services and monitoring
 
+On **Manage → Activity**, the monitoring changes summary groups events by monitor for the selected
+24-hour or 7-day period. Opened and recovered counts count events; the total counts distinct incidents
+with at least one event in the period. Counts use the complete retained period even if event details
+are truncated. At most 100 monitors and 100 individual events are shown, with separate truncation
+notices. An empty result does not establish complete incident history or a cause.
+Duration is not aggregated: incidents may be open or extend beyond the selected period.
+
 ## Review monitoring coverage
 
 On **Activity**, select **Review monitoring coverage** to assess the current configuration and
@@ -217,6 +224,9 @@ are not carried by export and import.
 - Set **Failures before it counts as down** to 2 or 3 for flaky links.
 
 ## Investigate an incident
+
+The authenticated summary and investigation resolve service names locally. Probes, removed services
+and unavailable names fall back to the monitor ID; evidence bundles and MCP responses do not gain names.
 
 Choose **Investigate incident** beside an incident in service details or in **Manage → Activity**.
 The timeline shows the recorded incident, up to 100 retained checks and up to 20 overlapping

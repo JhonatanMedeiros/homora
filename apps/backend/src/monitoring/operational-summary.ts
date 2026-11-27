@@ -55,6 +55,18 @@ type EventRow = {
   at: number;
   hasService: number;
 };
+const monitorAggregates = z
+  .array(
+    z
+      .object({
+        monitorId: z.number().int().positive().safe(),
+        opened: z.number().int().nonnegative().safe(),
+        recovered: z.number().int().nonnegative().safe(),
+        total: z.number().int().positive().safe(),
+      })
+      .strict(),
+  )
+  .max(LIMIT + 1);
 
 /** Read only events the incident store actually retains; never claim complete coverage. */
 export function operationalSummary(db: DatabaseSync, range: '24h' | '7d', now = Date.now()) {
@@ -74,6 +86,21 @@ export function operationalSummary(db: DatabaseSync, range: '24h' | '7d', now = 
   `)
     .all(from, now, from, now, LIMIT + 1) as EventRow[];
   const truncated = rows.length > LIMIT;
+  // Counts use the entire requested window, independently of the bounded event list.
+  const aggregates = monitorAggregates.parse(
+    db
+      .prepare(`
+    SELECT monitorId, SUM(event='opened') AS opened, SUM(event='recovered') AS recovered,
+      COUNT(DISTINCT id) AS total FROM (
+      SELECT id,service_id AS monitorId,'opened' AS event FROM service_incidents
+        WHERE started_at>=? AND started_at<=?
+      UNION ALL
+      SELECT id,service_id AS monitorId,'recovered' AS event FROM service_incidents
+        WHERE ended_at>=? AND ended_at<=?
+    ) GROUP BY monitorId ORDER BY total DESC, monitorId LIMIT ?
+  `)
+      .all(from, now, from, now, LIMIT + 1),
+  );
   const items = rows.slice(0, LIMIT).map((row) => ({
     id: `incident:${row.id}:${row.event}`,
     version: 1 as const,
@@ -113,5 +140,13 @@ export function operationalSummary(db: DatabaseSync, range: '24h' | '7d', now = 
       },
     ],
   });
-  return { range, from: new Date(from).toISOString(), to: evaluatedAt, truncated, evidence };
+  return {
+    range,
+    from: new Date(from).toISOString(),
+    to: evaluatedAt,
+    truncated,
+    evidence,
+    monitors: aggregates.slice(0, LIMIT),
+    monitorsTruncated: aggregates.length > LIMIT,
+  };
 }

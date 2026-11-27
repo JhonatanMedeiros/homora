@@ -6,16 +6,25 @@ import { LoadingRegion } from '@/components/skeletons';
 import { useNow } from '@/hooks/use-now';
 import { IncidentEvidenceDialog } from './incident-evidence-dialog';
 import { IncidentInvestigationDialog } from '@/features/investigation/incident-investigation-dialog';
+import { useMonitorNames } from '@/features/investigation/use-monitor-names';
 import { ToggleGroup, ToggleGroupItem } from '@homora/ui/toggle-group';
 import { formatDateTime, t } from '@/i18n';
 
-type Summary = { from: string; to: string; truncated: boolean; evidence: EvidenceBundle };
+type Summary = {
+  from: string;
+  to: string;
+  truncated: boolean;
+  evidence: EvidenceBundle;
+  monitors: { monitorId: number; opened: number; recovered: number; total: number }[];
+  monitorsTruncated: boolean;
+};
 
 export function OperationalSummary() {
   const [enabled, setEnabled] = useState(false);
   const now = useNow();
   const [range, setRange] = useState<'24h' | '7d'>('24h');
   const [data, setData] = useState<Summary | null>(null);
+  const monitorName = useMonitorNames(data !== null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -97,51 +106,82 @@ export function OperationalSummary() {
                 · {t('operationalSummary.source')}
               </p>
               <p className="text-sm text-muted-foreground">{t('operationalSummary.coverage')}</p>
+              {(data.monitors?.length ?? 0) > 0 && (
+                <section aria-labelledby="summary-monitors">
+                  <h3 id="summary-monitors" className="font-semibold">
+                    {t('operationalSummary.byMonitor')}
+                  </h3>
+                  <ul className="flex flex-col gap-2 pt-2">
+                    {data.monitors.map((monitor) => (
+                      <li key={monitor.monitorId} className="text-sm">
+                        <span className="font-medium">
+                          {monitorName(String(monitor.monitorId))}
+                        </span>
+                        {' · '}
+                        {t('operationalSummary.counts', {
+                          opened: monitor.opened,
+                          recovered: monitor.recovered,
+                          total: monitor.total,
+                        })}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {data.monitorsTruncated && <p>{t('operationalSummary.monitorsTruncated')}</p>}
               {data.truncated && <p>{t('operationalSummary.truncated')}</p>}
               {events.length === 0 ? (
                 <p>{t('operationalSummary.empty')}</p>
               ) : (
-                <ul className="flex flex-col gap-2">
-                  {events.map((item) => (
-                    <li key={item.id} className="flex flex-wrap gap-x-3 gap-y-1">
-                      <span>
-                        {item.attributes.event === 'opened'
-                          ? t('operationalSummary.opened')
-                          : t('operationalSummary.recovered')}
-                      </span>
-                      <time dateTime={item.observedAt}>{formatDateTime(item.observedAt)}</time>
-                      <Button
-                        variant="link"
-                        className="h-auto p-0"
-                        aria-label={t('investigation.openFor', { id: item.id })}
-                        onClick={() => {
-                          const match = /^incident:(\d+):(opened|recovered)$/.exec(item.id);
-                          const id = match ? Number(match[1]) : NaN;
-                          if (Number.isSafeInteger(id) && id > 0) setInvestigationId(id);
-                        }}
-                      >
-                        {t('investigation.open')}
-                      </Button>
-                      {item.link ? (
-                        <a className="underline" href={item.link}>
-                          {t('operationalSummary.monitor', { id: item.subject.id })}
-                        </a>
-                      ) : (
+                <section aria-labelledby="summary-events">
+                  <h3 id="summary-events" className="font-semibold">
+                    {t('operationalSummary.events')}
+                  </h3>
+                  <ul className="flex flex-col gap-2">
+                    {events.map((item) => (
+                      <li key={item.id} className="flex flex-wrap gap-x-3 gap-y-1">
+                        <span>
+                          {item.attributes.event === 'opened'
+                            ? t('operationalSummary.opened')
+                            : t('operationalSummary.recovered')}
+                        </span>
+                        <time dateTime={item.observedAt}>{formatDateTime(item.observedAt)}</time>
                         <Button
                           variant="link"
                           className="h-auto p-0"
+                          aria-label={t('investigation.openForNamed', {
+                            id: item.id,
+                            name: monitorName(item.subject.id),
+                          })}
                           onClick={() => {
                             const match = /^incident:(\d+):(opened|recovered)$/.exec(item.id);
-                            if (match && /^\d+$/.test(item.subject.id))
-                              setTarget({ monitorId: item.subject.id, incidentId: match[1]! });
+                            const id = match ? Number(match[1]) : NaN;
+                            if (Number.isSafeInteger(id) && id > 0) setInvestigationId(id);
                           }}
                         >
-                          {t('operationalSummary.inspect', { id: item.subject.id })}
+                          {t('investigation.open')}
                         </Button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                        {item.link ? (
+                          <a className="underline" href={item.link}>
+                            {monitorName(item.subject.id)}
+                          </a>
+                        ) : (
+                          <Button
+                            variant="link"
+                            className="h-auto p-0"
+                            onClick={() => {
+                              const match = /^incident:(\d+):(opened|recovered)$/.exec(item.id);
+                              if (match && /^\d+$/.test(item.subject.id))
+                                setTarget({ monitorId: item.subject.id, incidentId: match[1]! });
+                            }}
+                          >
+                            {t('operationalSummary.inspect', { id: item.subject.id })}
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
             </>
           )}
