@@ -1,5 +1,25 @@
 # Serviços e monitoramento
 
+## Avaliar impacto potencial das dependências
+
+No mapa, selecione um serviço ou um host convidado e escolha **Avaliar impacto potencial** nos
+detalhes. A avaliação do convidado começa pelos cartões explicitamente vinculados a ele. As setas
+apontam da dependência para o cartão que a utiliza; cada resultado mostra um caminho mais curto
+registrado e indica se é direto ou transitivo. Selecione um cartão visível para revisar suas relações.
+Os serviços ficam disponíveis no mapa mesmo quando nenhum está vinculado a um host.
+
+São percorridas apenas dependências manuais entre serviços. Hosts sugeridos não são vínculos
+confirmados e não entram no cálculo; a ausência de um caminho registrado não comprova que um serviço
+esteja livre de impacto. Impacto potencial não é uma falha observada nem um diagnóstico. Resultados
+são limitados a oito etapas e 100 monitores dependentes, com aviso de truncamento; ciclos não causam
+repetição infinita. Falhas de leitura são distintas de um grafo vazio, e leituras com mais de dois
+minutos devem ser atualizadas. O retrato usa o vocabulário de evidência para relações registradas e
+completude desconhecida, sem estabelecer histórico de dependências ou garantir completude.
+
+Agentes com `services:read` já podem consultar as relações manuais por `list_service_dependencies` e
+calcular caminhos, sem novas permissões ou acesso a infraestrutura externa. Sugestões de host exigem
+o escopo `hosts:read` existente e permanecem separadas das dependências confirmadas.
+
 O resumo e a investigação autenticados resolvem nomes de serviços localmente. Sondas, serviços removidos
 e nomes indisponíveis usam o ID do monitor; os bundles de evidências e as respostas MCP não recebem nomes.
 

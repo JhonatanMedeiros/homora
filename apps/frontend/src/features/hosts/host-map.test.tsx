@@ -211,7 +211,8 @@ it('shows the phone notice under 768 px, with the list as the primary choice', (
   expect(screen.getByRole('region', { name: 'Map of services by host' })).toBeTruthy();
 });
 
-it('says there is nothing to map when no service is linked', () => {
+it('shows unlinked services on the map without a host connection', () => {
   setup({ services: [card(4, 'notes')] });
-  expect(screen.getByText(/nothing to map/)).toBeTruthy();
+  expect(screen.getByRole('region', { name: 'Map of services by host' })).toBeTruthy();
+  expect(screen.getByText('notes')).toBeTruthy();
 });

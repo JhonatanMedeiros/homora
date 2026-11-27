@@ -2369,3 +2369,7 @@ The authenticated operational summary and incident investigation resolve current
 ### Operational summary aggregation (#367)
 
 The summary counts opened and recovered events and distinct incidents by monitor in the selected window. Counts cover all retained matching events independently of the separately bounded event details; monitor groups and event details each expose truncation. Correlation and root cause are not inferred. A local HTTP injection benchmark with 50,000 synthetic incident rows measured p95 9.73 ms for 24 hours and 16.52 ms for 7 days.
+
+### Potential dependency impact (#348)
+
+The map assesses potential impact from a selected card or guest using confirmed manual service dependencies and, for a guest, explicitly linked cards. It shows one shortest path per dependent monitor, bounded to eight edges and 100 results, with cycles guarded and truncation explicit. The on-demand snapshot reports read failure, age and unknown graph completeness; it does not assert a failure, use host suggestions as confirmed relations, infer a root cause or access external infrastructure. The shared assessment emits recorded-edge facts and an unknown completeness item using the evidence contract. Existing scoped MCP dependency reads remain the agent interface; no new agent permission was added.

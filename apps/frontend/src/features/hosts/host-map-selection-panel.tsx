@@ -12,6 +12,7 @@ import { LoadMeters } from '@/features/hosts/host-map-parts';
 import { guestSummary, type HealthOf } from '@/features/hosts/host-health';
 import type { MapGuest } from '@/features/hosts/map-layout';
 import { t } from '@/i18n';
+import { ImpactConsultation } from './impact-consultation';
 
 /** Width of the docked panel; the map uses it to bring a selected tile out from under it. */
 export const PANEL_WIDTH = 384;
@@ -52,6 +53,7 @@ export function HostMapSelectionPanel({
   hostEditor,
   onClose,
   onSelectService,
+  impactServices,
 }: {
   service?: ServiceProps;
   cardDetails?: Pick<
@@ -67,6 +69,7 @@ export function HostMapSelectionPanel({
   hostEditor?: ReactNode;
   onClose: () => void;
   onSelectService: (id: number) => void;
+  impactServices: { id: number; name: string }[];
 }) {
   const summary = guest ? guestSummary(guest.group, healthOf) : null;
   return (
@@ -154,6 +157,11 @@ export function HostMapSelectionPanel({
               })}
             </ul>
           </div>
+          <ImpactConsultation
+            roots={guest.group.services}
+            services={impactServices}
+            onSelect={onSelectService}
+          />
         </div>
       )}
     </aside>
