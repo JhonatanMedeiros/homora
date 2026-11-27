@@ -98,6 +98,17 @@ it('keeps the password form and shows the reason when the provider cannot be rea
   expect(screen.getByLabelText('Email')).toBeTruthy();
 });
 
+it('is usable again when the browser restores the page after Back from the provider', async () => {
+  stub({ oidc: linked });
+  render(<App />);
+  const button = await screen.findByRole('button', { name: 'Sign in with Authentik' });
+  fireEvent.click(button);
+  await vi.waitFor(() => expect(assign).toHaveBeenCalled());
+  expect((button as HTMLButtonElement).disabled).toBe(true);
+  fireEvent(window, Object.assign(new Event('pageshow'), { persisted: true }));
+  await vi.waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
+});
+
 it('tells a linked identity once and cleans the address', async () => {
   window.history.replaceState(null, '', '/?oidc=linked');
   stub({ oidc: linked });
@@ -119,6 +130,27 @@ it.each([
     stub({ oidc: linked });
     render(<App />);
     expect((await screen.findByRole('alert')).textContent).toBe(message);
+    expect(window.location.search).toBe('');
+  },
+);
+
+it.each([
+  [
+    'failed',
+    'The identity was not linked. Nothing changed; check the provider settings and try again.',
+  ],
+  [
+    'denied',
+    'The provider did not authorize the link. Nothing changed; try again when you are ready.',
+  ],
+])(
+  'tells a signed-in person that linking (%s) did not happen, not that sign-in failed',
+  async (reason, message) => {
+    window.history.replaceState(null, '', `/account?error=${reason}`);
+    stub({ oidc: linked, signedIn: true });
+    render(<App />);
+    expect(await screen.findByText(message)).toBeTruthy();
+    expect(screen.queryByText(/sign-in with the provider|authorize the sign-in/)).toBeNull();
     expect(window.location.search).toBe('');
   },
 );

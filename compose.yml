@@ -11,6 +11,8 @@ services:
       HOMORA_OIDC_CLIENT_SECRET: ${HOMORA_OIDC_CLIENT_SECRET:-}
       HOMORA_OIDC_NAME: ${HOMORA_OIDC_NAME:-}
       HOMORA_OIDC_REDIRECT_ORIGIN: ${HOMORA_OIDC_REDIRECT_ORIGIN:-}
+      # Path, inside the container, of a private CA for the OIDC provider (mount the file too).
+      NODE_EXTRA_CA_CERTS: ${NODE_EXTRA_CA_CERTS:-}
       HOMORA_LOG_LEVEL: ${HOMORA_LOG_LEVEL:-info}
       HOMORA_TRUSTED_PROXY: ${HOMORA_TRUSTED_PROXY:-127.0.0.1}
     extra_hosts:

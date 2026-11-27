@@ -50,7 +50,7 @@ export function registerAuthRoutes(
         ? {
             enabled: true,
             name: oidc.name,
-            linked: auth.oidc.links().some((link) => link.providerId === auth.oidc?.providerId),
+            linked: auth.oidcLinks.list().some((link) => link.providerId === auth.oidc?.providerId),
           }
         : { enabled: false },
   }));

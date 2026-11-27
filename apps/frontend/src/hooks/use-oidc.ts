@@ -24,7 +24,7 @@ export type OidcAccount = {
 };
 
 /** What the provider's redirect left in the address: a linked identity or a reason it failed. */
-export type OidcReturn = { linked: true } | { reason: 'denied' | 'failed' };
+export type OidcReturn = { linked: true } | { reason: 'denied' | 'failed'; linking: boolean };
 
 let taken: OidcReturn | null | undefined;
 
@@ -45,7 +45,8 @@ export function takeOidcReturn(): OidcReturn | null {
     params.get('oidc') === 'linked'
       ? { linked: true }
       : error === 'denied' || error === 'failed'
-        ? { reason: error }
+        ? // The gateway returns a failed link to the Account page and a failed sign-in elsewhere.
+          { reason: error, linking: window.location.pathname === '/account' }
         : null;
   if (taken) {
     params.delete('oidc');
@@ -61,12 +62,11 @@ export function takeOidcReturn(): OidcReturn | null {
   return taken;
 }
 
-const REASONS: Record<string, MessageKey> = {
-  denied: 'auth.oidcDenied',
-  unavailable: 'auth.oidcUnavailable',
-  failed: 'auth.oidcFailed',
-};
-export const oidcReasonMessage = (reason: string) => t(REASONS[reason] ?? 'auth.oidcFailed');
+/** What to tell the person about a failed return from the provider. */
+export function oidcReturnMessage({ reason, linking }: Extract<OidcReturn, { reason: string }>) {
+  if (linking) return t(reason === 'denied' ? 'account.oidcLinkDenied' : 'account.oidcLinkRefused');
+  return t(reason === 'denied' ? 'auth.oidcDenied' : 'auth.oidcFailed');
+}
 
 const post = (path: string, body: object) =>
   fetch(path, {

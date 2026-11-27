@@ -24,6 +24,7 @@ export async function createMockIdp() {
     down: false,
     discovery: {} as Record<string, unknown>,
     tokenStatus: 200,
+    withoutIdToken: false,
     signingKey: undefined as CryptoKey | undefined,
   };
   let issuer = '';
@@ -50,6 +51,9 @@ export async function createMockIdp() {
         ...state.discovery,
       });
     if (url.pathname === '/jwks') return send(200, { keys: [jwk] });
+    // Answers with the linked subject, as an attacker without a signed token would want.
+    if (url.pathname === '/userinfo')
+      return send(200, { sub: 'subject-1', email: 'idp@example.test' });
     if (url.pathname === '/token' && req.method === 'POST') {
       let raw = '';
       for await (const chunk of req) raw += chunk;
@@ -87,7 +91,7 @@ export async function createMockIdp() {
         access_token: 'access-token-never-stored',
         refresh_token: 'refresh-token-never-stored',
         token_type: 'Bearer',
-        id_token: await jwt.sign(state.signingKey ?? privateKey),
+        id_token: state.withoutIdToken ? undefined : await jwt.sign(state.signingKey ?? privateKey),
       });
     }
     return send(404, {});

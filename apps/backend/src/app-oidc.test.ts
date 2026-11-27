@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDatabase, getSqliteHandle } from '@homora/db';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
+import { createLogger } from './logger.js';
 import { oidcProviderId, type OidcConfig } from './oidc-config.js';
 import { createMockIdp, IDP_CLIENT_SECRET, type MockIdp } from './test-oidc.js';
 
@@ -41,6 +42,9 @@ async function fresh(options: Options = {}) {
   const config = options.config === null ? undefined : idp.config(options.config);
   const db = createDatabase(':memory:');
   const sqlite = getSqliteHandle(db.db);
+  /** Every line the application logs. */
+  const lines: string[] = [];
+  const logger = createLogger({ level: 'warn', stream: { write: (line) => lines.push(line) } });
   const build = (oidc: OidcConfig | undefined) => {
     const auth = createAuth({
       sqlite,
@@ -49,7 +53,10 @@ async function fresh(options: Options = {}) {
       allowedOrigins,
       oidc,
     });
-    const app = createApp(db.db, 5173, auth, undefined, allowedOrigins, undefined, { oidc });
+    const app = createApp(db.db, 5173, auth, undefined, allowedOrigins, undefined, {
+      oidc,
+      logger,
+    });
     open.push(() => app.close());
     return { auth, app };
   };
@@ -137,6 +144,7 @@ async function fresh(options: Options = {}) {
     oidcSignIn,
     events,
     count,
+    lines,
     hasSession,
     config,
     origin,
@@ -366,7 +374,9 @@ describe('OIDC sign-in', () => {
       failed(await t.call('GET', path)); // another browser: no cookie
       const ok = await t.call('GET', path, undefined, start.cookie);
       expect(ok.headers.location).toBe('/');
-      failed(await t.call('GET', path, undefined, start.cookie)); // replay of the same callback
+      const replay = await t.call('GET', path, undefined, start.cookie);
+      // A replay lands on the sign-in page, never on the library's own error route.
+      expect(replay.headers.location).toBe('/login?error=failed');
 
       const second = await t.beginLogin();
       failed(
@@ -405,6 +415,26 @@ describe('OIDC sign-in', () => {
   });
 
   describe('unavailable or misbehaving provider', () => {
+    it('never signs in on userinfo claims when the ID token is missing', async () => {
+      const t = await fresh();
+      await t.link(await t.signIn());
+      t.idp.state.withoutIdToken = true;
+      const result = await t.oidcSignIn();
+      expect(result.back.headers.location).toBe('/login?error=failed');
+      expect(t.hasSession(result.back)).toBe(false);
+      expect(t.idp.requests).not.toContain('/userinfo');
+    });
+
+    it('does not start when discovery reports another issuer', async () => {
+      const idp = await createMockIdp();
+      idp.state.discovery = { issuer: 'https://someone-else.example.test/' };
+      open.push(() => idp.close());
+      const t = await fresh({ idp });
+      const response = await t.call('POST', '/api/auth/oidc/login', {});
+      expect(response.statusCode).toBe(503);
+      expect(cookiesOf(response)).toHaveLength(0);
+    });
+
     it('answers 503 for OIDC, keeps the password sign-in and recovers when the provider is back', async () => {
       const idp = await createMockIdp();
       idp.state.down = true;
@@ -428,7 +458,101 @@ describe('OIDC sign-in', () => {
     });
   });
 
+  describe('diagnosing the provider', () => {
+    const hmacOnly = { id_token_signing_alg_values_supported: ['HS256'] };
+    const signingWarnings = (lines: string[]) =>
+      lines.filter((line) => line.includes('signing key'));
+
+    it('says in the log that an HMAC-only provider cannot work, once', async () => {
+      const idp = await createMockIdp();
+      idp.state.discovery = hmacOnly;
+      open.push(() => idp.close());
+      const t = await fresh({ idp });
+      expect(await t.auth.oidc!.unverifiableAlgorithms()).toEqual(['HS256']);
+      await t.call('POST', '/api/auth/oidc/login', {});
+      await t.call('POST', '/api/auth/oidc/login', {});
+      await vi.waitFor(() => expect(signingWarnings(t.lines)).toHaveLength(1));
+    });
+
+    it('notices it after a provider that was down at startup comes back', async () => {
+      const idp = await createMockIdp();
+      idp.state.discovery = hmacOnly;
+      idp.state.down = true;
+      open.push(() => idp.close());
+      const t = await fresh({ idp });
+      expect(await t.auth.oidc!.unverifiableAlgorithms()).toBeNull();
+      expect(signingWarnings(t.lines)).toHaveLength(0);
+      idp.state.down = false;
+      expect((await t.call('POST', '/api/auth/oidc/login', {})).statusCode).toBe(200);
+      await vi.waitFor(() => expect(signingWarnings(t.lines)).toHaveLength(1));
+    });
+
+    it.each([[['RS256']], [['HS256', 'RS256']]])('stays quiet for %j', async (algorithms) => {
+      const idp = await createMockIdp();
+      idp.state.discovery = { id_token_signing_alg_values_supported: algorithms };
+      open.push(() => idp.close());
+      const t = await fresh({ idp });
+      expect(await t.auth.oidc!.unverifiableAlgorithms()).toBeNull();
+    });
+  });
+
   describe('changing or removing the link', () => {
+    it('links only one identity even when two attempts return together', async () => {
+      const t = await fresh();
+      const session = await t.signIn();
+      const first = await t.beginLink(session);
+      const second = await t.beginLink(session);
+      const [a, b] = await Promise.all([
+        t.callback(first, claimsOf('subject-1')),
+        t.callback(second, claimsOf('subject-2')),
+      ]);
+      expect([a.headers.location, b.headers.location].sort()).toEqual([
+        '/account?error=failed',
+        '/account?oidc=linked',
+      ]);
+      expect(t.auth.oidcLinks.list()).toHaveLength(1);
+    });
+
+    it('removes every identity and any attempt that could link again', async () => {
+      const t = await fresh();
+      const session = await t.signIn();
+      const pending = await t.beginLink(session);
+      await t.link(session);
+      // A database that already holds a second identity.
+      t.sqlite.exec(
+        "INSERT INTO account (id, accountId, providerId, userId, createdAt, updatedAt) SELECT 'extra', 'subject-9', providerId, userId, createdAt, updatedAt FROM account WHERE providerId LIKE 'oidc-%'",
+      );
+      const removed = await t.call(
+        'POST',
+        '/api/account/oidc/unlink',
+        { password: account.password },
+        session,
+      );
+      expect(removed.statusCode).toBe(200);
+      expect(t.auth.oidcLinks.list()).toHaveLength(0);
+      const late = await t.callback(pending, claimsOf('subject-2'));
+      expect(String(late.headers.location)).toContain('error=');
+      expect(t.auth.oidcLinks.list()).toHaveLength(0);
+    });
+
+    it('still shows and removes the link after OIDC is switched off', async () => {
+      const first = await fresh();
+      const session = await first.signIn();
+      await first.link(session);
+      const { app } = first.build(undefined);
+      const headers = { origin: 'http://localhost:5173', cookie: session };
+      const info = await app.inject({ method: 'GET', url: '/api/account/oidc', headers });
+      expect(info.json()).toMatchObject({ enabled: false, identity: { current: false } });
+      const removed = await app.inject({
+        method: 'POST',
+        url: '/api/account/oidc/unlink',
+        headers,
+        payload: { password: account.password },
+      });
+      expect(removed.statusCode).toBe(200);
+      expect(first.auth.oidcLinks.list()).toHaveLength(0);
+    });
+
     it('unlinks with the password, ends other sessions and closes the OIDC entrance', async () => {
       const t = await fresh();
       const session = await t.signIn();

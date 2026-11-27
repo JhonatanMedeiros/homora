@@ -265,6 +265,10 @@ export const en = {
   'account.oidcUnlinked': 'The link was removed.',
   'account.oidcLinkedToast': 'Identity linked. You can now sign in with the provider.',
   'account.oidcLinkFailed': 'The identity could not be linked.',
+  'account.oidcLinkDenied':
+    'The provider did not authorize the link. Nothing changed; try again when you are ready.',
+  'account.oidcLinkRefused':
+    'The identity was not linked. Nothing changed; check the provider settings and try again.',
   'account.oidcUnlinkFailed': 'The link could not be removed.',
   'account.oidcLoadFailed': 'Could not load the sign-in provider.',
   'activity.event.oidc-link.success': 'Sign-in provider linked',
@@ -616,6 +620,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'account.oidcUnlinked': 'O vínculo foi removido.',
   'account.oidcLinkedToast': 'Identidade vinculada. Agora você pode entrar pelo provedor.',
   'account.oidcLinkFailed': 'Não foi possível vincular a identidade.',
+  'account.oidcLinkDenied':
+    'O provedor não autorizou o vínculo. Nada mudou; tente novamente quando quiser.',
+  'account.oidcLinkRefused':
+    'A identidade não foi vinculada. Nada mudou; confira a configuração do provedor e tente de novo.',
   'account.oidcUnlinkFailed': 'Não foi possível remover o vínculo.',
   'account.oidcLoadFailed': 'Não foi possível carregar o provedor de login.',
   'activity.event.oidc-link.success': 'Provedor de login vinculado',
