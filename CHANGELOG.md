@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.6.0](https://github.com/JhonatanMedeiros/homora/compare/v0.5.0...v0.6.0) (2026-11-27)
+
+
+### 🚀 New features
+
+* add AI shortcuts to command palette ([#353](https://github.com/JhonatanMedeiros/homora/issues/353)) ([d4c16b9](https://github.com/JhonatanMedeiros/homora/commit/d4c16b9786490227c4d5fbc1f3f9b5d4a4f80e78))
+* add evidence-based incident investigation ([#362](https://github.com/JhonatanMedeiros/homora/issues/362)) ([3c1b7db](https://github.com/JhonatanMedeiros/homora/commit/3c1b7db6e737d59163cddf03f269e6eceb29359c))
+* add evidence-based operational summary ([#359](https://github.com/JhonatanMedeiros/homora/issues/359)) ([492b99b](https://github.com/JhonatanMedeiros/homora/commit/492b99b3fe51ea3a12f24891165dd697febfd95f))
+* add Healthchecks jobs widget ([#358](https://github.com/JhonatanMedeiros/homora/issues/358)) ([21f9926](https://github.com/JhonatanMedeiros/homora/commit/21f9926f9671e99caff64e8ddc2d47881d16aac5))
+* add Home Assistant entities widget ([#344](https://github.com/JhonatanMedeiros/homora/issues/344)) ([b7da983](https://github.com/JhonatanMedeiros/homora/commit/b7da983c7450cf0d7ebc11df43e1880f6b739e7f))
+* add optional OIDC sign-in for the administrator account ([#374](https://github.com/JhonatanMedeiros/homora/issues/374)) ([df51815](https://github.com/JhonatanMedeiros/homora/commit/df5181513459d7e5cba4b60e2909596bd0676ee3)), closes [#147](https://github.com/JhonatanMedeiros/homora/issues/147)
+* assess monitoring coverage gaps ([#363](https://github.com/JhonatanMedeiros/homora/issues/363)) ([aa3c4e4](https://github.com/JhonatanMedeiros/homora/commit/aa3c4e4462f02e0c254bd7112bc6b57c600a62b4))
+* assess potential dependency impact ([#373](https://github.com/JhonatanMedeiros/homora/issues/373)) ([27a9d03](https://github.com/JhonatanMedeiros/homora/commit/27a9d039058ee389b4a0b54d7b392284ee98214d))
+* assist maintenance planning and review ([#375](https://github.com/JhonatanMedeiros/homora/issues/375)) ([751eb49](https://github.com/JhonatanMedeiros/homora/commit/751eb4902aa3699997b0c1348216b5fecff369f6))
+* configure the OIDC provider from the interface ([#382](https://github.com/JhonatanMedeiros/homora/issues/382)) ([2125ac9](https://github.com/JhonatanMedeiros/homora/commit/2125ac96645fb8877b69c2261162d34eef24e891)), closes [#380](https://github.com/JhonatanMedeiros/homora/issues/380)
+* **mcp:** let agents create and remove page widgets through a reviewed proposal ([#340](https://github.com/JhonatanMedeiros/homora/issues/340)) ([fbf5315](https://github.com/JhonatanMedeiros/homora/commit/fbf531536ff4836aff6807546546847f2c587426)), closes [#338](https://github.com/JhonatanMedeiros/homora/issues/338)
+* show service names in evidence views ([#371](https://github.com/JhonatanMedeiros/homora/issues/371)) ([82b0ed6](https://github.com/JhonatanMedeiros/homora/commit/82b0ed6e6b090512d4d3f2195c2c175c36ad5e9e))
+* **ui:** give the pages their own bar and a full page list ([#342](https://github.com/JhonatanMedeiros/homora/issues/342)) ([76090ff](https://github.com/JhonatanMedeiros/homora/commit/76090ffb2e9a804d9fcbec92d688b7f67d53e41b))
+* **ui:** polish the add-widget dialog ([#336](https://github.com/JhonatanMedeiros/homora/issues/336)) ([ec9d0ed](https://github.com/JhonatanMedeiros/homora/commit/ec9d0ed46c9c85d7a79027fdc6aa1488ebeeafa4))
+* **ui:** redesign the service map with health, filters, load meters and a docked panel ([#352](https://github.com/JhonatanMedeiros/homora/issues/352)) ([9b4c8af](https://github.com/JhonatanMedeiros/homora/commit/9b4c8afa64314c8e4e7cda091100e5ea3ccf28e3))
+* **ui:** show probes in the rail on two lines with a health summary ([#341](https://github.com/JhonatanMedeiros/homora/issues/341)) ([8a30944](https://github.com/JhonatanMedeiros/homora/commit/8a3094422de1918f3245f2c8d1a4f5a6ca47c493))
+
+
+### 🩹 Bug fixes
+
+* group overlapping incident hypotheses ([#369](https://github.com/JhonatanMedeiros/homora/issues/369)) ([ddb7835](https://github.com/JhonatanMedeiros/homora/commit/ddb7835a1d7f1538ef38a92720c92874219de9c5))
+* harden OIDC linking, sign-in verification and failure feedback ([#379](https://github.com/JhonatanMedeiros/homora/issues/379)) ([91ae834](https://github.com/JhonatanMedeiros/homora/commit/91ae8348fc9f91becf49fb2b5ca2075568eb49f8))
+* improve UI contrast, accessibility and mobile Home ([#361](https://github.com/JhonatanMedeiros/homora/issues/361)) ([78e99f7](https://github.com/JhonatanMedeiros/homora/commit/78e99f71e5fee493883070062f0fa0a2d7a28f39))
+* keep statuses honest and protect the service form ([#368](https://github.com/JhonatanMedeiros/homora/issues/368)) ([7226d59](https://github.com/JhonatanMedeiros/homora/commit/7226d59bffd3458b2bb18d5525beca39e8cb1966))
+* keep the OIDC sign-in button after signing out ([#376](https://github.com/JhonatanMedeiros/homora/issues/376)) ([96ab739](https://github.com/JhonatanMedeiros/homora/commit/96ab739c23e39b80865f2ead70926da9f6487a80))
+* **mcp:** validate propose_batch items in order and name the invalid item ([#339](https://github.com/JhonatanMedeiros/homora/issues/339)) ([2391d73](https://github.com/JhonatanMedeiros/homora/commit/2391d7348cd0b10b28ceac184b9b8932eb42bb73)), closes [#337](https://github.com/JhonatanMedeiros/homora/issues/337)
+* report missing incidents to mcp agents ([#370](https://github.com/JhonatanMedeiros/homora/issues/370)) ([25982e5](https://github.com/JhonatanMedeiros/homora/commit/25982e520fd5e93ce611c84c87e04f60fe417f8e))
+* ship the recovery scripts in the container image ([#385](https://github.com/JhonatanMedeiros/homora/issues/385)) ([fca3b88](https://github.com/JhonatanMedeiros/homora/commit/fca3b889dbb6cc765b15d161bd5b18e178c0b87a))
+* stop notification rows overlapping on touch screens ([#360](https://github.com/JhonatanMedeiros/homora/issues/360)) ([09d088f](https://github.com/JhonatanMedeiros/homora/commit/09d088f4756f6ddf3bc14a63464e58fbae9b0ff7))
+
+
+### 🔐 Security
+
+* require a session for percent-encoded API paths ([#383](https://github.com/JhonatanMedeiros/homora/issues/383)) ([09beb22](https://github.com/JhonatanMedeiros/homora/commit/09beb22a012c9faeb8a50657f94377c145347492))
+
+
+### 📝 Documentation
+
+* define evidence and AI assistance boundaries ([255572c](https://github.com/JhonatanMedeiros/homora/commit/255572c96b1093728c839d50c77cb6634fe03bf1))
+* require a published signing key for the OIDC provider ([#378](https://github.com/JhonatanMedeiros/homora/issues/378)) ([c129267](https://github.com/JhonatanMedeiros/homora/commit/c129267d27977106ad9c7eb2496ae857d5c553b8))
+
+### Upgrade notes
+
+- Before upgrading to 0.6.0, take and verify a restorable backup of the database, and keep the `.key` file with it. OIDC sign-in is optional; configure an HTTPS issuer with a matching issuer URL, an email claim, and a published signing key. For a private CA, mount its certificate and set `NODE_EXTRA_CA_CERTS`.
+
 ## [0.5.0](https://github.com/JhonatanMedeiros/homora/compare/v0.4.0...v0.5.0) (2026-11-24)
 
 
