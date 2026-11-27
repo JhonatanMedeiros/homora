@@ -14,7 +14,7 @@ import {
 } from '@homora/widgets';
 import { InputError } from '../api-error.js';
 import { getAuthorizedResponse } from '../network-request.js';
-import type { createVault } from '../vault.js';
+import { hasSealedValues, type createVault } from '../vault.js';
 import { createOpenMeteoProvider } from './open-meteo.js';
 import { createOpenWeatherMapProvider } from './openweathermap.js';
 import {
@@ -27,7 +27,7 @@ type Vault = ReturnType<typeof createVault>;
 
 const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 64;
-const API_KEY_PATTERN = /^[\x21-\x7E]{1,256}$/;
+const API_KEY_PATTERN = /^[\u0021-\u007E]{1,256}$/;
 
 const sealedSecretSchema = z.object({ apiKey: z.string().regex(API_KEY_PATTERN) }).strict();
 
@@ -171,7 +171,7 @@ export function createWeatherService(
     const apiKey = rawApiKey.trim();
     if (!API_KEY_PATTERN.test(apiKey)) throw new InputError('invalid-weather-api-key');
     if (!vault) throw new InputError('vault-unavailable');
-    const sealed = vault.seal(JSON.stringify({ apiKey }), true);
+    const sealed = vault.seal(JSON.stringify({ apiKey }), !hasSealedValues(db));
     const timestamp = now();
     db.prepare(
       'INSERT INTO weather_providers(provider, secret_ref, updated_at) VALUES(?, ?, ?) ON CONFLICT(provider) DO UPDATE SET secret_ref = excluded.secret_ref, updated_at = excluded.updated_at',

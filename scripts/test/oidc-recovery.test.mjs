@@ -42,6 +42,7 @@ async function linkedAccount(path) {
       "INSERT INTO account(id,accountId,providerId,userId,createdAt,updatedAt) VALUES('i1','sub-1','oidc-0123456789abcdef',?,'2026-01-01','2026-01-01')",
     )
     .run(userId);
+  sqlite.exec("INSERT INTO oidc_settings (id, provider, preferences) VALUES (1, 'sealed', '{}')");
   db.close();
 }
 
@@ -67,6 +68,8 @@ test('--oidc-only removes the link and the sessions but keeps the account and pa
         sqlite.prepare("SELECT COUNT(*) AS n FROM account WHERE providerId = 'credential'").get().n,
         1,
       );
+      // The provider saved in the interface goes too, so that the variables apply again.
+      assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM oidc_settings').get().n, 0);
       assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM session').get().n, 0);
       assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM "user"').get().n, 1);
       const auth = createAuth({ sqlite, secret, webPort: 5173 });

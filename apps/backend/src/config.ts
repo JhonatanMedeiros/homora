@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { parseDockerHost } from './discovery/index.js';
 import { parseLogLevel } from './logger.js';
-import { parseOidcConfig } from './oidc-config.js';
+import { parseOidcConfig, resolveOidcRedirectOrigin } from './oidc-config.js';
 import { parsePasskeyRpId, resolvePasskeyConfig } from './passkey-config.js';
 export const root = fileURLToPath(new URL('../../../', import.meta.url));
 export function parseAllowedOrigins(value: string | undefined): string[] {
@@ -51,6 +51,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
   // Fails at startup when the domain has no matching HTTPS origin.
   resolvePasskeyConfig({ webPort, allowedOrigins, rpId: passkeyRpId });
   const oidc = parseOidcConfig(env, { webPort, allowedOrigins });
+  // Needed even without variables: a provider can be configured in the interface.
+  const oidcRedirectOrigin = resolveOidcRedirectOrigin(env, { webPort, allowedOrigins });
   if (!['true', 'false', undefined, ''].includes(env.HOMORA_TRUST_PROXY))
     throw new Error('HOMORA_TRUST_PROXY must be true or false.');
   const sessionSecret = env.HOMORA_SESSION_SECRET || undefined;
@@ -64,6 +66,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     allowedOrigins,
     passkeyRpId,
     oidc,
+    oidcRedirectOrigin,
     sessionSecret,
     trustProxy: env.HOMORA_TRUST_PROXY === 'true',
     developmentMocks: env.HOMORA_DEV_MOCKS === 'true',

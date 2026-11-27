@@ -55,6 +55,7 @@ it('upgrades the monitoring view without changing cards, probes or history', asy
       ALTER TABLE services DROP COLUMN host_external;
       DROP TRIGGER service_identity_insert;
       DROP TABLE service_identities;
+      DROP TABLE oidc_settings;
       DELETE FROM __drizzle_migrations WHERE created_at >= 1794900000000;
     `);
     first.close();
@@ -83,6 +84,43 @@ it('upgrades the monitoring view without changing cards, probes or history', asy
       expect(
         db.prepare('SELECT identity FROM service_identities WHERE service_id=101').get(),
       ).toMatchObject({ identity: expect.stringMatching(/^[0-9a-f]{32}$/) });
+    } finally {
+      upgraded.close();
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it('adds the sign-in provider settings without touching the account or its links', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const directory = mkdtempSync(join(tmpdir(), 'homora-oidc-migration-'));
+  const path = join(directory, 'test.sqlite');
+  try {
+    const first = createDatabase(path);
+    const sqlite = getSqliteHandle(first.db);
+    const latest = sqlite
+      .prepare('SELECT MAX(created_at) AS at FROM __drizzle_migrations')
+      .get() as { at: number };
+    sqlite.exec(`
+      INSERT INTO user(id,name,email,emailVerified,createdAt,updatedAt) VALUES('u','Admin','admin@example.test',0,'2026-01-01','2026-01-01');
+      INSERT INTO account(id,accountId,providerId,userId,createdAt,updatedAt) VALUES('a','subject','oidc-0123456789abcdef','u','2026-01-01','2026-01-01');
+      DROP TABLE oidc_settings;
+      DELETE FROM __drizzle_migrations WHERE created_at = ${latest.at};
+    `);
+    first.close();
+    const upgraded = createDatabase(path);
+    try {
+      const db = getSqliteHandle(upgraded.db);
+      expect(upgraded.migrations.appliedNow).toBe(1);
+      expect(db.prepare('SELECT providerId, userId FROM account').get()).toEqual({
+        providerId: 'oidc-0123456789abcdef',
+        userId: 'u',
+      });
+      expect(db.prepare('SELECT COUNT(*) AS n FROM oidc_settings').get()).toEqual({ n: 0 });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
     } finally {
       upgraded.close();
     }

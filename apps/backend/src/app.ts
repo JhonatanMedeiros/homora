@@ -22,6 +22,8 @@ import { integrationRegistry } from './integrations/integration-registry.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerOidcRoutes } from './routes/oidc.js';
+import { registerOidcSettingsRoutes } from './routes/oidc-settings.js';
+import { createOidcManager } from './oidc-manager.js';
 import type { OidcConfig } from './oidc-config.js';
 import { registerAccountRoutes } from './routes/account.js';
 import { createAuditLog, SYSTEM_ACTOR } from './audit.js';
@@ -92,8 +94,12 @@ export function createApp(
     apiPort?: number;
     backgroundPath?: string;
     developmentMocks?: boolean;
-    /** Optional OIDC sign-in (ADR 0032); without it the feature is off. */
+    /** The OIDC provider defined by the environment, if any (ADR 0032). */
     oidc?: OidcConfig;
+    /** Where a provider redirects back to; needed to configure one in the interface. */
+    oidcRedirectOrigin?: string;
+    /** Lets tests save a provider served over HTTP on loopback; never set by the server. */
+    oidcAllowLoopbackHttp?: boolean;
     /** Process logger (see `createLogger`). Without one the application logs nothing, as in tests. */
     logger?: FastifyBaseLogger;
   } = {},
@@ -325,8 +331,27 @@ export function createApp(
   });
 
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
-  registerAuthRoutes(app, auth, webPort, audit, options.oidc);
-  registerOidcRoutes(app, auth, audit, options.oidc);
+  const oidc = createOidcManager({
+    sqlite,
+    vault,
+    auth,
+    environment: options.oidc,
+    redirectOrigin:
+      options.oidc?.redirectOrigin ?? options.oidcRedirectOrigin ?? `http://localhost:${webPort}`,
+    log,
+  });
+  // Not awaited: startup never waits for the provider.
+  app.addHook('onReady', async () => oidc.testInBackground());
+  registerAuthRoutes(app, auth, webPort, audit, oidc);
+  // A reset on the command line changes the saved provider under a running server.
+  app.addHook('onRequest', async (request) => {
+    const path = request.routeOptions.url;
+    if (path?.startsWith('/api/auth/') || path?.startsWith('/api/account/oidc')) oidc.sync();
+  });
+  registerOidcRoutes(app, auth, audit, oidc);
+  registerOidcSettingsRoutes(app, auth, audit, oidc, {
+    allowLoopbackHttp: options.oidcAllowLoopbackHttp === true,
+  });
   registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.describe());
   let invalidateIntegrationWidgetCache = (_id: number) => {};

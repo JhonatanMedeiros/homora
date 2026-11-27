@@ -110,6 +110,11 @@ export const ERROR_MESSAGES = {
   'oidc-wrong-origin':
     'Open Homora at the address configured for the sign-in provider and try again.',
   'oidc-already-linked': 'An identity is already linked. Remove it first.',
+  'oidc-invalid-issuer': 'The issuer must be an HTTPS URL without credentials, query or fragment.',
+  'oidc-confirm-issuer': 'Changing the issuer removes the linked identity. Confirm to continue.',
+  'oidc-auto-unavailable': 'Automatic redirect needs a working provider with a linked identity.',
+  'oidc-unreadable':
+    'The saved sign-in provider cannot be read. Remove it or restore the encryption key.',
   'oidc-link-failed': 'The identity could not be linked.',
   'oidc-not-configured': 'No sign-in provider is configured.',
   'passkey-sign-in-failed': 'The passkey was not accepted.',

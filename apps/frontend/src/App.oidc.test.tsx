@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { toast } from 'sonner';
 import { setLocale } from '@/i18n';
 import { navigation, resetOidcReturn } from '@/hooks/use-oidc';
@@ -161,4 +161,86 @@ it('ignores unknown error values in the address', async () => {
   render(<App />);
   await screen.findByLabelText('Email');
   expect(screen.queryByRole('alert')).toBeNull();
+});
+
+const automatic = { ...linked, autoRedirect: true };
+const clearRedirectMemory = () => {
+  localStorage.removeItem('homora.signed-out');
+  sessionStorage.removeItem('homora.oidc-redirected');
+};
+
+describe('automatic redirect', () => {
+  beforeEach(clearRedirectMemory);
+  afterEach(clearRedirectMemory);
+  const loginBody = (fetchMock: ReturnType<typeof stub>) =>
+    fetchMock.mock.calls
+      .map((call) => call as unknown as [string, RequestInit?])
+      .filter(([url]) => url === '/api/auth/oidc/login')
+      .map(([, init]) => JSON.parse(String(init?.body)) as object);
+
+  it('opens the provider on arrival, once', async () => {
+    const fetchMock = stub({ oidc: automatic });
+    render(<App />);
+    expect(await screen.findByText('Going to Authentik…')).toBeTruthy();
+    await waitFor(() => expect(assign).toHaveBeenCalledTimes(1));
+    expect(loginBody(fetchMock)).toEqual([{ auto: true }]);
+    cleanup();
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'Sign in with Authentik' })).toBeTruthy();
+    expect(assign).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['/login?local=1', '/login?error=failed'])('stays on %s', async (address) => {
+    window.history.replaceState(null, '', address);
+    const fetchMock = stub({ oidc: automatic });
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'Sign in with Authentik' })).toBeTruthy();
+    expect(loginBody(fetchMock)).toEqual([]);
+  });
+
+  it('does not leave by itself when the browser keeps nothing', async () => {
+    const real = window.sessionStorage;
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      get: () => {
+        throw new Error('blocked');
+      },
+    });
+    try {
+      const fetchMock = stub({ oidc: automatic });
+      render(<App />);
+      expect(await screen.findByRole('button', { name: 'Sign in with Authentik' })).toBeTruthy();
+      expect(loginBody(fetchMock)).toEqual([]);
+    } finally {
+      Object.defineProperty(window, 'sessionStorage', { configurable: true, value: real });
+    }
+  });
+
+  it('stays on the sign-in page after signing out', async () => {
+    localStorage.setItem('homora.signed-out', '1');
+    const fetchMock = stub({ oidc: automatic });
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'Sign in with Authentik' })).toBeTruthy();
+    expect(loginBody(fetchMock)).toEqual([]);
+  });
+
+  it('shows the sign-in page when the provider does not answer', async () => {
+    stub({
+      oidc: automatic,
+      login: () => new Response(JSON.stringify({ code: 'oidc-unavailable' }), { status: 503 }),
+    });
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'Sign in with Authentik' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBe(null);
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('sends the "keep me signed in" choice with the provider button', async () => {
+    const fetchMock = stub({ oidc: linked });
+    render(<App />);
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Keep me signed in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with Authentik' }));
+    await waitFor(() => expect(assign).toHaveBeenCalled());
+    expect(loginBody(fetchMock)).toEqual([{ rememberMe: true }]);
+  });
 });

@@ -15,12 +15,48 @@ export type OidcIdentity = {
   /** False once the configured provider changed: the link no longer opens the account. */
   current: boolean;
 };
+export type OidcProblem = 'unreachable' | 'issuer' | 'endpoints' | 'signing';
+export type OidcDraft = {
+  issuer: string;
+  clientId: string;
+  name: string;
+  hasSecret: boolean;
+  redirectUri: string;
+};
+/** The sign-in provider as the account sees it; the client secret is never part of it. */
 export type OidcAccount = {
+  /** A provider is in use: configured and not switched off. */
   enabled: boolean;
   name: string | null;
   /** The address to register at the provider as the redirect (callback) URL. */
   redirectUri: string | null;
+  /** The address the provider returns to; set by the server. */
+  redirectOrigin: string;
   identity: OidcIdentity | null;
+  /** Where the provider comes from. A saved one takes the place of the variables. */
+  source: 'saved' | 'environment' | 'none';
+  environment: boolean;
+  unreadable: boolean;
+  provider: { issuer: string; clientId: string; name: string } | null;
+  draft: OidcDraft | null;
+  disabled: boolean;
+  autoRedirect: boolean;
+  longSession: boolean;
+  health: {
+    status: 'unknown' | 'ok' | 'failing';
+    failure: OidcProblem | null;
+    testedAt: string | null;
+  };
+};
+
+export type OidcProviderInput = {
+  password: string;
+  issuer: string;
+  clientId: string;
+  clientSecret?: string;
+  name?: string;
+  confirmIssuerChange?: boolean;
+  fromDraft?: boolean;
 };
 
 /** What the provider's redirect left in the address: a linked identity or a reason it failed. */
@@ -85,12 +121,18 @@ async function start(response: Response | null, fallback: MessageKey): Promise<t
   return { error: apiError(body, t(fallback)) };
 }
 
-/** Sends the browser to the provider to sign in. */
-export async function signInWithOidc() {
-  return start(await post('/api/auth/oidc/login', {}), 'auth.oidcFailed');
+/**
+ * Sends the browser to the provider to sign in. `auto` is the redirect nobody asked for: the
+ * server then checks that the provider answers and applies its own session length.
+ */
+export async function signInWithOidc(options: { rememberMe?: boolean; auto?: boolean } = {}) {
+  return start(await post('/api/auth/oidc/login', options), 'auth.oidcFailed');
 }
 
-/** The OIDC link of the signed-in account, and the two actions that change it. */
+/** A refusal, with the server's code so that a confirmation can be asked for. */
+export type OidcRefusal = { error: string; code?: string };
+
+/** The sign-in provider of the signed-in account, its identity link and the changes to both. */
 export function useOidcAccount() {
   const [account, setAccount] = useState<OidcAccount | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -108,6 +150,18 @@ export function useOidcAccount() {
     void load();
   }, [load]);
 
+  /** A change that answers with the new state of the provider. */
+  const change = useCallback(async (path: string, body: object): Promise<true | OidcRefusal> => {
+    const response = await post(`/api/account/oidc/${path}`, body);
+    const result = (await response?.json().catch(() => null)) as
+      | (OidcAccount & { code?: string })
+      | null;
+    if (!response?.ok || !result)
+      return { error: apiError(result, t('account.oidcSaveFailed')), code: result?.code };
+    setAccount(result);
+    return true;
+  }, []);
+
   return {
     account,
     loadFailed,
@@ -124,5 +178,17 @@ export function useOidcAccount() {
       await load();
       return true;
     },
+    /** Saves the provider, or a draft while the client ID or secret is missing. */
+    save: (input: OidcProviderInput) => change('config', input),
+    setPreferences: (input: {
+      password: string;
+      disabled?: boolean;
+      autoRedirect?: boolean;
+      longSession?: boolean;
+    }) => change('preferences', input),
+    discardDraft: (password: string) => change('draft/discard', { password }),
+    remove: (password: string) => change('remove', { password }),
+    test: () => change('test', {}),
   };
 }
+export type OidcActions = ReturnType<typeof useOidcAccount>;

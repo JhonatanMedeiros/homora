@@ -95,7 +95,7 @@ export const en = {
   'account.started': 'Started {time}',
   'account.expires': 'Expires {time}',
   'account.sessionsNote':
-    'The browser and address are the ones seen at sign-in. Sessions expire 8 hours after they start.',
+    'The browser and address are the ones seen at sign-in. Sessions expire 8 hours after they start, or after 30 days when you chose to stay signed in.',
   'operationalSummary.title': 'Monitoring changes',
   'coverage.title': 'Monitoring coverage',
   'coverage.description':
@@ -249,7 +249,90 @@ export const en = {
   'account.oidcLink': 'Link identity',
   'account.oidcLinkIntro':
     'Link the identity you use at {name}. Only that identity can then sign in; an e-mail address is never enough.',
-  'account.oidcRedirectUri': 'Register this redirect URL at the provider: {uri}',
+  'account.oidcRedirectUri': 'Redirect URL',
+  'account.oidcRedirectUriPending': 'Enter an HTTPS issuer, or save a draft, to get this address.',
+  'account.oidcRedirectUriHint':
+    'Register exactly this address at the provider. It changes when the issuer changes.',
+  'account.oidcCopy': 'Copy',
+  'account.oidcConfigure': 'Set up',
+  'account.oidcProvider': 'Provider',
+  'account.oidcIdentity': 'Identity',
+  'account.oidcConfiguration': 'Configuration',
+  'account.oidcBehaviour': 'Sign-in behaviour',
+  'account.oidcIssuer': 'Issuer URL',
+  'account.oidcIssuerHint': 'Exactly as the provider reports it, with or without the final slash.',
+  'account.oidcClientId': 'Client ID',
+  'account.oidcClientSecret': 'Client secret',
+  'account.oidcSecretHint': 'It is not shown again after saving.',
+  'account.oidcSecretKept': 'Leave empty to keep the saved secret.',
+  'account.oidcSecretConfigured': 'Configured',
+  'account.oidcButtonName': 'Button name',
+  'account.oidcButtonNameHint': 'Optional. The sign-in page shows “Sign in with” this name.',
+  'account.oidcSaveAndTest': 'Save and test',
+  'account.oidcSaveDraft': 'Save draft',
+  'account.oidcSaveBehaviour': 'Save behaviour',
+  'account.oidcSaved': 'Sign-in provider saved.',
+  'account.oidcDraftSaved': 'Draft saved. Complete it when you have the client ID and secret.',
+  'account.oidcSaveFailed': 'The sign-in provider could not be changed.',
+  'account.oidcCancel': 'Cancel',
+  'account.oidcEdit': 'Edit',
+  'account.oidcDraft': 'Draft',
+  'account.oidcDraftPending':
+    'A draft for {issuer} is waiting. The configuration in use does not change until it is completed.',
+  'account.oidcCompleteDraft': 'Complete draft',
+  'account.oidcDiscard': 'Discard draft',
+  'account.oidcDiscardHint': 'The draft is deleted. The configuration in use does not change.',
+  'account.oidcIssuerChange':
+    'A new issuer removes the linked identity and ends your other sessions. You will need to link again.',
+  'account.oidcIssuerChangeConfirm': 'Remove the link and save',
+  'account.oidcFromEnvironment':
+    'Defined by the HOMORA_OIDC_* variables. Saving a configuration here takes their place.',
+  'account.oidcOverrideHint':
+    'These values come from the variables. The secret is never copied: type it again.',
+  'account.oidcOverridesEnvironment':
+    'This configuration takes the place of the HOMORA_OIDC_* variables. Removing it makes them apply again.',
+  'account.oidcOtherOrigin':
+    'The provider returns to {origin}. Open Homora at that address to link or sign in.',
+  'account.oidcWorking': 'The provider answers and publishes a signing key.',
+  'account.oidcNotTested': 'Not tested since Homora started.',
+  'account.oidcTestAgain': 'Test again',
+  'account.oidcTestedAt':
+    'Tested on {date}. The client ID and secret are only checked when you link.',
+  'account.oidcFailing': 'The provider is not working',
+  'account.oidcProblemUnreachable':
+    'It did not answer. Check the issuer URL, the network and the certificate.',
+  'account.oidcProblemIssuer':
+    'It reports a different issuer. Copy the issuer exactly as the provider shows it.',
+  'account.oidcProblemEndpoints':
+    'It announces addresses that do not use HTTPS. Check the proxy settings of the provider.',
+  'account.oidcProblemSigning':
+    'It publishes no signing key (only HS256). Choose a signing key at the provider, then test again.',
+  'account.oidcButtonVisible': 'The sign-in page shows the provider button.',
+  'account.oidcButtonHidden':
+    'The sign-in page hides the provider button until the provider is on, working and linked.',
+  'account.oidcAutoRedirect': 'Automatic redirect',
+  'account.oidcAutoRedirectHint':
+    'Opening Homora goes straight to the provider. After signing out or a provider error, the sign-in page appears.',
+  'account.oidcAutoRedirectBlocked': 'Available once the provider works and an identity is linked.',
+  'account.oidcPasswordAddress': 'Password sign-in',
+  'account.oidcPasswordAddressHint':
+    'Keep this address: it opens the sign-in page without redirecting.',
+  'account.oidcLongSession': 'Stay signed in on automatic redirect',
+  'account.oidcLongSessionHint':
+    'On: 30 days. Off: 8 hours. The provider button follows “Keep me signed in” on the sign-in page.',
+  'account.oidcDisable': 'Disable',
+  'account.oidcDisableHint':
+    'The provider stops signing in. The configuration, the link and open sessions stay.',
+  'account.oidcEnable': 'Enable',
+  'account.oidcEnableHint': 'The provider can sign in again.',
+  'account.oidcDisabled': 'The sign-in provider is disabled.',
+  'account.oidcRemove': 'Remove configuration',
+  'account.oidcRemoveHint':
+    'Deletes this configuration and the linked identity, and ends your other sessions.',
+  'account.oidcRemoveHintEnvironment':
+    'Deletes this configuration and the linked identity, and ends your other sessions. The HOMORA_OIDC_* variables apply again.',
+  'account.oidcLinkNeedsEnabled': 'Enable the provider to link an identity.',
+  'account.oidcLinkNeedsWorking': 'Fix the provider and test it again to link an identity.',
   'account.oidcPasswordHint':
     'Confirm your password. The provider then asks you to sign in to prove the identity.',
   'account.oidcContinue': 'Continue to {name}',
@@ -275,6 +358,8 @@ export const en = {
   'activity.event.oidc-link.failure': 'Linking the sign-in provider failed',
   'activity.event.oidc-unlink.success': 'Sign-in provider link removed',
   'activity.event.oidc-unlink.failure': 'Removing the sign-in provider link failed',
+  'activity.event.oidc-config.success': 'Sign-in provider configuration changed',
+  'activity.event.oidc-config.failure': 'Changing the sign-in provider configuration failed',
   'account.passkeys': 'Passkeys',
   'account.passkeysDescription':
     'Sign in with your fingerprint, face or device PIN instead of typing the password. Each passkey is tied to this address. The password keeps working.',
@@ -441,7 +526,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'account.started': 'Iniciada {time}',
   'account.expires': 'Expira {time}',
   'account.sessionsNote':
-    'O navegador e o endereço são os vistos no momento do login. As sessões expiram 8 horas depois de iniciadas.',
+    'O navegador e o endereço são os vistos no momento do login. As sessões expiram 8 horas depois de iniciadas, ou em 30 dias quando você escolheu manter conectado.',
   'operationalSummary.title': 'Mudanças no monitoramento',
   'coverage.title': 'Cobertura de monitoramento',
   'coverage.description':
@@ -604,7 +689,93 @@ export const ptBR: Record<keyof typeof en, string> = {
   'account.oidcLink': 'Vincular identidade',
   'account.oidcLinkIntro':
     'Vincule a identidade que você usa em {name}. Só ela poderá entrar; um endereço de e-mail nunca basta.',
-  'account.oidcRedirectUri': 'Registre esta URL de redirecionamento no provedor: {uri}',
+  'account.oidcRedirectUri': 'URL de redirecionamento',
+  'account.oidcRedirectUriPending':
+    'Informe um emissor HTTPS, ou salve um rascunho, para gerar este endereço.',
+  'account.oidcRedirectUriHint':
+    'Cadastre exatamente este endereço no provedor. Ele muda se o emissor mudar.',
+  'account.oidcCopy': 'Copiar',
+  'account.oidcConfigure': 'Configurar',
+  'account.oidcProvider': 'Provedor',
+  'account.oidcIdentity': 'Identidade',
+  'account.oidcConfiguration': 'Configuração',
+  'account.oidcBehaviour': 'Comportamento no login',
+  'account.oidcIssuer': 'URL do emissor',
+  'account.oidcIssuerHint': 'Exatamente como o provedor informa, com ou sem a barra final.',
+  'account.oidcClientId': 'ID do cliente',
+  'account.oidcClientSecret': 'Segredo do cliente',
+  'account.oidcSecretHint': 'Depois de salvo, não é exibido de novo.',
+  'account.oidcSecretKept': 'Deixe em branco para manter o segredo salvo.',
+  'account.oidcSecretConfigured': 'Configurado',
+  'account.oidcButtonName': 'Nome no botão',
+  'account.oidcButtonNameHint': 'Opcional. A tela de login mostra “Entrar com” este nome.',
+  'account.oidcSaveAndTest': 'Salvar e testar',
+  'account.oidcSaveDraft': 'Salvar rascunho',
+  'account.oidcSaveBehaviour': 'Salvar comportamento',
+  'account.oidcSaved': 'Provedor de login salvo.',
+  'account.oidcDraftSaved': 'Rascunho salvo. Complete quando tiver o ID e o segredo do cliente.',
+  'account.oidcSaveFailed': 'Não foi possível alterar o provedor de login.',
+  'account.oidcCancel': 'Cancelar',
+  'account.oidcEdit': 'Editar',
+  'account.oidcDraft': 'Rascunho',
+  'account.oidcDraftPending':
+    'Há um rascunho para {issuer}. A configuração em uso não muda até ele ser completado.',
+  'account.oidcCompleteDraft': 'Completar rascunho',
+  'account.oidcDiscard': 'Descartar rascunho',
+  'account.oidcDiscardHint': 'O rascunho é apagado. A configuração em uso não muda.',
+  'account.oidcIssuerChange':
+    'Um novo emissor remove a identidade vinculada e encerra as outras sessões. Será preciso vincular de novo.',
+  'account.oidcIssuerChangeConfirm': 'Remover o vínculo e salvar',
+  'account.oidcFromEnvironment':
+    'Definido pelas variáveis HOMORA_OIDC_*. Salvar uma configuração aqui toma o lugar delas.',
+  'account.oidcOverrideHint':
+    'Estes valores vêm das variáveis. O segredo nunca é copiado: digite-o novamente.',
+  'account.oidcOverridesEnvironment':
+    'Esta configuração toma o lugar das variáveis HOMORA_OIDC_*. Removê-la faz as variáveis voltarem a valer.',
+  'account.oidcOtherOrigin':
+    'O provedor retorna para {origin}. Abra o Homora nesse endereço para vincular ou entrar.',
+  'account.oidcWorking': 'O provedor responde e publica uma chave de assinatura.',
+  'account.oidcNotTested': 'Não testado desde que o Homora iniciou.',
+  'account.oidcTestAgain': 'Testar novamente',
+  'account.oidcTestedAt':
+    'Testado em {date}. O ID e o segredo do cliente só são conferidos ao vincular.',
+  'account.oidcFailing': 'O provedor não está funcionando',
+  'account.oidcProblemUnreachable':
+    'Ele não respondeu. Confira a URL do emissor, a rede e o certificado.',
+  'account.oidcProblemIssuer':
+    'Ele informa outro emissor. Copie o emissor exatamente como o provedor mostra.',
+  'account.oidcProblemEndpoints':
+    'Ele anuncia endereços sem HTTPS. Confira a configuração de proxy do provedor.',
+  'account.oidcProblemSigning':
+    'Ele não publica chave de assinatura (só HS256). Escolha uma chave no provedor e teste novamente.',
+  'account.oidcButtonVisible': 'A tela de login mostra o botão do provedor.',
+  'account.oidcButtonHidden':
+    'A tela de login esconde o botão até o provedor estar ativo, funcionando e vinculado.',
+  'account.oidcAutoRedirect': 'Redirecionamento automático',
+  'account.oidcAutoRedirectHint':
+    'Abrir o Homora leva direto ao provedor. Depois de sair ou de um erro no provedor, a tela de login aparece.',
+  'account.oidcAutoRedirectBlocked':
+    'Disponível quando o provedor funcionar e houver uma identidade vinculada.',
+  'account.oidcPasswordAddress': 'Acesso com senha',
+  'account.oidcPasswordAddressHint':
+    'Guarde este endereço: ele abre a tela de login sem redirecionar.',
+  'account.oidcLongSession': 'Manter conectado no redirecionamento automático',
+  'account.oidcLongSessionHint':
+    'Ligado: 30 dias. Desligado: 8 horas. No botão do provedor vale “Manter conectado” da tela de login.',
+  'account.oidcDisable': 'Desativar',
+  'account.oidcDisableHint':
+    'O provedor deixa de permitir login. A configuração, o vínculo e as sessões abertas continuam.',
+  'account.oidcEnable': 'Ativar',
+  'account.oidcEnableHint': 'O provedor volta a permitir login.',
+  'account.oidcDisabled': 'O provedor de login está desativado.',
+  'account.oidcRemove': 'Remover configuração',
+  'account.oidcRemoveHint':
+    'Apaga esta configuração e a identidade vinculada, e encerra as outras sessões.',
+  'account.oidcRemoveHintEnvironment':
+    'Apaga esta configuração e a identidade vinculada, e encerra as outras sessões. As variáveis HOMORA_OIDC_* voltam a valer.',
+  'account.oidcLinkNeedsEnabled': 'Ative o provedor para vincular uma identidade.',
+  'account.oidcLinkNeedsWorking':
+    'Corrija o provedor e teste de novo para vincular uma identidade.',
   'account.oidcPasswordHint':
     'Confirme sua senha. Depois o provedor pede que você entre para provar a identidade.',
   'account.oidcContinue': 'Continuar para {name}',
@@ -630,6 +801,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'activity.event.oidc-link.failure': 'Falha ao vincular o provedor de login',
   'activity.event.oidc-unlink.success': 'Vínculo do provedor de login removido',
   'activity.event.oidc-unlink.failure': 'Falha ao remover o vínculo do provedor de login',
+  'activity.event.oidc-config.success': 'Configuração do provedor de login alterada',
+  'activity.event.oidc-config.failure': 'Falha ao alterar a configuração do provedor de login',
   'account.passkeys': 'Passkeys',
   'account.passkeysDescription':
     'Entre com a digital, o rosto ou o PIN do dispositivo, sem digitar a senha. Cada passkey fica ligada a este endereço. A senha continua funcionando.',

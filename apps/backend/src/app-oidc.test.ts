@@ -1,155 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createDatabase, getSqliteHandle } from '@homora/db';
-import { createApp } from './app.js';
-import { createAuth } from './auth.js';
-import { createLogger } from './logger.js';
-import { oidcProviderId, type OidcConfig } from './oidc-config.js';
-import { createMockIdp, IDP_CLIENT_SECRET, type MockIdp } from './test-oidc.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { oidcProviderId } from './oidc-config.js';
+import { account, claimsOf, closeAll, cookiesOf, fresh, open, pairsOf } from './test-oidc-app.js';
+import { createMockIdp, IDP_CLIENT_SECRET } from './test-oidc.js';
 
-const account = {
-  name: 'Administrator',
-  email: 'admin@homora.test',
-  password: 'super-secure-password',
-};
-const claimsOf = (sub: string, extra: Record<string, unknown> = {}): Record<string, unknown> => ({
-  sub,
-  email: 'idp@example.test',
-  ...extra,
-});
-
-const cookiesOf = (response: { headers: Record<string, unknown> }) =>
-  ([] as string[]).concat((response.headers['set-cookie'] as string | string[] | undefined) ?? []);
-const pairsOf = (response: { headers: Record<string, unknown> }) =>
-  cookiesOf(response)
-    .map((cookie) => cookie.split(';')[0]!)
-    .filter((pair) => !pair.endsWith('='));
-
-const open: (() => Promise<void>)[] = [];
-afterEach(async () => {
-  for (const close of open.splice(0)) await close();
-});
-
-type Options = {
-  config?: Partial<OidcConfig> | null;
-  allowedOrigins?: string[];
-  idp?: MockIdp;
-  sqlite?: ReturnType<typeof getSqliteHandle>;
-};
-
-async function fresh(options: Options = {}) {
-  const idp = options.idp ?? (await createMockIdp());
-  const allowedOrigins = options.allowedOrigins ?? [];
-  const config = options.config === null ? undefined : idp.config(options.config);
-  const db = createDatabase(':memory:');
-  const sqlite = getSqliteHandle(db.db);
-  /** Every line the application logs. */
-  const lines: string[] = [];
-  const logger = createLogger({ level: 'warn', stream: { write: (line) => lines.push(line) } });
-  const build = (oidc: OidcConfig | undefined) => {
-    const auth = createAuth({
-      sqlite,
-      secret: 'x'.repeat(48),
-      webPort: 5173,
-      allowedOrigins,
-      oidc,
-    });
-    const app = createApp(db.db, 5173, auth, undefined, allowedOrigins, undefined, {
-      oidc,
-      logger,
-    });
-    open.push(() => app.close());
-    return { auth, app };
-  };
-  const { auth, app } = build(config);
-  open.push(async () => {
-    db.close();
-    if (!options.idp) await idp.close();
-  });
-  const origin = config?.redirectOrigin ?? 'http://localhost:5173';
-  const call = (
-    method: 'GET' | 'POST',
-    url: string,
-    payload?: object,
-    cookie?: string,
-    headers: Record<string, string> = {},
-  ) =>
-    app.inject({
-      method,
-      url,
-      headers: { origin, ...(cookie ? { cookie } : {}), ...headers },
-      payload,
-    });
-  await call('POST', '/api/auth/setup', account);
-  const signIn = async () =>
-    pairsOf(
-      await call('POST', '/api/auth/sign-in/email', {
-        email: account.email,
-        password: account.password,
-        rememberMe: false,
-      }),
-    ).join('; ');
-
-  const beginLogin = async (headers: Record<string, string> = {}) => {
-    const response = await call('POST', '/api/auth/oidc/login', {}, undefined, headers);
-    return { response, url: response.json().url as string, cookie: pairsOf(response).join('; ') };
-  };
-  const beginLink = async (session: string, password = account.password) => {
-    const response = await call('POST', '/api/auth/oidc/link', { password }, session);
-    return { response, url: response.json().url as string, cookie: pairsOf(response).join('; ') };
-  };
-  /**
-   * The provider's redirect as the browser follows it: a cross-site navigation carrying only the
-   * attempt's `state` cookie, never the Strict session cookie.
-   */
-  const callback = (
-    start: { url: string; cookie: string },
-    claims: Record<string, unknown> = claimsOf('subject-1'),
-    mutate: (path: string) => string = (path) => path,
-    cookie: string = start.cookie,
-  ) => call('GET', mutate(idp.approve(start.url, claims)), undefined, cookie);
-  const link = async (session: string, claims = claimsOf('subject-1')) => {
-    const start = await beginLink(session);
-    return { start, back: await callback(start, claims) };
-  };
-  const oidcSignIn = async (claims = claimsOf('subject-1')) => {
-    const start = await beginLogin();
-    const back = await callback(start, claims);
-    return { start, back, session: pairsOf(back).join('; ') };
-  };
-  const events = () =>
-    sqlite.prepare('SELECT actor, action, result, detail FROM audit_events ORDER BY id').all() as {
-      actor: string;
-      action: string;
-      result: string;
-      detail: string | null;
-    }[];
-  const count = (sql: string) => (sqlite.prepare(sql).get() as { n: number }).n;
-  const hasSession = (response: { headers: Record<string, unknown> }) =>
-    cookiesOf(response).some(
-      (cookie) =>
-        cookie.startsWith('homora.session_token=') && !cookie.startsWith('homora.session_token=;'),
-    );
-  return {
-    idp,
-    app,
-    sqlite,
-    auth,
-    build,
-    call,
-    signIn,
-    beginLogin,
-    beginLink,
-    callback,
-    link,
-    oidcSignIn,
-    events,
-    count,
-    lines,
-    hasSession,
-    config,
-    origin,
-  };
-}
+afterEach(closeAll);
 
 describe('OIDC sign-in', () => {
   it('stays off without configuration and keeps the local sign-in working', async () => {
@@ -167,7 +21,12 @@ describe('OIDC sign-in', () => {
   it('tells the sign-in page only the label and whether an identity is linked', async () => {
     const t = await fresh();
     const status = (await t.call('GET', '/api/auth/status')).json();
-    expect(status.oidc).toEqual({ enabled: true, name: 'Test IdP', linked: false });
+    expect(status.oidc).toEqual({
+      enabled: true,
+      name: 'Test IdP',
+      linked: false,
+      autoRedirect: false,
+    });
     expect(JSON.stringify(status)).not.toContain(IDP_CLIENT_SECRET);
     expect(JSON.stringify(status)).not.toContain('127.0.0.1');
   });
@@ -463,15 +322,19 @@ describe('OIDC sign-in', () => {
     const signingWarnings = (lines: string[]) =>
       lines.filter((line) => line.includes('signing key'));
 
+    const health = async (t: Awaited<ReturnType<typeof fresh>>) =>
+      (await t.call('POST', '/api/account/oidc/test', {}, await t.signIn())).json().health;
+
     it('says in the log that an HMAC-only provider cannot work, once', async () => {
       const idp = await createMockIdp();
       idp.state.discovery = hmacOnly;
       open.push(() => idp.close());
       const t = await fresh({ idp });
-      expect(await t.auth.oidc!.unverifiableAlgorithms()).toEqual(['HS256']);
-      await t.call('POST', '/api/auth/oidc/login', {});
-      await t.call('POST', '/api/auth/oidc/login', {});
-      await vi.waitFor(() => expect(signingWarnings(t.lines)).toHaveLength(1));
+      expect(await health(t)).toMatchObject({ status: 'failing', failure: 'signing' });
+      await health(t);
+      expect(signingWarnings(t.lines)).toHaveLength(1);
+      // The button is not offered for a provider that cannot work.
+      expect((await t.call('GET', '/api/auth/status')).json().oidc).toEqual({ enabled: false });
     });
 
     it('notices it after a provider that was down at startup comes back', async () => {
@@ -480,11 +343,11 @@ describe('OIDC sign-in', () => {
       idp.state.down = true;
       open.push(() => idp.close());
       const t = await fresh({ idp });
-      expect(await t.auth.oidc!.unverifiableAlgorithms()).toBeNull();
+      expect(await health(t)).toMatchObject({ status: 'failing', failure: 'unreachable' });
       expect(signingWarnings(t.lines)).toHaveLength(0);
       idp.state.down = false;
-      expect((await t.call('POST', '/api/auth/oidc/login', {})).statusCode).toBe(200);
-      await vi.waitFor(() => expect(signingWarnings(t.lines)).toHaveLength(1));
+      expect(await health(t)).toMatchObject({ failure: 'signing' });
+      expect(signingWarnings(t.lines)).toHaveLength(1);
     });
 
     it.each([[['RS256']], [['HS256', 'RS256']]])('stays quiet for %j', async (algorithms) => {
@@ -492,7 +355,8 @@ describe('OIDC sign-in', () => {
       idp.state.discovery = { id_token_signing_alg_values_supported: algorithms };
       open.push(() => idp.close());
       const t = await fresh({ idp });
-      expect(await t.auth.oidc!.unverifiableAlgorithms()).toBeNull();
+      expect(await health(t)).toMatchObject({ status: 'ok', failure: null });
+      expect(signingWarnings(t.lines)).toHaveLength(0);
     });
   });
 

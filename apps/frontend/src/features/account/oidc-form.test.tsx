@@ -17,16 +17,27 @@ const notLinked: OidcAccount = {
   enabled: true,
   name: 'Authentik',
   redirectUri: 'https://homora.example.home/api/auth/callback/oidc-0123456789abcdef',
+  redirectOrigin: 'https://homora.example.home',
   identity: null,
+  source: 'saved',
+  environment: false,
+  unreadable: false,
+  provider: {
+    issuer: 'https://auth.example.home/application/o/homora/',
+    clientId: 'homora',
+    name: 'Authentik',
+  },
+  draft: null,
+  disabled: false,
+  autoRedirect: false,
+  longSession: false,
+  health: { status: 'ok', failure: null, testedAt: null },
 };
 const identity = { createdAt: '2026-11-13T12:00:00.000Z', current: true };
 
-it('asks for the password before leaving for the provider and shows the redirect URL', async () => {
+it('asks for the password before leaving for the provider', async () => {
   const onLink = vi.fn().mockResolvedValue(true);
   render(<OidcForm account={notLinked} onLink={onLink} onUnlink={vi.fn()} />);
-  expect(
-    screen.getByText(/Register this redirect URL at the provider: https:\/\/homora/),
-  ).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Current password'), {
     target: { value: 'secret-password' },
   });
@@ -72,4 +83,19 @@ it('says when the link belongs to a provider that is no longer configured', () =
     />,
   );
   expect(screen.getByText(/no longer configured and cannot sign in/)).toBeTruthy();
+});
+
+it('explains why an identity cannot be linked and keeps the button off', () => {
+  render(
+    <OidcForm
+      account={notLinked}
+      onLink={vi.fn()}
+      onUnlink={vi.fn()}
+      linkBlocked="Fix the provider first."
+    />,
+  );
+  expect(screen.getByText('Fix the provider first.')).toBeTruthy();
+  expect(
+    (screen.getByRole('button', { name: 'Continue to Authentik' }) as HTMLButtonElement).disabled,
+  ).toBe(true);
 });

@@ -81,6 +81,14 @@ export const en = {
   'apiError.oidc-wrong-origin':
     'Open Homora at the address configured for the sign-in provider and try again.',
   'apiError.oidc-already-linked': 'An identity is already linked. Remove it first.',
+  'apiError.oidc-invalid-issuer':
+    'The issuer must be an HTTPS URL without credentials, query or fragment.',
+  'apiError.oidc-confirm-issuer':
+    'Changing the issuer removes the linked identity. Confirm to continue.',
+  'apiError.oidc-auto-unavailable':
+    'Automatic redirect needs a working provider with a linked identity.',
+  'apiError.oidc-unreadable':
+    'The saved sign-in provider cannot be read. Remove it or restore the encryption key.',
   'apiError.oidc-link-failed': 'The identity could not be linked.',
   'apiError.oidc-not-configured': 'No sign-in provider is configured.',
   'apiError.passkey-sign-in-failed': 'The passkey was not accepted.',
@@ -189,6 +197,14 @@ export const ptBR = {
   'apiError.oidc-wrong-origin':
     'Abra o Homora no endereço configurado para o provedor de login e tente novamente.',
   'apiError.oidc-already-linked': 'Já existe uma identidade vinculada. Remova-a primeiro.',
+  'apiError.oidc-invalid-issuer':
+    'O emissor precisa ser uma URL HTTPS, sem credenciais, parâmetros ou fragmento.',
+  'apiError.oidc-confirm-issuer':
+    'Trocar o emissor remove a identidade vinculada. Confirme para continuar.',
+  'apiError.oidc-auto-unavailable':
+    'O redirecionamento automático exige um provedor funcionando e uma identidade vinculada.',
+  'apiError.oidc-unreadable':
+    'Não foi possível ler o provedor salvo. Remova-o ou restaure a chave de criptografia.',
   'apiError.oidc-link-failed': 'Não foi possível vincular a identidade.',
   'apiError.oidc-not-configured': 'Nenhum provedor de login está configurado.',
   'apiError.passkey-sign-in-failed': 'A passkey não foi aceita.',
