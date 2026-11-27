@@ -109,6 +109,9 @@ export const en = {
   'proposal.managed.card-order': 'Card ordering',
   'proposal.managed.widget': 'Widget change',
   'proposal.managed.connection-setup': 'Connection setup suggestion',
+  'proposal.managed.connection-delete': 'Delete connection and stored credentials',
+  'proposal.stale.recreate':
+    'The configuration changed. Request a new connection deletion proposal to review its current details.',
   'proposal.managed.details': 'Proposed operation and values',
   'proposal.managed.connectionNote':
     'Approval records the suggestion. No connection is created until you complete and save the form yourself.',
@@ -268,6 +271,9 @@ export const ptBR: Record<keyof typeof en, string> = {
   'proposal.managed.card-order': 'Ordenação de cards',
   'proposal.managed.widget': 'Alteração de widget',
   'proposal.managed.connection-setup': 'Sugestão de configuração de conexão',
+  'proposal.managed.connection-delete': 'Remover conexão e credenciais armazenadas',
+  'proposal.stale.recreate':
+    'A configuração mudou. Solicite uma nova proposta de remoção para revisar os dados atuais da conexão.',
   'proposal.managed.details': 'Operação e valores propostos',
   'proposal.managed.connectionNote':
     'A aprovação registra a sugestão. A conexão só será criada quando você completar e salvar o formulário.',

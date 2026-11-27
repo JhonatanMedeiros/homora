@@ -2395,6 +2395,16 @@ On 2026-11-27, Codex (GPT-6, OpenAI) manually used an MCP SDK in-memory client a
 
 This was one manual synthetic evaluation by the implementing agent; the reviewer actions were simulated, not independent human review. The ambiguity response was a manual assessment, not a deterministic guarantee about other models. It did not test stdio or HTTP transport, a separately hosted model, real infrastructure, independent users, costs or end-to-end latency; those remain unverified. A finite synthetic run cannot establish that future agents will consistently clarify ambiguity or avoid inventing targets.
 
+### MCP connection deletion proposals (#387)
+
+An agent with `connections:propose` can request deletion of one unused connection. Human review
+shows its name, type and sanitized URL; approval deletes the stored encrypted credentials and
+records a `connection-delete` audit event. Card and page widgets, host links and resource links
+block deletion. Validation is repeated at approval, and stale deletion proposals must be recreated.
+The operation does not alter external services. Synthetic MCP and database tests cover authorization,
+missing connections, linked widgets and services, approval and credential removal. `pnpm check`,
+`pnpm build` and `pnpm docs:build` passed; live integrations and browser review remain unverified.
+
 ### API session check on the matched route
 
 The API session requirement is decided on the route the router matched instead of the received URL, which can be

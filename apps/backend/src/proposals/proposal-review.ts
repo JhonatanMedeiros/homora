@@ -70,6 +70,14 @@ export function createProposalReviewService({
     now: number,
     affectedId?: number,
   ) {
+    if (change.kind === 'connection-delete') {
+      sqlite
+        .prepare(
+          'INSERT INTO audit_events(actor,action,proposal_id,result,created_at,detail) VALUES(?,?,?,?,?,?)',
+        )
+        .run(human, 'connection-delete', proposalId, 'ok', now, `connection:${affectedId}`);
+      return;
+    }
     if (change.kind === 'widget' && change.change.op === 'move') {
       sqlite
         .prepare(

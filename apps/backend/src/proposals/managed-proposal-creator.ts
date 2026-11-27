@@ -121,175 +121,197 @@ export function createManagedProposalCreator({
               ]
           : relevantGroups.map((row) => row.name);
       const before =
-        change.kind === 'pin'
+        change.kind === 'connection-delete'
           ? {
-              pinned: sqlite
-                .prepare(
-                  'SELECT s.service_id AS id,m.name FROM service_pins s JOIN monitors m ON m.id=s.service_id ORDER BY s.service_id',
-                )
-                .all(),
-              order:
-                sqlite
-                  .prepare("SELECT value FROM app_settings WHERE key='service_pin_order'")
-                  .get() ?? null,
-              services: snapshot.services
-                .filter(
-                  (row) => change.change.op !== 'reorder' && row.id === change.change.serviceId,
-                )
-                .map(({ id, name }) => ({ id, name })),
+              connections: snapshot.connections
+                .filter((row) => row.id === targetId)
+                .map(({ id, type, name, public_config }) => {
+                  let url = '';
+                  try {
+                    const value = JSON.parse(String(public_config)) as { url?: unknown };
+                    if (typeof value.url === 'string') {
+                      const parsed = new URL(value.url);
+                      parsed.username = '';
+                      parsed.password = '';
+                      parsed.search = '';
+                      parsed.hash = '';
+                      url = parsed.href;
+                    }
+                  } catch {
+                    /* Invalid stored URLs are withheld. */
+                  }
+                  return { id, type, name, url };
+                }),
             }
-          : change.kind === 'link'
+          : change.kind === 'pin'
             ? {
-                link:
+                pinned: sqlite
+                  .prepare(
+                    'SELECT s.service_id AS id,m.name FROM service_pins s JOIN monitors m ON m.id=s.service_id ORDER BY s.service_id',
+                  )
+                  .all(),
+                order:
                   sqlite
-                    .prepare(
-                      'SELECT service_id AS serviceId,integration_id AS integrationId,resource_uuid AS resourceUuid,resource_type AS resourceType,seen_name AS name FROM integration_resource_links WHERE service_id=?',
-                    )
-                    .get(change.change.serviceId) ?? null,
+                    .prepare("SELECT value FROM app_settings WHERE key='service_pin_order'")
+                    .get() ?? null,
                 services: snapshot.services
-                  .filter((row) => row.id === change.change.serviceId)
+                  .filter(
+                    (row) => change.change.op !== 'reorder' && row.id === change.change.serviceId,
+                  )
                   .map(({ id, name }) => ({ id, name })),
               }
-            : change.kind === 'public-visibility'
+            : change.kind === 'link'
               ? {
-                  monitor:
+                  link:
                     sqlite
-                      .prepare('SELECT id,name,is_public AS isPublic FROM monitors WHERE id=?')
+                      .prepare(
+                        'SELECT service_id AS serviceId,integration_id AS integrationId,resource_uuid AS resourceUuid,resource_type AS resourceType,seen_name AS name FROM integration_resource_links WHERE service_id=?',
+                      )
                       .get(change.change.serviceId) ?? null,
+                  services: snapshot.services
+                    .filter((row) => row.id === change.change.serviceId)
+                    .map(({ id, name }) => ({ id, name })),
                 }
-              : change.kind === 'acknowledgement'
+              : change.kind === 'public-visibility'
                 ? {
                     monitor:
                       sqlite
-                        .prepare('SELECT id,name FROM monitors WHERE id=?')
-                        .get(change.change.serviceId) ?? null,
-                    acknowledgement:
-                      sqlite
-                        .prepare(
-                          'SELECT incident_id AS incidentId,acknowledged_at AS acknowledgedAt,muted_until AS mutedUntil FROM service_acknowledgements WHERE service_id=?',
-                        )
+                        .prepare('SELECT id,name,is_public AS isPublic FROM monitors WHERE id=?')
                         .get(change.change.serviceId) ?? null,
                   }
-                : change.kind === 'tag'
+                : change.kind === 'acknowledgement'
                   ? {
-                      tags: sqlite
-                        .prepare('SELECT tag FROM service_tags WHERE service_id=? ORDER BY tag')
-                        .all(change.change.serviceId)
-                        .map((row) => row.tag),
-                      services: snapshot.services
-                        .filter((row) => row.id === change.change.serviceId)
-                        .map(({ id, name }) => ({ id, name })),
+                      monitor:
+                        sqlite
+                          .prepare('SELECT id,name FROM monitors WHERE id=?')
+                          .get(change.change.serviceId) ?? null,
+                      acknowledgement:
+                        sqlite
+                          .prepare(
+                            'SELECT incident_id AS incidentId,acknowledged_at AS acknowledgedAt,muted_until AS mutedUntil FROM service_acknowledgements WHERE service_id=?',
+                          )
+                          .get(change.change.serviceId) ?? null,
                     }
-                  : change.kind === 'probe'
+                  : change.kind === 'tag'
                     ? {
-                        probe:
-                          change.change.op === 'create'
-                            ? null
-                            : (sqlite
-                                .prepare(
-                                  'SELECT id,name,check_url AS address,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_match AS checkMatch,allow_private AS allowPrivate FROM monitors WHERE id=? AND NOT EXISTS (SELECT 1 FROM services WHERE services.id=monitors.id)',
-                                )
-                                .get(change.change.id) ?? null),
+                        tags: sqlite
+                          .prepare('SELECT tag FROM service_tags WHERE service_id=? ORDER BY tag')
+                          .all(change.change.serviceId)
+                          .map((row) => row.tag),
+                        services: snapshot.services
+                          .filter((row) => row.id === change.change.serviceId)
+                          .map(({ id, name }) => ({ id, name })),
                       }
-                    : change.kind === 'page'
+                    : change.kind === 'probe'
                       ? {
-                          pages: sqlite
-                            .prepare('SELECT id,name,position FROM pages ORDER BY position,id')
-                            .all(),
-                          groups: sqlite
-                            .prepare(
-                              'SELECT id,name,page_id AS pageId FROM service_groups ORDER BY id',
-                            )
-                            .all(),
-                          widgets: sqlite
-                            .prepare(
-                              'SELECT id,name,page_id AS pageId,position FROM page_widgets ORDER BY id',
-                            )
-                            .all(),
+                          probe:
+                            change.change.op === 'create'
+                              ? null
+                              : (sqlite
+                                  .prepare(
+                                    'SELECT id,name,check_url AS address,check_type AS checkType,check_interval AS checkInterval,expected_status AS expectedStatus,check_match AS checkMatch,allow_private AS allowPrivate FROM monitors WHERE id=? AND NOT EXISTS (SELECT 1 FROM services WHERE services.id=monitors.id)',
+                                  )
+                                  .get(change.change.id) ?? null),
                         }
-                      : change.kind === 'maintenance'
+                      : change.kind === 'page'
                         ? {
-                            services: snapshot.services
-                              .filter((row) => row.id === change.change.serviceId)
-                              .map(({ id, name }) => ({ id, name })),
+                            pages: sqlite
+                              .prepare('SELECT id,name,position FROM pages ORDER BY position,id')
+                              .all(),
+                            groups: sqlite
+                              .prepare(
+                                'SELECT id,name,page_id AS pageId FROM service_groups ORDER BY id',
+                              )
+                              .all(),
+                            widgets: sqlite
+                              .prepare(
+                                'SELECT id,name,page_id AS pageId,position FROM page_widgets ORDER BY id',
+                              )
+                              .all(),
                           }
-                        : change.kind === 'host-link'
+                        : change.kind === 'maintenance'
                           ? {
                               services: snapshot.services
                                 .filter((row) => row.id === change.change.serviceId)
-                                .map(
-                                  ({
-                                    id,
-                                    name,
-                                    host_connection_id,
-                                    host_node,
-                                    host_vmid,
-                                    host_type,
-                                  }) => ({
-                                    id,
-                                    name,
-                                    host_connection_id,
-                                    host_node,
-                                    host_vmid,
-                                    host_type,
-                                  }),
-                                ),
+                                .map(({ id, name }) => ({ id, name })),
                             }
-                          : change.kind === 'group' || change.kind === 'card-order'
+                          : change.kind === 'host-link'
                             ? {
-                                groups: relevantGroups,
                                 services: snapshot.services
-                                  .filter((row) => relevantCategories.includes(row.category))
-                                  .map(({ id, name, category, position }) => ({
-                                    id,
-                                    name,
-                                    category,
-                                    position,
-                                  })),
+                                  .filter((row) => row.id === change.change.serviceId)
+                                  .map(
+                                    ({
+                                      id,
+                                      name,
+                                      host_connection_id,
+                                      host_node,
+                                      host_vmid,
+                                      host_type,
+                                    }) => ({
+                                      id,
+                                      name,
+                                      host_connection_id,
+                                      host_node,
+                                      host_vmid,
+                                      host_type,
+                                    }),
+                                  ),
                               }
-                            : change.kind === 'widget' &&
-                                (change.change.op === 'move' ||
-                                  change.change.op === 'page-create' ||
-                                  change.change.op === 'page-delete')
+                            : change.kind === 'group' || change.kind === 'card-order'
                               ? {
-                                  widgets: sqlite
-                                    .prepare(
-                                      'SELECT id,name,type,connection_id AS connectionId,page_id AS pageId,position FROM page_widgets ORDER BY page_id,position,id',
-                                    )
-                                    .all(),
-                                  pages: sqlite
-                                    .prepare('SELECT id,name FROM pages ORDER BY position,id')
-                                    .all(),
-                                  connections:
-                                    change.change.op === 'page-create'
-                                      ? snapshot.connections
-                                          .filter((row) => row.id === placedConnectionId)
-                                          .map(({ id, type, name }) => ({ id, type, name }))
-                                      : [],
+                                  groups: relevantGroups,
+                                  services: snapshot.services
+                                    .filter((row) => relevantCategories.includes(row.category))
+                                    .map(({ id, name, category, position }) => ({
+                                      id,
+                                      name,
+                                      category,
+                                      position,
+                                    })),
                                 }
-                              : change.kind === 'widget'
+                              : change.kind === 'widget' &&
+                                  (change.change.op === 'move' ||
+                                    change.change.op === 'page-create' ||
+                                    change.change.op === 'page-delete')
                                 ? {
-                                    widgets: widgetRows.map(
-                                      ({ id, integration_id, type, name, service_id }) => ({
-                                        id,
-                                        integration_id,
-                                        type,
-                                        name,
-                                        service_id,
-                                      }),
-                                    ),
-                                    connections: snapshot.connections
-                                      .filter((row) => row.id === widgetConnectionId)
-                                      .map(({ id, type, name }) => ({
-                                        id,
-                                        type,
-                                        name,
-                                      })),
-                                    services: snapshot.services
-                                      .filter((row) => widgetServiceIds.has(row.id))
-                                      .map(({ id, name }) => ({ id, name })),
+                                    widgets: sqlite
+                                      .prepare(
+                                        'SELECT id,name,type,connection_id AS connectionId,page_id AS pageId,position FROM page_widgets ORDER BY page_id,position,id',
+                                      )
+                                      .all(),
+                                    pages: sqlite
+                                      .prepare('SELECT id,name FROM pages ORDER BY position,id')
+                                      .all(),
+                                    connections:
+                                      change.change.op === 'page-create'
+                                        ? snapshot.connections
+                                            .filter((row) => row.id === placedConnectionId)
+                                            .map(({ id, type, name }) => ({ id, type, name }))
+                                        : [],
                                   }
-                                : null;
+                                : change.kind === 'widget'
+                                  ? {
+                                      widgets: widgetRows.map(
+                                        ({ id, integration_id, type, name, service_id }) => ({
+                                          id,
+                                          integration_id,
+                                          type,
+                                          name,
+                                          service_id,
+                                        }),
+                                      ),
+                                      connections: snapshot.connections
+                                        .filter((row) => row.id === widgetConnectionId)
+                                        .map(({ id, type, name }) => ({
+                                          id,
+                                          type,
+                                          name,
+                                        })),
+                                      services: snapshot.services
+                                        .filter((row) => widgetServiceIds.has(row.id))
+                                        .map(({ id, name }) => ({ id, name })),
+                                    }
+                                  : null;
       const diff = { kind: 'managed', change, before };
       const duplicate = findDuplicate(
         diff,

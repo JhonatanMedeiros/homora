@@ -10,7 +10,7 @@ import {
 
 type Configuration = ReturnType<typeof createServiceConfiguration>;
 
-export type StaleReason = 'batch' | 'target-gone' | 'config-changed' | 'agent';
+export type StaleReason = 'batch' | 'target-gone' | 'config-changed' | 'agent' | 'recreate';
 
 type Row = {
   id: string;
@@ -75,6 +75,7 @@ export function createProposalRefresh({
   function reasonFor(decoded: Record<string, unknown>, batchId: string | null): StaleReason {
     if (decoded.kind === 'agent') return 'agent';
     if (batchId) return 'batch';
+    if (managedOf(decoded)?.kind === 'connection-delete') return 'recreate';
     return stillApplies(decoded) ? 'config-changed' : 'target-gone';
   }
 
@@ -88,6 +89,8 @@ export function createProposalRefresh({
         throw new Error('Proposal is unavailable');
       const decoded = JSON.parse(row.diff) as Record<string, unknown>;
       if (decoded.kind === 'agent') throw new Error('Proposal is unavailable');
+      if (managedOf(decoded)?.kind === 'connection-delete')
+        throw new Error('Proposal is unavailable');
       if (!isStale(row, decoded)) throw new Error('Proposal is not stale');
       if (!stillApplies(decoded)) throw new Error('Target is gone');
       const nextVersion = configuration.version();
@@ -113,9 +116,10 @@ export function createProposalRefresh({
   }
 
   const destructive = (decoded: Record<string, unknown>) => {
-    const inner = decoded.change as { op?: unknown } | undefined;
+    const inner = decoded.change as { op?: unknown; change?: { op?: unknown } } | undefined;
     return (
       decoded.op === 'delete' ||
+      inner?.change?.op === 'delete' ||
       ['delete', 'unlink', 'cancel', 'remove'].includes(String(inner?.op))
     );
   };

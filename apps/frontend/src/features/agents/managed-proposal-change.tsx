@@ -158,7 +158,9 @@ export function ManagedProposalChange({ diff }: { diff: Diff }) {
                           ? 'proposal.managed.host-link'
                           : kind === 'public-visibility'
                             ? 'proposal.managed.public-visibility'
-                            : 'proposal.managed.connection-setup';
+                            : kind === 'connection-delete'
+                              ? 'proposal.managed.connection-delete'
+                              : 'proposal.managed.connection-setup';
   return (
     <div className="flex flex-col gap-3">
       <p className="font-label text-lg font-semibold">{t(title)}</p>

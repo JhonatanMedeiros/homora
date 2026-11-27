@@ -149,6 +149,30 @@ export function registerMcpHostTools(
     },
   );
   server.registerTool(
+    'propose_connection_delete',
+    {
+      title: 'Propor remoção de conexão',
+      description:
+        'Propõe remover uma conexão sem widgets. Exige aprovação humana e remove a credencial armazenada.',
+      inputSchema: { id: z.number().int().safe().positive() },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+    },
+    async ({ id }) => {
+      const author = authorize('connections:propose');
+      if (!author) return unauthorized();
+      try {
+        return result(
+          proposalService.proposeManaged(author, {
+            kind: 'connection-delete',
+            change: { op: 'delete', id },
+          }),
+        );
+      } catch (error) {
+        return failed(error);
+      }
+    },
+  );
+  server.registerTool(
     'propose_connection_setup',
     {
       title: 'Sugerir conexão',

@@ -563,6 +563,95 @@ it('hides connection URLs from MCP proposals while retaining them for human revi
   }
 });
 
+it('proposes deletion only for unlinked connections and requires human approval', async () => {
+  const storage = createDatabase(':memory:');
+  const db = getSqliteHandle(storage.db);
+  db.prepare(
+    "INSERT INTO integration_instances(id,type,name,public_config,secret_ref) VALUES(1,'jellyfin','Media',?,?)",
+  ).run(JSON.stringify({ url: 'https://media.example.test/?key=private' }), 'sealed-test-value');
+  const proposals = createProposalService(db);
+  const makeClient = async (scopes: string[]) => {
+    const server = createMcp(db, { token: proposals.issue('agent', scopes).token });
+    const client = new Client({ name: 'test', version: '1' });
+    const [a, b] = InMemoryTransport.createLinkedPair();
+    await Promise.all([client.connect(a), server.connect(b)]);
+    return client;
+  };
+  const client = await makeClient(['connections:propose']);
+  const denied = await makeClient(['services:read']);
+  const call = (id: number) =>
+    client.callTool({ name: 'propose_connection_delete', arguments: { id } });
+  try {
+    const caps = JSON.parse(
+      responseText(await denied.callTool({ name: 'get_homora_capabilities' })),
+    );
+    expect(caps.tools).toContainEqual(
+      expect.objectContaining({ name: 'propose_connection_delete', available: false }),
+    );
+    expect(
+      (await denied.callTool({ name: 'propose_connection_delete', arguments: { id: 1 } })).isError,
+    ).toBe(true);
+    expect(responseText(await call(999))).toContain('connection-not-found');
+    db.prepare(
+      "INSERT INTO integration_widgets(integration_id,type,name,public_config) VALUES(1,'jellyfin','Widget','{}')",
+    ).run();
+    expect(responseText(await call(1))).toContain('Remove or unlink');
+    db.prepare('DELETE FROM integration_widgets').run();
+    db.prepare(
+      "INSERT INTO page_widgets(page_id,type,name,config,connection_id) VALUES(1,'test','Widget','{}',1)",
+    ).run();
+    expect(responseText(await call(1))).toContain('Remove or unlink');
+    db.prepare('DELETE FROM page_widgets').run();
+    db.prepare("INSERT INTO monitors(id,name) VALUES(2,'Card')").run();
+    db.prepare(
+      "INSERT INTO services(id,url,category,description,host_connection_id) VALUES(2,'https://card.test','Apps','',1)",
+    ).run();
+    expect(responseText(await call(1))).toContain('connection-has-links');
+    db.prepare('UPDATE services SET host_connection_id=NULL WHERE id=2').run();
+    db.prepare(
+      "INSERT INTO integration_resource_links(service_id,integration_id,resource_uuid,resource_type,seen_name,created_at) VALUES(2,1,'resource','service','Resource',1)",
+    ).run();
+    expect(responseText(await call(1))).toContain('connection-has-links');
+    db.prepare('DELETE FROM integration_resource_links').run();
+    const response = await call(1);
+    expect(response.isError).not.toBe(true);
+    expect(responseText(response)).not.toContain('media.example.test');
+    const proposal = JSON.parse(responseText(response)) as { id: string };
+    const row = db.prepare('SELECT diff FROM service_proposals WHERE id=?').get(proposal.id) as {
+      diff: string;
+    };
+    expect(row.diff).toContain('https://media.example.test/');
+    expect(row.diff).not.toContain('private');
+    expect(row.diff).not.toContain('sealed-test-value');
+    expect(
+      db.prepare('SELECT secret_ref FROM integration_instances WHERE id=1').get(),
+    ).toBeDefined();
+    db.prepare(
+      "INSERT INTO page_widgets(page_id,type,name,config,connection_id) VALUES(1,'test','Widget','{}',1)",
+    ).run();
+    expect(() => proposals.decide(proposal.id, true, 'user:admin')).toThrow();
+    expect(
+      db.prepare('SELECT secret_ref FROM integration_instances WHERE id=1').get(),
+    ).toBeDefined();
+    db.prepare('DELETE FROM page_widgets').run();
+    expect(proposals.decide(proposal.id, true, 'user:admin')).toBe('approved');
+    expect(
+      db.prepare('SELECT secret_ref FROM integration_instances WHERE id=1').get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          "SELECT action FROM audit_events WHERE proposal_id=? AND action='connection-delete'",
+        )
+        .get(proposal.id),
+    ).toBeDefined();
+  } finally {
+    await client.close();
+    await denied.close();
+    storage.close();
+  }
+});
+
 it('reviews a mixed batch of all new proposal kinds atomically', async () => {
   const storage = createDatabase(':memory:');
   const db = getSqliteHandle(storage.db);

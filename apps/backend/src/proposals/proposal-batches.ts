@@ -77,6 +77,7 @@ export function createProposalBatches({
 
   function proposeBatch(authorId: string, items: { kind: string; change: unknown }[]) {
     if (items.length === 0 || items.length > 20) throw new Error('Invalid batch');
+    if (items.some((item) => item.kind === 'connection-delete')) throw new Error('Invalid batch');
     return configuration.transaction(() => {
       context.insideBatch = true;
       try {

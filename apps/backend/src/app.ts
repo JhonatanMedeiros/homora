@@ -123,7 +123,10 @@ export function createApp(
   const audit = createAuditLog(sqlite, Date.now, log);
   const appearance = createAppearance(sqlite);
   const customCss = createCustomCss(sqlite);
-  const proposals = createProposalService(sqlite, configuration);
+  let invalidateDeletedConnection = (_id: number) => {};
+  const proposals = createProposalService(sqlite, configuration, (id) =>
+    invalidateDeletedConnection(id),
+  );
   const rollup = createRollupStore(sqlite);
   const observations = createObservationStore(sqlite, rollup);
   const notifications = createNotifications(sqlite, vault, log);
@@ -366,6 +369,7 @@ export function createApp(
     options.developmentMocks === true,
     (id) => invalidateIntegrationWidgetCache(id),
   );
+  invalidateDeletedConnection = connections.invalidateConnection;
   registerNotificationRoutes(app, notifications);
   registerInboxRoutes(app, inbox);
   registerPageRoutes(app, createPages(sqlite), auth, audit);

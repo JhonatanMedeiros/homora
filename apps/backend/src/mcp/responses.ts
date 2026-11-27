@@ -30,15 +30,21 @@ export const failed = (error?: unknown) => ({
     {
       type: 'text' as const,
       text:
-        error instanceof IntegrationRowsLimitError
-          ? 'integration-rows-limit: The integration returned too many rows.'
-          : error instanceof BatchItemError
-            ? `${error.message}. The whole batch was rejected and nothing was changed.`
-            : error instanceof Error && STABLE_REASONS.has(error.message)
-              ? `${error.message}: The widget change was rejected.`
-              : error instanceof Error && error.message === 'Pending proposal limit reached'
-                ? 'Pending proposal limit reached (100). Wait for review or expiry, or withdraw one with withdraw_proposal.'
-                : 'The request could not be completed.',
+        error instanceof Error && error.message === 'connection-has-links'
+          ? 'connection-has-links: Remove the service host and resource links before deleting this connection.'
+          : error instanceof Error && error.message === 'connection-has-widgets'
+            ? 'connection-has-widgets: Remove or unlink the widgets before deleting this connection.'
+            : error instanceof Error && error.message === 'connection-not-found'
+              ? 'connection-not-found: The connection does not exist.'
+              : error instanceof IntegrationRowsLimitError
+                ? 'integration-rows-limit: The integration returned too many rows.'
+                : error instanceof BatchItemError
+                  ? `${error.message}. The whole batch was rejected and nothing was changed.`
+                  : error instanceof Error && STABLE_REASONS.has(error.message)
+                    ? `${error.message}: The widget change was rejected.`
+                    : error instanceof Error && error.message === 'Pending proposal limit reached'
+                      ? 'Pending proposal limit reached (100). Wait for review or expiry, or withdraw one with withdraw_proposal.'
+                      : 'The request could not be completed.',
     },
   ],
   isError: true as const,
@@ -77,6 +83,12 @@ export function redactMcpValue(value: unknown): unknown {
         }
       }
       output[key] = redactMcpValue({ ...managed, change: details });
+    } else if (
+      input.kind === 'managed' &&
+      key === 'before' &&
+      (input.change as Record<string, unknown> | undefined)?.kind === 'connection-delete'
+    ) {
+      output[key] = null;
     } else if (
       input.kind === 'managed' &&
       key === 'before' &&
