@@ -16,6 +16,8 @@ const ACTIONS_BY_KIND: Record<AuditKind, readonly string[]> = {
     'passkey-add',
     'passkey-rename',
     'passkey-remove',
+    'oidc-link',
+    'oidc-unlink',
     'session-revoke',
     'sessions-revoke-others',
     'profile-update',

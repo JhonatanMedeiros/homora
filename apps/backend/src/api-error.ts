@@ -105,6 +105,13 @@ export const ERROR_MESSAGES = {
   'two-factor-already-enabled': 'Two-factor authentication is already on.',
   'two-factor-not-enabled': 'Two-factor authentication is not on.',
   'session-not-fresh': 'Sign in again to make this change.',
+  'oidc-unavailable': 'The sign-in provider is not reachable. Use your password instead.',
+  'oidc-sign-in-failed': 'The sign-in provider was not accepted.',
+  'oidc-wrong-origin':
+    'Open Homora at the address configured for the sign-in provider and try again.',
+  'oidc-already-linked': 'An identity is already linked. Remove it first.',
+  'oidc-link-failed': 'The identity could not be linked.',
+  'oidc-not-configured': 'No sign-in provider is configured.',
   'passkey-sign-in-failed': 'The passkey was not accepted.',
   'passkey-challenge-expired': 'The passkey request expired. Try again.',
   'passkey-registration-failed': 'The passkey could not be added.',

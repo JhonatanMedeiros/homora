@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KeyRound, Lock, Smartphone } from 'lucide-react';
+import { KeyRound, Lock, LogIn, Smartphone } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { FormError } from '@/components/form-error';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
@@ -13,14 +13,16 @@ import {
 import { PasswordForm } from '@/features/account/password-form';
 import { ProfileForm } from '@/features/account/profile-form';
 import { PasskeysForm } from '@/features/account/passkeys-form';
+import { OidcForm } from '@/features/account/oidc-form';
 import { TwoFactorForm } from '@/features/account/two-factor-form';
 import { SignInActivity } from '@/features/account/sign-in-activity';
 import { SessionsList } from '@/features/account/sessions-list';
 import type { Profile } from '@/features/account/account-model';
+import { useOidcAccount } from '@/hooks/use-oidc';
 import { failed, passkeyAvailability, usePasskeyOrigins, usePasskeys } from '@/hooks/use-passkeys';
 import { t } from '@/i18n';
 
-type Panel = 'profile' | 'password' | 'twoFactor' | 'passkeys';
+type Panel = 'profile' | 'password' | 'twoFactor' | 'passkeys' | 'oidc';
 
 export function AccountPage({
   profile,
@@ -44,6 +46,9 @@ export function AccountPage({
   const [passkeyCount, setPasskeyCount] = useState<number | null>(null);
   const passkeys = usePasskeys();
   const origins = usePasskeyOrigins();
+  const oidc = useOidcAccount();
+  // Shown when a provider is configured, or while a link of a previous one still exists.
+  const oidcVisible = oidc.account?.enabled === true || oidc.account?.identity != null;
 
   useEffect(() => {
     let active = true;
@@ -144,6 +149,18 @@ export function AccountPage({
                 </Button>
               }
             />
+            {oidcVisible && (
+              <SecurityCard
+                icon={<LogIn />}
+                title={oidc.account?.name ?? t('account.oidc')}
+                description={t('account.oidcDescription')}
+                action={
+                  <Button type="button" variant="outline" onClick={() => open('oidc')}>
+                    {t(oidc.account?.identity ? 'account.manage' : 'account.oidcLink')}
+                  </Button>
+                }
+              />
+            )}
           </div>
         </>
       ) : (
@@ -204,6 +221,20 @@ export function AccountPage({
               onCountChange={setPasskeyCount}
             />
           </ResponsiveDialog>
+          {oidc.account && (
+            <ResponsiveDialog
+              open={panel === 'oidc'}
+              onOpenChange={(open) => !open && close()}
+              title={oidc.account.name ?? t('account.oidc')}
+            >
+              <OidcForm
+                account={oidc.account}
+                onLink={oidc.link}
+                onUnlink={oidc.unlink}
+                onChanged={sessionsChanged}
+              />
+            </ResponsiveDialog>
+          )}
         </>
       )}
     </section>

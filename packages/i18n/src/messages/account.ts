@@ -241,6 +241,36 @@ export const en = {
   'activity.event.two-factor-codes-regenerate.success': 'Recovery codes regenerated',
   'activity.event.two-factor-codes-regenerate.failure': 'Recovery code regeneration failed',
   'activity.event.two-factor-recovery-used': 'Recovery code used to sign in',
+  'account.oidc': 'Sign-in provider',
+  'account.oidcDescription':
+    'Sign in with the identity provider of your homelab (OpenID Connect). Your password keeps working.',
+  'account.oidcStatusLinked': 'Linked',
+  'account.oidcStatusNotLinked': 'Not linked',
+  'account.oidcLink': 'Link identity',
+  'account.oidcLinkIntro':
+    'Link the identity you use at {name}. Only that identity can then sign in; an e-mail address is never enough.',
+  'account.oidcRedirectUri': 'Register this redirect URL at the provider: {uri}',
+  'account.oidcPasswordHint':
+    'Confirm your password. The provider then asks you to sign in to prove the identity.',
+  'account.oidcContinue': 'Continue to {name}',
+  'account.oidcLinkedAt': 'Linked on {date}',
+  'account.oidcStale':
+    'This identity belongs to a provider that is no longer configured and cannot sign in. Remove it to link a new one.',
+  'account.oidcSecondFactorNote':
+    'Signing in with the provider does not ask for the authenticator code: the provider is responsible for verifying you.',
+  'account.oidcUnlink': 'Remove link',
+  'account.oidcUnlinkHint':
+    'Removing the link ends your other sessions. Your password and the provider account are not touched.',
+  'account.oidcUnlinkConfirm': 'Remove the link',
+  'account.oidcUnlinked': 'The link was removed.',
+  'account.oidcLinkedToast': 'Identity linked. You can now sign in with the provider.',
+  'account.oidcLinkFailed': 'The identity could not be linked.',
+  'account.oidcUnlinkFailed': 'The link could not be removed.',
+  'account.oidcLoadFailed': 'Could not load the sign-in provider.',
+  'activity.event.oidc-link.success': 'Sign-in provider linked',
+  'activity.event.oidc-link.failure': 'Linking the sign-in provider failed',
+  'activity.event.oidc-unlink.success': 'Sign-in provider link removed',
+  'activity.event.oidc-unlink.failure': 'Removing the sign-in provider link failed',
   'account.passkeys': 'Passkeys',
   'account.passkeysDescription':
     'Sign in with your fingerprint, face or device PIN instead of typing the password. Each passkey is tied to this address. The password keeps working.',
@@ -562,6 +592,36 @@ export const ptBR: Record<keyof typeof en, string> = {
   'activity.event.two-factor-codes-regenerate.failure':
     'Falha ao gerar novos códigos de recuperação',
   'activity.event.two-factor-recovery-used': 'Código de recuperação usado para entrar',
+  'account.oidc': 'Provedor de login',
+  'account.oidcDescription':
+    'Entre com o provedor de identidade do seu homelab (OpenID Connect). A senha continua funcionando.',
+  'account.oidcStatusLinked': 'Vinculado',
+  'account.oidcStatusNotLinked': 'Não vinculado',
+  'account.oidcLink': 'Vincular identidade',
+  'account.oidcLinkIntro':
+    'Vincule a identidade que você usa em {name}. Só ela poderá entrar; um endereço de e-mail nunca basta.',
+  'account.oidcRedirectUri': 'Registre esta URL de redirecionamento no provedor: {uri}',
+  'account.oidcPasswordHint':
+    'Confirme sua senha. Depois o provedor pede que você entre para provar a identidade.',
+  'account.oidcContinue': 'Continuar para {name}',
+  'account.oidcLinkedAt': 'Vinculado em {date}',
+  'account.oidcStale':
+    'Esta identidade pertence a um provedor que não está mais configurado e não consegue entrar. Remova-a para vincular outra.',
+  'account.oidcSecondFactorNote':
+    'Entrar pelo provedor não pede o código do autenticador: o provedor é responsável por verificar você.',
+  'account.oidcUnlink': 'Remover vínculo',
+  'account.oidcUnlinkHint':
+    'Remover o vínculo encerra suas outras sessões. A senha e a conta no provedor não são alteradas.',
+  'account.oidcUnlinkConfirm': 'Remover o vínculo',
+  'account.oidcUnlinked': 'O vínculo foi removido.',
+  'account.oidcLinkedToast': 'Identidade vinculada. Agora você pode entrar pelo provedor.',
+  'account.oidcLinkFailed': 'Não foi possível vincular a identidade.',
+  'account.oidcUnlinkFailed': 'Não foi possível remover o vínculo.',
+  'account.oidcLoadFailed': 'Não foi possível carregar o provedor de login.',
+  'activity.event.oidc-link.success': 'Provedor de login vinculado',
+  'activity.event.oidc-link.failure': 'Falha ao vincular o provedor de login',
+  'activity.event.oidc-unlink.success': 'Vínculo do provedor de login removido',
+  'activity.event.oidc-unlink.failure': 'Falha ao remover o vínculo do provedor de login',
   'account.passkeys': 'Passkeys',
   'account.passkeysDescription':
     'Entre com a digital, o rosto ou o PIN do dispositivo, sem digitar a senha. Cada passkey fica ligada a este endereço. A senha continua funcionando.',

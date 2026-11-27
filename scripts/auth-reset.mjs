@@ -9,10 +9,13 @@ import { resolve } from 'node:path';
 // recovery codes are removed (and every session ends), for a lost phone or a lost session secret.
 // With --passkeys-only the account and password stay too: only the passkeys are removed (and every
 // session ends), for a lost authenticator or a changed domain (RP ID) that made them unusable.
+// With --oidc-only the account and password stay too: only the linked OIDC identity is removed (and
+// every session ends), for a provider that was replaced, lost or must stop opening the account.
 const args = process.argv.slice(2);
 const confirmed = args.includes('--yes');
 const twoFactorOnly = args.includes('--two-factor-only');
 const passkeysOnly = args.includes('--passkeys-only');
+const oidcOnly = args.includes('--oidc-only');
 const target = resolve(
   args.find((arg) => !arg.startsWith('--')) ??
     process.env.HOMORA_DATABASE_PATH ??
@@ -38,19 +41,22 @@ try {
   const hasPasskeys = tables.has('passkey');
   const userColumns = db.prepare('PRAGMA table_info("user")').all();
   const hasTwoFactorFlag = userColumns.some((column) => column.name === 'twoFactorEnabled');
-  if (!confirmed) {
-    console.log(`${target} has ${accounts} account(s). Nothing was changed.`);
-    console.log(
-      twoFactorOnly
-        ? 'Run again with --yes to remove two-factor authentication and end all sessions.'
-        : passkeysOnly
-          ? 'Run again with --yes to remove every passkey and end all sessions.'
-          : 'Run again with --yes to remove the account and all sessions.',
-    );
-  } else {
+  if (confirmed) {
     db.exec('BEGIN IMMEDIATE');
     try {
-      if (passkeysOnly) {
+      if (oidcOnly) {
+        // The identity is a row of the library's account table; the password row stays.
+        if (
+          db
+            .prepare('PRAGMA table_info(account)')
+            .all()
+            .some((c) => c.name === 'providerId')
+        )
+          db.exec("DELETE FROM account WHERE providerId LIKE 'oidc-%'");
+        db.exec('DELETE FROM session');
+        // Unfinished sign-in attempts.
+        db.exec("DELETE FROM verification WHERE value LIKE '%codeVerifier%'");
+      } else if (passkeysOnly) {
         for (const table of hasPasskeys ? ['passkey', 'session'] : ['session'])
           db.exec(`DELETE FROM "${table}"`);
         // Unfinished registration and sign-in challenges.
@@ -82,7 +88,10 @@ try {
       db.exec('ROLLBACK');
       throw error;
     }
-    if (passkeysOnly) {
+    if (oidcOnly) {
+      console.log(`Removed the linked OIDC identity and every session from ${target}.`);
+      console.log('Sign in with the password, then link the identity again in Account if needed.');
+    } else if (passkeysOnly) {
       console.log(`Removed every passkey and every session from ${target}.`);
       console.log(
         'Sign in with the password, then add a passkey again in Account if you want one.',
@@ -94,6 +103,17 @@ try {
       console.log(`Removed ${accounts} account(s) and every session from ${target}.`);
       console.log('Open Homora to create a new administrator account.');
     }
+  } else {
+    console.log(`${target} has ${accounts} account(s). Nothing was changed.`);
+    console.log(
+      twoFactorOnly
+        ? 'Run again with --yes to remove two-factor authentication and end all sessions.'
+        : passkeysOnly
+          ? 'Run again with --yes to remove every passkey and end all sessions.'
+          : oidcOnly
+            ? 'Run again with --yes to remove the linked OIDC identity and end all sessions.'
+            : 'Run again with --yes to remove the account and all sessions.',
+    );
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Could not reset the account.');
