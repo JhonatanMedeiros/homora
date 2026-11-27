@@ -53,6 +53,31 @@ describe('API authentication', () => {
     }
   });
 
+  it('requires a session however the API path is encoded', async () => {
+    const { localApp, setup, done } = fresh();
+    try {
+      await setup();
+      for (const prefix of ['/%61pi', '/a%70i', '/%61%70%69']) {
+        const read = await localApp.inject({ method: 'GET', url: `${prefix}/services` });
+        expect(read.statusCode, prefix).toBe(401);
+        const write = await localApp.inject({
+          method: 'POST',
+          url: `${prefix}/groups`,
+          headers: { origin },
+          payload: { name: 'Intruder' },
+        });
+        expect(write.statusCode, prefix).toBe(401);
+      }
+      // The anonymous routes stay anonymous in either spelling.
+      expect((await localApp.inject({ method: 'GET', url: '/%61pi/health' })).statusCode).not.toBe(
+        401,
+      );
+      expect((await localApp.inject({ method: 'GET', url: '/api/unknown' })).statusCode).toBe(401);
+    } finally {
+      await done();
+    }
+  });
+
   it('creates the account once, authenticates, and terminates the session', async () => {
     const { localApp, sqlite, signIn, setup, done } = fresh();
     try {
