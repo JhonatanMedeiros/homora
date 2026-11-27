@@ -113,6 +113,9 @@ Things to know:
   (see [ADR 0032](../decisions/0032-oidc-sign-in.md)).
 - Your provider must release the `email` claim (Homora asks for `openid email profile`); the e-mail is never used to
   decide who may sign in.
+- The provider must sign ID tokens with a key it publishes (for example RS256); tokens signed with the client secret
+  (HS256) are refused. In **Authentik**, choose a **Signing Key** in the OAuth2/OpenID provider: without one it uses
+  HS256 and linking fails.
 - If the provider is down or misconfigured, sign in with the password. Homora says the provider is unreachable when it
   could not read the provider's configuration since it started; if it had already read it, the button still leads to
   the provider and your browser shows that address's own error page (go back to Homora).
