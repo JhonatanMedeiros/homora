@@ -111,7 +111,7 @@ All scopes and tools are in the [agent capability inventory](docs/agent-capabili
 - **Import** from Homora, Homepage (`services.yaml`, `bookmarks.yaml`) and Dashy (`conf.yml`) with a preview that
   writes nothing until you confirm. **Export** to YAML or JSON.
 - **Backup and restore** scripts, transactional SQLite migrations, and multi-arch images (`linux/amd64`, `linux/arm64`).
-- **Sign-in options:** password, optional two-step verification (TOTP with recovery codes) and passkeys.
+- **Sign-in options:** password, optional two-step verification (TOTP with recovery codes), passkeys and an optional OpenID Connect provider.
 
 ## A closer look
 
@@ -217,7 +217,7 @@ Read the [security policy](SECURITY.md) and the [architecture and security model
 
 ## What is not available yet
 
-OIDC or multi-user access, and a validated setup for exposing Homora beyond your own network (only an HTTPS
+Multi-user access, and a validated setup for exposing Homora beyond your own network (only an HTTPS
 reverse proxy on a private network was validated, once). Real-world validation of the integrations is also
 pending. The roadmap lives in [docs/strategy.md](docs/strategy.md) and [docs/evolution.md](docs/evolution.md).
 
@@ -239,7 +239,7 @@ language menu), or run it locally with `pnpm docs:dev` ([details](docs/maintaine
 | [AI agents and MCP](docs/user-guide/agents-and-mcp.md)                            | Tokens, scopes, proposals, review and client setup.                             |
 | [Appearance and personalization](docs/user-guide/appearance.md)                   | Themes, accent colors, backgrounds, custom CSS and safe mode.                   |
 | [Import, export and backup](docs/user-guide/import-export-backup.md)              | Importing, exporting, backing up and restoring.                                 |
-| [Accounts and security](docs/user-guide/accounts-and-security.md)                 | Sessions, two-step verification, passkeys and account recovery.                 |
+| [Accounts and security](docs/user-guide/accounts-and-security.md)                 | Sessions, two-step verification, passkeys, OIDC and account recovery.           |
 | [Deployment and upgrades](docs/user-guide/deployment.md)                          | Docker, HTTPS reverse proxy, environment variables and upgrades.                |
 | [Logs and health checks](docs/user-guide/logs.md)                                 | JSON logs, `HOMORA_LOG_LEVEL`, what is never logged and `/api/health`.          |
 | [Use cases](docs/user-guide/use-cases.md)                                         | Step-by-step recipes for common homelab goals.                                  |

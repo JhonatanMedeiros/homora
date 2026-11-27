@@ -1,5 +1,5 @@
 import { PasswordInput } from '@/components/password-input';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, LogIn } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import type { AuthStatus, Credentials } from '@/hooks/use-auth';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -29,6 +29,8 @@ type Props = {
   onSubmit: (credentials: Credentials) => Promise<boolean>;
   /** Signs in with a passkey; `rememberMe` is the form's "keep me signed in" choice. */
   onPasskey?: (rememberMe: boolean) => Promise<boolean>;
+  /** Sends the browser to the OIDC provider; the page leaves when it succeeds. */
+  onOidc?: (rememberMe: boolean) => Promise<boolean>;
   onVerify?: (code: string, recovery: boolean) => Promise<boolean>;
   onCancelChallenge?: () => void;
   onRetry?: () => void;
@@ -42,6 +44,7 @@ export function AuthPage({
   challenge = false,
   onSubmit,
   onPasskey,
+  onOidc,
   onVerify,
   onCancelChallenge,
   onRetry,
@@ -58,6 +61,8 @@ export function AuthPage({
   const creating = status ? !status.configured : false;
   const showMismatch = creating && confirmation !== password && (confirmTouched || mismatch);
   const passkey = status?.configured ? passkeyAvailability(status.passkey?.origins) : null;
+  const oidc =
+    status?.configured && status.oidc?.enabled && status.oidc.linked ? status.oidc : null;
 
   async function startPasskey() {
     if (pending.current || !onPasskey) return;
@@ -68,6 +73,18 @@ export function AuthPage({
     } finally {
       pending.current = false;
       setBusy(false);
+    }
+  }
+
+  async function startOidc() {
+    if (pending.current || !onOidc) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      // On success the browser leaves for the provider, so the page stays busy until it does.
+      if (!(await onOidc(rememberMe))) setBusy(false);
+    } finally {
+      pending.current = false;
     }
   }
 
@@ -111,7 +128,7 @@ export function AuthPage({
               <TwoFactorChallenge
                 error={error}
                 onVerify={onVerify}
-                onCancel={onCancelChallenge ?? (() => undefined)}
+                onCancel={onCancelChallenge ?? (() => {})}
               />
             ) : status ? (
               <>
@@ -220,6 +237,17 @@ export function AuthPage({
                         >
                           <KeyRound data-icon="inline-start" />
                           {t('auth.passkeySignIn')}
+                        </Button>
+                      )}
+                      {oidc && onOidc && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => void startOidc()}
+                        >
+                          <LogIn data-icon="inline-start" />
+                          {t('auth.oidcSignIn', { name: oidc.name })}
                         </Button>
                       )}
                       {passkey && passkey !== 'available' && (

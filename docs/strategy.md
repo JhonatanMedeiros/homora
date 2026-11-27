@@ -87,7 +87,8 @@ and prioritized adapters are verified against live production services.
 
 ### R3 — Access, Reach, and Customization
 
-- [ ] Optional OIDC authentication and read-only guest access mode.
+- [x] Optional OIDC authentication ([ADR 0032](decisions/0032-oidc-sign-in.md)).
+- [ ] Read-only guest access mode.
 - [ ] Finalize and document supported network topology scenarios (P2) before advertising access
       outside localhost.
 - [x] Theming, custom CSS, background images, translucent cards, and multi-page/tab views

@@ -166,6 +166,7 @@ function AppRoutes() {
     challenge,
     submit,
     submitPasskey,
+    submitOidc,
     verifyTwoFactor,
     cancelChallenge,
     logout,
@@ -195,6 +196,7 @@ function AppRoutes() {
       challenge={challenge}
       onSubmit={submit}
       onPasskey={submitPasskey}
+      onOidc={submitOidc}
       onVerify={verifyTwoFactor}
       onCancelChallenge={cancelChallenge}
       onRetry={retry}

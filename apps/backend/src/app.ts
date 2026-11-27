@@ -21,6 +21,8 @@ import { createProposalService } from './proposals/index.js';
 import { integrationRegistry } from './integrations/integration-registry.js';
 import { createServiceConfiguration } from './service-configuration.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerOidcRoutes } from './routes/oidc.js';
+import type { OidcConfig } from './oidc-config.js';
 import { registerAccountRoutes } from './routes/account.js';
 import { createAuditLog, SYSTEM_ACTOR } from './audit.js';
 import { registerAgentProposalRoutes } from './routes/agent-proposals.js';
@@ -90,6 +92,8 @@ export function createApp(
     apiPort?: number;
     backgroundPath?: string;
     developmentMocks?: boolean;
+    /** Optional OIDC sign-in (ADR 0032); without it the feature is off. */
+    oidc?: OidcConfig;
     /** Process logger (see `createLogger`). Without one the application logs nothing, as in tests. */
     logger?: FastifyBaseLogger;
   } = {},
@@ -321,7 +325,8 @@ export function createApp(
   });
 
   app.get('/', async (_req, reply) => reply.redirect(`http://localhost:${webPort}/`));
-  registerAuthRoutes(app, auth, webPort, audit);
+  registerAuthRoutes(app, auth, webPort, audit, options.oidc);
+  registerOidcRoutes(app, auth, audit, options.oidc);
   registerAccountRoutes(app, auth, audit);
   app.get('/api/integrations/catalog', async () => integrationRegistry.describe());
   let invalidateIntegrationWidgetCache = (_id: number) => {};

@@ -4,8 +4,10 @@ import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { fromNodeHeaders } from 'better-auth/node';
 import { twoFactor } from 'better-auth/plugins/two-factor';
+import { genericOAuth } from 'better-auth/plugins/generic-oauth';
 import { passkey } from '@better-auth/passkey';
 import { resolvePasskeyConfig } from './passkey-config.js';
+import { oidcProviderId, type OidcConfig } from './oidc-config.js';
 import {
   createRateLimitStorage,
   SIGN_IN_MAX_ATTEMPTS,
@@ -25,6 +27,12 @@ const REMEMBERED_SESSION_SECONDS = 30 * 24 * 60 * 60;
 const TWO_FACTOR_PATH_PREFIX = '/two-factor/';
 /** Header the API sets from the sign-in form's choice; the hook below reads it, clients cannot. */
 export const REMEMBER_ME_HEADER = 'x-homora-remember-me';
+/** Path (under the base path) the provider redirects back to; the one OIDC route forwarded. */
+export const OIDC_CALLBACK_PREFIX = '/callback/';
+const withoutProviderTokens = <T extends { providerId?: unknown }>(account: T): T =>
+  typeof account.providerId === 'string' && account.providerId.startsWith('oidc-')
+    ? { ...account, accessToken: null, refreshToken: null, idToken: null }
+    : account;
 /** Better Auth routes that only exist for passkeys, relative to the base path. */
 const PASSKEY_PATH_PREFIX = '/passkey/';
 /** Seconds the password step stays valid while the authenticator code is typed. */
@@ -68,13 +76,22 @@ type Options = {
   allowedOrigins?: readonly string[];
   /** Domain the passkeys are bound to (`HOMORA_PASSKEY_RP_ID`); defaults to `localhost`. */
   passkeyRpId?: string;
+  /** Optional OIDC provider (ADR 0032); everything OIDC is off without it. */
+  oidc?: OidcConfig;
 };
 
 /**
  * Web authentication for the single administrator account, backed by Better Auth. Accounts
  * and sessions live in the application database (see the `user`, `session` and `account` tables).
  */
-export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passkeyRpId }: Options) {
+export function createAuth({
+  sqlite,
+  secret,
+  webPort,
+  allowedOrigins = [],
+  passkeyRpId,
+  oidc,
+}: Options) {
   const passkeyConfig = resolvePasskeyConfig({ webPort, allowedOrigins, rpId: passkeyRpId });
   const countUsers = () =>
     (sqlite.prepare('SELECT COUNT(*) AS count FROM "user"').get() as { count: number }).count;
@@ -82,7 +99,8 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
     appName: 'Homora',
     database: sqlite,
     secret,
-    baseURL: `http://localhost:${webPort}`,
+    // The provider redirects back to this origin, so it is the configured one when OIDC is on.
+    baseURL: oidc?.redirectOrigin ?? `http://localhost:${webPort}`,
     basePath: AUTH_BASE_PATH,
     trustedOrigins: [
       `http://127.0.0.1:${webPort}`,
@@ -99,6 +117,28 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
         // Discoverable credentials with biometrics or PIN: the passkey alone is possession plus
         // user verification, so the sign-in is complete without a password.
         authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+      }),
+      // Without a configured provider the plugin has nothing to register and adds no route use.
+      genericOAuth({
+        config: oidc
+          ? [
+              {
+                providerId: oidcProviderId(oidc.issuer),
+                discoveryUrl: `${oidc.issuer.replace(/\/$/, '')}/.well-known/openid-configuration`,
+                clientId: oidc.clientId,
+                clientSecret: oidc.clientSecret,
+                // The e-mail claim is only asked for because the library requires one; it never
+                // decides who may sign in (implicit linking is off, below).
+                scopes: ['openid', 'email', 'profile'],
+                pkce: true,
+                requireIdTokenVerification: true,
+                // Only a linked identity opens the account; the provider can never create one.
+                disableSignUp: true,
+                disableImplicitSignUp: true,
+                overrideUserInfo: false,
+              },
+            ]
+          : [],
       }),
       twoFactor({
         issuer: 'Homora',
@@ -119,6 +159,19 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
     session: { expiresIn: REMEMBERED_SESSION_SECONDS, disableSessionRefresh: true },
     // Public sign-up is closed: the account is created by `setup()` only.
     disabledPaths: ['/sign-up/email'],
+    account: {
+      // Explicit linking by the signed-in administrator only (`link-social`): a matching e-mail
+      // address, verified or not, never links or signs in anything.
+      accountLinking: {
+        enabled: true,
+        disableImplicitLinking: true,
+        allowDifferentEmails: true,
+        // The administrator chose this provider: without it the library refuses an explicit link
+        // whose e-mail the provider did not verify. It does not permit implicit linking.
+        trustedProviders: oidc ? [oidcProviderId(oidc.issuer)] : [],
+      },
+      encryptOAuthTokens: true,
+    },
     rateLimit: {
       enabled: true,
       window: 10,
@@ -161,6 +214,9 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
       // `Secure` is added by the API from the request origin (see routes/auth.ts).
       useSecureCookies: false,
       defaultCookieAttributes: { sameSite: 'strict' },
+      // The provider's redirect back is a cross-site navigation: only the short-lived, signed
+      // `state` cookie of the attempt must travel with it. Every other cookie stays Strict.
+      cookies: { state: { attributes: { sameSite: 'lax' } } },
       ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },
     databaseHooks: {
@@ -173,6 +229,10 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
                 return context.body?.rememberMe === false
                   ? new Date(Date.now() + SESSION_SECONDS * 1000)
                   : null;
+              // An OIDC sign-in is a browser session of eight hours ("keep me signed in" does not
+              // apply: the provider's own session decides how long it stays valid there).
+              if (context?.path?.startsWith(OIDC_CALLBACK_PREFIX))
+                return new Date(Date.now() + SESSION_SECONDS * 1000);
               // A passkey sign-in has no "forget me" cookie: the form's choice arrives in a header.
               if (context?.path === `${PASSKEY_PATH_PREFIX}verify-authentication`)
                 return context.request?.headers.get(REMEMBER_ME_HEADER) === '1'
@@ -193,6 +253,11 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
             if (end) return { data: { ...session, expiresAt: end } };
           },
         },
+      },
+      account: {
+        // Homora never needs the provider's tokens: they are dropped before they are stored.
+        create: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
+        update: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
       },
       user: {
         create: {
@@ -344,8 +409,55 @@ export function createAuth({ sqlite, secret, webPort, allowedOrigins = [], passk
         if (countUsers() > 0) throw new AccountExistsError();
         await instance.api.signUpEmail({ body: input });
       });
-      setupQueue = run.catch(() => undefined);
+      setupQueue = run.catch(() => {});
       return run;
+    },
+    /**
+     * Optional OIDC provider, run entirely by Better Auth's generic OAuth plugin. Starting
+     * returns the provider URL and the cookies of the attempt; the callback is the one OIDC route
+     * the gateway forwards. The link lives in the library's `account` table.
+     */
+    oidc: oidc && {
+      providerId: oidcProviderId(oidc.issuer),
+      async start(headers: IncomingHttpHeaders, mode: 'login' | 'link') {
+        const input = { headers: fromNodeHeaders(headers), returnHeaders: true as const };
+        const provider = oidcProviderId(oidc.issuer);
+        const result =
+          mode === 'login'
+            ? await instance.api.signInSocial({
+                ...input,
+                body: {
+                  provider,
+                  callbackURL: '/',
+                  errorCallbackURL: '/login',
+                  disableRedirect: true,
+                },
+              })
+            : await instance.api.linkSocialAccount({
+                ...input,
+                body: {
+                  provider,
+                  callbackURL: '/account?oidc=linked',
+                  errorCallbackURL: '/account',
+                  disableRedirect: true,
+                },
+              });
+        return { url: result.response.url, cookies: result.headers.getSetCookie() };
+      },
+      /** The linked identities of the account: their provider ids and when they were linked. */
+      links() {
+        return sqlite
+          .prepare(
+            "SELECT id, providerId, userId, createdAt FROM account WHERE providerId LIKE 'oidc-%'",
+          )
+          .all() as { id: string; providerId: string; userId: string; createdAt: string }[];
+      },
+      async unlink(headers: IncomingHttpHeaders, accountId: string) {
+        await instance.api.unlinkAccount({
+          headers: fromNodeHeaders(headers),
+          body: { accountId },
+        });
+      },
     },
     /** Server-side sign-in returning a `Cookie` header value (tests and restore checks). */
     async createSessionCookie(email: string, password: string) {

@@ -15,7 +15,7 @@ const config = loadConfig();
 const log = createLogger({ level: config.logLevel });
 const build = buildInfo();
 // Replaced once the application exists; before that there is nothing to drain.
-let closeApp: () => Promise<void> = async () => undefined;
+let closeApp: () => Promise<void> = async () => {};
 const shutdown = createShutdownHandler({
   close: () => closeApp(),
   exit: (code) => process.exit(code),
@@ -62,12 +62,14 @@ const app = createApp(
     webPort: config.webPort,
     allowedOrigins: config.allowedOrigins,
     passkeyRpId: config.passkeyRpId,
+    oidc: config.oidc,
   }),
   vault,
   config.allowedOrigins,
   config.dockerHost ? createDockerSource(config.dockerHost) : undefined,
   {
     trustProxy: config.trustProxy,
+    oidc: config.oidc,
     developmentMocks: config.developmentMocks,
     apiPort: config.apiPort,
     // Next to the database, so a backup of the database can take the picture along.
@@ -92,6 +94,7 @@ log.info(
     flags: {
       docker: config.dockerHost !== undefined,
       trustProxy: config.trustProxy,
+      oidc: config.oidc !== undefined,
       developmentMocks: config.developmentMocks,
       allowedOrigins: config.allowedOrigins.length,
       customSessionSecret: config.sessionSecret !== undefined,

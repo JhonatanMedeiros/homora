@@ -76,12 +76,60 @@ cannot sign in, run `pnpm auth:reset --passkeys-only`, then add `--yes`, on the 
 `docker compose exec backend node scripts/auth-reset.mjs --passkeys-only --yes`). Details:
 [ADR 0017](../decisions/0017-passkey-sign-in.md).
 
+## Sign in with your identity provider (OIDC)
+
+Optional and off until you configure it. Homora supports **one** OpenID Connect provider for the one administrator
+(Authentik, Keycloak, Authelia, Zitadel and similar). Your password keeps working, so a provider outage never locks
+you out.
+
+1. At the provider, create a confidential client with the **authorization code** flow and register the redirect URL
+   shown in **Account** (`<your Homora address>/api/auth/oidc/callback`). Homora asks only for the `openid` scope.
+2. Set the variables (in `.env`, or the environment of the container) and restart Homora:
+
+   | Variable                                              | Meaning                                                                                                                                                |
+   | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+   | `HOMORA_OIDC_ISSUER`                                  | The provider's issuer URL, exactly as it appears in its discovery document. HTTPS only. Setting it turns the feature on.                               |
+   | `HOMORA_OIDC_CLIENT_ID` / `HOMORA_OIDC_CLIENT_SECRET` | The client you created. The secret stays in the environment: it is not stored in the database or backups and is never shown.                           |
+   | `HOMORA_OIDC_NAME`                                    | Label of the sign-in button (default `OpenID Connect`).                                                                                                |
+   | `HOMORA_OIDC_REDIRECT_ORIGIN`                         | The address you open Homora at (default: the first HTTPS origin in `HOMORA_ALLOWED_ORIGINS`, else `http://localhost:<port>`). Start from that address. |
+   | `HOMORA_OIDC_ALLOW_PRIVATE_NETWORK`                   | `true` when the provider is on a private network (192.168.x.x, 10.x.x.x…). Off by default.                                                             |
+   | `HOMORA_OIDC_CA_FILE`                                 | PEM file of the private certificate authority that signed the provider's certificate.                                                                  |
+
+3. In **Account → Sign-in provider**, confirm your password and choose **Continue**. Sign in at the provider; the
+   identity you used is linked. Only that exact identity (issuer and subject) can sign in: an e-mail address, a name
+   or a new account at the provider is never enough, and Homora never creates accounts.
+4. The sign-in page now offers **Sign in with …**. A provider sign-in is a browser session of eight hours;
+   **Keep me signed in** does not apply to it.
+
+Things to know:
+
+- A provider sign-in does not ask for the authenticator code: the provider is responsible for verifying you. Use
+  multi-factor at the provider.
+- **Sign out is local.** Homora does not sign you out of the provider.
+- Removing the link asks for the password and signs out your other devices.
+- Homora talks to the provider through Better Auth's own HTTP client: its address is the issuer you configured, over
+  HTTPS. A provider on a private network works without extra settings; for a private certificate authority, start
+  Homora with `NODE_EXTRA_CA_CERTS=/path/to/ca.pem`. These requests do not use the restricted monitoring transport
+  (see [ADR 0032](../decisions/0032-oidc-sign-in.md)).
+- Your provider must release the `email` claim (Homora asks for `openid email profile`); the e-mail is never used to
+  decide who may sign in.
+- If the provider is down or misconfigured, Homora says so and you sign in with the password.
+- Changing `HOMORA_OIDC_ISSUER` makes the existing link stop working (Account says so); remove it and link again.
+  Removing the variables turns the feature off.
+
+**Cannot reach the provider, or want to detach it?** Sign in with the password and remove the link in Account. If you
+cannot sign in, run `pnpm auth:reset --oidc-only`, then add `--yes`, on the server (with Compose:
+`docker compose exec backend node scripts/auth-reset.mjs --oidc-only --yes`). Details:
+[ADR 0032](../decisions/0032-oidc-sign-in.md).
+
 ## Rotating secrets
 
 - **Connection credentials:** rotating the encryption key itself is not supported, and removing `<database>.key` while
   encrypted connections exist makes them unreadable (Homora will not create a new key over them). In practice, create a
   new token at the source (Proxmox, Home Assistant and so on), enter it again on the connection in Integrations, then
   revoke the old token.
+- **OIDC client secret:** create a new secret at the provider, put it in `HOMORA_OIDC_CLIENT_SECRET` and restart
+  Homora, then revoke the old one.
 - **Agent tokens:** replace one on the Agents page with **Generate new token**, or revoke it. Revoked agents stay in a
   collapsed section for reference; the main list and count show active agents.
 

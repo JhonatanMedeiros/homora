@@ -118,7 +118,7 @@ Todos os escopos e ferramentas estão no [inventário de capacidades](docs/agent
   que não grava nada até você confirmar. **Exporte** para YAML ou JSON.
 - **Scripts de backup e restauração**, migrações SQLite transacionais e imagens multiarquitetura (`linux/amd64`,
   `linux/arm64`).
-- **Opções de acesso:** senha, verificação em duas etapas opcional (TOTP com códigos de recuperação) e passkeys.
+- **Opções de acesso:** senha, verificação em duas etapas opcional (TOTP com códigos de recuperação), passkeys e um provedor OpenID Connect opcional.
 
 ## Um olhar mais de perto
 
@@ -223,7 +223,7 @@ Leia a [política de segurança](SECURITY.md) e o [modelo de arquitetura e segur
 
 ## O que ainda não está disponível
 
-OIDC ou acesso multiusuário, e uma configuração validada para expor o Homora fora da sua rede (apenas um proxy reverso
+acesso multiusuário, e uma configuração validada para expor o Homora fora da sua rede (apenas um proxy reverso
 HTTPS em rede privada foi validado, uma vez). A validação das integrações em ambientes reais também está pendente. O plano
 está em [docs/strategy.md](docs/strategy.md) e [docs/evolution.md](docs/evolution.md).
 

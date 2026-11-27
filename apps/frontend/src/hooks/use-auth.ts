@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { apiError, t } from '@/i18n';
 import { failed, signInWithPasskey } from '@/hooks/use-passkeys';
+import { oidcFailed, oidcReasonMessage, signInWithOidc, takeOidcReturn } from '@/hooks/use-oidc';
 import { watchSession } from '@/lib/session-guard';
 import { clearDraft } from '@/lib/service-draft';
 
@@ -22,6 +23,8 @@ export type AuthStatus = {
   authenticated: boolean;
   /** Origins where passkeys work; absent on servers that predate them. */
   passkey?: { origins: string[] };
+  /** The optional OIDC provider; `linked` says an identity can already sign in with it. */
+  oidc?: { enabled: false } | { enabled: true; name: string; linked: boolean };
 };
 /** `name` is only needed to create the first account. */
 export type Credentials = { email: string; password: string; name?: string; rememberMe?: boolean };
@@ -37,6 +40,19 @@ export function useAuth() {
   /** The session ended while the app was open (not a sign-out the person asked for). */
   const [expired, setExpired] = useState(false);
   const authenticated = status?.authenticated === true;
+  // The provider's redirect back leaves its outcome in the address; read before anything navigates.
+  const [returned] = useState(takeOidcReturn);
+
+  useEffect(() => {
+    if (!returned) return;
+    if ('linked' in returned) {
+      toast.success(t('account.oidcLinkedToast'), { id: 'oidc-return' });
+      return;
+    }
+    const message = oidcReasonMessage(returned.reason);
+    setError(message);
+    toast.error(message, { id: 'oidc-return' });
+  }, [returned]);
 
   useEffect(() => {
     if (!authenticated) return;
@@ -172,6 +188,17 @@ export function useAuth() {
     return true;
   }
 
+  /** Sends the browser to the OIDC provider; the sign-in completes when it redirects back. */
+  async function submitOidc(rememberMe: boolean) {
+    setError('');
+    const result = await signInWithOidc(rememberMe);
+    if (oidcFailed(result)) {
+      setError(result.error);
+      return false;
+    }
+    return true;
+  }
+
   function cancelChallenge() {
     setChallenge(false);
     setError('');
@@ -196,6 +223,7 @@ export function useAuth() {
     challenge,
     submit,
     submitPasskey,
+    submitOidc,
     verifyTwoFactor,
     cancelChallenge,
     logout,

@@ -7,6 +7,7 @@ import { ANONYMOUS_ACTOR, type AuditLog } from '../audit.js';
 import { describeUserAgent } from '../client-info.js';
 import { PASSKEY_PATHS } from '../passkey-gateway.js';
 import { handlePasskeyRoute } from './passkey.js';
+import type { OidcConfig } from '../oidc-config.js';
 import {
   sanitizeTwoFactorBody,
   sessionCookieOf,
@@ -37,12 +38,21 @@ export function registerAuthRoutes(
   auth: Auth,
   webPort: number,
   audit: AuditLog,
+  oidc: OidcConfig | undefined,
 ) {
   app.get('/api/auth/status', async (request) => ({
     configured: auth.configured(),
     authenticated: (await auth.session(request.headers)) !== null,
     // Browsers only offer a passkey on these origins; the interface compares its own.
     passkey: { origins: auth.passkey.origins },
+    oidc:
+      oidc && auth.oidc
+        ? {
+            enabled: true,
+            name: oidc.name,
+            linked: auth.oidc.links().some((link) => link.providerId === auth.oidc?.providerId),
+          }
+        : { enabled: false },
   }));
   app.post('/api/auth/setup', async (request, reply) => {
     if (auth.configured()) return reply.code(403).send(errorBody('account-exists'));
@@ -150,7 +160,7 @@ export function registerAuthRoutes(
           if (ok && (action === 'two-factor-enable' || action === 'two-factor-disable')) {
             const cookie = sessionCookieOf(setCookies);
             // Best effort: the response still has to deliver the new session cookie.
-            if (cookie) await auth.revokeOtherSessions({ cookie }).catch(() => undefined);
+            if (cookie) await auth.revokeOtherSessions({ cookie }).catch(() => {});
           }
         }
       }

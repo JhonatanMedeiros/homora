@@ -67,6 +67,7 @@ describe('API authentication', () => {
         configured: false,
         authenticated: false,
         passkey: { origins: ['http://localhost:5173'] },
+        oidc: { enabled: false },
       });
       expect((await setup({ origin }, { password: 'only-a-password' })).statusCode).toBe(400);
       expect((await setup({ origin }, { ...account, email: 'not-an-email' })).statusCode).toBe(400);
@@ -136,6 +137,7 @@ describe('API authentication', () => {
         configured: true,
         authenticated: true,
         passkey: { origins: ['http://localhost:5173'] },
+        oidc: { enabled: false },
       });
       await localApp.inject({
         method: 'POST',
@@ -251,6 +253,7 @@ describe('API authentication', () => {
         configured: true,
         authenticated: false,
         passkey: { origins: ['http://localhost:5173'] },
+        oidc: { enabled: false },
       });
     } finally {
       await done();

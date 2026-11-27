@@ -32,6 +32,12 @@ data or real credentials. There is no established response SLA or bug bounty pol
   secret; they are bound to the RP ID (`localhost`, or `HOMORA_PASSKEY_RP_ID`) and to explicit
   origins, never to request headers. Adding or removing one asks for the password. Recovery is local
   (`pnpm auth:reset --passkeys-only`). See ADR 0017.
+- OIDC sign-in is optional, runs on Better Auth's generic OAuth plugin and is configured only by environment
+  (`HOMORA_OIDC_*`); the client secret is never stored, logged or sent to the browser. The account is linked
+  explicitly (password confirmed) to one provider/subject; e-mail never grants access, implicit linking and sign-up
+  are off, and provider tokens are discarded before storage. Provider requests use Better Auth's HTTP client, not the
+  restricted network transport, against the operator-configured HTTPS issuer. An OIDC sign-in does not ask for the
+  local authenticator code and logout is local. Recovery: `pnpm auth:reset --oidc-only`. See ADR 0032.
 - Appearance and custom CSS are administrator-controlled. Custom CSS is validated and served from
   the same origin, but Homora does not send a Content-Security-Policy header today, so treat the
   stylesheet as trusted administrator content. If it breaks the interface, open the page with
