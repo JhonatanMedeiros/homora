@@ -122,20 +122,29 @@ menu. **Ctrl or Cmd K** opens the command palette (`CommandPalette`). A skip lin
 
 ### Home: Summary, Services and Maintenance
 
-**The Home opens with health; the cards are one click away.** The Summary (`/`) reads: pinned services, Needs attention
-(`ProbableCauses alwaysOpen`, where every cause says "likely", or a calm or "cannot measure" card), health figures, the
-state strip (a ring, a number and a name per state, each a button that filters Services), availability target and latency,
-upcoming maintenance, page widgets. "Nothing needs attention" is said only when nothing is unknown or stale. From 1280px
-a left column (`HomeSidebar`) holds views, groups, hosts and probes, and on the Summary and Services a right column
-(`ServicePanel`) holds one window per service (shape and color together, named for screen readers), the selected
-service's details and pending agent proposals. Choosing a service fills that column; without it the same details open in
-a sheet (`ServiceDrawer`), and a selection never turns into a sheet by itself. Maintenance (`/maintenance`) schedules a
-window and lists the open and the scheduled ones.
+**The Home opens with health; the cards are one click away.** The Summary (`/`) is a grid of blocks (`SummaryBoard`):
+pinned services, Needs attention (`ProbableCauses alwaysOpen`, where every cause says "likely", or a calm or "cannot
+measure" card), service windows, hosts, probes, health figures, agent proposals, the state strip (a ring, a number and a
+name per state, each a button that filters Services), availability target, latency, upcoming maintenance and the page
+widgets. "Nothing needs attention" is said only when nothing is unknown or stale. It has no side columns; choosing a
+service opens the details sheet (`ServiceDrawer`).
+
+**The grid** (`SummaryGrid`) has 12 columns, rows of at least 5rem and a 16px gap; blocks flow in order and fill holes
+(dense flow), never overlap and never take free pixel positions. Blocks that must be read at a glance (pinned, attention,
+figures, state strip) grow with their content; the others scroll inside their cell, fade at the bottom edge while more is
+below and become focusable. From 768 to 1023px a block takes half or all of the width. **Arranging is a mode**: a sticky
+toolbar (Add widget, Hidden, Restore default, Cancel, Done) takes focus, each block gets a dashed outline (no layout
+shift), a floating chip with its name, size and `⋯` menu, and a corner handle for pointer resizing; its content is inert.
+Every move and resize is in the menu and announced politely. On phones (`SummaryColumn`) it is one column in its own
+order, with 44px up, down and hide buttons and no sizes. Services and Maintenance keep the left column (`HomeSidebar`).
+Maintenance (`/maintenance`) schedules a window and lists the open and the scheduled ones.
 
 Services default to **compact tiles** (`ServiceCardCompact`): icon, name, host in mono, the state in words, a 6px bar of the period (`UptimeMiniBar`) and the latency, with an `i` button that opens the details drawer. **List** is one dense row per service, two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "Display" button in the toolbar (`ViewOptions`, a popover) switches the layout and sets descriptions and the uptime period; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`tiles`, `list` or `cards`; nothing stored means tiles, the older `comfortable` maps to cards and `compact` to list).
 
-On Services, from 1440px the page widgets (`PageWidgets layout="rail"`) sit in the right column; otherwise they are a row
-below the content, after the probes, so services come first on small screens. On phones the Add widget tile shows only
+On Services, from 1280px the page widgets (`PageWidgetList layout="rail"`) are at the top of the right column
+(`ServicePanel`), above the service windows; choosing a service shows its details in their place with **Back to widgets**.
+A page without widgets shows the details of one service there, the first problem first. Without the column, widgets sit
+above the groups in a collapsible section (`WidgetsSection`), open until folded. On phones the Add widget tile shows only
 in Organize. The **status pill** (`HealthPill`, `HomeStatusPill`) is in the header of every page: an 8px status light and
 a few words ("All up", "2 problems", "Partly monitored", "Cannot measure"), a ghost button with no border and no colored
 text, so the color is the dot alone. On phones it shrinks to the dot plus the problem count, a check when all is well or a

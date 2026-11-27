@@ -187,43 +187,7 @@ export function HomeRail({
           })}
         </section>
       )}
-      {hosts && hosts.items.length > 0 && (
-        <section aria-label={t('rail.hosts')} className="flex flex-col gap-0.5">
-          <h2 className="px-2.5 pb-1 text-xs font-medium text-muted-foreground">
-            {t('rail.hosts')}
-          </h2>
-          {hosts.items.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => hosts.onSelect(item)}
-              className={cn(ITEM, 'text-muted-foreground')}
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'size-2 shrink-0 rounded-full',
-                    item.state === 'online' && 'bg-success',
-                    item.state === 'offline' && 'bg-destructive',
-                    item.state === 'unknown' && 'border border-muted-foreground',
-                  )}
-                />
-                <span className="truncate">{item.node}</span>
-              </span>
-              <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs tabular-nums">
-                {item.state === 'offline' && (
-                  <span className="text-destructive">{t('filter.status.down')}</span>
-                )}
-                {item.down > 0 && item.state !== 'offline' && (
-                  <span className="text-destructive">{item.down}</span>
-                )}
-                {item.total}
-              </span>
-            </button>
-          ))}
-        </section>
-      )}
+      {hosts && hosts.items.length > 0 && <HostsBlock {...hosts} />}
       {probes && probes.items.length > 0 && <ProbesBlock {...probes} />}
       {widgets && (
         <Button
@@ -269,6 +233,55 @@ const CHECK_BADGE: Record<CheckType, string> = {
   tls: 'TLS',
 };
 
+/** One button per Proxmox node that runs cards, with its state and how many are down. */
+export function HostsBlock({
+  items,
+  onSelect,
+}: {
+  items: HostRailItem[];
+  onSelect: (item: HostRailItem) => void;
+}) {
+  return (
+    <section aria-label={t('rail.hosts')} className="flex flex-col gap-0.5">
+      <h2 className="px-2.5 pb-1 text-xs font-medium text-muted-foreground">{t('rail.hosts')}</h2>
+      {items.map((item) => (
+        <button
+          key={item.key}
+          type="button"
+          onClick={() => onSelect(item)}
+          className={cn(ITEM, 'text-muted-foreground')}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span
+              aria-hidden="true"
+              className={cn(
+                'size-2 shrink-0 rounded-full',
+                item.state === 'online' && 'bg-success',
+                item.state === 'offline' && 'bg-destructive',
+                item.state === 'unknown' && 'border border-muted-foreground',
+              )}
+            />
+            <span className="truncate">{item.node}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs tabular-nums">
+            {item.state === 'offline' && (
+              <span className="text-destructive">{t('filter.status.down')}</span>
+            )}
+            {item.state === 'unknown' && <span>{t('summarygrid.hosts.state.unknown')}</span>}
+            {item.state === 'online' && (
+              <span className="sr-only">{t('summarygrid.hosts.state.online')}</span>
+            )}
+            {item.down > 0 && item.state !== 'offline' && (
+              <span className="text-destructive">{item.down}</span>
+            )}
+            {item.total}
+          </span>
+        </button>
+      ))}
+    </section>
+  );
+}
+
 /** "Rental Manager — origem" reads as a name and a detail; without a dash the detail is the host. */
 function splitProbeName(probe: RailProbe) {
   const [head, ...rest] = probe.name.split(' — ');
@@ -282,7 +295,7 @@ function splitProbeName(probe: RailProbe) {
   return { title: probe.name, detail: host };
 }
 
-function ProbesBlock({ items, onOpen }: { items: RailProbe[]; onOpen: () => void }) {
+export function ProbesBlock({ items, onOpen }: { items: RailProbe[]; onOpen: () => void }) {
   const sorted = [...items].sort((a, b) => PROBE_ORDER[a.state] - PROBE_ORDER[b.state]);
   const ok = items.filter((probe) => probe.state === 'available').length;
   return (

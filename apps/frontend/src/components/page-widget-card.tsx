@@ -33,6 +33,7 @@ export function PageWidgetCard({
   pages,
   fullPages,
   layout,
+  wide = layout === 'strip' && item.size === 'wide',
   groups,
   openMonitor,
   showHidden,
@@ -57,7 +58,9 @@ export function PageWidgetCard({
   loading: boolean;
   pages: PageRow[];
   fullPages: Set<number>;
-  layout: 'rail' | 'strip';
+  layout: 'rail' | 'strip' | 'grid';
+  /** Whether the content has room for its wide form. */
+  wide?: boolean;
   groups: { name: string; pageId: number | null }[];
   openMonitor?: (id: number, hasService: boolean) => void;
   showHidden: boolean;
@@ -158,6 +161,7 @@ export function PageWidgetCard({
         layout === 'strip' && item.size === 'wide' && 'sm:col-span-2',
         current.length > 1 && 'cursor-grab active:cursor-grabbing pointer-coarse:cursor-default',
         dragId === item.id && 'border-dashed opacity-40',
+        layout === 'grid' && 'flex-1',
       )}
     >
       {markable(index) && <DropMarker edge="start" stacked={layout === 'rail'} />}
@@ -176,7 +180,7 @@ export function PageWidgetCard({
                   : { status: state.status }
               }
               incidentReading={monitoring}
-              wide={layout === 'strip' && item.size === 'wide'}
+              wide={wide}
               groups={groups}
               pages={pages}
               openMonitor={openMonitor}

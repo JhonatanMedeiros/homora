@@ -1,5 +1,6 @@
 import { WidgetStatusFilterContext } from '@/components/widget-host';
-import { PageWidgets } from '@/components/page-widgets';
+import { PageWidgetList, usePageWidgets } from '@/components/page-widgets';
+import { WidgetsSection } from '@/features/summary/services-widgets';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { cn } from '@homora/ui/lib/utils';
 import { Alert, AlertDescription } from '@homora/ui/alert';
@@ -105,6 +106,8 @@ export function ServicesPage({
     problemsFirst,
     widgetRail,
     setWidgetRail,
+    widgetsOpen,
+    setWidgetsOpen,
   } = useViewPreferences();
   const wide = useMinWidth(1280);
   const sources = useHealthSources(uptimeRange);
@@ -218,6 +221,16 @@ export function ServicesPage({
   const details = useDetailsSelection(panelled);
   const selectedService = services.find((item) => item.id === details.selectedId) ?? null;
   const sheetService = services.find((item) => item.id === details.sheetId) ?? null;
+  const widgets = usePageWidgets({
+    pageId: activePageId,
+    pages,
+    layout: widgetsInRail ? 'rail' : 'strip',
+    groups: groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null })),
+    openMonitor: (id, hasService) => (hasService ? details.open(id) : navigate('/manage/probes')),
+  });
+  const hasWidgets = widgets.current.length > 0;
+  // With widgets in the column, a chosen service takes their place until the person goes back.
+  const widgetsFirst = widgetsInRail && hasWidgets;
   // 'Problems first' only reorders what is shown; it never changes the saved order of groups.
   const ordered =
     problemsFirst && !organizing
@@ -538,6 +551,17 @@ export function ServicesPage({
           />
         </Suspense>
       )}
+      {!hostView && !widgetsInRail && hasWidgets && (
+        <WidgetStatusFilterContext.Provider value={setStatusFilter}>
+          <WidgetsSection
+            open={widgetsOpen}
+            onOpenChange={setWidgetsOpen}
+            count={widgets.current.length}
+          >
+            <PageWidgetList widgets={widgets} showAdd={!mobile || organizing} />
+          </WidgetsSection>
+        </WidgetStatusFilterContext.Provider>
+      )}
       {!organizing && !hostView && !favoritesOnly && (
         <PinnedRow
           services={pinnedServices}
@@ -676,22 +700,20 @@ export function ServicesPage({
       {!railed && !organizing && !hostView && (
         <HomeProbes probes={probeViews} onOpen={() => navigate('/manage/probes')} />
       )}
-      {!hostView && !widgetsInRail && (
-        <WidgetStatusFilterContext.Provider value={setStatusFilter}>
-          <PageWidgets
-            pageId={activePageId}
-            showAdd={!mobile || organizing}
-            pages={pages}
-            groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
-            openMonitor={(id, hasService) =>
-              hasService ? details.open(id) : navigate('/manage/probes')
-            }
-          />
-        </WidgetStatusFilterContext.Provider>
+      {/* A page without widgets only offers to add one, after the services. */}
+      {!hostView && !widgetsInRail && !hasWidgets && activePageId > 0 && (
+        <PageWidgetList widgets={widgets} showAdd={!mobile || organizing} />
       )}
     </section>
   );
-  if (!railed) return body;
+  // The dialogs stay mounted wherever the cards are drawn.
+  if (!railed)
+    return (
+      <>
+        {body}
+        {widgets.dialogs}
+      </>
+    );
   return (
     <div
       className={cn(
@@ -711,34 +733,27 @@ export function ServicesPage({
         widgets={{ shown: widgetRail, onToggle: () => setWidgetRail(!widgetRail) }}
       />
       {body}
+      {widgets.dialogs}
       {panelled && (
-        <div className="flex min-w-0 flex-col gap-4">
-          <ServicePanel
-            windows={health.summary.windows}
-            details={panelService ? detailsOf(panelService) : null}
-            onSelect={(id) => (probeIds.has(id) ? navigate('/manage/probes') : details.open(id))}
-            onReviewProposals={() => navigate('/manage/agents')}
-          />
-          {widgetsInRail && (
-            <aside aria-label={t('pageWidgets.title')} className="min-w-0">
-              <WidgetStatusFilterContext.Provider value={setStatusFilter}>
-                <PageWidgets
-                  pageId={activePageId}
-                  pages={pages}
-                  layout="rail"
-                  showAdd
-                  groups={groupRows.map((group) => ({
-                    name: group.name,
-                    pageId: group.pageId ?? null,
-                  }))}
-                  openMonitor={(id, hasService) =>
-                    hasService ? details.open(id) : navigate('/manage/probes')
-                  }
-                />
-              </WidgetStatusFilterContext.Provider>
-            </aside>
-          )}
-        </div>
+        <ServicePanel
+          windows={health.summary.windows}
+          details={
+            panelService && !(widgetsFirst && !selectedService) ? detailsOf(panelService) : null
+          }
+          onSelect={(id) => (probeIds.has(id) ? navigate('/manage/probes') : details.open(id))}
+          onReviewProposals={() => navigate('/manage/agents')}
+          showDetails={!widgetsFirst || selectedService !== null}
+          onBack={widgetsFirst && selectedService ? details.close : undefined}
+          top={
+            widgetsInRail && activePageId > 0 && !(widgetsFirst && selectedService) ? (
+              <aside aria-label={t('pageWidgets.title')} className="min-w-0 empty:hidden">
+                <WidgetStatusFilterContext.Provider value={setStatusFilter}>
+                  <PageWidgetList widgets={widgets} layout="rail" />
+                </WidgetStatusFilterContext.Provider>
+              </aside>
+            ) : undefined
+          }
+        />
       )}
     </div>
   );

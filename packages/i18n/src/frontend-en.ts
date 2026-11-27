@@ -21,6 +21,7 @@ import { en as serviceDetail } from './messages/service-detail.js';
 import { en as checks } from './messages/checks.js';
 import { en as probes } from './messages/probes.js';
 import { en as home } from './messages/home.js';
+import { en as summaryGrid } from './messages/summary-grid.js';
 
 /** Source of truth for translation keys: every language must provide these exact keys. */
 export const en = {
@@ -47,5 +48,6 @@ export const en = {
   ...probes,
   ...pageWidgets,
   ...home,
+  ...summaryGrid,
 } as const;
 export type MessageKey = keyof typeof en;

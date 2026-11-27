@@ -108,7 +108,7 @@ afterEach(() => {
 
 it('opens with pinned services, what needs attention and the health numbers', async () => {
   show();
-  const pinned = screen.getByRole('region', { name: 'Pinned' });
+  const pinned = await screen.findByRole('region', { name: 'Pinned' });
   expect(
     within(pinned)
       .getByRole('link', { name: /Jellyfin/ })
@@ -147,11 +147,11 @@ it('says calmly that nothing needs attention when everything answers', async () 
   expect(await screen.findByText('Nothing needs attention')).toBeTruthy();
 });
 
-it('does not claim all is well when statuses are unknown or stale', () => {
+it('does not claim all is well when statuses are unknown or stale', async () => {
   const data = dataWith({ statuses: {}, statusError: true });
   show(data);
+  expect(await screen.findByText('Nothing is reported offline')).toBeTruthy();
   expect(screen.queryByText('Nothing needs attention')).toBeNull();
-  expect(screen.getByText('Nothing is reported offline')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /try again|retry/i }));
   expect(data.retryStatuses).toHaveBeenCalled();
 });
@@ -208,7 +208,7 @@ it('opens the details in a sheet on narrow screens', async () => {
   expect(await screen.findByRole('dialog', { name: 'Jellyfin' })).toBeTruthy();
 });
 
-it('shows the details in a column beside the summary on wide screens', async () => {
+it('keeps the full width on wide screens and opens the details in a sheet', async () => {
   vi.spyOn(window, 'matchMedia').mockImplementation(
     (query: string) =>
       ({
@@ -219,10 +219,8 @@ it('shows the details in a column beside the summary on wide screens', async () 
       }) as unknown as MediaQueryList,
   );
   show();
-  const panel = await screen.findByRole('region', { name: 'Selected service' });
-  // The first problem is selected before anything is chosen.
-  expect(within(panel).getByRole('heading', { name: 'Radarr' })).toBeTruthy();
   fireEvent.click(await screen.findByRole('button', { name: /^Jellyfin: Online/ }));
-  expect(within(panel).getByRole('heading', { name: 'Jellyfin' })).toBeTruthy();
-  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(await screen.findByRole('dialog', { name: 'Jellyfin' })).toBeTruthy();
+  expect(screen.queryByRole('region', { name: 'Selected service' })).toBeNull();
+  expect(screen.queryByRole('navigation', { name: /filter|views/i })).toBeNull();
 });

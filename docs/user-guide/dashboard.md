@@ -26,19 +26,52 @@ The account menu holds **Account**, **Toggle theme**, **What's new**, **GitHub**
 
 ## The Summary
 
-The Summary reads from top to bottom:
+The Summary is a grid of blocks. Every block, including each page widget, can be moved, resized, hidden and brought
+back. It starts with a ready-made arrangement:
 
-- **Pinned** services, one click away.
-- **Needs attention**: the likely causes of what is offline, then what is slow. When nothing is wrong it says so, and it
-  says **Nothing is reported offline** when some states are unknown or out of date.
-- **Health figures**: average uptime, incidents, mean time to recover and certificates close to expiry.
-- **Services by state**: select a state to open Services filtered by it.
-- **Availability target** and **Latency now** (slowest first, with each service's slow limit).
-- **Upcoming maintenance**, and the page's widgets.
+| Block                        | What it shows                                                                                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pinned**                   | Your pinned services, one click away, with their **Details**.                                                                                                                       |
+| **Needs attention**          | The likely causes of what is offline, then what is slow. When nothing is wrong it says so, and it says **Nothing is reported offline** when some states are unknown or out of date. |
+| **All services at a glance** | One small window per service; shape and color show the state.                                                                                                                       |
+| **Hosts**                    | Each Proxmox node that runs some of your cards, with its state and counts.                                                                                                          |
+| **Probes**                   | State and latency of each probe.                                                                                                                                                    |
+| **Health figures**           | Average uptime, incidents, mean time to recover and certificates close to expiry.                                                                                                   |
+| **Agent proposals**          | How many proposals wait for review.                                                                                                                                                 |
+| **Services by state**        | Select a state to open Services filtered by it.                                                                                                                                     |
+| **Availability target**      | The availability reached and the remaining error budget.                                                                                                                            |
+| **Latency now**              | Slowest first, with each service's slow limit.                                                                                                                                      |
+| **Upcoming maintenance**     | Open and scheduled windows.                                                                                                                                                         |
+| **Page widgets**             | Every widget of the selected page, beside the latency and maintenance blocks by default.                                                                                            |
 
-On wide screens (from 1280 px) a left column adds the views, groups, Proxmox hosts and probes, and a right column shows
-**All services at a glance**, one small window per service, with the details of the selected one and a link to agent
-proposals waiting for review. On narrower screens the details open in a drawer.
+**Hosts** and **Agent proposals** appear only when there is something to show. A block with nothing yet says what to do
+next. Selecting a service opens its details in a drawer. Notices about out-of-date or unreadable data stay above the
+grid.
+
+### Customize the Summary
+
+Press **Customize**. Nothing is saved until you press **Done**; **Cancel** discards the changes.
+
+![The Summary while being customized](../screenshots/summary-customize.png)
+
+- **Move** a block by dragging it, or use **Move earlier** and **Move later** in its `⋯` menu.
+- **Resize** by dragging the corner, or use **Wider**, **Narrower**, **Taller** and **Shorter** in the menu. The grid
+  has 12 columns, each block has a smallest size, and blocks never overlap; they flow in order and fill free places.
+  **Pinned**, **Needs attention**, **Health figures** and **Services by state** also grow to show all their content;
+  other blocks scroll when it does not fit.
+- **Hide from Summary** removes a block; **Hidden** brings it back at the end.
+- **Add widget** opens the widget gallery. A page holds up to 12 widgets; the built-in blocks do not count.
+- **Delete widget** (or **Remove** in a widget's menu) removes the widget from the page, also from Services. The same
+  dialog offers to only hide it from the Summary. Adding, editing and deleting a widget take effect at once.
+- **Restore default** returns to the ready-made arrangement after **Done**. It keeps your widgets.
+
+Each page has its own arrangement, saved on the server and shared by your devices. Widgets added later, also by an
+approved agent proposal, appear without editing it. If the arrangement was changed somewhere else while you were
+editing, Homora says so: press **Done** again to replace it, or **Cancel** to see it.
+
+**On a phone** the Summary is one column with its own order, which starts with what needs attention. **Customize** there
+moves blocks up and down and hides them; sizes are set on a larger screen. Between 768 and 1023 px a block takes half or
+all of the width.
 
 ## Maintenance
 
@@ -87,7 +120,7 @@ recorded in the audit log.
 
 ## Status filters
 
-On wide screens, the left column of Summary, Services and Maintenance has **Views** (**All**, **Offline**,
+On wide screens, the left column of Services and Maintenance has **Views** (**All**, **Offline**,
 **Degraded**, **Maintenance**, **Online** and **Not measured**), **Groups** with each group's health, **Probes**, and,
 when a connected Proxmox runs some of your cards, **Hosts** with each node's state and card count. Choosing a view or a
 group opens Services with that filter. The view counts also include probes, and the column says how many. On smaller
@@ -204,11 +237,12 @@ A short history is stated as such. `Esc` closes it.
 **Pin** a service from its details to show it in the **Pinned** row on the Summary and above the groups on Services, on
 every page. **Favorites** in the left column shows only pinned services. Pins are included in export and import.
 
-### Widget panel
+### Widgets on Services
 
-On screens wider than 1440 px, a page's widgets sit in the right column of Services, under the selected service; **Hide
-widget panel** moves them below your groups, after the probes. A widget that cannot refresh keeps its last reading and
-says how old it is.
+From 1280 px, a page's widgets are at the top of the right column of Services. Selecting a service shows its details in
+their place, and **Back to widgets** returns. **Hide widget panel** in the left column moves them above your groups, which
+is also where they are on narrower screens, in a section you can fold; the choice is saved in your browser. A widget that
+cannot refresh keeps its last reading and says how old it is.
 
 ## Search: the command palette
 
@@ -280,11 +314,12 @@ Everything you can do by dragging also works with buttons and menus.
 
 ## Widgets on the dashboard
 
-**Page widgets** (a clock, monitoring summaries, live readings from an integration) appear on the Summary and on Services: in the right column of Services on wide screens, and below the content otherwise. A page holds up
-to 12. The dashed **Add widget** tile (on a phone, shown in **Organize**) opens a searchable gallery; each widget's **⋯** menu edits, moves or removes it, and
-you can drag to reorder. When a widget offers sizes, **wide** uses two columns below the groups when there is room; the
-right panel and small screens use normal width. Widgets can also be attached _inside_ a card. See
-[Integrations and widgets](integrations-and-widgets.md) and the [widget gallery](widget-gallery.md).
+**Page widgets** (a clock, monitoring summaries, live readings from an integration) belong to a page and appear on its
+[Summary](#customize-the-summary) and on [Services](#widgets-on-services). A page holds up to 12. Add one with
+**Customize → Add widget** on the Summary, or with the dashed **Add widget** tile on Services (on a phone, shown in
+**Organize**). Each widget's **⋯** menu edits, moves or removes it. Sizes are set by dragging on the Summary; on
+Services a widget offered as **wide** uses two columns above the groups when there is room. Widgets can also be attached
+_inside_ a card. See [Integrations and widgets](integrations-and-widgets.md) and the [widget gallery](widget-gallery.md).
 
 ## Other addresses (Links)
 

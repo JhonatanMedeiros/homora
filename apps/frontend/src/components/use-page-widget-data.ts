@@ -26,6 +26,8 @@ export function usePageWidgetData(pageId: number) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  /** The widgets of the page could not be read, so what is shown may be missing some. */
+  const [loadFailed, setLoadFailed] = useState(false);
   const reload = useCallback(async () => {
     const response = await fetch('/api/page-widgets');
     if (!response.ok) throw new Error();
@@ -43,7 +45,9 @@ export function usePageWidgetData(pageId: number) {
         if (active) setConnections(rows as Connection[]);
       })
       .catch(() => {
-        if (active) setError(t('pageWidgets.loadFailed'));
+        if (!active) return;
+        setError(t('pageWidgets.loadFailed'));
+        setLoadFailed(true);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -170,5 +174,5 @@ export function usePageWidgetData(pageId: number) {
       if (!ok) void reload();
     });
   };
-  return { widgets, connections, readings, error, busy, loading, change, reorder };
+  return { widgets, connections, readings, error, busy, loading, loadFailed, change, reorder };
 }

@@ -27,15 +27,15 @@ type Limits = SummarySize & { minWidth: number; minHeight: number };
 /** Default and smallest size of each block, in columns and grid rows. */
 export const SUMMARY_BLOCK_SIZES: Record<SummaryBlock, Limits> = {
   pinned: { width: 12, height: 1, minWidth: 4, minHeight: 1 },
-  attention: { width: 8, height: 5, minWidth: 6, minHeight: 2 },
+  attention: { width: 8, height: 6, minWidth: 6, minHeight: 2 },
   services: { width: 4, height: 2, minWidth: 3, minHeight: 1 },
   hosts: { width: 4, height: 2, minWidth: 3, minHeight: 2 },
-  probes: { width: 4, height: 2, minWidth: 3, minHeight: 2 },
+  probes: { width: 4, height: 4, minWidth: 3, minHeight: 2 },
   figures: { width: 8, height: 1, minWidth: 4, minHeight: 1 },
   proposals: { width: 4, height: 1, minWidth: 3, minHeight: 1 },
   status: { width: 8, height: 1, minWidth: 4, minHeight: 1 },
-  availability: { width: 6, height: 2, minWidth: 3, minHeight: 2 },
-  latency: { width: 6, height: 4, minWidth: 4, minHeight: 2 },
+  availability: { width: 4, height: 4, minWidth: 3, minHeight: 2 },
+  latency: { width: 4, height: 4, minWidth: 4, minHeight: 2 },
   maintenance: { width: 8, height: 2, minWidth: 4, minHeight: 1 },
 };
 

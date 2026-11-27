@@ -54,7 +54,8 @@ Docs in `docs/`. There are no testimonials, customers, or metrics; do not invent
 ## Product Principles
 
 1. Using comes before managing: opening services is the primary path. The Home opens with a health summary, pinned
-   services stay one click away there, and Services holds the cards.
+   services stay one click away there, and Services holds the cards. That Summary arrives ready to use and each person
+   arranges it as they like; arranging it is never required.
 2. Honest status: unknown is displayed as unknown.
 3. Human in control: no agent changes configuration without approval.
 4. Works out of the box: without Proxmox, without agent, without manual.

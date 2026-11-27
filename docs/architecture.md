@@ -401,6 +401,8 @@ inbox is not an audit log. The frontend polls the authenticated API every minute
 
 `@homora/ui` owns shadcn primitives as source-only TSX exports, one subpath per component, with no barrel or build output. Vite and Vitest transpile the source and the frontend type-check includes it. The shell-specific sidebar and `use-mobile` remain in the frontend; revisit this if another consumer needs them. The shared Toaster receives its theme from the app. `cn` lives at `@homora/ui/lib/utils`, with no app re-export. Tokens remain in the frontend `style.css` and Tailwind scans package sources via `@source`. The app and package each have a shadcn `components.json`; see [Interface standards](standards.md#interface-frontend) for the CLI workflow. React and React DOM are peers; other primitive dependencies belong to the package. UI must not depend on apps or domain packages.
 
-Page widget size is host layout metadata stored independently of widget configuration. Definitions opt into wide layout; see [ADR 0026](decisions/0026-widget-modules.md#page-widget-sizes-255) for responsive behavior and transfer compatibility.
+The Summary arrangement is stored per page (`summary_layouts`, `summary_layout_items`): separate desktop and phone
+orders, replaced whole with a revision check. Nothing stored means the default, which the frontend derives, so new blocks
+and widgets appear without a data change. Page widget size is host layout metadata stored independently of widget configuration. Definitions opt into wide layout; see [ADR 0026](decisions/0026-widget-modules.md#page-widget-sizes-255) for responsive behavior and transfer compatibility.
 
 Internal monitoring widget sources use the authenticated, bounded readers in [ADR 0027](decisions/0027-widget-internal-monitoring.md). They share the Home state classifier and expose no addresses or response bodies. No MON widget presentation is implemented by this foundation.

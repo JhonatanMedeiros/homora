@@ -19,12 +19,53 @@ de cada ícone aparece ao apontar ou focar. O cabeçalho traz **Resumo**, **Serv
 
 ## O Resumo
 
-De cima para baixo: serviços **fixados**; **Precisa de atenção** (causas prováveis do que está fora do ar e o que está
-lento, ou o aviso de que nada precisa de atenção, com texto próprio quando há estados desconhecidos ou desatualizados);
-os **números de saúde**; os **serviços por estado** (selecionar um estado abre Serviços filtrado); a **meta de
-disponibilidade** e a **latência agora**; as **próximas manutenções**; e os widgets da página. A partir de 1280 px, uma
-coluna à esquerda mostra visões, grupos, hosts e sondas, e uma à direita mostra **todos os serviços num olhar**, os
-detalhes do selecionado e as propostas de agentes aguardando revisão. Em telas menores, os detalhes abrem em um painel.
+O Resumo é uma grade de blocos. Todos, inclusive cada widget de página, podem ser movidos, redimensionados, ocultados e
+trazidos de volta. Ele já vem organizado:
+
+| Bloco                       | O que mostra                                                                                                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fixados**                 | Os serviços fixados, a um clique, com **Detalhes**.                                                                                                                   |
+| **Precisa de atenção**      | As causas prováveis do que está fora do ar e o que está lento. Quando não há nada, ele diz isso, com texto próprio quando há estados desconhecidos ou desatualizados. |
+| **Todos os serviços**       | Uma pequena janela por serviço; forma e cor mostram o estado.                                                                                                         |
+| **Hosts**                   | Cada nó do Proxmox que roda cartões, com estado e contagens.                                                                                                          |
+| **Sondas**                  | Estado e latência de cada sonda.                                                                                                                                      |
+| **Números de saúde**        | Disponibilidade média, incidentes, tempo médio de recuperação e certificados perto de vencer.                                                                         |
+| **Propostas de agentes**    | Quantas propostas aguardam revisão.                                                                                                                                   |
+| **Serviços por estado**     | Selecionar um estado abre Serviços filtrado por ele.                                                                                                                  |
+| **Meta de disponibilidade** | A disponibilidade alcançada e o orçamento de erro restante.                                                                                                           |
+| **Latência agora**          | Os mais lentos primeiro, com o limite de lentidão de cada serviço.                                                                                                    |
+| **Próximas manutenções**    | Janelas abertas e agendadas.                                                                                                                                          |
+| **Widgets de página**       | Todos os widgets da página selecionada, por padrão ao lado da latência e das manutenções.                                                                             |
+
+**Hosts** e **Propostas de agentes** só aparecem quando há algo a mostrar. Um bloco ainda sem conteúdo diz o que fazer.
+Selecionar um serviço abre os detalhes em um painel. Avisos de dados desatualizados ou ilegíveis ficam fixos acima da
+grade.
+
+### Personalizar o Resumo
+
+Clique em **Personalizar**. Nada é salvo até **Concluir**; **Cancelar** descarta as mudanças.
+
+![O Resumo sendo personalizado](../../screenshots/summary-customize.png)
+
+- **Mova** um bloco arrastando-o, ou use **Mover para antes** e **Mover para depois** no menu `⋯`.
+- **Redimensione** arrastando o canto, ou use **Mais largo**, **Mais estreito**, **Mais alto** e **Mais baixo** no menu.
+  A grade tem 12 colunas, cada bloco tem um tamanho mínimo e eles nunca se sobrepõem: seguem a ordem e preenchem os
+  espaços livres. **Fixados**, **Precisa de atenção**, **Números de saúde** e **Serviços por estado** também crescem para
+  mostrar todo o conteúdo; os demais ganham rolagem quando ele não cabe.
+- **Ocultar do Resumo** retira um bloco; **Ocultos** o traz de volta no fim.
+- **Adicionar widget** abre a galeria. Uma página comporta até 12 widgets; os blocos nativos não contam.
+- **Excluir widget** (ou **Remover** no menu do widget) apaga o widget da página, também em Serviços. A mesma janela
+  oferece apenas ocultá-lo do Resumo. Adicionar, editar e excluir um widget valem na hora.
+- **Restaurar padrão** volta à organização pronta depois de **Concluir**, mantendo os widgets.
+
+Cada página tem sua própria organização, salva no servidor e compartilhada entre os dispositivos. Widgets adicionados
+depois, inclusive por uma proposta de agente aprovada, aparecem sem precisar editar. Se a organização for alterada em
+outro lugar durante a edição, o Homora avisa: clique em **Concluir** novamente para substituir, ou em **Cancelar** para
+vê-la.
+
+**No celular**, o Resumo é uma coluna com ordem própria, que começa pelo que precisa de atenção. Ali, **Personalizar**
+sobe, desce e oculta blocos; os tamanhos são ajustados em uma tela maior. Entre 768 e 1023 px, um bloco ocupa metade ou
+toda a largura.
 
 ## Manutenção
 
@@ -68,4 +109,10 @@ conta fica no cabeçalho. Pressione `?` para consultar os atalhos disponíveis.
 
 [Leia a referência completa do dashboard em inglês](/user-guide/dashboard).
 
-Quando um widget de página oferecer tamanhos, escolha normal ou largo no editor. Nas telas grandes, os widgets de página ficam no painel à direita; nas menores e no Resumo, abaixo do conteúdo, e no celular o bloco **Adicionar widget** aparece em **Organizar**. Largo ocupa duas colunas abaixo dos grupos quando há espaço; no painel lateral e em telas pequenas usa a largura normal. Os tamanhos disponíveis dependem do widget.
+### Widgets em Serviços
+
+A partir de 1280 px, os widgets da página ficam no topo da coluna direita de Serviços. Selecionar um serviço mostra os
+detalhes no lugar deles, e **Voltar aos widgets** retorna. Ocultar o painel de widgets na lateral os leva para cima dos
+grupos, que é onde ficam nas telas menores, em uma seção que pode ser recolhida (a escolha fica neste navegador). No
+celular, o bloco **Adicionar widget** aparece em **Organizar**. No Resumo, o tamanho é ajustado em **Personalizar**; em
+Serviços, um widget largo ocupa duas colunas acima dos grupos quando há espaço.

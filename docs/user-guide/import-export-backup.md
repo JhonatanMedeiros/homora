@@ -18,6 +18,9 @@ In **Settings**, download your groups, cards and their order as YAML or JSON (`G
 
 - The file never contains passwords, tokens, connections or IDs. It can contain page widget names and connection names,
   so review it before sharing.
+- Customized [Summaries](dashboard.md#customize-the-summary) are exported per page, as the optional `summaryLayouts`
+  field (file version 7). Importing applies one only to a page that had no widgets and no arrangement of its own; older
+  files still import, and an invalid arrangement is ignored with a warning.
 - Extra addresses (Links) are exported with their type name and color, and pinned favorites as `pinned: true`. Older
   files still import.
 
