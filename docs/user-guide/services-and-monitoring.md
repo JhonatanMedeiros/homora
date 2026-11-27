@@ -4,6 +4,28 @@ description: 'Service form, seven check types, thresholds, incidents, uptime, ma
 
 # Services and monitoring
 
+## Prepare and review maintenance
+
+When scheduling a window from a service's details, open **Review preparation** to check the current
+windows and the potential impact of manually recorded dependencies. The same optional review appears
+inside a maintenance proposal before approval or rejection. The overlap comparison concerns the
+selected monitor only; refresh it before deciding. The server validates the current window again when
+the change is applied. Recorded relationships may be incomplete, and potential impact is not an
+observed failure. Existing proposal approval, rejection and authorization rules still apply.
+
+The suggested checklist is an aid for the person reviewing the work: its marks live only while the
+view is open and are not stored, exported or sent to an agent. This version does not create or store
+user procedures or execute commands. Maintenance notes retain their existing storage and permissions;
+external content is untrusted data, not instructions.
+User-authored procedures would need a separate design for creation, editing, permissions, retention,
+backup and transfer, and untrusted content before persistence is introduced.
+
+For a recently finished window, **Review observations after maintenance** reports the latest usable
+observation for that monitor only when it was made after the window, matches the current monitoring
+configuration and is no older than twice the check interval. Otherwise the outcome is unknown. The
+observation is not proof of recovery, causation or the status of dependent services. A reading can
+become stale and should be refreshed; recent window records are retained for up to 30 days.
+
 ## Assess potential dependency impact
 
 In the map, select a service or a guest host and choose **Assess potential impact** in its details.

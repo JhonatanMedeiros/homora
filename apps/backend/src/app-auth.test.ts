@@ -58,6 +58,9 @@ describe('API authentication', () => {
     try {
       expect((await localApp.inject({ method: 'GET', url: '/api/services' })).statusCode).toBe(401);
       expect(
+        (await localApp.inject({ url: '/api/services/1/maintenance/1/summary' })).statusCode,
+      ).toBe(401);
+      expect(
         (await localApp.inject({ method: 'GET', url: '/api/monitoring/coverage' })).statusCode,
       ).toBe(401);
       expect(
@@ -92,6 +95,23 @@ describe('API authentication', () => {
       ).toBe(200);
       sqlite.prepare('INSERT INTO monitors(id,name) VALUES(?,?)').run(701, 'Synthetic');
       sqlite.prepare('INSERT INTO monitors(id,name) VALUES(?,?)').run(702, 'Synthetic other');
+      sqlite
+        .prepare('INSERT INTO service_maintenance(id,service_id,starts_at,ends_at) VALUES(?,?,?,?)')
+        .run(31, 701, Date.now() - 100_000, Date.now() - 10_000);
+      const summary = await localApp.inject({
+        url: '/api/services/701/maintenance/31/summary',
+        headers: { cookie },
+      });
+      expect(summary.statusCode).toBe(200);
+      expect(summary.json().state).toBe('insufficient');
+      expect(
+        (
+          await localApp.inject({
+            url: '/api/services/702/maintenance/31/summary',
+            headers: { cookie },
+          })
+        ).statusCode,
+      ).toBe(404);
       sqlite
         .prepare('INSERT INTO service_incidents(id,service_id,started_at,reason) VALUES(?,?,?,?)')
         .run(99, 701, Date.now(), 'no-response');

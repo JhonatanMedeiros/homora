@@ -2,7 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import type { MaintenanceOverview } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { maintenanceSchema, parseId } from '../input-schemas.js';
-import { MaintenanceError, type createMaintenanceStore } from '../monitoring/index.js';
+import {
+  MaintenanceError,
+  maintenanceSummary,
+  type createMaintenanceStore,
+} from '../monitoring/index.js';
+import type { DatabaseSync } from 'node:sqlite';
 import type { createAuth } from '../auth.js';
 import type { AuditLog } from '../audit.js';
 
@@ -13,6 +18,7 @@ export function registerServiceMaintenanceRoutes(
   monitor: { invalidate: () => Promise<void> | void },
   auth: ReturnType<typeof createAuth>,
   audit: AuditLog,
+  db: DatabaseSync,
 ) {
   const actor = async (headers: Record<string, unknown>) => {
     const session = await auth.session(headers as never);
@@ -26,6 +32,15 @@ export function registerServiceMaintenanceRoutes(
     if (id === null) return reply.code(404).send(errorBody('service-not-found'));
     return { windows: maintenance.ofService(id) };
   });
+  app.get<{ Params: { id: string; windowId: string } }>(
+    '/api/services/:id/maintenance/:windowId/summary',
+    async (request, reply) => {
+      const id = parseId(request.params.id);
+      const windowId = parseId(request.params.windowId);
+      const result = id !== null && windowId !== null ? maintenanceSummary(db, id, windowId) : null;
+      return result ?? reply.code(404).send(errorBody('maintenance-not-found'));
+    },
+  );
   app.post<{ Params: { id: string } }>('/api/services/:id/maintenance', async (request, reply) => {
     const id = parseId(request.params.id);
     if (id === null) return reply.code(404).send(errorBody('service-not-found'));

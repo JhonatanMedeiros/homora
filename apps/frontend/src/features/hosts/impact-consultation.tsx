@@ -104,7 +104,12 @@ export function ImpactConsultation({
                     <span key={id}>
                       {index > 0 && ' → '}
                       {names.has(id) ? (
-                        <Button variant="link" className="h-auto p-0" onClick={() => onSelect(id)}>
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="h-auto p-0"
+                          onClick={() => onSelect(id)}
+                        >
                           {names.get(id)}
                         </Button>
                       ) : (

@@ -6,6 +6,7 @@ import { Badge } from '@homora/ui/badge';
 import { Button } from '@homora/ui/button';
 import { Skeleton } from '@homora/ui/skeleton';
 import { apiError, formatDateTime, t } from '@/i18n';
+import { MaintenanceSummary } from './maintenance-summary';
 
 /** The maintenance windows of one service: open, scheduled and recently finished. */
 export function MaintenancePanel({
@@ -93,6 +94,9 @@ export function MaintenancePanel({
                   >
                     {open ? t('maint.end') : t('maint.cancel')}
                   </Button>
+                )}
+                {finished && (
+                  <MaintenanceSummary serviceId={item.serviceId} windowId={item.id} now={now} />
                 )}
               </li>
             );

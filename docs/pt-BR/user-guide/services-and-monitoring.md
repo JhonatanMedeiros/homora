@@ -1,5 +1,27 @@
 # Serviços e monitoramento
 
+## Preparar e revisar manutenção
+
+Ao agendar uma janela pelos detalhes de um serviço, abra **Revisar preparação** para consultar as
+janelas atuais e o impacto potencial das dependências manuais. A mesma revisão opcional aparece em
+uma proposta de manutenção antes da aprovação ou rejeição. A comparação de sobreposição considera
+apenas o monitor selecionado; atualize antes de decidir. O servidor valida novamente a janela atual
+ao aplicar a alteração. Relações registradas podem estar incompletas e impacto potencial não é falha
+observada. As regras existentes de aprovação, rejeição e autorização continuam válidas.
+
+O checklist é uma orientação para quem revisa: as marcações existem apenas enquanto a tela está
+aberta e não são armazenadas, exportadas ou enviadas a agentes. Esta versão não cria nem armazena
+procedimentos do usuário e não executa comandos. Notas de manutenção mantêm o armazenamento e as
+permissões existentes; conteúdo externo é dado não confiável, não instrução.
+Procedimentos escritos pelo usuário exigiriam desenho separado de criação, edição, permissões,
+retenção, backup e transferência, além do tratamento de conteúdo não confiável, antes de persistir dados.
+
+Para uma janela encerrada recentemente, **Revisar observações após a manutenção** mostra a última
+observação utilizável do próprio monitor somente se ocorreu após a janela, corresponde à configuração
+atual e tem no máximo duas vezes o intervalo de verificação. Caso contrário, o resultado é desconhecido.
+A observação não comprova recuperação, causa nem o estado dos serviços dependentes. Uma leitura pode
+ficar desatualizada e deve ser atualizada; janelas recentes são retidas por até 30 dias.
+
 ## Avaliar impacto potencial das dependências
 
 No mapa, selecione um serviço ou um host convidado e escolha **Avaliar impacto potencial** nos

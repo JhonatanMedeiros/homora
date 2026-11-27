@@ -171,6 +171,7 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
           open
           serviceId={id}
           serviceName={service.name}
+          services={services}
           onOpenChange={setScheduling}
           onScheduled={() => setMaintenanceVersion((value) => value + 1)}
         />
