@@ -1,18 +1,18 @@
 import { toast } from 'sonner';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { byNewest, parseDiff, type Agent, type Proposal } from '@/features/agents/agent-model';
+import { byNewest, parseDiff, type Agent } from '@/features/agents/agent-model';
 import { apiError, t } from '@/i18n';
-import { PROPOSALS_CHANGED, PROPOSALS_POLL_MS } from '@/hooks/use-pending-proposals';
+import {
+  pauseProposalPolling,
+  PROPOSALS_POLL_MS,
+  refreshProposals,
+  useProposals,
+} from '@/hooks/use-pending-proposals';
 
-async function fetchAgentData(): Promise<[Agent[], Proposal[]]> {
-  const [agentResponse, proposalResponse] = await Promise.all([
-    fetch('/api/agents'),
-    fetch('/api/proposals'),
-  ]);
-  if (!agentResponse.ok || !proposalResponse.ok) throw new Error();
-  return Promise.all([agentResponse.json(), proposalResponse.json()]) as Promise<
-    [Agent[], Proposal[]]
-  >;
+async function fetchAgentData(): Promise<Agent[]> {
+  const [agentResponse] = await Promise.all([fetch('/api/agents'), refreshProposals(true)]);
+  if (!agentResponse.ok) throw new Error();
+  return agentResponse.json() as Promise<Agent[]>;
 }
 
 /** Agent identity, proposal lifecycle, and API state for the agents management page. */
@@ -21,7 +21,7 @@ export function useAgentWorkspace(
   onToken: (name: string, value: string) => void,
 ) {
   const [agents, setAgents] = useState<Agent[] | null>(null);
-  const [proposals, setProposals] = useState<Proposal[] | null>(null);
+  const proposals = useProposals();
   const [message, setMessage] = useState('');
   const [loadFailed, setLoadFailed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -60,13 +60,10 @@ export function useAgentWorkspace(
   const load = useCallback(async () => {
     const version = ++loadVersion.current;
     try {
-      const [agentData, proposalData] = await fetchAgentData();
+      const agentData = await fetchAgentData();
       if (version !== loadVersion.current) return;
       setAgents(agentData);
-      setProposals(proposalData);
       setLoadFailed(false);
-      // The menu badge counts the same proposals; tell it they changed.
-      window.dispatchEvent(new Event(PROPOSALS_CHANGED));
     } catch {
       if (version === loadVersion.current) setLoadFailed(true);
     }
@@ -79,10 +76,9 @@ export function useAgentWorkspace(
     fetch('/api/proposals/refresh-stale', { method: 'POST' })
       .catch(() => null)
       .then(() => fetchAgentData())
-      .then(([agentData, proposalData]) => {
+      .then((agentData) => {
         if (active && version === loadVersion.current) {
           setAgents(agentData);
-          setProposals(proposalData);
           setLoadFailed(false);
         }
       })
@@ -115,11 +111,13 @@ export function useAgentWorkspace(
     const timer = window.setInterval(() => {
       if (document.visibilityState !== 'visible' || reviewLock.current) return;
       const version = ++loadVersion.current;
-      fetchAgentData()
-        .then(([agentData, proposalData]) => {
+      fetch('/api/agents')
+        .then((response) =>
+          response.ok ? (response.json() as Promise<Agent[]>) : Promise.reject(),
+        )
+        .then((agentData) => {
           if (!active || reviewLock.current || version !== loadVersion.current) return;
           setAgents(agentData);
-          setProposals(proposalData);
           setLoadFailed(false);
         })
         .catch(() => {
@@ -164,12 +162,12 @@ export function useAgentWorkspace(
     const response = await fetch(`/api/agents/${agent.id}/revoke`, { method: 'POST' }).catch(
       () => null,
     );
-    if (!response?.ok) {
-      setMessage(t('agents.revokeFailed'));
-      toast.error(t('agents.revokeFailed'));
-    } else {
+    if (response?.ok) {
       await load();
       toast.success(t('agents.revokeDone'));
+    } else {
+      setMessage(t('agents.revokeFailed'));
+      toast.error(t('agents.revokeFailed'));
     }
   }
 
@@ -187,12 +185,14 @@ export function useAgentWorkspace(
   async function review(id: string, approve: boolean, batch = false, quiet = false) {
     if (reviewLock.current) return false;
     reviewLock.current = true;
+    pauseProposalPolling(true);
     loadVersion.current += 1;
     setReviewing(id);
     try {
       return await decide(id, approve, batch, quiet);
     } finally {
       reviewLock.current = false;
+      pauseProposalPolling(false);
       setReviewing(null);
     }
   }
@@ -233,25 +233,24 @@ export function useAgentWorkspace(
       await load();
       await onApplied();
       return true;
-    } else {
-      const body = (await response?.json().catch(() => null)) as { code?: string } | null;
-      const unexpected = !response || response.status >= 500;
-      const feedback = t(
-        unexpected
-          ? 'agents.reviewError'
-          : body?.code === 'batch-conflict'
-            ? 'agents.batchConflict'
-            : body?.code === 'config-changed'
-              ? 'agents.configChanged'
-              : body?.code === 'proposal-unavailable'
-                ? 'agents.proposalUnavailable'
-                : 'agents.reviewFailed',
-      );
-      setMessage(feedback);
-      toast.error(feedback);
-      await load();
-      return false;
     }
+    const body = (await response?.json().catch(() => null)) as { code?: string } | null;
+    const unexpected = !response || response.status >= 500;
+    const feedback = t(
+      unexpected
+        ? 'agents.reviewError'
+        : body?.code === 'batch-conflict'
+          ? 'agents.batchConflict'
+          : body?.code === 'config-changed'
+            ? 'agents.configChanged'
+            : body?.code === 'proposal-unavailable'
+              ? 'agents.proposalUnavailable'
+              : 'agents.reviewFailed',
+    );
+    setMessage(feedback);
+    toast.error(feedback);
+    await load();
+    return false;
   }
 
   async function recreate(id: string) {
@@ -259,9 +258,9 @@ export function useAgentWorkspace(
     const response = await fetch(`/api/proposals/${id}/recreate`, { method: 'POST' }).catch(
       () => null,
     );
-    const body = !response?.ok
-      ? ((await response?.json().catch(() => null)) as { code?: string } | null)
-      : null;
+    const body = response?.ok
+      ? null
+      : ((await response?.json().catch(() => null)) as { code?: string } | null);
     const feedback = response?.ok
       ? t('agents.recreated')
       : body?.code === 'config-changed'
@@ -308,7 +307,7 @@ export function useAgentWorkspace(
   }
 
   const effective = (proposals ?? []).map((proposal) =>
-    (proposal.state === 'pending' || proposal.state === 'stale') && proposal.expiresAt <= now
+    (proposal.state === 'pending' || proposal.state === 'stale') && proposal.expiresAt <= Date.now()
       ? { ...proposal, state: 'expired' }
       : proposal,
   );

@@ -48,7 +48,7 @@ it('shows pending proposals in clear language and approves with a single click',
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Agentes',
+      name: /^Agentes/,
     }),
   );
   expect(await screen.findByRole('heading', { name: 'Adicionar “Immich”' })).toBeTruthy();
@@ -151,7 +151,7 @@ it('shows before and after of an update proposal', async () => {
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Agentes',
+      name: /^Agentes/,
     }),
   );
   expect(await screen.findByRole('heading', { name: 'Alterar “Jellyfin”' })).toBeTruthy();

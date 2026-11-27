@@ -88,7 +88,7 @@ async function openProposals() {
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
     within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
-      name: 'Agentes',
+      name: /^Agentes/,
     }),
   );
 }
