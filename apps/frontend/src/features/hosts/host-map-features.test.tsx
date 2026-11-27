@@ -359,7 +359,7 @@ it('says what is wrong in the panel: an alert with how long it has been down', (
   expect(within(alert).getByText(/down since/)).toBeTruthy();
   // Every action is read-only toward the infrastructure.
   expect(within(panel).getByRole('link', { name: 'Open service' })).toBeTruthy();
-  expect(within(panel).getByRole('button', { name: 'Open card on Home' })).toBeTruthy();
+  expect(within(panel).getByRole('button', { name: 'Open card in Services' })).toBeTruthy();
   expect(within(panel).queryByRole('button', { name: /restart|logs/i })).toBeNull();
 });
 

@@ -34,7 +34,7 @@ import { t } from '@/i18n';
 import { isPrivateHost } from '@/lib/services';
 import { describeStatus } from '@/lib/status-text';
 
-/** Manage › Probes: what Homora checks without a card on the Home. */
+/** Manage › Probes: what Homora checks without a card in Services. */
 export function ProbesPage() {
   const { probes, statuses, failed, save, remove } = useProbes();
   const uptime = useUptime('24h');

@@ -125,7 +125,7 @@ export function ServicesPage({
   } = browse;
   const list = view === 'list';
   const deps = useDependencies();
-  // "Open card on Home" from the map reuses the command palette's scroll-and-highlight.
+  // "Open card in Services" from the map reuses the command palette's scroll-and-highlight.
   const [localFocus, setLocalFocus] = useState<FocusRequest | null>(null);
   const focusRequest = localFocus ?? requestedFocus;
   const onFocusHandled = () => {
