@@ -31,6 +31,12 @@ not necessarily the existing implementation.
 - When delivering, explain what changed, how it was validated, and what could not
   be verified. Do not claim tests passed without running them.
 
+## Task skills
+
+Repository skills for pull requests, integrations, widgets, database migrations and releases live in
+`.agents/skills/homora-*`. Use the one that matches the task, and update it when its documented
+process changes. The documentation they reference remains the source of truth.
+
 ## Documentation site
 
 - For documentation site changes, read [the maintenance guide](docs/maintainers/documentation.md).

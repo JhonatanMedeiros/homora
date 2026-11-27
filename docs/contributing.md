@@ -13,6 +13,10 @@ Please follow the [code of conduct](https://github.com/JhonatanMedeiros/homora/b
 
 The [product vision](product.md) and [evolution plan](evolution.md) provide context. The plan is a guide, and planned work is not necessarily implemented.
 
+## AI agent skills
+
+If you work with a coding agent, the repository includes optional skills for pull requests, integrations, widgets, database migrations and releases. See the [skill list in the contribution guide](https://github.com/JhonatanMedeiros/homora/blob/main/CONTRIBUTING.md#ai-agent-skills).
+
 ## Local widget contributions
 
 Use `pnpm widget:create <type>` and follow the [widget creation guide](create-widget.md). Keep definition, logic, translations, tests and UI in the module; do not add widget-specific host branches. Future widget issues must account for the scaffold, module structure, compatibility and validation.
