@@ -24,10 +24,58 @@ export type AuthStatus = {
   /** Origins where passkeys work; absent on servers that predate them. */
   passkey?: { origins: string[] };
   /** The optional OIDC provider; `linked` says an identity can already sign in with it. */
-  oidc?: { enabled: false } | { enabled: true; name: string; linked: boolean };
+  oidc?:
+    | { enabled: false }
+    | { enabled: true; name: string; linked: boolean; autoRedirect?: boolean };
 };
 /** `name` is only needed to create the first account. */
 export type Credentials = { email: string; password: string; name?: string; rememberMe?: boolean };
+
+/** Remembers in this browser that the person signed out, until they sign in again. */
+const SIGNED_OUT_KEY = 'homora.signed-out';
+/** When this tab last left for the provider by itself, so that it can never loop. */
+const REDIRECTED_KEY = 'homora.oidc-redirected';
+const REDIRECT_PAUSE_MS = 60_000;
+const PROBE_KEY = 'homora.storage-probe';
+
+const stored = <T>(read: () => T): T | undefined => {
+  try {
+    return read();
+  } catch {
+    // Storage can be blocked; the sign-in page still works.
+    return undefined;
+  }
+};
+
+/**
+ * Whether opening Homora should leave for the provider without being asked. Never after signing
+ * out, after a return from the provider, with `?local=1`, or twice within a minute.
+ */
+function shouldRedirect(status: AuthStatus, returned: boolean) {
+  const oidc = status.oidc;
+  if (!status.configured || status.authenticated || returned) return false;
+  if (!oidc?.enabled || !oidc.autoRedirect) return false;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('local') === '1' || params.has('error')) return false;
+  return claimRedirect();
+}
+
+/**
+ * Notes that this tab is leaving by itself, and says whether it may. Both memories must work:
+ * without them nothing would stop a loop or remember a sign-out.
+ */
+function claimRedirect() {
+  const claimed = stored(() => {
+    if (localStorage.getItem(SIGNED_OUT_KEY)) return false;
+    localStorage.setItem(PROBE_KEY, '1');
+    localStorage.removeItem(PROBE_KEY);
+    const now = Date.now();
+    if (now - Number(sessionStorage.getItem(REDIRECTED_KEY) ?? 0) < REDIRECT_PAUSE_MS) return false;
+    sessionStorage.setItem(REDIRECTED_KEY, String(now));
+    return sessionStorage.getItem(REDIRECTED_KEY) === String(now);
+  });
+  return claimed === true;
+}
 
 /** Access status: checks session, creates admin account, and signs in or out. */
 export function useAuth() {
@@ -42,6 +90,21 @@ export function useAuth() {
   const authenticated = status?.authenticated === true;
   // The provider's redirect back leaves its outcome in the address; read before anything navigates.
   const [returned] = useState(takeOidcReturn);
+  /** The provider is being opened by itself; holds its label. */
+  const [redirecting, setRedirecting] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (authenticated) stored(() => localStorage.removeItem(SIGNED_OUT_KEY));
+  }, [authenticated]);
+
+  // Going Back from the provider may restore this page as it was left, still redirecting.
+  useEffect(() => {
+    const restored = (event: PageTransitionEvent) => {
+      if (event.persisted) setRedirecting(null);
+    };
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
 
   useEffect(() => {
     if (!returned) return;
@@ -91,7 +154,16 @@ export function useAuth() {
         return r.json() as Promise<AuthStatus>;
       })
       .then((value: AuthStatus) => {
-        if (active) setStatus(value);
+        if (!active) return;
+        // Only on arrival: a later check (after signing out, or a retry) stays on the page.
+        if (attempt === 0 && shouldRedirect(value, returned !== null)) {
+          setRedirecting(value.oidc?.enabled ? value.oidc.name : null);
+          void signInWithOidc({ auto: true }).then((result) => {
+            // The provider does not answer: the sign-in page takes over, without an alarm.
+            if (active && oidcFailed(result)) setRedirecting(null);
+          });
+        }
+        setStatus(value);
       })
       .catch(() => {
         if (active) setError(t('auth.serverUnreachable'));
@@ -99,7 +171,7 @@ export function useAuth() {
     return () => {
       active = false;
     };
-  }, [attempt]);
+  }, [attempt, returned]);
 
   function retry() {
     setError('');
@@ -190,9 +262,9 @@ export function useAuth() {
   }
 
   /** Sends the browser to the OIDC provider; the sign-in completes when it redirects back. */
-  async function submitOidc() {
+  async function submitOidc(rememberMe = false) {
     setError('');
-    const result = await signInWithOidc();
+    const result = await signInWithOidc({ rememberMe });
     if (oidcFailed(result)) {
       setError(result.error);
       return false;
@@ -211,6 +283,7 @@ export function useAuth() {
     try {
       const response = await fetch('/api/auth/sign-out', { method: 'POST' });
       if (!response.ok) throw new Error();
+      stored(() => localStorage.setItem(SIGNED_OUT_KEY, '1'));
       // Keep what the sign-in page offers (passkeys, provider), then refresh it: the link may
       // have changed while signed in.
       setStatus((value) => ({ ...value, configured: true, authenticated: false }));
@@ -225,6 +298,7 @@ export function useAuth() {
     error,
     expired,
     challenge,
+    redirecting,
     submit,
     submitPasskey,
     submitOidc,

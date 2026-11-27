@@ -6,6 +6,7 @@ import {
   InvalidPasswordError,
   OIDC_CALLBACK_PREFIX,
   RateLimitedError,
+  REMEMBER_ME_HEADER,
   SessionNotFoundError,
   type createAuth,
 } from '../auth.js';
@@ -19,33 +20,41 @@ import { errorBody } from '../api-error.js';
 import { ANONYMOUS_ACTOR, type AuditLog } from '../audit.js';
 import { describeUserAgent } from '../client-info.js';
 import { asBrowserSessionCookie } from '../passkey-gateway.js';
-import type { OidcConfig } from '../oidc-config.js';
+import type { OidcManager } from '../oidc-manager.js';
 
 type Auth = ReturnType<typeof createAuth>;
 
 const passwordSchema = z.object({ password: z.string().min(1).max(1024) }).strict();
+const loginSchema = z
+  .object({ rememberMe: z.boolean().optional(), auto: z.boolean().optional() })
+  .strict();
 const SESSION_COOKIE = 'homora.session_token=';
+/** The longer-session choice made before leaving for the provider; only the callback reads it. */
+const REMEMBER_COOKIE = 'homora.oidc-remember';
 
 /** Path of the provider's redirect back to Homora, relative to the configured origin. */
 export const oidcCallbackPath = (providerId: string) =>
   `${AUTH_BASE_PATH}${OIDC_CALLBACK_PREFIX}${providerId}`;
 
+const rememberCookie = (value: '1' | '') =>
+  `${REMEMBER_COOKIE}=${value}; Path=${AUTH_BASE_PATH}${OIDC_CALLBACK_PREFIX}; HttpOnly; SameSite=Lax; Max-Age=${value ? 600 : 0}`;
+
 /**
  * Optional OIDC sign-in and linking (ADR 0032). The protocol, the PKCE/state/nonce handling, the
  * ID token verification, the account link and the session are Better Auth's generic OAuth plugin.
  * Homora only adds thin gateway routes: starting needs the configured origin (and the password to
- * link), the one callback route is forwarded with its outcome reduced and audited, and the link
- * is listed and removed through account routes. No other Better Auth route is reachable.
+ * link), and the one callback route is forwarded with its outcome reduced and audited. The
+ * configuration and the link are managed by account routes. No other Better Auth route is
+ * reachable.
  */
 export function registerOidcRoutes(
   app: FastifyInstance,
   auth: Auth,
   audit: AuditLog,
-  config: OidcConfig | undefined,
+  manager: OidcManager,
 ) {
-  const oidc = auth.oidc;
   const limiter = createRateLimitStorage();
-  const secure = config?.redirectOrigin.startsWith('https://') ? '; Secure' : '';
+  const secure = manager.redirectOrigin.startsWith('https://') ? '; Secure' : '';
   const limited = async (request: FastifyRequest, scope: string) =>
     !(
       await limiter.consume(`${scope}:${request.ip}`, {
@@ -66,41 +75,32 @@ export function registerOidcRoutes(
       ipAddress: request.ip,
     });
 
-  // A provider that signs only with HMAC fails every callback with a generic message, so the
-  // log says why, once.
-  let signingWarned = false;
-  const checkSigning = async () => {
-    const algorithms = await oidc?.unverifiableAlgorithms();
-    if (!algorithms || signingWarned) return;
-    signingWarned = true;
-    app.log.warn(
-      { algorithms },
-      'OIDC sign-in will fail: the provider only signs ID tokens with the client secret. Configure a signing key at the provider (in Authentik, the “Signing Key” of the OAuth2/OpenID provider), then restart Homora.',
-    );
-  };
-  // Not awaited: startup never waits for the provider.
-  const warnAboutSigning = () => void checkSigning().catch(() => {});
-  app.addHook('onReady', async () => warnAboutSigning());
-
   const guardStart = (request: FastifyRequest, reply: FastifyReply) => {
-    if (!oidc || !config) return reply.code(404).send(errorBody('oidc-not-configured'));
+    if (!auth.oidc) return reply.code(404).send(errorBody('oidc-not-configured'));
     // Cookies of the attempt are set for the host the provider returns to.
-    if (request.headers.origin !== config.redirectOrigin)
+    if (request.headers.origin !== manager.redirectOrigin)
       return reply.code(400).send(errorBody('oidc-wrong-origin'));
     return null;
   };
-  const start = async (request: FastifyRequest, reply: FastifyReply, mode: 'login' | 'link') => {
+  const start = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+    mode: 'login' | 'link',
+    remember = false,
+  ) => {
     try {
-      const { url, cookies } = await oidc!.start(request.headers, mode);
-      // Discovery may only have succeeded now, after a provider that was down at startup.
-      warnAboutSigning();
+      const oidc = auth.oidc;
+      if (!oidc) return reply.code(404).send(errorBody('oidc-not-configured'));
+      const { url, cookies } = await oidc.start(request.headers, mode);
       reply.header(
         'set-cookie',
-        cookies.map((cookie) => `${cookie}${secure}`),
+        [...cookies, rememberCookie(remember ? '1' : '')].map((cookie) => `${cookie}${secure}`),
       );
       return { url };
     } catch (error) {
       request.log.warn({ err: error }, 'OIDC could not start');
+      // Finds out what is wrong, for the log and the sign-in page.
+      manager.testInBackground();
       return reply.code(503).send(errorBody('oidc-unavailable'));
     }
   };
@@ -108,9 +108,19 @@ export function registerOidcRoutes(
   app.post('/api/auth/oidc/login', async (request, reply) => {
     const blocked = guardStart(request, reply);
     if (blocked) return blocked;
+    const parsed = loginSchema.safeParse(request.body ?? {});
+    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
     if (await limited(request, 'oidc-login'))
       return reply.code(429).send(errorBody('too-many-attempts'));
-    return start(request, reply, 'login');
+    if (!parsed.data.auto) return start(request, reply, 'login', parsed.data.rememberMe === true);
+    const preferences = manager.preferences();
+    if (!preferences.autoRedirect || auth.oidcLinks.list().length === 0)
+      return reply.code(409).send(errorBody('oidc-auto-unavailable'));
+    // Leaving without being asked only for a provider that answers now: otherwise the browser
+    // would be stranded on its error page.
+    if ((await manager.test()).status !== 'ok')
+      return reply.code(503).send(errorBody('oidc-unavailable'));
+    return start(request, reply, 'login', preferences.longSession);
   });
 
   app.post('/api/auth/oidc/link', async (request, reply) => {
@@ -143,28 +153,49 @@ export function registerOidcRoutes(
     return start(request, reply, 'link');
   });
 
-  // One callback at a time, so that two returning link attempts cannot both be accepted.
-  let callbacks: Promise<unknown> = Promise.resolve();
-  const inTurn = <T>(work: () => Promise<T>) => {
-    const run = callbacks.then(work);
-    callbacks = run.catch(() => {});
+  // One callback at a time, so that two returning link attempts cannot both be accepted. Each
+  // provider has its own turn: one that stopped answering never delays its replacement.
+  const queues = new WeakMap<object, Promise<unknown>>();
+  const inTurn = <T>(provider: object, work: () => Promise<T>) => {
+    const run = (queues.get(provider) ?? Promise.resolve()).then(work);
+    queues.set(
+      provider,
+      run.catch(() => {}),
+    );
     return run;
   };
 
-  if (oidc) {
-    // The provider's redirect: a cross-site GET with the attempt's `state` cookie.
-    app.get(oidcCallbackPath(oidc.providerId), async (request, reply) => {
+  // The provider's redirect: a cross-site GET with the attempt's `state` cookie. Only the
+  // provider in use answers.
+  app.get<{ Params: { provider: string } }>(
+    oidcCallbackPath(':provider'),
+    async (request, reply) => {
+      const { provider } = request.params;
+      const active = auth.oidc;
+      if (active?.providerId !== provider) return reply.code(404).send(errorBody('not-found'));
       const unavailable = () => reply.redirect('/login?error=failed');
       if (await limited(request, 'oidc-callback')) return unavailable();
       const headers = fromNodeHeaders(request.headers);
       headers.delete('content-length');
       headers.delete('transfer-encoding');
       headers.set(CLIENT_IP_HEADER, request.ip);
-      const response = await inTurn(() =>
-        auth.handler(
-          new Request(new URL(request.url, config!.redirectOrigin), { method: 'GET', headers }),
-        ),
-      );
+      const remember = (request.headers.cookie ?? '')
+        .split(';')
+        .some((pair) => pair.trim() === `${REMEMBER_COOKIE}=1`);
+      headers.delete(REMEMBER_ME_HEADER);
+      if (remember) headers.set(REMEMBER_ME_HEADER, '1');
+      let response: Response;
+      try {
+        response = await inTurn(active.config, () =>
+          auth.handler(
+            new Request(new URL(request.url, manager.redirectOrigin), { method: 'GET', headers }),
+          ),
+        );
+      } catch (error) {
+        request.log.warn({ err: error }, 'OIDC callback could not be completed');
+        manager.testInBackground();
+        return unavailable();
+      }
       const setCookies = response.headers.getSetCookie();
       const sessionCookie = setCookies.find(
         (cookie) => cookie.startsWith(SESSION_COOKIE) && !cookie.startsWith(`${SESSION_COOKIE};`),
@@ -173,10 +204,10 @@ export function registerOidcRoutes(
       const raw = response.headers.get('location');
       if (raw) {
         try {
-          const target = new URL(raw, config!.redirectOrigin);
+          const target = new URL(raw, manager.redirectOrigin);
           // Anything else is the library's own error page, which the gateway does not serve.
           if (
-            target.origin === config!.redirectOrigin &&
+            target.origin === manager.redirectOrigin &&
             ['/', '/login', '/account'].includes(target.pathname)
           ) {
             // Only whether the provider refused, never its text, goes back to the page.
@@ -203,7 +234,7 @@ export function registerOidcRoutes(
             ipAddress: request.ip,
           });
       } else if (linking) {
-        const link = auth.oidcLinks.list().find((row) => row.providerId === oidc.providerId);
+        const link = auth.oidcLinks.list().find((row) => row.providerId === provider);
         if (link || failed)
           audit.record({
             actor: link ? `user:${link.userId}` : ANONYMOUS_ACTOR,
@@ -212,62 +243,17 @@ export function registerOidcRoutes(
             ipAddress: request.ip,
           });
       } else if (failed) failedLogin(request);
+      if (failed) manager.testInBackground();
       reply.header(
         'set-cookie',
-        setCookies.map((cookie) => `${asBrowserSessionCookie(cookie)}${secure}`),
+        [
+          // A longer session keeps the lifetime the library gave its cookie.
+          ...setCookies.map((cookie) => (remember ? cookie : asBrowserSessionCookie(cookie))),
+          rememberCookie(''),
+        ].map((cookie) => `${cookie}${secure}`),
       );
       reply.header('referrer-policy', 'no-referrer');
       return reply.redirect(location);
-    });
-  }
-
-  app.get('/api/account/oidc', async (request) => {
-    const session = await auth.session(request.headers);
-    const links = auth.oidcLinks.list().filter((row) => row.userId === session?.userId);
-    const link = links.find((row) => row.providerId === oidc?.providerId) ?? links[0];
-    return {
-      enabled: config !== undefined,
-      name: config?.name ?? null,
-      redirectUri:
-        config && oidc ? `${config.redirectOrigin}${oidcCallbackPath(oidc.providerId)}` : null,
-      identity: link
-        ? { createdAt: link.createdAt, current: link.providerId === oidc?.providerId }
-        : null,
-    };
-  });
-
-  app.post('/api/account/oidc/unlink', async (request, reply) => {
-    const parsed = passwordSchema.safeParse(request.body);
-    if (!parsed.success) return reply.code(400).send(errorBody('invalid-data'));
-    const session = await auth.session(request.headers);
-    if (!session) return reply.code(401).send(errorBody('auth-required'));
-    const actor = `user:${session.userId}`;
-    const linked = auth.oidcLinks.list().some((row) => row.userId === session.userId);
-    try {
-      await auth.confirmPassword(request.headers, parsed.data.password);
-    } catch (error) {
-      if (error instanceof RateLimitedError)
-        return reply.code(429).send(errorBody('too-many-attempts'));
-      if (error instanceof InvalidPasswordError) {
-        audit.record({ actor, action: 'oidc-unlink', result: 'failed', ipAddress: request.ip });
-        return reply.code(400).send(errorBody('invalid-current-password'));
-      }
-      if (error instanceof SessionNotFoundError)
-        return reply.code(401).send(errorBody('auth-required'));
-      throw error;
-    }
-    if (!linked) return reply.code(404).send(errorBody('not-found'));
-    try {
-      await auth.oidcLinks.removeAll(request.headers);
-    } catch (error) {
-      if ((error as { body?: { code?: string } }).body?.code === 'SESSION_NOT_FRESH')
-        return reply.code(400).send(errorBody('session-not-fresh'));
-      audit.record({ actor, action: 'oidc-unlink', result: 'failed', ipAddress: request.ip });
-      return reply.code(400).send(errorBody('oidc-link-failed'));
-    }
-    // Sessions do not record how they were opened, so every other one ends with the link.
-    await auth.revokeOtherSessions(request.headers).catch(() => {});
-    audit.record({ actor, action: 'oidc-unlink', result: 'ok', ipAddress: request.ip });
-    return { ok: true };
-  });
+    },
+  );
 }

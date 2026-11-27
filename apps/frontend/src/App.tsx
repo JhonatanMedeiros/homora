@@ -164,6 +164,7 @@ function AppRoutes() {
     error,
     expired,
     challenge,
+    redirecting,
     submit,
     submitPasskey,
     submitOidc,
@@ -197,6 +198,7 @@ function AppRoutes() {
       onSubmit={submit}
       onPasskey={submitPasskey}
       onOidc={submitOidc}
+      redirecting={redirecting}
       onVerify={verifyTwoFactor}
       onCancelChallenge={cancelChallenge}
       onRetry={retry}

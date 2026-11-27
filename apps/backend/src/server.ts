@@ -70,6 +70,7 @@ const app = createApp(
   {
     trustProxy: config.trustProxy,
     oidc: config.oidc,
+    oidcRedirectOrigin: config.oidcRedirectOrigin,
     developmentMocks: config.developmentMocks,
     apiPort: config.apiPort,
     // Next to the database, so a backup of the database can take the picture along.

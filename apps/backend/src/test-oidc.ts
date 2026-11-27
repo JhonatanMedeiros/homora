@@ -22,9 +22,13 @@ export async function createMockIdp() {
   const requests: string[] = [];
   const state = {
     down: false,
+    /** Accepts connections and never answers. */
+    stall: false,
     discovery: {} as Record<string, unknown>,
     tokenStatus: 200,
     withoutIdToken: false,
+    /** Holds the token response back, as a provider that stalls would. */
+    tokenGate: undefined as Promise<void> | undefined,
     signingKey: undefined as CryptoKey | undefined,
   };
   let issuer = '';
@@ -36,6 +40,7 @@ export async function createMockIdp() {
       res.writeHead(status, { 'content-type': 'application/json' });
       res.end(JSON.stringify(body));
     };
+    if (state.stall) return;
     if (state.down) return send(503, {});
     const origin = new URL(issuer).origin;
     if (url.pathname === '/application/o/homora/.well-known/openid-configuration')
@@ -61,6 +66,7 @@ export async function createMockIdp() {
       const code = form.get('code') ?? '';
       const grant = grants.get(code);
       grants.delete(code);
+      await state.tokenGate;
       const basic = req.headers.authorization;
       const secretOk =
         basic ===
@@ -134,7 +140,11 @@ export async function createMockIdp() {
     async foreignKey() {
       return (await generateKeyPair('RS256')).privateKey;
     },
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+    close: () =>
+      new Promise<void>((resolve) => {
+        server.close(() => resolve());
+        server.closeAllConnections();
+      }),
   };
 }
 export type MockIdp = Awaited<ReturnType<typeof createMockIdp>>;

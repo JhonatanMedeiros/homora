@@ -7,7 +7,7 @@ import { ANONYMOUS_ACTOR, type AuditLog } from '../audit.js';
 import { describeUserAgent } from '../client-info.js';
 import { PASSKEY_PATHS } from '../passkey-gateway.js';
 import { handlePasskeyRoute } from './passkey.js';
-import type { OidcConfig } from '../oidc-config.js';
+import type { OidcManager } from '../oidc-manager.js';
 import {
   sanitizeTwoFactorBody,
   sessionCookieOf,
@@ -38,22 +38,27 @@ export function registerAuthRoutes(
   auth: Auth,
   webPort: number,
   audit: AuditLog,
-  oidc: OidcConfig | undefined,
+  oidc: OidcManager,
 ) {
-  app.get('/api/auth/status', async (request) => ({
-    configured: auth.configured(),
-    authenticated: (await auth.session(request.headers)) !== null,
-    // Browsers only offer a passkey on these origins; the interface compares its own.
-    passkey: { origins: auth.passkey.origins },
-    oidc:
-      oidc && auth.oidc
-        ? {
-            enabled: true,
-            name: oidc.name,
-            linked: auth.oidcLinks.list().some((link) => link.providerId === auth.oidc?.providerId),
-          }
-        : { enabled: false },
-  }));
+  app.get('/api/auth/status', async (request) => {
+    const status = {
+      configured: auth.configured(),
+      authenticated: (await auth.session(request.headers)) !== null,
+      // Browsers only offer a passkey on these origins; the interface compares its own.
+      passkey: { origins: auth.passkey.origins },
+    };
+    if (!oidc.available()) return { ...status, oidc: { enabled: false } };
+    const linked = auth.oidcLinks.list().some((link) => link.providerId === auth.oidc?.providerId);
+    return {
+      ...status,
+      oidc: {
+        enabled: true,
+        name: oidc.name(),
+        linked,
+        autoRedirect: linked && oidc.preferences().autoRedirect,
+      },
+    };
+  });
   app.post('/api/auth/setup', async (request, reply) => {
     if (auth.configured()) return reply.code(403).send(errorBody('account-exists'));
     const parsed = setupSchema.safeParse(request.body);

@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { supportedLocales, type Locale } from '@homora/i18n';
-import type { createVault } from '../vault.js';
+import { hasSealedValues, type createVault } from '../vault.js';
 
 export const CHANNEL_TYPES = ['webhook', 'telegram', 'ntfy', 'discord'] as const;
 type ChannelType = (typeof CHANNEL_TYPES)[number];
@@ -113,11 +113,7 @@ export function createNotificationChannels(db: DatabaseSync, vault?: Vault) {
     )
       throw new Error('Invalid Telegram credentials');
     // Never create a replacement key over any existing encrypted credentials.
-    const encrypted =
-      db
-        .prepare('SELECT 1 FROM integration_instances WHERE secret_ref IS NOT NULL LIMIT 1')
-        .get() || db.prepare('SELECT 1 FROM notification_channels LIMIT 1').get();
-    const sealed = vault.seal(JSON.stringify(secret), !encrypted);
+    const sealed = vault.seal(JSON.stringify(secret), !hasSealedValues(db));
     if (old) {
       db.prepare(
         'UPDATE notification_channels SET name=?,type=?,secret=?,enabled=?,allow_private=?,include_url=?,locale=? WHERE id=?',

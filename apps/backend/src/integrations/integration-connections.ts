@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { createDatabase, getSqliteHandle, integrationInstances } from '@homora/db';
-import { createVault } from '../vault.js';
+import { createVault, hasSealedValues } from '../vault.js';
 import {
   migrateLegacyConnections,
   markLegacyConnectionDeleted,
@@ -132,14 +132,12 @@ export function createIntegrationConnections(
     if (!vault) throw new Error('Cofre indisponível.');
     const saved = current ? credentials(current) : {};
     const value = prepare(input, current, saved);
-    const existingRows = await db.select().from(integrationInstances);
-    const hasEncrypted =
-      existingRows.some((row) => row.secretRef !== null) ||
-      Boolean(getSqliteHandle(db).prepare('SELECT 1 FROM notification_channels LIMIT 1').get());
     const hasSecret = Boolean(value.keys.secret);
     const hasCa = Boolean(value.keys.ca);
     const secretRef =
-      hasSecret || hasCa ? vault.seal(JSON.stringify(value.keys), !hasEncrypted) : null;
+      hasSecret || hasCa
+        ? vault.seal(JSON.stringify(value.keys), !hasSealedValues(getSqliteHandle(db)))
+        : null;
     const values = {
       type: value.type,
       name: value.name,

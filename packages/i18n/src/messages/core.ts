@@ -68,6 +68,8 @@ export const en = {
   'auth.backToSignIn': 'Back to sign in',
   'auth.twoFactorFailed': 'The code was not accepted. Try again.',
   'auth.oidcSignIn': 'Sign in with {name}',
+  'auth.oidcRedirecting': 'Going to {name}…',
+  'auth.oidcUsePassword': 'Use your password instead',
   'auth.oidcFailed':
     'The sign-in with the provider was not accepted. Try again or use your password.',
   'auth.oidcDenied': 'The provider did not authorize the sign-in. Try again or use your password.',
@@ -163,6 +165,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'auth.backToSignIn': 'Voltar ao login',
   'auth.twoFactorFailed': 'O código não foi aceito. Tente novamente.',
   'auth.oidcSignIn': 'Entrar com {name}',
+  'auth.oidcRedirecting': 'Abrindo {name}…',
+  'auth.oidcUsePassword': 'Entrar com a senha',
   'auth.oidcFailed': 'O login pelo provedor não foi aceito. Tente novamente ou use a senha.',
   'auth.oidcDenied': 'O provedor não autorizou o login. Tente novamente ou use a senha.',
   'auth.oidcUnavailable': 'O provedor de login não está acessível. Use a senha.',

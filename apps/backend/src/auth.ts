@@ -8,6 +8,7 @@ import { genericOAuth } from 'better-auth/plugins/generic-oauth';
 import { passkey } from '@better-auth/passkey';
 import { resolvePasskeyConfig } from './passkey-config.js';
 import { oidcProviderId, type OidcConfig } from './oidc-config.js';
+import { oidcDiscoveryUrl } from './oidc-probe.js';
 import {
   createRateLimitStorage,
   SIGN_IN_MAX_ATTEMPTS,
@@ -35,6 +36,8 @@ const withoutProviderTokens = <T extends { providerId?: unknown }>(account: T): 
     : account;
 /** Better Auth routes that only exist for passkeys, relative to the base path. */
 const PASSKEY_PATH_PREFIX = '/passkey/';
+/** How long a sign-in waits for the provider's discovery document. */
+const PROVIDER_READY_MS = 10_000;
 /** Seconds the password step stays valid while the authenticator code is typed. */
 const TWO_FACTOR_CHALLENGE_SECONDS = 5 * 60;
 export class AccountExistsError extends Error {
@@ -78,6 +81,8 @@ type Options = {
   passkeyRpId?: string;
   /** Optional OIDC provider (ADR 0032); everything OIDC is off without it. */
   oidc?: OidcConfig;
+  /** Shortened by tests of a provider that does not answer. */
+  providerReadyMs?: number;
 };
 
 /**
@@ -91,194 +96,240 @@ export function createAuth({
   allowedOrigins = [],
   passkeyRpId,
   oidc,
+  providerReadyMs = PROVIDER_READY_MS,
 }: Options) {
   const passkeyConfig = resolvePasskeyConfig({ webPort, allowedOrigins, rpId: passkeyRpId });
   const countUsers = () =>
     (sqlite.prepare('SELECT COUNT(*) AS count FROM "user"').get() as { count: number }).count;
-  const instance = betterAuth({
-    appName: 'Homora',
-    database: sqlite,
-    secret,
-    // The provider redirects back to this origin, so it is the configured one when OIDC is on.
-    baseURL: oidc?.redirectOrigin ?? `http://localhost:${webPort}`,
-    basePath: AUTH_BASE_PATH,
-    trustedOrigins: [
-      `http://127.0.0.1:${webPort}`,
-      `http://localhost:${webPort}`,
-      ...allowedOrigins,
-    ],
-    telemetry: { enabled: false },
-    plugins: [
-      passkey({
-        rpID: passkeyConfig.rpId,
-        rpName: 'Homora',
-        // Explicit server-side origins: the request (Host, Origin, X-Forwarded-*) never picks them.
-        origin: passkeyConfig.origins,
-        // Discoverable credentials with biometrics or PIN: the passkey alone is possession plus
-        // user verification, so the sign-in is complete without a password.
-        authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
-      }),
-      // Without a configured provider the plugin has nothing to register and adds no route use.
-      genericOAuth({
-        config: oidc
-          ? [
-              {
-                providerId: oidcProviderId(oidc.issuer),
-                discoveryUrl: `${oidc.issuer.replace(/\/$/, '')}/.well-known/openid-configuration`,
-                clientId: oidc.clientId,
-                clientSecret: oidc.clientSecret,
-                // The e-mail claim is only asked for because the library requires one; it never
-                // decides who may sign in (implicit linking is off, below).
-                scopes: ['openid', 'email', 'profile'],
-                pkce: true,
-                requireIdTokenVerification: true,
-                // No userinfo requests: without them a token response lacking an ID token cannot
-                // sign in on unverified userinfo claims. The ID token must carry `sub` and `email`.
-                userInfoUrl: '',
-                // Only a linked identity opens the account; the provider can never create one.
-                disableSignUp: true,
-                disableImplicitSignUp: true,
-                overrideUserInfo: false,
-              },
-            ]
-          : [],
-      }),
-      twoFactor({
-        issuer: 'Homora',
-        twoFactorCookieMaxAge: TWO_FACTOR_CHALLENGE_SECONDS,
-        // Authenticator app only: no e-mail/SMS codes (`otpOptions` is left unset) and no
-        // trusted-device cookie (the routes drop `trustDevice`).
-        backupCodeOptions: { storeBackupCodes: 'encrypted', amount: 10, length: 10 },
-        // Ten wrong codes in a row lock the second step for 15 minutes.
-        accountLockout: { enabled: true, maxFailedAttempts: 10, durationSeconds: 15 * 60 },
-      }),
-    ],
-    emailAndPassword: {
-      enabled: true,
-      minPasswordLength: 8,
-      maxPasswordLength: 1024,
-      autoSignIn: false,
-    },
-    session: { expiresIn: REMEMBERED_SESSION_SECONDS, disableSessionRefresh: true },
-    // Public sign-up is closed: the account is created by `setup()` only.
-    disabledPaths: ['/sign-up/email'],
-    account: {
-      // Explicit linking by the signed-in administrator only (`link-social`): a matching e-mail
-      // address, verified or not, never links or signs in anything.
-      accountLinking: {
+  // Outlives the rebuilds below, so saving the provider never resets the attempt limits.
+  const rateLimitStorage = createRateLimitStorage();
+  const buildInstance = (oidc: OidcConfig | undefined) =>
+    betterAuth({
+      appName: 'Homora',
+      database: sqlite,
+      secret,
+      // The provider redirects back to this origin, so it is the configured one when OIDC is on.
+      baseURL: oidc?.redirectOrigin ?? `http://localhost:${webPort}`,
+      basePath: AUTH_BASE_PATH,
+      trustedOrigins: [
+        `http://127.0.0.1:${webPort}`,
+        `http://localhost:${webPort}`,
+        ...allowedOrigins,
+      ],
+      telemetry: { enabled: false },
+      plugins: [
+        passkey({
+          rpID: passkeyConfig.rpId,
+          rpName: 'Homora',
+          // Explicit server-side origins: the request (Host, Origin, X-Forwarded-*) never picks them.
+          origin: passkeyConfig.origins,
+          // Discoverable credentials with biometrics or PIN: the passkey alone is possession plus
+          // user verification, so the sign-in is complete without a password.
+          authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+        }),
+        // Without a configured provider the plugin has nothing to register and adds no route use.
+        genericOAuth({
+          config: oidc
+            ? [
+                {
+                  providerId: oidcProviderId(oidc.issuer),
+                  discoveryUrl: oidcDiscoveryUrl(oidc.issuer),
+                  clientId: oidc.clientId,
+                  clientSecret: oidc.clientSecret,
+                  // The e-mail claim is only asked for because the library requires one; it never
+                  // decides who may sign in (implicit linking is off, below).
+                  scopes: ['openid', 'email', 'profile'],
+                  pkce: true,
+                  requireIdTokenVerification: true,
+                  // No userinfo requests: without them a token response lacking an ID token cannot
+                  // sign in on unverified userinfo claims. The ID token must carry `sub` and `email`.
+                  userInfoUrl: '',
+                  // Only a linked identity opens the account; the provider can never create one.
+                  disableSignUp: true,
+                  disableImplicitSignUp: true,
+                  overrideUserInfo: false,
+                },
+              ]
+            : [],
+        }),
+        twoFactor({
+          issuer: 'Homora',
+          twoFactorCookieMaxAge: TWO_FACTOR_CHALLENGE_SECONDS,
+          // Authenticator app only: no e-mail/SMS codes (`otpOptions` is left unset) and no
+          // trusted-device cookie (the routes drop `trustDevice`).
+          backupCodeOptions: { storeBackupCodes: 'encrypted', amount: 10, length: 10 },
+          // Ten wrong codes in a row lock the second step for 15 minutes.
+          accountLockout: { enabled: true, maxFailedAttempts: 10, durationSeconds: 15 * 60 },
+        }),
+      ],
+      emailAndPassword: {
         enabled: true,
-        disableImplicitLinking: true,
-        allowDifferentEmails: true,
-        // The administrator chose this provider: without it the library refuses an explicit link
-        // whose e-mail the provider did not verify. It does not permit implicit linking.
-        trustedProviders: oidc ? [oidcProviderId(oidc.issuer)] : [],
+        minPasswordLength: 8,
+        maxPasswordLength: 1024,
+        autoSignIn: false,
       },
-      encryptOAuthTokens: true,
-    },
-    rateLimit: {
-      enabled: true,
-      window: 10,
-      max: 100,
-      customStorage: createRateLimitStorage(),
-      customRules: {
-        '/sign-in/email': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
-        // Guessing a code or the password through the second-factor routes is limited like sign-in.
-        '/two-factor/verify-totp': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
-        '/two-factor/verify-backup-code': {
-          window: SIGN_IN_WINDOW_SECONDS,
-          max: SIGN_IN_MAX_ATTEMPTS,
-        },
-        '/two-factor/enable': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
-        '/two-factor/disable': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
-        '/two-factor/generate-backup-codes': {
-          window: SIGN_IN_WINDOW_SECONDS,
-          max: SIGN_IN_MAX_ATTEMPTS,
-        },
-        // Signing in with a passkey is limited like the password; the challenge request that
-        // precedes it only needs a looser limit because it writes a short-lived row.
-        '/passkey/verify-authentication': {
-          window: SIGN_IN_WINDOW_SECONDS,
-          max: SIGN_IN_MAX_ATTEMPTS,
-        },
-        '/passkey/generate-authenticate-options': { window: 60, max: 30 },
-        '/passkey/generate-register-options': {
-          window: SIGN_IN_WINDOW_SECONDS,
-          max: SIGN_IN_MAX_ATTEMPTS,
-        },
-        '/passkey/verify-registration': {
-          window: SIGN_IN_WINDOW_SECONDS,
-          max: SIGN_IN_MAX_ATTEMPTS,
-        },
-        '/passkey/delete-passkey': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
-      },
-    },
-    advanced: {
-      cookiePrefix: 'homora',
-      // `Secure` is added by the API from the request origin (see routes/auth.ts).
-      useSecureCookies: false,
-      defaultCookieAttributes: { sameSite: 'strict' },
-      // The provider's redirect back is a cross-site navigation: only the short-lived, signed
-      // `state` cookie of the attempt must travel with it. Every other cookie stays Strict.
-      cookies: { state: { attributes: { sameSite: 'lax' } } },
-      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
-    },
-    databaseHooks: {
-      session: {
-        create: {
-          // Better Auth otherwise hard-codes a 24-hour lifetime for browser-session cookies.
-          before: async (session, context) => {
-            const expiresAt = async () => {
-              if (context?.path === '/sign-in/email')
-                return context.body?.rememberMe === false
-                  ? new Date(Date.now() + SESSION_SECONDS * 1000)
-                  : null;
-              // An OIDC sign-in is a browser session of eight hours ("keep me signed in" does not
-              // apply: the provider's own session decides how long it stays valid there).
-              if (context?.path?.startsWith(OIDC_CALLBACK_PREFIX))
-                return new Date(Date.now() + SESSION_SECONDS * 1000);
-              // A passkey sign-in has no "forget me" cookie: the form's choice arrives in a header.
-              if (context?.path === `${PASSKEY_PATH_PREFIX}verify-authentication`)
-                return context.request?.headers.get(REMEMBER_ME_HEADER) === '1'
-                  ? null
-                  : new Date(Date.now() + SESSION_SECONDS * 1000);
-              if (!context?.path?.startsWith(TWO_FACTOR_PATH_PREFIX)) return null;
-              // Enabling or disabling the second step replaces the current session: keep its end.
-              const active = context.context.session?.session;
-              if (active) return new Date(active.expiresAt);
-              // Finishing a sign-in: the choice made at the password step is in this cookie.
-              const forgotten = await context.getSignedCookie(
-                context.context.authCookies.dontRememberToken.name,
-                context.context.secret,
-              );
-              return forgotten ? new Date(Date.now() + SESSION_SECONDS * 1000) : null;
-            };
-            const end = await expiresAt();
-            if (end) return { data: { ...session, expiresAt: end } };
-          },
-        },
-      },
+      session: { expiresIn: REMEMBERED_SESSION_SECONDS, disableSessionRefresh: true },
+      // Public sign-up is closed: the account is created by `setup()` only.
+      disabledPaths: ['/sign-up/email'],
       account: {
-        // Homora never needs the provider's tokens: they are dropped before they are stored.
-        create: {
-          before: async (account) => {
-            // One identity at a time: two link attempts started together must not both land.
-            // (The gateway runs callbacks one after another, so this check cannot be raced.)
-            if (account.providerId.startsWith('oidc-') && oidcLinks().length > 0) return false;
-            return { data: withoutProviderTokens(account) };
+        // Explicit linking by the signed-in administrator only (`link-social`): a matching e-mail
+        // address, verified or not, never links or signs in anything.
+        accountLinking: {
+          enabled: true,
+          disableImplicitLinking: true,
+          allowDifferentEmails: true,
+          // The administrator chose this provider: without it the library refuses an explicit link
+          // whose e-mail the provider did not verify. It does not permit implicit linking.
+          trustedProviders: oidc ? [oidcProviderId(oidc.issuer)] : [],
+        },
+        encryptOAuthTokens: true,
+      },
+      rateLimit: {
+        enabled: true,
+        window: 10,
+        max: 100,
+        customStorage: rateLimitStorage,
+        customRules: {
+          '/sign-in/email': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+          // Guessing a code or the password through the second-factor routes is limited like sign-in.
+          '/two-factor/verify-totp': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+          '/two-factor/verify-backup-code': {
+            window: SIGN_IN_WINDOW_SECONDS,
+            max: SIGN_IN_MAX_ATTEMPTS,
+          },
+          '/two-factor/enable': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+          '/two-factor/disable': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+          '/two-factor/generate-backup-codes': {
+            window: SIGN_IN_WINDOW_SECONDS,
+            max: SIGN_IN_MAX_ATTEMPTS,
+          },
+          // Signing in with a passkey is limited like the password; the challenge request that
+          // precedes it only needs a looser limit because it writes a short-lived row.
+          '/passkey/verify-authentication': {
+            window: SIGN_IN_WINDOW_SECONDS,
+            max: SIGN_IN_MAX_ATTEMPTS,
+          },
+          '/passkey/generate-authenticate-options': { window: 60, max: 30 },
+          '/passkey/generate-register-options': {
+            window: SIGN_IN_WINDOW_SECONDS,
+            max: SIGN_IN_MAX_ATTEMPTS,
+          },
+          '/passkey/verify-registration': {
+            window: SIGN_IN_WINDOW_SECONDS,
+            max: SIGN_IN_MAX_ATTEMPTS,
+          },
+          '/passkey/delete-passkey': { window: SIGN_IN_WINDOW_SECONDS, max: SIGN_IN_MAX_ATTEMPTS },
+        },
+      },
+      advanced: {
+        cookiePrefix: 'homora',
+        // `Secure` is added by the API from the request origin (see routes/auth.ts).
+        useSecureCookies: false,
+        defaultCookieAttributes: { sameSite: 'strict' },
+        // The provider's redirect back is a cross-site navigation: only the short-lived, signed
+        // `state` cookie of the attempt must travel with it. Every other cookie stays Strict.
+        cookies: { state: { attributes: { sameSite: 'lax' } } },
+        ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
+      },
+      databaseHooks: {
+        session: {
+          create: {
+            // Better Auth otherwise hard-codes a 24-hour lifetime for browser-session cookies.
+            before: async (session, context) => {
+              // A callback still running when its provider was replaced or switched off must not
+              // sign in: its instance is no longer the current one.
+              if (context?.path?.startsWith(OIDC_CALLBACK_PREFIX) && oidc !== provider)
+                return false;
+              const expiresAt = async () => {
+                if (context?.path === '/sign-in/email')
+                  return context.body?.rememberMe === false
+                    ? new Date(Date.now() + SESSION_SECONDS * 1000)
+                    : null;
+                // An OIDC sign-in is a browser session of eight hours unless a longer one was
+                // chosen: the gateway sets this header, never the client.
+                if (context?.path?.startsWith(OIDC_CALLBACK_PREFIX))
+                  return context.request?.headers.get(REMEMBER_ME_HEADER) === '1'
+                    ? null
+                    : new Date(Date.now() + SESSION_SECONDS * 1000);
+                // A passkey sign-in has no "forget me" cookie: the form's choice arrives in a header.
+                if (context?.path === `${PASSKEY_PATH_PREFIX}verify-authentication`)
+                  return context.request?.headers.get(REMEMBER_ME_HEADER) === '1'
+                    ? null
+                    : new Date(Date.now() + SESSION_SECONDS * 1000);
+                if (!context?.path?.startsWith(TWO_FACTOR_PATH_PREFIX)) return null;
+                // Enabling or disabling the second step replaces the current session: keep its end.
+                const active = context.context.session?.session;
+                if (active) return new Date(active.expiresAt);
+                // Finishing a sign-in: the choice made at the password step is in this cookie.
+                const forgotten = await context.getSignedCookie(
+                  context.context.authCookies.dontRememberToken.name,
+                  context.context.secret,
+                );
+                return forgotten ? new Date(Date.now() + SESSION_SECONDS * 1000) : null;
+              };
+              const end = await expiresAt();
+              if (end) return { data: { ...session, expiresAt: end } };
+            },
           },
         },
-        update: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
-      },
-      user: {
-        create: {
-          // Last line of defense: no route can ever create a second account.
-          before: async () => {
-            if (countUsers() > 0) throw new APIError('FORBIDDEN', { message: 'account-exists' });
+        account: {
+          // Homora never needs the provider's tokens: they are dropped before they are stored.
+          create: {
+            before: async (account) => {
+              // One identity at a time: two link attempts started together must not both land.
+              // (The gateway runs callbacks one after another, so this check cannot be raced.)
+              // Nor may a callback outlive its provider and leave a link behind.
+              if (
+                account.providerId.startsWith('oidc-') &&
+                (oidc !== provider || oidcLinks().length > 0)
+              )
+                return false;
+              return { data: withoutProviderTokens(account) };
+            },
+          },
+          update: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
+        },
+        user: {
+          create: {
+            // Last line of defense: no route can ever create a second account.
+            before: async () => {
+              if (countUsers() > 0) throw new APIError('FORBIDDEN', { message: 'account-exists' });
+            },
           },
         },
       },
-    },
-  });
+    });
+
+  // Two instances over the same database and secret. Everything about the account uses one that
+  // knows no provider: the library's startup waits for the provider's discovery document, so a
+  // provider that does not answer must never be able to hold up sessions or the password. The
+  // other exists only while a provider is in use, runs its sign-in and is rebuilt when it changes
+  // (ADR 0032). Sessions and links live in the database and survive both.
+  const instance = buildInstance(undefined);
+  let provider = oidc;
+  let federated = provider && buildInstance(provider);
+
+  /**
+   * The provider's instance once its discovery settled. One that is still waiting after the limit
+   * is replaced, so that the next attempt asks the provider again.
+   */
+  async function ready() {
+    const current = federated;
+    if (!current) throw new Error('No sign-in provider is in use.');
+    let timer: NodeJS.Timeout | undefined;
+    const late = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        if (federated === current && provider) federated = buildInstance(provider);
+        reject(new Error('The provider did not answer in time.'));
+      }, providerReadyMs);
+    });
+    try {
+      await Promise.race([current.$context, late]);
+      return current;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   /** The linked OIDC identities; they outlive the configuration that created them. */
   function oidcLinks() {
@@ -287,6 +338,10 @@ export function createAuth({
         "SELECT id, providerId, userId, createdAt FROM account WHERE providerId LIKE 'oidc-%'",
       )
       .all() as { id: string; providerId: string; userId: string; createdAt: string }[];
+  }
+
+  function forgetAttempts() {
+    sqlite.exec("DELETE FROM verification WHERE value LIKE '%codeVerifier%'");
   }
 
   // Guesses of the current password by someone holding a session are throttled per account.
@@ -304,14 +359,61 @@ export function createAuth({
   // First-run setups are serialized so two simultaneous requests cannot both pass the check.
   let setupQueue: Promise<unknown> = Promise.resolve();
 
+  /** Everything OIDC for one provider, bound to the instance that was built with it. */
+  const oidcFor = (oidc: OidcConfig) => ({
+    config: oidc,
+    providerId: oidcProviderId(oidc.issuer),
+    async start(headers: IncomingHttpHeaders, mode: 'login' | 'link') {
+      const instance = await ready();
+      const input = { headers: fromNodeHeaders(headers), returnHeaders: true as const };
+      const provider = oidcProviderId(oidc.issuer);
+      const result =
+        mode === 'login'
+          ? await instance.api.signInSocial({
+              ...input,
+              body: {
+                provider,
+                callbackURL: '/',
+                errorCallbackURL: '/login',
+                disableRedirect: true,
+              },
+            })
+          : await instance.api.linkSocialAccount({
+              ...input,
+              body: {
+                provider,
+                callbackURL: '/account?oidc=linked',
+                errorCallbackURL: '/account',
+                disableRedirect: true,
+              },
+            });
+      // ID tokens are verified against the issuer discovery reports: it must be the configured
+      // one, or the configuration points somewhere other than the operator wrote.
+      const { socialProviders } = await instance.$context;
+      const discovered = socialProviders.find(({ id }) => id === provider)?.issuer;
+      if (discovered !== oidc.issuer)
+        throw new Error(
+          `The discovery document reports the issuer "${discovered}", not HOMORA_OIDC_ISSUER.`,
+        );
+      return { url: result.response.url, cookies: result.headers.getSetCookie() };
+    },
+  });
+
   return {
     /** Relying party and origins the passkeys are bound to. */
     passkey: passkeyConfig,
     /** Resolved Better Auth options, used to verify the database schema. */
-    options: instance.options,
+    get options() {
+      return instance.options;
+    },
     configured: () => countUsers() > 0,
     /** Handles `/api/auth/*` requests for Better Auth. */
-    handler: (request: Request) => instance.handler(request),
+    async handler(request: Request) {
+      const callback = new URL(request.url).pathname.startsWith(
+        `${AUTH_BASE_PATH}${OIDC_CALLBACK_PREFIX}`,
+      );
+      return (callback && federated ? await ready() : instance).handler(request);
+    },
     async session(headers: IncomingHttpHeaders) {
       const found = await instance.api.getSession({ headers: fromNodeHeaders(headers) });
       return found
@@ -432,60 +534,26 @@ export function createAuth({
       return run;
     },
     /**
-     * Optional OIDC provider, run entirely by Better Auth's generic OAuth plugin. Starting
-     * returns the provider URL and the cookies of the attempt; the callback is the one OIDC route
-     * the gateway forwards. The link lives in the library's `account` table.
+     * Optional OIDC provider, run entirely by Better Auth's generic OAuth plugin; undefined while
+     * none is in use. Starting returns the provider URL and the cookies of the attempt; the
+     * callback is the one OIDC route the gateway forwards. The link lives in the `account` table.
      */
-    oidc: oidc && {
-      providerId: oidcProviderId(oidc.issuer),
-      async start(headers: IncomingHttpHeaders, mode: 'login' | 'link') {
-        const input = { headers: fromNodeHeaders(headers), returnHeaders: true as const };
-        const provider = oidcProviderId(oidc.issuer);
-        const result =
-          mode === 'login'
-            ? await instance.api.signInSocial({
-                ...input,
-                body: {
-                  provider,
-                  callbackURL: '/',
-                  errorCallbackURL: '/login',
-                  disableRedirect: true,
-                },
-              })
-            : await instance.api.linkSocialAccount({
-                ...input,
-                body: {
-                  provider,
-                  callbackURL: '/account?oidc=linked',
-                  errorCallbackURL: '/account',
-                  disableRedirect: true,
-                },
-              });
-        // ID tokens are verified against the issuer discovery reports: it must be the configured
-        // one, or the configuration points somewhere other than the operator wrote.
-        const { socialProviders } = await instance.$context;
-        const discovered = socialProviders.find(({ id }) => id === provider)?.issuer;
-        if (discovered !== oidc.issuer)
-          throw new Error(
-            `The discovery document reports the issuer "${discovered}", not HOMORA_OIDC_ISSUER.`,
-          );
-        return { url: result.response.url, cookies: result.headers.getSetCookie() };
-      },
-      /**
-       * The ID token algorithms the provider advertises, when none of them can be verified: Homora
-       * checks signatures against the provider's published keys, so HMAC (`HS*`, signed with the
-       * client secret) never passes. Null when sign-in can work or discovery has not succeeded.
-       * Read from what the plugin already discovered; no request of its own.
-       */
-      async unverifiableAlgorithms(): Promise<string[] | null> {
-        const { socialProviders } = await instance.$context;
-        const provider = socialProviders.find(({ id }) => id === oidcProviderId(oidc.issuer));
-        const idToken = provider?.idToken;
-        const algorithms = (idToken && 'algorithms' in idToken && idToken.algorithms) || [];
-        return algorithms.length > 0 && algorithms.every((name) => name.startsWith('HS'))
-          ? [...algorithms]
-          : null;
-      },
+    get oidc() {
+      return provider && oidcFor(provider);
+    },
+    /**
+     * Reads the provider's discovery document again: the library keeps what it first read,
+     * including the signing algorithms. Attempts in progress stay valid.
+     */
+    refreshOidc() {
+      if (provider) federated = buildInstance(provider);
+    },
+    /** Switches to another provider, or to none, without restarting. */
+    configureOidc(next: OidcConfig | undefined) {
+      provider = next;
+      federated = next && buildInstance(next);
+      // Attempts started with the previous configuration must not complete.
+      forgetAttempts();
     },
     /**
      * The identity links, available even after OIDC was switched off, so that a link can always be
@@ -500,7 +568,7 @@ export function createAuth({
             headers: fromNodeHeaders(headers),
             body: { accountId: id },
           });
-        sqlite.exec("DELETE FROM verification WHERE value LIKE '%codeVerifier%'");
+        forgetAttempts();
       },
     },
     /** Server-side sign-in returning a `Cookie` header value (tests and restore checks). */

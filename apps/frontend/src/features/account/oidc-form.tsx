@@ -10,20 +10,22 @@ import { formatDateTime, t } from '@/i18n';
 
 /**
  * Links or unlinks the one identity at the configured sign-in provider. Both steps ask for the
- * password again. Linking leaves for the provider and returns to this page; the provider's
- * address and secrets never reach the interface.
+ * password again. Linking leaves for the provider and returns to this page.
  */
 export function OidcForm({
   account,
   onLink,
   onUnlink,
   onChanged,
+  linkBlocked,
 }: {
   account: OidcAccount;
   onLink: (password: string) => Promise<true | { error: string }>;
   onUnlink: (password: string) => Promise<true | { error: string }>;
   /** The link was removed; the server ended the other sessions. */
   onChanged?: () => void;
+  /** Why an identity cannot be linked right now, such as a provider that fails the test. */
+  linkBlocked?: string;
 }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -52,7 +54,6 @@ export function OidcForm({
   return (
     <section className="flex flex-col gap-4">
       <div className="flex max-w-md flex-col gap-4">
-        <p className="text-sm text-muted-foreground">{t('account.oidcDescription')}</p>
         {identity ? (
           <div className="flex flex-col gap-1 text-sm">
             <p className="font-medium">
@@ -71,9 +72,9 @@ export function OidcForm({
           </p>
         )}
         <p className="text-sm text-muted-foreground">{t('account.oidcSecondFactorNote')}</p>
-        {!identity && account.redirectUri && (
-          <p className="break-all text-sm text-muted-foreground">
-            {t('account.oidcRedirectUri', { uri: account.redirectUri })}
+        {!identity && linkBlocked && (
+          <p role="status" className="text-sm">
+            {linkBlocked}
           </p>
         )}
         <form onSubmit={(event) => void submit(event)} aria-label={t('account.oidc')}>
@@ -93,7 +94,11 @@ export function OidcForm({
             </Field>
             <FormError>{error}</FormError>
             <div>
-              <Button type="submit" variant={identity ? 'destructive' : 'default'} disabled={busy}>
+              <Button
+                type="submit"
+                variant={identity ? 'destructive' : 'default'}
+                disabled={busy || (!identity && Boolean(linkBlocked))}
+              >
                 {busy && <Spinner data-icon="inline-start" />}
                 {identity ? t('account.oidcUnlinkConfirm') : t('account.oidcContinue', { name })}
               </Button>

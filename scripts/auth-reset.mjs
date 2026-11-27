@@ -9,8 +9,9 @@ import { resolve } from 'node:path';
 // recovery codes are removed (and every session ends), for a lost phone or a lost session secret.
 // With --passkeys-only the account and password stay too: only the passkeys are removed (and every
 // session ends), for a lost authenticator or a changed domain (RP ID) that made them unusable.
-// With --oidc-only the account and password stay too: only the linked OIDC identity is removed (and
-// every session ends), for a provider that was replaced, lost or must stop opening the account.
+// With --oidc-only the account and password stay too: only the linked OIDC identity and the
+// provider saved in the interface are removed (and every session ends), for a provider that was
+// replaced, lost or must stop opening the account.
 const args = process.argv.slice(2);
 const confirmed = args.includes('--yes');
 const twoFactorOnly = args.includes('--two-factor-only');
@@ -58,6 +59,8 @@ try {
             .some((c) => c.name === 'providerId')
         )
           db.exec("DELETE FROM account WHERE providerId LIKE 'oidc-%'");
+        // A provider saved in the interface goes too, so that the variables apply again.
+        if (tables.has('oidc_settings')) db.exec('DELETE FROM oidc_settings');
         db.exec('DELETE FROM session');
         // Unfinished sign-in attempts.
         db.exec("DELETE FROM verification WHERE value LIKE '%codeVerifier%'");
@@ -81,6 +84,8 @@ try {
         for (const table of [
           ...(hasTwoFactor ? ['twoFactor'] : []),
           ...(hasPasskeys ? ['passkey'] : []),
+          // A provider saved by the removed account must not outlive it.
+          ...(tables.has('oidc_settings') ? ['oidc_settings'] : []),
           'session',
           'account',
           'verification',
@@ -94,7 +99,9 @@ try {
       throw error;
     }
     if (oidcOnly) {
-      console.log(`Removed the linked OIDC identity and every session from ${target}.`);
+      console.log(
+        `Removed the linked OIDC identity, the saved provider and every session from ${target}.`,
+      );
       console.log('Sign in with the password, then link the identity again in Account if needed.');
     } else if (passkeysOnly) {
       console.log(`Removed every passkey and every session from ${target}.`);
@@ -116,7 +123,7 @@ try {
         : passkeysOnly
           ? 'Run again with --yes to remove every passkey and end all sessions.'
           : oidcOnly
-            ? 'Run again with --yes to remove the linked OIDC identity and end all sessions.'
+            ? 'Run again with --yes to remove the linked OIDC identity and the saved provider, and end all sessions.'
             : 'Run again with --yes to remove the account and all sessions.',
     );
   }

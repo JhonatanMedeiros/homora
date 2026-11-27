@@ -30,7 +30,9 @@ type Props = {
   /** Signs in with a passkey; `rememberMe` is the form's "keep me signed in" choice. */
   onPasskey?: (rememberMe: boolean) => Promise<boolean>;
   /** Sends the browser to the OIDC provider; the page leaves when it succeeds. */
-  onOidc?: () => Promise<boolean>;
+  onOidc?: (rememberMe: boolean) => Promise<boolean>;
+  /** The provider is being opened by itself; holds its label. */
+  redirecting?: string | null;
   onVerify?: (code: string, recovery: boolean) => Promise<boolean>;
   onCancelChallenge?: () => void;
   onRetry?: () => void;
@@ -45,6 +47,7 @@ export function AuthPage({
   onSubmit,
   onPasskey,
   onOidc,
+  redirecting = null,
   onVerify,
   onCancelChallenge,
   onRetry,
@@ -93,7 +96,7 @@ export function AuthPage({
     setBusy(true);
     try {
       // On success the browser leaves for the provider, so the page stays busy until it does.
-      if (!(await onOidc())) setBusy(false);
+      if (!(await onOidc(rememberMe))) setBusy(false);
     } finally {
       pending.current = false;
     }
@@ -130,7 +133,7 @@ export function AuthPage({
               <LocaleSwitcher />
             </div>
           </div>
-          {status && !challenge && <AuthPreviewStrip />}
+          {status && !challenge && !redirecting && <AuthPreviewStrip />}
           <Card
             key={status && challenge && onVerify ? 'challenge' : 'form'}
             className="motion-panel"
@@ -141,6 +144,16 @@ export function AuthPage({
                 onVerify={onVerify}
                 onCancel={onCancelChallenge ?? (() => {})}
               />
+            ) : redirecting ? (
+              <CardContent className="flex flex-col items-start gap-4">
+                <p role="status" className="flex items-center gap-2 text-muted-foreground">
+                  <Spinner />
+                  {t('auth.oidcRedirecting', { name: redirecting })}
+                </p>
+                <Button variant="link" className="px-0" asChild>
+                  <a href="/login?local=1">{t('auth.oidcUsePassword')}</a>
+                </Button>
+              </CardContent>
             ) : status ? (
               <>
                 <CardHeader>

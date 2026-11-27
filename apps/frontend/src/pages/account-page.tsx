@@ -13,7 +13,7 @@ import {
 import { PasswordForm } from '@/features/account/password-form';
 import { ProfileForm } from '@/features/account/profile-form';
 import { PasskeysForm } from '@/features/account/passkeys-form';
-import { OidcForm } from '@/features/account/oidc-form';
+import { OidcPanel } from '@/features/account/oidc-panel';
 import { TwoFactorForm } from '@/features/account/two-factor-form';
 import { SignInActivity } from '@/features/account/sign-in-activity';
 import { SessionsList } from '@/features/account/sessions-list';
@@ -47,8 +47,6 @@ export function AccountPage({
   const passkeys = usePasskeys();
   const origins = usePasskeyOrigins();
   const oidc = useOidcAccount();
-  // Shown when a provider is configured, or while a link of a previous one still exists.
-  const oidcVisible = oidc.account?.enabled === true || oidc.account?.identity != null;
 
   useEffect(() => {
     let active = true;
@@ -149,14 +147,20 @@ export function AccountPage({
                 </Button>
               }
             />
-            {oidcVisible && (
+            {oidc.account && (
               <SecurityCard
                 icon={<LogIn />}
-                title={oidc.account?.name ?? t('account.oidc')}
+                title={oidc.account.name ?? t('account.oidc')}
                 description={t('account.oidcDescription')}
                 action={
                   <Button type="button" variant="outline" onClick={() => open('oidc')}>
-                    {t(oidc.account?.identity ? 'account.manage' : 'account.oidcLink')}
+                    {t(
+                      oidc.account.identity
+                        ? 'account.manage'
+                        : oidc.account.provider
+                          ? 'account.oidcLink'
+                          : 'account.oidcConfigure',
+                    )}
                   </Button>
                 }
               />
@@ -225,14 +229,10 @@ export function AccountPage({
             <ResponsiveDialog
               open={panel === 'oidc'}
               onOpenChange={(open) => !open && close()}
-              title={oidc.account.name ?? t('account.oidc')}
+              title={t('account.oidc')}
+              size="form"
             >
-              <OidcForm
-                account={oidc.account}
-                onLink={oidc.link}
-                onUnlink={oidc.unlink}
-                onChanged={sessionsChanged}
-              />
+              <OidcPanel oidc={oidc} onChanged={sessionsChanged} />
             </ResponsiveDialog>
           )}
         </>

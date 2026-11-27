@@ -111,3 +111,12 @@ export const passkey = sqliteTable(
     uniqueIndex('passkey_credentialID_unique').on(table.credentialID),
   ],
 );
+
+// The sign-in provider configured in the interface (a single row, ADR 0032). `provider` and
+// `draft` are sealed with the vault because they hold the client secret; `preferences` is plain.
+export const oidcSettings = sqliteTable('oidc_settings', {
+  id: integer('id').primaryKey(),
+  provider: text('provider'),
+  draft: text('draft'),
+  preferences: text('preferences').notNull(),
+});
