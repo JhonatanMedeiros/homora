@@ -262,12 +262,16 @@ export function createApp(
       return reply.code(403).send(errorBody('origin-not-allowed'));
   });
   app.addHook('onRequest', async (request, reply) => {
+    // The path the router matched, not the one received: the router decodes percent-encoding, so
+    // the received text (`/%61pi/…`) can differ from the route that will answer. An unmatched
+    // request has no route and keeps the received path.
+    const path = request.routeOptions.url ?? request.url.split('?')[0]!;
     if (
-      request.url.startsWith('/api/') &&
-      !request.url.startsWith('/api/auth/') &&
+      path.startsWith('/api/') &&
+      !path.startsWith('/api/auth/') &&
       // The one anonymous exception: exact path, read-only.
-      !(request.method === 'GET' && request.url.split('?')[0] === PUBLIC_STATUS_PATH) &&
-      !(request.method === 'GET' && request.url.split('?')[0] === HEALTH_PATH) &&
+      !(request.method === 'GET' && path === PUBLIC_STATUS_PATH) &&
+      !(request.method === 'GET' && path === HEALTH_PATH) &&
       !(await auth.session(request.headers))
     )
       return reply.code(401).send(errorBody('auth-required'));
