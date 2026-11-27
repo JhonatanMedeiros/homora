@@ -22,7 +22,7 @@ showcase; this guide is the manual.
 
 | Guide                                                                        | Topics                                                                                              |
 | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| [The dashboard](dashboard.md)                                                | Health banner, pages, groups, layouts, command palette, shortcuts, organize mode, details           |
+| [The dashboard](dashboard.md)                                                | Navigation, Summary, Maintenance, pages, layouts, search, shortcuts, organize, details              |
 | [Services and monitoring](services-and-monitoring.md)                        | Service form, seven check types, thresholds, incidents, uptime, maintenance, hosts and dependencies |
 | [Notifications and the public status page](notifications-and-status-page.md) | Telegram, ntfy, Discord, webhooks, and the optional read-only status page                           |
 | [Integrations and widgets](integrations-and-widgets.md)                      | Connections, supported integrations, card widgets, page widgets, top bar                            |

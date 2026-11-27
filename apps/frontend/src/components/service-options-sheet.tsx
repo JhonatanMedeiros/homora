@@ -1,4 +1,4 @@
-import { SlidersHorizontal, Sparkles } from 'lucide-react';
+import { ListChecks, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useState, type ComponentProps } from 'react';
 import { Button } from '@homora/ui/button';
 import {
@@ -20,6 +20,8 @@ type Props = {
     ComponentProps<typeof ViewLayoutFields> & {
       showHostSuggestions: boolean;
       onHostSuggestions: () => void;
+      /** Organize is also where services are edited and removed. */
+      onToggleOrganizing: () => void;
     };
   /** Status filter; absent in the Host and Map arrangements, which have no state filter. */
   status?: {
@@ -32,8 +34,8 @@ type Props = {
 };
 
 /**
- * Phone version of the Home controls: one button that opens a bottom sheet with the status filter,
- * how services are arranged, the layout and the host suggestions. The desktop keeps them inline.
+ * Phone version of the Services controls: one button that opens a bottom sheet with the status filter,
+ * how services are arranged, the layout, Organize and the host suggestions. The desktop keeps them inline.
  */
 export function ServiceOptionsSheet({ toolbar, status }: Props) {
   const [open, setOpen] = useState(false);
@@ -101,6 +103,18 @@ export function ServiceOptionsSheet({ toolbar, status }: Props) {
                 onUptimeRangeChange={toolbar.onUptimeRangeChange}
               />
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 justify-start"
+              onClick={() => {
+                setOpen(false);
+                toolbar.onToggleOrganizing();
+              }}
+            >
+              <ListChecks aria-hidden="true" />
+              {t('page.organize')}
+            </Button>
             {toolbar.showHostSuggestions && (
               <Button
                 type="button"

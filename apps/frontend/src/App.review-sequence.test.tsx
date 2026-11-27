@@ -84,10 +84,8 @@ function setup(items: Item[]) {
 async function openProposals() {
   render(<App />);
   await screen.findByRole('heading', { name: 'Tudo em seu lugar.' });
-  fireEvent.keyDown(screen.getByRole('button', { name: /Menu da conta de/ }), { key: 'Enter' });
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Gerenciar' }));
   fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Gerenciamento' })).getByRole('button', {
+    within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', {
       name: /^Agentes/,
     }),
   );

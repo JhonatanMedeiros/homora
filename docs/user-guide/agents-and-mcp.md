@@ -15,7 +15,7 @@ New to this? [A ten-minute walkthrough](../agent-demo.md) uses synthetic data, a
 
 ![The Agents page with a proposal waiting for review](../screenshots/agents.png)
 
-1. **Create an agent** on **Manage → Agents** and choose its scopes. Its token is shown **once**.
+1. **Create an agent** on **Agents** and choose its scopes. Its token is shown **once**.
 2. **Connect** your client (see [Connect a client](#connect-a-client)) with that token.
 3. The agent reads what its scopes allow and **proposes** changes.
 4. You **review** the exact diff and approve or reject it. Approved changes apply immediately; rejected ones store
@@ -127,7 +127,7 @@ external agent to inspect the existing cards and groups before proposing changes
 it to move the identified media cards to an existing Media group, create a page, or pin a named
 favorite. If the target or destination is ambiguous, clarify it before a proposal is made; do not
 assume the agent can infer services that are not in the inventory. Review the proposed targets and
-effects in **Manage → Agents** and approve or reject them yourself.
+effects in **Agents** and approve or reject them yourself.
 
 Use only the scopes needed: `services:read` for inventory, `proposals:create` for card moves and
 `organization:propose` for pages and pins. Group creation additionally requires `groups:propose`.

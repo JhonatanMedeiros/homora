@@ -2,6 +2,8 @@
 
 ## Preparar e revisar manutenção
 
+A visão **Manutenção** (`/maintenance`) lista as janelas abertas e agendadas e inicia uma nova para qualquer serviço.
+
 Ao agendar uma janela pelos detalhes de um serviço, abra **Revisar preparação** para consultar as
 janelas atuais e o impacto potencial das dependências manuais. A mesma revisão opcional aparece em
 uma proposta de manutenção antes da aprovação ou rejeição. A comparação de sobreposição considera
@@ -45,7 +47,7 @@ o escopo `hosts:read` existente e permanecem separadas das dependências confirm
 O resumo e a investigação autenticados resolvem nomes de serviços localmente. Sondas, serviços removidos
 e nomes indisponíveis usam o ID do monitor; os bundles de evidências e as respostas MCP não recebem nomes.
 
-Em **Gerenciar → Atividade**, o resumo de mudanças agrupa eventos por monitor nas últimas 24 horas ou
+Em **Atividade**, o resumo de mudanças agrupa eventos por monitor nas últimas 24 horas ou
 em 7 dias. As contagens de início e recuperação contam eventos; o total conta incidentes distintos com
 ao menos um evento no período. As contagens usam todo o período retido mesmo quando os detalhes são
 limitados. São exibidos até 100 monitores e 100 eventos individuais, com avisos separados de truncamento.
@@ -92,7 +94,7 @@ Também é possível registrar onde um serviço roda e suas dependências, para 
 
 ## Investigar um incidente
 
-Escolha **Investigar incidente** nos detalhes do serviço ou em **Gerenciar → Atividade**.
+Escolha **Investigar incidente** nos detalhes do serviço ou em **Atividade**.
 A linha do tempo mostra o incidente registrado, até 100 checagens retidas e até 20 incidentes
 simultâneos; dados truncados, inválidos ou de cobertura desconhecida são indicados. A coincidência
 de horários é uma hipótese, não prova uma causa comum. O histórico de checagens é retido por

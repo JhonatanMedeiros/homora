@@ -6,7 +6,7 @@
 
 [Quick start](#quick-start) · [Features](#features) · [Screenshots](#a-closer-look) · [Use cases](#use-cases) · [Documentation](#documentation) · [Português (Brasil)](README.pt-BR.md)
 
-![Homora dashboard in the dark theme](docs/screenshots/dashboard-dark.png)
+![The Homora Home in the dark theme](docs/screenshots/dashboard-dark.png)
 
 </div>
 
@@ -59,6 +59,12 @@ docker run -d --name homora --restart unless-stopped \
 New here? Follow [Getting started](docs/user-guide/getting-started.md), a ten-minute tour.
 
 ## Features
+
+### See and get around
+
+- **A Home that answers "is everything fine?"** with what needs attention, likely causes, uptime, latency, upcoming
+  maintenance and your pinned services one click away. **Services** and **Maintenance** sit beside it.
+- **One navigation everywhere:** an icon rail on larger screens and a bottom bar on phones.
 
 ### Organize
 
@@ -169,7 +175,7 @@ All scopes and tools are in the [agent capability inventory](docs/agent-capabili
   <tr>
     <td width="50%">
       <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Organize mode with Add service, a row menu to edit, remove or move, and drag handles"></a>
-      <br><b>Organize mode.</b> Add, edit, remove, reorder or move services, all on the Home.
+      <br><b>Organize mode.</b> Add, edit, remove, reorder or move services, all on Services.
     </td>
     <td width="50%">
       <a href="docs/screenshots/settings-appearance.png"><img src="docs/screenshots/settings-appearance.png" alt="Appearance settings with accent colors and page backgrounds"></a>
@@ -231,7 +237,7 @@ language menu), or run it locally with `pnpm docs:dev` ([details](docs/maintaine
 | Guide                                                                             | What it covers                                                                  |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | [Getting started](docs/user-guide/getting-started.md)                             | Install, first sign-in, your first card, and where everything lives.            |
-| [Dashboard](docs/user-guide/dashboard.md)                                         | Pages, groups, layouts, search, shortcuts, organize mode and service details.   |
+| [Dashboard](docs/user-guide/dashboard.md)                                         | Navigation, Home, Services, Maintenance, search, shortcuts and service details. |
 | [Services and monitoring](docs/user-guide/services-and-monitoring.md)             | Card fields, check types, thresholds, incidents, uptime, maintenance and hosts. |
 | [Notifications and status page](docs/user-guide/notifications-and-status-page.md) | Telegram, ntfy, Discord, webhooks and the public status page.                   |
 | [Integrations and widgets](docs/user-guide/integrations-and-widgets.md)           | Connections, card widgets, page widgets and the top bar.                        |
@@ -270,8 +276,8 @@ The monorepo uses pnpm and Turborepo: React, Vite, Tailwind CSS and shadcn/ui on
 Fastify on the backend; Drizzle ORM with SQLite. Run `pnpm check` and `pnpm build` before sending changes; commits follow
 Conventional Commits. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/standards.md](docs/standards.md).
 
-Routes: `/` is the dashboard, `/login` sign-in, `/manage/{probes,integrations,agents,activity,settings}` the management
-sections, `/manage/services/new` and `/manage/services/:id/edit` the service forms, and `/services/:id` a service's detail
+Routes: `/` is the Home summary, `/services` the cards, `/maintenance` the maintenance windows, `/account` the account,
+`/login` sign-in, `/manage/{probes,integrations,agents,activity,settings}` the management sections, `/manage/services/new` and `/manage/services/:id/edit` the service forms, and `/services/:id` a service's detail
 page. When hosting the frontend separately, return `index.html` for these routes.
 
 ## Contributing

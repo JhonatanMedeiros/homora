@@ -127,10 +127,10 @@ export function ServiceDetailPage({ id, services, loaded, statuses, blockedIds, 
         className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-muted-foreground"
       >
         <a
-          href="/"
+          href="/services"
           onClick={(event) => {
             event.preventDefault();
-            navigate('/');
+            navigate('/services');
           }}
           className="inline-flex items-center gap-1 text-accent-text hover:underline"
         >

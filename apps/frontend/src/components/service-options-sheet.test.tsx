@@ -15,6 +15,7 @@ function setup(overrides: Partial<Parameters<typeof ServiceOptionsSheet>[0]> = {
     onArrangeChange: vi.fn(),
     onViewChange: vi.fn(),
     onHostSuggestions: vi.fn(),
+    onToggleOrganizing: vi.fn(),
   };
   render(
     <ServiceOptionsSheet
@@ -27,6 +28,7 @@ function setup(overrides: Partial<Parameters<typeof ServiceOptionsSheet>[0]> = {
         onShowDescriptionsChange: () => {},
         showHostSuggestions: true,
         onHostSuggestions: handlers.onHostSuggestions,
+        onToggleOrganizing: handlers.onToggleOrganizing,
       }}
       status={{ selected: 'all', counts, onSelect: handlers.onSelect }}
       {...overrides}
@@ -66,4 +68,12 @@ it('flags an active status filter on the button and hides the filter in host vie
   setup({ status: undefined });
   fireEvent.click(screen.getByRole('button', { name: /options/i }));
   expect(screen.queryByRole('group', { name: 'Filter by status' })).toBeNull();
+});
+
+it('starts Organize from the sheet and closes it', () => {
+  const { onToggleOrganizing } = setup();
+  fireEvent.click(screen.getByRole('button', { name: /options/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'Organize' }));
+  expect(onToggleOrganizing).toHaveBeenCalled();
+  expect(screen.queryByRole('dialog')).toBeNull();
 });

@@ -48,7 +48,7 @@ it('opens the palette with / and the help with ?', () => {
 it('goes to a section with g then a letter', () => {
   setup();
   for (const [key, tab] of [
-    ['h', 'services'],
+    ['h', 'home'],
     ['i', 'integrations'],
     ['a', 'agents'],
     ['t', 'activity'],

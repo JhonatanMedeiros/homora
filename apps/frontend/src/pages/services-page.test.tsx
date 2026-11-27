@@ -131,3 +131,30 @@ it('counts a probe that is down in the health banner and in the Offline view', a
     /Offline\s*1/,
   );
 });
+
+it('does not open a sheet for the side panel selection when the arrangement changes', async () => {
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    (query: string) =>
+      ({
+        matches: query.includes('min-width'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList,
+  );
+  const wide = {
+    ...data,
+    statuses: { 7: { status: 'available', latencyMs: 5 } },
+  } as unknown as Data;
+  render(
+    <MemoryRouter>
+      <ServicesPage data={wide} formRoute={null} navigate={() => {}} onAddService={() => {}} />
+    </MemoryRouter>,
+  );
+  fireEvent.click(await screen.findByRole('button', { name: 'NAS: Online' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  fireEvent.click(screen.getByRole('radio', { name: 'Host' }));
+  expect(await screen.findByRole('radio', { name: 'Host', checked: true })).toBeTruthy();
+  expect(screen.queryByRole('dialog')).toBeNull();
+  vi.restoreAllMocks();
+});

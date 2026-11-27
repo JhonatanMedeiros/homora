@@ -6,7 +6,7 @@ export const en = {
   'home.probes.manage': 'Manage probes',
   'probes.title': 'Probes',
   'probes.description':
-    'Addresses Homora checks that have no card on the Home: your internet connection, a DNS name, a port.',
+    'Addresses Homora checks that have no card in Services: your internet connection, a DNS name, a port.',
   'probes.add': 'Add probe',
   'probes.loadFailed': 'The probes could not be loaded.',
   'probes.empty.title': 'Nothing is monitored without a card yet',
@@ -50,7 +50,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'home.probes.manage': 'Gerenciar sondas',
   'probes.title': 'Sondas',
   'probes.description':
-    'Endereços que o Homora verifica sem ter um card na Home: sua conexão com a internet, um nome DNS, uma porta.',
+    'Endereços que o Homora verifica sem ter um card em Serviços: sua conexão com a internet, um nome DNS, uma porta.',
   'probes.add': 'Adicionar sonda',
   'probes.loadFailed': 'Não foi possível carregar as sondas.',
   'probes.empty.title': 'Nada é monitorado sem um card ainda',

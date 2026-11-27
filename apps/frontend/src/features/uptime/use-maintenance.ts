@@ -3,12 +3,14 @@ import type { Maintenance, MaintenanceOverview } from '@homora/shared';
 
 /**
  * Maintenance windows that are open now or still ahead. Auxiliary like the uptime: when they
- * cannot be loaded the dashboard simply shows no maintenance. Reloaded every minute (windows open
+ * cannot be loaded the other views simply show no maintenance, and the Maintenance view says so. Reloaded every minute (windows open
  * and close on their own) and on demand after one is scheduled or cancelled.
  */
 export function useMaintenance() {
   const [windows, setWindows] = useState<Maintenance[]>([]);
   const [version, setVersion] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     let active = true;
     const load = () =>
@@ -18,9 +20,14 @@ export function useMaintenance() {
           return response.json() as Promise<MaintenanceOverview>;
         })
         .then((data) => {
-          if (active && Array.isArray(data?.windows)) setWindows(data.windows);
+          if (!active) return;
+          if (Array.isArray(data?.windows)) setWindows(data.windows);
+          setLoaded(true);
+          setFailed(false);
         })
-        .catch(() => {});
+        .catch(() => {
+          if (active) setFailed(true);
+        });
     void load();
     const timer = window.setInterval(() => void load(), 60_000);
     return () => {
@@ -29,7 +36,7 @@ export function useMaintenance() {
     };
   }, [version]);
   const reload = useCallback(() => setVersion((value) => value + 1), []);
-  return { windows, reload };
+  return { windows, loaded, failed, reload };
 }
 
 /** The window each service is in at `now`. */

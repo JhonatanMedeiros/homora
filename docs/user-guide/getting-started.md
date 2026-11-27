@@ -36,7 +36,7 @@ sign-in name; Homora never sends email. Tick **Keep me signed in** to stay signe
 
 ## 3. Add your first service
 
-1. Press **Add your first service** (or press `n` on the dashboard).
+1. Press **Add your first service** (or press `n` on the Home).
 2. Fill in a **name**, the **URL** you open it at, and a **category** (the group; a new name creates it).
 3. Pick an **icon**: Homora suggests the brand logo matching the name (such as `brand:jellyfin`), or use an emoji, a
    built-in icon like `lucide:server`, or an image URL.
@@ -56,16 +56,21 @@ a login prompt counts as Online; a failing card says why and opens a **Details**
 
 ![The Homora dashboard](../screenshots/dashboard-dark.png)
 
-| Where                     | What it is                                                                                   |
-| ------------------------- | -------------------------------------------------------------------------------------------- |
-| **Dashboard** (`/`)       | Your cards, grouped and organized in pages. The status pill in the header summarizes health. |
-| **Search** (`Ctrl K`)     | Jump to any card, filter by status or group, and reach any settings page.                    |
-| **Organize** (Dashboard)  | Add, edit, organize and delete cards and groups, right on the Home.                          |
-| **Manage → Integrations** | Connect Proxmox and other tools, attach widgets to cards, and set up Docker discovery.       |
-| **Manage → Agents**       | Create AI agent identities and review their proposals.                                       |
-| **Manage → Activity**     | A log of sign-ins, proposals, approvals and settings changes.                                |
-| **Manage → Settings**     | Appearance, pages, top bar, alerts, the public status page, and export or import.            |
-| **Account** (avatar menu) | Password, two-step verification and passkeys.                                                |
+| Where                     | What it is                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| **Summary** (`/`)         | What needs attention, health figures, pins and upcoming maintenance.                   |
+| **Services**              | Your cards, grouped and organized in pages, as groups, hosts or a map.                 |
+| **Organize** (Services)   | Edit, move and delete cards and groups.                                                |
+| **Maintenance**           | Windows that are open or scheduled.                                                    |
+| **Search** (`Ctrl K`)     | Jump to any card, filter by status or group, and reach any settings page.              |
+| **Integrations**          | Connect Proxmox and other tools, attach widgets to cards, and set up Docker discovery. |
+| **Agents**                | Create AI agent identities and review their proposals.                                 |
+| **Activity**              | A log of sign-ins, proposals, approvals and settings changes.                          |
+| **Settings**              | Appearance, pages, top bar, alerts, the public status page, and export or import.      |
+| **Account** (avatar menu) | Password, two-step verification and passkeys.                                          |
+
+On a computer these are in the rail on the left; on a phone, in the bottom bar and its **More** menu. The status pill in
+the header summarizes health on every page.
 
 The avatar menu also opens **What's new**, with release notes and whether a newer stable version exists. The server checks
 GitHub when you sign in and every six hours (GitHub sees only its public IP address), and Homora works if the check fails.
@@ -104,7 +109,7 @@ loopback addresses such as `127.0.0.1` are always blocked.
 
 ### Monitoring changes
 
-In **Manage → Activity**, select **Show monitoring changes** to inspect recorded incident starts
+In **Activity**, select **Show monitoring changes** to inspect recorded incident starts
 and recoveries over the last 24 hours or 7 days. Times use your browser's time zone. Service links
 open service details; select a probe incident to inspect its recorded start and end. The list shows at most 100 events
 and indicates when it is truncated. The view shows when it was updated, offers a refresh button and warns when its result is

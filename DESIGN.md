@@ -109,19 +109,54 @@ Geist Variable for interface and headings, Geist Mono Variable for hosts, counts
 
 ## Layout
 
-Content up to 72rem, 16px side margins (32px from `md`). Homepage: search (`/` focuses it), availability summary, then groups. **Ctrl or Cmd K** opens the command palette (`CommandPalette`): open any service, toggle theme, or switch to management. Management lives behind a single entry.
+Content up to 72rem (90rem when side columns are shown), 16px side margins (32px from `md`). **One shell for every
+page** (`AppShell`). From 768px an icon **rail** (`NavRail`, 64px, each icon named by a tooltip and an accessible name)
+lists Home, Services, Map, Probes, Integrations, Agents, Activity and Settings, with the theme and the account menu at
+its end. The header holds the section links Summary, Services and Maintenance (`SectionTabs`, links with
+`aria-current`) on those views and a breadcrumb elsewhere, then the command palette, the status pill, the alerts and New
+service. Pages have their own bar below it on the Summary and Services. On phones the floating bottom bar (`MobileTabs`
+over `FloatingNav`: a 60px capsule inset 14px from the edges, separated by a 1px line, no shadow, with a fade behind it;
+only the active item shows its name, on an ember 16% pill, the rest are icons with a 48px target and a screen-reader
+name) is on every page with Home, Services, Agents and More; the header keeps search, status, alerts and the account
+menu. **Ctrl or Cmd K** opens the command palette (`CommandPalette`). A skip link (`SkipLink`) is the first tab stop.
+
+### Home: Summary, Services and Maintenance
+
+**The Home opens with health; the cards are one click away.** The Summary (`/`) reads: pinned services, Needs attention
+(`ProbableCauses alwaysOpen`, where every cause says "likely", or a calm or "cannot measure" card), health figures, the
+state strip (a ring, a number and a name per state, each a button that filters Services), availability target and latency,
+upcoming maintenance, page widgets. "Nothing needs attention" is said only when nothing is unknown or stale. From 1280px
+a left column (`HomeSidebar`) holds views, groups, hosts and probes, and on the Summary and Services a right column
+(`ServicePanel`) holds one window per service (shape and color together, named for screen readers), the selected
+service's details and pending agent proposals. Choosing a service fills that column; without it the same details open in
+a sheet (`ServiceDrawer`), and a selection never turns into a sheet by itself. Maintenance (`/maintenance`) schedules a
+window and lists the open and the scheduled ones.
 
 Services default to **compact tiles** (`ServiceCardCompact`): icon, name, host in mono, the state in words, a 6px bar of the period (`UptimeMiniBar`) and the latency, with an `i` button that opens the details drawer. **List** is one dense row per service, two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "Display" button in the toolbar (`ViewOptions`, a popover) switches the layout and sets descriptions and the uptime period; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`tiles`, `list` or `cards`; nothing stored means tiles, the older `comfortable` maps to cards and `compact` to list).
 
-From 1280px the Home has a **left rail** (`HomeRail`: Views with the four status filters and their counts, Favorites when something is pinned, Groups with their health, Hosts when a connected Proxmox runs cards, and the widget panel toggle) and from 1440px a **right rail** with the page widgets (`PageWidgets layout="rail"`); the content column widens to 90rem. Below that the filters are chips and the widgets a row below the groups, after the probes, so services come first on small screens. On phones the Add widget tile shows only in Organize. **The Home body leads with cards.** Health lives in the header as one quiet **status pill** (`HomeStatusPill`): a 8px status light and a few words ("All up", "2 problems", "Partly monitored", "Cannot measure"), a ghost button with no border and no colored text, so the color is the dot alone. On phones it shrinks to the dot plus the problem count, a check when all is well or a question mark when unknown, so the state never depends on color alone. When the total mixes offline services, offline probes and slow ones, the banner breaks it down and the rail says its counts include probes. A status filter with a zero count fades only its dot; the text keeps full contrast. It opens a popover with the pulse content (`StatusBanner`: figures, SLA budget and one 12px window per service, colored by state with the name in its label) and **Needs attention** (`ProbableCauses alwaysOpen`), where every cause says "likely". Quiet services are named in one muted line, never hidden. The pill reads the same `summarizeStatus` the popover does, so the two cannot disagree. The Hosts section of the rail is a status light, the node name and a count of its cards; it never appears for an inventory that is loading or unreadable, because the rail does not guess a node is fine or offline. With "Problems first" on, offline cards also come first inside each group.
+On Services, from 1440px the page widgets (`PageWidgets layout="rail"`) sit in the right column; otherwise they are a row
+below the content, after the probes, so services come first on small screens. On phones the Add widget tile shows only
+in Organize. The **status pill** (`HealthPill`, `HomeStatusPill`) is in the header of every page: an 8px status light and
+a few words ("All up", "2 problems", "Partly monitored", "Cannot measure"), a ghost button with no border and no colored
+text, so the color is the dot alone. On phones it shrinks to the dot plus the problem count, a check when all is well or a
+question mark when unknown, so the state never depends on color alone. It opens a popover with `StatusBanner` and Needs
+attention, reading the same `summarizeStatus` as the Summary, so the two cannot disagree. When the total mixes offline
+services, offline probes and slow ones, the banner breaks it down and the left column says its counts include probes. A
+status filter with a zero count fades only its dot. The Hosts section is a status light, the node name and a count of its
+cards; it never appears for an inventory that is loading or unreadable. With "Problems first" on, offline cards also come
+first inside each group.
 
-The details drawer (`ServiceDrawer`) is a right side sheet and a bottom sheet under 768px. Empty states use the `Empty` primitive: first run, no result (with a clear-filters action) and a calm Offline view with a check icon, which is good news and is not styled as an error. Phones have no bottom bar on the Home, so the page keeps its height: search, notifications and the theme are in the header, and Manage is in the user menu. A skip link (`SkipLink`) is the first tab stop and jumps to the first service on the Home, or to the content elsewhere. Page tabs are a `nav` with `aria-current`. Service addresses truncate in the middle and keep the port (`HostAddress`). The management area has a floating bottom bar (`MobileTabs` over `FloatingNav`): a 60px capsule inset 14px from the edges, separated by a 1px line (no shadow) with a fade behind it. Only the active item shows its name, on an ember 16% pill; the rest are icons with a 48px target and a screen-reader name. The header stays one row on phones, with the back arrow replacing the logo outside the Home. Group filter tabs appear only with three or more groups.
+The details sheet is on the right, and at the bottom under 768px. Empty states use the `Empty` primitive: first run, no
+result (with a clear-filters action) and a calm Offline view with a check icon, which is good news and is not styled as
+an error. Service addresses truncate in the middle and keep the port (`HostAddress`). Group filter tabs appear only with
+three or more groups.
 
-On phones (under 768px) the status filter, the arrangement (Group, Host, Map), the layout and Suggested hosts move into one **Options** button that opens a bottom sheet (`ServiceOptionsSheet`), next to the category chips. The status pill collapses to its dot, and the optional top bar (clock and system resources) stays governed by its setting, only more compact.
+On phones (under 768px) the status filter, the arrangement (Group, Host, Map), the layout, Organize and Suggested hosts
+live in one **Options** button on Services that opens a bottom sheet (`ServiceOptionsSheet`), next to the category chips.
 
 ### Organize mode
 
-The status pill stays in the header, the left rail becomes group jump links, and a note says when the saved order is shown instead of Problems first. Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top", "Move to group", "Edit" and "Remove" (removal asks to confirm in the row). Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only, after a confirmation dialog). A one-line hint with "Add service" and "New group" buttons replaces the old form; services are added, edited and removed here (there is no Manage → Services page); on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group; while dragging, empty groups show a drop zone.
+The status pill stays in the header, the left column becomes group jump links, and a note says when the saved order is shown instead of Problems first. Services are one compact row each (`OrganizeRow`): drag handle (hidden on touch), icon, name, host, up and down arrows, and a menu with "Move to top", "Move to group", "Edit" and "Remove" (removal asks to confirm in the row). Each group header has its arrows and a menu with columns on the home (Auto, 1, 2, 3; larger saved values apply as 3), Rename, and Remove (empty groups only, after a confirmation dialog). A one-line hint with "Add service" and "New group" buttons replaces the old form; services are added, edited and removed here (there is no separate management list); on small screens a fixed bar holds Done. Dragging onto a row of another group moves the service there, at the end of that group; while dragging, empty groups show a drop zone.
 
 ## Elevation & Depth
 
@@ -149,7 +184,7 @@ Bordered card, 16px padding; whole card is the link. Icon tile turns ember-tinte
 
 ### shadcn base
 
-shadcn/ui new-york, Radix, Lucide, Tailwind v4, tokens in `@theme inline`. Primitives in `packages/ui/src/components` (except the shell sidebar in the frontend), product components in `src/components`, pages in `src/pages`, domain modules in `src/features`. Every UI element is a component.
+shadcn/ui new-york, Radix, Lucide, Tailwind v4, tokens in `@theme inline`. Primitives in `packages/ui/src/components`, product components in `src/components`, pages in `src/pages`, domain modules in `src/features`. Every UI element is a component.
 
 ## Do's and Don'ts
 

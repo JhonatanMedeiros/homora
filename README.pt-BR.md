@@ -66,6 +66,12 @@ card ao primeiro alerta.
 
 ## Recursos
 
+### Ver e navegar
+
+- **Um Início que responde "está tudo bem?"** com o que precisa de atenção, causas prováveis, disponibilidade,
+  latência, próximas manutenções e os serviços fixados a um clique. **Serviços** e **Manutenção** ficam ao lado.
+- **A mesma navegação em todo lugar:** barra de ícones em telas maiores e barra inferior no celular.
+
 ### Organizar
 
 - **Grupos, páginas e cards** com ordenação por arrastar e soltar, de 1 a 6 colunas por grupo, abas para páginas
@@ -176,7 +182,7 @@ Todos os escopos e ferramentas estão no [inventário de capacidades](docs/agent
   <tr>
     <td width="50%">
       <a href="docs/screenshots/organize-mode.png"><img src="docs/screenshots/organize-mode.png" alt="Modo organizar com Adicionar serviço, menu da linha para editar, remover ou mover, e alças de arrastar"></a>
-      <br><b>Modo organizar.</b> Adicione, edite, remova, reordene ou mova serviços, tudo na Home.
+      <br><b>Modo organizar.</b> Adicione, edite, remova, reordene ou mova serviços, tudo em Serviços.
     </td>
     <td width="50%">
       <a href="docs/screenshots/settings-appearance.png"><img src="docs/screenshots/settings-appearance.png" alt="Configurações de aparência com cores de destaque e fundos de página"></a>
@@ -238,7 +244,7 @@ O site inclui guias em português e referências detalhadas em inglês.
 | Guia                                                                              | O que cobre                                                                                     |
 | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | [Getting started](docs/user-guide/getting-started.md)                             | Instalação, primeiro acesso, seu primeiro card e onde fica cada coisa.                          |
-| [Dashboard](docs/user-guide/dashboard.md)                                         | Páginas, grupos, layouts, busca, atalhos, modo organizar e detalhes de serviço.                 |
+| [Dashboard](docs/user-guide/dashboard.md)                                         | Navegação, Início, Serviços, Manutenção, busca, atalhos e detalhes de serviço.                  |
 | [Services and monitoring](docs/user-guide/services-and-monitoring.md)             | Campos do card, tipos de verificação, limites, incidentes, disponibilidade, manutenção e hosts. |
 | [Notifications and status page](docs/user-guide/notifications-and-status-page.md) | Telegram, ntfy, Discord, webhooks e a página pública de status.                                 |
 | [Integrations and widgets](docs/user-guide/integrations-and-widgets.md)           | Conexões, widgets de card, widgets de página e a barra superior.                                |
@@ -277,7 +283,8 @@ backend; contratos compartilhados; Drizzle ORM com SQLite. Rode `pnpm check` (li
 `pnpm build` antes de enviar mudanças. Os commits seguem Conventional Commits (`feat: ...`), validados por Husky e
 Commitlint. Veja [CONTRIBUTING.md](CONTRIBUTING.md) e [docs/standards.md](docs/standards.md).
 
-Rotas: o painel é `/`, o acesso é `/login`, as seções de gestão são `/manage/probes`, `/manage/integrations`,
+Rotas: o resumo do Início é `/`, os cartões `/services`, as manutenções `/maintenance`, a conta `/account` e o acesso
+`/login`. As seções de gestão são `/manage/probes`, `/manage/integrations`,
 `/manage/agents`, `/manage/activity` e `/manage/settings`, os formulários de serviço são `/manage/services/new` e
 `/manage/services/:id/edit`, e a página de detalhes de um serviço é `/services/:id`. Ao hospedar o frontend separadamente,
 configure o servidor para devolver `index.html` nessas rotas.

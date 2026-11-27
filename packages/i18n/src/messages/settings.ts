@@ -126,7 +126,7 @@ export const en = {
   'settings.ui.keyboardSection': 'Keyboard',
   'settings.ui.shortcuts': 'Keyboard shortcuts',
   'settings.ui.shortcutsHint':
-    'Single-key shortcuts such as / to search, g then a letter to go to a section, n for a new service and ? for the full list. Ctrl/Cmd+K and Ctrl/Cmd+B always work.',
+    'Single-key shortcuts such as / to search, g then a letter to go to a section, n for a new service and ? for the full list. Ctrl/Cmd+K always works.',
   'settings.ui.searchSection': 'Command palette',
   'settings.ui.aiSearch': 'Ask an AI',
   'settings.ui.aiSearchHint':
@@ -154,14 +154,13 @@ export const en = {
   'shortcuts.palette': 'Open the command palette',
   'shortcuts.paletteToggle': 'Open or close the command palette',
   'shortcuts.help': 'Show this list',
-  'shortcuts.goHome': 'Go to the dashboard',
+  'shortcuts.goHome': 'Go to Home',
   'shortcuts.goProblems': 'Show what is offline',
   'shortcuts.goIntegrations': 'Go to Integrations',
   'shortcuts.goAgents': 'Go to Agents',
   'shortcuts.goActivity': 'Go to Activity',
   'shortcuts.goSettings': 'Go to Settings',
   'shortcuts.newService': 'Add a service (on the services pages)',
-  'shortcuts.sidebar': 'Show or hide the sidebar',
   'palette.webSearch': 'Search the web for “{text}”',
   'palette.webSearchWith': 'Search {engine} for “{text}”',
 } as const;
@@ -297,7 +296,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.ui.keyboardSection': 'Teclado',
   'settings.ui.shortcuts': 'Atalhos de teclado',
   'settings.ui.shortcutsHint':
-    'Atalhos de uma tecla, como / para buscar, g e depois uma letra para ir a uma seção, n para novo serviço e ? para a lista completa. Ctrl/Cmd+K e Ctrl/Cmd+B sempre funcionam.',
+    'Atalhos de uma tecla, como / para buscar, g e depois uma letra para ir a uma seção, n para novo serviço e ? para a lista completa. Ctrl/Cmd+K sempre funciona.',
   'settings.ui.searchSection': 'Paleta de comandos',
   'settings.ui.aiSearch': 'Perguntar a uma IA',
   'settings.ui.aiSearchHint':
@@ -332,7 +331,6 @@ export const ptBR: Record<keyof typeof en, string> = {
   'shortcuts.goActivity': 'Ir para Atividade',
   'shortcuts.goSettings': 'Ir para Configurações',
   'shortcuts.newService': 'Adicionar serviço (nas páginas de serviços)',
-  'shortcuts.sidebar': 'Mostrar ou ocultar a barra lateral',
   'palette.webSearch': 'Buscar na web por “{text}”',
   'palette.webSearchWith': 'Buscar no {engine} por “{text}”',
 };

@@ -135,7 +135,7 @@ it('selects a service with the keyboard-operable button and shows its details', 
   expect(within(panel).getByText('jellyfin')).toBeTruthy();
   expect(within(panel).getByText('media · on pve2')).toBeTruthy();
   expect(within(panel).getByText('Host offline')).toBeTruthy();
-  fireEvent.click(within(panel).getByRole('button', { name: 'Open card on Home' }));
+  fireEvent.click(within(panel).getByRole('button', { name: 'Open card in Services' }));
   expect(handlers.onOpenCard).toHaveBeenCalledWith(expect.objectContaining({ id: 3 }));
   fireEvent.click(within(panel).getByRole('button', { name: 'Change host' }));
   expect(handlers.onChangeHost).toHaveBeenCalledWith(expect.objectContaining({ id: 3 }));

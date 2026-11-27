@@ -58,6 +58,8 @@ type Options = {
   /** Called after the alert settings or the tags of a service were saved, so the page reloads them. */
   onMonitoringSaved?: () => void;
   onTagsSaved?: () => void;
+  /** The section the form route opens on; the first one when absent. */
+  initialSection?: Section;
 };
 
 export function useServiceEditor({
@@ -73,6 +75,7 @@ export function useServiceEditor({
   tagMap = {},
   onMonitoringSaved,
   onTagsSaved,
+  initialSection,
 }: Options) {
   const { services, refresh } = data;
   const [form, setForm] = useState<ServiceInput>(emptyService);
@@ -173,7 +176,7 @@ export function useServiceEditor({
       /* storage unavailable */
     }
     setFormOpen(false);
-    navigate('/', true);
+    navigate('/services', true);
   }
 
   useEffect(() => {
@@ -192,6 +195,7 @@ export function useServiceEditor({
     }
     initializedRoute.current = formRoute;
     // Initialize the draft once per route after service data arrives.
+    setSection(initialSection ?? 'look');
     setEditing(service?.id ?? null);
     setHost(service?.host ?? null);
     setDepAdded([]);
@@ -204,7 +208,7 @@ export function useServiceEditor({
     startDraft(service?.id ?? null, serviceDraft(service, privateDefaultRef.current));
     setFormError('');
     setFormOpen(true);
-  }, [formRoute, services]);
+  }, [formRoute, services, initialSection]);
 
   async function save(event: FormEvent) {
     event.preventDefault();

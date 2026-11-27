@@ -35,8 +35,8 @@ type Props = {
   hosts?: { items: HostRailItem[]; onSelect: (item: HostRailItem) => void };
   /** Probes to list under the groups; hidden when there are none. */
   probes?: { items: RailProbe[]; onOpen: () => void };
-  widgetRail: boolean;
-  onToggleWidgetRail: () => void;
+  /** The widget column of the Services view; absent where there is no such column. */
+  widgets?: { shown: boolean; onToggle: () => void };
   /** Organize mode keeps the frame; the rail then only jumps to a group. */
   organizing?: boolean;
 };
@@ -67,8 +67,7 @@ export function HomeRail({
   favorites,
   hosts,
   probes,
-  widgetRail,
-  onToggleWidgetRail,
+  widgets,
   organizing = false,
 }: Props) {
   if (organizing)
@@ -226,17 +225,19 @@ export function HomeRail({
         </section>
       )}
       {probes && probes.items.length > 0 && <ProbesBlock {...probes} />}
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        aria-pressed={widgetRail}
-        onClick={onToggleWidgetRail}
-        className="justify-start text-muted-foreground"
-      >
-        <PanelRight />
-        {widgetRail ? t('rail.hideWidgets') : t('rail.showWidgets')}
-      </Button>
+      {widgets && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-pressed={widgets.shown}
+          onClick={widgets.onToggle}
+          className="justify-start text-muted-foreground"
+        >
+          <PanelRight />
+          {widgets.shown ? t('rail.hideWidgets') : t('rail.showWidgets')}
+        </Button>
+      )}
     </nav>
   );
 }

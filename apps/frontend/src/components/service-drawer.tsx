@@ -1,188 +1,34 @@
-import { Link } from 'react-router';
-import { Copy, ExternalLink, Star } from 'lucide-react';
-import type {
-  Incident,
-  MonitorSettings,
-  Service,
-  UptimeRange,
-  UptimeSummary,
-} from '@homora/shared';
-import { Button } from '@homora/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@homora/ui/sheet';
-import { StatusLight } from '@/components/status-light';
-import { UptimeBars, UptimeDetails, UptimePercent } from '@/features/uptime/service-uptime';
-import { copyAddress } from '@/lib/copy-address';
-import { describeStatus } from '@/lib/status-text';
-import type { ServiceStatus } from '@/lib/services';
-import { hostOf, isLoopback } from '@/lib/services';
+import type { Service } from '@homora/shared';
+import { ServiceDetails, type ServiceDetailsProps } from '@/components/service-details';
+import { hostOf } from '@/lib/services';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { t } from '@/i18n';
 
-type Props = {
+type Props = Omit<ServiceDetailsProps, 'service' | 'onFullPage'> & {
   service: Service | null;
-  status?: ServiceStatus;
-  blocked: boolean;
-  uptime?: UptimeSummary;
-  monitor?: MonitorSettings;
-  incident?: Incident;
-  maintenanceUntil?: number | null;
-  /** The host or guest that likely explains the failure, with the other cards it affects. */
-  cause?: { kind: 'host-offline' | 'guest-stopped'; host: string; affected: number };
-  onShowMap?: () => void;
-  /** Opens the card's permission, when that is all monitoring is missing. */
-  onAllowMonitoring?: (service: Service) => void;
-  range: UptimeRange;
-  onRangeChange: (range: UptimeRange) => void;
-  /** Favorite toggle; absent when it cannot be saved here. */
-  onTogglePinned?: (service: Service) => void;
   onClose: () => void;
 };
 
 /**
- * Details without leaving the Home: state, the period bar, latency, recent incidents. A side
- * panel on wide screens and a bottom sheet on phones; the full page is one link away.
+ * Details without leaving the page: a side panel, or a bottom sheet on phones. Wide screens show
+ * the same details in a column instead.
  */
-export function ServiceDrawer({
-  service,
-  status,
-  blocked,
-  uptime,
-  monitor,
-  incident,
-  maintenanceUntil,
-  cause,
-  onShowMap,
-  onAllowMonitoring,
-  range,
-  onRangeChange,
-  onTogglePinned,
-  onClose,
-}: Props) {
+export function ServiceDrawer({ service, onClose, ...details }: Props) {
   const mobile = useIsMobile();
-  const measured = uptime?.buckets.filter((bucket) => (bucket.checks ?? 0) > 0).length ?? 0;
-  const view = service
-    ? describeStatus(status, blocked, {
-        monitor,
-        downSince: incident?.startedAt,
-        checkType: service.checkType,
-        maintenanceUntil,
-      })
-    : null;
   return (
     <Sheet open={service !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side={mobile ? 'bottom' : 'right'}
         className={mobile ? 'max-h-[85dvh] overflow-y-auto rounded-t-xl' : 'sm:max-w-md'}
       >
-        {service && view && (
+        {service && (
           <>
             <SheetHeader>
               <SheetTitle>{service.name}</SheetTitle>
               <SheetDescription className="font-mono">{hostOf(service.url)}</SheetDescription>
             </SheetHeader>
             <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-4">
-              <div className="flex flex-col gap-1">
-                <StatusLight state={view.state} blocked={view.blocked} label={view.label} />
-                {view.note && <p className="text-sm text-muted-foreground">{view.note}</p>}
-                {view.blocked && isLoopback(service.url) && (
-                  <p className="text-sm text-muted-foreground">{t('drawer.loopback')}</p>
-                )}
-                {view.blocked && !isLoopback(service.url) && onAllowMonitoring && (
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="h-auto w-fit p-0"
-                    onClick={() => onAllowMonitoring(service)}
-                  >
-                    {t('drawer.allow')}
-                  </Button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <a
-                    href={service.url}
-                    target={service.openTarget === 'same-tab' ? undefined : '_blank'}
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink />
-                    {t('drawer.open')}
-                  </a>
-                </Button>
-                {onTogglePinned && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    aria-pressed={Boolean(service.pinned)}
-                    onClick={() => onTogglePinned(service)}
-                  >
-                    <Star className={service.pinned ? 'fill-current' : undefined} />
-                    {service.pinned ? t('pinned.remove') : t('pinned.add')}
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void copyAddress(service.url)}
-                >
-                  <Copy />
-                  {t('drawer.copy')}
-                </Button>
-              </div>
-              {cause && (
-                <div className="flex flex-col gap-1 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm">
-                  <p>
-                    {t(`drawer.cause.${cause.kind}`, { host: cause.host })}
-                    {cause.affected > 1 && (
-                      <> {t('drawer.cause.affected', { count: cause.affected })}</>
-                    )}
-                  </p>
-                  {onShowMap && (
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="h-auto w-fit p-0"
-                      onClick={onShowMap}
-                    >
-                      {t('drawer.cause.map')}
-                    </Button>
-                  )}
-                </div>
-              )}
-              {uptime ? (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="text-muted-foreground">{t('drawer.availability')}</span>
-                    <UptimePercent summary={uptime} />
-                  </div>
-                  <UptimeBars summary={uptime} monitor={monitor} />
-                  {uptime.uptimePct === null ? (
-                    <p className="text-sm text-muted-foreground">{t('drawer.collecting')}</p>
-                  ) : (
-                    measured * 2 < uptime.buckets.length && (
-                      <p className="text-sm text-muted-foreground">
-                        {t('drawer.shortHistory', { measured, total: uptime.buckets.length })}
-                      </p>
-                    )
-                  )}
-                  <UptimeDetails
-                    id={`drawer-${service.id}`}
-                    service={service}
-                    summary={uptime}
-                    range={range}
-                    onRangeChange={onRangeChange}
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t('drawer.noUptime')}</p>
-              )}
-              <Link
-                to={`/services/${service.id}`}
-                className="text-sm text-accent-text hover:underline"
-                onClick={onClose}
-              >
-                {t('drawer.fullPage')} →
-              </Link>
+              <ServiceDetails {...details} service={service} onFullPage={onClose} />
             </div>
           </>
         )}

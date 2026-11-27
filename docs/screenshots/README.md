@@ -28,11 +28,12 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 
 | File                               | Screen                                                         |
 | ---------------------------------- | -------------------------------------------------------------- |
-| `dashboard-dark.png`               | Dashboard, dark theme (hero image)                             |
-| `dashboard-light.png`              | Dashboard, light theme                                         |
-| `dashboard-cards.png`              | Dashboard with the Cards layout                                |
+| `dashboard-dark.png`               | Home summary, dark theme (hero image)                          |
+| `dashboard-light.png`              | Services, light theme                                          |
+| `dashboard-cards.png`              | Services with the Cards layout                                 |
 | `dashboard-drawer.png`             | Details drawer of a failing service                            |
 | `command-palette.png`              | Command palette filtering with `status:down`                   |
+| `maintenance.png`                  | Maintenance view: open and scheduled windows                   |
 | `service-detail.png`               | A service's uptime, latency and incidents                      |
 | `service-form.png`                 | Service form, Appearance tab                                   |
 | `service-form-monitoring.png`      | Service form, Monitoring tab                                   |
@@ -55,7 +56,7 @@ results and the 90-day hourly counts behind the uptime figures, heatmaps and inc
 | `settings-alerts.png`              | Settings → Alerts                                              |
 | `settings-public.png`              | Settings → Public status                                       |
 | `settings-backup.png`              | Settings → Export and import                                   |
-| `mobile-dashboard.png`             | Dashboard on a phone                                           |
+| `mobile-dashboard.png`             | Home summary on phone                                          |
 | `widgets-gallery-integrations.png` | Gallery of integration widgets                                 |
 | `widgets-gallery-local.png`        | Gallery of page widgets that need no connection                |
 | `widgets-gallery-monitoring.png`   | Gallery of monitoring widgets                                  |

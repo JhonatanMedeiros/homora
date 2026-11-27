@@ -24,12 +24,12 @@ confira a prévia e salve.
 
 **Com uma das suas ferramentas** (por exemplo, o Pi-hole):
 
-1. Abra **Gerenciar → Integrações** e escolha **Adicionar conexão**.
+1. Abra **Integrações** e escolha **Adicionar conexão**.
 2. Selecione o tipo e informe nome, endereço e uma credencial somente de leitura. Use HTTPS e autorize **rede
    privada** se a ferramenta estiver na sua rede local.
 3. Escolha **Salvar e testar**. O cartão informa se as credenciais funcionaram ou o motivo resumido da falha.
 4. De volta ao dashboard, use **Adicionar widget**, escolha o widget oferecido pela conexão e salve. Para mostrá-lo em
-   um cartão de serviço, abra **Gerenciar → Integrações → Widgets** e associe-o ao cartão.
+   um cartão de serviço, abra **Integrações → Widgets** e associe-o ao cartão.
 
 Cada widget carrega por conta própria, então uma ferramenta fora do ar não quebra o resto da página. Detalhes, limites
 e regras de segurança estão em [Integrações e widgets](integrations-and-widgets.md).

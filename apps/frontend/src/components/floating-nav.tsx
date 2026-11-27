@@ -39,10 +39,12 @@ type ItemProps = {
   onClick: () => void;
   /** Haspopup for items that open a sheet. */
   popup?: boolean;
+  /** Something is waiting there: a dot, with these words for screen readers. */
+  badge?: string;
 };
 
 /** One item. Only the active one shows its name; the others keep it for screen readers. */
-export function FloatingNavItem({ icon: Icon, label, active, onClick, popup }: ItemProps) {
+export function FloatingNavItem({ icon: Icon, label, active, onClick, popup, badge }: ItemProps) {
   return (
     <button
       type="button"
@@ -58,6 +60,15 @@ export function FloatingNavItem({ icon: Icon, label, active, onClick, popup }: I
     >
       <Icon aria-hidden="true" />
       <span className={active ? undefined : 'sr-only'}>{label}</span>
+      {badge && (
+        <>
+          <span
+            aria-hidden="true"
+            className="absolute top-2 right-2.5 size-2 rounded-full bg-primary"
+          />
+          <span className="sr-only">, {badge}</span>
+        </>
+      )}
     </button>
   );
 }

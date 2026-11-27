@@ -60,11 +60,13 @@ export function AppearanceAdvancedSettings({
         <Button
           type="button"
           variant="ghost"
-          className="flex h-auto w-full justify-between p-4 text-left"
+          className="flex h-auto w-full justify-between p-4 text-left whitespace-normal"
         >
-          <span className="flex flex-col gap-1">
+          <span className="flex min-w-0 flex-col gap-1">
             <span className="text-sm font-medium">{t('settings.ui.advanced')}</span>
-            <span className="text-sm text-muted-foreground">{t('appearance.advancedHint')}</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {t('appearance.advancedHint')}
+            </span>
           </span>
           <ChevronDown
             aria-hidden="true"

@@ -1,6 +1,6 @@
 /** Text for the service detail page: latency chart, 90-day heat map, failure reasons and history. */
 export const en = {
-  'detail.back': 'Dashboard',
+  'detail.back': 'Services',
   'detail.breadcrumb': 'Breadcrumb',
   'detail.notFound': 'This service does not exist.',
   'detail.loadError': 'Could not load the details of this service.',
@@ -72,7 +72,7 @@ export const en = {
 } as const;
 
 export const ptBR: Record<keyof typeof en, string> = {
-  'detail.back': 'Painel',
+  'detail.back': 'Serviços',
   'detail.breadcrumb': 'Trilha de navegação',
   'detail.notFound': 'Este serviço não existe.',
   'detail.loadError': 'Não foi possível carregar os detalhes deste serviço.',

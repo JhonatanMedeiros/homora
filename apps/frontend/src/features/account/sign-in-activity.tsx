@@ -50,7 +50,9 @@ export function SignInActivity({ refreshKey = 0 }: { refreshKey?: number }) {
         id="account-sign-ins"
         actions={
           failures > 0 && (
-            <Badge variant="warning">{t('account.signInsFailed', { count: failures })}</Badge>
+            <Badge variant="warning" className="shrink whitespace-normal">
+              {t('account.signInsFailed', { count: failures })}
+            </Badge>
           )
         }
       >

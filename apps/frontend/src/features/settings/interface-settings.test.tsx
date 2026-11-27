@@ -59,7 +59,7 @@ it('turns the single-key shortcuts off and on, on by default', () => {
   expect(toggle.getAttribute('aria-checked')).toBe('true');
   fireEvent.click(toggle);
   expect(localStorage.getItem('homora-shortcuts')).toBe('off');
-  expect(screen.getByText(/Ctrl\/Cmd\+K and Ctrl\/Cmd\+B always work/)).toBeTruthy();
+  expect(screen.getByText(/Ctrl\/Cmd\+K always works/)).toBeTruthy();
 });
 
 it('keeps web search off by default and warns that the text goes to a third party', async () => {

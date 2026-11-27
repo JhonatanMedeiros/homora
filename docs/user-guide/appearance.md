@@ -13,13 +13,13 @@ description: 'Theme, language, accent color, backgrounds, custom CSS and safe mo
 | **Per browser**           | The browser       | Theme (light or dark), language, list or cards layout, descriptions, uptime period, top bar, keyboard shortcuts. |
 | **Shared by all devices** | The Homora server | Accent color, page background, card translucency, background image and custom CSS.                               |
 
-Open **Manage → Settings → Appearance** for both. The first card, **Theme and language**, is per browser; **Look for
+Open **Settings → Appearance** for both. The first card, **Theme and language**, is per browser; **Look for
 all devices** is shared.
 
 ## Theme and language
 
-- **Theme:** dark (default) or light; the header's contrast button also switches it.
-- **Language:** English or Portuguese (Brazil), following your browser by default; the header button switches it.
+- **Theme:** dark (default) or light; the contrast button at the end of the rail (in the account menu on a phone) also switches it.
+- **Language:** English or Portuguese (Brazil), following your browser by default.
   Notifications use the language chosen for each channel.
 
 ![The dashboard in the light theme](../screenshots/dashboard-light.png)
@@ -70,7 +70,7 @@ switch between them. The same screen holds the layout, descriptions and uptime p
 
 **Settings → Top bar and shortcuts**:
 
-- **Keyboard shortcuts:** turn single-key shortcuts on or off (`Ctrl/⌘ K` and `Ctrl/⌘ B` always work).
+- **Keyboard shortcuts:** turn single-key shortcuts on or off (`Ctrl/⌘ K` always works).
 - **Command palette:** optionally add "Search the web" (off by default; only the text you type is sent).
 - **Top bar:** the date, the time and CPU, memory and disk usage from a Proxmox connection.
 

@@ -5,10 +5,13 @@ import { t } from '@/i18n';
 export function BrandMark({
   className,
   compact,
+  iconOnly,
   onNavigate,
 }: {
   className?: string;
   compact?: boolean;
+  /** Only the mark, with the name kept for screen readers. */
+  iconOnly?: boolean;
   onNavigate?: () => void;
 }) {
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
@@ -39,7 +42,7 @@ export function BrandMark({
         />
         <rect x="11" y="13" width="6" height="6" rx="1.2" className="fill-primary" />
       </svg>
-      <span className={compact ? 'max-sm:sr-only' : undefined}>Homora</span>
+      <span className={iconOnly ? 'sr-only' : compact ? 'max-sm:sr-only' : undefined}>Homora</span>
     </a>
   );
 }

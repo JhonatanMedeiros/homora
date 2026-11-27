@@ -25,7 +25,7 @@ export type Shortcut = {
 export const SHORTCUTS: Shortcut[] = [
   { keys: ['/'], label: 'shortcuts.palette', action: { type: 'palette' } },
   { keys: ['?'], label: 'shortcuts.help', action: { type: 'help' } },
-  { keys: ['g', 'h'], label: 'shortcuts.goHome', action: { type: 'go', tab: 'services' } },
+  { keys: ['g', 'h'], label: 'shortcuts.goHome', action: { type: 'go', tab: 'home' } },
   {
     keys: ['g', 'i'],
     label: 'shortcuts.goIntegrations',
@@ -38,7 +38,6 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: ['n'], label: 'shortcuts.newService', action: { type: 'newService' } },
   { keys: ['1–9'], label: 'shortcuts.pages' },
   { keys: ['Ctrl/⌘', 'K'], label: 'shortcuts.paletteToggle', modifier: true },
-  { keys: ['Ctrl/⌘', 'B'], label: 'shortcuts.sidebar', modifier: true },
 ];
 
 /** Chord shortcuts by their second key (all of them start with `g`). */

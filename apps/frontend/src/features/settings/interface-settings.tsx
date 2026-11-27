@@ -23,9 +23,9 @@ function AdvancedSettings() {
         <Button
           type="button"
           variant="outline"
-          className="h-auto justify-between px-4 py-3 text-left"
+          className="h-auto justify-between px-4 py-3 text-left whitespace-normal"
         >
-          <span className="flex flex-col items-start gap-0.5">
+          <span className="flex min-w-0 flex-col items-start gap-0.5">
             <span className="font-medium">{t('css.title')}</span>
             <span className="text-sm font-normal text-muted-foreground">
               {t('settings.ui.advancedHint')}
