@@ -2,6 +2,8 @@
 
 Homora uses short-lived branches and pull requests against `main`. A maintainer runs Release Please on demand to create or refresh a release PR from Conventional Commits. Merging that PR triggers a workflow that creates the GitHub release and tag, then calls the image workflow in the same Actions run. Review the version, changelog, compatibility and backup instructions before merging; security fixes do not need to wait for a batch of features.
 
+With a coding agent, invoke the [`homora-release` skill](https://github.com/JhonatanMedeiros/homora/blob/main/.agents/skills/homora-release/SKILL.md) to walk through these steps; this guide remains the source of truth.
+
 ## Prerequisites
 
 - A repository-scoped `RELEASE_PLEASE_TOKEN` Actions secret with permission to write contents, pull requests and issues (labels), and read metadata. Use a fine-grained token with access only to this repository. The built-in `GITHUB_TOKEN` does not trigger CI on PRs it creates. A GitHub App requires a separate token-generation step; a short-lived installation token should not be stored as a static secret. Keep the credential outside the repository and rotate it according to the provider's guidance.
