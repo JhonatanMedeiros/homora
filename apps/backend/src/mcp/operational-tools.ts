@@ -188,7 +188,13 @@ export function registerMcpOperationalTools(
       if (!authorize('incidents:read') || !authorize('services:read')) return unauthorized();
       try {
         const investigation = investigateIncident(db, id);
-        return investigation ? result(investigation) : failed();
+        return investigation
+          ? result(investigation)
+          : {
+              content: [{ type: 'text' as const, text: JSON.stringify({ code: 'not-found', id }) }],
+              structuredContent: { code: 'not-found', id },
+              isError: true as const,
+            };
       } catch (error) {
         return failed(error);
       }

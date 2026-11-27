@@ -23,4 +23,6 @@ Sugestões de configuração de conexão não criam uma conexão automaticamente
 
 São retornadas até cinco hipóteses de sobreposição, com as janelas mais recentes primeiro. Incidentes do mesmo monitor com janelas registradas idênticas compartilham uma hipótese e uma contagem; cada sobreposição preservada continua sendo um fato separado. Indicadores de dados ausentes informam quando hipóteses ou fatos de sobreposição foram omitidos. IDs relacionados e contagens não incluem nomes.
 
+Um incidente inexistente retorna um erro da ferramenta com `{ "code": "not-found", "id": <id solicitado> }`; falhas inesperadas continuam genéricas.
+
 [Leia o guia completo de MCP em inglês](/user-guide/agents-and-mcp) e o [inventário de capacidades em inglês](/agent-capabilities).
