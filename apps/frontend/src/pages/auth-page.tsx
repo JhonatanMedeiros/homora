@@ -30,7 +30,7 @@ type Props = {
   /** Signs in with a passkey; `rememberMe` is the form's "keep me signed in" choice. */
   onPasskey?: (rememberMe: boolean) => Promise<boolean>;
   /** Sends the browser to the OIDC provider; the page leaves when it succeeds. */
-  onOidc?: (rememberMe: boolean) => Promise<boolean>;
+  onOidc?: () => Promise<boolean>;
   onVerify?: (code: string, recovery: boolean) => Promise<boolean>;
   onCancelChallenge?: () => void;
   onRetry?: () => void;
@@ -82,7 +82,7 @@ export function AuthPage({
     setBusy(true);
     try {
       // On success the browser leaves for the provider, so the page stays busy until it does.
-      if (!(await onOidc(rememberMe))) setBusy(false);
+      if (!(await onOidc())) setBusy(false);
     } finally {
       pending.current = false;
     }

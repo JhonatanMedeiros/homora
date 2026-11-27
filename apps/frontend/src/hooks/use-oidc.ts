@@ -86,8 +86,8 @@ async function start(response: Response | null, fallback: MessageKey): Promise<t
 }
 
 /** Sends the browser to the provider to sign in. */
-export async function signInWithOidc(rememberMe: boolean) {
-  return start(await post('/api/auth/oidc/login', { rememberMe }), 'auth.oidcFailed');
+export async function signInWithOidc() {
+  return start(await post('/api/auth/oidc/login', {}), 'auth.oidcFailed');
 }
 
 /** The OIDC link of the signed-in account, and the two actions that change it. */
