@@ -1,68 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import {
-  parseSummaryLayout,
-  SUMMARY_BLOCK_SIZES,
-  SUMMARY_BLOCKS,
-  SUMMARY_MAX_ITEMS,
-  summaryKey,
-} from './summary-layout.js';
+import { parseSummaryLayout, SUMMARY_MAX_ITEMS } from './summary-layout.js';
 
-const block = { block: 'attention', width: 8, height: 5, hidden: false };
+const item = { widgetId: 3, width: 8, height: 5 };
 
 describe('parseSummaryLayout', () => {
-  it('accepts default parts and both kinds of entry', () => {
+  it('accepts default parts, saved widgets and widgets still to be created', () => {
     expect(parseSummaryLayout({ desktop: null, phone: null })).toEqual({
       desktop: null,
       phone: null,
     });
     const layout = {
-      desktop: [block, { widgetId: 3, width: 4, height: 2, hidden: true }],
-      phone: [
-        { widgetId: 3, hidden: false },
-        { block: 'pinned', hidden: true },
-      ],
+      desktop: [item, { widgetId: -1, width: 4, height: 2 }],
+      phone: [{ widgetId: -1 }, { widgetId: 3 }],
     };
     expect(parseSummaryLayout(layout)).toEqual(layout);
   });
 
   it.each([
-    ['an unknown block', { ...block, block: 'weather' }],
-    ['no reference', { width: 4, height: 2, hidden: false }],
-    ['two references', { ...block, widgetId: 1 }],
-    ['an extra field', { ...block, color: 'red' }],
-    ['a narrower block than it allows', { ...block, width: 5 }],
-    ['more columns than the grid', { ...block, width: 13 }],
-    ['a height of zero', { ...block, height: 0 }],
-    ['a fraction', { ...block, width: 8.5 }],
-    ['an invalid widget', { widgetId: 0, width: 4, height: 2, hidden: false }],
-    ['a missing visibility', { block: 'pinned', width: 12, height: 1 }],
-  ])('rejects %s', (_name, item) => {
-    expect(parseSummaryLayout({ desktop: [item], phone: null })).toBeNull();
+    ['no widget', { width: 4, height: 2 }],
+    ['widget zero', { ...item, widgetId: 0 }],
+    ['a fractional widget', { ...item, widgetId: 1.5 }],
+    ['an extra field', { ...item, hidden: true }],
+    ['more columns than the grid', { ...item, width: 13 }],
+    ['a height of zero', { ...item, height: 0 }],
+    ['a fraction', { ...item, width: 8.5 }],
+    ['a missing size', { widgetId: 3 }],
+  ])('rejects %s', (_name, entry) => {
+    expect(parseSummaryLayout({ desktop: [entry], phone: null })).toBeNull();
   });
 
   it('rejects repeated entries, sizes on phones, long lists and other shapes', () => {
-    expect(parseSummaryLayout({ desktop: [block, block], phone: null })).toBeNull();
-    expect(parseSummaryLayout({ desktop: null, phone: [block] })).toBeNull();
+    expect(parseSummaryLayout({ desktop: [item, item], phone: null })).toBeNull();
+    expect(parseSummaryLayout({ desktop: null, phone: [item] })).toBeNull();
     const many = Array.from({ length: SUMMARY_MAX_ITEMS + 1 }, (_, index) => ({
       widgetId: index + 1,
-      hidden: false,
     }));
     expect(parseSummaryLayout({ desktop: null, phone: many })).toBeNull();
     for (const value of [null, [], 'x', { desktop: null }, { desktop: {}, phone: null }])
       expect(parseSummaryLayout(value)).toBeNull();
-  });
-
-  it('keeps every default size inside its own limits', () => {
-    for (const name of SUMMARY_BLOCKS) {
-      const size = SUMMARY_BLOCK_SIZES[name];
-      expect(
-        parseSummaryLayout({
-          desktop: [{ block: name, width: size.width, height: size.height, hidden: false }],
-          phone: null,
-        }),
-      ).not.toBeNull();
-      expect(summaryKey({ block: name })).toBe(name);
-    }
-    expect(summaryKey({ widgetId: 4 })).toBe('widget:4');
   });
 });

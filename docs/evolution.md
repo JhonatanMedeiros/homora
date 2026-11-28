@@ -2420,9 +2420,12 @@ more than Node; the documented commands run in a container built from the change
 
 ### Customizable Summary grid (#391)
 
-The Summary became a grid in which built-in blocks and page widgets are moved, resized, removed and added back, with a
-ready-made default, a separate phone order and one saved arrangement per page (additive migration, session-protected
-endpoints with a revision check, optional field in configuration export version 7). Page widgets moved to the top of the
-Services right column. Validation: tests for the layout rules, migration upgrade, API, export and import, grid editing and
-widget placement; an upgraded synthetic database and a manual pass in a development server at desktop, tablet and phone
-widths in both themes. Not verified: physical touch devices, screen readers, real infrastructure and independent users.
+The Summary became a grid in which every block is a page widget that is moved, resized, removed and added back, with a
+ready-made default, a separate phone order and one saved arrangement per page. The additive migrations create the layout
+tables and give every existing page the eleven Summary widgets, keeping its own widgets. An edit is saved whole with a
+revision check; configuration export version 7 carries the widgets and the arrangement. The limit rose from 12 to 40
+widgets per page and from 200 to 500 in all ([ADR 0033](decisions/0033-summary-widgets.md)). The widgets of a page moved
+to the top of the Services right column. Validation: tests for the layout rules, migration upgrade, API, export and
+import, grid editing and widget placement; an upgraded synthetic database, a new installation that imported its export,
+and a manual pass in a development server at desktop, tablet and phone widths in both themes. Not verified: physical
+touch devices, screen readers, real infrastructure and independent users.

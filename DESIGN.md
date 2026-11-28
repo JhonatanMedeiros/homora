@@ -122,26 +122,30 @@ menu. **Ctrl or Cmd K** opens the command palette (`CommandPalette`). A skip lin
 
 ### Home: Summary, Services and Maintenance
 
-**The Home opens with health; the cards are one click away.** The Summary (`/`) is a grid of blocks (`SummaryBoard`):
-pinned services, Needs attention (`ProbableCauses alwaysOpen`, where every cause says "likely", or a calm or "cannot
-measure" card), service windows, hosts, probes, health figures, agent proposals, the state strip (a ring, a number and a
-name per state, each a button that filters Services), availability target, latency, upcoming maintenance and the page
-widgets. "Nothing needs attention" is said only when nothing is unknown or stale. It has no side columns; choosing a
-service opens the details sheet (`ServiceDrawer`).
+**The Home opens with health; the cards are one click away.** The Summary (`/`) is a grid of widgets (`SummaryBoard`).
+Eleven are its own (`summaryOnly` definitions, drawn by the application from the services and their health in
+`summaryBlocks`): pinned services, Needs attention (`ProbableCauses alwaysOpen`, where every cause says "likely", or a
+calm or "cannot measure" card), service windows, hosts, probes, health figures, agent proposals, the state strip (a
+ring, a number and a name per state, each a button that filters Services), availability target, latency and upcoming
+maintenance. The rest are drawn as widget cards. "Nothing needs attention" is said only when nothing is unknown or
+stale. It has no side columns; choosing a service opens the details sheet (`ServiceDrawer`).
 
-**The grid** (`SummaryGrid`) has 12 columns, rows of at least 5rem and a 16px gap; blocks flow in order and fill holes
-(dense flow), never overlap and never take free pixel positions. Blocks that must be read at a glance (pinned, attention,
+**The grid** (`SummaryGrid`) has 12 columns, rows of at least 5rem and a 16px gap; widgets flow in order and fill holes
+(dense flow), never overlap and never take free pixel positions. Those that must be read at a glance (pinned, attention,
 figures, state strip) grow with their content; the others scroll inside their cell, fade at the bottom edge while more is
-below and become focusable. From 768 to 1023px a block takes half or all of the width. **Arranging is a mode**: a sticky
-toolbar (Add widget, Restore default, Cancel, Done) takes focus, each block gets a dashed outline (no layout
-shift), a floating chip with its name, size and `⋯` menu, and a corner handle for pointer resizing; its content is inert.
-Every move and resize is in the menu and announced politely. On phones (`SummaryColumn`) it is one column in its own
-order, with 44px up, down and remove buttons and no sizes. **Remove** takes a block off; the Add widget gallery lists removed blocks first, under Summary. Removing a page widget deletes it, after a confirmation. Services and Maintenance keep the left column (`HomeSidebar`).
+below and become focusable. From 768 to 1023px a widget takes half or all of the width. **Arranging is a mode**: a sticky
+toolbar (Add widget, Restore default, Cancel, Done; two per row on phones) takes focus, each widget gets a dashed outline
+(no layout shift), a floating chip with its name, size and `⋯` menu, and a corner handle for pointer resizing; its
+content is inert. Every move and resize is in the menu and announced politely. On phones (`SummaryColumn`) it is one
+column in its own order, with 44px up, down and remove buttons and no sizes. **Everything arranged is one draft**:
+removals and additions happen on Done, the toolbar says removed widgets will be deleted, and deleting one with its own
+settings asks first. Restore default also brings back the Summary's own widgets. The Add widget gallery lists them first,
+marked "On this page" when present. Services and Maintenance keep the left column (`HomeSidebar`).
 Maintenance (`/maintenance`) schedules a window and lists the open and the scheduled ones.
 
 Services default to **compact tiles** (`ServiceCardCompact`): icon, name, host in mono, the state in words, a 6px bar of the period (`UptimeMiniBar`) and the latency, with an `i` button that opens the details drawer. **List** is one dense row per service, two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "Display" button in the toolbar (`ViewOptions`, a popover) switches the layout and sets descriptions and the uptime period; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`tiles`, `list` or `cards`; nothing stored means tiles, the older `comfortable` maps to cards and `compact` to list).
 
-On Services, from 1280px the page widgets (`PageWidgetList layout="rail"`) are at the top of the right column
+On Services, from 1280px the page widgets other than the Summary's own (`PageWidgetList layout="rail"`) are at the top of the right column
 (`ServicePanel`), above the service windows; choosing a service shows its details in their place with **Back to widgets**.
 A page without widgets shows the details of one service there, the first problem first. Without the column, widgets sit
 above the groups in a collapsible section (`WidgetsSection`), open until folded. On phones the Add widget tile shows only

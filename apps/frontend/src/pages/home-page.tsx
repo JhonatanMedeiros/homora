@@ -27,7 +27,7 @@ type Props = {
 };
 
 /**
- * The Home: a grid of blocks and widgets, arranged per page. By default it opens with pinned
+ * The Home: a grid of widgets, arranged per page. By default it opens with pinned
  * services, what needs attention and the health of everything. The cards live in Services.
  */
 export function HomePage({ data, browse, navigate, onEditService }: Props) {

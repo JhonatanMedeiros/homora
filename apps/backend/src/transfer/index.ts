@@ -10,7 +10,7 @@
  */
 export * from './types.js';
 export { isRecord, parseService, parseTransfer, withinParseBudget } from './parser.js';
-export { planImport } from './planner.js';
+export { planImport, summaryWidgetKey } from './planner.js';
 export { serializeConfiguration } from './serializer.js';
 export {
   IMPORT_SOURCES,

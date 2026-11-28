@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { resolveWidget } from '@homora/integrations';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import {
@@ -14,19 +15,23 @@ import {
 } from '@homora/ui/alert-dialog';
 import type { PageRow } from '@/hooks/use-pages';
 import { PageWidgetDialog, type WidgetDraft } from '@/components/page-widget-dialog';
-import type { GalleryBlock } from '@/components/widget-gallery';
 import { t, tOr } from '@/i18n';
 import { PageWidgetCard } from '@/components/page-widget-card';
 import { getWidgetUI, listWidgetUI } from '@/components/widget-ui-registry';
-import { usePageWidgetData, type PageWidget } from '@/components/use-page-widget-data';
+import {
+  usePageWidgetData,
+  type PageWidget,
+  type PendingWidgets,
+} from '@/components/use-page-widget-data';
 
 function newWidgetDraft(pageId: number): WidgetDraft {
+  const [type, ui] = listWidgetUI().find(([, entry]) => entry.category !== 'overview')!;
   return {
     id: null,
     pageId,
-    type: listWidgetUI()[0]![0],
+    type,
     name: '',
-    config: listWidgetUI()[0]![1].defaultConfig,
+    config: ui.defaultConfig,
     connectionId: null,
     size: 'normal',
   };
@@ -39,8 +44,15 @@ type Options = {
   layout?: 'strip' | 'rail' | 'grid';
   groups?: { name: string; pageId: number | null }[];
   openMonitor?: (id: number, hasService: boolean) => void;
-  /** Blocks of the view offered in the add dialog beside the widgets. */
-  blocks?: GalleryBlock[];
+  /** The Summary draws its own widgets too; other views leave them out. */
+  summary?: boolean;
+  /** While an editor holds a draft, additions and edits of unsaved widgets go to it. */
+  edits?: PendingWidgets & {
+    onAdd: (widget: Omit<PageWidget, 'id' | 'position' | 'version'>) => void;
+    onUpdate: (widget: PageWidget) => void;
+    /** Forgets an unsaved widget, here because it was created on another page. */
+    onDiscard: (id: number) => void;
+  };
 };
 
 /**
@@ -53,12 +65,24 @@ export function usePageWidgets({
   layout = 'strip',
   groups = [],
   openMonitor,
-  blocks,
+  summary = false,
+  edits,
 }: Options) {
   const [showHidden, setShowHidden] = useState(false);
   const [visibilityNow, setVisibilityNow] = useState(() => new Date());
-  const { widgets, connections, readings, error, busy, loading, loadFailed, change, reorder } =
-    usePageWidgetData(pageId);
+  const {
+    saved,
+    widgets,
+    connections,
+    readings,
+    error,
+    busy,
+    loading,
+    loadFailed,
+    change,
+    reorder,
+    reload,
+  } = usePageWidgetData(pageId, edits);
   const [draft, setDraft] = useState<WidgetDraft | null>(null);
   const [chosen, setChosen] = useState(false);
   const [dragId, setDragId] = useState<number | null>(null);
@@ -82,13 +106,16 @@ export function usePageWidgets({
       document.removeEventListener('visibilitychange', update);
     };
   }, [widgets]);
-  const current = widgets.filter((item) => item.pageId === pageId);
+  const onPage = widgets.filter((item) => item.pageId === pageId);
+  const current = summary
+    ? onPage
+    : onPage.filter((item) => !resolveWidget(item.type)?.summaryOnly);
   const hiddenCount = current.filter(
     (item) =>
       item.version === 1 &&
       (getWidgetUI(item.type)?.isHidden?.(item.config, visibilityNow) ?? false),
   ).length;
-  const full = current.length >= MAX_WIDGETS_PER_PAGE;
+  const full = onPage.length >= MAX_WIDGETS_PER_PAGE;
   const fullPages = new Set(
     pages
       .filter(
@@ -110,7 +137,11 @@ export function usePageWidgets({
   };
   const dropHere = () => {
     if (dragId !== null && dropAt !== null && draggedIndex >= 0) {
-      reorder(dragId, dropAt > draggedIndex ? dropAt - 1 : dropAt);
+      reorder(
+        dragId,
+        dropAt > draggedIndex ? dropAt - 1 : dropAt,
+        current.map((entry) => entry.id),
+      );
     }
     endDrag();
   };
@@ -156,7 +187,12 @@ export function usePageWidgets({
         endDrag,
         dropHere,
         markable,
-        reorder,
+        reorder: (id: number, to: number) =>
+          reorder(
+            id,
+            to,
+            current.map((entry) => entry.id),
+          ),
         setChosen,
         setDraft,
         setRemoving,
@@ -198,14 +234,19 @@ export function usePageWidgets({
       </AlertDialog>
       <PageWidgetDialog
         groups={groups}
-        blocks={blocks?.map((block) => ({
-          ...block,
-          onPick: () => {
-            block.onPick();
-            setDraft(null);
-          },
-        }))}
-        full={full}
+        summary={summary}
+        present={new Set(onPage.map((item) => item.type))}
+        onPickReady={(type) => {
+          edits?.onAdd({
+            pageId,
+            type,
+            name: '',
+            config: {},
+            connectionId: null,
+            size: 'normal',
+          });
+          setDraft(null);
+        }}
         draft={draft}
         chosen={chosen}
         connections={connections}
@@ -217,11 +258,23 @@ export function usePageWidgets({
         onClose={() => setDraft(null)}
         onSubmit={() => {
           if (!draft) return;
-          const { id, ...body } = draft;
-          void change(id ? `/api/page-widgets/${id}` : '/api/page-widgets', id ? 'PUT' : 'POST', {
-            ...body,
-            config: getWidgetUI(body.type) ? body.config : {},
-          }).then((ok) => {
+          const { id, ...rest } = draft;
+          const body = { ...rest, config: getWidgetUI(rest.type) ? rest.config : {} };
+          // What does not exist yet, on this page, waits for the editor to be saved.
+          const unsaved = edits?.add.find((item) => item.id === id);
+          if (edits && body.pageId === pageId && (id === null || unsaved)) {
+            if (unsaved) edits.onUpdate({ ...unsaved, ...body });
+            else edits.onAdd(body);
+            setDraft(null);
+            return;
+          }
+          const stored = id !== null && !unsaved;
+          void change(
+            stored ? `/api/page-widgets/${id}` : '/api/page-widgets',
+            stored ? 'PUT' : 'POST',
+            body,
+          ).then((ok) => {
+            if (ok && unsaved) edits?.onDiscard(unsaved.id);
             if (ok) setDraft(null);
           });
         }}
@@ -229,6 +282,8 @@ export function usePageWidgets({
     </>
   );
   return {
+    /** Every widget read, whatever the page and the pending edit. */
+    all: saved,
     current,
     loading,
     loadFailed,
@@ -244,6 +299,7 @@ export function usePageWidgets({
     hiddenCount,
     showHidden,
     toggleHidden: () => setShowHidden((value) => !value),
+    reload,
     dragId,
     setDropAt,
     dropHere,
@@ -262,7 +318,7 @@ export function ExpiredToggle({ widgets }: { widgets: ReturnType<typeof usePageW
   );
 }
 
-type Props = Omit<Options, 'blocks' | 'layout'> & {
+type Props = Omit<Options, 'summary' | 'edits' | 'layout'> & {
   layout?: 'strip' | 'rail';
   /** The "Add widget" tile; phones show it only while organizing. */
   showAdd?: boolean;

@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { CHECK_TYPES, MAINTENANCE_NOTE_MAX, MAX_WIDGETS_PER_PAGE } from '@homora/shared';
+import {
+  CHECK_TYPES,
+  MAINTENANCE_NOTE_MAX,
+  MAX_PAGE_WIDGETS,
+  MAX_WIDGETS_PER_PAGE,
+} from '@homora/shared';
 import { resolveWidget } from '@homora/integrations';
 import { createMaintenanceStore } from '../monitoring/index.js';
 import { checkPageWidget } from '../page-widget-validation.js';
@@ -496,7 +501,7 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
       if (siblings.length >= MAX_WIDGETS_PER_PAGE) throw new Error('widget-limit');
       if (change.position > siblings.length) throw new Error('invalid-position');
       const total = db.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number };
-      if (total.n >= 200) throw new Error('widget-limit');
+      if (total.n >= MAX_PAGE_WIDGETS) throw new Error('widget-limit');
       const created = db
         .prepare(
           'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,?,?,?)',

@@ -86,7 +86,7 @@ Each widget has its own loading and error state, so a failing connection never a
 
 ## Page widgets
 
-Page widgets live on a dashboard page. They are blocks of its [Summary](dashboard.md#customize-the-summary), and on
+Page widgets live on a dashboard page. They appear on its [Summary](dashboard.md#customize-the-summary), and on
 Services they sit at the top of the right column on wide screens, above your groups on smaller ones.
 
 1. On the Summary, press **Customize** and **Add widget**. On Services, press the dashed **Add widget** tile (on a

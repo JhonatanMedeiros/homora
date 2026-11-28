@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import type { Service, SummaryBlock } from '@homora/shared';
+import type { Service } from '@homora/shared';
+import type { SummaryWidgetType } from '@homora/widgets/summary';
 import { Button } from '@homora/ui/button';
 import { Card, CardContent } from '@homora/ui/card';
 import { HostsBlock, ProbesBlock } from '@/features/dashboard/home-rail';
@@ -79,7 +80,7 @@ function Empty({
   );
 }
 
-/** The built-in blocks of the Summary, each drawn from the same reading of health. */
+/** What the Summary's own widgets show, all drawn from the same reading of health. */
 export function summaryBlocks({
   data,
   sources,
@@ -92,7 +93,7 @@ export function summaryBlocks({
   navigate,
   showState,
   showHost,
-}: Context): Record<SummaryBlock, BlockView> {
+}: Context): Record<SummaryWidgetType, BlockView> {
   const { services, statuses, blockedIds } = data;
   const { overview, clock } = sources;
   const { downNow, entries, summary, quietNow } = health;
@@ -104,7 +105,7 @@ export function summaryBlocks({
   const calm = !summary.measurement && downNow.length === 0 && summary.slow.length === 0;
   const attentionTitle = t('homeview.attention');
   return {
-    pinned: {
+    'summary-pinned': {
       fit: true,
       title: t('pinned.title'),
       node:
@@ -123,7 +124,7 @@ export function summaryBlocks({
           />
         ),
     },
-    attention: {
+    'summary-attention': {
       fit: true,
       title: attentionTitle,
       // About a row per thing to say; the block grows if that is not enough.
@@ -170,12 +171,12 @@ export function summaryBlocks({
         </SummaryCard>
       ),
     },
-    services: {
-      title: t('summarygrid.block.services'),
+    'summary-services': {
+      title: t('summaryWidgets.services'),
       node: <ServiceWindows windows={summary.windows} onSelect={openEntry} />,
     },
-    hosts: {
-      title: t('summarygrid.block.hosts'),
+    'summary-hosts': {
+      title: t('summaryWidgets.hosts'),
       absent: hosts.length === 0,
       node:
         hosts.length > 0 ? (
@@ -185,11 +186,11 @@ export function summaryBlocks({
             </CardContent>
           </Card>
         ) : (
-          <Empty title={t('summarygrid.block.hosts')} text={t('summarygrid.hosts.empty')} />
+          <Empty title={t('summaryWidgets.hosts')} text={t('summarygrid.hosts.empty')} />
         ),
     },
-    probes: {
-      title: t('summarygrid.block.probes'),
+    'summary-probes': {
+      title: t('summaryWidgets.probes'),
       node:
         health.allProbes.length > 0 ? (
           <Card className="py-3">
@@ -199,7 +200,7 @@ export function summaryBlocks({
           </Card>
         ) : (
           <Empty
-            title={t('summarygrid.block.probes')}
+            title={t('summaryWidgets.probes')}
             text={t('summarygrid.probes.empty')}
             action={{
               label: t('summarygrid.probes.add'),
@@ -208,9 +209,9 @@ export function summaryBlocks({
           />
         ),
     },
-    figures: {
+    'summary-figures': {
       fit: true,
-      title: t('summarygrid.block.figures'),
+      title: t('summaryWidgets.figures'),
       node: (
         <section aria-label={t('homeview.figures')}>
           <HealthFigures
@@ -223,21 +224,21 @@ export function summaryBlocks({
         </section>
       ),
     },
-    proposals: {
-      title: t('summarygrid.block.proposals'),
+    'summary-proposals': {
+      title: t('summaryWidgets.proposals'),
       absent: pending === 0,
       node: <ProposalsCard pending={pending} onReview={() => navigate('/manage/agents')} />,
     },
-    status: {
+    'summary-status': {
       fit: true,
-      title: t('summarygrid.block.status'),
+      title: t('summaryWidgets.status'),
       node: <StateStrip counts={health.countsWithProbes} onSelect={showState} />,
     },
-    availability: {
+    'summary-availability': {
       title: t('homeview.availability'),
       node: <AvailabilityCard sla={overview?.sla} />,
     },
-    latency: {
+    'summary-latency': {
       title: t('homeview.latency'),
       node: (
         <LatencyCard
@@ -248,7 +249,7 @@ export function summaryBlocks({
         />
       ),
     },
-    maintenance: {
+    'summary-maintenance': {
       title: t('homeview.maintenance'),
       node: (
         <UpcomingMaintenance

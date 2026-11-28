@@ -1,102 +1,87 @@
 import { describe, expect, it } from 'vitest';
-import { summaryKey, SUMMARY_BLOCKS, type SummaryDesktopItem } from '@homora/shared';
+import { summaryWidgetTypes } from '@homora/widgets/summary';
 import {
+  limitsOf,
   mediumWidth,
   moveTo,
   resize,
   resolveDesktop,
   resolvePhone,
-  setHidden,
   step,
   type LayoutWidget,
 } from './model';
 
-const widgets: LayoutWidget[] = [
-  { id: 1, size: 'normal' },
-  { id: 2, size: 'wide' },
-  { id: 3, size: 'normal' },
+const own: LayoutWidget[] = summaryWidgetTypes.map((type, index) => ({
+  id: index + 1,
+  type,
+  size: 'normal',
+}));
+const added: LayoutWidget[] = [
+  { id: 100, type: 'clock', size: 'normal' },
+  { id: 101, type: 'note', size: 'wide' },
+  { id: 102, type: 'clock', size: 'normal' },
 ];
-const keys = (items: Parameters<typeof summaryKey>[0][]) => items.map(summaryKey);
+const idOf = (type: string) => own.find((widget) => widget.type === type)!.id;
+const ids = (items: { widgetId: number }[]) => items.map((item) => item.widgetId);
 
-describe('default arrangement', () => {
-  it('shows every block and widget, the first widgets beside latency and maintenance', () => {
-    const items = resolveDesktop(null, widgets);
-    expect(items).toHaveLength(SUMMARY_BLOCKS.length + widgets.length);
-    expect(keys(items).slice(-5)).toEqual([
-      'latency',
-      'widget:1',
-      'maintenance',
-      'widget:2',
-      'widget:3',
-    ]);
-    expect(items.every((item) => !item.hidden)).toBe(true);
-    expect(items.find((item) => item.widgetId === 2)?.width).toBe(8);
+describe('default arrangements', () => {
+  it('reads the Summary in its order, with added widgets beside latency and maintenance', () => {
+    const items = resolveDesktop(null, [...added, ...[...own].reverse()]);
+    const order = ids(items);
+    expect(order[0]).toBe(idOf('summary-pinned'));
+    expect(order.indexOf(100)).toBe(order.indexOf(idOf('summary-latency')) + 1);
+    expect(order.indexOf(101)).toBe(order.indexOf(idOf('summary-maintenance')) + 1);
+    expect(order.at(-1)).toBe(102);
+    expect(items.find((item) => item.widgetId === 101)).toMatchObject({ width: 8 });
+    expect(order).toHaveLength(own.length + added.length);
   });
 
-  it('has its own order on phones', () => {
-    expect(keys(resolvePhone(null, widgets)).slice(0, 7)).toEqual([
-      'pinned',
-      'attention',
-      'proposals',
-      'status',
-      'widget:1',
-      'widget:2',
-      'widget:3',
-    ]);
+  it('puts what needs attention first on phones, then the added widgets', () => {
+    const order = ids(resolvePhone(null, [...added, ...own]));
+    expect(order.slice(0, 2)).toEqual([idOf('summary-pinned'), idOf('summary-attention')]);
+    expect(order.indexOf(100)).toBe(order.indexOf(idOf('summary-status')) + 1);
+    expect(order.at(-1)).toBe(idOf('summary-probes'));
+  });
+
+  it('copes with removed and repeated widgets', () => {
+    const some: LayoutWidget[] = [own[1]!, { ...own[1]!, id: 200 }, added[0]!];
+    expect(ids(resolveDesktop(null, some))).toEqual([2, 200, 100]);
   });
 });
 
-describe('saved arrangement', () => {
-  const saved: SummaryDesktopItem[] = [
-    { widgetId: 9, width: 4, height: 2, hidden: false },
-    { block: 'latency', width: 12, height: 3, hidden: false },
-    { block: 'pinned', width: 12, height: 1, hidden: true },
-  ];
-
-  it('keeps its order, drops what is gone and appends what is new', () => {
-    const items = resolveDesktop(saved, widgets);
-    expect(keys(items).slice(0, 2)).toEqual(['latency', 'pinned']);
-    expect(keys(items)).not.toContain('widget:9');
-    expect(keys(items)).toContain('widget:3');
-    expect(keys(items)).toHaveLength(SUMMARY_BLOCKS.length + widgets.length);
-    expect(items[1]?.hidden).toBe(true);
+describe('saved arrangements', () => {
+  it('keeps the saved order, drops widgets that are gone and appends new ones', () => {
+    const saved = [
+      { widgetId: 100, width: 6, height: 3 },
+      { widgetId: 999, width: 4, height: 2 },
+      { widgetId: 2, width: 12, height: 4 },
+    ];
+    const items = resolveDesktop(saved, [own[0]!, own[1]!, added[0]!]);
+    expect(ids(items)).toEqual([100, 2, 1]);
+    expect(items[0]).toEqual(saved[0]);
   });
 });
 
-describe('arranging', () => {
-  const items = resolveDesktop(null, widgets);
+describe('editing', () => {
+  const items = resolveDesktop(null, own);
 
-  it('moves by place and ignores unknown or unchanged moves', () => {
-    expect(keys(moveTo(items, 'hosts', 'pinned'))[0]).toBe('hosts');
-    expect(moveTo(items, 'hosts', 'hosts')).toBe(items);
-    expect(moveTo(items, 'nothing', 'pinned')).toBe(items);
+  it('moves to another place and one step, skipping widgets not on screen', () => {
+    expect(ids(moveTo(items, 3, 1))[0]).toBe(3);
+    expect(moveTo(items, 3, 999)).toBe(items);
+    const skipped = step(items, 3, -1, (item) => item.widgetId !== 2);
+    expect(ids(skipped).slice(0, 2)).toEqual([3, 1]);
+    expect(step(items, 1, -1)).toBe(items);
   });
 
-  it('steps over entries that are not on screen', () => {
-    const hidden = setHidden(items, 'attention', true);
-    const moved = step(hidden, 'services', -1);
-    expect(keys(moved).slice(0, 3)).toEqual(['services', 'pinned', 'attention']);
-    expect(step(moved, 'services', -1)).toBe(moved);
-  });
-
-  it('brings a hidden block back at the end', () => {
-    const shown = setHidden(setHidden(items, 'pinned', true), 'pinned', false);
-    expect(keys(shown).at(-1)).toBe('pinned');
-    expect(shown.at(-1)?.hidden).toBe(false);
-  });
-
-  it('keeps sizes inside the limits of each block', () => {
-    const size = (width: number, height: number) =>
-      resize(items, 'attention', { width, height }, widgets).find(
-        (item) => item.block === 'attention',
-      );
-    expect(size(1, 0)).toMatchObject({ width: 6, height: 2 });
-    expect(size(99, 99)).toMatchObject({ width: 12, height: 12 });
-    expect(size(7.6, 3.2)).toMatchObject({ width: 8, height: 3 });
-    expect(resize(items, 'pinned', { width: 12, height: 1 }, widgets)).toEqual(items);
-  });
-
-  it('uses half or all of the width on medium screens', () => {
-    expect([3, 6, 7, 12].map(mediumWidth)).toEqual([6, 6, 12, 12]);
+  it('keeps sizes inside the limits of each widget', () => {
+    const attention = idOf('summary-attention');
+    const small = resize(items, attention, { width: 1, height: 99 }, own);
+    expect(small.find((item) => item.widgetId === attention)).toMatchObject({
+      width: limitsOf(own[1]!).minWidth,
+      height: 12,
+    });
+    expect(resize(items, 999, { width: 4, height: 2 }, own)).toBe(items);
+    expect(mediumWidth(4)).toBe(6);
+    expect(mediumWidth(8)).toBe(12);
   });
 });

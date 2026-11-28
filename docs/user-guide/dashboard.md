@@ -26,9 +26,10 @@ The account menu holds **Account**, **Toggle theme**, **What's new**, **GitHub**
 
 ## The Summary
 
-The Summary is a grid of blocks. Every block, including each page widget, can be moved, resized, removed and added back. It starts with a ready-made arrangement:
+The Summary is a grid of widgets. Every one can be moved, resized, removed and added back. Each page starts with a
+ready-made arrangement of the Summary's own widgets:
 
-| Block                        | What it shows                                                                                                                                                                       |
+| Widget                       | What it shows                                                                                                                                                                       |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Pinned**                   | Your pinned services, one click away, with their **Details**.                                                                                                                       |
 | **Needs attention**          | The likely causes of what is offline, then what is slow. When nothing is wrong it says so, and it says **Nothing is reported offline** when some states are unknown or out of date. |
@@ -41,10 +42,11 @@ The Summary is a grid of blocks. Every block, including each page widget, can be
 | **Availability target**      | The availability reached and the remaining error budget.                                                                                                                            |
 | **Latency now**              | Slowest first, with each service's slow limit.                                                                                                                                      |
 | **Upcoming maintenance**     | Open and scheduled windows.                                                                                                                                                         |
-| **Page widgets**             | Every widget of the selected page, beside the latency and maintenance blocks by default.                                                                                            |
+| **Your widgets**             | The other widgets of the page (clock, notes, integrations…), beside the latency and maintenance ones by default.                                                                    |
 
-**Hosts** and **Agent proposals** appear only when there is something to show. A block with nothing yet says what to do
-next. Selecting a service opens its details in a drawer. Notices about out-of-date or unreadable data stay above the
+These eleven belong to the Summary and have no options. **Hosts** and **Agent proposals** appear only when there is
+something to show. A widget with nothing yet says what to do next. Until there is a first service, they stay out of the
+way. Selecting a service opens its details in a drawer. Notices about out-of-date or unreadable data stay above the
 grid.
 
 ### Customize the Summary
@@ -53,24 +55,29 @@ Press **Customize**. Nothing is saved until you press **Done**; **Cancel** disca
 
 ![The Summary while being customized](../screenshots/summary-customize.png)
 
-- **Move** a block by dragging it, or use **Move earlier** and **Move later** in its `⋯` menu.
+- **Move** a widget by dragging it, or use **Move earlier** and **Move later** in its `⋯` menu.
 - **Resize** by dragging the corner, or use **Wider**, **Narrower**, **Taller** and **Shorter** in the menu. The grid
-  has 12 columns, each block has a smallest size, and blocks never overlap; they flow in order and fill free places.
+  has 12 columns, each widget has a smallest size, and widgets never overlap; they flow in order and fill free places.
   **Pinned**, **Needs attention**, **Health figures** and **Services by state** also grow to show all their content;
-  other blocks scroll when it does not fit.
-- **Remove**, in a block's `⋯` menu, takes it off the Summary.
-- **Add widget** lists the blocks you removed, under **Summary**, and the widget gallery. A block added back goes to the
-  end. A page holds up to 12 widgets; the built-in blocks do not count.
-- **Removing a page widget** deletes it after you confirm, also from Services; add it again from the gallery. Adding,
-  editing and removing a widget take effect at once, and **Cancel** does not undo them.
-- **Restore default** returns to the ready-made arrangement after **Done**. It keeps your widgets.
+  the others scroll when it does not fit.
+- **Remove**, in a widget's `⋯` menu, deletes it from the page. When you removed one with settings of your own (a note, a
+  feed, a connected widget), **Done** names it and asks before deleting.
+- **Add widget** opens the gallery. The Summary's own widgets come first and say **On this page** when one is already
+  there; you may add it again. A page holds up to 40 widgets, these included.
+- **Edit**, in the menu of a widget that has options, saves as soon as you confirm its dialog; **Cancel** on the page
+  does not undo it.
+- **Restore default** returns to the ready-made arrangement and brings back the Summary widgets you removed. It keeps
+  your other widgets.
+
+Outside **Customize**, the `⋯` menu of your own widgets still edits, moves or removes them at once, after confirming a
+removal.
 
 Each page has its own arrangement, saved on the server and shared by your devices. Widgets added later, also by an
 approved agent proposal, appear without editing it. If the arrangement was changed somewhere else while you were
 editing, Homora says so: press **Done** again to replace it, or **Cancel** to see it.
 
 **On a phone** the Summary is one column with its own order, which starts with what needs attention. **Customize** there
-moves blocks up and down and removes them; sizes are set on a larger screen. Between 768 and 1023 px a block takes half or
+moves widgets up and down, removes and adds them; sizes are set on a larger screen. Between 768 and 1023 px a widget takes half or
 all of the width.
 
 ## Maintenance
@@ -315,7 +322,8 @@ Everything you can do by dragging also works with buttons and menus.
 ## Widgets on the dashboard
 
 **Page widgets** (a clock, monitoring summaries, live readings from an integration) belong to a page and appear on its
-[Summary](#customize-the-summary) and on [Services](#widgets-on-services). A page holds up to 12. Add one with
+[Summary](#customize-the-summary) and on [Services](#widgets-on-services) (the Summary's own appear only on the
+Summary). A page holds up to 40. Add one with
 **Customize → Add widget** on the Summary, or with the dashed **Add widget** tile on Services (on a phone, shown in
 **Organize**). Each widget's **⋯** menu edits, moves or removes it. Sizes are set by dragging on the Summary; on
 Services a widget offered as **wide** uses two columns above the groups when there is room. Widgets can also be attached

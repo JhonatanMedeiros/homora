@@ -7,7 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { summaryKey, type SummaryDesktopItem, type SummaryPhoneItem } from '@homora/shared';
+import type { SummaryDesktopItem, SummaryPhoneItem } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import {
   DropdownMenu,
@@ -22,22 +22,23 @@ import {
   mediumWidth,
   moveTo,
   resize,
-  setHidden,
   step,
   type LayoutWidget,
 } from '@/features/summary/model';
 import { t } from '@/i18n';
 
 export type GridEntry = {
-  key: string;
+  id: number;
+  type: string;
   title: string;
   node: ReactNode;
-  /** The most rows the block needs right now. */
+  /** The most rows the widget needs right now. */
   rows?: number;
   /** Takes the room its content needs; the saved height is then the least it takes. */
   fit?: boolean;
-  /** Extra menu items of a page widget, while arranging. */
-  widget?: { onEdit?: () => void; onDelete: () => void };
+  /** Menu actions while arranging. */
+  onEdit?: () => void;
+  onRemove: () => void;
 };
 
 type WideProps = {
@@ -49,62 +50,60 @@ type WideProps = {
 };
 
 /**
- * The Summary on larger screens: twelve columns, blocks flowing in reading order and filling the
- * holes. Arranging is a mode; a pointer can drag, and every move is also in the block's menu.
+ * The Summary on larger screens: twelve columns, widgets flowing in reading order and filling the
+ * holes. Arranging is a mode; a pointer can drag, and every move is also in the widget's menu.
  */
 export function SummaryGrid({ entries, items, widgets, editing, onChange }: WideProps) {
-  const [dragKey, setDragKey] = useState<string | null>(null);
-  const [overKey, setOverKey] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [overId, setOverId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const stopResize = useRef<(() => void) | null>(null);
   useEffect(() => () => stopResize.current?.(), []);
-  const byKey = new Map(items.map((item) => [summaryKey(item), item]));
-  const shown = new Set(entries.map((entry) => entry.key));
-  const visible = items.filter((item) => shown.has(summaryKey(item)));
+  const byId = new Map(items.map((item) => [item.widgetId, item]));
+  const shown = new Set(entries.map((entry) => entry.id));
+  const visible = items.filter((item) => shown.has(item.widgetId));
 
-  const announceMove = (next: SummaryDesktopItem[], key: string, title: string) => {
-    const order = next.filter((item) => shown.has(summaryKey(item)));
+  const announceMove = (next: SummaryDesktopItem[], id: number, title: string) => {
+    const order = next.filter((item) => shown.has(item.widgetId));
     setMessage(
       t('summarygrid.moved', {
         name: title,
-        position: order.findIndex((item) => summaryKey(item) === key) + 1,
+        position: order.findIndex((item) => item.widgetId === id) + 1,
         total: order.length,
       }),
     );
   };
-  const move = (key: string, title: string, delta: -1 | 1) => {
-    const next = step(items, key, delta, (item) => shown.has(summaryKey(item)));
+  const move = (id: number, title: string, delta: -1 | 1) => {
+    const next = step(items, id, delta, (item) => shown.has(item.widgetId));
     onChange(next);
-    announceMove(next, key, title);
+    announceMove(next, id, title);
   };
   const remove = (entry: GridEntry) => {
-    // A widget is deleted, after confirming; a block waits in "Add widget".
-    if (entry.widget) return entry.widget.onDelete();
-    onChange(setHidden(items, entry.key, true));
+    entry.onRemove();
     setMessage(t('summarygrid.removed', { name: entry.title }));
   };
-  const size = (key: string, title: string, width: number, height: number) => {
-    const next = resize(items, key, { width, height }, widgets);
-    const item = next.find((entry) => summaryKey(entry) === key)!;
+  const size = (id: number, title: string, width: number, height: number) => {
+    const next = resize(items, id, { width, height }, widgets);
+    const item = next.find((entry) => entry.widgetId === id)!;
     onChange(next);
     setMessage(t('summarygrid.resized', { name: title, width: item.width, height: item.height }));
   };
 
   /** Dragging the corner changes the size by whole columns and rows. */
   const startResize = (event: ReactPointerEvent<HTMLElement>, item: SummaryDesktopItem) => {
-    const cell = event.currentTarget.closest<HTMLElement>('[data-block]');
+    const cell = event.currentTarget.closest<HTMLElement>('[data-widget]');
     if (!cell || event.button !== 0) return;
     event.preventDefault();
     const box = cell.getBoundingClientRect();
     const start = { x: event.clientX, y: event.clientY };
     const column = box.width / item.width || 1;
     const row = box.height / item.height || 1;
-    const key = summaryKey(item);
+    const id = item.widgetId;
     let last = items;
     const onMove = (move: PointerEvent) => {
       const next = resize(
         last,
-        key,
+        id,
         {
           width: item.width + (move.clientX - start.x) / column,
           height: item.height + (move.clientY - start.y) / row,
@@ -135,46 +134,48 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
         className="m-0 grid list-none grid-flow-row-dense auto-rows-[minmax(5rem,auto)] grid-cols-12 gap-4 p-0"
       >
         {entries.map((entry) => {
-          const item = byKey.get(entry.key);
-          if (!item) return null;
+          const item = byId.get(entry.id);
+          const widget = widgets.find((other) => other.id === entry.id);
+          if (!item || !widget) return null;
           const height =
             !editing && entry.rows !== undefined ? Math.min(item.height, entry.rows) : item.height;
           const at = visible.indexOf(item);
-          const limits = limitsOf(item, widgets);
+          const limits = limitsOf(widget);
           return (
             <li
-              key={entry.key}
-              data-block={entry.key}
+              key={entry.id}
+              data-widget={entry.id}
+              data-widget-type={entry.type}
               draggable={editing}
               onDragStart={(event) => {
                 // The resize corner uses the pointer; it must not start a move.
                 if (stopResize.current) return event.preventDefault();
                 event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', entry.key);
-                setDragKey(entry.key);
+                event.dataTransfer.setData('text/plain', String(entry.id));
+                setDragId(entry.id);
               }}
               onDragEnd={() => {
-                setDragKey(null);
-                setOverKey(null);
+                setDragId(null);
+                setOverId(null);
               }}
               onDragOver={(event) => {
-                if (dragKey === null) return;
+                if (dragId === null) return;
                 event.preventDefault();
-                setOverKey(entry.key);
+                setOverId(entry.id);
               }}
               onDrop={(event) => {
                 event.preventDefault();
-                if (dragKey !== null) {
-                  const next = moveTo(items, dragKey, entry.key);
+                if (dragId !== null) {
+                  const next = moveTo(items, dragId, entry.id);
                   onChange(next);
                   announceMove(
                     next,
-                    dragKey,
-                    entries.find((other) => other.key === dragKey)?.title ?? '',
+                    dragId,
+                    entries.find((other) => other.id === dragId)?.title ?? '',
                   );
                 }
-                setDragKey(null);
-                setOverKey(null);
+                setDragId(null);
+                setOverId(null);
               }}
               style={
                 {
@@ -185,11 +186,11 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
               }
               className={cn(
                 'relative flex min-w-0 flex-col [grid-column:span_var(--wm)] [grid-row:span_var(--h)] lg:[grid-column:span_var(--w)]',
-                // An outline takes no room, so arranging shows the blocks at their real size.
+                // An outline takes no room, so arranging shows the widgets at their real size.
                 editing &&
                   'cursor-grab rounded-xl outline-1 outline-offset-2 outline-primary/70 outline-dashed',
-                dragKey === entry.key && 'opacity-40',
-                overKey === entry.key && dragKey !== entry.key && 'ring-2 ring-primary',
+                dragId === entry.id && 'opacity-40',
+                overId === entry.id && dragId !== entry.id && 'ring-2 ring-primary',
               )}
             >
               {editing && (
@@ -222,13 +223,13 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
                     <DropdownMenuContent align="end" className="w-52">
                       <DropdownMenuItem
                         disabled={at <= 0}
-                        onSelect={() => move(entry.key, entry.title, -1)}
+                        onSelect={() => move(entry.id, entry.title, -1)}
                       >
                         {t('summarygrid.earlier')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={at >= visible.length - 1}
-                        onSelect={() => move(entry.key, entry.title, 1)}
+                        onSelect={() => move(entry.id, entry.title, 1)}
                       >
                         {t('summarygrid.later')}
                       </DropdownMenuItem>
@@ -238,7 +239,7 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
                         disabled={item.width >= 12}
                         onSelect={(event) => {
                           event.preventDefault();
-                          size(entry.key, entry.title, item.width + 1, item.height);
+                          size(entry.id, entry.title, item.width + 1, item.height);
                         }}
                       >
                         {t('summarygrid.wider')}
@@ -247,7 +248,7 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
                         disabled={item.width <= limits.minWidth}
                         onSelect={(event) => {
                           event.preventDefault();
-                          size(entry.key, entry.title, item.width - 1, item.height);
+                          size(entry.id, entry.title, item.width - 1, item.height);
                         }}
                       >
                         {t('summarygrid.narrower')}
@@ -256,7 +257,7 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
                         disabled={item.height >= 12}
                         onSelect={(event) => {
                           event.preventDefault();
-                          size(entry.key, entry.title, item.width, item.height + 1);
+                          size(entry.id, entry.title, item.width, item.height + 1);
                         }}
                       >
                         {t('summarygrid.taller')}
@@ -265,14 +266,14 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
                         disabled={item.height <= limits.minHeight}
                         onSelect={(event) => {
                           event.preventDefault();
-                          size(entry.key, entry.title, item.width, item.height - 1);
+                          size(entry.id, entry.title, item.width, item.height - 1);
                         }}
                       >
                         {t('summarygrid.shorter')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {entry.widget?.onEdit && (
-                        <DropdownMenuItem onSelect={entry.widget.onEdit}>
+                      {entry.onEdit && (
+                        <DropdownMenuItem onSelect={entry.onEdit}>
                           {t('common.edit')}
                         </DropdownMenuItem>
                       )}
@@ -283,9 +284,9 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
                   </DropdownMenu>
                 </div>
               )}
-              <BlockBody editing={editing} fit={entry.fit} label={entry.title}>
+              <CellBody editing={editing} fit={entry.fit} label={entry.title}>
                 {entry.node}
-              </BlockBody>
+              </CellBody>
               {editing && (
                 <button
                   type="button"
@@ -313,7 +314,7 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
  * The content of a cell. When it does not fit it scrolls, and then can be focused so the keyboard
  * reaches the rest. While arranging it takes no input.
  */
-function BlockBody({
+function CellBody({
   editing,
   fit = false,
   label,
@@ -351,7 +352,7 @@ function BlockBody({
       {...(overflows && !editing ? { tabIndex: 0, role: 'group', 'aria-label': label } : {})}
       className={cn(
         'flex min-h-0 flex-1 flex-col gap-4 overflow-auto rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring [&>*]:shrink-0 [&>*:last-child]:grow',
-        // Size containment: a scrolling block does not stretch the rows it sits in.
+        // Size containment: a scrolling widget does not stretch the rows it sits in.
         !fit && '[contain:size]',
         editing && 'opacity-60',
         more && '[mask-image:linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent)]',
@@ -372,22 +373,21 @@ type PhoneProps = {
 /** The Summary on a phone: one column in its own order. Arranging reorders and removes. */
 export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps) {
   const [message, setMessage] = useState('');
-  const shown = new Set(entries.map((entry) => entry.key));
-  const move = (key: string, title: string, delta: -1 | 1) => {
-    const next = step(items, key, delta, (item) => shown.has(summaryKey(item)));
+  const shown = new Set(entries.map((entry) => entry.id));
+  const move = (id: number, title: string, delta: -1 | 1) => {
+    const next = step(items, id, delta, (item) => shown.has(item.widgetId));
     onChange(next);
-    const order = next.filter((item) => shown.has(summaryKey(item)));
+    const order = next.filter((item) => shown.has(item.widgetId));
     setMessage(
       t('summarygrid.moved', {
         name: title,
-        position: order.findIndex((item) => summaryKey(item) === key) + 1,
+        position: order.findIndex((item) => item.widgetId === id) + 1,
         total: order.length,
       }),
     );
   };
   const remove = (entry: GridEntry) => {
-    if (entry.widget) return entry.widget.onDelete();
-    onChange(setHidden(items, entry.key, true));
+    entry.onRemove();
     setMessage(t('summarygrid.removed', { name: entry.title }));
   };
   return (
@@ -395,8 +395,9 @@ export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps)
       <ul data-homora="summary-grid" className="m-0 flex list-none flex-col gap-4 p-0">
         {entries.map((entry, index) => (
           <li
-            key={entry.key}
-            data-block={entry.key}
+            key={entry.id}
+            data-widget={entry.id}
+            data-widget-type={entry.type}
             className={cn(
               'flex min-w-0 flex-col gap-2',
               editing && 'rounded-xl border border-dashed border-primary/60 p-2',
@@ -412,7 +413,7 @@ export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps)
                   className="size-11"
                   disabled={index === 0}
                   aria-label={t('summarygrid.up', { name: entry.title })}
-                  onClick={() => move(entry.key, entry.title, -1)}
+                  onClick={() => move(entry.id, entry.title, -1)}
                 >
                   <ArrowUp />
                 </Button>
@@ -423,7 +424,7 @@ export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps)
                   className="size-11"
                   disabled={index === entries.length - 1}
                   aria-label={t('summarygrid.down', { name: entry.title })}
-                  onClick={() => move(entry.key, entry.title, 1)}
+                  onClick={() => move(entry.id, entry.title, 1)}
                 >
                   <ArrowDown />
                 </Button>
@@ -439,7 +440,7 @@ export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps)
                 </Button>
               </div>
             )}
-            {/* Arranging shows only the headings' size of each block, so the order is easy to see. */}
+            {/* Arranging shows only the headings' size of each widget, so the order is easy to see. */}
             <div
               inert={editing}
               className={cn('flex min-w-0 flex-col gap-4', editing && 'max-h-28 overflow-hidden')}

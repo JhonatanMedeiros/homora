@@ -1,3 +1,4 @@
+import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { createProposalService } from './index.js';
@@ -107,7 +108,7 @@ describe('page widget proposals', () => {
       const insert = db.prepare(
         "INSERT INTO page_widgets(page_id,type,name,config,position) VALUES(2,'clock','x','{}',?)",
       );
-      for (let index = 0; index < 20; index += 1) insert.run(index);
+      for (let index = 0; index < MAX_WIDGETS_PER_PAGE; index += 1) insert.run(index);
       expect(() => api.proposeManaged(agent.id, create({ pageId: 2, position: 0 }))).toThrow(
         'widget-limit',
       );

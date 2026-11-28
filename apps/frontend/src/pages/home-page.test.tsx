@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { MemoryRouter } from 'react-router';
 import { useBrowseState, type BrowseState } from '@/features/dashboard/use-browse-state';
 import { HomePage } from './home-page';
+import { summaryWidgetTypes } from '@homora/widgets/summary';
 import { setLocale } from '@/i18n';
 import type { useServices } from '@/hooks/use-services';
 
@@ -36,7 +37,7 @@ function dataWith(extra: Partial<Record<keyof Data, unknown>> = {}) {
     statusAt: null,
     categories: ['Home'],
     pages: [],
-    activePageId: 0,
+    activePageId: 1,
     pageIdOf: () => 0,
     selectPage: () => {},
     sortedIn: () => services,
@@ -62,6 +63,17 @@ function stubApi(replies: Record<string, unknown> = {}) {
   const all: Record<string, unknown> = {
     '/api/status-overview': overview,
     '/api/maintenance': { windows: [] },
+    '/api/page-widgets': summaryWidgetTypes.map((type, index) => ({
+      id: index + 1,
+      pageId: 1,
+      type,
+      name: '',
+      config: {},
+      connectionId: null,
+      position: index,
+      version: 1,
+      size: 'normal',
+    })),
     ...replies,
   };
   vi.stubGlobal(

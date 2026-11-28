@@ -19,9 +19,10 @@ de cada ícone aparece ao apontar ou focar. O cabeçalho traz **Resumo**, **Serv
 
 ## O Resumo
 
-O Resumo é uma grade de blocos. Todos, inclusive cada widget de página, podem ser movidos, redimensionados, removidos e adicionados de novo. Ele já vem organizado:
+O Resumo é uma grade de widgets. Todos podem ser movidos, redimensionados, removidos e adicionados de novo. Cada página
+nasce com uma organização pronta dos widgets próprios do Resumo:
 
-| Bloco                       | O que mostra                                                                                                                                                          |
+| Widget                      | O que mostra                                                                                                                                                          |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Fixados**                 | Os serviços fixados, a um clique, com **Detalhes**.                                                                                                                   |
 | **Precisa de atenção**      | As causas prováveis do que está fora do ar e o que está lento. Quando não há nada, ele diz isso, com texto próprio quando há estados desconhecidos ou desatualizados. |
@@ -34,11 +35,11 @@ O Resumo é uma grade de blocos. Todos, inclusive cada widget de página, podem 
 | **Meta de disponibilidade** | A disponibilidade alcançada e o orçamento de erro restante.                                                                                                           |
 | **Latência agora**          | Os mais lentos primeiro, com o limite de lentidão de cada serviço.                                                                                                    |
 | **Próximas manutenções**    | Janelas abertas e agendadas.                                                                                                                                          |
-| **Widgets de página**       | Todos os widgets da página selecionada, por padrão ao lado da latência e das manutenções.                                                                             |
+| **Seus widgets**            | Os demais widgets da página (relógio, notas, integrações…), por padrão ao lado da latência e das manutenções.                                                         |
 
-**Hosts** e **Propostas de agentes** só aparecem quando há algo a mostrar. Um bloco ainda sem conteúdo diz o que fazer.
-Selecionar um serviço abre os detalhes em um painel. Avisos de dados desatualizados ou ilegíveis ficam fixos acima da
-grade.
+Esses onze pertencem ao Resumo e não têm opções. **Hosts** e **Propostas de agentes** só aparecem quando há algo a
+mostrar. Um widget ainda sem conteúdo diz o que fazer. Antes do primeiro serviço, eles não aparecem. Selecionar um
+serviço abre os detalhes em um painel. Avisos de dados desatualizados ou ilegíveis ficam fixos acima da grade.
 
 ### Personalizar o Resumo
 
@@ -46,17 +47,21 @@ Clique em **Personalizar**. Nada é salvo até **Concluir**; **Cancelar** descar
 
 ![O Resumo sendo personalizado](../../screenshots/summary-customize.png)
 
-- **Mova** um bloco arrastando-o, ou use **Mover para antes** e **Mover para depois** no menu `⋯`.
+- **Mova** um widget arrastando-o, ou use **Mover para antes** e **Mover para depois** no menu `⋯`.
 - **Redimensione** arrastando o canto, ou use **Mais largo**, **Mais estreito**, **Mais alto** e **Mais baixo** no menu.
-  A grade tem 12 colunas, cada bloco tem um tamanho mínimo e eles nunca se sobrepõem: seguem a ordem e preenchem os
+  A grade tem 12 colunas, cada widget tem um tamanho mínimo e eles nunca se sobrepõem: seguem a ordem e preenchem os
   espaços livres. **Fixados**, **Precisa de atenção**, **Números de saúde** e **Serviços por estado** também crescem para
   mostrar todo o conteúdo; os demais ganham rolagem quando ele não cabe.
-- **Remover**, no menu `⋯` do bloco, tira o bloco do Resumo.
-- **Adicionar widget** lista os blocos removidos, em **Resumo**, e a galeria de widgets. Um bloco adicionado de novo vai
-  para o fim. Uma página comporta até 12 widgets; os blocos nativos não contam.
-- **Remover um widget de página** o apaga depois da confirmação, também em Serviços; adicione-o de novo pela galeria.
-  Adicionar, editar e remover um widget valem na hora, e **Cancelar** não desfaz.
-- **Restaurar padrão** volta à organização pronta depois de **Concluir**, mantendo os widgets.
+- **Remover**, no menu `⋯` do widget, o exclui da página. Se você removeu um com configurações próprias (nota, feed,
+  widget conectado), **Concluir** mostra o nome e pede confirmação antes de excluir.
+- **Adicionar widget** abre a galeria. Os widgets do Resumo vêm primeiro e indicam **Já na página** quando há um; é
+  possível adicioná-lo de novo. Uma página comporta até 40 widgets, contando esses.
+- **Editar**, no menu de um widget com opções, salva assim que você confirma o diálogo; o **Cancelar** da página não
+  desfaz.
+- **Restaurar padrão** volta à organização pronta e traz de volta os widgets do Resumo removidos, mantendo os demais.
+
+Fora do **Personalizar**, o menu `⋯` dos seus widgets continua editando, movendo ou removendo na hora, com confirmação
+antes de remover.
 
 Cada página tem sua própria organização, salva no servidor e compartilhada entre os dispositivos. Widgets adicionados
 depois, inclusive por uma proposta de agente aprovada, aparecem sem precisar editar. Se a organização for alterada em
@@ -64,7 +69,7 @@ outro lugar durante a edição, o Homora avisa: clique em **Concluir** novamente
 vê-la.
 
 **No celular**, o Resumo é uma coluna com ordem própria, que começa pelo que precisa de atenção. Ali, **Personalizar**
-sobe, desce e remove blocos; os tamanhos são ajustados em uma tela maior. Entre 768 e 1023 px, um bloco ocupa metade ou
+sobe, desce, remove e adiciona widgets; os tamanhos são ajustados em uma tela maior. Entre 768 e 1023 px, um widget ocupa metade ou
 toda a largura.
 
 ## Manutenção
@@ -111,7 +116,7 @@ conta fica no cabeçalho. Pressione `?` para consultar os atalhos disponíveis.
 
 ### Widgets em Serviços
 
-A partir de 1280 px, os widgets da página ficam no topo da coluna direita de Serviços. Selecionar um serviço mostra os
+A partir de 1280 px, os widgets da página (menos os próprios do Resumo) ficam no topo da coluna direita de Serviços. Selecionar um serviço mostra os
 detalhes no lugar deles, e **Voltar aos widgets** retorna. Ocultar o painel de widgets na lateral os leva para cima dos
 grupos, que é onde ficam nas telas menores, em uma seção que pode ser recolhida (a escolha fica neste navegador). No
 celular, o bloco **Adicionar widget** aparece em **Organizar**. No Resumo, o tamanho é ajustado em **Personalizar**; em

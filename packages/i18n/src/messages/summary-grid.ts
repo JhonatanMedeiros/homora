@@ -1,4 +1,4 @@
-/** The customizable Summary grid and its blocks. */
+/** The customizable Summary grid. */
 export const en = {
   'summarygrid.customize': 'Customize',
   'summarygrid.done': 'Done',
@@ -6,9 +6,6 @@ export const en = {
   'summarygrid.reset': 'Restore default',
   'summarygrid.addWidget': 'Add widget',
   'summarygrid.toolbar': 'Customize the Summary',
-  'summarygrid.hint.wide':
-    'Drag a block to move it, or its corner to resize it. Each block also has a menu.',
-  'summarygrid.hint.phone': 'Reorder or remove blocks. Sizes are adjusted on a larger screen.',
   'summarygrid.menu': 'Arrange {name}',
   'summarygrid.earlier': 'Move earlier',
   'summarygrid.later': 'Move later',
@@ -22,20 +19,12 @@ export const en = {
   'summarygrid.size': '{width} of 12 columns, height {height}',
   'summarygrid.moved': '{name} moved to position {position} of {total}',
   'summarygrid.resized': '{name}: {width} of 12 columns, height {height}',
-  'summarygrid.empty':
-    'The Summary is empty. Customize it and use Add widget to bring blocks back.',
   'summarygrid.saved': 'Summary saved.',
   'summarygrid.saveFailed': 'Could not save the Summary.',
   'summarygrid.conflict':
     'The Summary was changed somewhere else. Press Done again to replace it with yours, or Cancel to see it.',
   'summarygrid.loadFailed': 'Could not load your arrangement. The default one is shown.',
   'summarygrid.retry': 'Try again',
-  'summarygrid.block.services': 'All services at a glance',
-  'summarygrid.block.hosts': 'Hosts',
-  'summarygrid.block.probes': 'Probes',
-  'summarygrid.block.proposals': 'Agent proposals',
-  'summarygrid.block.status': 'Services by state',
-  'summarygrid.block.figures': 'Health figures',
   'summarygrid.pinned.empty': 'Pin a service to open it from here with one click.',
   'summarygrid.pinned.go': 'Choose in Services',
   'summarygrid.hosts.empty': 'Link services to a Proxmox host to follow them here.',
@@ -48,9 +37,16 @@ export const en = {
   'summarygrid.services.widgets.hide': 'Hide widgets',
   'summarygrid.services.back': 'Back to widgets',
   'summarygrid.removeNamed': 'Remove {name}',
-  'summarygrid.removed': '{name} removed. Add it again with Add widget.',
-  'summarygrid.gallery.title': 'Summary',
-  'summarygrid.gallery.description': 'A Summary block you removed.',
+  'summarygrid.hint.wide':
+    'Drag a widget to move it, or its corner to resize it. Each one also has a menu.',
+  'summarygrid.hint.phone': 'Reorder or remove widgets. Sizes are adjusted on a larger screen.',
+  'summarygrid.empty': 'The Summary is empty. Customize it and use Add widget to fill it.',
+  'summarygrid.removed': '{name} removed. Cancel brings it back.',
+  'summarygrid.pendingRemoval': 'Removed widgets are deleted when you press Done.',
+  'summarygrid.deleteTitle': 'Delete widgets?',
+  'summarygrid.deleteNote':
+    '{names}. Their settings are deleted with them and cannot be recovered.',
+  'summarygrid.deleteAction': 'Delete and save',
 } as const;
 export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.customize': 'Personalizar',
@@ -59,10 +55,6 @@ export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.reset': 'Restaurar padrão',
   'summarygrid.addWidget': 'Adicionar widget',
   'summarygrid.toolbar': 'Personalizar o Resumo',
-  'summarygrid.hint.wide':
-    'Arraste um bloco para movê-lo, ou o canto para redimensionar. Cada bloco também tem um menu.',
-  'summarygrid.hint.phone':
-    'Reordene ou remova blocos. Os tamanhos são ajustados em uma tela maior.',
   'summarygrid.menu': 'Organizar {name}',
   'summarygrid.earlier': 'Mover para antes',
   'summarygrid.later': 'Mover para depois',
@@ -76,20 +68,12 @@ export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.size': '{width} de 12 colunas, altura {height}',
   'summarygrid.moved': '{name} movido para a posição {position} de {total}',
   'summarygrid.resized': '{name}: {width} de 12 colunas, altura {height}',
-  'summarygrid.empty':
-    'O Resumo está vazio. Personalize e use Adicionar widget para trazer blocos de volta.',
   'summarygrid.saved': 'Resumo salvo.',
   'summarygrid.saveFailed': 'Não foi possível salvar o Resumo.',
   'summarygrid.conflict':
     'O Resumo foi alterado em outro lugar. Clique em Concluir novamente para substituir pelo seu, ou em Cancelar para ver o outro.',
   'summarygrid.loadFailed': 'Não foi possível carregar sua organização. A padrão é exibida.',
   'summarygrid.retry': 'Tentar novamente',
-  'summarygrid.block.services': 'Todos os serviços',
-  'summarygrid.block.hosts': 'Hosts',
-  'summarygrid.block.probes': 'Sondas',
-  'summarygrid.block.proposals': 'Propostas de agentes',
-  'summarygrid.block.status': 'Serviços por estado',
-  'summarygrid.block.figures': 'Números de saúde',
   'summarygrid.pinned.empty': 'Fixe um serviço para abri-lo daqui com um clique.',
   'summarygrid.pinned.go': 'Escolher em Serviços',
   'summarygrid.hosts.empty': 'Vincule serviços a um host Proxmox para acompanhá-los aqui.',
@@ -102,7 +86,15 @@ export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.services.widgets.hide': 'Ocultar widgets',
   'summarygrid.services.back': 'Voltar aos widgets',
   'summarygrid.removeNamed': 'Remover {name}',
-  'summarygrid.removed': '{name} removido. Adicione de novo em Adicionar widget.',
-  'summarygrid.gallery.title': 'Resumo',
-  'summarygrid.gallery.description': 'Um bloco do Resumo que você removeu.',
+  'summarygrid.hint.wide':
+    'Arraste um widget para movê-lo, ou o canto para redimensionar. Cada um também tem um menu.',
+  'summarygrid.hint.phone':
+    'Reordene ou remova widgets. Os tamanhos são ajustados em uma tela maior.',
+  'summarygrid.empty': 'O Resumo está vazio. Personalize e use Adicionar widget para preenchê-lo.',
+  'summarygrid.removed': '{name} removido. Cancelar traz de volta.',
+  'summarygrid.pendingRemoval': 'Os widgets removidos são excluídos ao clicar em Concluir.',
+  'summarygrid.deleteTitle': 'Excluir widgets?',
+  'summarygrid.deleteNote':
+    '{names}. As configurações são excluídas junto e não podem ser recuperadas.',
+  'summarygrid.deleteAction': 'Excluir e salvar',
 };

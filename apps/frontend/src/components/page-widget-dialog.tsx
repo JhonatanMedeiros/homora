@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
 import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
-import { WidgetGallery, type GalleryBlock } from '@/components/widget-gallery';
+import { WidgetGallery } from '@/components/widget-gallery';
 import { WidgetHost } from '@/components/widget-host';
 import { getWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
@@ -34,9 +34,12 @@ type Props = {
   chosen: boolean;
   connections: Connection[];
   pages: PageRow[];
-  /** Removed blocks the gallery offers to bring back. */
-  blocks?: GalleryBlock[];
-  full?: boolean;
+  /** Offer the widgets only the Summary draws. */
+  summary?: boolean;
+  /** Types already on the page. */
+  present?: Set<string>;
+  /** A widget with nothing to set up was chosen. */
+  onPickReady?: (type: string) => void;
   groups?: { name: string; pageId: number | null }[];
   busy: boolean;
   error: string;
@@ -52,8 +55,9 @@ function DialogContents({
   chosen,
   connections,
   pages,
-  blocks,
-  full,
+  summary,
+  present,
+  onPickReady,
   groups,
   busy,
   error,
@@ -95,6 +99,7 @@ function DialogContents({
         draft.type);
   const pick = (connection: Connection | null, type: string) => {
     if (!draft) return;
+    if (!connection && resolveWidget(type)?.summaryOnly) return onPickReady?.(type);
     onChange({
       ...draft,
       type: connection?.type ?? type,
@@ -120,7 +125,7 @@ function DialogContents({
             : t('pageWidgets.willAdd', { page: pageName })
       }
     >
-      {draft && gallery && <WidgetGallery {...{ blocks, full, connections }} onPick={pick} />}
+      {draft && gallery && <WidgetGallery {...{ summary, present, connections }} onPick={pick} />}
       {draft && !gallery && (
         <form
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"

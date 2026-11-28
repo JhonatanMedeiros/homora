@@ -4,7 +4,9 @@ import { hasControlChars } from '@homora/utils';
 export const MAX_PAGES = 12;
 export const PAGE_NAME_MAX = 40;
 /** Widgets one page can hold; the Home keeps them in a single panel, so it stays readable. */
-export const MAX_WIDGETS_PER_PAGE = 12;
+export const MAX_WIDGETS_PER_PAGE = 40;
+/** Across all pages. */
+export const MAX_PAGE_WIDGETS = 500;
 
 export type Page = { id: number; name: string; position: number };
 

@@ -242,7 +242,7 @@ export const summaryLayouts = sqliteTable('summary_layouts', {
   revision: integer('revision').notNull().default(1),
 });
 
-/** One block or page widget of a customized Summary, per kind of screen, in reading order. */
+/** One widget of a customized Summary, per kind of screen, in reading order. */
 export const summaryLayoutItems = sqliteTable(
   'summary_layout_items',
   {
@@ -251,12 +251,13 @@ export const summaryLayoutItems = sqliteTable(
       .notNull()
       .references(() => summaryLayouts.pageId, { onDelete: 'cascade' }),
     device: text('device').notNull(),
-    block: text('block'),
-    widgetId: integer('widget_id').references(() => pageWidgets.id, { onDelete: 'cascade' }),
+    widgetId: integer('widget_id')
+      .notNull()
+      .references(() => pageWidgets.id, { onDelete: 'cascade' }),
     position: integer('position').notNull(),
+    /** Columns and rows; phones have none. */
     width: integer('width'),
     height: integer('height'),
-    hidden: integer('hidden', { mode: 'boolean' }).notNull().default(false),
   },
   (table) => [
     index('summary_layout_items_page_idx').on(table.pageId),

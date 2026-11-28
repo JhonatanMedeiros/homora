@@ -7,7 +7,6 @@ import {
   type CheckType,
   type LinkColor,
   type OpenTarget,
-  type SummaryBlock,
 } from '@homora/shared';
 
 export { MAX_TRANSFER_CHARS, type ImportIssue, type ImportPlan, type IssueCode };
@@ -67,9 +66,9 @@ export type PortableWidget = {
   config: unknown;
   source?: { type: string; name: string };
 };
-/** A Summary entry in a file: a built-in block, or a widget by its place in `widgets`. */
-export type PortableSummaryItem = ({ block: SummaryBlock } | { widget: number }) & {
-  hidden: boolean;
+/** A Summary entry in a file: a widget by its place in `widgets`. */
+export type PortableSummaryItem = {
+  widget: number;
   width?: number;
   height?: number;
 };
@@ -85,6 +84,7 @@ export type ImportDocument = {
   summaryLayouts?: PortableSummaryLayout[];
   /** For each of `widgets`, its place in the file; kept when layouts need to find it. */
   widgetRefs?: number[];
+  hasSummaryWidgets?: true;
 };
 
 export type ParsedImport = { document: ImportDocument; issues: ImportIssue[] };

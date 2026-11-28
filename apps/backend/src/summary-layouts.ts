@@ -1,43 +1,51 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { resolveWidget } from '@homora/integrations';
 import {
-  isSummaryBlock,
+  MAX_PAGE_WIDGETS,
+  MAX_WIDGETS_PER_PAGE,
   parseSummaryLayout,
+  SUMMARY_MAX_ITEMS,
   type StoredSummaryLayout,
   type SummaryDesktopItem,
   type SummaryLayout,
   type SummaryPhoneItem,
-  type SummaryRef,
 } from '@homora/shared';
+import { summaryPlacement } from '@homora/widgets';
+import { checkPageWidget, type PageWidgetValue } from './page-widget-validation.js';
 
 type ItemRow = {
   pageId: number;
   device: string;
-  block: string | null;
-  widgetId: number | null;
+  widgetId: number;
   width: number | null;
   height: number | null;
-  hidden: number;
 };
 
+type Failure =
+  | 'page-not-found'
+  | 'invalid-summary-layout'
+  | 'summary-layout-conflict'
+  | 'widget-limit';
 export type SummarySaveResult =
   | { ok: true; layout: StoredSummaryLayout }
-  | { ok: false; code: 'page-not-found' | 'invalid-summary-layout' | 'summary-layout-conflict' };
+  | { ok: false; code: Failure };
 
-/** Reads and writes the customized Summary of each page. */
+export type SummaryEdit = {
+  revision: number;
+  desktop: unknown;
+  phone: unknown;
+  add?: ({ id: number } & Record<string, unknown>)[];
+  remove?: number[];
+};
+
+/** Reads the Summary of each page and saves one edit of it at a time. */
 export function createSummaryLayouts(sqlite: DatabaseSync) {
   const items = () =>
     sqlite
       .prepare(
-        'SELECT page_id AS pageId,device,block,widget_id AS widgetId,width,height,hidden FROM summary_layout_items ORDER BY page_id,device,position,id',
+        'SELECT page_id AS pageId,device,widget_id AS widgetId,width,height FROM summary_layout_items ORDER BY page_id,device,position,id',
       )
       .all() as ItemRow[];
-  const refOf = (row: ItemRow): SummaryRef | null =>
-    row.widgetId === null
-      ? isSummaryBlock(row.block)
-        ? { block: row.block }
-        : null
-      : // A block saved by a newer version is left out instead of breaking the page.
-        { widgetId: row.widgetId };
 
   function list(): StoredSummaryLayout[] {
     const rows = items();
@@ -48,13 +56,10 @@ export function createSummaryLayouts(sqlite: DatabaseSync) {
     ).map(({ pageId, revision }) => {
       const desktop: SummaryDesktopItem[] = [];
       const phone: SummaryPhoneItem[] = [];
-      for (const row of rows) {
-        const ref = row.pageId === pageId ? refOf(row) : null;
-        if (!ref) continue;
-        const hidden = row.hidden === 1;
-        if (row.device === 'phone') phone.push({ ...ref, hidden });
-        else if (row.width !== null && row.height !== null)
-          desktop.push({ ...ref, width: row.width, height: row.height, hidden });
+      for (const { pageId: page, device, widgetId, width, height } of rows) {
+        if (page !== pageId) continue;
+        if (device === 'phone') phone.push({ widgetId });
+        else if (width !== null && height !== null) desktop.push({ widgetId, width, height });
       }
       return {
         pageId,
@@ -65,21 +70,7 @@ export function createSummaryLayouts(sqlite: DatabaseSync) {
     });
   }
 
-  /** Items of a layout that name a widget of this page; blocks always belong. */
-  const onPage = (pageId: number, layout: SummaryLayout) => {
-    const ids = new Set(
-      (
-        sqlite.prepare('SELECT id FROM page_widgets WHERE page_id=?').all(pageId) as {
-          id: number;
-        }[]
-      ).map((row) => row.id),
-    );
-    return [...(layout.desktop ?? []), ...(layout.phone ?? [])].every(
-      (item) => item.widgetId === undefined || ids.has(item.widgetId),
-    );
-  };
-
-  /** Replaces a page's layout. Must run inside the caller's transaction. */
+  /** Replaces a page's arrangement. Must run inside the caller's transaction. */
   function write(pageId: number, layout: SummaryLayout) {
     sqlite
       .prepare(
@@ -88,41 +79,42 @@ export function createSummaryLayouts(sqlite: DatabaseSync) {
       .run(pageId);
     sqlite.prepare('DELETE FROM summary_layout_items WHERE page_id=?').run(pageId);
     const insert = sqlite.prepare(
-      'INSERT INTO summary_layout_items(page_id,device,block,widget_id,position,width,height,hidden) VALUES(?,?,?,?,?,?,?,?)',
+      'INSERT INTO summary_layout_items(page_id,device,widget_id,position,width,height) VALUES(?,?,?,?,?,?)',
     );
     layout.desktop?.forEach((item, position) =>
-      insert.run(
-        pageId,
-        'desktop',
-        item.block ?? null,
-        item.widgetId ?? null,
-        position,
-        item.width,
-        item.height,
-        item.hidden ? 1 : 0,
-      ),
+      insert.run(pageId, 'desktop', item.widgetId, position, item.width, item.height),
     );
     layout.phone?.forEach((item, position) =>
-      insert.run(
-        pageId,
-        'phone',
-        item.block ?? null,
-        item.widgetId ?? null,
-        position,
-        null,
-        null,
-        item.hidden ? 1 : 0,
-      ),
+      insert.run(pageId, 'phone', item.widgetId, position, null, null),
     );
   }
 
-  /** Saves a layout edited from `revision` (0 for a page never customized). */
-  function save(pageId: number, revision: number, raw: unknown): SummarySaveResult {
-    const layout = parseSummaryLayout(raw);
-    if (!layout) return { ok: false, code: 'invalid-summary-layout' };
+  const widgetsOf = (pageId: number) =>
+    sqlite.prepare('SELECT id,type,size FROM page_widgets WHERE page_id=?').all(pageId) as {
+      id: number;
+      type: string;
+      size: string;
+    }[];
+
+  /**
+   * Saves one edit made from `revision` (0 for a page never customized): removes widgets, creates
+   * the new ones and stores the arrangement, all or nothing.
+   */
+  function save(pageId: number, edit: SummaryEdit): SummarySaveResult {
+    const layout = parseSummaryLayout({ desktop: edit.desktop, phone: edit.phone });
+    const add = edit.add ?? [];
+    const remove = edit.remove ?? [];
+    const names = new Set(add.map((widget) => widget.id));
+    if (
+      !layout ||
+      add.length > SUMMARY_MAX_ITEMS ||
+      names.size !== add.length ||
+      add.some((widget) => !Number.isInteger(widget.id) || widget.id >= 0)
+    )
+      return { ok: false, code: 'invalid-summary-layout' };
     sqlite.exec('BEGIN IMMEDIATE');
     try {
-      const fail = (code: Extract<SummarySaveResult, { ok: false }>['code']) => {
+      const fail = (code: Failure) => {
         sqlite.exec('ROLLBACK');
         return { ok: false as const, code };
       };
@@ -131,9 +123,71 @@ export function createSummaryLayouts(sqlite: DatabaseSync) {
       const current = sqlite
         .prepare('SELECT revision FROM summary_layouts WHERE page_id=?')
         .get(pageId) as { revision: number } | undefined;
-      if ((current?.revision ?? 0) !== revision) return fail('summary-layout-conflict');
-      if (!onPage(pageId, layout)) return fail('invalid-summary-layout');
-      write(pageId, layout);
+      if ((current?.revision ?? 0) !== edit.revision) return fail('summary-layout-conflict');
+
+      // Only this page's widgets go; one already deleted or moved away is left as it is.
+      const drop = sqlite.prepare('DELETE FROM page_widgets WHERE id=? AND page_id=?');
+      for (const id of remove) drop.run(id, pageId);
+
+      const values: { name: number; value: PageWidgetValue }[] = [];
+      for (const { id, ...body } of add) {
+        const checked = checkPageWidget(sqlite, { ...body, pageId });
+        if (!checked.ok) return fail('invalid-summary-layout');
+        values.push({ name: id, value: checked.value });
+      }
+      const total = sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number };
+      if (
+        values.length > 0 &&
+        (widgetsOf(pageId).length + values.length > MAX_WIDGETS_PER_PAGE ||
+          total.n + values.length > MAX_PAGE_WIDGETS)
+      )
+        return fail('widget-limit');
+      const insert = sqlite.prepare(
+        'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,?,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
+      );
+      const created = new Map<number, number>();
+      for (const { name, value } of values)
+        created.set(
+          name,
+          Number(
+            insert.run(
+              pageId,
+              value.type,
+              value.name,
+              JSON.stringify(value.config),
+              value.connectionId,
+              value.size,
+              pageId,
+            ).lastInsertRowid,
+          ),
+        );
+
+      const here = new Map(widgetsOf(pageId).map((row) => [row.id, row]));
+      const exists = sqlite.prepare('SELECT 1 FROM page_widgets WHERE id=?');
+      let invalid = false;
+      /** Entries with real ids; those of widgets that no longer exist are dropped. */
+      const settle = <T extends SummaryPhoneItem>(entries: T[] | null) =>
+        entries?.flatMap((entry) => {
+          const id = entry.widgetId < 0 ? created.get(entry.widgetId) : entry.widgetId;
+          if (id !== undefined && here.has(id)) return [{ ...entry, widgetId: id }];
+          // A new widget nobody described, or one that lives on another page.
+          if (id === undefined || exists.get(id)) invalid = true;
+          return [];
+        }) ?? null;
+      const settled: SummaryLayout = {
+        desktop: settle(layout.desktop),
+        phone: settle(layout.phone),
+      };
+      const tooSmall = settled.desktop?.some((entry) => {
+        const widget = here.get(entry.widgetId)!;
+        const least = summaryPlacement(
+          resolveWidget(widget.type),
+          widget.size === 'wide' ? 'wide' : 'normal',
+        );
+        return entry.width < least.minWidth || entry.height < least.minHeight;
+      });
+      if (invalid || tooSmall) return fail('invalid-summary-layout');
+      write(pageId, settled);
       sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
       sqlite.exec('COMMIT');
     } catch (error) {

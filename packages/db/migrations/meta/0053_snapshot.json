@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "555f4d32-7bb3-4c61-bb1b-ed75a5f127dd",
+  "id": "3d0310d4-48a4-4bff-acd5-06776b4df691",
   "prevId": "5b1cbb81-8295-4f2f-91bf-d739e85de374",
   "tables": {
     "app_settings": {
@@ -1048,18 +1048,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "block": {
-          "name": "block",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "widget_id": {
           "name": "widget_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "position": {
@@ -1082,14 +1075,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "hidden": {
-          "name": "hidden",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
         }
       },
       "indexes": {

@@ -1,155 +1,134 @@
+import { resolveWidget } from '@homora/integrations';
 import {
-  SUMMARY_BLOCK_SIZES,
-  SUMMARY_BLOCKS,
   SUMMARY_COLUMNS,
   SUMMARY_MAX_ROWS,
-  SUMMARY_WIDGET_SIZES,
-  summaryKey,
-  type SummaryBlock,
   type SummaryDesktopItem,
   type SummaryPhoneItem,
-  type SummaryRef,
 } from '@homora/shared';
+import { summaryPlacement } from '@homora/widgets';
+import { summaryWidgetTypes, type SummaryWidgetType } from '@homora/widgets/summary';
 
 /** The widgets of one page, as far as the arrangement cares. */
-export type LayoutWidget = { id: number; size: 'normal' | 'wide' };
+export type LayoutWidget = { id: number; type: string; size: 'normal' | 'wide' };
 
-/** Stands for "every page widget here" in the default orders. */
-const WIDGETS = 'widgets';
-type Slot = SummaryBlock | typeof WIDGETS;
+/** Stands for the widgets someone added, in the default orders. */
+const ADDED = 'added';
+type Slot = SummaryWidgetType | typeof ADDED;
 
 const PHONE_ORDER: readonly Slot[] = [
-  'pinned',
-  'attention',
-  'proposals',
-  'status',
-  WIDGETS,
-  'figures',
-  'availability',
-  'latency',
-  'maintenance',
-  'services',
-  'hosts',
-  'probes',
+  'summary-pinned',
+  'summary-attention',
+  'summary-proposals',
+  'summary-status',
+  ADDED,
+  'summary-figures',
+  'summary-availability',
+  'summary-latency',
+  'summary-maintenance',
+  'summary-services',
+  'summary-hosts',
+  'summary-probes',
 ];
 
+const isOwn = (widget: LayoutWidget) =>
+  (summaryWidgetTypes as readonly string[]).includes(widget.type);
+
+const ofType = (widgets: LayoutWidget[], type: string) =>
+  widgets.filter((widget) => widget.type === type);
+
 /**
- * Wide screens: the first widgets stand beside the latency and the maintenance, so they form a
- * column on the right; any further ones flow after them.
+ * Wide screens: the Summary's own widgets in their reading order. The first added widgets stand
+ * beside the latency and the maintenance, forming a column on the right; further ones follow.
  */
-function desktopOrder(widgets: LayoutWidget[]): SummaryRef[] {
-  const waiting: SummaryRef[] = widgets.map((widget) => ({ widgetId: widget.id }));
-  const after = new Set<SummaryBlock>(['latency', 'maintenance']);
-  const order = SUMMARY_BLOCKS.flatMap((block): SummaryRef[] => [
-    { block },
-    ...(after.has(block) ? waiting.splice(0, 1) : []),
+function desktopOrder(widgets: LayoutWidget[]): LayoutWidget[] {
+  const waiting = widgets.filter((widget) => !isOwn(widget));
+  const order = summaryWidgetTypes.flatMap((type) => [
+    ...ofType(widgets, type),
+    ...(type === 'summary-latency' || type === 'summary-maintenance' ? waiting.splice(0, 1) : []),
   ]);
   return [...order, ...waiting];
 }
 
-const phoneOrder = (widgets: LayoutWidget[]): SummaryRef[] =>
-  PHONE_ORDER.flatMap((slot): SummaryRef[] =>
-    slot === WIDGETS ? widgets.map((widget) => ({ widgetId: widget.id })) : [{ block: slot }],
+const phoneOrder = (widgets: LayoutWidget[]): LayoutWidget[] =>
+  PHONE_ORDER.flatMap((slot) =>
+    slot === ADDED ? widgets.filter((widget) => !isOwn(widget)) : ofType(widgets, slot),
   );
 
-export function limitsOf(ref: SummaryRef, widgets: LayoutWidget[] = []) {
-  if (ref.block !== undefined) return SUMMARY_BLOCK_SIZES[ref.block];
-  const widget = widgets.find((item) => item.id === ref.widgetId);
-  return SUMMARY_WIDGET_SIZES[widget?.size ?? 'normal'];
-}
-
-const sized = (ref: SummaryRef, widgets: LayoutWidget[]): SummaryDesktopItem => {
-  const { width, height } = limitsOf(ref, widgets);
-  return { ...ref, width, height, hidden: false };
-};
+export const limitsOf = (widget: LayoutWidget) =>
+  summaryPlacement(resolveWidget(widget.type), widget.size);
 
 /**
- * The saved entries that still exist, in their order, followed by everything saved nowhere yet:
- * blocks of a newer version and widgets added since.
+ * The saved entries of widgets that still exist, in their order, followed by every widget saved
+ * nowhere yet.
  */
 function merge<T extends SummaryPhoneItem>(
   saved: T[],
-  all: SummaryRef[],
-  make: (ref: SummaryRef) => T,
+  ordered: LayoutWidget[],
+  make: (widget: LayoutWidget) => T,
 ): T[] {
-  const known = new Set(all.map(summaryKey));
-  const kept = saved.filter((item) => known.has(summaryKey(item)));
-  const present = new Set(kept.map(summaryKey));
-  return [
-    // A widget is on the Summary for as long as it exists; only blocks can be taken off.
-    ...kept.map((item) =>
-      item.widgetId !== undefined && item.hidden ? { ...item, hidden: false } : item,
-    ),
-    ...all.filter((ref) => !present.has(summaryKey(ref))).map(make),
-  ];
+  const known = new Set(ordered.map((widget) => widget.id));
+  const kept = saved.filter((item) => known.has(item.widgetId));
+  const present = new Set(kept.map((item) => item.widgetId));
+  return [...kept, ...ordered.filter((widget) => !present.has(widget.id)).map(make)];
 }
 
 export function resolveDesktop(
   saved: SummaryDesktopItem[] | null,
   widgets: LayoutWidget[],
 ): SummaryDesktopItem[] {
-  const all = desktopOrder(widgets);
-  const make = (ref: SummaryRef) => sized(ref, widgets);
-  return saved ? merge(saved, all, make) : all.map(make);
+  const make = (widget: LayoutWidget): SummaryDesktopItem => {
+    const { width, height } = limitsOf(widget);
+    return { widgetId: widget.id, width, height };
+  };
+  const ordered = desktopOrder(widgets);
+  return saved ? merge(saved, ordered, make) : ordered.map(make);
 }
 
 export function resolvePhone(
   saved: SummaryPhoneItem[] | null,
   widgets: LayoutWidget[],
 ): SummaryPhoneItem[] {
-  const all = phoneOrder(widgets);
-  const make = (ref: SummaryRef): SummaryPhoneItem => ({ ...ref, hidden: false });
-  return saved ? merge(saved, all, make) : all.map(make);
+  const make = (widget: LayoutWidget): SummaryPhoneItem => ({ widgetId: widget.id });
+  const ordered = phoneOrder(widgets);
+  return saved ? merge(saved, ordered, make) : ordered.map(make);
 }
 
-/** Moves an entry to the place another holds; unknown keys change nothing. */
-export function moveTo<T extends SummaryRef>(items: T[], key: string, targetKey: string): T[] {
-  const from = items.findIndex((item) => summaryKey(item) === key);
-  const to = items.findIndex((item) => summaryKey(item) === targetKey);
+/** Moves an entry to the place another holds; unknown widgets change nothing. */
+export function moveTo<T extends SummaryPhoneItem>(items: T[], id: number, targetId: number): T[] {
+  const from = items.findIndex((item) => item.widgetId === id);
+  const to = items.findIndex((item) => item.widgetId === targetId);
   if (from < 0 || to < 0 || from === to) return items;
   const next = [...items];
   next.splice(to, 0, ...next.splice(from, 1));
   return next;
 }
 
-/** Moves an entry one visible place earlier or later; hidden entries are stepped over. */
-export function step<T extends SummaryRef & { hidden: boolean }>(
+/** Moves an entry one visible place earlier or later; widgets not on screen are stepped over. */
+export function step<T extends SummaryPhoneItem>(
   items: T[],
-  key: string,
+  id: number,
   delta: -1 | 1,
-  shown: (item: T) => boolean = (item) => !item.hidden,
+  shown: (item: T) => boolean = () => true,
 ): T[] {
-  const visible = items.filter((item) => shown(item) || summaryKey(item) === key);
-  const at = visible.findIndex((item) => summaryKey(item) === key);
+  const visible = items.filter((item) => shown(item) || item.widgetId === id);
+  const at = visible.findIndex((item) => item.widgetId === id);
   const target = visible[at + delta];
-  return at >= 0 && target ? moveTo(items, key, summaryKey(target)) : items;
-}
-
-export function setHidden<T extends SummaryRef & { hidden: boolean }>(
-  items: T[],
-  key: string,
-  hidden: boolean,
-): T[] {
-  const found = items.find((item) => summaryKey(item) === key);
-  if (!found) return items;
-  const changed = { ...found, hidden };
-  // A block brought back goes to the end, where it can be seen arriving.
-  return hidden
-    ? items.map((item) => (item === found ? changed : item))
-    : [...items.filter((item) => item !== found), changed];
+  return at >= 0 && target ? moveTo(items, id, target.widgetId) : items;
 }
 
 export function resize(
   items: SummaryDesktopItem[],
-  key: string,
+  id: number,
   size: { width: number; height: number },
   widgets: LayoutWidget[],
 ): SummaryDesktopItem[] {
+  const widget = widgets.find((item) => item.id === id);
+  if (!widget) return items;
+  const limits = limitsOf(widget);
+  const clamp = (value: number, min: number, max: number) =>
+    Math.min(max, Math.max(min, Math.round(value)));
   return items.map((item) => {
-    if (summaryKey(item) !== key) return item;
-    const limits = limitsOf(item, widgets);
-    const clamp = (value: number, min: number, max: number) =>
-      Math.min(max, Math.max(min, Math.round(value)));
+    if (item.widgetId !== id) return item;
     const width = clamp(size.width, limits.minWidth, SUMMARY_COLUMNS);
     const height = clamp(size.height, limits.minHeight, SUMMARY_MAX_ROWS);
     return width === item.width && height === item.height ? item : { ...item, width, height };

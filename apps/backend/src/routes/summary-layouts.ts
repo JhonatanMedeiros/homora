@@ -10,6 +10,11 @@ const bodySchema = z
     revision: z.number().int().safe().min(0),
     desktop: z.unknown(),
     phone: z.unknown(),
+    add: z
+      .array(z.object({ id: z.number().int() }).passthrough())
+      .max(80)
+      .optional(),
+    remove: z.array(z.number().int().safe().positive()).max(80).optional(),
   })
   .strict();
 
@@ -17,9 +22,10 @@ const STATUS = {
   'page-not-found': 404,
   'invalid-summary-layout': 400,
   'summary-layout-conflict': 409,
+  'widget-limit': 409,
 } as const;
 
-/** The customized Summary: read every page's layout and replace one of them. */
+/** The Summary: read every page's arrangement and save one edit of it. */
 export function registerSummaryLayoutRoutes(app: FastifyInstance, sqlite: DatabaseSync) {
   const layouts = createSummaryLayouts(sqlite);
   app.get('/api/summary-layouts', async () => layouts.list());
@@ -28,8 +34,7 @@ export function registerSummaryLayoutRoutes(app: FastifyInstance, sqlite: Databa
     const parsed = bodySchema.safeParse(request.body);
     if (pageId === null || !parsed.success)
       return reply.code(400).send(errorBody('invalid-summary-layout'));
-    const { revision, desktop, phone } = parsed.data;
-    const result = layouts.save(pageId, revision, { desktop, phone });
+    const result = layouts.save(pageId, parsed.data);
     if (!result.ok) return reply.code(STATUS[result.code]).send(errorBody(result.code));
     return result.layout;
   });

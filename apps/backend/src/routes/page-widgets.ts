@@ -3,13 +3,13 @@ import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { resolveWidget } from '@homora/integrations';
 import type { WidgetDefinition } from '@homora/widgets';
-import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
+import { MAX_PAGE_WIDGETS, MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { parseId } from '../input-schemas.js';
 import { checkPageWidget } from '../page-widget-validation.js';
 
 const id = z.number().int().safe().positive();
-const orderSchema = z.object({ pageId: id, ids: z.array(id).max(200) }).strict();
+const orderSchema = z.object({ pageId: id, ids: z.array(id).max(MAX_PAGE_WIDGETS) }).strict();
 
 type Row = {
   id: number;
@@ -65,7 +65,8 @@ export function registerPageWidgetRoutes(
   app.get('/api/page-widgets', async () => list());
   app.post('/api/page-widgets', async (request, reply) => {
     const value = validate(request.body);
-    if (!value || list().length >= 200) return reply.code(400).send(errorBody('invalid-widget'));
+    if (!value || list().length >= MAX_PAGE_WIDGETS)
+      return reply.code(400).send(errorBody('invalid-widget'));
     if (list().filter((row) => row.pageId === value.pageId).length >= MAX_WIDGETS_PER_PAGE)
       return reply.code(409).send(errorBody('widget-limit'));
     const result = transaction(() =>

@@ -371,6 +371,7 @@ it('moves page widgets only after review and keeps both pages ordered', async ()
   const storage = createDatabase(':memory:');
   const db = getSqliteHandle(storage.db);
   db.prepare("INSERT INTO pages(id,name,position) VALUES(2,'Other',1)").run();
+  db.prepare('DELETE FROM page_widgets').run();
   db.prepare(
     "INSERT INTO page_widgets(id,page_id,type,name,config,version,position) VALUES(1,1,'clock','Clock','{}',1,0),(2,1,'clock','Clock 2','{}',1,1),(3,2,'clock','Clock 3','{}',1,0)",
   ).run();

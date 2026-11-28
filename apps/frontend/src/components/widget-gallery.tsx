@@ -18,17 +18,13 @@ import { Button } from '@homora/ui/button';
 import { Input } from '@homora/ui/input';
 import { cn } from '@homora/ui/lib/utils';
 import { integrationDefinition, resolveWidget } from '@homora/integrations';
-import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import type { WidgetCategory, WidgetUI } from '@homora/widgets/ui';
 import { listWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
 import { t, tOr } from '@/i18n';
 
 type CategoryKey = WidgetCategory | 'other';
-type FilterTab = 'all' | 'summary' | 'recent' | 'connections' | CategoryKey;
-
-/** A block of the view that was removed and can be brought back from the gallery. */
-export type GalleryBlock = { key: string; title: string; onPick: () => void };
+type FilterTab = 'all' | 'recent' | 'connections' | CategoryKey;
 
 type RecentEntry = { kind: 'local'; type: string } | { kind: 'connection'; id: number };
 
@@ -36,6 +32,7 @@ const RECENT_STORAGE_KEY = 'homora.recentWidgets';
 const MAX_RECENT = 4;
 
 const CATEGORY_ORDER: readonly CategoryKey[] = [
+  'overview',
   'time',
   'monitoring',
   'feeds',
@@ -44,6 +41,7 @@ const CATEGORY_ORDER: readonly CategoryKey[] = [
 ];
 
 const CATEGORY_LABEL_KEYS = {
+  overview: 'pageWidgets.categoryOverview',
   time: 'pageWidgets.categoryTime',
   monitoring: 'pageWidgets.categoryMonitoring',
   feeds: 'pageWidgets.categoryFeeds',
@@ -53,7 +51,7 @@ const CATEGORY_LABEL_KEYS = {
 
 const CATEGORY_ICONS: Record<FilterTab, LucideIcon> = {
   all: LayoutGrid,
-  summary: LayoutDashboard,
+  overview: LayoutDashboard,
   recent: Clock,
   connections: Plug,
   time: CalendarClock,
@@ -126,27 +124,23 @@ function Highlight({ text, needle }: { text: string; needle: string }) {
 }
 
 type Props = {
-  blocks?: GalleryBlock[];
-  /** The page holds as many widgets as it can: only blocks are offered. */
-  full?: boolean;
+  /** Offer the widgets only the Summary draws. */
+  summary?: boolean;
+  /** Types already on the page, which the gallery says. */
+  present?: Set<string>;
   connections: Connection[];
   onPick: (connection: Connection | null, type: string) => void;
 };
 
-const NO_CONNECTIONS: Connection[] = [];
-
-export function WidgetGallery({
-  blocks = [],
-  full = false,
-  connections: allConnections,
-  onPick,
-}: Props) {
-  const connections = full ? NO_CONNECTIONS : allConnections;
+export function WidgetGallery({ summary = false, present, connections, onPick }: Props) {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [recentRaw, setRecentRaw] = useState<RecentEntry[]>(() => readRecentWidgets());
 
-  const allLocal = useMemo(() => (full ? [] : listWidgetUI()), [full]);
+  const allLocal = useMemo(
+    () => listWidgetUI().filter(([type]) => summary || !resolveWidget(type)?.summaryOnly),
+    [summary],
+  );
   const needle = query.trim().toLowerCase();
   const isSearching = needle.length > 0;
 
@@ -187,12 +181,9 @@ export function WidgetGallery({
       {
         key: 'all',
         label: t('pageWidgets.categoryAll'),
-        count: blocks.length + allLocal.length + connections.length,
+        count: allLocal.length + connections.length,
       },
     ];
-    if (blocks.length > 0) {
-      items.push({ key: 'summary', label: t('summarygrid.gallery.title'), count: blocks.length });
-    }
     if (recentItems.length > 0) {
       items.push({
         key: 'recent',
@@ -218,14 +209,13 @@ export function WidgetGallery({
       });
     }
     return items;
-  }, [blocks.length, allLocal.length, connections.length, recentItems.length, categoryCounts]);
+  }, [allLocal.length, connections.length, recentItems.length, categoryCounts]);
 
   const visibleLocal = useMemo(() => {
     return allLocal.filter(([, entry]) => {
       if (!widgetMatchesQuery(entry, needle)) return false;
       if (isSearching || activeTab === 'all') return true;
-      if (activeTab === 'connections' || activeTab === 'recent' || activeTab === 'summary')
-        return false;
+      if (activeTab === 'connections' || activeTab === 'recent') return false;
       return (entry.category ?? 'other') === activeTab;
     });
   }, [allLocal, needle, isSearching, activeTab]);
@@ -238,17 +228,14 @@ export function WidgetGallery({
     });
   }, [connections, needle, isSearching, activeTab]);
 
-  const visibleBlocks =
-    isSearching || activeTab === 'all' || activeTab === 'summary'
-      ? blocks.filter((block) => block.title.toLowerCase().includes(needle))
-      : [];
-
   const showRecentOnly = !isSearching && activeTab === 'recent';
 
   const handlePickLocal = (type: string) => {
-    const next: RecentEntry = { kind: 'local', type };
-    recordRecentWidget(next);
-    setRecentRaw(readRecentWidgets());
+    // The Summary's own are one tap away in their category already.
+    if (!resolveWidget(type)?.summaryOnly) {
+      recordRecentWidget({ kind: 'local', type });
+      setRecentRaw(readRecentWidgets());
+    }
     onPick(null, type);
   };
 
@@ -261,12 +248,10 @@ export function WidgetGallery({
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter') return;
-    const totalMatches = visibleBlocks.length + visibleLocal.length + visibleConnections.length;
+    const totalMatches = visibleLocal.length + visibleConnections.length;
     if (totalMatches !== 1) return;
     event.preventDefault();
-    if (visibleBlocks.length === 1) {
-      visibleBlocks[0].onPick();
-    } else if (visibleLocal.length === 1) {
+    if (visibleLocal.length === 1) {
       handlePickLocal(visibleLocal[0][0]);
     } else if (visibleConnections.length === 1) {
       handlePickConnection(visibleConnections[0]);
@@ -283,7 +268,13 @@ export function WidgetGallery({
         description={tOr(option.description, option.description)}
         needle={needle}
         meta={isSearching ? t(CATEGORY_LABEL_KEYS[option.category ?? 'other']) : undefined}
-        badge={supportsWide ? t('pageWidgets.wideBadge') : undefined}
+        badge={
+          present?.has(type) && resolveWidget(type)?.summaryOnly
+            ? t('pageWidgets.onPageBadge')
+            : supportsWide
+              ? t('pageWidgets.wideBadge')
+              : undefined
+        }
         onPick={() => handlePickLocal(type)}
       >
         <Gallery />
@@ -313,7 +304,7 @@ export function WidgetGallery({
 
   const hasResults = showRecentOnly
     ? recentItems.length > 0
-    : visibleBlocks.length > 0 || visibleLocal.length > 0 || visibleConnections.length > 0;
+    : visibleLocal.length > 0 || visibleConnections.length > 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -380,36 +371,6 @@ export function WidgetGallery({
         </nav>
 
         <div className="flex min-h-0 max-h-[55svh] flex-1 flex-col gap-5 overflow-y-auto pr-1 sm:h-[26rem] sm:max-h-none">
-          {full && (
-            <p className="text-sm text-muted-foreground">
-              {t('pageWidgets.limit', { max: MAX_WIDGETS_PER_PAGE })}
-            </p>
-          )}
-
-          {visibleBlocks.length > 0 && (
-            <section aria-labelledby="pw-group-summary" className="flex flex-col gap-2">
-              <h3
-                id="pw-group-summary"
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {t('summarygrid.gallery.title')}
-              </h3>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleBlocks.map((block) => (
-                  <GalleryOption
-                    key={block.key}
-                    title={block.title}
-                    description={t('summarygrid.gallery.description')}
-                    needle={needle}
-                    onPick={block.onPick}
-                  >
-                    <LayoutDashboard />
-                  </GalleryOption>
-                ))}
-              </div>
-            </section>
-          )}
-
           {showRecentOnly && (
             <section aria-labelledby="pw-group-recent" className="flex flex-col gap-2">
               <h3
@@ -429,19 +390,34 @@ export function WidgetGallery({
             </section>
           )}
 
-          {!showRecentOnly && visibleLocal.length > 0 && (
-            <section aria-labelledby="pw-group-homora" className="flex flex-col gap-2">
-              <h3
-                id="pw-group-homora"
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {t('pageWidgets.groupHomora')}
-              </h3>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleLocal.map(([type, option]) => renderLocalOption(type, option))}
-              </div>
-            </section>
-          )}
+          {!showRecentOnly &&
+            (
+              [
+                ['overview', 'pageWidgets.categoryOverview', true],
+                ['homora', 'pageWidgets.groupHomora', false],
+              ] as const
+            ).map(([id, heading, overview]) => {
+              const group = visibleLocal.filter(
+                ([, entry]) => (entry.category === 'overview') === overview,
+              );
+              return group.length === 0 ? null : (
+                <section
+                  key={id}
+                  aria-labelledby={`pw-group-${id}`}
+                  className="flex flex-col gap-2"
+                >
+                  <h3
+                    id={`pw-group-${id}`}
+                    className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                  >
+                    {t(heading)}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                    {group.map(([type, option]) => renderLocalOption(type, option))}
+                  </div>
+                </section>
+              );
+            })}
 
           {!showRecentOnly && visibleConnections.length > 0 && (
             <section aria-labelledby="pw-group-connections" className="flex flex-col gap-2">
@@ -457,7 +433,7 @@ export function WidgetGallery({
             </section>
           )}
 
-          {!hasResults && !(full && !isSearching) && (
+          {!hasResults && (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
               <p className="text-sm text-muted-foreground">{t('pageWidgets.noMatch')}</p>
               {isSearching && (

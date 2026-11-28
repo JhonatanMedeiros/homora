@@ -22,6 +22,7 @@ import {
   normalizeIcon,
   normalizePageName,
   samePageName,
+  MAX_PAGE_WIDGETS,
   MAX_PAGES,
   parseSummaryLayout,
   type SummaryDesktopItem,
@@ -175,15 +176,17 @@ function parseSummaryLayouts(raw: unknown, issues: ImportIssue[]): PortableSumma
       ? null
       : Array.isArray(items)
         ? items.map((item: unknown) => {
-            if (!isRecord(item) || item.widgetId !== undefined) return item;
+            // Ids of an installation mean nothing in a file.
+            if (!isRecord(item) || item.widgetId !== undefined) return null;
             const { widget, ...rest } = item;
             return typeof widget === 'number' ? { ...rest, widgetId: widget + 1 } : item;
           })
         : items;
   const toIndex = (items: (SummaryDesktopItem | SummaryPhoneItem)[]) =>
-    items.map(({ widgetId, ...item }) =>
-      widgetId === undefined ? item : { ...item, widget: widgetId - 1 },
-    ) as PortableSummaryItem[];
+    items.map(({ widgetId, ...item }) => ({
+      ...item,
+      widget: widgetId - 1,
+    })) as PortableSummaryItem[];
   const layouts: PortableSummaryLayout[] = [];
   raw.forEach((entry: unknown, index: number) => {
     const path = `summaryLayouts[${index}]`;
@@ -239,7 +242,7 @@ export function parseTransfer(content: string): ParsedImport {
     if (listed.length > 0) document.pages = listed;
   }
   if (raw.widgets !== undefined) {
-    if (!Array.isArray(raw.widgets) || raw.widgets.length > 200)
+    if (!Array.isArray(raw.widgets) || raw.widgets.length > MAX_PAGE_WIDGETS)
       issues.push({ path: 'widgets', code: 'widget-invalid', severity: 'warning' });
     else {
       document.widgets = [];
@@ -298,6 +301,9 @@ export function parseTransfer(content: string): ParsedImport {
       if (raw.summaryLayouts !== undefined) document.widgetRefs = refs;
     }
   }
+  // From version 7 on, the file says which Summary widgets each page has.
+  if (document.widgets && typeof raw.version === 'number' && raw.version >= 7)
+    document.hasSummaryWidgets = true;
   if (raw.summaryLayouts !== undefined) {
     const layouts = parseSummaryLayouts(raw.summaryLayouts, issues);
     if (layouts.length > 0) document.summaryLayouts = layouts;

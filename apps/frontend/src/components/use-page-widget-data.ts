@@ -1,5 +1,5 @@
 import { getWidget } from '@homora/widgets/registry';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { widgetStats, type Connection } from '@/features/connections/connection-model';
 import type { CardWidgetState } from '@/hooks/use-card-widgets';
 import { t } from '@/i18n';
@@ -17,8 +17,21 @@ export type PageWidget = {
   size: 'normal' | 'wide';
 };
 
-export function usePageWidgetData(pageId: number) {
-  const [widgets, setWidgets] = useState<PageWidget[]>([]);
+/** Widgets to add and remove that an editor has not saved yet. */
+export type PendingWidgets = { add: PageWidget[]; remove: number[] };
+
+export function usePageWidgetData(pageId: number, pending?: PendingWidgets) {
+  const [saved, setWidgets] = useState<PageWidget[]>([]);
+  const add = pending?.add;
+  const remove = pending?.remove;
+  /** The widgets as they will be once the pending edit is saved. */
+  const widgets = useMemo(
+    () =>
+      add || remove
+        ? [...saved.filter((item) => !remove?.includes(item.id)), ...(add ?? [])]
+        : saved,
+    [saved, add, remove],
+  );
   const [connections, setConnections] = useState<Connection[]>([]);
   const [readings, setReadings] = useState<Record<number, CardWidgetState>>({});
   /** Last good reading of each widget, so a failing connection shows old data marked as such. */
@@ -32,6 +45,7 @@ export function usePageWidgetData(pageId: number) {
     const response = await fetch('/api/page-widgets');
     if (!response.ok) throw new Error();
     setWidgets((await response.json()) as PageWidget[]);
+    setLoadFailed(false);
   }, []);
   useEffect(() => {
     let active = true;
@@ -156,11 +170,14 @@ export function usePageWidgetData(pageId: number) {
       setBusy(false);
     }
   }
-  const reorder = (id: number, to: number) => {
-    const ids = current.map((entry) => entry.id);
-    const from = ids.indexOf(id);
-    if (from < 0 || to < 0 || to >= ids.length || from === to) return;
-    ids.splice(to, 0, ...ids.splice(from, 1));
+  /** Moves a widget among the ones a view lists; the others of the page keep their places. */
+  const reorder = (id: number, to: number, listed = current.map((entry) => entry.id)) => {
+    const moved = [...listed];
+    const from = moved.indexOf(id);
+    if (from < 0 || to < 0 || to >= moved.length || from === to) return;
+    moved.splice(to, 0, ...moved.splice(from, 1));
+    let next = 0;
+    const ids = current.map((entry) => (listed.includes(entry.id) ? moved[next++]! : entry.id));
     // Show the new order at once; the request below reloads the stored one.
     setWidgets((rows) => {
       const slots = rows.flatMap((row, i) => (row.pageId === pageId ? [i] : []));
@@ -174,5 +191,17 @@ export function usePageWidgetData(pageId: number) {
       if (!ok) void reload();
     });
   };
-  return { widgets, connections, readings, error, busy, loading, loadFailed, change, reorder };
+  return {
+    saved,
+    widgets,
+    connections,
+    readings,
+    error,
+    busy,
+    loading,
+    loadFailed,
+    change,
+    reorder,
+    reload,
+  };
 }

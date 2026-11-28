@@ -20,8 +20,11 @@ import { clockWidget } from './clock.js';
 import { countdownWidget } from './countdown.js';
 import { noteWidget } from './note.js';
 import type { WidgetDefinition } from './index.js';
+import { summaryWidgets } from './summary.js';
 
 const widgets = {
+  // The Summary's own come first, in its reading order.
+  ...summaryWidgets,
   clock: clockWidget,
   countdown: countdownWidget,
   note: noteWidget,

@@ -2,12 +2,10 @@ CREATE TABLE `summary_layout_items` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`page_id` integer NOT NULL,
 	`device` text NOT NULL,
-	`block` text,
-	`widget_id` integer,
+	`widget_id` integer NOT NULL,
 	`position` integer NOT NULL,
 	`width` integer,
 	`height` integer,
-	`hidden` integer DEFAULT false NOT NULL,
 	FOREIGN KEY (`page_id`) REFERENCES `summary_layouts`(`page_id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`widget_id`) REFERENCES `page_widgets`(`id`) ON UPDATE no action ON DELETE cascade
 );

@@ -24,7 +24,11 @@ it('exports, previews, and imports an internal widget without a connection, incl
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   const b = getSqliteHandle(second.db);
+  // Only the widgets of this scenario.
+  b.exec('DELETE FROM page_widgets');
   const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
   a.prepare(
     "INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,'synthetic-internal','Summary','{}',1,NULL,'normal',0)",
@@ -58,7 +62,11 @@ it('round trips the homelab summary without a connection', () => {
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   const b = getSqliteHandle(second.db);
+  // Only the widgets of this scenario.
+  b.exec('DELETE FROM page_widgets');
   const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
   const config = { showUnmeasured: true, groups: ['Media'], pages: ['Home'] };
   a.prepare(
@@ -90,7 +98,11 @@ it('round trips selected Home Assistant entities without exporting a local conne
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   const b = getSqliteHandle(second.db);
+  // Only the widgets of this scenario.
+  b.exec('DELETE FROM page_widgets');
   try {
     const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
     const config = { entities: ['sensor.temperature', 'light.living_room'] };
@@ -136,7 +148,11 @@ it('round trips a recent incidents widget with portable filters and no connectio
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   const b = getSqliteHandle(second.db);
+  // Only the widgets of this scenario.
+  b.exec('DELETE FROM page_widgets');
   const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
   const config = {
     periodDays: 30,
@@ -173,7 +189,11 @@ it('round trips maintenance schedule filters and wide size without a connection'
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   const b = getSqliteHandle(second.db);
+  // Only the widgets of this scenario.
+  b.exec('DELETE FROM page_widgets');
   try {
     const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
     const config = { days: 30, limit: 7, groups: ['Infra'], pages: ['Home'] };
@@ -206,6 +226,8 @@ it('round trips maintenance schedule filters and wide size without a connection'
 it('strips local references from exports and even manually edited imports', () => {
   const first = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   try {
     const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
     const config = { target: 'a'.repeat(32), range: '30d' };
@@ -233,7 +255,11 @@ it('round trips the Healthchecks jobs widget without a local connection', () => 
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   const b = getSqliteHandle(second.db);
+  // Only the widgets of this scenario.
+  b.exec('DELETE FROM page_widgets');
   try {
     const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
     a.prepare(

@@ -1,3 +1,4 @@
+import { MAX_PAGE_WIDGETS } from '@homora/shared';
 import { describe, expect, it } from 'vitest';
 import type { Service } from '@homora/shared';
 import { parseTransfer, planImport, serializeConfiguration } from './index.js';
@@ -267,7 +268,7 @@ it('shows clocks beyond the page widget limit as skipped before applying', () =>
     groups: [],
     services: [],
     pages: ['Home'],
-    widgetCount: 199,
+    widgetCount: MAX_PAGE_WIDGETS - 1,
   });
   expect(plan.widgets.map((item) => item.status)).toEqual(['new', 'skipped']);
   expect(plan.issues).toContainEqual({

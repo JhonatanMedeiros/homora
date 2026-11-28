@@ -1,30 +1,42 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { StoredSummaryLayout, SummaryBlock } from '@homora/shared';
-import { SUMMARY_BLOCKS } from '@homora/shared';
+import type { StoredSummaryLayout, SummaryChange } from '@homora/shared';
+import { summaryWidgetTypes, type SummaryWidgetType } from '@homora/widgets/summary';
 import { setLocale } from '@/i18n';
 import { SummaryBoard } from './summary-board';
 import type { BlockView } from './summary-blocks';
 
+const name = (type: string) => type.replace('summary-', '');
 const blocks = Object.fromEntries(
-  SUMMARY_BLOCKS.map((block) => [
-    block,
-    { title: block, node: <p>content of {block}</p>, absent: block === 'proposals' },
+  summaryWidgetTypes.map((type) => [
+    type,
+    {
+      title: name(type),
+      node: <p>content of {name(type)}</p>,
+      absent: type === 'summary-proposals',
+    },
   ]),
-) as unknown as Record<SummaryBlock, BlockView>;
+) as unknown as Record<SummaryWidgetType, BlockView>;
 
-const widget = {
-  id: 7,
+const row = (id: number, type: string, extra: object = {}) => ({
+  id,
   pageId: 1,
-  type: 'clock',
-  name: 'Kitchen',
-  config: { timeZone: '', format: '24h', showDate: true, showSeconds: false },
+  type,
+  name: '',
+  config: {},
   connectionId: null,
-  position: 0,
+  position: id,
   version: 1,
   size: 'normal',
-};
+  ...extra,
+});
+const idOf = (short: string) => summaryWidgetTypes.indexOf(`summary-${short}` as never) + 1;
+const clock = row(50, 'clock', {
+  name: 'Kitchen',
+  config: { timeZone: '', format: '24h', showDate: true, showSeconds: false },
+});
+const everything = [...summaryWidgetTypes.map((type, index) => row(index + 1, type)), clock];
 
 type Options = {
   layouts?: StoredSummaryLayout[];
@@ -36,12 +48,13 @@ type Options = {
 
 function stubApi({ layouts = [], saves = [], failLayouts, failWidgets }: Options = {}) {
   let rows = layouts;
-  const sent: { revision: number; desktop: unknown; phone: unknown }[] = [];
+  let widgets = everything;
+  const sent: SummaryChange[] = [];
   const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === '/api/summary-layouts')
       return failLayouts ? new Response('{}', { status: 500 }) : new Response(JSON.stringify(rows));
     if (url === '/api/pages/1/summary-layout') {
-      const body = JSON.parse(String(init?.body));
+      const body = JSON.parse(String(init?.body)) as SummaryChange;
       sent.push(body);
       const status = saves.shift() ?? 200;
       if (status !== 200) {
@@ -49,14 +62,20 @@ function stubApi({ layouts = [], saves = [], failLayouts, failWidgets }: Options
         rows = [{ pageId: 1, revision: 9, desktop: null, phone: null }];
         return new Response(JSON.stringify({ code: 'summary-layout-conflict' }), { status });
       }
-      const row = { pageId: 1, ...body, revision: body.revision + 1 };
-      rows = [row];
-      return new Response(JSON.stringify(row));
+      widgets = widgets.filter((widget) => !body.remove?.includes(widget.id));
+      const saved = {
+        pageId: 1,
+        desktop: body.desktop,
+        phone: body.phone,
+        revision: body.revision + 1,
+      };
+      rows = [saved];
+      return new Response(JSON.stringify(saved));
     }
     if (url === '/api/page-widgets')
       return failWidgets
         ? new Response('{}', { status: 500 })
-        : new Response(JSON.stringify([widget]));
+        : new Response(JSON.stringify(widgets));
     return new Response('[]');
   });
   vi.stubGlobal('fetch', fetcher);
@@ -77,7 +96,9 @@ function show(phone = false) {
 }
 
 const order = () =>
-  [...document.querySelectorAll<HTMLElement>('[data-block]')].map((cell) => cell.dataset.block);
+  [...document.querySelectorAll<HTMLElement>('[data-widget-type]')].map((cell) =>
+    name(cell.dataset.widgetType!),
+  );
 const customize = async () => {
   const button = await screen.findByRole('button', { name: 'Customize' });
   await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
@@ -96,16 +117,25 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('opens with every block that has something to show, and the page widgets', async () => {
+const done = () => fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+const saved = () => screen.findByRole('button', { name: 'Customize' });
+const addFromGallery = async (option: RegExp) => {
+  fireEvent.click(screen.getByRole('button', { name: 'Add widget' }));
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.click(within(dialog).getAllByRole('button', { name: option })[0]!);
+  return dialog;
+};
+
+it('opens with every widget that has something to show', async () => {
   stubApi();
   show();
   await screen.findByText('Kitchen');
-  expect(order()).toContain('widget:7');
+  expect(order()).toContain('clock');
   expect(order()).not.toContain('proposals');
-  expect(order()).toHaveLength(SUMMARY_BLOCKS.length);
+  expect(order()).toHaveLength(everything.length - 1);
 });
 
-it('shows blocks without content while arranging, and keeps their input off', async () => {
+it('shows widgets without content while arranging, and keeps their input off', async () => {
   stubApi();
   show();
   await customize();
@@ -113,7 +143,7 @@ it('shows blocks without content while arranging, and keeps their input off', as
   expect(screen.getByText('content of pinned').closest('[inert]')).toBeTruthy();
 });
 
-it('saves moves and removed blocks only on Done', async () => {
+it('saves moves and removals only on Done', async () => {
   const sent = stubApi();
   show();
   await customize();
@@ -123,61 +153,92 @@ it('saves moves and removed blocks only on Done', async () => {
   await choose('Remove');
   expect(sent).toHaveLength(0);
   expect(order().slice(0, 2)).toEqual(['attention', 'pinned']);
-  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-  await screen.findByRole('button', { name: 'Customize' });
+  expect(order()).not.toContain('hosts');
+  expect(screen.getByText(/deleted when you press Done/)).toBeTruthy();
+  done();
+  await saved();
   expect(sent).toHaveLength(1);
-  expect(sent[0]).toMatchObject({ revision: 0, phone: null });
-  expect(sent[0]!.desktop).toContainEqual(
-    expect.objectContaining({ block: 'hosts', hidden: true }),
-  );
+  expect(sent[0]).toMatchObject({ revision: 0, phone: null, add: [], remove: [idOf('hosts')] });
+  expect(sent[0]!.desktop).not.toContainEqual(expect.objectContaining({ widgetId: idOf('hosts') }));
   expect(order()).not.toContain('hosts');
 });
 
-it('brings a removed block back from Add widget, and discards it on Cancel', async () => {
-  const sent = stubApi({
-    layouts: [
-      {
-        pageId: 1,
-        revision: 3,
-        desktop: [{ block: 'latency', width: 12, height: 2, hidden: true }],
-        phone: null,
-      },
-    ],
-  });
+it('adds a removed widget back from the gallery, and discards it on Cancel', async () => {
+  const sent = stubApi();
   show();
   await customize();
-  fireEvent.click(screen.getByRole('button', { name: 'Add widget' }));
-  const dialog = await screen.findByRole('dialog');
-  fireEvent.click(within(dialog).getByRole('button', { name: /^latency/ }));
+  openMenu('latency');
+  await choose('Remove');
+  await addFromGallery(/Latency now/);
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  expect(order().at(-1)).toBe('latency');
+  expect(order()).toContain('latency');
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-  expect(order()).not.toContain('latency');
+  expect(order()).toContain('latency');
   expect(sent).toHaveLength(0);
 });
 
-it('stores no arrangement after Restore default', async () => {
+it('creates the added widgets together with the arrangement', async () => {
+  const sent = stubApi();
+  show();
+  await customize();
+  await addFromGallery(/Services by state/);
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  expect(order().filter((item) => item === 'status')).toHaveLength(2);
+  done();
+  await saved();
+  expect(sent[0]!.add).toEqual([
+    { id: -1, type: 'summary-status', name: '', config: {}, connectionId: null, size: 'normal' },
+  ]);
+  expect(vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
+});
+
+it('restores the default arrangement and the widgets it starts with', async () => {
   const sent = stubApi({
     layouts: [
       {
         pageId: 1,
         revision: 2,
-        desktop: [{ block: 'latency', width: 12, height: 2, hidden: false }],
-        phone: [{ block: 'status', hidden: false }],
+        desktop: [{ widgetId: idOf('latency'), width: 12, height: 2 }],
+        phone: [{ widgetId: idOf('status') }],
       },
     ],
   });
   show();
   await customize();
+  openMenu('pinned');
+  await choose('Remove');
+  openMenu('Kitchen');
+  await choose('Remove');
   fireEvent.click(screen.getByRole('button', { name: 'Restore default' }));
   expect(order()[0]).toBe('pinned');
-  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-  await screen.findByRole('button', { name: 'Customize' });
+  expect(order()).not.toContain('clock');
+  done();
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete and save' }));
+  await saved();
   expect(sent[0]).toEqual({
     revision: 2,
     desktop: null,
-    phone: [{ block: 'status', hidden: false }],
+    phone: [{ widgetId: idOf('status') }],
+    add: [],
+    remove: [clock.id],
   });
+});
+
+it('asks before saving deletes a widget someone set up', async () => {
+  const sent = stubApi();
+  show();
+  await customize();
+  openMenu('Kitchen');
+  await choose('Remove');
+  done();
+  const dialog = await screen.findByRole('alertdialog');
+  expect(dialog.textContent).toMatch(/Kitchen/);
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+  expect(sent).toHaveLength(0);
+  done();
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete and save' }));
+  await saved();
+  expect(sent[0]!.remove).toEqual([clock.id]);
 });
 
 it('keeps the work when someone else saved, and replaces it on a second Done', async () => {
@@ -186,11 +247,11 @@ it('keeps the work when someone else saved, and replaces it on a second Done', a
   await customize();
   openMenu('attention');
   await choose('Move earlier');
-  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+  done();
   expect((await screen.findByRole('alert')).textContent).toMatch(/changed somewhere else/);
   expect(order()[0]).toBe('attention');
-  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-  await screen.findByRole('button', { name: 'Customize' });
+  done();
+  await saved();
   expect(sent.map((body) => body.revision)).toEqual([0, 9]);
 });
 
@@ -201,48 +262,19 @@ it('reorders and removes on phones without touching the wide arrangement', async
   fireEvent.click(screen.getByRole('button', { name: 'Move attention up' }));
   fireEvent.click(screen.getByRole('button', { name: 'Remove status' }));
   expect(screen.queryByRole('button', { name: /^Arrange/ })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-  await screen.findByRole('button', { name: 'Customize' });
+  done();
+  await saved();
   expect(sent[0]!.desktop).toBeNull();
+  expect(sent[0]!.remove).toEqual([idOf('status')]);
   expect(order()[0]).toBe('attention');
   expect(order()).not.toContain('status');
-});
-
-it('deletes a widget only after confirming', async () => {
-  const sent = stubApi();
-  show();
-  await customize();
-  openMenu('Kitchen');
-  await choose('Remove');
-  const dialog = await screen.findByRole('alertdialog');
-  expect(dialog.textContent).toMatch(/Summary and Services/);
-  const deleted = () => vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'DELETE');
-  expect(deleted()).toBe(false);
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
-  await waitFor(() => expect(deleted()).toBe(true));
-  expect(sent).toHaveLength(0);
-});
-
-it('keeps showing a widget stored as taken off the Summary', async () => {
-  stubApi({
-    layouts: [
-      {
-        pageId: 1,
-        revision: 1,
-        desktop: [{ widgetId: 7, width: 4, height: 2, hidden: true }],
-        phone: null,
-      },
-    ],
-  });
-  show();
-  await screen.findByText('Kitchen');
-  expect(order()[0]).toBe('widget:7');
 });
 
 it('shows the default and blocks editing when the arrangement cannot be read', async () => {
   stubApi({ failLayouts: true });
   show();
   expect((await screen.findByRole('alert')).textContent).toMatch(/default one is shown/);
+  await screen.findByText('Kitchen');
   expect(order()[0]).toBe('pinned');
   expect((screen.getByRole('button', { name: 'Customize' }) as HTMLButtonElement).disabled).toBe(
     true,
@@ -259,18 +291,22 @@ it('blocks editing when the widgets cannot be read, so their places are not lost
 });
 
 it('saves after a widget is gone, dropping its place on both kinds of screen', async () => {
-  const gone = { widgetId: 99, width: 4, height: 2, hidden: false };
   const sent = stubApi({
     layouts: [
-      { pageId: 1, revision: 1, desktop: [gone], phone: [{ widgetId: 99, hidden: false }] },
+      {
+        pageId: 1,
+        revision: 1,
+        desktop: [{ widgetId: 99, width: 4, height: 2 }],
+        phone: [{ widgetId: 99 }],
+      },
     ],
   });
   show();
   await customize();
   openMenu('attention');
   await choose('Move earlier');
-  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-  await screen.findByRole('button', { name: 'Customize' });
+  done();
+  await saved();
   expect(sent[0]!.phone).toEqual([]);
   expect(JSON.stringify(sent[0]!.desktop)).not.toContain('99');
 });

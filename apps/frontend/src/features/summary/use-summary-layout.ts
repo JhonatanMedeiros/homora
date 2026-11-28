@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { StoredSummaryLayout, SummaryLayout } from '@homora/shared';
+import type { StoredSummaryLayout, SummaryChange } from '@homora/shared';
 import { apiError, t } from '@/i18n';
 
 export type SummarySave = { ok: true } | { ok: false; message: string };
 
-/** The saved Summary of every page, and the way to replace one. */
+/** The saved arrangement of every page, and the way to save an edit of one. */
 export function useSummaryLayouts() {
   const [layouts, setLayouts] = useState<StoredSummaryLayout[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -28,32 +28,29 @@ export function useSummaryLayouts() {
     void reload();
   }, [reload]);
 
-  const save = useCallback(
-    async (pageId: number, revision: number, layout: SummaryLayout): Promise<SummarySave> => {
-      try {
-        const response = await fetch(`/api/pages/${pageId}/summary-layout`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ revision, ...layout }),
-        });
-        const body = (await response.json().catch(() => null)) as unknown;
-        if (!response.ok) {
-          // A newer arrangement is on the server: say what each choice does now.
-          const message =
-            response.status === 409
-              ? t('summarygrid.conflict')
-              : apiError(body, t('summarygrid.saveFailed'));
-          return { ok: false, message };
-        }
-        const saved = body as StoredSummaryLayout;
-        setLayouts((rows) => [...(rows ?? []).filter((row) => row.pageId !== pageId), saved]);
-        return { ok: true };
-      } catch {
-        return { ok: false, message: t('summarygrid.saveFailed') };
+  const save = useCallback(async (pageId: number, change: SummaryChange): Promise<SummarySave> => {
+    try {
+      const response = await fetch(`/api/pages/${pageId}/summary-layout`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(change),
+      });
+      const body = (await response.json().catch(() => null)) as unknown;
+      if (!response.ok) {
+        // A newer arrangement is on the server: say what each choice does now.
+        const conflict = (body as { code?: string } | null)?.code === 'summary-layout-conflict';
+        const message = conflict
+          ? t('summarygrid.conflict')
+          : apiError(body, t('summarygrid.saveFailed'));
+        return { ok: false, message };
       }
-    },
-    [],
-  );
+      const saved = body as StoredSummaryLayout;
+      setLayouts((rows) => [...(rows ?? []).filter((row) => row.pageId !== pageId), saved]);
+      return { ok: true };
+    } catch {
+      return { ok: false, message: t('summarygrid.saveFailed') };
+    }
+  }, []);
 
   return { layouts, failed, reload, save };
 }
