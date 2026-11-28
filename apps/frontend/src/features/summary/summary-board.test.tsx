@@ -2,22 +2,17 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { StoredSummaryLayout, SummaryChange } from '@homora/shared';
-import { summaryWidgetTypes, type SummaryWidgetType } from '@homora/widgets/summary';
+import { summaryWidgetTypes } from '@homora/widgets/summary';
 import { setLocale } from '@/i18n';
 import { SummaryBoard } from './summary-board';
-import type { BlockView } from './summary-blocks';
+import type { SummaryContent } from './summary-content';
 
 const name = (type: string) => type.replace('summary-', '');
-const blocks = Object.fromEntries(
-  summaryWidgetTypes.map((type) => [
-    type,
-    {
-      title: name(type),
-      node: <p>content of {name(type)}</p>,
-      absent: type === 'summary-proposals',
-    },
-  ]),
-) as unknown as Record<SummaryWidgetType, BlockView>;
+const content: SummaryContent = ({ type }) => ({
+  title: name(type),
+  node: <p>content of {name(type)}</p>,
+  absent: type === 'summary-proposals',
+});
 
 const row = (id: number, type: string, extra: object = {}) => ({
   id,
@@ -89,7 +84,7 @@ function show(phone = false) {
       pages={[{ id: 1, name: 'Home', position: 0, groups: 0 }]}
       groups={[]}
       phone={phone}
-      blocks={blocks}
+      content={content}
       openMonitor={() => {}}
     />,
   );
@@ -309,4 +304,26 @@ it('saves after a widget is gone, dropping its place on both kinds of screen', a
   await saved();
   expect(sent[0]!.phone).toEqual([]);
   expect(JSON.stringify(sent[0]!.desktop)).not.toContain('99');
+});
+
+it('opens the options of a Summary widget only where there is something to choose', async () => {
+  stubApi();
+  show();
+  await customize();
+  openMenu('figures');
+  await screen.findByRole('menuitem', { name: 'Remove' });
+  expect(screen.queryByRole('menuitem', { name: 'Edit' })).toBeNull();
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+  openMenu('latency');
+  await choose('Edit');
+  expect(await screen.findByText('Shows everything.')).toBeTruthy();
+});
+
+it('opens the options on a phone too', async () => {
+  stubApi();
+  show(true);
+  await customize();
+  expect(screen.queryByRole('button', { name: 'Edit figures' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit latency' }));
+  expect(await screen.findByText('Shows everything.')).toBeTruthy();
 });

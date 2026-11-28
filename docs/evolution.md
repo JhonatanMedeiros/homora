@@ -2425,7 +2425,8 @@ ready-made default, a separate phone order and one saved arrangement per page. T
 tables and give every existing page the eleven Summary widgets, keeping its own widgets. An edit is saved whole with a
 revision check; configuration export version 7 carries the widgets and the arrangement. The limit rose from 12 to 40
 widgets per page and from 200 to 500 in all ([ADR 0033](decisions/0033-summary-widgets.md)). The widgets of a page moved
-to the top of the Services right column. Validation: tests for the layout rules, migration upgrade, API, export and
+to the top of the Services right column. Summary widgets can be narrowed to groups, pages or probes, only those on a
+page are computed, and one backend module writes page widgets. Validation: tests for the layout rules, migration upgrade, API, export and
 import, grid editing and widget placement; an upgraded synthetic database, a new installation that imported its export,
 and a manual pass in a development server at desktop, tablet and phone widths in both themes. Not verified: physical
 touch devices, screen readers, real infrastructure and independent users.

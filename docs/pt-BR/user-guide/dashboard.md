@@ -37,7 +37,20 @@ nasce com uma organização pronta dos widgets próprios do Resumo:
 | **Próximas manutenções**    | Janelas abertas e agendadas.                                                                                                                                          |
 | **Seus widgets**            | Os demais widgets da página (relógio, notas, integrações…), por padrão ao lado da latência e das manutenções.                                                         |
 
-Esses onze pertencem ao Resumo e não têm opções. **Hosts** e **Propostas de agentes** só aparecem quando há algo a
+Esses onze pertencem ao Resumo. Em **Personalizar**, use **Editar** em um deles para filtrar, dar um nome ou enviá-lo
+a outra página:
+
+- **Fixados**, **Precisa de atenção**, **Todos os serviços**, **Hosts**, **Serviços por estado**,
+  **Latência agora** e **Próximas manutenções** podem mostrar somente alguns grupos ou páginas. Com os dois escolhidos,
+  o serviço precisa atender a ambos. Widgets filtrados deixam as sondas de fora.
+- **Sondas** pode mostrar somente algumas sondas.
+- **Números de saúde**, **Meta de disponibilidade** e **Propostas de agentes** sempre consideram a instalação inteira.
+
+Sem nada marcado, o widget mostra tudo. Um widget filtrado escreve a seleção acima do conteúdo. A seleção usa nomes:
+depois de renomear ou remover um grupo, página ou sonda, edite o widget; ele nunca passa a mostrar mais do que você
+escolheu. Adicione um widget de novo para acompanhar outra parte, como um cartão de latência por grupo.
+
+**Hosts** e **Propostas de agentes** só aparecem quando há algo a
 mostrar. Um widget ainda sem conteúdo diz o que fazer. Antes do primeiro serviço, eles não aparecem. Selecionar um
 serviço abre os detalhes em um painel. Avisos de dados desatualizados ou ilegíveis ficam fixos acima da grade.
 
@@ -69,7 +82,7 @@ outro lugar durante a edição, o Homora avisa: clique em **Concluir** novamente
 vê-la.
 
 **No celular**, o Resumo é uma coluna com ordem própria, que começa pelo que precisa de atenção. Ali, **Personalizar**
-sobe, desce, remove e adiciona widgets; os tamanhos são ajustados em uma tela maior. Entre 768 e 1023 px, um widget ocupa metade ou
+sobe, desce, edita, remove e adiciona widgets; os tamanhos são ajustados em uma tela maior. Entre 768 e 1023 px, um widget ocupa metade ou
 toda a largura.
 
 ## Manutenção

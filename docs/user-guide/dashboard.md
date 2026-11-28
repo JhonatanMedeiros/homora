@@ -44,7 +44,20 @@ ready-made arrangement of the Summary's own widgets:
 | **Upcoming maintenance**     | Open and scheduled windows.                                                                                                                                                         |
 | **Your widgets**             | The other widgets of the page (clock, notes, integrations…), beside the latency and maintenance ones by default.                                                                    |
 
-These eleven belong to the Summary and have no options. **Hosts** and **Agent proposals** appear only when there is
+These eleven belong to the Summary. Press **Customize** and choose **Edit** on one to narrow it, name it or send it to
+another page:
+
+- **Pinned**, **Needs attention**, **All services at a glance**, **Hosts**, **Services by state**, **Latency now** and
+  **Upcoming maintenance** can show only some groups or pages. With both chosen, a service must match both. Narrowed
+  widgets leave probes out.
+- **Probes** can show only some probes.
+- **Health figures**, **Availability target** and **Agent proposals** always cover the whole installation.
+
+With nothing checked, a widget shows everything. A narrowed widget writes its selection above its content. Names are
+used, so after renaming or removing a group, page or probe, edit the widget; it never starts showing more than you
+chose. Add a widget again to follow another part, such as one latency card per group.
+
+**Hosts** and **Agent proposals** appear only when there is
 something to show. A widget with nothing yet says what to do next. Until there is a first service, they stay out of the
 way. Selecting a service opens its details in a drawer. Notices about out-of-date or unreadable data stay above the
 grid.
@@ -77,7 +90,7 @@ approved agent proposal, appear without editing it. If the arrangement was chang
 editing, Homora says so: press **Done** again to replace it, or **Cancel** to see it.
 
 **On a phone** the Summary is one column with its own order, which starts with what needs attention. **Customize** there
-moves widgets up and down, removes and adds them; sizes are set on a larger screen. Between 768 and 1023 px a widget takes half or
+moves widgets up and down, edits, removes and adds them; sizes are set on a larger screen. Between 768 and 1023 px a widget takes half or
 all of the width.
 
 ## Maintenance

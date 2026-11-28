@@ -17,8 +17,10 @@ export function useSummaryLayouts() {
       if (!Array.isArray(body)) throw new TypeError();
       setLayouts(body as StoredSummaryLayout[]);
       setFailed(false);
+      return body as StoredSummaryLayout[];
     } catch {
       setFailed(true);
+      return null;
     }
   }, []);
 

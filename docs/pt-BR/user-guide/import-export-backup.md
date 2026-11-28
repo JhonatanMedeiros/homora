@@ -25,7 +25,7 @@ Para restaurar, pare o Homora, preserve o banco atual e restaure para um novo ar
 Desde a versão 7 do arquivo, os widgets de cada página incluem os do Resumo, e os Resumos personalizados vão por
 página no campo opcional `summaryLayouts`. Uma página que só tem os widgets do Resumo sem alterações recebe os widgets e
 a organização do arquivo. Uma página já alterada mantém a organização e não ganha uma segunda cópia de um widget do
-Resumo que já possui. Um arquivo pode listar até 500 widgets. Arquivos antigos
+Resumo que já possui com o mesmo nome e as mesmas opções. Um arquivo pode listar até 500 widgets. Arquivos antigos
 continuam sendo importados, com o Resumo padrão nas páginas novas, e uma organização inválida é ignorada com aviso.
 
 A exportação preserva o tamanho largo de widgets de página quando disponível. Arquivos antigos são importados com tamanho normal; versões antigas do Homora ignoram o campo e exibem o widget em tamanho normal.

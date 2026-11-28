@@ -163,6 +163,7 @@ export type WidgetHost = {
       signal: AbortSignal,
     ) => Promise<{ groups: { id: number; name: string }[]; pages: { id: number; name: string }[] }>;
     filterStatus?: (state: 'ok' | 'down' | 'degraded' | 'maintenance' | 'unmeasured') => void;
+    readProbes?: (signal: AbortSignal) => Promise<{ name: string }[]>;
   };
   weather?: WeatherHost;
   readSource?: <T = unknown>(

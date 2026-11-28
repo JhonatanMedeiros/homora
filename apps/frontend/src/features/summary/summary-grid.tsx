@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal, Scaling, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal, Pencil, Scaling, X } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -404,40 +404,54 @@ export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps)
             )}
           >
             {editing && (
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{entry.title}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-11"
-                  disabled={index === 0}
-                  aria-label={t('summarygrid.up', { name: entry.title })}
-                  onClick={() => move(entry.id, entry.title, -1)}
-                >
-                  <ArrowUp />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-11"
-                  disabled={index === entries.length - 1}
-                  aria-label={t('summarygrid.down', { name: entry.title })}
-                  onClick={() => move(entry.id, entry.title, 1)}
-                >
-                  <ArrowDown />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-11"
-                  aria-label={t('summarygrid.removeNamed', { name: entry.title })}
-                  onClick={() => remove(entry)}
-                >
-                  <X />
-                </Button>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="min-w-28 flex-1 truncate text-sm font-medium">{entry.title}</span>
+                <div className="ml-auto flex gap-2">
+                  {entry.onEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="size-11"
+                      aria-label={t('summarygrid.editNamed', { name: entry.title })}
+                      onClick={entry.onEdit}
+                    >
+                      <Pencil />
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-11"
+                    disabled={index === 0}
+                    aria-label={t('summarygrid.up', { name: entry.title })}
+                    onClick={() => move(entry.id, entry.title, -1)}
+                  >
+                    <ArrowUp />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-11"
+                    disabled={index === entries.length - 1}
+                    aria-label={t('summarygrid.down', { name: entry.title })}
+                    onClick={() => move(entry.id, entry.title, 1)}
+                  >
+                    <ArrowDown />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-11"
+                    aria-label={t('summarygrid.removeNamed', { name: entry.title })}
+                    onClick={() => remove(entry)}
+                  >
+                    <X />
+                  </Button>
+                </div>
               </div>
             )}
             {/* Arranging shows only the headings' size of each widget, so the order is easy to see. */}

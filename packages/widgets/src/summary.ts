@@ -1,10 +1,9 @@
 /**
  * The widgets of the application's own health: what the Summary of a page shows from the start.
- * They read nothing themselves; the application draws them from what it already knows.
+ * They read nothing themselves; the application draws them from what it already knows. Some can be
+ * narrowed to part of the installation; an empty configuration shows everything.
  */
 import { defineWidget, type SummaryPlacement } from './index.js';
-
-type EmptyConfig = Record<string, never>;
 
 /** In the default reading order of wide screens. */
 export const summaryWidgetTypes = [
@@ -43,8 +42,49 @@ const placements: Record<SummaryWidgetType, SummaryPlacement> = {
   'summary-maintenance': placement(8, 2, 4, 1),
 };
 
+/** What a widget can be narrowed to, by name, so a configuration stays portable. */
+export type SummaryOption = 'groups' | 'pages' | 'probes';
+export type SummaryConfig = Partial<Record<SummaryOption, string[]>>;
+
+const scope = ['groups', 'pages'] as const;
+/** Figures, availability and proposals read installation totals, so they have nothing to choose. */
+export const summaryOptions: Record<SummaryWidgetType, readonly SummaryOption[]> = {
+  'summary-pinned': scope,
+  'summary-attention': scope,
+  'summary-services': scope,
+  'summary-hosts': scope,
+  'summary-probes': ['probes'],
+  'summary-figures': [],
+  'summary-proposals': [],
+  'summary-status': scope,
+  'summary-availability': [],
+  'summary-latency': scope,
+  'summary-maintenance': scope,
+};
+
+const isNames = (value: unknown): value is string[] =>
+  Array.isArray(value) &&
+  value.length <= 100 &&
+  value.every((name) => typeof name === 'string' && name.length > 0 && name.length <= 200) &&
+  new Set(value).size === value.length;
+
+/** Empty choices are left out, so "everything" is always stored as `{}`. */
+function parseSummaryConfig(options: readonly SummaryOption[], value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  if (Object.keys(input).some((key) => !(options as readonly string[]).includes(key))) return null;
+  const config: SummaryConfig = {};
+  for (const option of options) {
+    const names = input[option];
+    if (names === undefined) continue;
+    if (!isNames(names)) return null;
+    if (names.length > 0) config[option] = [...names];
+  }
+  return config;
+}
+
 function summaryWidget(type: SummaryWidgetType) {
-  return defineWidget<EmptyConfig>({
+  return defineWidget<SummaryConfig>({
     type,
     version: 1,
     locations: ['page'],
@@ -53,10 +93,7 @@ function summaryWidget(type: SummaryWidgetType) {
     summaryOnly: true,
     summary: placements[type],
     defaultConfig: {},
-    parseConfig: (value) =>
-      value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0
-        ? {}
-        : null,
+    parseConfig: (value) => parseSummaryConfig(summaryOptions[type], value),
   });
 }
 

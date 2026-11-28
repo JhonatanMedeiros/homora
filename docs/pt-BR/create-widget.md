@@ -17,4 +17,5 @@ As fontes internas de monitoramento são registradas por contrato e versão, nã
 
 No Resumo, cada widget é uma célula de uma grade de 12 colunas. Declare `summary` (largura e altura padrão e mínimas)
 quando o padrão geral (4 ou 8 colunas conforme o tamanho, 2 linhas, no mínimo 3×1) não servir. `summaryOnly` é para
-widgets sobre os dados do próprio Início, desenhados pela aplicação; veja o [ADR 0033](../decisions/0033-summary-widgets.md).
+widgets sobre os dados do próprio Início, desenhados pela aplicação: adicione o desenho em `summaryRenderers` (um
+teste exige) e as opções em `summaryOptions`; veja o [ADR 0033](../decisions/0033-summary-widgets.md).

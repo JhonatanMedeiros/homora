@@ -21,6 +21,13 @@ export const en = {
   'summaryWidgets.latencyDesc': 'The slowest services against their limit.',
   'summaryWidgets.maintenance': 'Upcoming maintenance',
   'summaryWidgets.maintenanceDesc': 'Open and scheduled windows.',
+  'summaryOptions.groups': 'Groups',
+  'summaryOptions.pages': 'Pages',
+  'summaryOptions.probes': 'Probes',
+  'summaryOptions.all': 'Check none to show all.',
+  'summaryOptions.error': 'Could not read the choices. What is already chosen is kept.',
+  'summaryOptions.everything': 'Shows everything.',
+  'summaryOptions.showing': 'Shows only: {names}.',
 } as const;
 export const ptBR: Record<keyof typeof en, string> = {
   'summaryWidgets.pinned': 'Fixados',
@@ -45,4 +52,11 @@ export const ptBR: Record<keyof typeof en, string> = {
   'summaryWidgets.latencyDesc': 'Os serviços mais lentos e seus limites.',
   'summaryWidgets.maintenance': 'Próximas manutenções',
   'summaryWidgets.maintenanceDesc': 'Janelas abertas e agendadas.',
+  'summaryOptions.groups': 'Grupos',
+  'summaryOptions.pages': 'Páginas',
+  'summaryOptions.probes': 'Sondas',
+  'summaryOptions.all': 'Sem nada marcado, mostra tudo.',
+  'summaryOptions.error': 'Não foi possível ler as opções. O que já está marcado é mantido.',
+  'summaryOptions.everything': 'Mostra tudo.',
+  'summaryOptions.showing': 'Mostra somente: {names}.',
 };

@@ -1,3 +1,4 @@
+import { isSummaryWidgetType, summaryOptions } from '@homora/widgets/summary';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { resolveWidget } from '@homora/integrations';
@@ -295,6 +296,9 @@ export function usePageWidgets({
     isExpired,
     nameOf,
     edit,
+    /** Whether one of the Summary's own widgets has anything to choose. */
+    hasOptions: (item: PageWidget) =>
+      isSummaryWidgetType(item.type) && summaryOptions[item.type].length > 0,
     askRemove: setRemoving,
     hiddenCount,
     showHidden,

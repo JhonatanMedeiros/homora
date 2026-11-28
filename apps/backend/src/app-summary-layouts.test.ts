@@ -247,6 +247,34 @@ it('carries each page Summary through export and import without rearranging exis
     expect(again).toHaveLength(imported.length + summaryWidgetTypes.length + 1);
     expect((await target.req('GET', '/api/summary-layouts')).json()[0].desktop).toHaveLength(2);
 
+    // The untouched page takes the file's widgets, narrowed ones included, and only once.
+    const narrowed = JSON.stringify({
+      version: 7,
+      groups: [],
+      pages: ['Attic'],
+      widgets: [
+        { page: 'Attic', type: 'summary-latency', name: '', config: {} },
+        { page: 'Attic', type: 'summary-latency', name: '', config: { groups: ['Media'] } },
+      ],
+    });
+    const latency = async () =>
+      (await target.req('POST', '/api/config/import/preview', { content: narrowed })).json().plan
+        .summary.newWidgets as number;
+    expect(await latency()).toBe(2);
+    await target.req('POST', '/api/config/import/apply', { content: narrowed });
+    expect(await latency()).toBe(0);
+    expect((await target.req('GET', '/api/config/export?format=json')).body).toContain('"Media"');
+
+    // A widget with options marks its page as changed, so a file never replaces its Summary.
+    const bad = await target.req('POST', '/api/page-widgets', {
+      pageId: home,
+      type: 'summary-figures',
+      name: '',
+      config: { groups: ['Media'] },
+      connectionId: null,
+    });
+    expect(bad.statusCode).toBe(400);
+
     // A new page of an older file starts with the usual Summary beside the file's widgets.
     const older = {
       version: 6,

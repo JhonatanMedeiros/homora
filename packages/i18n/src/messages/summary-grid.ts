@@ -13,6 +13,7 @@ export const en = {
   'summarygrid.narrower': 'Narrower',
   'summarygrid.taller': 'Taller',
   'summarygrid.shorter': 'Shorter',
+  'summarygrid.editNamed': 'Edit {name}',
   'summarygrid.up': 'Move {name} up',
   'summarygrid.down': 'Move {name} down',
   'summarygrid.resize': 'Resize {name} by dragging',
@@ -39,7 +40,8 @@ export const en = {
   'summarygrid.removeNamed': 'Remove {name}',
   'summarygrid.hint.wide':
     'Drag a widget to move it, or its corner to resize it. Each one also has a menu.',
-  'summarygrid.hint.phone': 'Reorder or remove widgets. Sizes are adjusted on a larger screen.',
+  'summarygrid.hint.phone':
+    'Reorder, edit or remove widgets. Sizes are adjusted on a larger screen.',
   'summarygrid.empty': 'The Summary is empty. Customize it and use Add widget to fill it.',
   'summarygrid.removed': '{name} removed. Cancel brings it back.',
   'summarygrid.pendingRemoval': 'Removed widgets are deleted when you press Done.',
@@ -47,6 +49,14 @@ export const en = {
   'summarygrid.deleteNote':
     '{names}. Their settings are deleted with them and cannot be recovered.',
   'summarygrid.deleteAction': 'Delete and save',
+  'summarygrid.pinned.noneHere': 'No pinned service in this selection.',
+  'summarygrid.probes.noneChosen':
+    'None of the chosen probes exists any more. Edit the widget to choose others.',
+  'summarygrid.emptyScope':
+    'No service in the chosen groups or pages. Edit the widget to choose others.',
+  'summarygrid.unsupported': 'This version of Homora cannot show this widget.',
+  'summarygrid.unreadableSettings':
+    'The settings of this widget cannot be read. Edit it, or remove it and add it again.',
 } as const;
 export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.customize': 'Personalizar',
@@ -62,6 +72,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.narrower': 'Mais estreito',
   'summarygrid.taller': 'Mais alto',
   'summarygrid.shorter': 'Mais baixo',
+  'summarygrid.editNamed': 'Editar {name}',
   'summarygrid.up': 'Subir {name}',
   'summarygrid.down': 'Descer {name}',
   'summarygrid.resize': 'Redimensionar {name} arrastando',
@@ -89,7 +100,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.hint.wide':
     'Arraste um widget para movê-lo, ou o canto para redimensionar. Cada um também tem um menu.',
   'summarygrid.hint.phone':
-    'Reordene ou remova widgets. Os tamanhos são ajustados em uma tela maior.',
+    'Reordene, edite ou remova widgets. Os tamanhos são ajustados em uma tela maior.',
   'summarygrid.empty': 'O Resumo está vazio. Personalize e use Adicionar widget para preenchê-lo.',
   'summarygrid.removed': '{name} removido. Cancelar traz de volta.',
   'summarygrid.pendingRemoval': 'Os widgets removidos são excluídos ao clicar em Concluir.',
@@ -97,4 +108,12 @@ export const ptBR: Record<keyof typeof en, string> = {
   'summarygrid.deleteNote':
     '{names}. As configurações são excluídas junto e não podem ser recuperadas.',
   'summarygrid.deleteAction': 'Excluir e salvar',
+  'summarygrid.pinned.noneHere': 'Nenhum serviço fixado nesta seleção.',
+  'summarygrid.probes.noneChosen':
+    'Nenhuma das sondas escolhidas existe mais. Edite o widget para escolher outras.',
+  'summarygrid.emptyScope':
+    'Nenhum serviço nos grupos ou páginas escolhidos. Edite o widget para escolher outros.',
+  'summarygrid.unsupported': 'Esta versão do Homora não consegue mostrar este widget.',
+  'summarygrid.unreadableSettings':
+    'As configurações deste widget não puderam ser lidas. Edite-o, ou remova e adicione de novo.',
 };

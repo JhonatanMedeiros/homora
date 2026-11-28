@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { MAX_PAGES, normalizePageName, type Page } from '@homora/shared';
-import { seedSummaryWidgets, SUMMARY_TYPES_SQL } from './summary-widgets.js';
+import { createPageWidgetStore } from './page-widget-store.js';
 
 export type PageFailure =
   | 'invalid-page-name'
@@ -20,6 +20,7 @@ const fail = (code: PageFailure): Result<never> => ({ ok: false, code });
  * services) to another page. The database enforces name uniqueness too (NOCASE index).
  */
 export function createPages(sqlite: DatabaseSync, nested = false) {
+  const widgets = createPageWidgetStore(sqlite);
   const transaction = <T>(work: () => T): T => {
     sqlite.exec(nested ? 'SAVEPOINT page_change' : 'BEGIN IMMEDIATE');
     try {
@@ -43,14 +44,6 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
     );
   const bumpVersion = () =>
     sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
-  const widgetCount = (id: number) =>
-    (
-      sqlite
-        .prepare(
-          `SELECT COUNT(*) AS n FROM page_widgets WHERE page_id=? AND type NOT IN (${SUMMARY_TYPES_SQL})`,
-        )
-        .get(id) as { n: number }
-    ).n;
   const renumber = () => {
     const update = sqlite.prepare('UPDATE pages SET position=? WHERE id=?');
     list().forEach((page, position) => update.run(position, page.id));
@@ -80,7 +73,7 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
       return new Map(rows.map((row) => [row.id, row.n]));
     },
     /** Widgets someone added; the Summary's own are replaced by those of any other page. */
-    widgetCount,
+    widgetCount: widgets.countAdded,
     create(rawName: unknown): Result<Page> {
       const name = normalizePageName(rawName);
       if (!name) return fail('invalid-page-name');
@@ -91,7 +84,7 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
         const created = sqlite
           .prepare('INSERT INTO pages(name,position) VALUES(?,?)')
           .run(name, position);
-        seedSummaryWidgets(sqlite, Number(created.lastInsertRowid));
+        widgets.seedSummary(Number(created.lastInsertRowid));
         bumpVersion();
         return ok(find(Number(created.lastInsertRowid))!);
       });
@@ -118,22 +111,14 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
             n: number;
           }
         ).n;
-        if (groups > 0 || widgetCount(id) > 0) {
+        if (groups > 0 || widgets.countAdded(id) > 0) {
           if (moveTo === undefined) return fail('page-move-required');
           if (moveTo === id || !find(moveTo)) return fail('page-not-found');
           sqlite.prepare('UPDATE service_groups SET page_id=? WHERE page_id=?').run(moveTo, id);
         }
         // The destination has its own Summary: this page's goes with it.
-        sqlite
-          .prepare(`DELETE FROM page_widgets WHERE page_id=? AND type IN (${SUMMARY_TYPES_SQL})`)
-          .run(id);
-        if (moveTo !== undefined) {
-          sqlite
-            .prepare(
-              'UPDATE page_widgets SET page_id=?, position=position + (SELECT COALESCE(MAX(position), -1) + 1 FROM page_widgets WHERE page_id=?) WHERE page_id=?',
-            )
-            .run(moveTo, moveTo, id);
-        }
+        widgets.removeSummary(id);
+        if (moveTo !== undefined) widgets.moveAll(id, moveTo);
         sqlite.prepare('DELETE FROM pages WHERE id=?').run(id);
         renumber();
         bumpVersion();

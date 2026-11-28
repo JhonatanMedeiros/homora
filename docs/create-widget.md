@@ -16,7 +16,8 @@ Page widgets can declare `sizes: ['normal', 'wide']` in their definition when ap
 
 On the Summary every widget is a cell of a 12-column grid. Declare `summary` (default and smallest width and height) when
 the general default (4 or 8 columns by size, 2 rows, at least 3×1) does not fit. `summaryOnly` is for widgets over the
-Home's own data, which the application draws; see [ADR 0033](decisions/0033-summary-widgets.md).
+Home's own data, which the application draws: add its renderer to `summaryRenderers` (a test requires one) and its
+choices to `summaryOptions`; see [ADR 0033](decisions/0033-summary-widgets.md).
 
 Internal monitoring sources are registered by contract and version, require no connection, and are portable. See [ADR 0027](decisions/0027-widget-internal-monitoring.md) for the three contracts, limits, stale data and privacy. The host reads them; a widget must not access monitoring infrastructure directly. MON presentations remain separate work.
 

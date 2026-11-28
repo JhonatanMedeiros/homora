@@ -1,8 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { resolveWidget } from '@homora/integrations';
 import {
-  MAX_PAGE_WIDGETS,
-  MAX_WIDGETS_PER_PAGE,
   parseSummaryLayout,
   SUMMARY_MAX_ITEMS,
   type StoredSummaryLayout,
@@ -11,6 +9,7 @@ import {
   type SummaryPhoneItem,
 } from '@homora/shared';
 import { summaryPlacement } from '@homora/widgets';
+import { createPageWidgetStore } from './page-widget-store.js';
 import { checkPageWidget, type PageWidgetValue } from './page-widget-validation.js';
 
 type ItemRow = {
@@ -89,12 +88,7 @@ export function createSummaryLayouts(sqlite: DatabaseSync) {
     );
   }
 
-  const widgetsOf = (pageId: number) =>
-    sqlite.prepare('SELECT id,type,size FROM page_widgets WHERE page_id=?').all(pageId) as {
-      id: number;
-      type: string;
-      size: string;
-    }[];
+  const widgets = createPageWidgetStore(sqlite);
 
   /**
    * Saves one edit made from `revision` (0 for a page never customized): removes widgets, creates
@@ -126,8 +120,7 @@ export function createSummaryLayouts(sqlite: DatabaseSync) {
       if ((current?.revision ?? 0) !== edit.revision) return fail('summary-layout-conflict');
 
       // Only this page's widgets go; one already deleted or moved away is left as it is.
-      const drop = sqlite.prepare('DELETE FROM page_widgets WHERE id=? AND page_id=?');
-      for (const id of remove) drop.run(id, pageId);
+      for (const id of remove) widgets.remove(id, pageId);
 
       const values: { name: number; value: PageWidgetValue }[] = [];
       for (const { id, ...body } of add) {
@@ -135,34 +128,11 @@ export function createSummaryLayouts(sqlite: DatabaseSync) {
         if (!checked.ok) return fail('invalid-summary-layout');
         values.push({ name: id, value: checked.value });
       }
-      const total = sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number };
-      if (
-        values.length > 0 &&
-        (widgetsOf(pageId).length + values.length > MAX_WIDGETS_PER_PAGE ||
-          total.n + values.length > MAX_PAGE_WIDGETS)
-      )
-        return fail('widget-limit');
-      const insert = sqlite.prepare(
-        'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,?,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
-      );
+      if (values.length > 0 && !widgets.hasRoom(pageId, values.length)) return fail('widget-limit');
       const created = new Map<number, number>();
-      for (const { name, value } of values)
-        created.set(
-          name,
-          Number(
-            insert.run(
-              pageId,
-              value.type,
-              value.name,
-              JSON.stringify(value.config),
-              value.connectionId,
-              value.size,
-              pageId,
-            ).lastInsertRowid,
-          ),
-        );
+      for (const { name, value } of values) created.set(name, widgets.insert(value));
 
-      const here = new Map(widgetsOf(pageId).map((row) => [row.id, row]));
+      const here = new Map(widgets.list(pageId).map((row) => [row.id, row]));
       const exists = sqlite.prepare('SELECT 1 FROM page_widgets WHERE id=?');
       let invalid = false;
       /** Entries with real ids; those of widgets that no longer exist are dropped. */

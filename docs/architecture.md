@@ -404,7 +404,8 @@ inbox is not an audit log. The frontend polls the authenticated API every minute
 The Summary arrangement is stored per page (`summary_layouts`, `summary_layout_items`): separate desktop and phone
 orders, replaced whole with a revision check. Nothing stored means the default, which the frontend derives, so new
 widgets appear without a data change. Everything on the Summary is a page widget: its own are definitions marked
-`summaryOnly`, created with every page, and one edit (removals, additions and arrangement) is saved in one transaction;
+`summaryOnly`, created with every page, and one edit (removals, additions and arrangement) is saved in one transaction. `page-widget-store.ts` is the only
+writer of page widgets and keeps their limits and order;
 see [ADR 0033](decisions/0033-summary-widgets.md). Page widget size is host layout metadata stored independently of widget configuration. Definitions opt into wide layout; see [ADR 0026](decisions/0026-widget-modules.md#page-widget-sizes-255) for responsive behavior and transfer compatibility.
 
 Internal monitoring widget sources use the authenticated, bounded readers in [ADR 0027](decisions/0027-widget-internal-monitoring.md). They share the Home state classifier and expose no addresses or response bodies. No MON widget presentation is implemented by this foundation.

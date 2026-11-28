@@ -12,7 +12,7 @@ import { detailsFor } from '@/features/home/details-props';
 import { HealthPill } from '@/features/home/health-pill';
 import { useDetailsSelection } from '@/features/home/use-details-selection';
 import { useHomeArea } from '@/features/home/use-home-area';
-import { summaryBlocks } from '@/features/summary/summary-blocks';
+import { summaryContent } from '@/features/summary/summary-content';
 import { SummaryBoard } from '@/features/summary/summary-board';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePendingProposals } from '@/hooks/use-pending-proposals';
@@ -67,9 +67,9 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
     });
   const ready = data.loaded && !data.loadError;
   const empty = ready && health.entries.length === 0;
-  const blocks =
+  const content =
     ready && !empty
-      ? summaryBlocks({
+      ? summaryContent({
           data,
           sources,
           health,
@@ -122,7 +122,7 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
             pages={pages}
             groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
             phone={mobile}
-            blocks={blocks}
+            content={content}
             openMonitor={(id, hasService) => (hasService ? selection.open(id) : toProbes())}
           />
         </WidgetStatusFilterContext.Provider>

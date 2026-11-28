@@ -124,10 +124,12 @@ menu. **Ctrl or Cmd K** opens the command palette (`CommandPalette`). A skip lin
 
 **The Home opens with health; the cards are one click away.** The Summary (`/`) is a grid of widgets (`SummaryBoard`).
 Eleven are its own (`summaryOnly` definitions, drawn by the application from the services and their health in
-`summaryBlocks`): pinned services, Needs attention (`ProbableCauses alwaysOpen`, where every cause says "likely", or a
+`summaryRenderers`): pinned services, Needs attention (`ProbableCauses alwaysOpen`, where every cause says "likely", or a
 calm or "cannot measure" card), service windows, hosts, probes, health figures, agent proposals, the state strip (a
 ring, a number and a name per state, each a button that filters Services), availability target, latency and upcoming
-maintenance. The rest are drawn as widget cards. "Nothing needs attention" is said only when nothing is unknown or
+maintenance. The rest are drawn as widget cards. A narrowed or named
+widget writes its name and selection above its content, an empty selection says so and shrinks, and a widget that
+cannot be drawn says why. "Nothing needs attention" is said only when nothing is unknown or
 stale. It has no side columns; choosing a service opens the details sheet (`ServiceDrawer`).
 
 **The grid** (`SummaryGrid`) has 12 columns, rows of at least 5rem and a 16px gap; widgets flow in order and fill holes
@@ -137,7 +139,7 @@ below and become focusable. From 768 to 1023px a widget takes half or all of the
 toolbar (Add widget, Restore default, Cancel, Done; two per row on phones) takes focus, each widget gets a dashed outline
 (no layout shift), a floating chip with its name, size and `⋯` menu, and a corner handle for pointer resizing; its
 content is inert. Every move and resize is in the menu and announced politely. On phones (`SummaryColumn`) it is one
-column in its own order, with 44px up, down and remove buttons and no sizes. **Everything arranged is one draft**:
+column in its own order, with 44px edit (where there are options), up, down and remove buttons and no sizes. **Everything arranged is one draft**:
 removals and additions happen on Done, the toolbar says removed widgets will be deleted, and deleting one with its own
 settings asks first. Restore default also brings back the Summary's own widgets. The Add widget gallery lists them first,
 marked "On this page" when present. Services and Maintenance keep the left column (`HomeSidebar`).

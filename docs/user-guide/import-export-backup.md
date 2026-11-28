@@ -21,7 +21,7 @@ In **Settings**, download your groups, cards and their order as YAML or JSON (`G
 - Since file version 7, each page's widgets include the Summary's own, and customized
   [Summaries](dashboard.md#customize-the-summary) are exported per page in the optional `summaryLayouts` field. A page
   that holds only untouched Summary widgets takes the file's widgets and arrangement. A page you already changed keeps
-  its arrangement and does not receive a second copy of a Summary widget it has. Older files still import, and their new
+  its arrangement and does not receive a second copy of a Summary widget it has with the same name and options. Older files still import, and their new
   pages start with the default Summary. An invalid arrangement is ignored with a warning. A file may list up to 500
   widgets.
 - Extra addresses (Links) are exported with their type name and color, and pinned favorites as `pinned: true`. Older
