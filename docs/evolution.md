@@ -2420,7 +2420,7 @@ more than Node; the documented commands run in a container built from the change
 
 ### Customizable Summary grid (#391)
 
-The Summary became a grid in which built-in blocks and page widgets are moved, resized, hidden and restored, with a
+The Summary became a grid in which built-in blocks and page widgets are moved, resized, removed and added back, with a
 ready-made default, a separate phone order and one saved arrangement per page (additive migration, session-protected
 endpoints with a revision check, optional field in configuration export version 7). Page widgets moved to the top of the
 Services right column. Validation: tests for the layout rules, migration upgrade, API, export and import, grid editing and

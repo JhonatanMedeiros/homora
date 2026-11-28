@@ -26,8 +26,7 @@ The account menu holds **Account**, **Toggle theme**, **What's new**, **GitHub**
 
 ## The Summary
 
-The Summary is a grid of blocks. Every block, including each page widget, can be moved, resized, hidden and brought
-back. It starts with a ready-made arrangement:
+The Summary is a grid of blocks. Every block, including each page widget, can be moved, resized, removed and added back. It starts with a ready-made arrangement:
 
 | Block                        | What it shows                                                                                                                                                                       |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -59,10 +58,11 @@ Press **Customize**. Nothing is saved until you press **Done**; **Cancel** disca
   has 12 columns, each block has a smallest size, and blocks never overlap; they flow in order and fill free places.
   **Pinned**, **Needs attention**, **Health figures** and **Services by state** also grow to show all their content;
   other blocks scroll when it does not fit.
-- **Hide from Summary** removes a block; **Hidden** brings it back at the end.
-- **Add widget** opens the widget gallery. A page holds up to 12 widgets; the built-in blocks do not count.
-- **Delete widget** (or **Remove** in a widget's menu) removes the widget from the page, also from Services. The same
-  dialog offers to only hide it from the Summary. Adding, editing and deleting a widget take effect at once.
+- **Remove**, in a block's `⋯` menu, takes it off the Summary.
+- **Add widget** lists the blocks you removed, under **Summary**, and the widget gallery. A block added back goes to the
+  end. A page holds up to 12 widgets; the built-in blocks do not count.
+- **Removing a page widget** deletes it after you confirm, also from Services; add it again from the gallery. Adding,
+  editing and removing a widget take effect at once, and **Cancel** does not undo them.
 - **Restore default** returns to the ready-made arrangement after **Done**. It keeps your widgets.
 
 Each page has its own arrangement, saved on the server and shared by your devices. Widgets added later, also by an
@@ -70,7 +70,7 @@ approved agent proposal, appear without editing it. If the arrangement was chang
 editing, Homora says so: press **Done** again to replace it, or **Cancel** to see it.
 
 **On a phone** the Summary is one column with its own order, which starts with what needs attention. **Customize** there
-moves blocks up and down and hides them; sizes are set on a larger screen. Between 768 and 1023 px a block takes half or
+moves blocks up and down and removes them; sizes are set on a larger screen. Between 768 and 1023 px a block takes half or
 all of the width.
 
 ## Maintenance

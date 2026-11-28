@@ -1,4 +1,4 @@
-import { Eye, Plus, SlidersHorizontal } from 'lucide-react';
+import { Plus, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -11,12 +11,6 @@ import {
 } from '@homora/shared';
 import { Alert, AlertDescription } from '@homora/ui/alert';
 import { Button } from '@homora/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@homora/ui/dropdown-menu';
 import { ExpiredToggle, usePageWidgets } from '@/components/page-widgets';
 import { SectionSkeleton } from '@/components/skeletons';
 import { resolveDesktop, resolvePhone, setHidden } from '@/features/summary/model';
@@ -38,7 +32,7 @@ type Props = {
   pageId: number;
   pages: PageRow[];
   groups: { name: string; pageId: number | null }[];
-  /** One column, with its own order and only reordering and hiding. */
+  /** One column, with its own order and only reordering and removing. */
   phone: boolean;
   /** The built-in blocks; null while there is no service to speak of. */
   blocks: Record<SummaryBlock, BlockView> | null;
@@ -66,43 +60,39 @@ export function SummaryBoard({ pageId, pages, groups, phone, blocks, openMonitor
     setSaving(false);
     return result;
   };
+  const saved = phone ? (stored?.phone ?? null) : (stored?.desktop ?? null);
+  const source = editing ? draft.items : saved;
+  const resolve = (items: Draft['items']) =>
+    phone
+      ? resolvePhone(items as SummaryPhoneItem[] | null, widgets.current)
+      : resolveDesktop(items as SummaryDesktopItem[] | null, widgets.current);
+  /** Removed blocks wait in the add dialog; taking one back puts it at the end. */
+  const removed = (source ?? []).flatMap((item) => {
+    const block = item.block;
+    if (!item.hidden || block === undefined || !blocks) return [];
+    const key = summaryKey(item);
+    return [
+      {
+        key,
+        title: blocks[block].title,
+        onPick: () =>
+          setDraft(
+            (current) =>
+              current && {
+                ...current,
+                items: setHidden(resolve(current.items) as SummaryDesktopItem[], key, false),
+              },
+          ),
+      },
+    ];
+  });
   const widgets = usePageWidgets({
     pageId,
     pages,
     groups,
     layout: 'grid',
     openMonitor,
-    // While arranging it joins the draft; otherwise taking a widget off is saved at once.
-    onHide: (id) => {
-      const key = `widget:${id}`;
-      if (editing) {
-        setDraft((current) => {
-          if (!current) return current;
-          const next = phone
-            ? setHidden(
-                resolvePhone(current.items as SummaryPhoneItem[] | null, widgets.current),
-                key,
-                true,
-              )
-            : setHidden(
-                resolveDesktop(current.items as SummaryDesktopItem[] | null, widgets.current),
-                key,
-                true,
-              );
-          return { ...current, items: next };
-        });
-        return;
-      }
-      const items = phone
-        ? setHidden(resolvePhone(stored?.phone ?? null, widgets.current), key, true)
-        : setHidden(resolveDesktop(stored?.desktop ?? null, widgets.current), key, true);
-      void save(replaced(items), stored?.revision ?? 0).then((result) => {
-        if (!result.ok) {
-          toast.error(result.message);
-          void store.reload();
-        }
-      });
-    },
+    blocks: removed,
   });
 
   /** Without the entries of widgets deleted or moved away since they were arranged. */
@@ -121,17 +111,9 @@ export function SummaryBoard({ pageId, pages, groups, phone, blocks, openMonitor
   if (store.layouts === null && !store.failed)
     return <SectionSkeleton label={t('common.loading')} />;
 
-  const saved = phone ? (stored?.phone ?? null) : (stored?.desktop ?? null);
-  const source = editing ? draft.items : saved;
-  const items = phone
-    ? resolvePhone(source as SummaryPhoneItem[] | null, widgets.current)
-    : resolveDesktop(source as SummaryDesktopItem[] | null, widgets.current);
+  const items = resolve(source);
 
   const byId = new Map(widgets.current.map((widget) => [widget.id, widget]));
-  const titleOf = (item: (typeof items)[number]) =>
-    item.block === undefined
-      ? byId.get(item.widgetId) && widgets.nameOf(byId.get(item.widgetId)!)
-      : blocks?.[item.block].title;
   const change = (next: SummaryDesktopItem[] | SummaryPhoneItem[]) =>
     setDraft((current) => current && { ...current, items: next });
 
@@ -162,7 +144,6 @@ export function SummaryBoard({ pageId, pages, groups, phone, blocks, openMonitor
       },
     ];
   });
-  const hidden = items.filter((item) => item.hidden && titleOf(item) !== undefined);
 
   const leave = () => {
     setDraft(null);
@@ -209,34 +190,12 @@ export function SummaryBoard({ pageId, pages, groups, phone, blocks, openMonitor
               variant="outline"
               size="sm"
               className={button}
-              disabled={widgets.full}
+              disabled={widgets.full && removed.length === 0}
               onClick={widgets.openAdd}
             >
               <Plus />
               {t('summarygrid.addWidget')}
             </Button>
-            {hidden.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" size="sm" className={button}>
-                    <Eye />
-                    {t('summarygrid.hiddenBlocks', { count: hidden.length })}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-60">
-                  {hidden.map((item) => (
-                    <DropdownMenuItem
-                      key={summaryKey(item)}
-                      onSelect={() =>
-                        change(setHidden(items as SummaryDesktopItem[], summaryKey(item), false))
-                      }
-                    >
-                      {t('summarygrid.show', { name: titleOf(item)! })}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
             <Button
               type="button"
               variant="ghost"

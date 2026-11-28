@@ -113,14 +113,14 @@ it('shows blocks without content while arranging, and keeps their input off', as
   expect(screen.getByText('content of pinned').closest('[inert]')).toBeTruthy();
 });
 
-it('saves moves and hidden blocks only on Done', async () => {
+it('saves moves and removed blocks only on Done', async () => {
   const sent = stubApi();
   show();
   await customize();
   openMenu('attention');
   await choose('Move earlier');
   openMenu('hosts');
-  await choose('Hide from Summary');
+  await choose('Remove');
   expect(sent).toHaveLength(0);
   expect(order().slice(0, 2)).toEqual(['attention', 'pinned']);
   fireEvent.click(screen.getByRole('button', { name: 'Done' }));
@@ -133,7 +133,7 @@ it('saves moves and hidden blocks only on Done', async () => {
   expect(order()).not.toContain('hosts');
 });
 
-it('discards changes on Cancel and brings hidden blocks back', async () => {
+it('brings a removed block back from Add widget, and discards it on Cancel', async () => {
   const sent = stubApi({
     layouts: [
       {
@@ -146,9 +146,11 @@ it('discards changes on Cancel and brings hidden blocks back', async () => {
   });
   show();
   await customize();
-  fireEvent.keyDown(screen.getByRole('button', { name: 'Hidden (1)' }), { key: 'Enter' });
-  await choose('Show latency');
-  expect(order()).toContain('latency');
+  fireEvent.click(screen.getByRole('button', { name: 'Add widget' }));
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: /^latency/ }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  expect(order().at(-1)).toBe('latency');
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   expect(order()).not.toContain('latency');
   expect(sent).toHaveLength(0);
@@ -192,12 +194,12 @@ it('keeps the work when someone else saved, and replaces it on a second Done', a
   expect(sent.map((body) => body.revision)).toEqual([0, 9]);
 });
 
-it('reorders and hides on phones without touching the wide arrangement', async () => {
+it('reorders and removes on phones without touching the wide arrangement', async () => {
   const sent = stubApi();
   show(true);
   await customize();
   fireEvent.click(screen.getByRole('button', { name: 'Move attention up' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Hide status' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Remove status' }));
   expect(screen.queryByRole('button', { name: /^Arrange/ })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Done' }));
   await screen.findByRole('button', { name: 'Customize' });
@@ -206,17 +208,35 @@ it('reorders and hides on phones without touching the wide arrangement', async (
   expect(order()).not.toContain('status');
 });
 
-it('offers to hide a widget instead of deleting it', async () => {
+it('deletes a widget only after confirming', async () => {
   const sent = stubApi();
   show();
-  await screen.findByText('Kitchen');
-  fireEvent.keyDown(screen.getByRole('button', { name: 'Actions: Kitchen' }), { key: 'Enter' });
+  await customize();
+  openMenu('Kitchen');
   await choose('Remove');
   const dialog = await screen.findByRole('alertdialog');
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Hide from Summary' }));
-  await waitFor(() => expect(order()).not.toContain('widget:7'));
-  expect(sent[0]!.desktop).toContainEqual(expect.objectContaining({ widgetId: 7, hidden: true }));
-  expect(vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false);
+  expect(dialog.textContent).toMatch(/Summary and Services/);
+  const deleted = () => vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'DELETE');
+  expect(deleted()).toBe(false);
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
+  await waitFor(() => expect(deleted()).toBe(true));
+  expect(sent).toHaveLength(0);
+});
+
+it('keeps showing a widget stored as taken off the Summary', async () => {
+  stubApi({
+    layouts: [
+      {
+        pageId: 1,
+        revision: 1,
+        desktop: [{ widgetId: 7, width: 4, height: 2, hidden: true }],
+        phone: null,
+      },
+    ],
+  });
+  show();
+  await screen.findByText('Kitchen');
+  expect(order()[0]).toBe('widget:7');
 });
 
 it('shows the default and blocks editing when the arrangement cannot be read', async () => {

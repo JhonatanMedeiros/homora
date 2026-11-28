@@ -19,8 +19,7 @@ de cada ícone aparece ao apontar ou focar. O cabeçalho traz **Resumo**, **Serv
 
 ## O Resumo
 
-O Resumo é uma grade de blocos. Todos, inclusive cada widget de página, podem ser movidos, redimensionados, ocultados e
-trazidos de volta. Ele já vem organizado:
+O Resumo é uma grade de blocos. Todos, inclusive cada widget de página, podem ser movidos, redimensionados, removidos e adicionados de novo. Ele já vem organizado:
 
 | Bloco                       | O que mostra                                                                                                                                                          |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -52,10 +51,11 @@ Clique em **Personalizar**. Nada é salvo até **Concluir**; **Cancelar** descar
   A grade tem 12 colunas, cada bloco tem um tamanho mínimo e eles nunca se sobrepõem: seguem a ordem e preenchem os
   espaços livres. **Fixados**, **Precisa de atenção**, **Números de saúde** e **Serviços por estado** também crescem para
   mostrar todo o conteúdo; os demais ganham rolagem quando ele não cabe.
-- **Ocultar do Resumo** retira um bloco; **Ocultos** o traz de volta no fim.
-- **Adicionar widget** abre a galeria. Uma página comporta até 12 widgets; os blocos nativos não contam.
-- **Excluir widget** (ou **Remover** no menu do widget) apaga o widget da página, também em Serviços. A mesma janela
-  oferece apenas ocultá-lo do Resumo. Adicionar, editar e excluir um widget valem na hora.
+- **Remover**, no menu `⋯` do bloco, tira o bloco do Resumo.
+- **Adicionar widget** lista os blocos removidos, em **Resumo**, e a galeria de widgets. Um bloco adicionado de novo vai
+  para o fim. Uma página comporta até 12 widgets; os blocos nativos não contam.
+- **Remover um widget de página** o apaga depois da confirmação, também em Serviços; adicione-o de novo pela galeria.
+  Adicionar, editar e remover um widget valem na hora, e **Cancelar** não desfaz.
 - **Restaurar padrão** volta à organização pronta depois de **Concluir**, mantendo os widgets.
 
 Cada página tem sua própria organização, salva no servidor e compartilhada entre os dispositivos. Widgets adicionados
@@ -64,7 +64,7 @@ outro lugar durante a edição, o Homora avisa: clique em **Concluir** novamente
 vê-la.
 
 **No celular**, o Resumo é uma coluna com ordem própria, que começa pelo que precisa de atenção. Ali, **Personalizar**
-sobe, desce e oculta blocos; os tamanhos são ajustados em uma tela maior. Entre 768 e 1023 px, um bloco ocupa metade ou
+sobe, desce e remove blocos; os tamanhos são ajustados em uma tela maior. Entre 768 e 1023 px, um bloco ocupa metade ou
 toda a largura.
 
 ## Manutenção

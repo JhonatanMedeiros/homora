@@ -133,10 +133,10 @@ service opens the details sheet (`ServiceDrawer`).
 (dense flow), never overlap and never take free pixel positions. Blocks that must be read at a glance (pinned, attention,
 figures, state strip) grow with their content; the others scroll inside their cell, fade at the bottom edge while more is
 below and become focusable. From 768 to 1023px a block takes half or all of the width. **Arranging is a mode**: a sticky
-toolbar (Add widget, Hidden, Restore default, Cancel, Done) takes focus, each block gets a dashed outline (no layout
+toolbar (Add widget, Restore default, Cancel, Done) takes focus, each block gets a dashed outline (no layout
 shift), a floating chip with its name, size and `⋯` menu, and a corner handle for pointer resizing; its content is inert.
 Every move and resize is in the menu and announced politely. On phones (`SummaryColumn`) it is one column in its own
-order, with 44px up, down and hide buttons and no sizes. Services and Maintenance keep the left column (`HomeSidebar`).
+order, with 44px up, down and remove buttons and no sizes. **Remove** takes a block off; the Add widget gallery lists removed blocks first, under Summary. Removing a page widget deletes it, after a confirmation. Services and Maintenance keep the left column (`HomeSidebar`).
 Maintenance (`/maintenance`) schedules a window and lists the open and the scheduled ones.
 
 Services default to **compact tiles** (`ServiceCardCompact`): icon, name, host in mono, the state in words, a 6px bar of the period (`UptimeMiniBar`) and the latency, with an `i` button that opens the details drawer. **List** is one dense row per service, two columns from `lg`. **Cards** shows the three-column cards with descriptions. One "Display" button in the toolbar (`ViewOptions`, a popover) switches the layout and sets descriptions and the uptime period; the descriptions switch exists only in Cards. The same actions are in the command palette. The choice is stored in `homora-density` (`tiles`, `list` or `cards`; nothing stored means tiles, the older `comfortable` maps to cards and `compact` to list).

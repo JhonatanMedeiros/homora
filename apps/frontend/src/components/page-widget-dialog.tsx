@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@homora/ui/
 import { FormSelect, FormSelectOption } from '@/components/form-select';
 import { ResponsiveDialog } from '@/components/responsive-dialog';
 import { WidgetErrorBoundary } from '@/components/widget-error-boundary';
-import { WidgetGallery } from '@/components/widget-gallery';
+import { WidgetGallery, type GalleryBlock } from '@/components/widget-gallery';
 import { WidgetHost } from '@/components/widget-host';
 import { getWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
@@ -34,6 +34,9 @@ type Props = {
   chosen: boolean;
   connections: Connection[];
   pages: PageRow[];
+  /** Removed blocks the gallery offers to bring back. */
+  blocks?: GalleryBlock[];
+  full?: boolean;
   groups?: { name: string; pageId: number | null }[];
   busy: boolean;
   error: string;
@@ -49,6 +52,8 @@ function DialogContents({
   chosen,
   connections,
   pages,
+  blocks,
+  full,
   groups,
   busy,
   error,
@@ -115,7 +120,7 @@ function DialogContents({
             : t('pageWidgets.willAdd', { page: pageName })
       }
     >
-      {draft && gallery && <WidgetGallery connections={connections} onPick={pick} />}
+      {draft && gallery && <WidgetGallery {...{ blocks, full, connections }} onPick={pick} />}
       {draft && !gallery && (
         <form
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"

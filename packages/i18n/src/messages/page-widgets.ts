@@ -14,6 +14,8 @@ export const en = {
   'pageWidgets.down': 'Move down',
   'pageWidgets.remove': 'Remove widget',
   'pageWidgets.removeConfirm': 'Remove this widget?',
+  'pageWidgets.removeNote':
+    'It leaves the Summary and Services. To have it again, add it with Add widget.',
   'pageWidgets.deleteMove': 'Choose a page to receive its groups and widgets.',
   'pageWidgets.options': 'Actions: {name}',
   'pageWidgets.movePage': 'Move to page',
@@ -66,6 +68,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'pageWidgets.down': 'Mover para baixo',
   'pageWidgets.remove': 'Remover widget',
   'pageWidgets.removeConfirm': 'Remover este widget?',
+  'pageWidgets.removeNote':
+    'Ele sai do Resumo e de Serviços. Para tê-lo de novo, use Adicionar widget.',
   'pageWidgets.deleteMove': 'Escolha a página que receberá seus grupos e widgets.',
   'pageWidgets.options': 'Ações: {name}',
   'pageWidgets.movePage': 'Mover para outra página',

@@ -14,6 +14,7 @@ import {
 } from '@homora/ui/alert-dialog';
 import type { PageRow } from '@/hooks/use-pages';
 import { PageWidgetDialog, type WidgetDraft } from '@/components/page-widget-dialog';
+import type { GalleryBlock } from '@/components/widget-gallery';
 import { t, tOr } from '@/i18n';
 import { PageWidgetCard } from '@/components/page-widget-card';
 import { getWidgetUI, listWidgetUI } from '@/components/widget-ui-registry';
@@ -38,8 +39,8 @@ type Options = {
   layout?: 'strip' | 'rail' | 'grid';
   groups?: { name: string; pageId: number | null }[];
   openMonitor?: (id: number, hasService: boolean) => void;
-  /** Offered beside "Remove" where a widget can also just be taken off the view. */
-  onHide?: (id: number) => void;
+  /** Blocks of the view offered in the add dialog beside the widgets. */
+  blocks?: GalleryBlock[];
 };
 
 /**
@@ -52,7 +53,7 @@ export function usePageWidgets({
   layout = 'strip',
   groups = [],
   openMonitor,
-  onHide,
+  blocks,
 }: Options) {
   const [showHidden, setShowHidden] = useState(false);
   const [visibilityNow, setVisibilityNow] = useState(() => new Date());
@@ -177,22 +178,12 @@ export function usePageWidgets({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('pageWidgets.removeConfirm')}</AlertDialogTitle>
-            <AlertDialogDescription>{removing?.name || removing?.type}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {removing && nameOf(removing)}. {t('pageWidgets.removeNote')}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('pages.cancel')}</AlertDialogCancel>
-            {onHide && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  if (removing) onHide(removing.id);
-                  setRemoving(null);
-                }}
-              >
-                {t('summarygrid.hide')}
-              </Button>
-            )}
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
@@ -207,6 +198,14 @@ export function usePageWidgets({
       </AlertDialog>
       <PageWidgetDialog
         groups={groups}
+        blocks={blocks?.map((block) => ({
+          ...block,
+          onPick: () => {
+            block.onPick();
+            setDraft(null);
+          },
+        }))}
+        full={full}
         draft={draft}
         chosen={chosen}
         connections={connections}
@@ -263,7 +262,7 @@ export function ExpiredToggle({ widgets }: { widgets: ReturnType<typeof usePageW
   );
 }
 
-type Props = Omit<Options, 'onHide' | 'layout'> & {
+type Props = Omit<Options, 'blocks' | 'layout'> & {
   layout?: 'strip' | 'rail';
   /** The "Add widget" tile; phones show it only while organizing. */
   showAdd?: boolean;

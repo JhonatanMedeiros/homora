@@ -3,6 +3,7 @@ import {
   Activity,
   CalendarClock,
   Clock,
+  LayoutDashboard,
   LayoutGrid,
   Plug,
   Rss,
@@ -17,13 +18,17 @@ import { Button } from '@homora/ui/button';
 import { Input } from '@homora/ui/input';
 import { cn } from '@homora/ui/lib/utils';
 import { integrationDefinition, resolveWidget } from '@homora/integrations';
+import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import type { WidgetCategory, WidgetUI } from '@homora/widgets/ui';
 import { listWidgetUI } from '@/components/widget-ui-registry';
 import type { Connection } from '@/features/connections/connection-model';
 import { t, tOr } from '@/i18n';
 
 type CategoryKey = WidgetCategory | 'other';
-type FilterTab = 'all' | 'recent' | 'connections' | CategoryKey;
+type FilterTab = 'all' | 'summary' | 'recent' | 'connections' | CategoryKey;
+
+/** A block of the view that was removed and can be brought back from the gallery. */
+export type GalleryBlock = { key: string; title: string; onPick: () => void };
 
 type RecentEntry = { kind: 'local'; type: string } | { kind: 'connection'; id: number };
 
@@ -48,6 +53,7 @@ const CATEGORY_LABEL_KEYS = {
 
 const CATEGORY_ICONS: Record<FilterTab, LucideIcon> = {
   all: LayoutGrid,
+  summary: LayoutDashboard,
   recent: Clock,
   connections: Plug,
   time: CalendarClock,
@@ -120,16 +126,27 @@ function Highlight({ text, needle }: { text: string; needle: string }) {
 }
 
 type Props = {
+  blocks?: GalleryBlock[];
+  /** The page holds as many widgets as it can: only blocks are offered. */
+  full?: boolean;
   connections: Connection[];
   onPick: (connection: Connection | null, type: string) => void;
 };
 
-export function WidgetGallery({ connections, onPick }: Props) {
+const NO_CONNECTIONS: Connection[] = [];
+
+export function WidgetGallery({
+  blocks = [],
+  full = false,
+  connections: allConnections,
+  onPick,
+}: Props) {
+  const connections = full ? NO_CONNECTIONS : allConnections;
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [recentRaw, setRecentRaw] = useState<RecentEntry[]>(() => readRecentWidgets());
 
-  const allLocal = useMemo(() => listWidgetUI(), []);
+  const allLocal = useMemo(() => (full ? [] : listWidgetUI()), [full]);
   const needle = query.trim().toLowerCase();
   const isSearching = needle.length > 0;
 
@@ -170,9 +187,12 @@ export function WidgetGallery({ connections, onPick }: Props) {
       {
         key: 'all',
         label: t('pageWidgets.categoryAll'),
-        count: allLocal.length + connections.length,
+        count: blocks.length + allLocal.length + connections.length,
       },
     ];
+    if (blocks.length > 0) {
+      items.push({ key: 'summary', label: t('summarygrid.gallery.title'), count: blocks.length });
+    }
     if (recentItems.length > 0) {
       items.push({
         key: 'recent',
@@ -198,13 +218,14 @@ export function WidgetGallery({ connections, onPick }: Props) {
       });
     }
     return items;
-  }, [allLocal.length, connections.length, recentItems.length, categoryCounts]);
+  }, [blocks.length, allLocal.length, connections.length, recentItems.length, categoryCounts]);
 
   const visibleLocal = useMemo(() => {
     return allLocal.filter(([, entry]) => {
       if (!widgetMatchesQuery(entry, needle)) return false;
       if (isSearching || activeTab === 'all') return true;
-      if (activeTab === 'connections' || activeTab === 'recent') return false;
+      if (activeTab === 'connections' || activeTab === 'recent' || activeTab === 'summary')
+        return false;
       return (entry.category ?? 'other') === activeTab;
     });
   }, [allLocal, needle, isSearching, activeTab]);
@@ -216,6 +237,11 @@ export function WidgetGallery({ connections, onPick }: Props) {
       return false;
     });
   }, [connections, needle, isSearching, activeTab]);
+
+  const visibleBlocks =
+    isSearching || activeTab === 'all' || activeTab === 'summary'
+      ? blocks.filter((block) => block.title.toLowerCase().includes(needle))
+      : [];
 
   const showRecentOnly = !isSearching && activeTab === 'recent';
 
@@ -235,10 +261,12 @@ export function WidgetGallery({ connections, onPick }: Props) {
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter') return;
-    const totalMatches = visibleLocal.length + visibleConnections.length;
+    const totalMatches = visibleBlocks.length + visibleLocal.length + visibleConnections.length;
     if (totalMatches !== 1) return;
     event.preventDefault();
-    if (visibleLocal.length === 1) {
+    if (visibleBlocks.length === 1) {
+      visibleBlocks[0].onPick();
+    } else if (visibleLocal.length === 1) {
       handlePickLocal(visibleLocal[0][0]);
     } else if (visibleConnections.length === 1) {
       handlePickConnection(visibleConnections[0]);
@@ -285,7 +313,7 @@ export function WidgetGallery({ connections, onPick }: Props) {
 
   const hasResults = showRecentOnly
     ? recentItems.length > 0
-    : visibleLocal.length > 0 || visibleConnections.length > 0;
+    : visibleBlocks.length > 0 || visibleLocal.length > 0 || visibleConnections.length > 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -352,6 +380,36 @@ export function WidgetGallery({ connections, onPick }: Props) {
         </nav>
 
         <div className="flex min-h-0 max-h-[55svh] flex-1 flex-col gap-5 overflow-y-auto pr-1 sm:h-[26rem] sm:max-h-none">
+          {full && (
+            <p className="text-sm text-muted-foreground">
+              {t('pageWidgets.limit', { max: MAX_WIDGETS_PER_PAGE })}
+            </p>
+          )}
+
+          {visibleBlocks.length > 0 && (
+            <section aria-labelledby="pw-group-summary" className="flex flex-col gap-2">
+              <h3
+                id="pw-group-summary"
+                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+              >
+                {t('summarygrid.gallery.title')}
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {visibleBlocks.map((block) => (
+                  <GalleryOption
+                    key={block.key}
+                    title={block.title}
+                    description={t('summarygrid.gallery.description')}
+                    needle={needle}
+                    onPick={block.onPick}
+                  >
+                    <LayoutDashboard />
+                  </GalleryOption>
+                ))}
+              </div>
+            </section>
+          )}
+
           {showRecentOnly && (
             <section aria-labelledby="pw-group-recent" className="flex flex-col gap-2">
               <h3
@@ -399,7 +457,7 @@ export function WidgetGallery({ connections, onPick }: Props) {
             </section>
           )}
 
-          {!hasResults && (
+          {!hasResults && !(full && !isSearching) && (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
               <p className="text-sm text-muted-foreground">{t('pageWidgets.noMatch')}</p>
               {isSearching && (

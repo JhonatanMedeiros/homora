@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, EyeOff, GripVertical, MoreHorizontal, Scaling } from 'lucide-react';
+import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal, Scaling, X } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -76,6 +76,12 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
     const next = step(items, key, delta, (item) => shown.has(summaryKey(item)));
     onChange(next);
     announceMove(next, key, title);
+  };
+  const remove = (entry: GridEntry) => {
+    // A widget is deleted, after confirming; a block waits in "Add widget".
+    if (entry.widget) return entry.widget.onDelete();
+    onChange(setHidden(items, entry.key, true));
+    setMessage(t('summarygrid.removed', { name: entry.title }));
   };
   const size = (key: string, title: string, width: number, height: number) => {
     const next = resize(items, key, { width, height }, widgets);
@@ -270,16 +276,9 @@ export function SummaryGrid({ entries, items, widgets, editing, onChange }: Wide
                           {t('common.edit')}
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem
-                        onSelect={() => onChange(setHidden(items, entry.key, true))}
-                      >
-                        {t('summarygrid.hide')}
+                      <DropdownMenuItem variant="destructive" onSelect={() => remove(entry)}>
+                        {t('common.remove')}
                       </DropdownMenuItem>
-                      {entry.widget && (
-                        <DropdownMenuItem variant="destructive" onSelect={entry.widget.onDelete}>
-                          {t('summarygrid.delete')}
-                        </DropdownMenuItem>
-                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -370,7 +369,7 @@ type PhoneProps = {
   onChange: (items: SummaryPhoneItem[]) => void;
 };
 
-/** The Summary on a phone: one column in its own order. Arranging reorders and hides. */
+/** The Summary on a phone: one column in its own order. Arranging reorders and removes. */
 export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps) {
   const [message, setMessage] = useState('');
   const shown = new Set(entries.map((entry) => entry.key));
@@ -385,6 +384,11 @@ export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps)
         total: order.length,
       }),
     );
+  };
+  const remove = (entry: GridEntry) => {
+    if (entry.widget) return entry.widget.onDelete();
+    onChange(setHidden(items, entry.key, true));
+    setMessage(t('summarygrid.removed', { name: entry.title }));
   };
   return (
     <>
@@ -428,10 +432,10 @@ export function SummaryColumn({ entries, items, editing, onChange }: PhoneProps)
                   variant="outline"
                   size="icon"
                   className="size-11"
-                  aria-label={t('summarygrid.hideNamed', { name: entry.title })}
-                  onClick={() => onChange(setHidden(items, entry.key, true))}
+                  aria-label={t('summarygrid.removeNamed', { name: entry.title })}
+                  onClick={() => remove(entry)}
                 >
-                  <EyeOff />
+                  <X />
                 </Button>
               </div>
             )}

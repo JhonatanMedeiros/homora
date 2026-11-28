@@ -75,7 +75,13 @@ function merge<T extends SummaryPhoneItem>(
   const known = new Set(all.map(summaryKey));
   const kept = saved.filter((item) => known.has(summaryKey(item)));
   const present = new Set(kept.map(summaryKey));
-  return [...kept, ...all.filter((ref) => !present.has(summaryKey(ref))).map(make)];
+  return [
+    // A widget is on the Summary for as long as it exists; only blocks can be taken off.
+    ...kept.map((item) =>
+      item.widgetId !== undefined && item.hidden ? { ...item, hidden: false } : item,
+    ),
+    ...all.filter((ref) => !present.has(summaryKey(ref))).map(make),
+  ];
 }
 
 export function resolveDesktop(
