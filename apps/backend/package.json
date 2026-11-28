@@ -11,8 +11,8 @@
     "mcp": "node dist/mcp-server.js"
   },
   "dependencies": {
-    "@better-auth/passkey": "1.7.25",
-    "@fastify/rate-limit": "^11.2.2",
+    "@better-auth/passkey": "1.7.28",
+    "@fastify/rate-limit": "^11.3.0",
     "@homora/db": "workspace:*",
     "@homora/i18n": "workspace:*",
     "@homora/icons": "workspace:*",
@@ -20,19 +20,19 @@
     "@homora/shared": "workspace:*",
     "@homora/utils": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.2",
-    "better-auth": "1.7.25",
+    "better-auth": "1.7.28",
     "drizzle-orm": "0.45.4",
     "fastify": "5.12.8",
-    "i18next": "^27.1.5",
+    "i18next": "^27.2.9",
     "sharp": "^0.35.5",
     "yaml": "2.9.1",
     "zod": "4.6.7",
     "@homora/widgets": "workspace:*"
   },
   "devDependencies": {
-    "@simplewebauthn/server": "13.3.2",
-    "@types/node": "26.6.6",
-    "jose": "6.2.15",
+    "@simplewebauthn/server": "13.3.3",
+    "@types/node": "26.6.10",
+    "jose": "6.2.18",
     "tsx": "4.23.15",
     "typescript": "6.0.3"
   }

@@ -101,7 +101,7 @@
     "build": "node scripts/integration-catalog.mjs --check && tsc -p tsconfig.json"
   },
   "devDependencies": {
-    "@types/node": "26.6.6",
+    "@types/node": "26.6.10",
     "typescript": "6.0.3"
   },
   "dependencies": {
