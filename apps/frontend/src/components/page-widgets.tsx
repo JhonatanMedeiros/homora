@@ -1,5 +1,7 @@
+import { isSummaryWidgetType, summaryOptions } from '@homora/widgets/summary';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { resolveWidget } from '@homora/integrations';
 import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
 import { Button } from '@homora/ui/button';
 import {
@@ -14,47 +16,74 @@ import {
 } from '@homora/ui/alert-dialog';
 import type { PageRow } from '@/hooks/use-pages';
 import { PageWidgetDialog, type WidgetDraft } from '@/components/page-widget-dialog';
-import { t } from '@/i18n';
+import { t, tOr } from '@/i18n';
 import { PageWidgetCard } from '@/components/page-widget-card';
 import { getWidgetUI, listWidgetUI } from '@/components/widget-ui-registry';
-import { usePageWidgetData, type PageWidget } from '@/components/use-page-widget-data';
+import {
+  usePageWidgetData,
+  type PageWidget,
+  type PendingWidgets,
+} from '@/components/use-page-widget-data';
 
 function newWidgetDraft(pageId: number): WidgetDraft {
+  const [type, ui] = listWidgetUI().find(([, entry]) => entry.category !== 'overview')!;
   return {
     id: null,
     pageId,
-    type: listWidgetUI()[0]![0],
+    type,
     name: '',
-    config: listWidgetUI()[0]![1].defaultConfig,
+    config: ui.defaultConfig,
     connectionId: null,
     size: 'normal',
   };
 }
 
-type Props = {
+type Options = {
   pageId: number;
   pages: PageRow[];
-  /** `rail` stacks the widgets in a narrow column beside the services; `strip` spreads them above. */
-  layout?: 'strip' | 'rail';
+  /** `rail` stacks the widgets in a narrow column; `strip` spreads them; `grid` fills Summary cells. */
+  layout?: 'strip' | 'rail' | 'grid';
   groups?: { name: string; pageId: number | null }[];
   openMonitor?: (id: number, hasService: boolean) => void;
-  /** The "Add widget" tile; phones show it only while organizing. */
-  showAdd?: boolean;
+  /** The Summary draws its own widgets too; other views leave them out. */
+  summary?: boolean;
+  /** While an editor holds a draft, additions and edits of unsaved widgets go to it. */
+  edits?: PendingWidgets & {
+    onAdd: (widget: Omit<PageWidget, 'id' | 'position' | 'version'>) => void;
+    onUpdate: (widget: PageWidget) => void;
+    /** Forgets an unsaved widget, here because it was created on another page. */
+    onDiscard: (id: number) => void;
+  };
 };
 
-/** Widgets of a page. Plain information by default; the controls appear in the card menu and organize mode. */
-export function PageWidgets({
+/**
+ * Everything the widgets of a page need wherever they are drawn: their data, one card each, and
+ * the add, edit and remove dialogs.
+ */
+export function usePageWidgets({
   pageId,
   pages,
   layout = 'strip',
   groups = [],
   openMonitor,
-  showAdd = true,
-}: Props) {
+  summary = false,
+  edits,
+}: Options) {
   const [showHidden, setShowHidden] = useState(false);
   const [visibilityNow, setVisibilityNow] = useState(() => new Date());
-  const { widgets, connections, readings, error, busy, loading, change, reorder } =
-    usePageWidgetData(pageId);
+  const {
+    saved,
+    widgets,
+    connections,
+    readings,
+    error,
+    busy,
+    loading,
+    loadFailed,
+    change,
+    reorder,
+    reload,
+  } = usePageWidgetData(pageId, edits);
   const [draft, setDraft] = useState<WidgetDraft | null>(null);
   const [chosen, setChosen] = useState(false);
   const [dragId, setDragId] = useState<number | null>(null);
@@ -78,14 +107,16 @@ export function PageWidgets({
       document.removeEventListener('visibilitychange', update);
     };
   }, [widgets]);
-  const current = widgets.filter((item) => item.pageId === pageId);
-  const hiddenCount = current.filter((item) => {
-    return (
+  const onPage = widgets.filter((item) => item.pageId === pageId);
+  const current = summary
+    ? onPage
+    : onPage.filter((item) => !resolveWidget(item.type)?.summaryOnly);
+  const hiddenCount = current.filter(
+    (item) =>
       item.version === 1 &&
-      (getWidgetUI(item.type)?.isHidden?.(item.config, visibilityNow) ?? false)
-    );
-  }).length;
-  const full = current.length >= MAX_WIDGETS_PER_PAGE;
+      (getWidgetUI(item.type)?.isHidden?.(item.config, visibilityNow) ?? false),
+  ).length;
+  const full = onPage.length >= MAX_WIDGETS_PER_PAGE;
   const fullPages = new Set(
     pages
       .filter(
@@ -107,14 +138,225 @@ export function PageWidgets({
   };
   const dropHere = () => {
     if (dragId !== null && dropAt !== null && draggedIndex >= 0) {
-      reorder(dragId, dropAt > draggedIndex ? dropAt - 1 : dropAt);
+      reorder(
+        dragId,
+        dropAt > draggedIndex ? dropAt - 1 : dropAt,
+        current.map((entry) => entry.id),
+      );
     }
     endDrag();
   };
-  if (!pageId) return null;
+  const isExpired = (item: PageWidget) =>
+    item.version === 1 && (getWidgetUI(item.type)?.isHidden?.(item.config, visibilityNow) ?? false);
+  const nameOf = (item: PageWidget) => {
+    const ui = getWidgetUI(item.type);
+    return item.name || (ui ? tOr(ui.name, ui.name) : item.type);
+  };
+  const edit = (item: PageWidget) => {
+    const ui = getWidgetUI(item.type);
+    setChosen(true);
+    setDraft({
+      id: item.id,
+      pageId: item.pageId,
+      type: item.type,
+      name: item.name,
+      connectionId: item.connectionId,
+      config: ui ? ((item.version === 1 ? ui.parse(item.config) : null) ?? ui.defaultConfig) : {},
+      size: item.size,
+    });
+  };
+  /** One card. In the grid the Summary owns the order, so the card neither drags nor reorders. */
+  const card = (item: PageWidget, index: number, wide?: boolean) => (
+    <PageWidgetCard
+      key={item.id}
+      {...{
+        item,
+        connections,
+        readings,
+        loading,
+        pages,
+        fullPages,
+        layout,
+        wide,
+        groups,
+        openMonitor,
+        showHidden,
+        visibilityNow,
+        dragId,
+        setDragId,
+        setDropAt,
+        endDrag,
+        dropHere,
+        markable,
+        reorder: (id: number, to: number) =>
+          reorder(
+            id,
+            to,
+            current.map((entry) => entry.id),
+          ),
+        setChosen,
+        setDraft,
+        setRemoving,
+        change,
+      }}
+      index={layout === 'grid' ? 0 : index}
+      current={layout === 'grid' ? [item] : current}
+    />
+  );
+  const remove = (item: PageWidget) => void change(`/api/page-widgets/${item.id}`, 'DELETE');
+  const dialogs = (
+    <>
+      <AlertDialog
+        open={removing !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('pageWidgets.removeConfirm')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {removing && nameOf(removing)}. {t('pageWidgets.removeNote')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('pages.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (removing) remove(removing);
+                setRemoving(null);
+              }}
+            >
+              {t('common.remove')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <PageWidgetDialog
+        groups={groups}
+        summary={summary}
+        present={new Set(onPage.map((item) => item.type))}
+        onPickReady={(type) => {
+          edits?.onAdd({
+            pageId,
+            type,
+            name: '',
+            config: {},
+            connectionId: null,
+            size: 'normal',
+          });
+          setDraft(null);
+        }}
+        draft={draft}
+        chosen={chosen}
+        connections={connections}
+        pages={pages}
+        busy={busy}
+        error={error}
+        onChange={setDraft}
+        onChoose={setChosen}
+        onClose={() => setDraft(null)}
+        onSubmit={() => {
+          if (!draft) return;
+          const { id, ...rest } = draft;
+          const body = { ...rest, config: getWidgetUI(rest.type) ? rest.config : {} };
+          // What does not exist yet, on this page, waits for the editor to be saved.
+          const unsaved = edits?.add.find((item) => item.id === id);
+          if (edits && body.pageId === pageId && (id === null || unsaved)) {
+            if (unsaved) edits.onUpdate({ ...unsaved, ...body });
+            else edits.onAdd(body);
+            setDraft(null);
+            return;
+          }
+          const stored = id !== null && !unsaved;
+          void change(
+            stored ? `/api/page-widgets/${id}` : '/api/page-widgets',
+            stored ? 'PUT' : 'POST',
+            body,
+          ).then((ok) => {
+            if (ok && unsaved) edits?.onDiscard(unsaved.id);
+            if (ok) setDraft(null);
+          });
+        }}
+      />
+    </>
+  );
+  return {
+    /** Every widget read, whatever the page and the pending edit. */
+    all: saved,
+    current,
+    loading,
+    loadFailed,
+    error: draft ? '' : error,
+    full,
+    openAdd,
+    card,
+    dialogs,
+    isExpired,
+    nameOf,
+    edit,
+    /** Whether one of the Summary's own widgets has anything to choose. */
+    hasOptions: (item: PageWidget) =>
+      isSummaryWidgetType(item.type) && summaryOptions[item.type].length > 0,
+    askRemove: setRemoving,
+    hiddenCount,
+    showHidden,
+    toggleHidden: () => setShowHidden((value) => !value),
+    reload,
+    dragId,
+    setDropAt,
+    dropHere,
+  };
+}
+
+/** The button that reveals widgets that chose to hide themselves, such as finished countdowns. */
+export function ExpiredToggle({ widgets }: { widgets: ReturnType<typeof usePageWidgets> }) {
+  if (widgets.hiddenCount === 0) return null;
+  return (
+    <Button type="button" variant="ghost" className="self-start" onClick={widgets.toggleHidden}>
+      {widgets.showHidden
+        ? t('pageWidgets.hideExpired')
+        : t('pageWidgets.showExpired', { count: widgets.hiddenCount })}
+    </Button>
+  );
+}
+
+type Props = Omit<Options, 'summary' | 'edits' | 'layout'> & {
+  layout?: 'strip' | 'rail';
+  /** The "Add widget" tile; phones show it only while organizing. */
+  showAdd?: boolean;
+};
+
+/** Widgets of a page. Plain information by default; the controls appear in the card menu. */
+export function PageWidgets({ showAdd = true, ...options }: Props) {
+  const widgets = usePageWidgets(options);
+  if (!options.pageId) return null;
+  return (
+    <>
+      <PageWidgetList widgets={widgets} layout={options.layout} showAdd={showAdd} />
+      {widgets.dialogs}
+    </>
+  );
+}
+
+/**
+ * The cards of a page from a controller the caller keeps, so they can move around the view without
+ * reading everything again. The caller renders `widgets.dialogs` somewhere that stays mounted.
+ */
+export function PageWidgetList({
+  widgets,
+  layout = 'strip',
+  showAdd = true,
+}: {
+  widgets: ReturnType<typeof usePageWidgets>;
+  layout?: 'strip' | 'rail';
+  showAdd?: boolean;
+}) {
+  const { current, loading, error, full, openAdd, dragId, setDropAt, dropHere } = widgets;
   return (
     <section aria-label={t('pageWidgets.title')} className="flex flex-col gap-3">
-      {error && !draft && (
+      {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
@@ -134,37 +376,7 @@ export function PageWidgets({
           }}
         >
           <div role={current.length > 0 ? 'list' : undefined} className="contents">
-            {current.map((item, index) => (
-              <PageWidgetCard
-                key={item.id}
-                {...{
-                  item,
-                  index,
-                  current,
-                  connections,
-                  readings,
-                  loading,
-                  pages,
-                  fullPages,
-                  layout,
-                  groups,
-                  openMonitor,
-                  showHidden,
-                  visibilityNow,
-                  dragId,
-                  setDragId,
-                  setDropAt,
-                  endDrag,
-                  dropHere,
-                  markable,
-                  reorder,
-                  setChosen,
-                  setDraft,
-                  setRemoving,
-                  change,
-                }}
-              />
-            ))}
+            {current.map((item, index) => widgets.card(item, index))}
           </div>
           {full ? (
             <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">
@@ -192,65 +404,7 @@ export function PageWidgets({
           ) : null}
         </div>
       )}
-      {hiddenCount > 0 && (
-        <Button
-          type="button"
-          variant="ghost"
-          className="self-start"
-          onClick={() => setShowHidden(!showHidden)}
-        >
-          {showHidden
-            ? t('pageWidgets.hideExpired')
-            : t('pageWidgets.showExpired', { count: hiddenCount })}
-        </Button>
-      )}
-      <AlertDialog
-        open={removing !== null}
-        onOpenChange={(open) => {
-          if (!open) setRemoving(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('pageWidgets.removeConfirm')}</AlertDialogTitle>
-            <AlertDialogDescription>{removing?.name || removing?.type}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('pages.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => {
-                if (removing) void change(`/api/page-widgets/${removing.id}`, 'DELETE');
-                setRemoving(null);
-              }}
-            >
-              {t('common.remove')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <PageWidgetDialog
-        groups={groups}
-        draft={draft}
-        chosen={chosen}
-        connections={connections}
-        pages={pages}
-        busy={busy}
-        error={error}
-        onChange={setDraft}
-        onChoose={setChosen}
-        onClose={() => setDraft(null)}
-        onSubmit={() => {
-          if (!draft) return;
-          const { id, ...body } = draft;
-          void change(id ? `/api/page-widgets/${id}` : '/api/page-widgets', id ? 'PUT' : 'POST', {
-            ...body,
-            config: getWidgetUI(body.type) ? body.config : {},
-          }).then((ok) => {
-            if (ok) setDraft(null);
-          });
-        }}
-      />
+      <ExpiredToggle widgets={widgets} />
     </section>
   );
 }

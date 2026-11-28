@@ -10,5 +10,6 @@ export * from './pages.js';
 export * from './probes.js';
 export * from './service-links.js';
 export * from './services.js';
+export * from './summary-layout.js';
 export * from './transfer.js';
 export * from './uptime.js';

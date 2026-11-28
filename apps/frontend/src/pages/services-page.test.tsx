@@ -158,3 +158,70 @@ it('does not open a sheet for the side panel selection when the arrangement chan
   expect(screen.queryByRole('dialog')).toBeNull();
   vi.restoreAllMocks();
 });
+
+const clock = {
+  id: 3,
+  pageId: 1,
+  type: 'clock',
+  name: 'Kitchen',
+  config: { timeZone: '', format: '24h', showDate: true, showSeconds: false },
+  connectionId: null,
+  position: 0,
+  version: 1,
+  size: 'normal',
+};
+const withWidgets = { ...data, activePageId: 1 } as unknown as Data;
+
+function showWithWidget(wide: boolean) {
+  // The arrangement chosen by an earlier test is saved in this browser.
+  localStorage.clear();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async (url: string) =>
+        new Response(JSON.stringify(url === '/api/page-widgets' ? [clock] : [])),
+    ),
+  );
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    (query: string) =>
+      ({
+        matches: wide && query.includes('min-width'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList,
+  );
+  render(
+    <MemoryRouter>
+      <ServicesPage
+        data={withWidgets}
+        formRoute={null}
+        navigate={() => {}}
+        onAddService={() => {}}
+      />
+    </MemoryRouter>,
+  );
+}
+
+it('puts the widgets in the column and gives their place to a chosen service, with a way back', async () => {
+  showWithWidget(true);
+  const column = await screen.findByRole('complementary', { name: 'Page widgets' });
+  await waitFor(() => expect(column.textContent).toContain('Kitchen'));
+  expect(screen.queryByRole('region', { name: 'Selected service' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /^NAS: / }));
+  expect(screen.getByRole('region', { name: 'Selected service' }).textContent).toContain('NAS');
+  expect(screen.queryByText('Kitchen')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Back to widgets' }));
+  expect(await screen.findByText('Kitchen')).toBeTruthy();
+});
+
+it('folds the widgets away above the groups where there is no column, and remembers it', async () => {
+  showWithWidget(false);
+  const toggle = await screen.findByRole('button', { name: /Hide widgets/ });
+  expect(screen.getByText('Kitchen')).toBeTruthy();
+  fireEvent.click(toggle);
+  expect(screen.queryByText('Kitchen')).toBeNull();
+  expect(screen.getByRole('button', { name: /Show widgets/ })).toBeTruthy();
+  expect(localStorage.getItem('homora-widgets-open')).toBe('off');
+  localStorage.clear();
+});

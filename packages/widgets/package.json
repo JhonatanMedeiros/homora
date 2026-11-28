@@ -8,6 +8,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./summary": {
+      "types": "./dist/summary.d.ts",
+      "default": "./dist/summary.js"
+    },
+    "./summary/ui": "./src/ui/summary.tsx",
     "./clock": {
       "types": "./dist/clock.d.ts",
       "default": "./dist/clock.js"

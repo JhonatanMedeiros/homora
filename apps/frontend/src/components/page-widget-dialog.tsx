@@ -34,6 +34,12 @@ type Props = {
   chosen: boolean;
   connections: Connection[];
   pages: PageRow[];
+  /** Offer the widgets only the Summary draws. */
+  summary?: boolean;
+  /** Types already on the page. */
+  present?: Set<string>;
+  /** A widget with nothing to set up was chosen. */
+  onPickReady?: (type: string) => void;
   groups?: { name: string; pageId: number | null }[];
   busy: boolean;
   error: string;
@@ -49,6 +55,9 @@ function DialogContents({
   chosen,
   connections,
   pages,
+  summary,
+  present,
+  onPickReady,
   groups,
   busy,
   error,
@@ -90,6 +99,7 @@ function DialogContents({
         draft.type);
   const pick = (connection: Connection | null, type: string) => {
     if (!draft) return;
+    if (!connection && resolveWidget(type)?.summaryOnly) return onPickReady?.(type);
     onChange({
       ...draft,
       type: connection?.type ?? type,
@@ -115,7 +125,7 @@ function DialogContents({
             : t('pageWidgets.willAdd', { page: pageName })
       }
     >
-      {draft && gallery && <WidgetGallery connections={connections} onPick={pick} />}
+      {draft && gallery && <WidgetGallery {...{ summary, present, connections }} onPick={pick} />}
       {draft && !gallery && (
         <form
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"

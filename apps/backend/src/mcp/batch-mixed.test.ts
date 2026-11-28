@@ -10,6 +10,7 @@ const text = (response: unknown) => (response as { content: { text: string }[] }
 async function setup() {
   const storage = createDatabase(':memory:');
   const db = getSqliteHandle(storage.db);
+  db.prepare('DELETE FROM page_widgets').run();
   db.prepare("INSERT INTO pages(name,position) VALUES('Lab',5)").run();
   db.prepare(
     "INSERT INTO service_groups(name,position,page_id) VALUES('Apps',0,1),('Media',1,1)",

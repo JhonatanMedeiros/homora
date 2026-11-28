@@ -12,6 +12,7 @@ const ARRANGE_KEY = 'homora-arrange';
 const COLLAPSE_HEALTHY_KEY = 'homora-collapse-healthy';
 const PROBLEMS_FIRST_KEY = 'homora-problems-first';
 const WIDGET_RAIL_KEY = 'homora-widget-rail';
+const WIDGETS_OPEN_KEY = 'homora-widgets-open';
 
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => {
@@ -53,6 +54,8 @@ const currentProblemsFirst = () => read(PROBLEMS_FIRST_KEY) === 'on';
 /** The widgets sit in a side rail unless the person moved them back above the services. */
 const currentWidgetRail = () => read(WIDGET_RAIL_KEY) !== 'off';
 
+const currentWidgetsOpen = () => read(WIDGETS_OPEN_KEY) !== 'off';
+
 /** Home view preferences (tiles, list or cards, descriptions, uptime period, group handling), saved in this browser. */
 export function useViewPreferences() {
   const view = useSyncExternalStore(subscribe, currentView, () => 'tiles' as View);
@@ -90,7 +93,14 @@ export function useViewPreferences() {
     write(WIDGET_RAIL_KEY, next ? 'on' : 'off');
     notify();
   }, []);
+  const widgetsOpen = useSyncExternalStore(subscribe, currentWidgetsOpen, () => true);
+  const setWidgetsOpen = useCallback((next: boolean) => {
+    write(WIDGETS_OPEN_KEY, next ? 'on' : 'off');
+    notify();
+  }, []);
   return {
+    widgetsOpen,
+    setWidgetsOpen,
     view,
     setView,
     widgetRail,

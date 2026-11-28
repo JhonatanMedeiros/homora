@@ -1,4 +1,8 @@
 import {
+  en as summaryWidgetMessages,
+  ptBR as summaryWidgetMessagesPt,
+} from './summary-messages.js';
+import {
   en as widgetHealthchecksJobs,
   ptBR as widgetHealthchecksJobsPt,
 } from './widgets/healthchecks-jobs/messages.js';
@@ -54,6 +58,7 @@ export const widgetEnglish = {
   ...countdown,
   ...note,
   ...widgetCalendar,
+  ...summaryWidgetMessages,
   ...summary,
   ...incidents,
 
@@ -78,6 +83,7 @@ export const widgetPortuguese: Record<keyof typeof widgetEnglish, string> = {
   ...countdownPt,
   ...notePt,
   ...widgetCalendarPt,
+  ...summaryWidgetMessagesPt,
   ...summaryPt,
   ...incidentsPt,
 

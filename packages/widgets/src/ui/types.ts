@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import type { MonitoringQuery } from './host.js';
-export type WidgetCategory = 'time' | 'monitoring' | 'feeds' | 'utilities';
+export type WidgetCategory = 'overview' | 'time' | 'monitoring' | 'feeds' | 'utilities';
 
 export type WidgetUI = {
   name: string;

@@ -6,7 +6,7 @@ import { createTestSession } from './test-auth.js';
 
 const closers: (() => Promise<void> | void)[] = [];
 afterEach(async () => {
-  while (closers.length) await closers.pop()?.();
+  while (closers.length > 0) await closers.pop()?.();
 });
 
 type Link = {
@@ -247,7 +247,7 @@ describe('export and import', () => {
       version: number;
       groups: { services: { links: unknown[] }[] }[];
     };
-    expect(document.version).toBe(6);
+    expect(document.version).toBe(7);
     expect(document.groups[0].services[0].links).toHaveLength(3);
     expect(exported).toContain('"alias": "cloud"');
     expect(exported).not.toContain('typeId');

@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
-import { CHECK_TYPES, MAINTENANCE_NOTE_MAX, MAX_WIDGETS_PER_PAGE } from '@homora/shared';
+import { CHECK_TYPES, MAINTENANCE_NOTE_MAX } from '@homora/shared';
 import { resolveWidget } from '@homora/integrations';
 import { createMaintenanceStore } from '../monitoring/index.js';
+import { createPageWidgetStore } from '../page-widget-store.js';
 import { checkPageWidget } from '../page-widget-validation.js';
 import {
   hasInventoryDomain,
@@ -290,13 +291,6 @@ export function managedHash(db: DatabaseSync) {
     .update(JSON.stringify(managedSnapshot(db)))
     .digest('hex');
 }
-function pageWidgetIds(db: DatabaseSync, pageId: number) {
-  return (
-    db.prepare('SELECT id FROM page_widgets WHERE page_id=? ORDER BY position,id').all(pageId) as {
-      id: number;
-    }[]
-  ).map((row) => row.id);
-}
 function exactMembers(current: (string | number)[], requested: (string | number)[]) {
   return (
     current.length === requested.length &&
@@ -462,26 +456,15 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
     }
   } else if (kind === 'widget') {
     if (change.op === 'move') {
-      const widget = db
-        .prepare('SELECT id,page_id AS pageId FROM page_widgets WHERE id=?')
-        .get(change.id) as { id: number; pageId: number } | undefined;
+      const store = createPageWidgetStore(db);
+      const widget = store.find(change.id);
       if (!widget || !db.prepare('SELECT id FROM pages WHERE id=?').get(change.pageId))
         throw new Error('Widget or page not found');
-      const ids = (pageId: number) =>
-        (
-          db
-            .prepare('SELECT id FROM page_widgets WHERE page_id=? AND id<>? ORDER BY position,id')
-            .all(pageId, change.id) as { id: number }[]
-        ).map((row) => row.id);
-      const destination = ids(change.pageId);
-      if (destination.length >= MAX_WIDGETS_PER_PAGE || change.position > destination.length)
+      const staying = widget.pageId === change.pageId;
+      const siblings = store.idsOf(change.pageId).length - (staying ? 1 : 0);
+      if ((!staying && !store.pageHasRoom(change.pageId)) || change.position > siblings)
         throw new Error('Invalid widget position');
-      const source = ids(widget.pageId);
-      destination.splice(change.position, 0, change.id);
-      db.prepare('UPDATE page_widgets SET page_id=? WHERE id=?').run(change.pageId, change.id);
-      const update = db.prepare('UPDATE page_widgets SET position=? WHERE id=?');
-      if (widget.pageId !== change.pageId) source.forEach((item, index) => update.run(index, item));
-      destination.forEach((item, index) => update.run(index, item));
+      store.move(widget, change.pageId, change.position);
     } else if (change.op === 'page-create') {
       const checked = checkPageWidget(db, {
         pageId: change.pageId,
@@ -492,36 +475,13 @@ export function applyManagedChange(db: DatabaseSync, input: ManagedChange) {
         size: 'normal',
       });
       if (!checked.ok) throw new Error(checked.code);
-      const siblings = pageWidgetIds(db, change.pageId);
-      if (siblings.length >= MAX_WIDGETS_PER_PAGE) throw new Error('widget-limit');
-      if (change.position > siblings.length) throw new Error('invalid-position');
-      const total = db.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number };
-      if (total.n >= 200) throw new Error('widget-limit');
-      const created = db
-        .prepare(
-          'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,?,?,?)',
-        )
-        .run(
-          checked.value.pageId,
-          checked.value.type,
-          checked.value.name,
-          JSON.stringify(checked.value.config),
-          checked.value.connectionId,
-          checked.value.size,
-          change.position,
-        );
-      affectedId = Number(created.lastInsertRowid);
-      siblings.splice(change.position, 0, affectedId);
-      const update = db.prepare('UPDATE page_widgets SET position=? WHERE id=?');
-      siblings.forEach((item, index) => update.run(index, item));
+      const store = createPageWidgetStore(db);
+      if (!store.pageHasRoom(change.pageId)) throw new Error('widget-limit');
+      if (change.position > store.idsOf(change.pageId).length) throw new Error('invalid-position');
+      if (!store.hasRoom(change.pageId)) throw new Error('widget-limit');
+      affectedId = store.insert(checked.value, change.position);
     } else if (change.op === 'page-delete') {
-      const widget = db
-        .prepare('SELECT page_id AS pageId FROM page_widgets WHERE id=?')
-        .get(change.id) as { pageId: number } | undefined;
-      if (!widget) throw new Error('widget-not-found');
-      db.prepare('DELETE FROM page_widgets WHERE id=?').run(change.id);
-      const update = db.prepare('UPDATE page_widgets SET position=? WHERE id=?');
-      pageWidgetIds(db, widget.pageId).forEach((item, index) => update.run(index, item));
+      if (!createPageWidgetStore(db).remove(change.id)) throw new Error('widget-not-found');
       affectedId = change.id;
     } else if (change.op === 'create') {
       let connectionId = change.integrationId;

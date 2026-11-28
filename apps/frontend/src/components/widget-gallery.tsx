@@ -3,6 +3,7 @@ import {
   Activity,
   CalendarClock,
   Clock,
+  LayoutDashboard,
   LayoutGrid,
   Plug,
   Rss,
@@ -31,6 +32,7 @@ const RECENT_STORAGE_KEY = 'homora.recentWidgets';
 const MAX_RECENT = 4;
 
 const CATEGORY_ORDER: readonly CategoryKey[] = [
+  'overview',
   'time',
   'monitoring',
   'feeds',
@@ -39,6 +41,7 @@ const CATEGORY_ORDER: readonly CategoryKey[] = [
 ];
 
 const CATEGORY_LABEL_KEYS = {
+  overview: 'pageWidgets.categoryOverview',
   time: 'pageWidgets.categoryTime',
   monitoring: 'pageWidgets.categoryMonitoring',
   feeds: 'pageWidgets.categoryFeeds',
@@ -48,6 +51,7 @@ const CATEGORY_LABEL_KEYS = {
 
 const CATEGORY_ICONS: Record<FilterTab, LucideIcon> = {
   all: LayoutGrid,
+  overview: LayoutDashboard,
   recent: Clock,
   connections: Plug,
   time: CalendarClock,
@@ -120,16 +124,23 @@ function Highlight({ text, needle }: { text: string; needle: string }) {
 }
 
 type Props = {
+  /** Offer the widgets only the Summary draws. */
+  summary?: boolean;
+  /** Types already on the page, which the gallery says. */
+  present?: Set<string>;
   connections: Connection[];
   onPick: (connection: Connection | null, type: string) => void;
 };
 
-export function WidgetGallery({ connections, onPick }: Props) {
+export function WidgetGallery({ summary = false, present, connections, onPick }: Props) {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [recentRaw, setRecentRaw] = useState<RecentEntry[]>(() => readRecentWidgets());
 
-  const allLocal = useMemo(() => listWidgetUI(), []);
+  const allLocal = useMemo(
+    () => listWidgetUI().filter(([type]) => summary || !resolveWidget(type)?.summaryOnly),
+    [summary],
+  );
   const needle = query.trim().toLowerCase();
   const isSearching = needle.length > 0;
 
@@ -220,9 +231,11 @@ export function WidgetGallery({ connections, onPick }: Props) {
   const showRecentOnly = !isSearching && activeTab === 'recent';
 
   const handlePickLocal = (type: string) => {
-    const next: RecentEntry = { kind: 'local', type };
-    recordRecentWidget(next);
-    setRecentRaw(readRecentWidgets());
+    // The Summary's own are one tap away in their category already.
+    if (!resolveWidget(type)?.summaryOnly) {
+      recordRecentWidget({ kind: 'local', type });
+      setRecentRaw(readRecentWidgets());
+    }
     onPick(null, type);
   };
 
@@ -255,7 +268,13 @@ export function WidgetGallery({ connections, onPick }: Props) {
         description={tOr(option.description, option.description)}
         needle={needle}
         meta={isSearching ? t(CATEGORY_LABEL_KEYS[option.category ?? 'other']) : undefined}
-        badge={supportsWide ? t('pageWidgets.wideBadge') : undefined}
+        badge={
+          present?.has(type) && resolveWidget(type)?.summaryOnly
+            ? t('pageWidgets.onPageBadge')
+            : supportsWide
+              ? t('pageWidgets.wideBadge')
+              : undefined
+        }
         onPick={() => handlePickLocal(type)}
       >
         <Gallery />
@@ -371,19 +390,34 @@ export function WidgetGallery({ connections, onPick }: Props) {
             </section>
           )}
 
-          {!showRecentOnly && visibleLocal.length > 0 && (
-            <section aria-labelledby="pw-group-homora" className="flex flex-col gap-2">
-              <h3
-                id="pw-group-homora"
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {t('pageWidgets.groupHomora')}
-              </h3>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleLocal.map(([type, option]) => renderLocalOption(type, option))}
-              </div>
-            </section>
-          )}
+          {!showRecentOnly &&
+            (
+              [
+                ['overview', 'pageWidgets.categoryOverview', true],
+                ['homora', 'pageWidgets.groupHomora', false],
+              ] as const
+            ).map(([id, heading, overview]) => {
+              const group = visibleLocal.filter(
+                ([, entry]) => (entry.category === 'overview') === overview,
+              );
+              return group.length === 0 ? null : (
+                <section
+                  key={id}
+                  aria-labelledby={`pw-group-${id}`}
+                  className="flex flex-col gap-2"
+                >
+                  <h3
+                    id={`pw-group-${id}`}
+                    className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                  >
+                    {t(heading)}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                    {group.map(([type, option]) => renderLocalOption(type, option))}
+                  </div>
+                </section>
+              );
+            })}
 
           {!showRecentOnly && visibleConnections.length > 0 && (
             <section aria-labelledby="pw-group-connections" className="flex flex-col gap-2">

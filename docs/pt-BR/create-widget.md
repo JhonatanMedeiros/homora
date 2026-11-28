@@ -14,3 +14,8 @@ Execute os testes específicos, `pnpm check` e `pnpm build`; valide a galeria e 
 Widgets de página podem declarar `sizes: ['normal', 'wide']` na definição quando esse escopo for aprovado; omitir o campo significa apenas normal. O host guarda a escolha. Largo ocupa duas colunas na faixa a partir de `sm` e aparece normal no painel lateral e em telas pequenas; todo widget deve funcionar na largura normal.
 
 As fontes internas de monitoramento são registradas por contrato e versão, não exigem conexão e são portáveis. Consulte o [ADR 0027](../decisions/0027-widget-internal-monitoring.md) (em inglês) para contratos, limites, dados desatualizados e privacidade. O host fornece a leitura; o widget não deve acessar a infraestrutura de monitoramento diretamente. As apresentações MON ficam para outras issues.
+
+No Resumo, cada widget é uma célula de uma grade de 12 colunas. Declare `summary` (largura e altura padrão e mínimas)
+quando o padrão geral (4 ou 8 colunas conforme o tamanho, 2 linhas, no mínimo 3×1) não servir. `summaryOnly` é para
+widgets sobre os dados do próprio Início, desenhados pela aplicação: adicione o desenho em `summaryRenderers` (um
+teste exige) e as opções em `summaryOptions`; veja o [ADR 0033](../decisions/0033-summary-widgets.md).

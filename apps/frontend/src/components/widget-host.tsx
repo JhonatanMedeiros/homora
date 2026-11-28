@@ -45,6 +45,10 @@ async function readScopes(signal: AbortSignal) {
   return { groups, pages };
 }
 
+async function readProbes(signal: AbortSignal) {
+  return (await getJson('/api/probes', signal)) as { name: string }[];
+}
+
 export async function readIncidents(
   options: MonitoringQuery,
   signal: AbortSignal,
@@ -262,6 +266,7 @@ export function WidgetHost({
         monitoring: {
           readSummary,
           readScopes,
+          readProbes,
           readProblems,
           readMaintenance,
           readAvailability,

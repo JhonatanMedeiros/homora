@@ -7,7 +7,11 @@ it('round trips the portable monitoring widget and its scope without a connectio
   const first = createDatabase(':memory:');
   const second = createDatabase(':memory:');
   const a = getSqliteHandle(first.db);
+  // Only the widgets of this scenario.
+  a.exec('DELETE FROM page_widgets');
   const b = getSqliteHandle(second.db);
+  // Only the widgets of this scenario.
+  b.exec('DELETE FROM page_widgets');
   const page = (a.prepare('SELECT id FROM pages LIMIT 1').get() as { id: number }).id;
   const config = { threshold: 14, pages: ['Home'], groups: ['Media'] };
   a.prepare(

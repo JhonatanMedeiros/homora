@@ -30,6 +30,7 @@ export type IssueCode =
   | 'widget-source-unavailable'
   | 'widget-invalid'
   | 'widget-limit'
+  | 'summary-layout-invalid'
   | 'pages-ignored'
   | 'page-invalid'
   | 'page-limit'

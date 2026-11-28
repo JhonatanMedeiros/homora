@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { MAX_PAGES, normalizePageName, type Page } from '@homora/shared';
+import { createPageWidgetStore } from './page-widget-store.js';
 
 export type PageFailure =
   | 'invalid-page-name'
@@ -19,6 +20,7 @@ const fail = (code: PageFailure): Result<never> => ({ ok: false, code });
  * services) to another page. The database enforces name uniqueness too (NOCASE index).
  */
 export function createPages(sqlite: DatabaseSync, nested = false) {
+  const widgets = createPageWidgetStore(sqlite);
   const transaction = <T>(work: () => T): T => {
     sqlite.exec(nested ? 'SAVEPOINT page_change' : 'BEGIN IMMEDIATE');
     try {
@@ -70,13 +72,8 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
         .all() as { id: number; n: number }[];
       return new Map(rows.map((row) => [row.id, row.n]));
     },
-    widgetCount(id: number): number {
-      return (
-        sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets WHERE page_id=?').get(id) as {
-          n: number;
-        }
-      ).n;
-    },
+    /** Widgets someone added; the Summary's own are replaced by those of any other page. */
+    widgetCount: widgets.countAdded,
     create(rawName: unknown): Result<Page> {
       const name = normalizePageName(rawName);
       if (!name) return fail('invalid-page-name');
@@ -87,6 +84,7 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
         const created = sqlite
           .prepare('INSERT INTO pages(name,position) VALUES(?,?)')
           .run(name, position);
+        widgets.seedSummary(Number(created.lastInsertRowid));
         bumpVersion();
         return ok(find(Number(created.lastInsertRowid))!);
       });
@@ -102,7 +100,7 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
         return ok(find(id)!);
       });
     },
-    /** Deletes a page. When it holds groups they move to `moveTo`, which must then be given. */
+    /** Deletes a page. Its groups and widgets move to `moveTo`, which must then be given. */
     remove(id: number, moveTo?: number): Result<{ movedGroups: number; name: string }> {
       return transaction(() => {
         const page = find(id);
@@ -113,21 +111,14 @@ export function createPages(sqlite: DatabaseSync, nested = false) {
             n: number;
           }
         ).n;
-        const widgets = (
-          sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets WHERE page_id=?').get(id) as {
-            n: number;
-          }
-        ).n;
-        if (groups > 0 || widgets > 0) {
+        if (groups > 0 || widgets.countAdded(id) > 0) {
           if (moveTo === undefined) return fail('page-move-required');
           if (moveTo === id || !find(moveTo)) return fail('page-not-found');
           sqlite.prepare('UPDATE service_groups SET page_id=? WHERE page_id=?').run(moveTo, id);
-          sqlite
-            .prepare(
-              'UPDATE page_widgets SET page_id=?, position=position + (SELECT COALESCE(MAX(position), -1) + 1 FROM page_widgets WHERE page_id=?) WHERE page_id=?',
-            )
-            .run(moveTo, moveTo, id);
         }
+        // The destination has its own Summary: this page's goes with it.
+        widgets.removeSummary(id);
+        if (moveTo !== undefined) widgets.moveAll(id, moveTo);
         sqlite.prepare('DELETE FROM pages WHERE id=?').run(id);
         renumber();
         bumpVersion();

@@ -5,6 +5,27 @@ export { monitoringState, type MonitoringState } from './monitoring-state.js';
 /** Internal widget contracts. The host owns placement, persistence and data access. */
 export type WidgetLocation = 'page' | 'card' | 'top-bar';
 export type WidgetSize = 'normal' | 'wide';
+/** In grid columns (of 12) and rows. */
+export type SummaryPlacement = {
+  width: number;
+  height: number;
+  minWidth: number;
+  minHeight: number;
+};
+/** The default and smallest size a widget takes on the Summary. */
+export function summaryPlacement(
+  definition: WidgetDefinition<unknown> | undefined,
+  size: WidgetSize = 'normal',
+): SummaryPlacement {
+  return (
+    definition?.summary ?? {
+      width: size === 'wide' ? 8 : 4,
+      height: 2,
+      minWidth: 3,
+      minHeight: 1,
+    }
+  );
+}
 export type WidgetStat = { label: string; value: string; id?: 'cpu' | 'memory' | 'disk' };
 
 /** Source identifiers name a data contract, not a transport or credentials. */
@@ -19,6 +40,10 @@ export type WidgetDefinition<Config> = {
   connectionData?: 'resources';
   defaultConfig?: Config;
   sizes?: readonly WidgetSize[];
+  /** How the widget sits on the Summary grid when it differs from what its size gives. */
+  summary?: SummaryPlacement;
+  /** Drawn only on the Summary, from the health the application has already read. */
+  summaryOnly?: boolean;
   parseConfig(value: unknown): Config | null;
   /** Remove installation-local references when crossing the configuration transfer boundary. */
   portableConfig?(config: Config): Config;

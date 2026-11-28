@@ -761,7 +761,11 @@ it('adds page widget storage without changing unlinked or card integration widge
       { id: 4, name: 'Card', service_id: 1 },
       { id: 5, name: 'Unlinked', service_id: null },
     ]);
-    expect(check.prepare('SELECT COUNT(*) AS n FROM page_widgets').get()).toEqual({ n: 0 });
+    expect(
+      check.prepare("SELECT COUNT(*) AS n FROM page_widgets WHERE type NOT LIKE 'summary-%'").get(),
+    ).toEqual({
+      n: 0,
+    });
     expect(
       check
         .prepare("SELECT state,base_hash,base_version FROM service_proposals WHERE id='proposal'")
@@ -815,7 +819,13 @@ it('rolls back a failed page widget migration and can migrate a restored backup'
     expect(recovered.prepare('SELECT name,service_id FROM integration_widgets').all()).toEqual([
       { name: 'Unlinked', service_id: null },
     ]);
-    expect(recovered.prepare('SELECT COUNT(*) AS n FROM page_widgets').get()).toEqual({ n: 0 });
+    expect(
+      recovered
+        .prepare("SELECT COUNT(*) AS n FROM page_widgets WHERE type NOT LIKE 'summary-%'")
+        .get(),
+    ).toEqual({
+      n: 0,
+    });
     recovered.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });

@@ -215,6 +215,8 @@ export const en = {
     'Connected widget skipped: recreate it with a connection after import. Connections and credentials are not transferred.',
   'transfer.issue.widget-invalid': 'Invalid page widget skipped.',
   'transfer.issue.widget-limit': 'Widget skipped: the limit of 200 page widgets was reached.',
+  'transfer.issue.summary-layout-invalid':
+    'Summary arrangement ignored: it is not valid. The default is used.',
   'transfer.issue.pages-ignored':
     'Other pages listed in "pages" were not read. Import each file separately.',
   'transfer.issue.group-renamed': 'The group name was shortened to 40 characters.',
@@ -455,6 +457,8 @@ export const ptBR: Record<keyof typeof en, string> = {
     'Widget conectado ignorado: crie-o novamente com uma conexão após a importação. Conexões e credenciais não são transferidas.',
   'transfer.issue.widget-invalid': 'Widget de página inválido ignorado.',
   'transfer.issue.widget-limit': 'Widget ignorado: o limite de 200 widgets de página foi atingido.',
+  'transfer.issue.summary-layout-invalid':
+    'Organização do Resumo ignorada: ela não é válida. O padrão será usado.',
   'transfer.issue.pages-ignored':
     'As outras páginas listadas em "pages" não foram lidas. Importe cada arquivo separadamente.',
   'transfer.issue.group-renamed': 'O nome do grupo foi encurtado para 40 caracteres.',

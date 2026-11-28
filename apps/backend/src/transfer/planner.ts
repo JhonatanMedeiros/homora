@@ -1,3 +1,9 @@
+import { MAX_PAGE_WIDGETS } from '@homora/shared';
+import {
+  isSummaryWidgetType,
+  summaryWidgets,
+  type SummaryWidgetType,
+} from '@homora/widgets/summary';
 import { isPortableWidget } from '@homora/widgets';
 import { resolveWidget } from '@homora/integrations';
 import { samePageName } from '@homora/shared';
@@ -8,9 +14,23 @@ type Existing = {
   services: { category: string; url: string; alias?: string | null }[];
   pages?: string[];
   widgetCount?: number;
+  /** Summary widgets an import must not add again, as `summaryWidgetKey`s. */
+  summaryWidgets?: Set<string>;
 };
 
 /** Compares file with current configuration. Additive only: nothing is overwritten or deleted. */
+/** Two Summary widgets are the same when a page would show the same thing twice. */
+export const summaryWidgetKey = (
+  page: string,
+  widget: { type: SummaryWidgetType; name: string; config: unknown },
+) =>
+  [
+    page.toLocaleLowerCase(),
+    widget.type,
+    widget.name,
+    JSON.stringify(summaryWidgets[widget.type].parseConfig(widget.config)),
+  ].join('\n');
+
 export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan {
   const issues = [...parsed.issues];
   const knownGroups = new Set(existing.groups);
@@ -71,12 +91,17 @@ export function planImport(parsed: ParsedImport, existing: Existing): ImportPlan
       });
     });
   });
-  let remainingWidgets = Math.max(0, 200 - (existing.widgetCount ?? 0));
+  let remainingWidgets = Math.max(0, MAX_PAGE_WIDGETS - (existing.widgetCount ?? 0));
   const widgets = (parsed.document.widgets ?? []).map((widget, index) => {
     const portable = isPortableWidget(resolveWidget(widget.type));
-    const canCreate = portable && remainingWidgets > 0;
+    // A page keeps the Summary widgets it already has instead of receiving them again.
+    const { type } = widget;
+    const repeated =
+      isSummaryWidgetType(type) &&
+      existing.summaryWidgets?.has(summaryWidgetKey(widget.page, { ...widget, type }));
+    const canCreate = portable && !repeated && remainingWidgets > 0;
     if (canCreate) remainingWidgets -= 1;
-    else if (portable)
+    else if (portable && !repeated)
       issues.push({ path: `widgets[${index}]`, code: 'widget-limit', severity: 'warning' });
     return {
       page: widget.page,

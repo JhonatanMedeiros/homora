@@ -12,6 +12,7 @@ import { createVault } from './vault.js';
 it('persists, validates, reorders and moves page widgets without changing legacy widgets', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-page-widgets-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const sqlite = getSqliteHandle(db);
   const { auth, cookie } = await createTestSession();
   const app = createApp(db, 5173, auth, createVault(path));
@@ -22,6 +23,8 @@ it('persists, validates, reorders and moves page widgets without changing legacy
   const home = (await req('GET', '/api/pages')).json()[0].id;
   const pages = (await req('POST', '/api/pages', { name: 'Lab' })).json();
   const lab = pages.find((page: { name: string }) => page.name === 'Lab').id;
+  // The Summary a new page starts with is not what this test is about.
+  sqlite.exec('DELETE FROM page_widgets');
   const data = {
     pageId: lab,
     type: 'clock',
@@ -67,6 +70,7 @@ it('persists, validates, reorders and moves page widgets without changing legacy
 it('exports portable clock configuration and rejects a stale import preview', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-widget-transfer-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const { auth, cookie } = await createTestSession();
   const app = createApp(db, 5173, auth, createVault(path));
   const headers = { cookie, origin: 'http://localhost:5173' };
@@ -147,6 +151,7 @@ it('exports portable clock configuration and rejects a stale import preview', as
 it('accepts only a matching integration source and protects it from deletion', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-widget-source-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const sqlite = getSqliteHandle(db);
   sqlite
     .prepare(
@@ -177,6 +182,7 @@ it('accepts only a matching integration source and protects it from deletion', a
 it('holds at most the widget limit per page, for creating and for moving in', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-widget-limit-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const { auth, cookie } = await createTestSession();
   const app = createApp(db, 5173, auth, createVault(path));
   const headers = { cookie, origin: 'http://localhost:5173' };
@@ -186,6 +192,7 @@ it('holds at most the widget limit per page, for creating and for moving in', as
   const lab = (await req('POST', '/api/pages', { name: 'Lab' }))
     .json()
     .find((page: { name: string }) => page.name === 'Lab').id;
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const data = (pageId: number) => ({
     pageId,
     type: 'clock',
@@ -213,6 +220,7 @@ it('holds at most the widget limit per page, for creating and for moving in', as
 it('persists, edits and transfers local notes, rejecting invalid configuration', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-notes-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const { auth, cookie } = await createTestSession();
   const app = createApp(db, 5173, auth, createVault(path));
   const headers = { cookie, origin: 'http://localhost:5173' };
@@ -264,6 +272,7 @@ it('persists, edits and transfers local notes, rejecting invalid configuration',
 it('reads existing version-one rows without rewriting their configurations', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-widget-legacy-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const sqlite = getSqliteHandle(db);
   const { auth, cookie } = await createTestSession();
   const app = createApp(db, 5173, auth, createVault(path));
@@ -298,6 +307,7 @@ it('reads existing version-one rows without rewriting their configurations', asy
 it('persists, resizes, transfers, and validates rss-feed widgets', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-rss-feed-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const { auth, cookie } = await createTestSession();
   const app = createApp(db, 5173, auth, createVault(path));
   const headers = { cookie, origin: 'http://localhost:5173' };
@@ -369,6 +379,7 @@ it('persists, resizes, transfers, and validates rss-feed widgets', async () => {
 it('persists, resizes, transfers, and validates weather widgets without storing API keys', async () => {
   const path = join(mkdtempSync(join(tmpdir(), 'homora-weather-widget-')), 'data.sqlite');
   const { db } = createDatabase(path);
+  getSqliteHandle(db).exec('DELETE FROM page_widgets');
   const { auth, cookie } = await createTestSession();
   const app = createApp(db, 5173, auth, createVault(path));
   const headers = { cookie, origin: 'http://localhost:5173' };

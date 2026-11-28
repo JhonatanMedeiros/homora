@@ -22,6 +22,7 @@ import { ptBR as serviceDetail } from './messages/service-detail.js';
 import { ptBR as checks } from './messages/checks.js';
 import { ptBR as probes } from './messages/probes.js';
 import { ptBR as home } from './messages/home.js';
+import { ptBR as summaryGrid } from './messages/summary-grid.js';
 
 export const ptBR: Record<MessageKey, string> = {
   ...core,
@@ -47,4 +48,5 @@ export const ptBR: Record<MessageKey, string> = {
   ...probes,
   ...pageWidgets,
   ...home,
+  ...summaryGrid,
 };

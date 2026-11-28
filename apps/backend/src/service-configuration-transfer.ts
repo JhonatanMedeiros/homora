@@ -1,7 +1,9 @@
 import { isPortableWidget } from '@homora/widgets';
-import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
+import { isSummaryWidgetType } from '@homora/widgets/summary';
 import { resolveWidget } from '@homora/integrations';
 import { createServiceAttention } from './service-attention.js';
+import { createSummaryLayouts } from './summary-layouts.js';
+import { createPageWidgetStore, SUMMARY_TYPES_SQL } from './page-widget-store.js';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   MAX_PAGES,
@@ -9,12 +11,17 @@ import {
   type CheckType,
   type Service,
   type ServiceLink,
+  type SummaryDesktopItem,
+  type SummaryPhoneItem,
 } from '@homora/shared';
 import {
   planImport,
   type ImportPlan,
   type ParsedImport,
+  type PortableSummaryItem,
+  type PortableSummaryLayout,
   type PortableWidget,
+  summaryWidgetKey,
 } from './transfer/index.js';
 
 type ServiceRow = Omit<
@@ -59,6 +66,78 @@ export function createConfigurationTransfer({
   writeLinks: (id: number, links: unknown) => void;
   ensureType: (name: unknown, color: unknown) => number | null;
 }) {
+  const widgetStore = createPageWidgetStore(sqlite);
+  /** The Summary widgets a page holds, as `summaryWidgetKey`s. */
+  const summaryKeysOf = (pageId: number, page: string) =>
+    widgetStore
+      .list(pageId)
+      .flatMap(({ type, name, config }) =>
+        isSummaryWidgetType(type)
+          ? [summaryWidgetKey(page, { type, name, config: JSON.parse(config) })]
+          : [],
+      );
+  /**
+   * How an import treats each page's Summary. A page is untouched while it holds only unnamed
+   * Summary widgets without options and no arrangement of its own.
+   */
+  function summaryState(parsed: ParsedImport, onlyPage?: number) {
+    const pages = sqlite.prepare('SELECT id,name FROM pages').all() as {
+      id: number;
+      name: string;
+    }[];
+    const touched = new Set(
+      (
+        sqlite
+          .prepare(
+            `SELECT page_id AS id FROM page_widgets WHERE type NOT IN (${SUMMARY_TYPES_SQL}) OR name<>'' OR config<>'{}' UNION SELECT page_id FROM summary_layout_items`,
+          )
+          .all() as { id: number }[]
+      ).map((row) => row.id),
+    );
+    /** Pages whose Summary widgets the file lists, by lower-cased name. */
+    const described = new Set(
+      parsed.document.hasSummaryWidgets && onlyPage === undefined
+        ? (parsed.document.widgets ?? [])
+            .filter((widget) => isSummaryWidgetType(widget.type))
+            .map((widget) => widget.page.toLocaleLowerCase())
+        : [],
+    );
+    /** Whether the file would leave the page with another set of widgets or arrange them. */
+    const changes = (pageId: number, name: string) => {
+      const there = (parsed.document.widgets ?? []).flatMap((widget) => {
+        const { type } = widget;
+        return widget.page.toLocaleLowerCase() === name && isSummaryWidgetType(type)
+          ? [summaryWidgetKey(name, { ...widget, type })]
+          : [];
+      });
+      return (
+        summaryKeysOf(pageId, name).sort().join() !== there.sort().join() ||
+        (parsed.document.summaryLayouts ?? []).some(
+          (layout) => layout.page.toLocaleLowerCase() === name,
+        )
+      );
+    };
+    const replace: number[] = [];
+    const keep = new Set<string>();
+    for (const page of pages) {
+      const name = page.name.toLocaleLowerCase();
+      if (described.has(name) && !touched.has(page.id) && changes(page.id, name)) {
+        replace.push(page.id);
+        continue;
+      }
+      for (const key of summaryKeysOf(page.id, page.name)) keep.add(key);
+    }
+    // A new page that the file does not describe receives the usual widgets first.
+    const known = new Set(pages.map((page) => page.name.toLocaleLowerCase()));
+    for (const widget of parsed.document.widgets ?? []) {
+      const page = widget.page.toLocaleLowerCase();
+      const { type } = widget;
+      // It comes with the usual widgets, without options.
+      if (!known.has(page) && !described.has(page) && isSummaryWidgetType(type))
+        keep.add(summaryWidgetKey(page, { type, name: '', config: {} }));
+    }
+    return { described, replace, touched, keep };
+  }
   return {
     /** Groups and cards in current order, for export. */
     exportData() {
@@ -70,22 +149,24 @@ export function createConfigurationTransfer({
           }[]
         ).map((row) => [row.id, row.name]),
       );
-      return {
-        pages: [...pageNames.values()],
-        widgets: (
-          sqlite
-            .prepare(
-              `SELECT w.type,w.name,w.config,w.size,p.name AS page,c.name AS sourceName FROM page_widgets w JOIN pages p ON p.id=w.page_id LEFT JOIN integration_instances c ON c.id=w.connection_id WHERE w.version=1 ORDER BY p.position,w.position,w.id`,
-            )
-            .all() as {
-            type: string;
-            name: string;
-            config: string;
-            size: string;
-            page: string;
-            sourceName: string | null;
-          }[]
-        ).flatMap<PortableWidget>((row) => {
+      // Layouts name widgets by their position in the exported list.
+      const exported = new Map<number, number>();
+      const widgets = (
+        sqlite
+          .prepare(
+            `SELECT w.id,w.type,w.name,w.config,w.size,p.name AS page,c.name AS sourceName FROM page_widgets w JOIN pages p ON p.id=w.page_id LEFT JOIN integration_instances c ON c.id=w.connection_id WHERE w.version=1 ORDER BY p.position,w.position,w.id`,
+          )
+          .all() as {
+          id: number;
+          type: string;
+          name: string;
+          config: string;
+          size: string;
+          page: string;
+          sourceName: string | null;
+        }[]
+      )
+        .flatMap<PortableWidget & { id: number }>((row) => {
           let raw: unknown;
           try {
             raw = JSON.parse(row.config);
@@ -101,6 +182,7 @@ export function createConfigurationTransfer({
               ? []
               : [
                   {
+                    id: row.id,
                     page: row.page,
                     type: row.type,
                     name: row.name,
@@ -112,6 +194,7 @@ export function createConfigurationTransfer({
           if (!definition?.source || row.sourceName === null) return [];
           return [
             {
+              id: row.id,
               page: row.page,
               type: row.type,
               name: row.name,
@@ -120,7 +203,33 @@ export function createConfigurationTransfer({
               source: { type: row.type, name: row.sourceName },
             },
           ];
-        }),
+        })
+        .map(({ id, ...widget }, index) => {
+          exported.set(id, index);
+          return widget;
+        });
+      const portable = (items: (SummaryDesktopItem | SummaryPhoneItem)[]) =>
+        items.flatMap<PortableSummaryItem>(({ widgetId, ...item }) => {
+          const widget = exported.get(widgetId);
+          return widget === undefined ? [] : [{ ...item, widget }];
+        });
+      const summaryLayouts = createSummaryLayouts(sqlite)
+        .list()
+        .flatMap<PortableSummaryLayout>(({ pageId, desktop, phone }) => {
+          const page = pageNames.get(pageId);
+          if (!page || (!desktop && !phone)) return [];
+          return [
+            {
+              page,
+              ...(desktop ? { desktop: portable(desktop) } : {}),
+              ...(phone ? { phone: portable(phone) } : {}),
+            },
+          ];
+        });
+      return {
+        pages: [...pageNames.values()],
+        widgets,
+        summaryLayouts,
         groups: selectGroups().map((group) => ({
           ...group,
           page: group.pageId === null ? undefined : pageNames.get(group.pageId),
@@ -157,6 +266,7 @@ export function createConfigurationTransfer({
           widgetCount: (
             sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number }
           ).n,
+          summaryWidgets: summaryState(parsed).keep,
           groups: selectGroups().map((group) => group.name),
           services: rows.map((row) => ({ category: row.category, url: row.url, alias: row.alias })),
           pages: (
@@ -206,7 +316,10 @@ export function createConfigurationTransfer({
           !existingPages.some((page) => page.id === options.pageId)
         )
           return { status: 'stale' as const };
+        // Which pages hand their Summary over to the file is decided before anything is added.
+        const summary = summaryState(parsed, options.pageId);
         const plan = planImport(parsed, {
+          summaryWidgets: summary.keep,
           widgetCount: (
             sqlite.prepare('SELECT COUNT(*) AS n FROM page_widgets').get() as { n: number }
           ).n,
@@ -240,7 +353,10 @@ export function createConfigurationTransfer({
                 'INSERT INTO pages(name,position) VALUES(?,(SELECT COALESCE(MAX(position),-1)+1 FROM pages))',
               )
               .run(page.name);
-            pageIds.set(key, Number(created.lastInsertRowid));
+            const createdId = Number(created.lastInsertRowid);
+            // Unless the file brings the page's widgets, it starts with the usual Summary.
+            if (!summary.described.has(key)) widgetStore.seedSummary(createdId);
+            pageIds.set(key, createdId);
             count += 1;
           }
         }
@@ -306,35 +422,60 @@ export function createConfigurationTransfer({
             );
           created += 1;
         });
+        // The file replaces the untouched Summary of a page it describes.
+        for (const pageId of summary.replace) widgetStore.removeSummary(pageId);
+        const widgetIds = new Map<number, number>();
         let widgetsCreated = 0;
         for (const [index, widget] of (parsed.document.widgets ?? []).entries()) {
           if (plan.widgets[index]?.status !== 'new') continue;
           const pageId = options.pageId ?? pageIds.get(widget.page.toLocaleLowerCase());
           if (!pageId) continue;
-          const onPage = (
-            sqlite
-              .prepare('SELECT COUNT(*) AS n FROM page_widgets WHERE page_id=?')
-              .get(pageId) as {
-              n: number;
-            }
-          ).n;
+          // Pages of the file that fall back to another one do not double its Summary.
+          const { type } = widget;
+          if (
+            isSummaryWidgetType(type) &&
+            !pageIds.has(widget.page.toLocaleLowerCase()) &&
+            summaryKeysOf(pageId, '').includes(summaryWidgetKey('', { ...widget, type }))
+          )
+            continue;
           // A page holds a limited number of widgets; the rest of the file's widgets are skipped.
-          if (onPage >= MAX_WIDGETS_PER_PAGE) continue;
-          sqlite
-            .prepare(
-              'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,NULL,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
-            )
-            .run(
-              pageId,
-              widget.type,
-              widget.name,
-              JSON.stringify(widget.config),
-              widget.size ?? 'normal',
-              pageId,
-            );
+          if (!widgetStore.hasRoom(pageId)) continue;
+          const created = widgetStore.insert({
+            pageId,
+            type: widget.type,
+            name: widget.name,
+            config: widget.config,
+            connectionId: null,
+            size: widget.size ?? 'normal',
+          });
+          const ref = parsed.document.widgetRefs?.[index];
+          if (ref !== undefined) widgetIds.set(ref, created);
           widgetsCreated += 1;
         }
-        if (created || widgetsCreated) bumpVersion();
+        let layoutsApplied = 0;
+        for (const layout of parsed.document.summaryLayouts ?? []) {
+          const pageId =
+            options.pageId === undefined ? pageIds.get(layout.page.toLocaleLowerCase()) : undefined;
+          // Importing never rearranges a Summary someone has already changed.
+          if (!pageId || summary.touched.has(pageId)) continue;
+          const local = <T>(items: PortableSummaryItem[] | undefined) =>
+            items?.flatMap(({ widget, ...rest }) => {
+              const widgetId = widgetIds.get(widget);
+              // The widget must have been created on this very page.
+              const here =
+                widgetId !== undefined &&
+                sqlite
+                  .prepare('SELECT 1 FROM page_widgets WHERE id=? AND page_id=?')
+                  .get(widgetId, pageId);
+              return here ? [{ ...rest, widgetId } as T] : [];
+            }) ?? null;
+          createSummaryLayouts(sqlite).write(pageId, {
+            desktop: local<SummaryDesktopItem>(layout.desktop),
+            phone: local<SummaryPhoneItem>(layout.phone),
+          });
+          layoutsApplied += 1;
+        }
+        if (created || widgetsCreated || layoutsApplied) bumpVersion();
         return { status: 'applied' as const, plan, created, widgetsCreated };
       });
     },

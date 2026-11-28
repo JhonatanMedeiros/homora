@@ -56,6 +56,9 @@ it('upgrades the monitoring view without changing cards, probes or history', asy
       DROP TRIGGER service_identity_insert;
       DROP TABLE service_identities;
       DROP TABLE oidc_settings;
+      DELETE FROM page_widgets WHERE type LIKE 'summary-%';
+      DROP TABLE summary_layout_items;
+      DROP TABLE summary_layouts;
       DELETE FROM __drizzle_migrations WHERE created_at >= 1794900000000;
     `);
     first.close();
@@ -102,19 +105,25 @@ it('adds the sign-in provider settings without touching the account or its links
     const first = createDatabase(path);
     const sqlite = getSqliteHandle(first.db);
     const latest = sqlite
-      .prepare('SELECT MAX(created_at) AS at FROM __drizzle_migrations')
+      // Two migrations follow the one that creates `oidc_settings`; all three are undone.
+      .prepare(
+        'SELECT created_at AS at FROM __drizzle_migrations ORDER BY at DESC LIMIT 1 OFFSET 2',
+      )
       .get() as { at: number };
     sqlite.exec(`
       INSERT INTO user(id,name,email,emailVerified,createdAt,updatedAt) VALUES('u','Admin','admin@example.test',0,'2026-01-01','2026-01-01');
       INSERT INTO account(id,accountId,providerId,userId,createdAt,updatedAt) VALUES('a','subject','oidc-0123456789abcdef','u','2026-01-01','2026-01-01');
       DROP TABLE oidc_settings;
-      DELETE FROM __drizzle_migrations WHERE created_at = ${latest.at};
+      DELETE FROM page_widgets WHERE type LIKE 'summary-%';
+      DROP TABLE summary_layout_items;
+      DROP TABLE summary_layouts;
+      DELETE FROM __drizzle_migrations WHERE created_at >= ${latest.at};
     `);
     first.close();
     const upgraded = createDatabase(path);
     try {
       const db = getSqliteHandle(upgraded.db);
-      expect(upgraded.migrations.appliedNow).toBe(1);
+      expect(upgraded.migrations.appliedNow).toBe(3);
       expect(db.prepare('SELECT providerId, userId FROM account').get()).toEqual({
         providerId: 'oidc-0123456789abcdef',
         userId: 'u',
@@ -183,7 +192,11 @@ it('preserves a service identity and its widget selection in a SQLite backup', a
       ).toEqual({ identity });
       expect(
         JSON.parse(
-          (restored.prepare('SELECT config FROM page_widgets').get() as { config: string }).config,
+          (
+            restored
+              .prepare("SELECT config FROM page_widgets WHERE type='latency-history'")
+              .get() as { config: string }
+          ).config,
         ),
       ).toEqual({ target: identity, range: '7d' });
     } finally {
@@ -192,5 +205,63 @@ it('preserves a service identity and its widget selection in a SQLite backup', a
   } finally {
     source.close();
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('gives every page its Summary widgets and a place to arrange them, keeping what exists', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const directory = mkdtempSync(join(tmpdir(), 'homora-summary-migration-'));
+  const path = join(directory, 'test.sqlite');
+  try {
+    const first = createDatabase(path);
+    const sqlite = getSqliteHandle(first.db);
+    // The newest two migrations add the layout tables and the Summary widgets.
+    const before = sqlite
+      .prepare(
+        'SELECT created_at AS at FROM __drizzle_migrations ORDER BY at DESC LIMIT 1 OFFSET 1',
+      )
+      .get() as { at: number };
+    sqlite.exec(`
+      DELETE FROM page_widgets;
+      INSERT INTO pages(id,name,position) VALUES(9,'Lab',1);
+      INSERT INTO page_widgets(id,page_id,type,name,config,version,size,position) VALUES(7,(SELECT id FROM pages LIMIT 1),'clock','Kitchen','{}',1,'wide',3);
+      DROP TABLE summary_layout_items;
+      DROP TABLE summary_layouts;
+      DELETE FROM __drizzle_migrations WHERE created_at >= ${before.at};
+    `);
+    first.close();
+    const upgraded = createDatabase(path);
+    try {
+      const db = getSqliteHandle(upgraded.db);
+      expect(upgraded.migrations.appliedNow).toBe(2);
+      expect(db.prepare('SELECT id,name,size,position FROM page_widgets WHERE id=7').get()).toEqual(
+        { id: 7, name: 'Kitchen', size: 'wide', position: 3 },
+      );
+      // Both pages get every Summary widget, after what they already had.
+      const seeded = db
+        .prepare(
+          "SELECT page_id AS page,COUNT(DISTINCT type) AS n,MIN(position) AS first FROM page_widgets WHERE type LIKE 'summary-%' GROUP BY page_id ORDER BY page_id",
+        )
+        .all();
+      expect(seeded).toEqual([
+        { page: 1, n: 11, first: 4 },
+        { page: 9, n: 11, first: 0 },
+      ]);
+      expect(db.prepare('SELECT COUNT(*) AS n FROM summary_layouts').get()).toEqual({ n: 0 });
+      // Items follow their widget and their page away.
+      db.exec(`
+        INSERT INTO summary_layouts(page_id,revision) SELECT id,1 FROM pages LIMIT 1;
+        INSERT INTO summary_layout_items(page_id,device,widget_id,position,width,height) SELECT page_id,'desktop',7,0,4,2 FROM summary_layouts;
+        DELETE FROM page_widgets WHERE id=7;
+      `);
+      expect(db.prepare('SELECT COUNT(*) AS n FROM summary_layout_items').get()).toEqual({ n: 0 });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    } finally {
+      upgraded.close();
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
   }
 });

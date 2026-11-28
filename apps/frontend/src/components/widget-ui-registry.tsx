@@ -21,10 +21,12 @@ import { widgetUI as countdown } from '@homora/widgets/countdown/ui';
 import { widgetUI as note } from '@homora/widgets/note/ui';
 import { localWidgetTypes, type LocalWidgetType } from '@homora/widgets/registry';
 import type { WidgetUI } from '@homora/widgets/ui';
+import { summaryWidgetUIs } from '@homora/widgets/summary/ui';
 import { useClockPreferences } from '@/hooks/use-clock-preferences';
 import { WidgetHost } from '@/components/widget-host';
 
 const widgets = {
+  ...summaryWidgetUIs,
   clock,
   countdown,
   note,

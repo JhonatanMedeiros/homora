@@ -3,25 +3,14 @@ import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { resolveWidget } from '@homora/integrations';
 import type { WidgetDefinition } from '@homora/widgets';
-import { MAX_WIDGETS_PER_PAGE } from '@homora/shared';
+import { MAX_PAGE_WIDGETS } from '@homora/shared';
 import { errorBody } from '../api-error.js';
 import { parseId } from '../input-schemas.js';
+import { createPageWidgetStore } from '../page-widget-store.js';
 import { checkPageWidget } from '../page-widget-validation.js';
 
 const id = z.number().int().safe().positive();
-const orderSchema = z.object({ pageId: id, ids: z.array(id).max(200) }).strict();
-
-type Row = {
-  id: number;
-  pageId: number;
-  type: string;
-  name: string;
-  config: string;
-  version: number;
-  connectionId: number | null;
-  position: number;
-  size: string;
-};
+const orderSchema = z.object({ pageId: id, ids: z.array(id).max(MAX_PAGE_WIDGETS) }).strict();
 
 /** Page widget storage is independent of legacy integration widget identities. */
 export function registerPageWidgetRoutes(
@@ -29,6 +18,7 @@ export function registerPageWidgetRoutes(
   sqlite: DatabaseSync,
   resolve: (type: string) => WidgetDefinition<unknown> | undefined = resolveWidget,
 ) {
+  const store = createPageWidgetStore(sqlite);
   const bump = () => sqlite.prepare('UPDATE config_version SET version=version+1 WHERE id=1').run();
   const transaction = <T>(work: () => T): T => {
     sqlite.exec('BEGIN IMMEDIATE');
@@ -43,13 +33,7 @@ export function registerPageWidgetRoutes(
     }
   };
   const list = () =>
-    (
-      sqlite
-        .prepare(
-          'SELECT id,page_id AS pageId,type,name,config,version,connection_id AS connectionId,position,size FROM page_widgets ORDER BY page_id,position,id',
-        )
-        .all() as Row[]
-    ).map((row) => {
+    store.list().map((row) => {
       let config: unknown = null;
       try {
         config = JSON.parse(row.config);
@@ -65,25 +49,10 @@ export function registerPageWidgetRoutes(
   app.get('/api/page-widgets', async () => list());
   app.post('/api/page-widgets', async (request, reply) => {
     const value = validate(request.body);
-    if (!value || list().length >= 200) return reply.code(400).send(errorBody('invalid-widget'));
-    if (list().filter((row) => row.pageId === value.pageId).length >= MAX_WIDGETS_PER_PAGE)
-      return reply.code(409).send(errorBody('widget-limit'));
-    const result = transaction(() =>
-      sqlite
-        .prepare(
-          'INSERT INTO page_widgets(page_id,type,name,config,version,connection_id,size,position) VALUES(?,?,?,?,1,?,?,(SELECT COALESCE(MAX(position),-1)+1 FROM page_widgets WHERE page_id=?))',
-        )
-        .run(
-          value.pageId,
-          value.type,
-          value.name,
-          JSON.stringify(value.config),
-          value.connectionId,
-          value.size,
-          value.pageId,
-        ),
-    );
-    return reply.code(201).send(list().find((row) => row.id === Number(result.lastInsertRowid)));
+    if (!value) return reply.code(400).send(errorBody('invalid-widget'));
+    if (!store.hasRoom(value.pageId)) return reply.code(409).send(errorBody('widget-limit'));
+    const id = transaction(() => store.insert(value));
+    return reply.code(201).send(list().find((row) => row.id === id));
   });
   app.put('/api/page-widgets/order', async (request, reply) => {
     const parsed = orderSchema.safeParse(request.body);
@@ -91,17 +60,16 @@ export function registerPageWidgetRoutes(
     const { pageId, ids } = parsed.data;
     sqlite.exec('BEGIN IMMEDIATE');
     try {
-      const current = list().filter((row) => row.pageId === pageId);
+      const current = store.idsOf(pageId);
       if (
         ids.length !== current.length ||
         new Set(ids).size !== ids.length ||
-        ids.some((id) => !current.some((row) => row.id === id))
+        ids.some((id) => !current.includes(id))
       ) {
         sqlite.exec('ROLLBACK');
         return reply.code(400).send(errorBody('invalid-data'));
       }
-      const update = sqlite.prepare('UPDATE page_widgets SET position=? WHERE id=?');
-      ids.forEach((id, position) => update.run(position, id));
+      store.arrange(ids);
       bump();
       sqlite.exec('COMMIT');
       return list();
@@ -114,45 +82,19 @@ export function registerPageWidgetRoutes(
     const widgetId = parseId(request.params.id);
     const value = validate(request.body);
     if (!value) return reply.code(400).send(errorBody('invalid-widget'));
-    const current = list().find((row) => row.id === widgetId);
+    const current = widgetId === null ? undefined : store.find(widgetId);
     if (!current) return reply.code(404).send(errorBody('widget-not-found'));
     if (current.version !== 1) return reply.code(409).send(errorBody('invalid-widget'));
-    if (
-      current.pageId !== value.pageId &&
-      list().filter((row) => row.pageId === value.pageId).length >= MAX_WIDGETS_PER_PAGE
-    )
+    if (current.pageId !== value.pageId && !store.pageHasRoom(value.pageId))
       return reply.code(409).send(errorBody('widget-limit'));
-    const position =
-      current.pageId === value.pageId
-        ? current.position
-        : (
-            sqlite
-              .prepare('SELECT COALESCE(MAX(position),-1)+1 AS n FROM page_widgets WHERE page_id=?')
-              .get(value.pageId) as { n: number }
-          ).n;
-    transaction(() =>
-      sqlite
-        .prepare(
-          'UPDATE page_widgets SET page_id=?,type=?,name=?,config=?,version=1,connection_id=?,size=?,position=? WHERE id=?',
-        )
-        .run(
-          value.pageId,
-          value.type,
-          value.name,
-          JSON.stringify(value.config),
-          value.connectionId,
-          value.size,
-          position,
-          widgetId,
-        ),
-    );
+    transaction(() => store.update(current, value));
     return list().find((row) => row.id === widgetId);
   });
   app.delete<{ Params: { id: string } }>('/api/page-widgets/:id', async (request, reply) => {
     const widgetId = parseId(request.params.id);
-    if (widgetId === null || !list().some((row) => row.id === widgetId))
+    if (widgetId === null || !store.find(widgetId))
       return reply.code(404).send(errorBody('widget-not-found'));
-    transaction(() => sqlite.prepare('DELETE FROM page_widgets WHERE id=?').run(widgetId));
+    transaction(() => store.remove(widgetId));
     return reply.code(204).send();
   });
 }

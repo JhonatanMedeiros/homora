@@ -1,34 +1,21 @@
 import type { Service } from '@homora/shared';
-import { Button } from '@homora/ui/button';
-import { PageWidgets } from '@/components/page-widgets';
 import { WidgetStatusFilterContext } from '@/components/widget-host';
+import { LoadErrorAlert } from '@/components/load-error-alert';
 import { ServiceDrawer } from '@/components/service-drawer';
 import { ServicesEmpty } from '@/components/services-empty';
 import { SectionSkeleton } from '@/components/skeletons';
 import { StaleStatusAlert } from '@/components/stale-status-alert';
-import { PinnedRow } from '@/features/dashboard/pinned-row';
+import type { StatusFilter } from '@/features/dashboard/status-filter-model';
 import type { BrowseState } from '@/features/dashboard/use-browse-state';
 import { useViewPreferences } from '@/features/dashboard/use-view-preferences';
-import { defaultSelection, detailsFor } from '@/features/home/details-props';
+import { detailsFor } from '@/features/home/details-props';
 import { HealthPill } from '@/features/home/health-pill';
-import { HomeSidebar } from '@/features/home/home-sidebar';
-import { ServicePanel } from '@/features/home/service-panel';
-import {
-  AvailabilityCard,
-  LatencyCard,
-  NothingToDo,
-  SlowList,
-  StateStrip,
-  SummaryCard,
-  UpcomingMaintenance,
-} from '@/features/home/summary-cards';
-import { LoadErrorAlert } from '@/components/load-error-alert';
 import { useDetailsSelection } from '@/features/home/use-details-selection';
 import { useHomeArea } from '@/features/home/use-home-area';
-import { averageUptime, HealthFigures } from '@/features/uptime/health-figures';
-import { ProbableCauses } from '@/features/uptime/probable-causes';
-import { useMinWidth } from '@/hooks/use-min-width';
+import { summaryContent } from '@/features/summary/summary-content';
+import { SummaryBoard } from '@/features/summary/summary-board';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePendingProposals } from '@/hooks/use-pending-proposals';
 import type { useServices } from '@/hooks/use-services';
 import { t } from '@/i18n';
 
@@ -40,28 +27,28 @@ type Props = {
 };
 
 /**
- * The Home: pinned services one click away, what needs attention, and the health of everything in
- * numbers. The cards themselves live in the Services view.
+ * The Home: a grid of widgets, arranged per page. By default it opens with pinned
+ * services, what needs attention and the health of everything. The cards live in Services.
  */
 export function HomePage({ data, browse, navigate, onEditService }: Props) {
-  const { services, statuses, blockedIds, pages, groupRows, activePageId } = data;
+  const { services, pages, groupRows, activePageId } = data;
   const { uptimeRange, setUptimeRange, setArrange } = useViewPreferences();
-  const { sources, hostData, model, health, actions, categories } = useHomeArea(
-    data,
-    browse,
-    uptimeRange,
-  );
+  const area = useHomeArea(data, browse, uptimeRange);
+  const { sources, model, health, actions } = area;
   const mobile = useIsMobile();
-  const wide = useMinWidth(1280) && !mobile && services.length > 0;
-  const selection = useDetailsSelection(wide);
-  const { overview, clock } = sources;
-  const selected = services.find((service) => service.id === selection.selectedId) ?? null;
+  const pending = usePendingProposals('summary', true);
+  const selection = useDetailsSelection(false);
   const sheetService = services.find((service) => service.id === selection.sheetId) ?? null;
   const toServices = () => navigate('/services');
   const toProbes = () => navigate('/manage/probes');
   const openEntry = (id: number) => {
     if (health.probeIds.has(id)) toProbes();
     else selection.open(id);
+  };
+  const showState = (filter: StatusFilter) => {
+    browse.setStatusFilter(filter);
+    setArrange('group');
+    toServices();
   };
   const details = (service: Service) =>
     detailsFor(service, {
@@ -78,15 +65,30 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
       },
       onAllowMonitoring: (item) => onEditService(item.id, 'access'),
     });
-  const panelService = selected ?? defaultSelection(services, health.isDown, health.quietNow);
-  const pinned = services
-    .filter((service) => service.pinned)
-    .sort((a, b) => (a.pinnedPosition ?? Infinity) - (b.pinnedPosition ?? Infinity));
-  const { downNow, entries, summary, quietNow } = health;
   const ready = data.loaded && !data.loadError;
-  const empty = ready && entries.length === 0;
+  const empty = ready && health.entries.length === 0;
+  const content =
+    ready && !empty
+      ? summaryContent({
+          data,
+          sources,
+          health,
+          area,
+          range: uptimeRange,
+          pending,
+          openService: selection.open,
+          openEntry,
+          navigate,
+          showState,
+          showHost: (item) => {
+            browse.setNodeFilter({ connectionId: item.connectionId, node: item.node });
+            setArrange('host');
+            toServices();
+          },
+        })
+      : null;
 
-  const body = (
+  return (
     <section aria-label={t('nav.summary')} className="flex min-w-0 flex-col gap-4 md:gap-5">
       <HealthPill
         data={data}
@@ -107,100 +109,6 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
       {empty && (
         <ServicesEmpty hasServices={false} onAdd={() => navigate('/manage/services/new')} />
       )}
-      {ready && !empty && (
-        <>
-          <PinnedRow
-            services={pinned}
-            statuses={statuses}
-            blockedIds={blockedIds}
-            onDetails={(service) => selection.open(service.id)}
-          />
-          {summary.measurement ? (
-            <SummaryCard title={t('homeview.attention')}>
-              <div className="flex flex-col items-start gap-1 text-sm">
-                <p className="font-medium">{summary.title}</p>
-                <p className="text-muted-foreground">{summary.subtitle}</p>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0"
-                  onClick={() => navigate('/manage/integrations')}
-                >
-                  {t('banner.measurement.action')}
-                </Button>
-              </div>
-            </SummaryCard>
-          ) : downNow.length > 0 ? (
-            <>
-              <ProbableCauses
-                alwaysOpen
-                down={downNow.filter((service) => !quietNow(service.id))}
-                quiet={downNow.filter((service) => quietNow(service.id))}
-                incidents={overview?.open}
-                impacts={model.impacts}
-                onOpen={(service) => openEntry(service.id)}
-                onAcknowledge={(members, minutes) => void actions.acknowledge(members, minutes)}
-                onShowAgain={(members) =>
-                  void sources.attention.clear(members.map((member) => member.id))
-                }
-              />
-              {summary.slow.length > 0 && (
-                <SummaryCard title={t('homeview.attention.slow')}>
-                  <SlowList lines={summary.slow} />
-                </SummaryCard>
-              )}
-            </>
-          ) : (
-            <SummaryCard title={t('homeview.attention')}>
-              {summary.slow.length === 0 ? (
-                <NothingToDo certain={!data.statusError && summary.unknown === 0} />
-              ) : (
-                <>
-                  <h3 className="text-xs font-medium text-muted-foreground">
-                    {t('homeview.attention.slow')}
-                  </h3>
-                  <SlowList lines={summary.slow} />
-                </>
-              )}
-            </SummaryCard>
-          )}
-          <section aria-label={t('homeview.figures')}>
-            <HealthFigures
-              average={averageUptime(entries, sources.uptime)}
-              monitored={entries.length - summary.blocked}
-              range={uptimeRange}
-              overview={overview}
-              certs={summary.certs}
-            />
-          </section>
-          <StateStrip
-            counts={health.countsWithProbes}
-            onSelect={(filter) => {
-              browse.setStatusFilter(filter);
-              setArrange('group');
-              toServices();
-            }}
-          />
-          <div className="grid gap-4 md:gap-5 lg:grid-cols-2">
-            <AvailabilityCard sla={overview?.sla} />
-            <LatencyCard
-              entries={entries}
-              statuses={statuses}
-              settings={overview?.settings}
-              onSelect={openEntry}
-            />
-          </div>
-          <UpcomingMaintenance
-            windows={sources.maintenance.windows}
-            now={clock}
-            nameOf={(id) =>
-              entries.find((entry) => entry.id === id)?.name ?? t('maintview.unknownService')
-            }
-            onAll={() => navigate('/maintenance')}
-          />
-        </>
-      )}
       {ready && (
         <WidgetStatusFilterContext.Provider
           value={(filter) => {
@@ -208,11 +116,13 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
             toServices();
           }}
         >
-          <PageWidgets
+          <SummaryBoard
+            key={activePageId}
             pageId={activePageId}
-            showAdd={!mobile}
             pages={pages}
             groups={groupRows.map((group) => ({ name: group.name, pageId: group.pageId ?? null }))}
+            phone={mobile}
+            content={content}
             openMonitor={(id, hasService) => (hasService ? selection.open(id) : toProbes())}
           />
         </WidgetStatusFilterContext.Provider>
@@ -225,35 +135,5 @@ export function HomePage({ data, browse, navigate, onEditService }: Props) {
         onClose={selection.close}
       />
     </section>
-  );
-  if (!wide) return body;
-  return (
-    <div className="grid grid-cols-[13rem_minmax(0,1fr)_19rem] gap-6">
-      <HomeSidebar
-        data={data}
-        hostData={hostData}
-        health={health}
-        browse={browse}
-        categories={categories}
-        onShowHosts={() => {
-          setArrange('host');
-          toServices();
-        }}
-        onProbes={toProbes}
-        onChosen={() => {
-          setArrange('group');
-          toServices();
-        }}
-      />
-      {body}
-      <div className="min-w-0">
-        <ServicePanel
-          windows={summary.windows}
-          details={panelService ? details(panelService) : null}
-          onSelect={openEntry}
-          onReviewProposals={() => navigate('/manage/agents')}
-        />
-      </div>
-    </div>
   );
 }

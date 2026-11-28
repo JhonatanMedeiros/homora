@@ -86,9 +86,11 @@ Each widget has its own loading and error state, so a failing connection never a
 
 ## Page widgets
 
-Page widgets live on a dashboard page: in the right panel on wide screens, below your groups on smaller ones.
+Page widgets live on a dashboard page. They appear on its [Summary](dashboard.md#customize-the-summary), and on
+Services they sit at the top of the right column on wide screens, above your groups on smaller ones.
 
-1. On the dashboard, press the dashed **Add widget** tile (on a phone, open **Organize** first).
+1. On the Summary, press **Customize** and **Add widget**. On Services, press the dashed **Add widget** tile (on a
+   phone, open **Organize** first).
 2. Pick a widget from the searchable gallery (Homora's own, and those offered by your connections).
 3. Set its options. A **clock** offers 12 or 24-hour format, seconds, the date and any time zone, with a live preview.
 4. For a **note**, enter up to 4,000 characters of basic Markdown. An optional name appears above it. Paragraphs, line breaks, emphasis, lists and HTTP(S) links are supported; HTML, images, tables and code blocks are not rendered as such.

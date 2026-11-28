@@ -1,7 +1,9 @@
+import { isSummaryWidgetType } from '@homora/widgets/summary';
+import { getWidgetUI } from '@/components/widget-ui-registry';
 import { CircleAlert, TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@homora/ui/alert';
 import { Badge } from '@homora/ui/badge';
-import { t, type MessageKey } from '@/i18n';
+import { t, tOr, type MessageKey } from '@/i18n';
 import type { Plan } from './transfer-model';
 
 /** Import report: what is added, what already exists, and what was skipped. */
@@ -22,6 +24,10 @@ export function ImportPreview({ plan }: { plan: Plan }) {
         </AlertDescription>
       </Alert>
     );
+  // A Summary widget the page already has is nothing to review.
+  const widgets = (plan.widgets ?? []).filter(
+    (widget) => widget.status === 'new' || !isSummaryWidgetType(widget.type),
+  );
   return (
     <div className="flex flex-col gap-4" aria-label={t('transfer.previewTitle')} role="group">
       <p className="text-sm font-medium">
@@ -49,12 +55,13 @@ export function ImportPreview({ plan }: { plan: Plan }) {
           ))}
         </ul>
       )}
-      {(plan.widgets?.length ?? 0) > 0 && (
+      {widgets.length > 0 && (
         <ul className="flex flex-col gap-1 rounded-md border p-2 text-sm">
-          {plan.widgets?.map((widget, index) => (
+          {widgets.map((widget, index) => (
             <li key={index} className="flex justify-between gap-2">
               <span>
-                {widget.name || widget.type} · {widget.page}
+                {widget.name || tOr(getWidgetUI(widget.type)?.name ?? '', widget.type)} ·{' '}
+                {widget.page}
               </span>
               <Badge variant={widget.status === 'new' ? 'success' : 'secondary'}>
                 {widget.status === 'new' ? t('transfer.statusNew') : t('pageWidgets.skipped')}
