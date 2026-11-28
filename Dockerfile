@@ -1,5 +1,5 @@
 # Base images are pinned by digest so builds are repeatable. Dependabot proposes updates.
-FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS base
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS base
 WORKDIR /app
 RUN corepack enable
 
@@ -31,7 +31,7 @@ RUN pnpm build
 FROM build AS prod
 RUN pnpm --filter @homora/backend deploy --prod --legacy /prod
 
-FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS backend
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS backend
 LABEL org.opencontainers.image.title="Homora backend" \
       org.opencontainers.image.description="API, monitor and local MCP server for the Homora self-hosted dashboard" \
       org.opencontainers.image.source="https://github.com/JhonatanMedeiros/homora" \
@@ -59,7 +59,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 CMD ["node", "apps/backend/dist/server.js"]
 
 # Optional Docker inventory agent. Supply a socket, token file and HTTPS origin at runtime.
-FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS discovery-agent
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS discovery-agent
 WORKDIR /app
 COPY --chown=node:node scripts/docker-push-agent.mjs ./docker-push-agent.mjs
 USER node
